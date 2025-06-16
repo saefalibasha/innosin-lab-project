@@ -28,6 +28,7 @@ interface FloorPlannerCanvasProps {
   showGrid: boolean;
   showRuler: boolean;
   onClearAll: () => void;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
 const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
@@ -39,7 +40,8 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   currentTool,
   showGrid,
   showRuler,
-  onClearAll
+  onClearAll,
+  canvasRef
 }) => {
   return (
     <div className="h-full w-full">
@@ -53,6 +55,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         showGrid={showGrid}
         showRuler={showRuler}
         onClearAll={onClearAll}
+        canvasRef={canvasRef}
       />
     </div>
   );

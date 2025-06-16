@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,8 @@ import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
+import ExportModal from '@/components/ExportModal';
+import SendPlanModal from '@/components/SendPlanModal';
 
 interface Point {
   x: number;
@@ -34,6 +35,7 @@ const FloorPlanner = () => {
   const [openPanel, setOpenPanel] = useState<string>('tools');
   const [showGrid, setShowGrid] = useState(true);
   const [showRuler, setShowRuler] = useState(false);
+  const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
   const productLibrary = [
     {
@@ -143,14 +145,31 @@ const FloorPlanner = () => {
                 <Eye className="w-4 h-4 mr-1" />
                 View
               </Button>
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-1" />
-                Export
-              </Button>
-              <Button variant="outline" size="sm">
-                <Send className="w-4 h-4 mr-1" />
-                Send
-              </Button>
+              
+              {/* Export Modal */}
+              <ExportModal
+                canvasRef={canvasRef}
+                roomPoints={roomPoints}
+                placedProducts={placedProducts}
+              >
+                <Button variant="outline" size="sm">
+                  <Download className="w-4 h-4 mr-1" />
+                  Export
+                </Button>
+              </ExportModal>
+
+              {/* Send Plan Modal */}
+              <SendPlanModal
+                canvasRef={canvasRef}
+                roomPoints={roomPoints}
+                placedProducts={placedProducts}
+              >
+                <Button variant="outline" size="sm">
+                  <Send className="w-4 h-4 mr-1" />
+                  Send
+                </Button>
+              </SendPlanModal>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -168,12 +187,12 @@ const FloorPlanner = () => {
           isSidebarCollapsed ? 'w-0' : 'w-80'
         } ${isFullScreen ? 'mt-12' : 'mt-24'} overflow-hidden`}>
           <div className="w-80 h-full overflow-y-auto p-4 space-y-4">
-            {/* Tool Instructions */}
+            {/* Enhanced Tool Instructions */}
             <Collapsible open={openPanel === 'instructions'} onOpenChange={() => setOpenPanel(openPanel === 'instructions' ? '' : 'instructions')}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start font-medium">
                   <HelpCircle className="w-4 h-4 mr-2" />
-                  Tool Instructions
+                  Complete Tool Guide
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-2">
@@ -182,14 +201,15 @@ const FloorPlanner = () => {
                   <div className="flex items-center space-x-2 mb-2">
                     <Ruler className="w-4 h-4 text-blue-600" />
                     <span className="font-medium text-sm">Wall Tool</span>
+                    <Badge variant="outline" className="text-xs">Active</Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Draw room walls and boundaries</p>
+                  <p className="text-xs text-gray-600 mb-3">Draw room walls and boundaries with precision</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Click to place wall points</div>
-                    <div className="text-xs text-gray-700">• Double-click to complete room</div>
-                    <div className="text-xs text-gray-700">• ESC to finish drawing</div>
-                    <div className="text-xs text-gray-700">• Enter for custom length input</div>
-                    <div className="text-xs text-gray-700">• Length shown parallel to line</div>
+                    <div className="text-xs text-gray-700">• <strong>Click:</strong> Place wall points</div>
+                    <div className="text-xs text-gray-700">• <strong>Double-click:</strong> Complete room</div>
+                    <div className="text-xs text-gray-700">• <strong>ESC:</strong> Finish drawing</div>
+                    <div className="text-xs text-gray-700">• <strong>Enter:</strong> Custom length input</div>
+                    <div className="text-xs text-gray-700">• Auto-displays length parallel to line</div>
                   </div>
                 </div>
 
@@ -198,15 +218,16 @@ const FloorPlanner = () => {
                   <div className="flex items-center space-x-2 mb-2">
                     <Move className="w-4 h-4 text-green-600" />
                     <span className="font-medium text-sm">Select & Move Tool</span>
+                    <Badge variant="outline" className="text-xs">Enhanced</Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Select and manipulate objects</p>
+                  <p className="text-xs text-gray-600 mb-3">Select, move, and rotate objects with precision</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Click to select objects</div>
-                    <div className="text-xs text-gray-700">• Drag center to move</div>
-                    <div className="text-xs text-gray-700">• Drag edges to rotate</div>
-                    <div className="text-xs text-gray-700">• R key: rotate 15°</div>
-                    <div className="text-xs text-gray-700">• D key: duplicate</div>
-                    <div className="text-xs text-gray-700">• Delete key: remove</div>
+                    <div className="text-xs text-gray-700">• <strong>Click:</strong> Select objects</div>
+                    <div className="text-xs text-gray-700">• <strong>Drag center:</strong> Move with grid snap</div>
+                    <div className="text-xs text-gray-700">• <strong>Drag edges:</strong> Rotate with compass</div>
+                    <div className="text-xs text-gray-700">• <strong>R key:</strong> Rotate 15° increments</div>
+                    <div className="text-xs text-gray-700">• <strong>D key:</strong> Duplicate selected</div>
+                    <div className="text-xs text-gray-700">• <strong>Delete:</strong> Remove selected</div>
                   </div>
                 </div>
 
@@ -215,13 +236,14 @@ const FloorPlanner = () => {
                   <div className="flex items-center space-x-2 mb-2">
                     <Type className="w-4 h-4 text-purple-600" />
                     <span className="font-medium text-sm">Text Tool</span>
+                    <Badge variant="outline" className="text-xs">New</Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Add text annotations and labels</p>
+                  <p className="text-xs text-gray-600 mb-3">Add text annotations and labels anywhere</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Click to place text box</div>
-                    <div className="text-xs text-gray-700">• Drag to move text</div>
-                    <div className="text-xs text-gray-700">• Double-click to edit text</div>
-                    <div className="text-xs text-gray-700">• Delete key to remove</div>
+                    <div className="text-xs text-gray-700">• <strong>Click:</strong> Place text box</div>
+                    <div className="text-xs text-gray-700">• <strong>Drag:</strong> Move text freely</div>
+                    <div className="text-xs text-gray-700">• <strong>Double-click:</strong> Edit text content</div>
+                    <div className="text-xs text-gray-700">• <strong>Delete:</strong> Remove text</div>
                   </div>
                 </div>
 
@@ -231,11 +253,27 @@ const FloorPlanner = () => {
                     <Eraser className="w-4 h-4 text-red-600" />
                     <span className="font-medium text-sm">Eraser Tool</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Remove objects, text, and wall points</p>
+                  <p className="text-xs text-gray-600 mb-3">Remove objects, text, and wall points precisely</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Click to erase items</div>
-                    <div className="text-xs text-gray-700">• Works on products and walls</div>
-                    <div className="text-xs text-gray-700">• Point-by-point deletion</div>
+                    <div className="text-xs text-gray-700">• <strong>Click:</strong> Erase any item</div>
+                    <div className="text-xs text-gray-700">• Works on products, text, and walls</div>
+                    <div className="text-xs text-gray-700">• Point-by-point wall deletion</div>
+                    <div className="text-xs text-gray-700">• Segment-by-segment removal</div>
+                  </div>
+                </div>
+                
+                {/* Export & Send Tools */}
+                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Download className="w-4 h-4 text-green-600" />
+                    <span className="font-medium text-sm text-green-800">Export & Send</span>
+                    <Badge variant="outline" className="text-xs bg-green-100">New</Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs text-green-700">• <strong>Export:</strong> Save as PNG or PDF</div>
+                    <div className="text-xs text-green-700">• <strong>Send:</strong> Email plan to team</div>
+                    <div className="text-xs text-green-700">• Includes dimensions and furniture</div>
+                    <div className="text-xs text-green-700">• HubSpot integration for leads</div>
                   </div>
                 </div>
                 
@@ -243,13 +281,14 @@ const FloorPlanner = () => {
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <div className="flex items-center space-x-2 mb-2">
                     <MousePointer className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-sm text-blue-800">Basic Controls</span>
+                    <span className="font-medium text-sm text-blue-800">Universal Controls</span>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs text-blue-700">• Left click: Draw/Select</div>
-                    <div className="text-xs text-blue-700">• Right click: Pan canvas</div>
-                    <div className="text-xs text-blue-700">• Mouse wheel: Zoom in/out</div>
-                    <div className="text-xs text-blue-700">• Drag from library: Place items</div>
+                    <div className="text-xs text-blue-700">• <strong>Left click:</strong> Draw/Select</div>
+                    <div className="text-xs text-blue-700">• <strong>Right click:</strong> Pan canvas</div>
+                    <div className="text-xs text-blue-700">• <strong>Mouse wheel:</strong> Zoom in/out</div>
+                    <div className="text-xs text-blue-700">• <strong>Drag from library:</strong> Place items</div>
+                    <div className="text-xs text-blue-700">• <strong>Grid/Ruler:</strong> Toggle in toolbar</div>
                   </div>
                 </div>
               </CollapsibleContent>

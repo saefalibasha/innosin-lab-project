@@ -37,6 +37,7 @@ interface CanvasWorkspaceProps {
   showGrid: boolean;
   showRuler: boolean;
   onClearAll: () => void;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
 const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
@@ -48,11 +49,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   currentTool,
   showGrid,
   showRuler,
-  onClearAll
+  onClearAll,
+  canvasRef: externalCanvasRef
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
+  const internalCanvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = externalCanvasRef || internalCanvasRef;
   
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
