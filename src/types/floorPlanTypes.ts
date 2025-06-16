@@ -22,6 +22,8 @@ export interface Door {
   width: number; // in meters
   swingDirection: 'inward' | 'outward';
   wallSegmentIndex: number;
+  isEmbedded: boolean; // indicates if door is properly embedded in wall
+  wallPosition: number; // position along the wall segment (0-1)
 }
 
 export interface TextAnnotation {

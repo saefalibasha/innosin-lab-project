@@ -1,14 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type, DoorOpen } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type, DoorOpen, Undo, Redo } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import ExportModal from '@/components/ExportModal';
 import SendPlanModal from '@/components/SendPlanModal';
+import { useFloorPlanHistory, FloorPlanState } from '@/hooks/useFloorPlanHistory';
+import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 
 interface Point {
   x: number;
@@ -28,6 +30,8 @@ interface PlacedProduct {
 const FloorPlanner = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
+  const [doors, setDoors] = useState<Door[]>([]);
+  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [scale] = useState(40);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -36,6 +40,55 @@ const FloorPlanner = () => {
   const [showGrid, setShowGrid] = useState(true);
   const [showRuler, setShowRuler] = useState(false);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
+
+  // Initialize history management
+  const initialState: FloorPlanState = {
+    roomPoints: [],
+    placedProducts: [],
+    doors: [],
+    textAnnotations: []
+  };
+
+  const {
+    saveState,
+    undo,
+    redo,
+    canUndo,
+    canRedo
+  } = useFloorPlanHistory(initialState);
+
+  // Save state whenever any data changes
+  useEffect(() => {
+    const currentState: FloorPlanState = {
+      roomPoints,
+      placedProducts,
+      doors,
+      textAnnotations
+    };
+    saveState(currentState);
+  }, [roomPoints, placedProducts, doors, textAnnotations, saveState]);
+
+  const handleUndo = () => {
+    const previousState = undo();
+    if (previousState) {
+      setRoomPoints(previousState.roomPoints);
+      setPlacedProducts(previousState.placedProducts);
+      setDoors(previousState.doors);
+      setTextAnnotations(previousState.textAnnotations);
+      toast.success('Action undone');
+    }
+  };
+
+  const handleRedo = () => {
+    const nextState = redo();
+    if (nextState) {
+      setRoomPoints(nextState.roomPoints);
+      setPlacedProducts(nextState.placedProducts);
+      setDoors(nextState.doors);
+      setTextAnnotations(nextState.textAnnotations);
+      toast.success('Action redone');
+    }
+  };
 
   const productLibrary = [
     {
@@ -82,12 +135,19 @@ const FloorPlanner = () => {
   const handleClearAll = () => {
     setRoomPoints([]);
     setPlacedProducts([]);
+    setDoors([]);
+    setTextAnnotations([]);
     toast.success('Floor plan cleared');
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      // ESC handling is now in CanvasWorkspace
+    // Handle undo/redo shortcuts
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      handleRedo();
     }
   };
 
@@ -111,6 +171,43 @@ const FloorPlanner = () => {
                 {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
               </Button>
               <h1 className="text-xl font-bold text-black">Floor Planner</h1>
+              
+              {/* Undo/Redo Controls */}
+              <div className="flex items-center space-x-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUndo}
+                      disabled={!canUndo}
+                      title="Undo (Ctrl+Z)"
+                    >
+                      <Undo className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Undo last action (Ctrl+Z)</p>
+                  </TooltipContent>
+                </Tooltip>
+                
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleRedo}
+                      disabled={!canRedo}
+                      title="Redo (Ctrl+Y)"
+                    >
+                      <Redo className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Redo last action (Ctrl+Y)</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -452,11 +549,16 @@ const FloorPlanner = () => {
             setRoomPoints={setRoomPoints}
             placedProducts={placedProducts}
             setPlacedProducts={setPlacedProducts}
+            doors={doors}
+            setDoors={setDoors}
+            textAnnotations={textAnnotations}
+            setTextAnnotations={setTextAnnotations}
             scale={scale}
             currentTool={activeTool}
             showGrid={showGrid}
             showRuler={showRuler}
             onClearAll={handleClearAll}
+            canvasRef={canvasRef}
           />
         </div>
       </div>

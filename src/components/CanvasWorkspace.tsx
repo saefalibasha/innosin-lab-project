@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, DoorOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { isProductWithinRoom, findClosestWallSegment, getWallAngle } from '@/utils/collisionDetection';
+import { isProductWithinRoom, findClosestWallSegment, getWallAngle, findOptimalDoorPosition, checkDoorConflict } from '@/utils/collisionDetection';
 import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 
 interface CanvasWorkspaceProps {
@@ -11,6 +11,10 @@ interface CanvasWorkspaceProps {
   setRoomPoints: (points: Point[]) => void;
   placedProducts: PlacedProduct[];
   setPlacedProducts: (products: PlacedProduct[]) => void;
+  doors: Door[];
+  setDoors: (doors: Door[]) => void;
+  textAnnotations: TextAnnotation[];
+  setTextAnnotations: (annotations: TextAnnotation[]) => void;
   scale: number;
   currentTool: string;
   showGrid: boolean;
@@ -24,6 +28,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   setRoomPoints,
   placedProducts,
   setPlacedProducts,
+  doors,
+  setDoors,
+  textAnnotations,
+  setTextAnnotations,
   scale,
   currentTool,
   showGrid,
@@ -62,7 +70,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [editingText, setEditingText] = useState('');
 
   // New state for doors
-  const [doors, setDoors] = useState<Door[]>([]);
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
 
   // Optimized drawing with requestAnimationFrame
@@ -594,41 +601,53 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const doorWidth = door.width * scale;
       const doorThickness = 8 / zoom;
       
-      // Draw door opening (gap in wall)
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
+      // Draw door opening (gap in wall) - only if embedded
+      if (door.isEmbedded) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
+        
+        // Draw door frame with enhanced styling
+        ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
+        ctx.lineWidth = 3 / zoom;
+        ctx.strokeRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
+      }
       
-      // Draw door frame
-      ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
-      ctx.lineWidth = 2 / zoom;
-      ctx.strokeRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
-      
-      // Draw door swing arc
+      // Draw door swing arc with proper direction
       ctx.strokeStyle = '#d1d5db';
       ctx.lineWidth = 1 / zoom;
-      ctx.setLineDash([3 / zoom, 3 / zoom]);
+      ctx.setLineDash([4 / zoom, 4 / zoom]);
       
-      const swingRadius = doorWidth * 0.8;
+      const swingRadius = doorWidth * 0.85;
       const swingDirection = door.swingDirection === 'inward' ? 1 : -1;
       
       ctx.beginPath();
-      ctx.arc(-doorWidth/2, 0, swingRadius, 0, Math.PI/2 * swingDirection);
+      ctx.arc(-doorWidth/2, 0, swingRadius, 0, (Math.PI/2) * swingDirection);
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // Draw door leaf
+      // Draw door leaf with enhanced visibility
       ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
-      ctx.lineWidth = 2 / zoom;
+      ctx.lineWidth = 3 / zoom;
       ctx.beginPath();
       ctx.moveTo(-doorWidth/2, 0);
-      ctx.lineTo(-doorWidth/2 + swingRadius * Math.cos(Math.PI/4), swingRadius * Math.sin(Math.PI/4) * swingDirection);
+      const leafEndX = -doorWidth/2 + swingRadius * Math.cos(Math.PI/4);
+      const leafEndY = swingRadius * Math.sin(Math.PI/4) * swingDirection;
+      ctx.lineTo(leafEndX, leafEndY);
       ctx.stroke();
 
-      // Selection indicator
+      // Draw door handle
+      ctx.fillStyle = selectedDoor === door.id ? '#3b82f6' : '#666666';
+      ctx.beginPath();
+      ctx.arc(leafEndX * 0.8, leafEndY * 0.8, 3 / zoom, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // Enhanced selection indicator
       if (selectedDoor === door.id) {
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2 / zoom;
-        ctx.strokeRect(-doorWidth/2 - 5, -doorThickness/2 - 5, doorWidth + 10, doorThickness + 10);
+        ctx.setLineDash([5 / zoom, 5 / zoom]);
+        ctx.strokeRect(-doorWidth/2 - 10, -doorThickness/2 - 10, doorWidth + 20, doorThickness + 20);
+        ctx.setLineDash([]);
       }
 
       ctx.restore();
@@ -863,13 +882,35 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleEraser = (point: Point) => {
-    // Erase products
+    // First check for doors (highest priority for embedded items)
+    const clickedDoor = doors.find(door => {
+      const dx = point.x - door.position.x;
+      const dy = point.y - door.position.y;
+      const doorWidth = door.width * scale;
+      return Math.sqrt(dx * dx + dy * dy) <= (doorWidth / 2 + 15 / zoom);
+    });
+
+    if (clickedDoor) {
+      const updatedDoors = doors.filter(d => d.id !== clickedDoor.id);
+      setDoors(updatedDoors);
+      toast.success('Door removed from wall');
+      return;
+    }
+
+    // Check for products
     const clickedProduct = placedProducts.find(product => {
       const dx = point.x - product.position.x;
       const dy = point.y - product.position.y;
+      
+      const cos = Math.cos((-product.rotation * Math.PI) / 180);
+      const sin = Math.sin((-product.rotation * Math.PI) / 180);
+      const rotatedX = dx * cos - dy * sin;
+      const rotatedY = dx * sin + dy * cos;
+      
       const width = (product.dimensions.length * scale * (product.scale || 1)) / 2;
       const height = (product.dimensions.width * scale * (product.scale || 1)) / 2;
-      return Math.abs(dx) <= width && Math.abs(dy) <= height;
+      
+      return Math.abs(rotatedX) <= width && Math.abs(rotatedY) <= height;
     });
 
     if (clickedProduct) {
@@ -879,7 +920,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Erase text annotations
+    // Check for text annotations
     const clickedText = textAnnotations.find(annotation => {
       const ctx = canvasRef.current?.getContext('2d');
       if (!ctx) return false;
@@ -898,21 +939,29 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Erase wall points with improved detection
+    // Check for wall points (lowest priority)
     const clickedPointIndex = roomPoints.findIndex(roomPoint => {
       const dx = point.x - roomPoint.x;
       const dy = point.y - roomPoint.y;
-      return Math.sqrt(dx * dx + dy * dy) <= 25 / zoom; // Scale-aware detection
+      return Math.sqrt(dx * dx + dy * dy) <= 25 / zoom;
     });
 
     if (clickedPointIndex !== -1) {
       const updatedPoints = roomPoints.filter((_, index) => index !== clickedPointIndex);
       setRoomPoints(updatedPoints);
-      toast.success('Wall point erased');
+      
+      // Remove any doors that were on walls that no longer exist
+      const updatedDoors = doors.filter(door => door.wallSegmentIndex < updatedPoints.length);
+      if (updatedDoors.length !== doors.length) {
+        setDoors(updatedDoors);
+        toast.success('Wall point and associated doors erased');
+      } else {
+        toast.success('Wall point erased');
+      }
       return;
     }
 
-    // Erase wall segments
+    // Check for wall segments
     for (let i = 0; i < roomPoints.length; i++) {
       const nextIndex = (i + 1) % roomPoints.length;
       if (nextIndex === 0 && isDrawingActive) continue;
@@ -920,13 +969,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const point1 = roomPoints[i];
       const point2 = roomPoints[nextIndex];
       
-      // Check if click is near the line segment
       const distanceToLine = distanceFromPointToLineSegment(point, point1, point2);
       if (distanceToLine <= 15 / zoom) {
-        // Remove this segment by removing the second point
+        // Remove doors on this wall segment before removing the wall
+        const doorsOnSegment = doors.filter(door => door.wallSegmentIndex === i);
+        if (doorsOnSegment.length > 0) {
+          const updatedDoors = doors.filter(door => door.wallSegmentIndex !== i);
+          setDoors(updatedDoors);
+        }
+        
         const updatedPoints = roomPoints.filter((_, index) => index !== nextIndex);
         setRoomPoints(updatedPoints);
-        toast.success('Wall segment erased');
+        toast.success('Wall segment and associated doors erased');
         return;
       }
     }
@@ -1045,21 +1099,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    const wallAngle = getWallAngle(wallInfo.segment[0], wallInfo.segment[1]);
-    const doorPosition = findClosestWallSegment(point, roomPoints)?.segment ? 
-      point : wallInfo.segment[0]; // Snap to wall
-
+    const doorWidth = 0.9; // 900mm standard door width
+    const doorPlacement = findOptimalDoorPosition(point, wallInfo.segment);
+    
     const newDoor: Door = {
       id: `door-${Date.now()}`,
-      position: doorPosition,
-      rotation: wallAngle,
-      width: 0.9, // 900mm standard door width
+      position: doorPlacement.position,
+      rotation: doorPlacement.rotation,
+      width: doorWidth,
       swingDirection: 'inward',
-      wallSegmentIndex: wallInfo.index
+      wallSegmentIndex: wallInfo.index,
+      isEmbedded: true,
+      wallPosition: doorPlacement.wallPosition
     };
 
+    // Check for conflicts with existing doors
+    if (checkDoorConflict(newDoor, doors, doorWidth)) {
+      toast.error('Door placement conflicts with existing door');
+      return;
+    }
+
     setDoors([...doors, newDoor]);
-    toast.success('Door placed');
+    toast.success('Door embedded in wall');
   };
 
   const validateProductMove = (productId: string, newPosition: Point): boolean => {
@@ -1127,12 +1188,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const updatedDoors = doors.filter(d => d.id !== selectedDoor);
     setDoors(updatedDoors);
     setSelectedDoor(null);
-    toast.success('Door deleted');
+    toast.success('Door removed from wall');
   };
 
   const clearAll = () => {
     setRoomPoints([]);
     setPlacedProducts([]);
+    setDoors([]);
     setTextAnnotations([]);
     setSelectedProduct(null);
     setSelectedText(null);
@@ -1359,13 +1421,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Enhanced Status Bar */}
+      {/* Enhanced Status Bar with Door Count */}
       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded px-3 py-2 text-xs text-gray-600 border">
         <div className="flex flex-col space-y-1">
-          <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Text: {textAnnotations.length}</div>
+          <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Doors: {doors.length} | Text: {textAnnotations.length}</div>
           <div className="text-gray-500">
             Left click: Draw/Select | Right click: Pan | Mouse wheel: Zoom
-            {selectedProduct && <span className="text-blue-600 font-medium"> | Drag center: Move | Drag edges: Rotate | Shift+drag: Snap to 15°</span>}
+            {selectedProduct && <span className="text-blue-600 font-medium"> | Drag center: Move | Drag edges: Rotate</span>}
+            {selectedDoor && <span className="text-orange-600 font-medium"> | Door selected - Delete to remove</span>}
           </div>
         </div>
       </div>

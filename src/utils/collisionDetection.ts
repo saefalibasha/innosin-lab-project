@@ -1,4 +1,3 @@
-
 interface Point {
   x: number;
   y: number;
@@ -118,4 +117,41 @@ export const findClosestWallSegment = (point: Point, roomPoints: Point[]): { seg
 // Calculate wall angle for door placement
 export const getWallAngle = (wallStart: Point, wallEnd: Point): number => {
   return Math.atan2(wallEnd.y - wallStart.y, wallEnd.x - wallStart.x) * 180 / Math.PI;
+};
+
+// Enhanced door placement function
+export const findOptimalDoorPosition = (clickPoint: Point, wallSegment: [Point, Point]): { position: Point, wallPosition: number, rotation: number } => {
+  const closestPoint = closestPointOnLineSegment(clickPoint, wallSegment[0], wallSegment[1]);
+  
+  // Calculate position along wall (0 to 1)
+  const wallLength = Math.sqrt(
+    Math.pow(wallSegment[1].x - wallSegment[0].x, 2) + 
+    Math.pow(wallSegment[1].y - wallSegment[0].y, 2)
+  );
+  
+  const distanceFromStart = Math.sqrt(
+    Math.pow(closestPoint.x - wallSegment[0].x, 2) + 
+    Math.pow(closestPoint.y - wallSegment[0].y, 2)
+  );
+  
+  const wallPosition = wallLength > 0 ? distanceFromStart / wallLength : 0;
+  const rotation = getWallAngle(wallSegment[0], wallSegment[1]);
+  
+  return {
+    position: closestPoint,
+    wallPosition: Math.max(0.1, Math.min(0.9, wallPosition)), // Keep doors away from corners
+    rotation
+  };
+};
+
+// Check if door placement conflicts with existing doors
+export const checkDoorConflict = (newDoor: Door, existingDoors: Door[], doorWidth: number): boolean => {
+  return existingDoors.some(existingDoor => {
+    if (existingDoor.wallSegmentIndex !== newDoor.wallSegmentIndex) return false;
+    
+    const distance = Math.abs(existingDoor.wallPosition - newDoor.wallPosition);
+    const minDistance = (doorWidth + existingDoor.width) / 2; // Minimum separation
+    
+    return distance < minDistance;
+  });
 };

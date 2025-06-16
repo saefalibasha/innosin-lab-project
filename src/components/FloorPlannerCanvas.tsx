@@ -1,13 +1,17 @@
 
 import React from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
-import { Point, PlacedProduct } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];
   setRoomPoints: (points: Point[]) => void;
   placedProducts: PlacedProduct[];
   setPlacedProducts: (products: PlacedProduct[]) => void;
+  doors: Door[];
+  setDoors: (doors: Door[]) => void;
+  textAnnotations: TextAnnotation[];
+  setTextAnnotations: (annotations: TextAnnotation[]) => void;
   scale: number;
   currentTool: string;
   showGrid: boolean;
@@ -21,6 +25,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   setRoomPoints,
   placedProducts,
   setPlacedProducts,
+  doors,
+  setDoors,
+  textAnnotations,
+  setTextAnnotations,
   scale,
   currentTool,
   showGrid,
@@ -35,6 +43,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         setRoomPoints={setRoomPoints}
         placedProducts={placedProducts}
         setPlacedProducts={setPlacedProducts}
+        doors={doors}
+        setDoors={setDoors}
+        textAnnotations={textAnnotations}
+        setTextAnnotations={setTextAnnotations}
         scale={scale}
         currentTool={currentTool}
         showGrid={showGrid}
