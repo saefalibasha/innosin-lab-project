@@ -44,6 +44,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   
+  // Interaction states
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
@@ -56,9 +57,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [customLength, setCustomLength] = useState('');
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
   
-  // Separate movement and rotation states
+  // Movement and rotation states with improved sensitivity
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
+  const [dragThreshold] = useState(8); // Minimum pixels to start drag
+  const [hasStartedDrag, setHasStartedDrag] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
   const [initialRotation, setInitialRotation] = useState(0);
@@ -78,6 +81,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   // Collision detection states
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
   const [collisionWarningPos, setCollisionWarningPos] = useState<Point>({ x: 0, y: 0 });
+
+  // Debouncing and timing
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [doubleClickTimeout, setDoubleClickTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -141,27 +148,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.restore();
   }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool]);
 
-  // Enhanced keyboard shortcuts
+  // Enhanced keyboard shortcuts with improved sensitivity
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       // ESC to cleanly exit any active mode
       if (e.key === 'Escape') {
         e.preventDefault();
-        if (isDrawingActive) {
-          setIsDrawingActive(false);
-          setCurrentDrawingPoint(null);
-          setPendingLineStart(null);
-          toast.success('Drawing cancelled');
-        } else {
-          setSelectedProduct(null);
-          setSelectedText(null);
-          setSelectedWallIndex(null);
-          setIsEditingText(false);
-          setShowRotationHandle(false);
-          setIsDragging(false);
-          setIsRotating(false);
-          setShowWallLengthInput(false);
-        }
+        resetAllStates();
         return;
       }
 
@@ -193,6 +186,25 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [selectedProduct, selectedText, isDrawingActive, currentDrawingPoint, roomPoints, currentTool]);
 
+  const resetAllStates = () => {
+    setIsDrawingActive(false);
+    setCurrentDrawingPoint(null);
+    setPendingLineStart(null);
+    setSelectedProduct(null);
+    setSelectedText(null);
+    setSelectedWallIndex(null);
+    setIsEditingText(false);
+    setShowRotationHandle(false);
+    setIsDragging(false);
+    setIsRotating(false);
+    setShowWallLengthInput(false);
+    setHasStartedDrag(false);
+    if (isDrawingActive) {
+      toast.success('Drawing cancelled');
+    }
+  };
+
+  // Canvas setup and event handling
   useEffect(() => {
     let resizeTimeout: NodeJS.Timeout;
     
@@ -621,6 +633,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return Math.round(angle / snapIncrement) * snapIncrement;
   };
 
+  // Improved detection with better thresholds
   const findProductAt = (point: Point): string | null => {
     for (const product of placedProducts) {
       const { position, rotation, dimensions } = product;
@@ -665,7 +678,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const findWallAt = (point: Point): number | null => {
     if (roomPoints.length < 2) return null;
     
-    const threshold = 10 / zoom;
+    const threshold = 15 / zoom; // Increased threshold for better UX
     
     for (let i = 0; i < roomPoints.length; i++) {
       const nextIndex = (i + 1) % roomPoints.length;
@@ -743,8 +756,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Text deleted');
   };
 
+  // Improved mouse event handlers with better sensitivity control
   const handleMouseDown = (e: MouseEvent) => {
     const point = snapToGrid(getCanvasMousePosition(e));
+    const currentTime = Date.now();
 
     // Handle right click for panning
     if (e.button === 2) {
@@ -753,6 +768,27 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
+    // Double click detection with timeout
+    if (currentTime - lastClickTime < 300) {
+      if (doubleClickTimeout) {
+        clearTimeout(doubleClickTimeout);
+        setDoubleClickTimeout(null);
+      }
+      handleDoubleClick(point, e);
+      return;
+    }
+
+    setLastClickTime(currentTime);
+    
+    // Set timeout for single click to avoid conflicts
+    const timeout = setTimeout(() => {
+      handleSingleClick(point, e);
+    }, 250);
+    
+    setDoubleClickTimeout(timeout);
+  };
+
+  const handleSingleClick = (point: Point, e: MouseEvent) => {
     // Tool-specific handling
     switch (currentTool) {
       case 'wall':
@@ -779,17 +815,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  const handleWallToolMouseDown = (point: Point, e: MouseEvent) => {
-    if (e.detail === 2) {
+  const handleDoubleClick = (point: Point, e: MouseEvent) => {
+    if (currentTool === 'wall' && isDrawingActive) {
       // Double click - finish room
       if (roomPoints.length > 2) {
         setIsDrawingActive(false);
         setCurrentDrawingPoint(null);
         toast.success('Room completed');
       }
-      return;
+    } else if (currentTool === 'text') {
+      const textId = findTextAt(point);
+      if (textId) {
+        const annotation = textAnnotations.find(t => t.id === textId);
+        if (annotation) {
+          setSelectedText(textId);
+          setIsEditingText(true);
+          setEditingText(annotation.text);
+        }
+      }
     }
+  };
 
+  const handleWallToolMouseDown = (point: Point, e: MouseEvent) => {
     if (!isDrawingActive) {
       setIsDrawingActive(true);
       setRoomPoints([point]);
@@ -807,11 +854,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setSelectedText(null);
       setIsDragging(true);
       setDragStart(point);
+      setHasStartedDrag(false);
     } else if (textId) {
       setSelectedText(textId);
       setSelectedProduct(null);
       setIsDragging(true);
       setDragStart(point);
+      setHasStartedDrag(false);
     } else {
       setSelectedProduct(null);
       setSelectedText(null);
@@ -853,14 +902,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const handleTextToolMouseDown = (point: Point, e: MouseEvent) => {
     const textId = findTextAt(point);
     
-    if (textId && e.detail === 2) {
-      const annotation = textAnnotations.find(t => t.id === textId);
-      if (annotation) {
-        setSelectedText(textId);
-        setIsEditingText(true);
-        setEditingText(annotation.text);
-      }
-    } else if (!textId) {
+    if (!textId) {
       const newText: TextAnnotation = {
         id: `text-${Date.now()}`,
         text: 'New Text',
@@ -926,11 +968,22 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setCurrentDrawingPoint(point);
     }
 
-    if (currentTool === 'select' && isDragging && selectedProduct) {
+    // Improved drag handling with threshold
+    if (currentTool === 'select' && isDragging && !hasStartedDrag && dragStart) {
+      const distance = Math.sqrt(
+        Math.pow(point.x - dragStart.x, 2) + Math.pow(point.y - dragStart.y, 2)
+      );
+      
+      if (distance > dragThreshold) {
+        setHasStartedDrag(true);
+      }
+    }
+
+    if (currentTool === 'select' && isDragging && hasStartedDrag && selectedProduct) {
       handleProductDrag(point);
     }
 
-    if (currentTool === 'select' && isDragging && selectedText) {
+    if (currentTool === 'select' && isDragging && hasStartedDrag && selectedText) {
       handleTextDrag(point);
     }
 
@@ -1014,6 +1067,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setIsDragging(false);
     setIsRotating(false);
     setDragStart(null);
+    setHasStartedDrag(false);
     setShowCollisionWarning(false);
   };
 
@@ -1118,7 +1172,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('drop', handleDrop);
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
-  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors]);
+  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
 
   return (
     <div className="relative w-full h-full bg-gray-100">
