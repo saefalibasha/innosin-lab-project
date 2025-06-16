@@ -3,8 +3,10 @@ import { ArrowRight, CheckCircle, Users, Award, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navigation from "@/components/Navigation";
+import VideoHero from "@/components/VideoHero";
 import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import NewsletterSubscription from "@/components/NewsletterSubscription";
+import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -28,43 +30,17 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Navigation />
       
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Laboratory Solutions
-              <span className="block text-blue-600">Reimagined</span>
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Transform your research environment with cutting-edge laboratory furniture, 
-              equipment, and design solutions. From concept to completion, we deliver 
-              excellence in every project.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
-                <Link to="/products">
-                  Explore Products <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/contact">
-                  Schedule Consultation
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Video Hero Section */}
+      <VideoHero />
 
       {/* Features Section */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-black mb-4">
               Why Choose Innosin Lab?
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               We provide comprehensive laboratory solutions with unmatched quality and expertise.
             </p>
           </div>
@@ -72,8 +48,8 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <div key={index} className="flex items-start space-x-3 p-4">
-                <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
-                <span className="text-gray-700">{feature}</span>
+                <CheckCircle className="w-6 h-6 text-black flex-shrink-0 mt-1" />
+                <span className="text-gray-800">{feature}</span>
               </div>
             ))}
           </div>
@@ -81,13 +57,13 @@ const Index = () => {
       </section>
 
       {/* Before-After Comparison Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-black mb-4">
               Project Transformations
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               See how we've transformed laboratories across Singapore and beyond. 
               Slide to reveal the complete transformation.
             </p>
@@ -98,16 +74,16 @@ const Index = () => {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-blue-600">
+      <section className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center text-white">
-                <div className="flex justify-center mb-4 text-blue-200">
+                <div className="flex justify-center mb-4 text-gray-300">
                   {stat.icon}
                 </div>
                 <div className="text-3xl font-bold mb-2">{stat.value}</div>
-                <div className="text-blue-200">{stat.label}</div>
+                <div className="text-gray-300">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -132,7 +108,7 @@ const Index = () => {
             that exceeds your expectations.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700">
+            <Button asChild size="lg" className="bg-white text-black hover:bg-gray-200">
               <Link to="/floor-planner">
                 Try Floor Planner <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
@@ -145,6 +121,8 @@ const Index = () => {
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   );
 };

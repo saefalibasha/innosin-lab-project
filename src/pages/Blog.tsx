@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -125,21 +125,21 @@ const Blog = () => {
   const regularPosts = filteredPosts.filter(post => !post.featured);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Laboratory Insights Blog</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold text-black mb-4">Laboratory Insights Blog</h1>
+          <p className="text-xl text-gray-700 max-w-3xl mx-auto">
             Expert insights, technical guides, case studies, and industry trends in laboratory design, 
             safety, and equipment from the Innosin Lab team.
           </p>
         </div>
 
         {/* Search and Filters */}
-        <Card className="mb-12">
+        <Card className="mb-12 border-gray-200">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="relative">
@@ -148,12 +148,12 @@ const Blog = () => {
                   placeholder="Search articles..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 border-gray-300"
                 />
               </div>
               
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-300">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
@@ -167,7 +167,7 @@ const Blog = () => {
               </Select>
 
               <Select value={selectedTag} onValueChange={setSelectedTag}>
-                <SelectTrigger>
+                <SelectTrigger className="border-gray-300">
                   <SelectValue placeholder="Tags" />
                 </SelectTrigger>
                 <SelectContent>
@@ -180,7 +180,7 @@ const Blog = () => {
               </Select>
 
               <div className="flex items-center">
-                <Badge variant="secondary" className="text-sm">
+                <Badge variant="secondary" className="text-sm bg-gray-100 text-gray-800">
                   {filteredPosts.length} articles found
                 </Badge>
               </div>
@@ -191,8 +191,8 @@ const Blog = () => {
         {/* Featured Article */}
         {featuredPost && (
           <div className="mb-16">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Article</h2>
-            <Card className="overflow-hidden shadow-xl">
+            <h2 className="text-2xl font-bold text-black mb-6">Featured Article</h2>
+            <Card className="overflow-hidden shadow-xl border-gray-200">
               <div className="md:flex">
                 <div className="md:w-1/2">
                   <img
@@ -203,7 +203,7 @@ const Blog = () => {
                 </div>
                 <div className="md:w-1/2 p-8">
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                    <Badge className="bg-blue-100 text-blue-800">
+                    <Badge className="bg-black text-white">
                       {featuredPost.category}
                     </Badge>
                     <span className="flex items-center gap-1">
@@ -216,17 +216,17 @@ const Blog = () => {
                     </span>
                   </div>
                   
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  <h3 className="text-2xl font-bold text-black mb-4">
                     {featuredPost.title}
                   </h3>
                   
-                  <p className="text-gray-600 mb-6 line-clamp-3">
+                  <p className="text-gray-700 mb-6 line-clamp-3">
                     {featuredPost.excerpt}
                   </p>
                   
                   <div className="flex flex-wrap gap-2 mb-6">
                     {featuredPost.tags.slice(0, 3).map(tag => (
-                      <Badge key={tag} variant="outline" className="text-xs">
+                      <Badge key={tag} variant="outline" className="text-xs border-gray-300">
                         {tag}
                       </Badge>
                     ))}
@@ -237,7 +237,7 @@ const Blog = () => {
                       <User className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">{featuredPost.author}</span>
                     </div>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Button className="bg-black hover:bg-gray-800 text-white">
                       Read Article <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -250,7 +250,7 @@ const Blog = () => {
         {/* Articles Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {regularPosts.map((post) => (
-            <Card key={post.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <Card key={post.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-gray-200">
               <div className="aspect-video overflow-hidden">
                 <img
                   src={post.featuredImage}
@@ -270,7 +270,7 @@ const Blog = () => {
                   </span>
                 </div>
                 
-                <CardTitle className="text-lg leading-tight hover:text-blue-600 transition-colors">
+                <CardTitle className="text-lg leading-tight hover:text-black transition-colors">
                   {post.title}
                 </CardTitle>
               </CardHeader>
@@ -296,7 +296,7 @@ const Blog = () => {
                   <span className="text-xs text-gray-500">{post.readTime}</span>
                 </div>
                 
-                <Button variant="outline" size="sm" className="w-full mt-4 hover:bg-blue-50 hover:border-blue-200">
+                <Button variant="outline" size="sm" className="w-full mt-4 hover:bg-black hover:border-black">
                   Read Full Article
                 </Button>
               </CardContent>
@@ -306,10 +306,10 @@ const Blog = () => {
 
         {/* Newsletter Subscription CTA */}
         <div className="mt-20">
-          <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <Card className="bg-black text-white border-black">
             <CardContent className="p-8 text-center">
               <h3 className="text-2xl font-bold mb-4">Never Miss an Update</h3>
-              <p className="mb-6 opacity-90 max-w-2xl mx-auto">
+              <p className="mb-6 text-gray-300 max-w-2xl mx-auto">
                 Subscribe to our newsletter and get the latest laboratory insights, technical guides, 
                 and industry news delivered directly to your inbox every month.
               </p>
@@ -317,19 +317,21 @@ const Blog = () => {
                 <Input
                   type="email"
                   placeholder="Enter your email address"
-                  className="flex-1 text-gray-900"
+                  className="flex-1 bg-white text-black border-white"
                 />
-                <Button variant="secondary" className="whitespace-nowrap">
+                <Button variant="secondary" className="whitespace-nowrap bg-white text-black hover:bg-gray-200">
                   Subscribe Now
                 </Button>
               </div>
-              <p className="text-xs opacity-75 mt-4">
+              <p className="text-xs text-gray-400 mt-4">
                 Join 2,500+ laboratory professionals who trust our insights
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };

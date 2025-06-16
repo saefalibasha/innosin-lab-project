@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 import GoogleMapsLocation from '@/components/GoogleMapsLocation';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import { Button } from '@/components/ui/button';
@@ -32,14 +33,14 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <h1 className="text-4xl font-bold text-black mb-4">Contact Us</h1>
+          <p className="text-xl text-gray-700 max-w-3xl mx-auto">
             Have questions about our products or need support? We'd love to hear from you. 
             Send us a message and we'll respond as soon as possible.
           </p>
@@ -161,6 +162,8 @@ const Contact = () => {
           <NewsletterSubscription />
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };

@@ -2,8 +2,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { RotateCcw, Download, Save, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RotateCcw, Download, Save, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Point {
@@ -41,10 +42,15 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [showLengthInput, setShowLengthInput] = useState(false);
+  const [currentLineLength, setCurrentLineLength] = useState('');
+  const [lastPoint, setLastPoint] = useState<Point | null>(null);
 
   useEffect(() => {
     drawCanvas();
-  }, [roomPoints, placedProducts, selectedProduct]);
+  }, [roomPoints, placedProducts, selectedProduct, zoom, pan]);
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -56,10 +62,20 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw grid
-    drawGrid(ctx, canvas.width, canvas.height);
+    // Save context and apply zoom/pan
+    ctx.save();
+    ctx.scale(zoom, zoom);
+    ctx.translate(pan.x, pan.y);
 
-    // Draw room outline
+    // Draw grid
+    drawGrid(ctx, canvas.width / zoom, canvas.height / zoom);
+
+    // Draw room outline (work in progress)
+    if (roomPoints.length > 0) {
+      drawRoomInProgress(ctx);
+    }
+
+    // Draw completed room
     if (roomPoints.length > 2) {
       drawRoom(ctx);
     }
@@ -68,20 +84,23 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     placedProducts.forEach(product => {
       drawProduct(ctx, product);
     });
+
+    ctx.restore();
   };
 
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.strokeStyle = '#e5e7eb';
+    ctx.strokeStyle = '#f3f4f6';
     ctx.lineWidth = 1;
 
-    for (let x = 0; x <= width; x += scale) {
+    const gridSize = scale;
+    for (let x = 0; x <= width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, height);
       ctx.stroke();
     }
 
-    for (let y = 0; y <= height; y += scale) {
+    for (let y = 0; y <= height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
@@ -89,10 +108,36 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     }
   };
 
+  const drawRoomInProgress = (ctx: CanvasRenderingContext2D) => {
+    if (roomPoints.length < 1) return;
+
+    // Draw lines between points
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([]);
+
+    ctx.beginPath();
+    ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
+    
+    for (let i = 1; i < roomPoints.length; i++) {
+      ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
+    }
+    ctx.stroke();
+
+    // Draw points
+    ctx.fillStyle = '#ef4444';
+    roomPoints.forEach(point => {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+  };
+
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 3;
     ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+    ctx.setLineDash([]);
 
     ctx.beginPath();
     ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
@@ -116,7 +161,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
     // Product rectangle
     ctx.fillStyle = product.color;
-    ctx.strokeStyle = selectedProduct === product.id ? '#ef4444' : '#374151';
+    ctx.strokeStyle = selectedProduct === product.id ? '#ef4444' : '#1f2937';
     ctx.lineWidth = selectedProduct === product.id ? 3 : 1;
     
     ctx.fillRect(-width/2, -height/2, width, height);
@@ -131,17 +176,27 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     ctx.restore();
   };
 
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left - pan.x * zoom) / zoom;
+    const y = (e.clientY - rect.top - pan.y * zoom) / zoom;
+    return { x, y };
+  };
+
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const { x, y } = getCanvasCoordinates(e);
 
     if (isDrawingMode) {
-      // Add point to room outline
-      setRoomPoints([...roomPoints, { x, y }]);
+      const newPoint = { x, y };
+      setRoomPoints([...roomPoints, newPoint]);
+      
+      if (roomPoints.length > 0) {
+        setLastPoint(roomPoints[roomPoints.length - 1]);
+        setShowLengthInput(true);
+      }
     } else {
       // Check if clicking on a product
       const clickedProduct = placedProducts.find(product => {
@@ -158,12 +213,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const { x, y } = getCanvasCoordinates(e as any);
 
     try {
       const productData = JSON.parse(e.dataTransfer.getData('product'));
@@ -182,6 +232,14 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     } catch (error) {
       console.error('Error placing product:', error);
     }
+  };
+
+  const handleZoomIn = () => {
+    setZoom(prev => Math.min(prev * 1.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setZoom(prev => Math.max(prev / 1.2, 0.5));
   };
 
   const rotateSelectedProduct = () => {
@@ -206,6 +264,8 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
   const clearRoom = () => {
     setRoomPoints([]);
+    setShowLengthInput(false);
+    setLastPoint(null);
     toast.success('Room outline cleared');
   };
 
@@ -213,7 +273,6 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Create download link
     const link = document.createElement('a');
     link.download = 'floor-plan.png';
     link.href = canvas.toDataURL();
@@ -222,10 +281,41 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     toast.success('Floor plan exported as PNG');
   };
 
+  const applyLineLength = () => {
+    if (!lastPoint || !currentLineLength) return;
+    
+    const lengthInMm = parseFloat(currentLineLength);
+    if (isNaN(lengthInMm)) return;
+
+    const lengthInPixels = (lengthInMm / 1000) * scale; // Convert mm to meters, then to pixels
+    
+    // For simplicity, extend horizontally
+    const newPoint = {
+      x: lastPoint.x + lengthInPixels,
+      y: lastPoint.y
+    };
+
+    const updatedPoints = [...roomPoints];
+    updatedPoints[updatedPoints.length - 1] = newPoint;
+    setRoomPoints(updatedPoints);
+    
+    setShowLengthInput(false);
+    setCurrentLineLength('');
+    setLastPoint(null);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex space-x-2">
+          <Button variant="outline" size="sm" onClick={handleZoomIn}>
+            <ZoomIn className="w-4 h-4 mr-2" />
+            Zoom In
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleZoomOut}>
+            <ZoomOut className="w-4 h-4 mr-2" />
+            Zoom Out
+          </Button>
           {selectedProduct && (
             <>
               <Button variant="outline" size="sm" onClick={rotateSelectedProduct}>
@@ -250,13 +340,33 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         </div>
       </div>
 
+      {showLengthInput && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-4">
+              <Label htmlFor="lineLength">Wall Length (mm):</Label>
+              <Input
+                id="lineLength"
+                type="number"
+                value={currentLineLength}
+                onChange={(e) => setCurrentLineLength(e.target.value)}
+                placeholder="4500"
+                className="w-32"
+              />
+              <Button onClick={applyLineLength}>Apply</Button>
+              <Button variant="outline" onClick={() => setShowLengthInput(false)}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-4">
           <canvas
             ref={canvasRef}
             width={800}
             height={600}
-            className="border border-gray-300 rounded cursor-crosshair"
+            className="border border-gray-300 rounded cursor-crosshair bg-white"
             onClick={handleCanvasClick}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
@@ -266,7 +376,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
             <span>
               {isDrawingMode ? 'Click to add points to room outline' : 'Drag products from library or click to select'}
             </span>
-            <span>Products placed: {placedProducts.length}</span>
+            <span>Products placed: {placedProducts.length} | Zoom: {Math.round(zoom * 100)}%</span>
           </div>
         </CardContent>
       </Card>

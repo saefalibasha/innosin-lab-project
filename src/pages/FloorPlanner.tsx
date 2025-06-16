@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
+import Footer from '@/components/Footer';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,14 +68,14 @@ const FloorPlanner = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navigation />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Floor Planner</h1>
-          <p className="text-xl text-gray-600">
+          <h1 className="text-4xl font-bold text-black mb-4">Floor Planner</h1>
+          <p className="text-xl text-gray-700">
             Design your laboratory layout with our interactive floor planning tool
           </p>
         </div>
@@ -158,6 +159,8 @@ const FloorPlanner = () => {
           </div>
         </div>
       </div>
+      
+      <Footer />
     </div>
   );
 };
