@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
         plugins.push(componentTagger());
       }
     } catch (error) {
-      console.warn("lovable-tagger not available:", error.message);
+      console.warn("lovable-tagger not available:", error);
     }
   }
 
