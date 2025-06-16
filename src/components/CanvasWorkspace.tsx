@@ -64,7 +64,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [initialRotation, setInitialRotation] = useState(0);
   const [showRotationCompass, setShowRotationCompass] = useState(false);
   
-  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingText, setEditingText] = useState('');

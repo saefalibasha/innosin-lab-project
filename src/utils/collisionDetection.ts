@@ -1,18 +1,4 @@
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface PlacedProduct {
-  id: string;
-  productId: string;
-  name: string;
-  position: Point;
-  rotation: number;
-  dimensions: { length: number; width: number; height: number };
-  color: string;
-  scale?: number;
-}
+import { Point, PlacedProduct, Door } from '@/types/floorPlanTypes';
 
 // Check if a point is inside a polygon using ray casting algorithm
 export const isPointInPolygon = (point: Point, polygon: Point[]): boolean => {

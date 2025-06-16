@@ -12,21 +12,6 @@ import SendPlanModal from '@/components/SendPlanModal';
 import { useFloorPlanHistory, FloorPlanState } from '@/hooks/useFloorPlanHistory';
 import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface PlacedProduct {
-  id: string;
-  productId: string;
-  name: string;
-  position: Point;
-  rotation: number;
-  dimensions: { length: number; width: number; height: number };
-  color: string;
-}
-
 const FloorPlanner = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
