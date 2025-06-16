@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,10 @@ import FloorPlanner from "./pages/FloorPlanner";
 import RFQCart from "./pages/RFQCart";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
+import Navigation from "./components/Navigation";
+import Breadcrumbs from "./components/Breadcrumbs";
+import LiveChat from "./components/LiveChat";
+import Footer from "./components/Footer";
 
 const queryClient = new QueryClient();
 
@@ -22,16 +27,24 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/products" element={<ProductCatalog />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/blog" element={<Blog />} />
-            <Route path="/floor-planner" element={<FloorPlanner />} />
-            <Route path="/rfq-cart" element={<RFQCart />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="min-h-screen flex flex-col">
+            <Navigation />
+            <Breadcrumbs />
+            <main className="flex-1">
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/products" element={<ProductCatalog />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/floor-planner" element={<FloorPlanner />} />
+                <Route path="/rfq-cart" element={<RFQCart />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+            <Footer />
+            <LiveChat />
+          </div>
         </BrowserRouter>
       </RFQProvider>
     </TooltipProvider>
