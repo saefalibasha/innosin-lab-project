@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -543,20 +542,22 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
   const rotateSelectedProduct = () => {
     if (!selectedProduct) return;
-    setPlacedProducts((prev: PlacedProduct[]) => prev.map((product: PlacedProduct) =>
+    const updatedProducts = placedProducts.map((product: PlacedProduct) =>
       product.id === selectedProduct
         ? { ...product, rotation: (product.rotation + 15) % 360 }
         : product
-    ));
+    );
+    setPlacedProducts(updatedProducts);
   };
 
   const scaleSelectedProduct = (factor: number) => {
     if (!selectedProduct) return;
-    setPlacedProducts((prev: PlacedProduct[]) => prev.map((product: PlacedProduct) =>
+    const updatedProducts = placedProducts.map((product: PlacedProduct) =>
       product.id === selectedProduct
         ? { ...product, scale: Math.max(0.1, (product.scale || 1) * factor) }
         : product
-    ));
+    );
+    setPlacedProducts(updatedProducts);
   };
 
   const duplicateSelectedProduct = () => {
