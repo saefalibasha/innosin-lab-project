@@ -68,6 +68,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingText, setEditingText] = useState('');
+  const [currentRotationAngle, setCurrentRotationAngle] = useState<number>(0);
+  const [showRotationCompass, setShowRotationCompass] = useState(false);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
@@ -206,6 +208,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     // Draw placed products
     drawPlacedProducts(ctx);
+    
+    // Draw rotation compass if rotating
+    if (showRotationCompass && selectedProduct && isRotating) {
+      drawRotationCompass(ctx);
+    }
     
     // Draw dimensions on completed walls (only when not actively drawing)
     if (!isDrawingActive) {
@@ -363,6 +370,30 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.fillRect(-width/2, -height/2, width, height);
       ctx.strokeRect(-width/2, -height/2, width, height);
 
+      // Draw rotation handles for selected product
+      if (selectedProduct === product.id) {
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2 / zoom;
+        ctx.setLineDash([5 / zoom, 5 / zoom]);
+        
+        // Draw rotation handle circles at corners
+        const handleSize = 8 / zoom;
+        const positions = [
+          { x: -width/2, y: -height/2 },
+          { x: width/2, y: -height/2 },
+          { x: width/2, y: height/2 },
+          { x: -width/2, y: height/2 }
+        ];
+        
+        positions.forEach(pos => {
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, handleSize, 0, 2 * Math.PI);
+          ctx.stroke();
+        });
+        
+        ctx.setLineDash([]);
+      }
+
       ctx.fillStyle = '#ffffff';
       ctx.font = `${10 / zoom}px sans-serif`;
       ctx.textAlign = 'center';
@@ -370,6 +401,61 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
       ctx.restore();
     });
+  };
+
+  const drawRotationCompass = (ctx: CanvasRenderingContext2D) => {
+    const product = placedProducts.find(p => p.id === selectedProduct);
+    if (!product) return;
+
+    ctx.save();
+    ctx.translate(product.position.x, product.position.y);
+
+    // Draw compass circle
+    const compassRadius = 60 / zoom;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2 / zoom;
+    ctx.setLineDash([]);
+    
+    ctx.beginPath();
+    ctx.arc(0, 0, compassRadius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Draw angle lines every 45 degrees
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1 / zoom;
+    
+    for (let angle = 0; angle < 360; angle += 45) {
+      const radian = (angle * Math.PI) / 180;
+      const x1 = Math.cos(radian) * (compassRadius - 10 / zoom);
+      const y1 = Math.sin(radian) * (compassRadius - 10 / zoom);
+      const x2 = Math.cos(radian) * compassRadius;
+      const y2 = Math.sin(radian) * compassRadius;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+    }
+
+    // Draw current rotation indicator
+    const currentRadian = (product.rotation * Math.PI) / 180;
+    const indicatorX = Math.cos(currentRadian) * compassRadius;
+    const indicatorY = Math.sin(currentRadian) * compassRadius;
+    
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(indicatorX, indicatorY);
+    ctx.stroke();
+
+    // Draw angle text
+    ctx.fillStyle = '#000000';
+    ctx.font = `bold ${14 / zoom}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.round(product.rotation)}°`, 0, -compassRadius - 20 / zoom);
+
+    ctx.restore();
   };
 
   const drawDimensions = (ctx: CanvasRenderingContext2D) => {
@@ -494,12 +580,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         setSelectedText(null);
         setIsRotating(true);
         setRotationStart({ x, y });
+        setShowRotationCompass(true);
+        setCurrentRotationAngle(clickedProduct.rotation);
       } else if (clickedText) {
         setSelectedText(clickedText.id);
         setSelectedProduct(null);
       } else {
         setSelectedProduct(null);
         setSelectedText(null);
+        setShowRotationCompass(false);
       }
     }
   };
@@ -530,7 +619,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Enhanced rotation with drag-to-rotate functionality
+    // Enhanced rotation with drag-to-rotate functionality and compass
     if (isRotating && selectedProduct && rotationStart) {
       const product = placedProducts.find(p => p.id === selectedProduct);
       if (product) {
@@ -545,17 +634,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
         if (distanceFromCenter > productSize * 0.8) {
           // Rotate when dragging near edges
-          const angle1 = Math.atan2(rotationStart.y - product.position.y, rotationStart.x - product.position.x);
-          const angle2 = Math.atan2(y - product.position.y, x - product.position.x);
-          const deltaAngle = (angle2 - angle1) * (180 / Math.PI);
+          const angle = Math.atan2(y - product.position.y, x - product.position.x);
+          const angleDegrees = (angle * 180) / Math.PI;
           
           const updatedProducts = placedProducts.map(p =>
             p.id === selectedProduct
-              ? { ...p, rotation: (p.rotation + deltaAngle) % 360 }
+              ? { ...p, rotation: (angleDegrees + 360) % 360 }
               : p
           );
           setPlacedProducts(updatedProducts);
-          setRotationStart({ x, y });
+          setCurrentRotationAngle((angleDegrees + 360) % 360);
         } else {
           // Move when dragging center
           const updatedProducts = placedProducts.map(p =>
@@ -591,6 +679,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setLastPanPoint(null);
     setIsRotating(false);
     setRotationStart(null);
+    setShowRotationCompass(false);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -777,6 +866,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const updatedProducts = placedProducts.filter(p => p.id !== selectedProduct);
     setPlacedProducts(updatedProducts);
     setSelectedProduct(null);
+    setShowRotationCompass(false);
     toast.success('Product deleted');
   };
 
@@ -837,17 +927,42 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setIsEditingText(false);
   };
 
+  // Get the cursor class based on current state
+  const getCursorClass = () => {
+    if (currentTool === 'eraser') return 'cursor-crosshair';
+    if (currentTool === 'pan') return 'cursor-move';
+    if (currentTool === 'text') return 'cursor-text';
+    if (currentTool === 'select') {
+      if (selectedProduct) return 'cursor-move';
+      if (selectedText) return 'cursor-move';
+      return 'cursor-pointer';
+    }
+    return 'cursor-crosshair';
+  };
+
+  // Get selected product position for delete button
+  const getSelectedProductScreenPosition = () => {
+    if (!selectedProduct || !canvasRef.current) return null;
+    
+    const product = placedProducts.find(p => p.id === selectedProduct);
+    if (!product) return null;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    
+    const screenX = (product.position.x + pan.x) * zoom + rect.left;
+    const screenY = (product.position.y + pan.y) * zoom + rect.top;
+    
+    return { x: screenX, y: screenY };
+  };
+
+  const selectedProductPosition = getSelectedProductScreenPosition();
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white">
       <canvas
         ref={canvasRef}
-        className={`w-full h-full ${
-          currentTool === 'eraser' ? 'cursor-crosshair' : 
-          currentTool === 'pan' ? 'cursor-move' : 
-          currentTool === 'text' ? 'cursor-text' :
-          currentTool === 'select' && selectedProduct ? 'cursor-grab' :
-          'cursor-crosshair'
-        }`}
+        className={`w-full h-full ${getCursorClass()}`}
         onMouseDown={handleCanvasMouseDown}
         onMouseMove={handleCanvasMouseMove}
         onMouseUp={handleCanvasMouseUp}
@@ -910,13 +1025,31 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           <Button
             variant="destructive"
             size="sm"
-            className="bg-white/90 backdrop-blur-sm shadow-lg"
+            className="bg-red-600 hover:bg-red-700 text-white shadow-lg"
             onClick={deleteSelectedProduct}
             title="Delete (Del)"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+      )}
+
+      {/* Floating Delete Button for Selected Product */}
+      {selectedProduct && selectedProductPosition && (
+        <Button
+          variant="destructive"
+          size="sm"
+          className="absolute bg-red-600 hover:bg-red-700 text-white shadow-lg border-2 border-white rounded-full p-2"
+          style={{
+            left: selectedProductPosition.x + 40,
+            top: selectedProductPosition.y - 20,
+            transform: 'translate(-50%, -50%)'
+          }}
+          onClick={deleteSelectedProduct}
+          title="Delete Product"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
       )}
 
       {/* Text Editing Modal */}
@@ -999,6 +1132,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Text: {textAnnotations.length}</div>
           <div className="text-gray-500">
             Left click: Draw/Select | Right click: Pan | Mouse wheel: Zoom
+            {selectedProduct && <span className="text-red-600 font-medium"> | Drag center: Move | Drag edges: Rotate</span>}
           </div>
         </div>
       </div>
