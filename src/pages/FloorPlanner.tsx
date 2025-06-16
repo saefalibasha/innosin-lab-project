@@ -422,22 +422,6 @@ const FloorPlanner = () => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant={activeTool === 'wall-edit' ? 'default' : 'outline'}
-                      className="w-full justify-start"
-                      onClick={() => setActiveTool('wall-edit')}
-                    >
-                      <Settings className="w-4 h-4 mr-2" />
-                      Wall Edit Tool
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Select and adjust wall lengths</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
                       variant={activeTool === 'select' ? 'default' : 'outline'}
                       className="w-full justify-start"
                       onClick={() => setActiveTool('select')}
