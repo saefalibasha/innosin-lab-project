@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -52,6 +52,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const animationFrameRef = useRef<number>();
+  
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
@@ -62,33 +64,102 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [customLength, setCustomLength] = useState('');
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
+  
+  // Enhanced product interaction states
+  const [isDragging, setIsDragging] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
-  const [rotationStart, setRotationStart] = useState<Point | null>(null);
+  const [dragStart, setDragStart] = useState<Point | null>(null);
+  const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
+  const [initialRotation, setInitialRotation] = useState(0);
+  const [showRotationCompass, setShowRotationCompass] = useState(false);
+  
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingText, setEditingText] = useState('');
-  const [currentRotationAngle, setCurrentRotationAngle] = useState<number>(0);
-  const [showRotationCompass, setShowRotationCompass] = useState(false);
-  const [isDraggingProduct, setIsDraggingProduct] = useState(false);
+
+  // Optimized drawing with requestAnimationFrame
+  const drawCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.scale(zoom, zoom);
+    ctx.translate(pan.x, pan.y);
+
+    // Draw grid if enabled
+    if (showGrid) {
+      drawGrid(ctx, canvas.width / zoom, canvas.height / zoom);
+    }
+    
+    // Draw ruler if enabled
+    if (showRuler) {
+      drawRuler(ctx, canvas.width / zoom, canvas.height / zoom);
+    }
+    
+    // Draw room
+    drawRoom(ctx);
+    
+    // Draw current line while drawing (only when actively drawing)
+    if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
+      drawCurrentLine(ctx);
+    }
+    
+    // Draw placed products
+    drawPlacedProducts(ctx);
+    
+    // Draw rotation compass if rotating
+    if (showRotationCompass && selectedProduct) {
+      drawRotationCompass(ctx);
+    }
+    
+    // Draw dimensions on completed walls (only when not actively drawing)
+    if (!isDrawingActive) {
+      drawDimensions(ctx);
+    }
+
+    // Draw text annotations
+    drawTextAnnotations(ctx);
+
+    ctx.restore();
+  }, [roomPoints, placedProducts, textAnnotations, selectedProduct, selectedText, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationCompass]);
+
+  // Debounced canvas redraw
+  useEffect(() => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
+    animationFrameRef.current = requestAnimationFrame(drawCanvas);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [drawCanvas]);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // ESC to cleanly exit drawing mode
+      // ESC to cleanly exit any active mode
       if (e.key === 'Escape') {
         e.preventDefault();
         if (isDrawingActive) {
           setIsDrawingActive(false);
           setCurrentDrawingPoint(null);
           setPendingLineStart(null);
-          // Force a clean redraw to remove any ghost labels
-          setTimeout(() => drawCanvas(), 10);
           toast.success('Drawing cancelled');
         } else {
           setSelectedProduct(null);
           setSelectedText(null);
           setIsEditingText(false);
+          setShowRotationCompass(false);
+          setIsDragging(false);
+          setIsRotating(false);
         }
         return;
       }
@@ -125,36 +196,43 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [selectedProduct, selectedText, isDrawingActive, currentDrawingPoint, roomPoints]);
 
-  // Mouse wheel zoom
+  // Mouse wheel zoom with smooth scaling
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const delta = e.deltaY > 0 ? 0.95 : 1.05;
       setZoom(prev => Math.min(Math.max(prev * delta, 0.1), 5));
     };
 
-    canvas.addEventListener('wheel', handleWheel);
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
   }, []);
 
-  // Canvas resize
+  // Canvas resize with debouncing
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout;
+    
     const resizeCanvas = () => {
-      const canvas = canvasRef.current;
-      const container = containerRef.current;
-      if (!canvas || !container) return;
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        const canvas = canvasRef.current;
+        const container = containerRef.current;
+        if (!canvas || !container) return;
 
-      canvas.width = container.clientWidth;
-      canvas.height = container.clientHeight;
-      drawCanvas();
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+      }, 100);
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+    return () => {
+      window.removeEventListener('resize', resizeCanvas);
+      clearTimeout(resizeTimeout);
+    };
   }, []);
 
   useEffect(() => {
@@ -175,55 +253,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     // Convert from pixels to square meters
     return area / (scale * scale);
-  };
-
-  const drawCanvas = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.scale(zoom, zoom);
-    ctx.translate(pan.x, pan.y);
-
-    // Draw grid if enabled
-    if (showGrid) {
-      drawGrid(ctx, canvas.width / zoom, canvas.height / zoom);
-    }
-    
-    // Draw ruler if enabled
-    if (showRuler) {
-      drawRuler(ctx, canvas.width / zoom, canvas.height / zoom);
-    }
-    
-    // Draw room
-    drawRoom(ctx);
-    
-    // Draw current line while drawing (only when actively drawing)
-    if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
-      drawCurrentLine(ctx);
-    }
-    
-    // Draw placed products
-    drawPlacedProducts(ctx);
-    
-    // Draw rotation compass if rotating
-    if (showRotationCompass && selectedProduct && isRotating) {
-      drawRotationCompass(ctx);
-    }
-    
-    // Draw dimensions on completed walls (only when not actively drawing)
-    if (!isDrawingActive) {
-      drawDimensions(ctx);
-    }
-
-    // Draw text annotations
-    drawTextAnnotations(ctx);
-
-    ctx.restore();
   };
 
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -355,110 +384,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
-    placedProducts.forEach(product => {
-      ctx.save();
-      ctx.translate(product.position.x, product.position.y);
-      ctx.rotate((product.rotation * Math.PI) / 180);
-
-      const width = product.dimensions.length * scale * (product.scale || 1);
-      const height = product.dimensions.width * scale * (product.scale || 1);
-
-      ctx.fillStyle = product.color;
-      ctx.strokeStyle = selectedProduct === product.id ? '#ef4444' : '#1f2937';
-      ctx.lineWidth = (selectedProduct === product.id ? 3 : 1) / zoom;
-      
-      ctx.fillRect(-width/2, -height/2, width, height);
-      ctx.strokeRect(-width/2, -height/2, width, height);
-
-      // Draw rotation handles for selected product
-      if (selectedProduct === product.id) {
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 2 / zoom;
-        ctx.setLineDash([5 / zoom, 5 / zoom]);
-        
-        // Draw rotation handle circles at corners
-        const handleSize = 8 / zoom;
-        const positions = [
-          { x: -width/2, y: -height/2 },
-          { x: width/2, y: -height/2 },
-          { x: width/2, y: height/2 },
-          { x: -width/2, y: height/2 }
-        ];
-        
-        positions.forEach(pos => {
-          ctx.beginPath();
-          ctx.arc(pos.x, pos.y, handleSize, 0, 2 * Math.PI);
-          ctx.stroke();
-        });
-        
-        ctx.setLineDash([]);
-      }
-
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `${10 / zoom}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.fillText(product.name, 0, 2);
-
-      ctx.restore();
-    });
-  };
-
-  const drawRotationCompass = (ctx: CanvasRenderingContext2D) => {
-    const product = placedProducts.find(p => p.id === selectedProduct);
-    if (!product) return;
-
-    ctx.save();
-    ctx.translate(product.position.x, product.position.y);
-
-    // Draw compass circle
-    const compassRadius = 60 / zoom;
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 2 / zoom;
-    ctx.setLineDash([]);
-    
-    ctx.beginPath();
-    ctx.arc(0, 0, compassRadius, 0, 2 * Math.PI);
-    ctx.stroke();
-
-    // Draw angle lines every 45 degrees
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 1 / zoom;
-    
-    for (let angle = 0; angle < 360; angle += 45) {
-      const radian = (angle * Math.PI) / 180;
-      const x1 = Math.cos(radian) * (compassRadius - 10 / zoom);
-      const y1 = Math.sin(radian) * (compassRadius - 10 / zoom);
-      const x2 = Math.cos(radian) * compassRadius;
-      const y2 = Math.sin(radian) * compassRadius;
-      
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
-    }
-
-    // Draw current rotation indicator
-    const currentRadian = (product.rotation * Math.PI) / 180;
-    const indicatorX = Math.cos(currentRadian) * compassRadius;
-    const indicatorY = Math.sin(currentRadian) * compassRadius;
-    
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 3 / zoom;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(indicatorX, indicatorY);
-    ctx.stroke();
-
-    // Draw angle text
-    ctx.fillStyle = '#000000';
-    ctx.font = `bold ${14 / zoom}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText(`${Math.round(product.rotation)}°`, 0, -compassRadius - 20 / zoom);
-
-    ctx.restore();
-  };
-
   const drawDimensions = (ctx: CanvasRenderingContext2D) => {
     if (roomPoints.length < 2) return;
 
@@ -515,6 +440,156 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     });
   };
 
+  // Enhanced product drawing with smooth selection feedback
+  const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
+    placedProducts.forEach(product => {
+      ctx.save();
+      ctx.translate(product.position.x, product.position.y);
+      ctx.rotate((product.rotation * Math.PI) / 180);
+
+      const width = product.dimensions.length * scale * (product.scale || 1);
+      const height = product.dimensions.width * scale * (product.scale || 1);
+
+      // Enhanced selection highlighting
+      const isSelected = selectedProduct === product.id;
+      
+      ctx.fillStyle = product.color;
+      ctx.strokeStyle = isSelected ? '#3b82f6' : '#1f2937';
+      ctx.lineWidth = (isSelected ? 3 : 1) / zoom;
+      
+      // Add subtle glow effect for selected products
+      if (isSelected) {
+        ctx.shadowColor = '#3b82f6';
+        ctx.shadowBlur = 10 / zoom;
+      }
+      
+      ctx.fillRect(-width/2, -height/2, width, height);
+      ctx.strokeRect(-width/2, -height/2, width, height);
+      
+      // Reset shadow
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+
+      // Draw selection handles for selected product
+      if (isSelected) {
+        // Center handle for moving
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.arc(0, 0, 6 / zoom, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Rotation handles at corners
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2 / zoom;
+        ctx.setLineDash([3 / zoom, 3 / zoom]);
+        
+        const handleSize = 6 / zoom;
+        const positions = [
+          { x: -width/2, y: -height/2 },
+          { x: width/2, y: -height/2 },
+          { x: width/2, y: height/2 },
+          { x: -width/2, y: height/2 }
+        ];
+        
+        positions.forEach(pos => {
+          ctx.fillStyle = '#ffffff';
+          ctx.strokeStyle = '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(pos.x, pos.y, handleSize, 0, 2 * Math.PI);
+          ctx.fill();
+          ctx.stroke();
+        });
+        
+        ctx.setLineDash([]);
+      }
+
+      // Product label
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${10 / zoom}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(product.name, 0, 2);
+
+      ctx.restore();
+    });
+  };
+
+  // Enhanced rotation compass with smooth angle display
+  const drawRotationCompass = (ctx: CanvasRenderingContext2D) => {
+    const product = placedProducts.find(p => p.id === selectedProduct);
+    if (!product) return;
+
+    ctx.save();
+    ctx.translate(product.position.x, product.position.y);
+
+    const compassRadius = 80 / zoom;
+    
+    // Draw compass background
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.arc(0, 0, compassRadius + 10 / zoom, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // Draw compass circle
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2 / zoom;
+    ctx.beginPath();
+    ctx.arc(0, 0, compassRadius, 0, 2 * Math.PI);
+    ctx.stroke();
+
+    // Draw angle markers every 45 degrees
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 1 / zoom;
+    
+    for (let angle = 0; angle < 360; angle += 45) {
+      const radian = (angle * Math.PI) / 180;
+      const x1 = Math.cos(radian) * (compassRadius - 10 / zoom);
+      const y1 = Math.sin(radian) * (compassRadius - 10 / zoom);
+      const x2 = Math.cos(radian) * compassRadius;
+      const y2 = Math.sin(radian) * compassRadius;
+      
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      
+      // Add degree labels
+      if (angle % 90 === 0) {
+        ctx.fillStyle = '#374151';
+        ctx.font = `bold ${12 / zoom}px sans-serif`;
+        ctx.textAlign = 'center';
+        const labelX = Math.cos(radian) * (compassRadius + 20 / zoom);
+        const labelY = Math.sin(radian) * (compassRadius + 20 / zoom);
+        ctx.fillText(`${angle}°`, labelX, labelY + 4 / zoom);
+      }
+    }
+
+    // Draw current rotation indicator
+    const currentRadian = (product.rotation * Math.PI) / 180;
+    const indicatorX = Math.cos(currentRadian) * (compassRadius - 5 / zoom);
+    const indicatorY = Math.sin(currentRadian) * (compassRadius - 5 / zoom);
+    
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 4 / zoom;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(indicatorX, indicatorY);
+    ctx.stroke();
+
+    // Draw angle indicator at tip
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(indicatorX, indicatorY, 6 / zoom, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // Draw angle text
+    ctx.fillStyle = '#1f2937';
+    ctx.font = `bold ${16 / zoom}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(`${Math.round(product.rotation)}°`, 0, -compassRadius - 30 / zoom);
+
+    ctx.restore();
+  };
+
   const calculateDistance = (point1: Point, point2: Point): number => {
     const dx = point2.x - point1.x;
     const dy = point2.y - point1.y;
@@ -539,6 +614,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return { x, y };
   };
 
+  // Enhanced mouse down handler with better product interaction
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoordinates(e);
 
@@ -557,61 +633,82 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     } else if (currentTool === 'text') {
       handleTextPlacement({ x, y });
     } else if (currentTool === 'select') {
-      const clickedProduct = placedProducts.find(product => {
-        const dx = x - product.position.x;
-        const dy = y - product.position.y;
-        const width = (product.dimensions.length * scale * (product.scale || 1)) / 2;
-        const height = (product.dimensions.width * scale * (product.scale || 1)) / 2;
-        return Math.abs(dx) <= width && Math.abs(dy) <= height;
-      });
-
-      const clickedText = textAnnotations.find(annotation => {
-        const ctx = canvasRef.current?.getContext('2d');
-        if (!ctx) return false;
-        ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
-        const metrics = ctx.measureText(annotation.text);
-        return x >= annotation.position.x && 
-               x <= annotation.position.x + metrics.width &&
-               y >= annotation.position.y - annotation.fontSize / zoom &&
-               y <= annotation.position.y;
-      });
-
-      if (clickedProduct) {
-        setSelectedProduct(clickedProduct.id);
-        setSelectedText(null);
-        setIsDraggingProduct(true);
-        setRotationStart({ x, y });
-        setShowRotationCompass(true);
-        setCurrentRotationAngle(clickedProduct.rotation);
-      } else if (clickedText) {
-        setSelectedText(clickedText.id);
-        setSelectedProduct(null);
-      } else {
-        setSelectedProduct(null);
-        setSelectedText(null);
-        setShowRotationCompass(false);
-      }
+      handleProductSelection({ x, y });
     }
   };
 
-  const handleTextPlacement = (point: Point) => {
-    const newText: TextAnnotation = {
-      id: `text-${Date.now()}`,
-      position: snapToGrid(point),
-      text: 'New Text',
-      fontSize: 16
-    };
-    
-    setTextAnnotations([...textAnnotations, newText]);
-    setSelectedText(newText.id);
-    setIsEditingText(true);
-    setEditingText(newText.text);
-    toast.success('Text annotation added');
+  // Enhanced product selection with improved interaction detection
+  const handleProductSelection = (point: Point) => {
+    const clickedProduct = placedProducts.find(product => {
+      const dx = point.x - product.position.x;
+      const dy = point.y - product.position.y;
+      
+      // Rotate the click point to product's coordinate system
+      const cos = Math.cos((-product.rotation * Math.PI) / 180);
+      const sin = Math.sin((-product.rotation * Math.PI) / 180);
+      const rotatedX = dx * cos - dy * sin;
+      const rotatedY = dx * sin + dy * cos;
+      
+      const width = (product.dimensions.length * scale * (product.scale || 1)) / 2;
+      const height = (product.dimensions.width * scale * (product.scale || 1)) / 2;
+      
+      return Math.abs(rotatedX) <= width && Math.abs(rotatedY) <= height;
+    });
+
+    const clickedText = textAnnotations.find(annotation => {
+      const ctx = canvasRef.current?.getContext('2d');
+      if (!ctx) return false;
+      ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
+      const metrics = ctx.measureText(annotation.text);
+      return point.x >= annotation.position.x && 
+             point.x <= annotation.position.x + metrics.width &&
+             point.y >= annotation.position.y - annotation.fontSize / zoom &&
+             point.y <= annotation.position.y;
+    });
+
+    if (clickedProduct) {
+      setSelectedProduct(clickedProduct.id);
+      setSelectedText(null);
+      setShowRotationCompass(true);
+      
+      // Determine if we're clicking on center (move) or edge (rotate)
+      const dx = point.x - clickedProduct.position.x;
+      const dy = point.y - clickedProduct.position.y;
+      const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+      const productSize = Math.max(
+        clickedProduct.dimensions.length * scale * (clickedProduct.scale || 1),
+        clickedProduct.dimensions.width * scale * (clickedProduct.scale || 1)
+      ) / 2;
+
+      if (distanceFromCenter <= productSize * 0.4) {
+        // Center area - prepare for moving
+        setIsDragging(true);
+        setDragStart(point);
+      } else {
+        // Edge area - prepare for rotating
+        setIsRotating(true);
+        setRotationCenter(clickedProduct.position);
+        setInitialRotation(clickedProduct.rotation);
+      }
+    } else if (clickedText) {
+      setSelectedText(clickedText.id);
+      setSelectedProduct(null);
+      setShowRotationCompass(false);
+    } else {
+      // Clear selection
+      setSelectedProduct(null);
+      setSelectedText(null);
+      setShowRotationCompass(false);
+      setIsDragging(false);
+      setIsRotating(false);
+    }
   };
 
+  // Enhanced mouse move handler with smooth interactions
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoordinates(e);
 
+    // Handle panning
     if (isPanning && lastPanPoint) {
       const deltaX = (e.clientX - lastPanPoint.x) / zoom;
       const deltaY = (e.clientY - lastPanPoint.y) / zoom;
@@ -620,45 +717,39 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Enhanced product interaction - move by dragging center, rotate by dragging edges
-    if (isDraggingProduct && selectedProduct && rotationStart && e.buttons === 1) {
-      const product = placedProducts.find(p => p.id === selectedProduct);
-      if (product) {
-        const distanceFromCenter = Math.sqrt(
-          Math.pow(rotationStart.x - product.position.x, 2) + 
-          Math.pow(rotationStart.y - product.position.y, 2)
-        );
-        const productSize = Math.max(
-          product.dimensions.length * scale * (product.scale || 1),
-          product.dimensions.width * scale * (product.scale || 1)
-        ) / 2;
-
-        if (distanceFromCenter > productSize * 0.7) {
-          // Rotate when dragging from edges
-          const angle = Math.atan2(y - product.position.y, x - product.position.x);
-          const angleDegrees = (angle * 180) / Math.PI;
-          
-          const updatedProducts = placedProducts.map(p =>
-            p.id === selectedProduct
-              ? { ...p, rotation: (angleDegrees + 360) % 360 }
-              : p
-          );
-          setPlacedProducts(updatedProducts);
-          setCurrentRotationAngle((angleDegrees + 360) % 360);
-        } else {
-          // Move when dragging from center
-          const updatedProducts = placedProducts.map(p =>
-            p.id === selectedProduct
-              ? { ...p, position: snapToGrid({ x, y }) }
-              : p
-          );
-          setPlacedProducts(updatedProducts);
-        }
-      }
+    // Handle product dragging (move)
+    if (isDragging && selectedProduct && dragStart && e.buttons === 1) {
+      const snappedPosition = snapToGrid({ x, y });
+      const updatedProducts = placedProducts.map(p =>
+        p.id === selectedProduct
+          ? { ...p, position: snappedPosition }
+          : p
+      );
+      setPlacedProducts(updatedProducts);
       return;
     }
 
-    // Move text annotations
+    // Handle product rotation
+    if (isRotating && selectedProduct && rotationCenter && e.buttons === 1) {
+      const angle = Math.atan2(y - rotationCenter.y, x - rotationCenter.x);
+      const angleDegrees = (angle * 180) / Math.PI;
+      
+      // Snap to 15-degree increments when shift is held
+      let finalAngle = (angleDegrees + 360) % 360;
+      if (e.shiftKey) {
+        finalAngle = Math.round(finalAngle / 15) * 15;
+      }
+      
+      const updatedProducts = placedProducts.map(p =>
+        p.id === selectedProduct
+          ? { ...p, rotation: finalAngle }
+          : p
+      );
+      setPlacedProducts(updatedProducts);
+      return;
+    }
+
+    // Handle text movement
     if (selectedText && e.buttons === 1) {
       const updatedAnnotations = textAnnotations.map(annotation =>
         annotation.id === selectedText
@@ -669,21 +760,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
+    // Update drawing preview
     if (isDrawingActive && roomPoints.length > 0) {
       const snappedPoint = snapToGrid({ x, y });
       setCurrentDrawingPoint(snappedPoint);
     }
   };
 
+  // Enhanced mouse up handler
   const handleCanvasMouseUp = () => {
     setIsPanning(false);
     setLastPanPoint(null);
-    setIsDraggingProduct(false);
-    setRotationStart(null);
-    // Keep compass visible when product is selected but not actively dragging
-    if (!selectedProduct) {
-      setShowRotationCompass(false);
-    }
+    setIsDragging(false);
+    setIsRotating(false);
+    setDragStart(null);
+    setRotationCenter(null);
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -811,6 +902,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
+  const handleTextPlacement = (point: Point) => {
+    const newText: TextAnnotation = {
+      id: `text-${Date.now()}`,
+      position: snapToGrid(point),
+      text: 'New Text',
+      fontSize: 16
+    };
+    
+    setTextAnnotations([...textAnnotations, newText]);
+    setSelectedText(newText.id);
+    setIsEditingText(true);
+    setEditingText(newText.text);
+    toast.success('Text annotation added');
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const { x, y } = getCanvasCoordinates(e as any);
@@ -931,12 +1037,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setIsEditingText(false);
   };
 
-  // Get the cursor class based on current state
+  // Dynamic cursor based on current interaction state
   const getCursorClass = () => {
     if (currentTool === 'eraser') return 'cursor-crosshair';
-    if (currentTool === 'pan') return 'cursor-move';
+    if (currentTool === 'pan' || isPanning) return 'cursor-move';
     if (currentTool === 'text') return 'cursor-text';
     if (currentTool === 'select') {
+      if (isDragging) return 'cursor-grabbing';
+      if (isRotating) return 'cursor-crosshair';
       if (selectedProduct || selectedText) return 'cursor-grab';
       return 'cursor-pointer';
     }
@@ -995,7 +1103,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* Selected Product Controls - Clean toolbar style */}
+      {/* Selected Product Controls */}
       {selectedProduct && (
         <div className="absolute top-4 right-4 flex space-x-2">
           <Button
@@ -1099,7 +1207,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Text: {textAnnotations.length}</div>
           <div className="text-gray-500">
             Left click: Draw/Select | Right click: Pan | Mouse wheel: Zoom
-            {selectedProduct && <span className="text-blue-600 font-medium"> | Drag center: Move | Drag edges: Rotate</span>}
+            {selectedProduct && <span className="text-blue-600 font-medium"> | Drag center: Move | Drag edges: Rotate | Shift+drag: Snap to 15°</span>}
           </div>
         </div>
       </div>
