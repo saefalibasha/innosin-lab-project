@@ -70,6 +70,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [editingText, setEditingText] = useState('');
   const [currentRotationAngle, setCurrentRotationAngle] = useState<number>(0);
   const [showRotationCompass, setShowRotationCompass] = useState(false);
+  const [isDraggingProduct, setIsDraggingProduct] = useState(false);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
@@ -578,7 +579,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       if (clickedProduct) {
         setSelectedProduct(clickedProduct.id);
         setSelectedText(null);
-        setIsRotating(true);
+        setIsDraggingProduct(true);
         setRotationStart({ x, y });
         setShowRotationCompass(true);
         setCurrentRotationAngle(clickedProduct.rotation);
@@ -619,21 +620,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Enhanced rotation with drag-to-rotate functionality and compass
-    if (isRotating && selectedProduct && rotationStart) {
+    // Enhanced product interaction - move by dragging center, rotate by dragging edges
+    if (isDraggingProduct && selectedProduct && rotationStart && e.buttons === 1) {
       const product = placedProducts.find(p => p.id === selectedProduct);
       if (product) {
-        // Check if we're dragging to move or rotate
         const distanceFromCenter = Math.sqrt(
-          Math.pow(x - product.position.x, 2) + Math.pow(y - product.position.y, 2)
+          Math.pow(rotationStart.x - product.position.x, 2) + 
+          Math.pow(rotationStart.y - product.position.y, 2)
         );
         const productSize = Math.max(
           product.dimensions.length * scale * (product.scale || 1),
           product.dimensions.width * scale * (product.scale || 1)
         ) / 2;
 
-        if (distanceFromCenter > productSize * 0.8) {
-          // Rotate when dragging near edges
+        if (distanceFromCenter > productSize * 0.7) {
+          // Rotate when dragging from edges
           const angle = Math.atan2(y - product.position.y, x - product.position.x);
           const angleDegrees = (angle * 180) / Math.PI;
           
@@ -645,7 +646,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           setPlacedProducts(updatedProducts);
           setCurrentRotationAngle((angleDegrees + 360) % 360);
         } else {
-          // Move when dragging center
+          // Move when dragging from center
           const updatedProducts = placedProducts.map(p =>
             p.id === selectedProduct
               ? { ...p, position: snapToGrid({ x, y }) }
@@ -677,9 +678,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const handleCanvasMouseUp = () => {
     setIsPanning(false);
     setLastPanPoint(null);
-    setIsRotating(false);
+    setIsDraggingProduct(false);
     setRotationStart(null);
-    setShowRotationCompass(false);
+    // Keep compass visible when product is selected but not actively dragging
+    if (!selectedProduct) {
+      setShowRotationCompass(false);
+    }
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -933,30 +937,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (currentTool === 'pan') return 'cursor-move';
     if (currentTool === 'text') return 'cursor-text';
     if (currentTool === 'select') {
-      if (selectedProduct) return 'cursor-move';
-      if (selectedText) return 'cursor-move';
+      if (selectedProduct || selectedText) return 'cursor-grab';
       return 'cursor-pointer';
     }
     return 'cursor-crosshair';
   };
-
-  // Get selected product position for delete button
-  const getSelectedProductScreenPosition = () => {
-    if (!selectedProduct || !canvasRef.current) return null;
-    
-    const product = placedProducts.find(p => p.id === selectedProduct);
-    if (!product) return null;
-
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    
-    const screenX = (product.position.x + pan.x) * zoom + rect.left;
-    const screenY = (product.position.y + pan.y) * zoom + rect.top;
-    
-    return { x: screenX, y: screenY };
-  };
-
-  const selectedProductPosition = getSelectedProductScreenPosition();
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white">
@@ -1010,7 +995,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* Selected Product Controls */}
+      {/* Selected Product Controls - Clean toolbar style */}
       {selectedProduct && (
         <div className="absolute top-4 right-4 flex space-x-2">
           <Button
@@ -1032,24 +1017,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
-      )}
-
-      {/* Floating Delete Button for Selected Product */}
-      {selectedProduct && selectedProductPosition && (
-        <Button
-          variant="destructive"
-          size="sm"
-          className="absolute bg-red-600 hover:bg-red-700 text-white shadow-lg border-2 border-white rounded-full p-2"
-          style={{
-            left: selectedProductPosition.x + 40,
-            top: selectedProductPosition.y - 20,
-            transform: 'translate(-50%, -50%)'
-          }}
-          onClick={deleteSelectedProduct}
-          title="Delete Product"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
       )}
 
       {/* Text Editing Modal */}
@@ -1132,7 +1099,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Text: {textAnnotations.length}</div>
           <div className="text-gray-500">
             Left click: Draw/Select | Right click: Pan | Mouse wheel: Zoom
-            {selectedProduct && <span className="text-red-600 font-medium"> | Drag center: Move | Drag edges: Rotate</span>}
+            {selectedProduct && <span className="text-blue-600 font-medium"> | Drag center: Move | Drag edges: Rotate</span>}
           </div>
         </div>
       </div>
