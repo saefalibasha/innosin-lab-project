@@ -60,7 +60,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   // Movement and rotation states with improved sensitivity
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
-  const [dragThreshold] = useState(8); // Minimum pixels to start drag
+  const [dragThreshold] = useState(5); // Reduced threshold for better precision
   const [hasStartedDrag, setHasStartedDrag] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
@@ -82,9 +82,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
   const [collisionWarningPos, setCollisionWarningPos] = useState<Point>({ x: 0, y: 0 });
 
+  // Cursor and crosshair states
+  const [cursorPosition, setCursorPosition] = useState<Point>({ x: 0, y: 0 });
+  const [showCrosshair, setShowCrosshair] = useState(false);
+
   // Debouncing and timing
   const [lastClickTime, setLastClickTime] = useState(0);
   const [doubleClickTimeout, setDoubleClickTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  // Pan sensitivity - much more controlled
+  const PAN_SENSITIVITY = 0.3; // Reduced from default 1.0
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -93,27 +100,36 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Set canvas to device pixel ratio for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+
+    ctx.clearRect(0, 0, rect.width, rect.height);
     ctx.save();
     ctx.scale(zoom, zoom);
     ctx.translate(pan.x, pan.y);
 
-    // Draw grid if enabled
+    // Enhanced grid rendering with better alignment
     if (showGrid) {
-      drawGrid(ctx, canvas.width / zoom, canvas.height / zoom);
+      drawPrecisionGrid(ctx, rect.width / zoom, rect.height / zoom);
     }
     
-    // Draw ruler if enabled
+    // Draw ruler if enabled with better precision
     if (showRuler) {
-      drawRuler(ctx, canvas.width / zoom, canvas.height / zoom);
+      drawPrecisionRuler(ctx, rect.width / zoom, rect.height / zoom);
     }
     
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing
+    // Draw current line while drawing with precise crosshair
     if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
-      drawCurrentLine(ctx);
+      drawCurrentLineWithCrosshair(ctx);
     }
     
     // Draw doors
@@ -127,9 +143,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawRotationHandle(ctx);
     }
     
-    // Draw dimensions on completed walls
+    // Draw dimensions on completed walls with better alignment
     if (!isDrawingActive) {
-      drawDimensions(ctx);
+      drawPreciseDimensions(ctx);
     }
 
     // Draw text annotations
@@ -145,8 +161,118 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawSelectedWall(ctx);
     }
 
+    // Draw precise crosshair when needed
+    if (showCrosshair && (currentTool === 'wall' || currentTool === 'door')) {
+      drawPreciseCrosshair(ctx);
+    }
+
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool]);
+  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, cursorPosition, showCrosshair]);
+
+  // Enhanced precision grid
+  const drawPrecisionGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 0.5 / zoom;
+
+    const gridSize = scale * 0.25;
+    const startX = Math.floor(-pan.x / gridSize) * gridSize;
+    const startY = Math.floor(-pan.y / gridSize) * gridSize;
+    
+    for (let x = startX; x <= width - pan.x; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, -pan.y);
+      ctx.lineTo(x, height - pan.y);
+      ctx.stroke();
+    }
+
+    for (let y = startY; y <= height - pan.y; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(-pan.x, y);
+      ctx.lineTo(width - pan.x, y);
+      ctx.stroke();
+    }
+
+    // Draw major grid lines every meter
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1 / zoom;
+    
+    const majorGridSize = scale;
+    const majorStartX = Math.floor(-pan.x / majorGridSize) * majorGridSize;
+    const majorStartY = Math.floor(-pan.y / majorGridSize) * majorGridSize;
+    
+    for (let x = majorStartX; x <= width - pan.x; x += majorGridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, -pan.y);
+      ctx.lineTo(x, height - pan.y);
+      ctx.stroke();
+    }
+
+    for (let y = majorStartY; y <= height - pan.y; y += majorGridSize) {
+      ctx.beginPath();
+      ctx.moveTo(-pan.x, y);
+      ctx.lineTo(width - pan.x, y);
+      ctx.stroke();
+    }
+  };
+
+  const drawPrecisionRuler = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.strokeStyle = '#1f2937';
+    ctx.fillStyle = '#1f2937';
+    ctx.lineWidth = 1 / zoom;
+    ctx.font = `${10 / zoom}px "Inter", sans-serif`;
+    ctx.textAlign = 'left';
+
+    // Horizontal ruler
+    for (let x = 0; x <= width; x += scale) {
+      const meters = x / scale;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 15 / zoom);
+      ctx.stroke();
+      
+      if (meters % 1 === 0) {
+        ctx.fillText(`${meters}m`, x + 2 / zoom, 12 / zoom);
+      }
+    }
+
+    // Vertical ruler
+    for (let y = 0; y <= height; y += scale) {
+      const meters = y / scale;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(15 / zoom, y);
+      ctx.stroke();
+      
+      if (meters % 1 === 0) {
+        ctx.save();
+        ctx.translate(12 / zoom, y - 2 / zoom);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(`${meters}m`, 0, 0);
+        ctx.restore();
+      }
+    }
+  };
+
+  const drawPreciseCrosshair = (ctx: CanvasRenderingContext2D) => {
+    const size = 20 / zoom;
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 1 / zoom;
+    ctx.setLineDash([3 / zoom, 3 / zoom]);
+
+    ctx.beginPath();
+    ctx.moveTo(cursorPosition.x - size, cursorPosition.y);
+    ctx.lineTo(cursorPosition.x + size, cursorPosition.y);
+    ctx.moveTo(cursorPosition.x, cursorPosition.y - size);
+    ctx.lineTo(cursorPosition.x, cursorPosition.y + size);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Center dot
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(cursorPosition.x, cursorPosition.y, 2 / zoom, 0, 2 * Math.PI);
+    ctx.fill();
+  };
 
   // Enhanced keyboard shortcuts with improved sensitivity
   useEffect(() => {
@@ -199,6 +325,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setIsRotating(false);
     setShowWallLengthInput(false);
     setHasStartedDrag(false);
+    setShowCrosshair(false);
     if (isDrawingActive) {
       toast.success('Drawing cancelled');
     }
@@ -215,8 +342,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         const container = containerRef.current;
         if (!canvas || !container) return;
 
-        canvas.width = container.clientWidth;
-        canvas.height = container.clientHeight;
+        const rect = container.getBoundingClientRect();
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
       }, 100);
     };
 
@@ -234,7 +362,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.95 : 1.05;
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
       setZoom(prev => Math.min(Math.max(prev * delta, 0.1), 5));
     };
 
@@ -269,65 +397,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return area / (scale * scale);
   };
 
-  const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.strokeStyle = '#f3f4f6';
-    ctx.lineWidth = 1 / zoom;
-
-    const gridSize = scale * 0.25;
-    for (let x = 0; x <= width; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-
-    for (let y = 0; y <= height; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
-  };
-
-  const drawRuler = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.strokeStyle = '#374151';
-    ctx.fillStyle = '#374151';
-    ctx.lineWidth = 2 / zoom;
-    ctx.font = `${12 / zoom}px sans-serif`;
-
-    for (let x = 0; x <= width; x += scale) {
-      const meters = x / scale;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 20 / zoom);
-      ctx.stroke();
-      
-      ctx.fillText(`${meters}m`, x + 5 / zoom, 15 / zoom);
-    }
-
-    for (let y = 0; y <= height; y += scale) {
-      const meters = y / scale;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(20 / zoom, y);
-      ctx.stroke();
-      
-      ctx.save();
-      ctx.translate(15 / zoom, y - 5 / zoom);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText(`${meters}m`, 0, 0);
-      ctx.restore();
-    }
-  };
-
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
     if (roomPoints.length < 1) return;
 
-    ctx.strokeStyle = '#374151';
+    ctx.strokeStyle = '#1f2937';
     ctx.lineWidth = 3 / zoom;
 
     if (roomPoints.length > 2 && !isDrawingActive) {
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
       ctx.beginPath();
       ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
       for (let i = 1; i < roomPoints.length; i++) {
@@ -347,10 +424,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
     ctx.stroke();
 
-    ctx.fillStyle = '#374151';
+    // Draw points with better visibility
+    ctx.fillStyle = '#1f2937';
     roomPoints.forEach(point => {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI);
+      ctx.arc(point.x, point.y, 3 / zoom, 0, 2 * Math.PI);
       ctx.fill();
     });
   };
@@ -370,14 +448,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
   };
 
-  const drawCurrentLine = (ctx: CanvasRenderingContext2D) => {
+  const drawCurrentLineWithCrosshair = (ctx: CanvasRenderingContext2D) => {
     if (!currentDrawingPoint || roomPoints.length === 0) return;
 
     const lastPoint = roomPoints[roomPoints.length - 1];
     
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 2 / zoom;
-    ctx.setLineDash([5 / zoom, 5 / zoom]);
+    ctx.setLineDash([4 / zoom, 4 / zoom]);
 
     ctx.beginPath();
     ctx.moveTo(lastPoint.x, lastPoint.y);
@@ -391,7 +469,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
       const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
       
-      const offsetDistance = 20 / zoom;
+      const offsetDistance = 25 / zoom;
       const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
       const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
       
@@ -399,19 +477,20 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.translate(midX + offsetX, midY + offsetY);
       ctx.rotate(angle);
       ctx.fillStyle = '#000000';
-      ctx.font = `bold ${14 / zoom}px sans-serif`;
+      ctx.font = `bold ${12 / zoom}px "Inter", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
+      ctx.fillRect(-20 / zoom, -8 / zoom, 40 / zoom, 16 / zoom);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${length.toFixed(2)}m`, 0, 3 / zoom);
       ctx.restore();
     }
   };
 
-  const drawDimensions = (ctx: CanvasRenderingContext2D) => {
+  const drawPreciseDimensions = (ctx: CanvasRenderingContext2D) => {
     if (roomPoints.length < 2) return;
 
-    ctx.font = `bold ${12 / zoom}px sans-serif`;
+    ctx.font = `bold ${11 / zoom}px "Inter", sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillStyle = '#000000';
 
     for (let i = 0; i < roomPoints.length; i++) {
       const nextIndex = (i + 1) % roomPoints.length;
@@ -426,14 +505,23 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         const midX = (point1.x + point2.x) / 2;
         const midY = (point1.y + point2.y) / 2;
         
-        const offsetDistance = 20 / zoom;
+        const offsetDistance = 25 / zoom;
         const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
         const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
         
         ctx.save();
         ctx.translate(midX + offsetX, midY + offsetY);
         ctx.rotate(angle);
-        ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
+        
+        // Background for better readability
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(-18 / zoom, -7 / zoom, 36 / zoom, 14 / zoom);
+        ctx.strokeStyle = '#e5e7eb';
+        ctx.lineWidth = 1 / zoom;
+        ctx.strokeRect(-18 / zoom, -7 / zoom, 36 / zoom, 14 / zoom);
+        
+        ctx.fillStyle = '#000000';
+        ctx.fillText(`${length.toFixed(2)}m`, 0, 3 / zoom);
         ctx.restore();
       }
     }
@@ -457,7 +545,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.fillRect(-width / 2, -height / 2, width, height);
       
       // Draw border
-      ctx.strokeStyle = selectedProduct === id ? '#ef4444' : '#374151';
+      ctx.strokeStyle = selectedProduct === id ? '#ef4444' : '#1f2937';
       ctx.lineWidth = selectedProduct === id ? 3 / zoom : 2 / zoom;
       ctx.strokeRect(-width / 2, -height / 2, width, height);
       
@@ -613,10 +701,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (!canvas) return { x: 0, y: 0 };
 
     const rect = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left) / zoom - pan.x,
-      y: (e.clientY - rect.top) / zoom - pan.y
-    };
+    const x = (e.clientX - rect.left) / zoom - pan.x;
+    const y = (e.clientY - rect.top) / zoom - pan.y;
+    
+    return { x, y };
   };
 
   const snapToGrid = (point: Point): Point => {
@@ -761,14 +849,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const point = snapToGrid(getCanvasMousePosition(e));
     const currentTime = Date.now();
 
-    // Handle right click for panning
+    // Handle right click for panning with reduced sensitivity
     if (e.button === 2) {
       setIsPanning(true);
       setLastPanPoint(getCanvasMousePosition(e));
       return;
     }
 
-    // Double click detection with timeout
+    // Double click detection
     if (currentTime - lastClickTime < 300) {
       if (doubleClickTimeout) {
         clearTimeout(doubleClickTimeout);
@@ -780,10 +868,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     setLastClickTime(currentTime);
     
-    // Set timeout for single click to avoid conflicts
     const timeout = setTimeout(() => {
       handleSingleClick(point, e);
-    }, 250);
+    }, 200);
     
     setDoubleClickTimeout(timeout);
   };
@@ -953,12 +1040,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     const point = snapToGrid(getCanvasMousePosition(e));
+    setCursorPosition(point);
+
+    // Show crosshair for precision tools
+    setShowCrosshair(currentTool === 'wall' || currentTool === 'door');
 
     if (isPanning && lastPanPoint) {
       const currentPoint = getCanvasMousePosition(e);
+      const deltaX = (currentPoint.x - lastPanPoint.x) * PAN_SENSITIVITY;
+      const deltaY = (currentPoint.y - lastPanPoint.y) * PAN_SENSITIVITY;
+      
       setPan(prev => ({
-        x: prev.x + (currentPoint.x - lastPanPoint.x),
-        y: prev.y + (currentPoint.y - lastPanPoint.y)
+        x: prev.x + deltaX,
+        y: prev.y + deltaY
       }));
       setLastPanPoint(currentPoint);
       return;
@@ -1175,28 +1269,33 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
 
   return (
-    <div className="relative w-full h-full bg-gray-100">
+    <div className="relative w-full h-full bg-gray-50">
       <div ref={containerRef} className="w-full h-full">
         <canvas
           ref={canvasRef}
-          className="cursor-crosshair bg-white"
+          className="cursor-crosshair bg-white shadow-sm"
+          style={{
+            cursor: currentTool === 'wall' || currentTool === 'door' ? 'crosshair' : 
+                   currentTool === 'select' ? 'default' :
+                   currentTool === 'rotate' ? 'grab' : 'crosshair'
+          }}
         />
       </div>
       
-      {/* Length Input Modal */}
+      {/* Enhanced Length Input Modal */}
       {showLengthInput && (
-        <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border">
-          <h3 className="font-semibold mb-2">Enter Wall Length</h3>
+        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+          <h3 className="font-semibold text-gray-900 mb-3">Enter Wall Length</h3>
           <div className="flex space-x-2">
             <Input
               type="number"
               value={customLength}
               onChange={(e) => setCustomLength(e.target.value)}
               placeholder="Length in meters"
-              className="w-32"
+              className="w-36 text-sm"
               autoFocus
             />
-            <Button onClick={handleLengthSubmit} size="sm">
+            <Button onClick={handleLengthSubmit} size="sm" className="px-4">
               Apply
             </Button>
             <Button
@@ -1207,6 +1306,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 setCustomLength('');
                 setPendingLineStart(null);
               }}
+              className="px-4"
             >
               Cancel
             </Button>
@@ -1214,20 +1314,20 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Wall Length Input Modal */}
+      {/* Enhanced Wall Length Input Modal */}
       {showWallLengthInput && (
-        <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border">
-          <h3 className="font-semibold mb-2">Edit Wall Length</h3>
+        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+          <h3 className="font-semibold text-gray-900 mb-3">Edit Wall Length</h3>
           <div className="flex space-x-2">
             <Input
               type="number"
               value={customWallLength}
               onChange={(e) => setCustomWallLength(e.target.value)}
               placeholder="Length in meters"
-              className="w-32"
+              className="w-36 text-sm"
               autoFocus
             />
-            <Button onClick={handleWallLengthSubmit} size="sm">
+            <Button onClick={handleWallLengthSubmit} size="sm" className="px-4">
               Apply
             </Button>
             <Button
@@ -1237,6 +1337,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 setShowWallLengthInput(false);
                 setSelectedWallIndex(null);
               }}
+              className="px-4"
             >
               Cancel
             </Button>
@@ -1244,17 +1345,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Text Edit Modal */}
+      {/* Enhanced Text Edit Modal */}
       {isEditingText && (
-        <div className="absolute top-4 left-4 bg-white p-4 rounded-lg shadow-lg border">
-          <h3 className="font-semibold mb-2">Edit Text</h3>
+        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+          <h3 className="font-semibold text-gray-900 mb-3">Edit Text</h3>
           <div className="flex space-x-2">
             <Input
               type="text"
               value={editingText}
               onChange={(e) => setEditingText(e.target.value)}
               placeholder="Enter text"
-              className="w-48"
+              className="w-48 text-sm"
               autoFocus
             />
             <Button
@@ -1268,6 +1369,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 setEditingText('');
               }}
               size="sm"
+              className="px-4"
             >
               Save
             </Button>
@@ -1278,6 +1380,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 setIsEditingText(false);
                 setEditingText('');
               }}
+              className="px-4"
             >
               Cancel
             </Button>
@@ -1285,12 +1388,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Zoom Controls */}
-      <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
+      {/* Enhanced Zoom Controls */}
+      <div className="absolute bottom-6 right-6 flex flex-col space-y-2">
         <Button
           variant="outline"
           size="sm"
           onClick={() => setZoom(prev => Math.min(prev * 1.2, 5))}
+          className="w-10 h-10 p-0 shadow-md"
         >
           <ZoomIn className="w-4 h-4" />
         </Button>
@@ -1298,18 +1402,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           variant="outline"
           size="sm"
           onClick={() => setZoom(prev => Math.max(prev * 0.8, 0.1))}
+          className="w-10 h-10 p-0 shadow-md"
         >
           <ZoomOut className="w-4 h-4" />
         </Button>
-        <div className="text-xs text-center bg-white px-2 py-1 rounded border">
+        <div className="text-xs text-center bg-white px-2 py-1 rounded border shadow-sm font-medium">
           {Math.round(zoom * 100)}%
         </div>
       </div>
 
-      {/* Room Area Display */}
+      {/* Enhanced Room Area Display */}
       {roomPoints.length > 2 && !isDrawingActive && (
-        <div className="absolute top-4 right-4 bg-white px-3 py-2 rounded-lg shadow border">
-          <span className="text-sm font-medium">
+        <div className="absolute top-6 right-6 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200">
+          <span className="text-sm font-semibold text-gray-900">
             Room Area: {calculateRoomArea().toFixed(2)} m²
           </span>
         </div>

@@ -143,22 +143,23 @@ const FloorPlanner = () => {
 
   return (
     <TooltipProvider>
-      <div className={`min-h-screen bg-white flex ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
-        {/* Top Toolbar */}
-        <div className={`fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-2 ${isFullScreen ? 'top-0' : ''}`}>
+      <div className={`min-h-screen bg-gray-50 flex ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
+        {/* Enhanced Top Toolbar */}
+        <div className={`fixed top-16 left-0 right-0 z-40 bg-white border-b border-gray-200 px-4 py-3 ${isFullScreen ? 'top-0' : ''}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="p-2"
               >
                 {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
               </Button>
-              <h1 className="text-xl font-bold text-black">Floor Planner</h1>
+              <h1 className="text-xl font-bold text-gray-900">Floor Planner</h1>
               
               {/* Undo/Redo Controls */}
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 border-l border-gray-200 pl-4">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -166,7 +167,7 @@ const FloorPlanner = () => {
                       size="sm"
                       onClick={handleUndo}
                       disabled={!canUndo}
-                      title="Undo (Ctrl+Z)"
+                      className="h-8 w-8 p-0"
                     >
                       <Undo className="w-4 h-4" />
                     </Button>
@@ -183,7 +184,7 @@ const FloorPlanner = () => {
                       size="sm"
                       onClick={handleRedo}
                       disabled={!canRedo}
-                      title="Redo (Ctrl+Y)"
+                      className="h-8 w-8 p-0"
                     >
                       <Redo className="w-4 h-4" />
                     </Button>
@@ -200,7 +201,7 @@ const FloorPlanner = () => {
                 variant={showGrid ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setShowGrid(!showGrid)}
-                title="Toggle Grid"
+                className="h-8 px-3"
               >
                 <Grid className="w-4 h-4 mr-1" />
                 Grid
@@ -209,66 +210,67 @@ const FloorPlanner = () => {
                 variant={showRuler ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setShowRuler(!showRuler)}
-                title="Toggle Ruler"
+                className="h-8 px-3"
               >
                 <Ruler className="w-4 h-4 mr-1" />
                 Ruler
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleClearAll}
-                title="Clear All"
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Clear All
-              </Button>
-              <Button variant="outline" size="sm">
-                <Eye className="w-4 h-4 mr-1" />
-                View
-              </Button>
               
-              {/* Export Modal */}
-              <ExportModal
-                canvasRef={canvasRef}
-                roomPoints={roomPoints}
-                placedProducts={placedProducts}
-              >
-                <Button variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-1" />
-                  Export
+              <div className="border-l border-gray-200 pl-2 ml-2 flex items-center space-x-2">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleClearAll}
+                  className="h-8 px-3"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Clear
                 </Button>
-              </ExportModal>
+                
+                {/* Export Modal */}
+                <ExportModal
+                  canvasRef={canvasRef}
+                  roomPoints={roomPoints}
+                  placedProducts={placedProducts}
+                >
+                  <Button variant="outline" size="sm" className="h-8 px-3">
+                    <Download className="w-4 h-4 mr-1" />
+                    Export
+                  </Button>
+                </ExportModal>
 
-              {/* Send Plan Modal */}
-              <SendPlanModal
-                canvasRef={canvasRef}
-                roomPoints={roomPoints}
-                placedProducts={placedProducts}
-              >
-                <Button variant="outline" size="sm">
-                  <Send className="w-4 h-4 mr-1" />
-                  Send
+                {/* Send Plan Modal */}
+                <SendPlanModal
+                  canvasRef={canvasRef}
+                  roomPoints={roomPoints}
+                  placedProducts={placedProducts}
+                >
+                  <Button variant="outline" size="sm" className="h-8 px-3">
+                    <Send className="w-4 h-4 mr-1" />
+                    Send
+                  </Button>
+                </SendPlanModal>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleFullScreen}
+                  className="h-8 px-3"
+                >
+                  <Maximize className="w-4 h-4 mr-1" />
+                  {isFullScreen ? 'Exit' : 'Full'}
                 </Button>
-              </SendPlanModal>
-
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={toggleFullScreen}
-              >
-                <Maximize className="w-4 h-4 mr-1" />
-                {isFullScreen ? 'Exit' : 'Full Screen'}
-              </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Collapsible Sidebar */}
-        <div className={`transition-all duration-300 bg-gray-50 border-r border-gray-200 ${
+        {/* Enhanced Collapsible Sidebar */}
+        <div className={`transition-all duration-300 bg-white border-r border-gray-200 ${
           isSidebarCollapsed ? 'w-0' : 'w-80'
-        } ${isFullScreen ? 'mt-12' : 'mt-24'} overflow-hidden`}>
+        } ${isFullScreen ? 'mt-12' : 'mt-24'} overflow-hidden shadow-sm`}>
           <div className="w-80 h-full overflow-y-auto p-4 space-y-4">
+            
             {/* Enhanced Tool Instructions */}
             <Collapsible open={openPanel === 'instructions'} onOpenChange={() => setOpenPanel(openPanel === 'instructions' ? '' : 'instructions')}>
               <CollapsibleTrigger asChild>
@@ -425,10 +427,10 @@ const FloorPlanner = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Drawing Tools */}
+            {/* Enhanced Drawing Tools */}
             <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start font-medium">
+                <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
                   <Ruler className="w-4 h-4 mr-2" />
                   Drawing Tools
                 </Button>
@@ -438,10 +440,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'wall' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('wall')}
                     >
-                      <Ruler className="w-4 h-4 mr-2" />
+                      <Ruler className="w-4 h-4 mr-3" />
                       Wall Tool
                     </Button>
                   </TooltipTrigger>
@@ -454,10 +456,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'select' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('select')}
                     >
-                      <Move className="w-4 h-4 mr-2" />
+                      <Move className="w-4 h-4 mr-3" />
                       Select & Move
                     </Button>
                   </TooltipTrigger>
@@ -470,10 +472,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'rotate' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('rotate')}
                     >
-                      <RotateCcw className="w-4 h-4 mr-2" />
+                      <RotateCcw className="w-4 h-4 mr-3" />
                       Rotate Tool
                     </Button>
                   </TooltipTrigger>
@@ -486,10 +488,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'wall-edit' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('wall-edit')}
                     >
-                      <Edit className="w-4 h-4 mr-2" />
+                      <Edit className="w-4 h-4 mr-3" />
                       Wall Edit
                     </Button>
                   </TooltipTrigger>
@@ -502,10 +504,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'text' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('text')}
                     >
-                      <Type className="w-4 h-4 mr-2" />
+                      <Type className="w-4 h-4 mr-3" />
                       Text Tool
                     </Button>
                   </TooltipTrigger>
@@ -518,10 +520,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'door' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('door')}
                     >
-                      <DoorOpen className="w-4 h-4 mr-2" />
+                      <DoorOpen className="w-4 h-4 mr-3" />
                       Door Tool
                     </Button>
                   </TooltipTrigger>
@@ -534,10 +536,10 @@ const FloorPlanner = () => {
                   <TooltipTrigger asChild>
                     <Button
                       variant={activeTool === 'eraser' ? 'default' : 'outline'}
-                      className="w-full justify-start"
+                      className="w-full justify-start h-10"
                       onClick={() => setActiveTool('eraser')}
                     >
-                      <Eraser className="w-4 h-4 mr-2" />
+                      <Eraser className="w-4 h-4 mr-3" />
                       Eraser
                     </Button>
                   </TooltipTrigger>
@@ -548,10 +550,10 @@ const FloorPlanner = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Product Library */}
+            {/* Enhanced Product Library */}
             <Collapsible open={openPanel === 'library'} onOpenChange={() => setOpenPanel(openPanel === 'library' ? '' : 'library')}>
               <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start font-medium">
+                <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
                   <Move className="w-4 h-4 mr-2" />
                   Product Library
                 </Button>
@@ -563,19 +565,19 @@ const FloorPlanner = () => {
                       <div
                         draggable
                         onDragStart={(e) => handleDragStart(e, product)}
-                        className="p-3 border rounded-lg transition-colors cursor-move hover:bg-white hover:shadow-sm"
+                        className="p-3 border border-gray-200 rounded-lg transition-all cursor-move hover:bg-gray-50 hover:shadow-sm hover:border-gray-300"
                       >
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex items-center space-x-2 mb-2">
                           <div 
-                            className="w-3 h-3 rounded"
+                            className="w-3 h-3 rounded-sm"
                             style={{ backgroundColor: product.color }}
                           />
-                          <span className="font-medium text-sm">{product.name}</span>
+                          <span className="font-medium text-sm text-gray-900">{product.name}</span>
                         </div>
-                        <p className="text-xs text-gray-600">
+                        <p className="text-xs text-gray-600 mb-2">
                           {product.dimensions.length}×{product.dimensions.width}×{product.dimensions.height}m
                         </p>
-                        <Badge variant="outline" className="text-xs mt-1">
+                        <Badge variant="outline" className="text-xs">
                           {product.category}
                         </Badge>
                       </div>
@@ -591,7 +593,7 @@ const FloorPlanner = () => {
         </div>
 
         {/* Main Canvas Area */}
-        <div className={`flex-1 ${isFullScreen ? 'mt-12' : 'mt-24'} relative`}>
+        <div className={`flex-1 ${isFullScreen ? 'mt-12' : 'mt-24'} relative bg-gray-50`}>
           <FloorPlannerCanvas
             roomPoints={roomPoints}
             setRoomPoints={setRoomPoints}
