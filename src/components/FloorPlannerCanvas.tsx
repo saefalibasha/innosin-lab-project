@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Download, Save, Trash2, ZoomIn, ZoomOut } from 'lucide-react';
+import { RotateCcw, Download, Save, Trash2, ZoomIn, ZoomOut, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Point {
@@ -47,10 +47,22 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [currentLineLength, setCurrentLineLength] = useState('');
   const [lastPoint, setLastPoint] = useState<Point | null>(null);
+  const [currentDrawingPoint, setCurrentDrawingPoint] = useState<Point | null>(null);
+  const [showSendForm, setShowSendForm] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [userMessage, setUserMessage] = useState('');
 
   useEffect(() => {
     drawCanvas();
-  }, [roomPoints, placedProducts, selectedProduct, zoom, pan]);
+  }, [roomPoints, placedProducts, selectedProduct, zoom, pan, currentDrawingPoint]);
+
+  const snapToGrid = (point: Point): Point => {
+    const gridSize = scale;
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  };
 
   const drawCanvas = () => {
     const canvas = canvasRef.current;
@@ -75,6 +87,11 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
       drawRoomInProgress(ctx);
     }
 
+    // Draw current drawing line
+    if (isDrawingMode && roomPoints.length > 0 && currentDrawingPoint) {
+      drawCurrentLine(ctx);
+    }
+
     // Draw completed room
     if (roomPoints.length > 2) {
       drawRoom(ctx);
@@ -86,6 +103,9 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     });
 
     ctx.restore();
+
+    // Draw zoom controls overlay
+    drawZoomControls();
   };
 
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -133,6 +153,23 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     });
   };
 
+  const drawCurrentLine = (ctx: CanvasRenderingContext2D) => {
+    if (!currentDrawingPoint || roomPoints.length === 0) return;
+
+    const lastRoomPoint = roomPoints[roomPoints.length - 1];
+    
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+
+    ctx.beginPath();
+    ctx.moveTo(lastRoomPoint.x, lastRoomPoint.y);
+    ctx.lineTo(currentDrawingPoint.x, currentDrawingPoint.y);
+    ctx.stroke();
+
+    ctx.setLineDash([]);
+  };
+
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 3;
@@ -176,6 +213,35 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     ctx.restore();
   };
 
+  const drawZoomControls = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Draw zoom controls background
+    const controlSize = 40;
+    const margin = 20;
+    const x = canvas.width - controlSize - margin;
+    const yZoomIn = margin;
+    const yZoomOut = margin + controlSize + 10;
+
+    // Zoom In button
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(x, yZoomIn, controlSize, controlSize);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('+', x + controlSize/2, yZoomIn + controlSize/2 + 7);
+
+    // Zoom Out button
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(x, yZoomOut, controlSize, controlSize);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('−', x + controlSize/2, yZoomOut + controlSize/2 + 7);
+  };
+
   const getCanvasCoordinates = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -187,11 +253,36 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   };
 
   const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const rawX = e.clientX - rect.left;
+    const rawY = e.clientY - rect.top;
+
+    // Check if clicking on zoom controls
+    const controlSize = 40;
+    const margin = 20;
+    const controlX = canvas.width - controlSize - margin;
+    const zoomInY = margin;
+    const zoomOutY = margin + controlSize + 10;
+
+    if (rawX >= controlX && rawX <= controlX + controlSize) {
+      if (rawY >= zoomInY && rawY <= zoomInY + controlSize) {
+        handleZoomIn();
+        return;
+      }
+      if (rawY >= zoomOutY && rawY <= zoomOutY + controlSize) {
+        handleZoomOut();
+        return;
+      }
+    }
+
     const { x, y } = getCanvasCoordinates(e);
 
     if (isDrawingMode) {
-      const newPoint = { x, y };
-      setRoomPoints([...roomPoints, newPoint]);
+      const snappedPoint = snapToGrid({ x, y });
+      setRoomPoints([...roomPoints, snappedPoint]);
       
       if (roomPoints.length > 0) {
         setLastPoint(roomPoints[roomPoints.length - 1]);
@@ -211,17 +302,27 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     }
   };
 
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDrawingMode && roomPoints.length > 0) {
+      const { x, y } = getCanvasCoordinates(e);
+      const snappedPoint = snapToGrid({ x, y });
+      setCurrentDrawingPoint(snappedPoint);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const { x, y } = getCanvasCoordinates(e as any);
 
     try {
       const productData = JSON.parse(e.dataTransfer.getData('product'));
+      const snappedPosition = snapToGrid({ x, y });
+      
       const newProduct: PlacedProduct = {
         id: `${productData.id}-${Date.now()}`,
         productId: productData.id,
         name: productData.name,
-        position: { x, y },
+        position: snappedPosition,
         rotation: 0,
         dimensions: productData.dimensions,
         color: productData.color
@@ -266,6 +367,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     setRoomPoints([]);
     setShowLengthInput(false);
     setLastPoint(null);
+    setCurrentDrawingPoint(null);
     toast.success('Room outline cleared');
   };
 
@@ -290,10 +392,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     const lengthInPixels = (lengthInMm / 1000) * scale; // Convert mm to meters, then to pixels
     
     // For simplicity, extend horizontally
-    const newPoint = {
+    const newPoint = snapToGrid({
       x: lastPoint.x + lengthInPixels,
       y: lastPoint.y
-    };
+    });
 
     const updatedPoints = [...roomPoints];
     updatedPoints[updatedPoints.length - 1] = newPoint;
@@ -304,18 +406,29 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     setLastPoint(null);
   };
 
+  const handleSendFloorPlan = () => {
+    if (!userEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    // Here you would integrate with HubSpot or your preferred CRM
+    // For now, we'll show a success message
+    console.log('Sending floor plan to:', userEmail);
+    console.log('Message:', userMessage);
+    console.log('Room points:', roomPoints);
+    console.log('Placed products:', placedProducts);
+    
+    toast.success('Floor plan sent successfully! Our team will contact you soon.');
+    setShowSendForm(false);
+    setUserEmail('');
+    setUserMessage('');
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex space-x-2">
-          <Button variant="outline" size="sm" onClick={handleZoomIn}>
-            <ZoomIn className="w-4 h-4 mr-2" />
-            Zoom In
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleZoomOut}>
-            <ZoomOut className="w-4 h-4 mr-2" />
-            Zoom Out
-          </Button>
           {selectedProduct && (
             <>
               <Button variant="outline" size="sm" onClick={rotateSelectedProduct}>
@@ -336,6 +449,14 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
           <Button variant="outline" size="sm" onClick={exportLayout}>
             <Download className="w-4 h-4 mr-2" />
             Export PNG
+          </Button>
+          <Button 
+            size="sm" 
+            onClick={() => setShowSendForm(true)}
+            className="bg-black text-white hover:bg-gray-800"
+          >
+            <Send className="w-4 h-4 mr-2" />
+            Send Floor Plan
           </Button>
         </div>
       </div>
@@ -360,6 +481,46 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         </Card>
       )}
 
+      {showSendForm && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Send Floor Plan to Our Team</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="userEmail">Email Address *</Label>
+                  <Input
+                    id="userEmail"
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="your.email@company.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="userMessage">Additional Notes</Label>
+                  <Input
+                    id="userMessage"
+                    value={userMessage}
+                    onChange={(e) => setUserMessage(e.target.value)}
+                    placeholder="Tell us about your lab requirements..."
+                  />
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <Button onClick={handleSendFloorPlan} className="bg-black text-white hover:bg-gray-800">
+                  Send to Team
+                </Button>
+                <Button variant="outline" onClick={() => setShowSendForm(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-4">
           <canvas
@@ -368,13 +529,17 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
             height={600}
             className="border border-gray-300 rounded cursor-crosshair bg-white"
             onClick={handleCanvasClick}
+            onMouseMove={handleMouseMove}
             onDrop={handleDrop}
             onDragOver={(e) => e.preventDefault()}
           />
           
           <div className="mt-4 flex justify-between text-sm text-gray-600">
             <span>
-              {isDrawingMode ? 'Click to add points to room outline' : 'Drag products from library or click to select'}
+              {isDrawingMode 
+                ? 'Click to add points to room outline (lines snap to grid)' 
+                : 'Drag products from library or click to select'
+              }
             </span>
             <span>Products placed: {placedProducts.length} | Zoom: {Math.round(zoom * 100)}%</span>
           </div>
