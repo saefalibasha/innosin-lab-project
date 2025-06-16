@@ -1,22 +1,7 @@
 
 import React from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface PlacedProduct {
-  id: string;
-  productId: string;
-  name: string;
-  position: Point;
-  rotation: number;
-  dimensions: { length: number; width: number; height: number };
-  color: string;
-  scale?: number;
-}
+import { Point, PlacedProduct } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];

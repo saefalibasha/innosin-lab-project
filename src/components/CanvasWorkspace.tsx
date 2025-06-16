@@ -1,31 +1,10 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, DoorOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-interface PlacedProduct {
-  id: string;
-  productId: string;
-  name: string;
-  position: Point;
-  rotation: number;
-  dimensions: { length: number; width: number; height: number };
-  color: string;
-  scale?: number;
-}
-
-interface TextAnnotation {
-  id: string;
-  position: Point;
-  text: string;
-  fontSize: number;
-}
+import { isProductWithinRoom, findClosestWallSegment, getWallAngle } from '@/utils/collisionDetection';
+import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
@@ -60,6 +39,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const [selectedDoor, setSelectedDoor] = useState<string | null>(null);
   const [isDrawingActive, setIsDrawingActive] = useState(false);
   const [currentDrawingPoint, setCurrentDrawingPoint] = useState<Point | null>(null);
   const [isPanning, setIsPanning] = useState(false);
@@ -80,6 +60,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingText, setEditingText] = useState('');
+
+  // New state for doors
+  const [doors, setDoors] = useState<Door[]>([]);
+  const [showCollisionWarning, setShowCollisionWarning] = useState(false);
 
   // Optimized drawing with requestAnimationFrame
   const drawCanvas = useCallback(() => {
@@ -112,6 +96,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawCurrentLine(ctx);
     }
     
+    // Draw doors
+    drawDoors(ctx);
+    
     // Draw placed products
     drawPlacedProducts(ctx);
     
@@ -128,8 +115,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw text annotations
     drawTextAnnotations(ctx);
 
+    // Draw collision warning if visible
+    if (showCollisionWarning) {
+      drawCollisionWarning(ctx);
+    }
+
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, selectedProduct, selectedText, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationCompass]);
+  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationCompass, showCollisionWarning]);
 
   // Debounced canvas redraw
   useEffect(() => {
@@ -593,6 +585,68 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.restore();
   };
 
+  const drawDoors = (ctx: CanvasRenderingContext2D) => {
+    doors.forEach(door => {
+      ctx.save();
+      ctx.translate(door.position.x, door.position.y);
+      ctx.rotate((door.rotation * Math.PI) / 180);
+
+      const doorWidth = door.width * scale;
+      const doorThickness = 8 / zoom;
+      
+      // Draw door opening (gap in wall)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
+      
+      // Draw door frame
+      ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
+      ctx.lineWidth = 2 / zoom;
+      ctx.strokeRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
+      
+      // Draw door swing arc
+      ctx.strokeStyle = '#d1d5db';
+      ctx.lineWidth = 1 / zoom;
+      ctx.setLineDash([3 / zoom, 3 / zoom]);
+      
+      const swingRadius = doorWidth * 0.8;
+      const swingDirection = door.swingDirection === 'inward' ? 1 : -1;
+      
+      ctx.beginPath();
+      ctx.arc(-doorWidth/2, 0, swingRadius, 0, Math.PI/2 * swingDirection);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Draw door leaf
+      ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
+      ctx.lineWidth = 2 / zoom;
+      ctx.beginPath();
+      ctx.moveTo(-doorWidth/2, 0);
+      ctx.lineTo(-doorWidth/2 + swingRadius * Math.cos(Math.PI/4), swingRadius * Math.sin(Math.PI/4) * swingDirection);
+      ctx.stroke();
+
+      // Selection indicator
+      if (selectedDoor === door.id) {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 2 / zoom;
+        ctx.strokeRect(-doorWidth/2 - 5, -doorThickness/2 - 5, doorWidth + 10, doorThickness + 10);
+      }
+
+      ctx.restore();
+    });
+  };
+
+  const drawCollisionWarning = (ctx: CanvasRenderingContext2D) => {
+    // Draw a semi-transparent red overlay to indicate collision
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+    ctx.fillRect(-pan.x, -pan.y, ctx.canvas.width / zoom, ctx.canvas.height / zoom);
+    
+    // Draw warning text
+    ctx.fillStyle = '#ef4444';
+    ctx.font = `bold ${20 / zoom}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Cannot place outside room boundaries!', ctx.canvas.width / zoom / 2 - pan.x, ctx.canvas.height / zoom / 2 - pan.y);
+  };
+
   const calculateDistance = (point1: Point, point2: Point): number => {
     const dx = point2.x - point1.x;
     const dy = point2.y - point1.y;
@@ -629,19 +683,37 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    if (currentTool === 'eraser') {
+    if (currentTool === 'door') {
+      handleDoorPlacement({ x, y });
+    } else if (currentTool === 'eraser') {
       handleEraser({ x, y });
     } else if (currentTool === 'wall') {
       handleWallDrawing({ x, y });
     } else if (currentTool === 'text') {
       handleTextPlacement({ x, y });
     } else if (currentTool === 'select') {
-      handleProductSelection({ x, y });
+      handleSelection({ x, y });
     }
   };
 
   // Enhanced product selection with improved interaction detection
-  const handleProductSelection = (point: Point) => {
+  const handleSelection = (point: Point) => {
+    // Check for door selection first
+    const clickedDoor = doors.find(door => {
+      const dx = point.x - door.position.x;
+      const dy = point.y - door.position.y;
+      return Math.sqrt(dx * dx + dy * dy) <= (door.width * scale / 2 + 10);
+    });
+
+    if (clickedDoor) {
+      setSelectedDoor(clickedDoor.id);
+      setSelectedProduct(null);
+      setSelectedText(null);
+      setShowRotationCompass(false);
+      return;
+    }
+
+    // Check for product selection
     const clickedProduct = placedProducts.find(product => {
       const dx = point.x - product.position.x;
       const dy = point.y - product.position.y;
@@ -658,19 +730,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return Math.abs(rotatedX) <= width && Math.abs(rotatedY) <= height;
     });
 
-    const clickedText = textAnnotations.find(annotation => {
-      const ctx = canvasRef.current?.getContext('2d');
-      if (!ctx) return false;
-      ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
-      const metrics = ctx.measureText(annotation.text);
-      return point.x >= annotation.position.x && 
-             point.x <= annotation.position.x + metrics.width &&
-             point.y >= annotation.position.y - annotation.fontSize / zoom &&
-             point.y <= annotation.position.y;
-    });
-
     if (clickedProduct) {
       setSelectedProduct(clickedProduct.id);
+      setSelectedDoor(null);
       setSelectedText(null);
       setShowRotationCompass(true);
       
@@ -693,17 +755,33 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         setRotationCenter(clickedProduct.position);
         setInitialRotation(clickedProduct.rotation);
       }
-    } else if (clickedText) {
-      setSelectedText(clickedText.id);
-      setSelectedProduct(null);
-      setShowRotationCompass(false);
     } else {
-      // Clear selection
-      setSelectedProduct(null);
-      setSelectedText(null);
-      setShowRotationCompass(false);
-      setIsDragging(false);
-      setIsRotating(false);
+      // Check for text selection
+      const clickedText = textAnnotations.find(annotation => {
+        const ctx = canvasRef.current?.getContext('2d');
+        if (!ctx) return false;
+        ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
+        const metrics = ctx.measureText(annotation.text);
+        return point.x >= annotation.position.x && 
+               point.x <= annotation.position.x + metrics.width &&
+               point.y >= annotation.position.y - annotation.fontSize / zoom &&
+               point.y <= annotation.position.y;
+      });
+
+      if (clickedText) {
+        setSelectedText(clickedText.id);
+        setSelectedProduct(null);
+        setSelectedDoor(null);
+        setShowRotationCompass(false);
+      } else {
+        // Clear selection
+        setSelectedProduct(null);
+        setSelectedDoor(null);
+        setSelectedText(null);
+        setShowRotationCompass(false);
+        setIsDragging(false);
+        setIsRotating(false);
+      }
     }
   };
 
@@ -926,25 +1004,78 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     try {
       const productData = JSON.parse(e.dataTransfer.getData('product'));
-      const snappedPosition = snapToGrid({ x, y });
-      
-      const newProduct: PlacedProduct = {
-        id: `${productData.id}-${Date.now()}`,
-        productId: productData.id,
-        name: productData.name,
-        position: snappedPosition,
-        rotation: 0,
-        dimensions: productData.dimensions,
-        color: productData.color,
-        scale: 1
-      };
-
-      const updatedProducts = [...placedProducts, newProduct];
-      setPlacedProducts(updatedProducts);
-      toast.success(`${productData.name} placed`);
+      handleProductPlacement({ x, y }, productData);
     } catch (error) {
       console.error('Error placing product:', error);
     }
+  };
+
+  const handleProductPlacement = (point: Point, productData: any) => {
+    const snappedPosition = snapToGrid(point);
+    
+    const newProduct: PlacedProduct = {
+      id: `${productData.id}-${Date.now()}`,
+      productId: productData.id,
+      name: productData.name,
+      position: snappedPosition,
+      rotation: 0,
+      dimensions: productData.dimensions,
+      color: productData.color,
+      scale: 1
+    };
+
+    // Check if product is within room boundaries
+    if (!isProductWithinRoom(newProduct, roomPoints, scale)) {
+      setShowCollisionWarning(true);
+      setTimeout(() => setShowCollisionWarning(false), 2000);
+      toast.error('Cannot place product outside room boundaries');
+      return;
+    }
+
+    const updatedProducts = [...placedProducts, newProduct];
+    setPlacedProducts(updatedProducts);
+    toast.success(`${productData.name} placed`);
+  };
+
+  const handleDoorPlacement = (point: Point) => {
+    // Find closest wall segment
+    const wallInfo = findClosestWallSegment(point, roomPoints);
+    if (!wallInfo || wallInfo.distance > 50 / zoom) {
+      toast.error('Door must be placed near a wall');
+      return;
+    }
+
+    const wallAngle = getWallAngle(wallInfo.segment[0], wallInfo.segment[1]);
+    const doorPosition = findClosestWallSegment(point, roomPoints)?.segment ? 
+      point : wallInfo.segment[0]; // Snap to wall
+
+    const newDoor: Door = {
+      id: `door-${Date.now()}`,
+      position: doorPosition,
+      rotation: wallAngle,
+      width: 0.9, // 900mm standard door width
+      swingDirection: 'inward',
+      wallSegmentIndex: wallInfo.index
+    };
+
+    setDoors([...doors, newDoor]);
+    toast.success('Door placed');
+  };
+
+  const validateProductMove = (productId: string, newPosition: Point): boolean => {
+    const product = placedProducts.find(p => p.id === productId);
+    if (!product) return false;
+
+    const testProduct = { ...product, position: newPosition };
+    return isProductWithinRoom(testProduct, roomPoints, scale);
+  };
+
+  const validateProductRotation = (productId: string, newRotation: number): boolean => {
+    const product = placedProducts.find(p => p.id === productId);
+    if (!product) return false;
+
+    const testProduct = { ...product, rotation: newRotation };
+    return isProductWithinRoom(testProduct, roomPoints, scale);
   };
 
   const rotateSelectedProduct = () => {
@@ -991,12 +1122,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Text deleted');
   };
 
+  const deleteSelectedDoor = () => {
+    if (!selectedDoor) return;
+    const updatedDoors = doors.filter(d => d.id !== selectedDoor);
+    setDoors(updatedDoors);
+    setSelectedDoor(null);
+    toast.success('Door deleted');
+  };
+
   const clearAll = () => {
     setRoomPoints([]);
     setPlacedProducts([]);
     setTextAnnotations([]);
     setSelectedProduct(null);
     setSelectedText(null);
+    setSelectedDoor(null);
     setIsDrawingActive(false);
     setCurrentDrawingPoint(null);
     toast.success('Floor plan cleared');
@@ -1106,27 +1246,42 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* Selected Product Controls */}
-      {selectedProduct && (
+      {/* Enhanced Selected Product Controls with Door Support */}
+      {(selectedProduct || selectedDoor) && (
         <div className="absolute top-4 right-4 flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/90 backdrop-blur-sm shadow-lg"
-            onClick={duplicateSelectedProduct}
-            title="Duplicate (D)"
-          >
-            <Copy className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="bg-red-600 hover:bg-red-700 text-white shadow-lg"
-            onClick={deleteSelectedProduct}
-            title="Delete (Del)"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+          {selectedProduct && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white/90 backdrop-blur-sm shadow-lg"
+                onClick={duplicateSelectedProduct}
+                title="Duplicate (D)"
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="bg-red-600 hover:bg-red-700 text-white shadow-lg"
+                onClick={deleteSelectedProduct}
+                title="Delete (Del)"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </>
+          )}
+          {selectedDoor && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white shadow-lg"
+              onClick={deleteSelectedDoor}
+              title="Delete Door (Del)"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
         </div>
       )}
 

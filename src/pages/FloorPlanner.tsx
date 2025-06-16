@@ -3,7 +3,7 @@ import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type, DoorOpen } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -220,14 +220,32 @@ const FloorPlanner = () => {
                     <span className="font-medium text-sm">Select & Move Tool</span>
                     <Badge variant="outline" className="text-xs">Enhanced</Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Select, move, and rotate objects with precision</p>
+                  <p className="text-xs text-gray-600 mb-3">Select, move, and rotate objects with boundary detection</p>
                   <div className="space-y-1">
                     <div className="text-xs text-gray-700">• <strong>Click:</strong> Select objects</div>
-                    <div className="text-xs text-gray-700">• <strong>Drag center:</strong> Move with grid snap</div>
-                    <div className="text-xs text-gray-700">• <strong>Drag edges:</strong> Rotate with compass</div>
+                    <div className="text-xs text-gray-700">• <strong>Drag center:</strong> Move with collision detection</div>
+                    <div className="text-xs text-gray-700">• <strong>Drag edges:</strong> Rotate with boundary validation</div>
                     <div className="text-xs text-gray-700">• <strong>R key:</strong> Rotate 15° increments</div>
                     <div className="text-xs text-gray-700">• <strong>D key:</strong> Duplicate selected</div>
                     <div className="text-xs text-gray-700">• <strong>Delete:</strong> Remove selected</div>
+                    <div className="text-xs text-red-600">• Objects cannot be moved outside room walls</div>
+                  </div>
+                </div>
+
+                {/* Door Tool */}
+                <div className="p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <DoorOpen className="w-4 h-4 text-orange-600" />
+                    <span className="font-medium text-sm">Door Tool</span>
+                    <Badge variant="outline" className="text-xs">New</Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Place doors along walls with swing direction</p>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-700">• <strong>Click near wall:</strong> Place door</div>
+                    <div className="text-xs text-gray-700">• <strong>Auto-snap:</strong> Aligns to closest wall</div>
+                    <div className="text-xs text-gray-700">• <strong>Standard size:</strong> 900mm width</div>
+                    <div className="text-xs text-gray-700">• <strong>Swing indicator:</strong> Shows door movement</div>
+                    <div className="text-xs text-gray-700">• <strong>Delete:</strong> Select and press Delete</div>
                   </div>
                 </div>
 
@@ -348,6 +366,22 @@ const FloorPlanner = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Add text annotations and labels</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'door' ? 'default' : 'outline'}
+                      className="w-full justify-start"
+                      onClick={() => setActiveTool('door')}
+                    >
+                      <DoorOpen className="w-4 h-4 mr-2" />
+                      Door Tool
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Place doors along walls</p>
                   </TooltipContent>
                 </Tooltip>
 
