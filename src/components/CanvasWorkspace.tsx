@@ -255,7 +255,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw length directly on the line
+    // Draw length directly on the line with black font
     const length = calculateDistance(lastPoint, currentDrawingPoint);
     const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
     const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
@@ -263,7 +263,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.fillStyle = '#000000';
     ctx.font = `bold ${16 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`${length.toFixed(2)}m`, midX, midY - 8);
+    ctx.fillText(`${length.toFixed(2)}m`, midX, midY);
   };
 
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
@@ -309,7 +309,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const midX = (point1.x + point2.x) / 2;
       const midY = (point1.y + point2.y) / 2;
       
-      ctx.fillText(`${length.toFixed(2)}m`, midX, midY - 8);
+      // Display length directly on the line
+      ctx.fillText(`${length.toFixed(2)}m`, midX, midY);
     }
   };
 
@@ -382,20 +383,41 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
+    // Enhanced rotation with drag-to-rotate functionality
     if (isRotating && selectedProduct && rotationStart) {
       const product = placedProducts.find(p => p.id === selectedProduct);
       if (product) {
-        const angle1 = Math.atan2(rotationStart.y - product.position.y, rotationStart.x - product.position.x);
-        const angle2 = Math.atan2(y - product.position.y, x - product.position.x);
-        const deltaAngle = (angle2 - angle1) * (180 / Math.PI);
-        
-        const updatedProducts = placedProducts.map(p =>
-          p.id === selectedProduct
-            ? { ...p, rotation: (p.rotation + deltaAngle) % 360 }
-            : p
+        // Check if we're dragging to move or rotate
+        const distanceFromCenter = Math.sqrt(
+          Math.pow(x - product.position.x, 2) + Math.pow(y - product.position.y, 2)
         );
-        setPlacedProducts(updatedProducts);
-        setRotationStart({ x, y });
+        const productSize = Math.max(
+          product.dimensions.length * scale * (product.scale || 1),
+          product.dimensions.width * scale * (product.scale || 1)
+        ) / 2;
+
+        if (distanceFromCenter > productSize * 0.8) {
+          // Rotate when dragging near edges
+          const angle1 = Math.atan2(rotationStart.y - product.position.y, rotationStart.x - product.position.x);
+          const angle2 = Math.atan2(y - product.position.y, x - product.position.x);
+          const deltaAngle = (angle2 - angle1) * (180 / Math.PI);
+          
+          const updatedProducts = placedProducts.map(p =>
+            p.id === selectedProduct
+              ? { ...p, rotation: (p.rotation + deltaAngle) % 360 }
+              : p
+          );
+          setPlacedProducts(updatedProducts);
+          setRotationStart({ x, y });
+        } else {
+          // Move when dragging center
+          const updatedProducts = placedProducts.map(p =>
+            p.id === selectedProduct
+              ? { ...p, position: snapToGrid({ x, y }) }
+              : p
+          );
+          setPlacedProducts(updatedProducts);
+        }
       }
       return;
     }
@@ -644,12 +666,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Clear All Button */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+      {/* Clear All Button - Moved outside grid area */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
         <Button
           variant="destructive"
           size="sm"
-          className="bg-red-600/90 hover:bg-red-700 backdrop-blur-sm shadow-lg"
+          className="bg-red-600/90 hover:bg-red-700 backdrop-blur-sm shadow-lg border border-red-500"
           onClick={clearAll}
           title="Clear All"
         >
@@ -704,7 +726,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         <div className="flex flex-col space-y-1">
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length}</div>
           <div className="text-gray-500">
-            {isDrawingActive ? 'ESC=Finish, Enter=Custom Length' : selectedProduct ? 'Drag to rotate, D=Duplicate, Del=Delete' : 'Left=Draw/Select, Right=Pan'}
+            {isDrawingActive ? 'ESC=Finish, Enter=Custom Length' : selectedProduct ? 'Drag center=Move, Drag edges=Rotate, D=Duplicate, Del=Delete' : 'Left=Draw/Select, Right=Pan'}
           </div>
         </div>
       </div>

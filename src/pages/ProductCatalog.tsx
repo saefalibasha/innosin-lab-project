@@ -6,16 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart, Search, Filter } from 'lucide-react';
+import { ShoppingCart, Search, Filter, Eye, Maximize } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
+import Product3DViewer from '@/components/Product3DViewer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const ProductCatalog = () => {
   const { addItem, itemCount } = useRFQ();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // Sample product data - in a real app this would come from an API
+  // Enhanced product data with 3D model support
   const products = [
     {
       id: 'fh-001',
@@ -23,6 +26,8 @@ const ProductCatalog = () => {
       category: 'Fume Hoods',
       dimensions: '1500 × 750 × 2400mm',
       image: '/placeholder.svg',
+      modelType: 'box',
+      modelColor: '#ef4444',
       description: 'Standard chemical fume hood with variable air volume control and energy-efficient design.',
       specifications: ['VAV Control', 'Energy Efficient', 'ASHRAE 110 Compliant']
     },
@@ -32,6 +37,8 @@ const ProductCatalog = () => {
       category: 'Lab Benches',
       dimensions: '3000 × 750 × 850mm',
       image: '/placeholder.svg',
+      modelType: 'box',
+      modelColor: '#3b82f6',
       description: 'Chemical-resistant epoxy resin lab bench with integrated utilities.',
       specifications: ['Chemical Resistant', 'Integrated Utilities', 'Modular Design']
     },
@@ -41,6 +48,8 @@ const ProductCatalog = () => {
       category: 'Safety Equipment',
       dimensions: '600 × 400 × 1200mm',
       image: '/placeholder.svg',
+      modelType: 'cone',
+      modelColor: '#10b981',
       description: 'ANSI Z358.1 compliant emergency eye wash station with stainless steel construction.',
       specifications: ['ANSI Z358.1', 'Stainless Steel', 'Hands-Free Operation']
     },
@@ -50,6 +59,8 @@ const ProductCatalog = () => {
       category: 'Safety Equipment',
       dimensions: '900 × 900 × 2300mm',
       image: '/placeholder.svg',
+      modelType: 'sphere',
+      modelColor: '#059669',
       description: 'Emergency safety shower with thermostatic mixing valve and freeze protection.',
       specifications: ['Thermostatic Valve', 'Freeze Protection', 'Easy Maintenance']
     },
@@ -59,6 +70,8 @@ const ProductCatalog = () => {
       category: 'Storage Solutions',
       dimensions: '1200 × 600 × 1800mm',
       image: '/placeholder.svg',
+      modelType: 'box',
+      modelColor: '#f59e0b',
       description: 'Fire-resistant chemical storage cabinet with ventilation system.',
       specifications: ['Fire Resistant', 'Ventilated', 'Multiple Shelves']
     },
@@ -68,6 +81,8 @@ const ProductCatalog = () => {
       category: 'Fume Hoods',
       dimensions: '1800 × 750 × 2400mm',
       image: '/placeholder.svg',
+      modelType: 'box',
+      modelColor: '#dc2626',
       description: 'Specialized fume hood for perchloric acid applications with wash-down system.',
       specifications: ['Wash-down System', 'Specialized Design', 'Corrosion Resistant']
     }
@@ -102,7 +117,7 @@ const ProductCatalog = () => {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Product Catalog</h1>
           <p className="text-xl text-gray-600">
-            Browse our comprehensive range of laboratory equipment and furniture
+            Browse our comprehensive range of laboratory equipment and furniture with 3D models
           </p>
         </div>
 
@@ -146,11 +161,32 @@ const ProductCatalog = () => {
           {filteredProducts.map((product) => (
             <Card key={product.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="p-0">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-48 object-cover rounded-t-lg"
-                />
+                <div className="relative">
+                  <Product3DViewer
+                    productType={product.modelType as any}
+                    color={product.modelColor}
+                    className="w-full h-48"
+                  />
+                  <div className="absolute top-2 right-2 flex space-x-2">
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white">
+                          <Maximize className="w-4 h-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                          <DialogTitle>{product.name} - 3D View</DialogTitle>
+                        </DialogHeader>
+                        <Product3DViewer
+                          productType={product.modelType as any}
+                          color={product.modelColor}
+                          className="w-full h-96"
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-6">
                 <div className="mb-3">

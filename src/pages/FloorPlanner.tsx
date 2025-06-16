@@ -185,26 +185,48 @@ const FloorPlanner = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-2">
-                {toolInstructions.map(instruction => {
-                  const IconComponent = instruction.icon;
-                  return (
-                    <div key={instruction.tool} className="p-3 bg-white rounded-lg border">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <IconComponent className="w-4 h-4 text-blue-600" />
-                        <span className="font-medium text-sm">{instruction.title}</span>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-3">{instruction.description}</p>
-                      <div className="space-y-1">
-                        {instruction.features.map((feature, index) => (
-                          <div key={index} className="text-xs text-gray-700 flex items-center">
-                            <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
-                            {feature}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+                {/* Enhanced Tool Instructions */}
+                <div className="p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Ruler className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-sm">Wall Tool</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Draw room walls and boundaries</p>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-700">• Left click to place wall points</div>
+                    <div className="text-xs text-gray-700">• Double-click to complete room</div>
+                    <div className="text-xs text-gray-700">• ESC to finish drawing</div>
+                    <div className="text-xs text-gray-700">• Enter to input custom length</div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Move className="w-4 h-4 text-green-600" />
+                    <span className="font-medium text-sm">Select & Move Tool</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Select, move, and rotate placed objects</p>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-700">• Left click to select objects</div>
+                    <div className="text-xs text-gray-700">• Drag to move selected objects</div>
+                    <div className="text-xs text-gray-700">• Drag with rotation handle to rotate</div>
+                    <div className="text-xs text-gray-700">• R key to rotate 15°</div>
+                    <div className="text-xs text-gray-700">• D key to duplicate</div>
+                    <div className="text-xs text-gray-700">• Delete key to remove</div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Eraser className="w-4 h-4 text-red-600" />
+                    <span className="font-medium text-sm">Eraser Tool</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Remove objects and wall points</p>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-700">• Left click to erase items</div>
+                    <div className="text-xs text-gray-700">• Works on products and walls</div>
+                  </div>
+                </div>
                 
                 {/* Basic Controls */}
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -213,22 +235,10 @@ const FloorPlanner = () => {
                     <span className="font-medium text-sm text-blue-800">Basic Controls</span>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs text-blue-700 flex items-center">
-                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
-                      Left click to draw/select
-                    </div>
-                    <div className="text-xs text-blue-700 flex items-center">
-                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
-                      Right click to pan canvas
-                    </div>
-                    <div className="text-xs text-blue-700 flex items-center">
-                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
-                      Mouse wheel to zoom
-                    </div>
-                    <div className="text-xs text-blue-700 flex items-center">
-                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
-                      Drag items from library to place
-                    </div>
+                    <div className="text-xs text-blue-700">• Left click to draw/select</div>
+                    <div className="text-xs text-blue-700">• Right click to pan canvas</div>
+                    <div className="text-xs text-blue-700">• Mouse wheel to zoom</div>
+                    <div className="text-xs text-blue-700">• Drag items from library to place</div>
                   </div>
                 </div>
               </CollapsibleContent>
@@ -267,11 +277,11 @@ const FloorPlanner = () => {
                       onClick={() => setActiveTool('select')}
                     >
                       <Move className="w-4 h-4 mr-2" />
-                      Select & Rotate
+                      Select & Move
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Select and rotate objects by dragging</p>
+                    <p>Select, move and rotate objects by dragging</p>
                   </TooltipContent>
                 </Tooltip>
 
