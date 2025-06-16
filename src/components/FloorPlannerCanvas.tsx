@@ -543,7 +543,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
   const rotateSelectedProduct = () => {
     if (!selectedProduct) return;
-    setPlacedProducts(prev => prev.map(product =>
+    setPlacedProducts((prev: PlacedProduct[]) => prev.map((product: PlacedProduct) =>
       product.id === selectedProduct
         ? { ...product, rotation: (product.rotation + 15) % 360 }
         : product
@@ -552,7 +552,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
   const scaleSelectedProduct = (factor: number) => {
     if (!selectedProduct) return;
-    setPlacedProducts(prev => prev.map(product =>
+    setPlacedProducts((prev: PlacedProduct[]) => prev.map((product: PlacedProduct) =>
       product.id === selectedProduct
         ? { ...product, scale: Math.max(0.1, (product.scale || 1) * factor) }
         : product
