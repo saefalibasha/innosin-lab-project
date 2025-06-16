@@ -187,21 +187,19 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   const rotateSelectedProduct = () => {
     if (!selectedProduct) return;
 
-    setPlacedProducts(products =>
-      products.map(product =>
-        product.id === selectedProduct
-          ? { ...product, rotation: (product.rotation + 90) % 360 }
-          : product
-      )
+    const updatedProducts = placedProducts.map(product =>
+      product.id === selectedProduct
+        ? { ...product, rotation: (product.rotation + 90) % 360 }
+        : product
     );
+    setPlacedProducts(updatedProducts);
   };
 
   const deleteSelectedProduct = () => {
     if (!selectedProduct) return;
 
-    setPlacedProducts(products =>
-      products.filter(product => product.id !== selectedProduct)
-    );
+    const updatedProducts = placedProducts.filter(product => product.id !== selectedProduct);
+    setPlacedProducts(updatedProducts);
     setSelectedProduct(null);
     toast.success('Product removed from floor plan');
   };
