@@ -1,12 +1,9 @@
 
 import { ArrowRight, CheckCircle, Users, Award, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import Navigation from "@/components/Navigation";
 import VideoHero from "@/components/VideoHero";
 import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import NewsletterSubscription from "@/components/NewsletterSubscription";
-import Footer from "@/components/Footer";
 import { Link } from "react-router-dom";
 
 const Index = () => {
@@ -28,8 +25,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
-      
       {/* Video Hero Section */}
       <VideoHero />
 
@@ -121,8 +116,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 };

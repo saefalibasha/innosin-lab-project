@@ -14,7 +14,6 @@ import RFQCart from "./pages/RFQCart";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import Navigation from "./components/Navigation";
-import Breadcrumbs from "./components/Breadcrumbs";
 import LiveChat from "./components/LiveChat";
 import Footer from "./components/Footer";
 
@@ -29,7 +28,6 @@ const App = () => (
         <BrowserRouter>
           <div className="min-h-screen flex flex-col">
             <Navigation />
-            <Breadcrumbs />
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Index />} />
