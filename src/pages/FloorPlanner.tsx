@@ -1,15 +1,10 @@
 
 import React, { useState } from 'react';
-import Navigation from '@/components/Navigation';
-import Footer from '@/components/Footer';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Download, Save, Grid, Ruler, Move } from 'lucide-react';
-import { toast } from 'sonner';
+import { Ruler, Move } from 'lucide-react';
 
 interface Point {
   x: number;
@@ -69,8 +64,6 @@ const FloorPlanner = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Navigation />
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-8">
@@ -159,8 +152,6 @@ const FloorPlanner = () => {
           </div>
         </div>
       </div>
-      
-      <Footer />
     </div>
   );
 };

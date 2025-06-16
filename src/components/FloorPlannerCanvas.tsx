@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Download, Save, Trash2, ZoomIn, ZoomOut, Send } from 'lucide-react';
+import { RotateCcw, Download, Save, Trash2, ZoomIn, ZoomOut, Send, Square, Eraser } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Point {
@@ -51,10 +51,13 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   const [showSendForm, setShowSendForm] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [userMessage, setUserMessage] = useState('');
+  const [isDrawingActive, setIsDrawingActive] = useState(false);
+  const [isEraseMode, setIsEraseMode] = useState(false);
+  const [currentLineLength_realtime, setCurrentLineLength_realtime] = useState<number | null>(null);
 
   useEffect(() => {
     drawCanvas();
-  }, [roomPoints, placedProducts, selectedProduct, zoom, pan, currentDrawingPoint]);
+  }, [roomPoints, placedProducts, selectedProduct, zoom, pan, currentDrawingPoint, currentLineLength_realtime]);
 
   const snapToGrid = (point: Point): Point => {
     const gridSize = scale;
@@ -62,6 +65,12 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
       x: Math.round(point.x / gridSize) * gridSize,
       y: Math.round(point.y / gridSize) * gridSize
     };
+  };
+
+  const calculateDistance = (point1: Point, point2: Point): number => {
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
+    return Math.sqrt(dx * dx + dy * dy) / scale; // Convert pixels to meters
   };
 
   const drawCanvas = () => {
@@ -87,13 +96,14 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
       drawRoomInProgress(ctx);
     }
 
-    // Draw current drawing line
-    if (isDrawingMode && roomPoints.length > 0 && currentDrawingPoint) {
+    // Draw current drawing line with real-time length
+    if (isDrawingMode && roomPoints.length > 0 && currentDrawingPoint && isDrawingActive) {
       drawCurrentLine(ctx);
+      drawRealtimeLength(ctx);
     }
 
     // Draw completed room
-    if (roomPoints.length > 2) {
+    if (roomPoints.length > 2 && !isDrawingActive) {
       drawRoom(ctx);
     }
 
@@ -132,7 +142,7 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     if (roomPoints.length < 1) return;
 
     // Draw lines between points
-    ctx.strokeStyle = '#374151';
+    ctx.strokeStyle = isEraseMode ? '#ef4444' : '#374151';
     ctx.lineWidth = 3;
     ctx.setLineDash([]);
 
@@ -145,11 +155,18 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     ctx.stroke();
 
     // Draw points
-    ctx.fillStyle = '#ef4444';
-    roomPoints.forEach(point => {
+    ctx.fillStyle = isEraseMode ? '#ef4444' : '#374151';
+    roomPoints.forEach((point, index) => {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+      ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
       ctx.fill();
+      
+      // Draw point index for easier identification
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(index.toString(), point.x, point.y + 3);
+      ctx.fillStyle = isEraseMode ? '#ef4444' : '#374151';
     });
   };
 
@@ -168,6 +185,25 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     ctx.stroke();
 
     ctx.setLineDash([]);
+  };
+
+  const drawRealtimeLength = (ctx: CanvasRenderingContext2D) => {
+    if (!currentDrawingPoint || roomPoints.length === 0) return;
+
+    const lastRoomPoint = roomPoints[roomPoints.length - 1];
+    const length = calculateDistance(lastRoomPoint, currentDrawingPoint);
+    
+    // Draw length label near the cursor
+    const midX = (lastRoomPoint.x + currentDrawingPoint.x) / 2;
+    const midY = (lastRoomPoint.y + currentDrawingPoint.y) / 2;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+    ctx.fillRect(midX - 25, midY - 15, 50, 20);
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 3);
   };
 
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
@@ -280,13 +316,35 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
 
     const { x, y } = getCanvasCoordinates(e);
 
-    if (isDrawingMode) {
+    if (isDrawingMode && !isEraseMode) {
       const snappedPoint = snapToGrid({ x, y });
-      setRoomPoints([...roomPoints, snappedPoint]);
       
-      if (roomPoints.length > 0) {
-        setLastPoint(roomPoints[roomPoints.length - 1]);
-        setShowLengthInput(true);
+      if (!isDrawingActive) {
+        // Start new drawing
+        setRoomPoints([snappedPoint]);
+        setIsDrawingActive(true);
+        toast.success('Drawing started! Click to add more points, or use "Finish Shape" to complete.');
+      } else {
+        // Continue drawing
+        setRoomPoints([...roomPoints, snappedPoint]);
+      }
+    } else if (isDrawingMode && isEraseMode) {
+      // Erase mode - check if clicking near a point
+      const clickThreshold = 20; // pixels
+      const pointToRemove = roomPoints.findIndex(point => {
+        const dx = x - point.x;
+        const dy = y - point.y;
+        return Math.sqrt(dx * dx + dy * dy) < clickThreshold;
+      });
+      
+      if (pointToRemove !== -1) {
+        const updatedPoints = roomPoints.filter((_, index) => index !== pointToRemove);
+        setRoomPoints(updatedPoints);
+        toast.success('Point removed');
+        
+        if (updatedPoints.length === 0) {
+          setIsDrawingActive(false);
+        }
       }
     } else {
       // Check if clicking on a product
@@ -303,10 +361,15 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (isDrawingMode && roomPoints.length > 0) {
+    if (isDrawingMode && roomPoints.length > 0 && isDrawingActive) {
       const { x, y } = getCanvasCoordinates(e);
       const snappedPoint = snapToGrid({ x, y });
       setCurrentDrawingPoint(snappedPoint);
+      
+      // Calculate real-time length
+      const lastRoomPoint = roomPoints[roomPoints.length - 1];
+      const length = calculateDistance(lastRoomPoint, snappedPoint);
+      setCurrentLineLength_realtime(length);
     }
   };
 
@@ -363,11 +426,34 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     toast.success('Product removed from floor plan');
   };
 
+  const finishShape = () => {
+    if (roomPoints.length < 3) {
+      toast.error('Need at least 3 points to create a room');
+      return;
+    }
+    
+    setIsDrawingActive(false);
+    setCurrentDrawingPoint(null);
+    setCurrentLineLength_realtime(null);
+    toast.success('Room shape completed!');
+  };
+
+  const toggleEraseMode = () => {
+    setIsEraseMode(!isEraseMode);
+    if (!isEraseMode) {
+      toast.info('Erase mode enabled - click on points to remove them');
+    } else {
+      toast.info('Erase mode disabled');
+    }
+  };
+
   const clearRoom = () => {
     setRoomPoints([]);
     setShowLengthInput(false);
     setLastPoint(null);
     setCurrentDrawingPoint(null);
+    setIsDrawingActive(false);
+    setCurrentLineLength_realtime(null);
     toast.success('Room outline cleared');
   };
 
@@ -383,37 +469,12 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     toast.success('Floor plan exported as PNG');
   };
 
-  const applyLineLength = () => {
-    if (!lastPoint || !currentLineLength) return;
-    
-    const lengthInMm = parseFloat(currentLineLength);
-    if (isNaN(lengthInMm)) return;
-
-    const lengthInPixels = (lengthInMm / 1000) * scale; // Convert mm to meters, then to pixels
-    
-    // For simplicity, extend horizontally
-    const newPoint = snapToGrid({
-      x: lastPoint.x + lengthInPixels,
-      y: lastPoint.y
-    });
-
-    const updatedPoints = [...roomPoints];
-    updatedPoints[updatedPoints.length - 1] = newPoint;
-    setRoomPoints(updatedPoints);
-    
-    setShowLengthInput(false);
-    setCurrentLineLength('');
-    setLastPoint(null);
-  };
-
   const handleSendFloorPlan = () => {
     if (!userEmail) {
       toast.error('Please enter your email address');
       return;
     }
 
-    // Here you would integrate with HubSpot or your preferred CRM
-    // For now, we'll show a success message
     console.log('Sending floor plan to:', userEmail);
     console.log('Message:', userMessage);
     console.log('Room points:', roomPoints);
@@ -429,6 +490,29 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div className="flex space-x-2">
+          {isDrawingMode && (
+            <>
+              {isDrawingActive && (
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  onClick={finishShape}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  Finish Shape
+                </Button>
+              )}
+              <Button 
+                variant={isEraseMode ? "destructive" : "outline"} 
+                size="sm" 
+                onClick={toggleEraseMode}
+              >
+                <Eraser className="w-4 h-4 mr-2" />
+                {isEraseMode ? 'Exit Erase' : 'Erase Points'}
+              </Button>
+            </>
+          )}
           {selectedProduct && (
             <>
               <Button variant="outline" size="sm" onClick={rotateSelectedProduct}>
@@ -461,24 +545,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         </div>
       </div>
 
-      {showLengthInput && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-4">
-              <Label htmlFor="lineLength">Wall Length (mm):</Label>
-              <Input
-                id="lineLength"
-                type="number"
-                value={currentLineLength}
-                onChange={(e) => setCurrentLineLength(e.target.value)}
-                placeholder="4500"
-                className="w-32"
-              />
-              <Button onClick={applyLineLength}>Apply</Button>
-              <Button variant="outline" onClick={() => setShowLengthInput(false)}>Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
+      {currentLineLength_realtime !== null && isDrawingActive && (
+        <div className="text-sm text-gray-600 bg-gray-100 p-2 rounded">
+          Current line length: <strong>{currentLineLength_realtime.toFixed(2)} meters</strong>
+        </div>
       )}
 
       {showSendForm && (
@@ -537,11 +607,13 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
           <div className="mt-4 flex justify-between text-sm text-gray-600">
             <span>
               {isDrawingMode 
-                ? 'Click to add points to room outline (lines snap to grid)' 
+                ? (isDrawingActive 
+                  ? (isEraseMode ? 'Click on points to remove them' : 'Continue adding points or finish the shape')
+                  : (isEraseMode ? 'Click on points to remove them' : 'Click to start drawing room outline'))
                 : 'Drag products from library or click to select'
               }
             </span>
-            <span>Products placed: {placedProducts.length} | Zoom: {Math.round(zoom * 100)}%</span>
+            <span>Products placed: {placedProducts.length} | Zoom: {Math.round(zoom * 100)}% | Room points: {roomPoints.length}</span>
           </div>
         </CardContent>
       </Card>
