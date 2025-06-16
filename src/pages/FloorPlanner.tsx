@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 interface Point {
   x: number;
@@ -30,6 +32,8 @@ const FloorPlanner = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [activeTool, setActiveTool] = useState('wall');
   const [openPanel, setOpenPanel] = useState<string>('tools');
+  const [showGrid, setShowGrid] = useState(true);
+  const [showRuler, setShowRuler] = useState(false);
 
   const productLibrary = [
     {
@@ -62,46 +66,6 @@ const FloorPlanner = () => {
     }
   ];
 
-  const toolInstructions = [
-    {
-      tool: 'wall',
-      icon: Ruler,
-      title: 'Wall Tool',
-      description: 'Draw room walls by clicking to place points',
-      features: [
-        'Left click to place wall points',
-        'Double-click to complete room',
-        'ESC to finish drawing',
-        'Enter to input custom length',
-        'Live measurement display'
-      ]
-    },
-    {
-      tool: 'select',
-      icon: Move,
-      title: 'Select Tool',
-      description: 'Select and manipulate placed objects',
-      features: [
-        'Left click to select objects',
-        'Drag to rotate selected objects',
-        'R key to rotate 15°',
-        'D key to duplicate',
-        'Delete key to remove'
-      ]
-    },
-    {
-      tool: 'eraser',
-      icon: Eraser,
-      title: 'Eraser Tool',
-      description: 'Remove objects and wall points',
-      features: [
-        'Left click to erase items',
-        'Works on products and walls',
-        'Precise removal control'
-      ]
-    }
-  ];
-
   const handleDragStart = (e: React.DragEvent, product: any) => {
     e.dataTransfer.setData('product', JSON.stringify(product));
   };
@@ -111,6 +75,12 @@ const FloorPlanner = () => {
     if (!isFullScreen) {
       setIsSidebarCollapsed(true);
     }
+  };
+
+  const handleClearAll = () => {
+    setRoomPoints([]);
+    setPlacedProducts([]);
+    toast.success('Floor plan cleared');
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -142,6 +112,33 @@ const FloorPlanner = () => {
             </div>
             
             <div className="flex items-center space-x-2">
+              <Button
+                variant={showGrid ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowGrid(!showGrid)}
+                title="Toggle Grid"
+              >
+                <Grid className="w-4 h-4 mr-1" />
+                Grid
+              </Button>
+              <Button
+                variant={showRuler ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setShowRuler(!showRuler)}
+                title="Toggle Ruler"
+              >
+                <Ruler className="w-4 h-4 mr-1" />
+                Ruler
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleClearAll}
+                title="Clear All"
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Clear All
+              </Button>
               <Button variant="outline" size="sm">
                 <Eye className="w-4 h-4 mr-1" />
                 View
@@ -237,7 +234,8 @@ const FloorPlanner = () => {
                   <p className="text-xs text-gray-600 mb-3">Remove objects, text, and wall points</p>
                   <div className="space-y-1">
                     <div className="text-xs text-gray-700">• Click to erase items</div>
-                    <div className="text-xs text-gray-700">• Works on all placed elements</div>
+                    <div className="text-xs text-gray-700">• Works on products and walls</div>
+                    <div className="text-xs text-gray-700">• Point-by-point deletion</div>
                   </div>
                 </div>
                 
@@ -383,6 +381,9 @@ const FloorPlanner = () => {
             setPlacedProducts={setPlacedProducts}
             scale={scale}
             currentTool={activeTool}
+            showGrid={showGrid}
+            showRuler={showRuler}
+            onClearAll={handleClearAll}
           />
         </div>
       </div>

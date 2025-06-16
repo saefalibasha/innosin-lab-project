@@ -34,6 +34,9 @@ interface CanvasWorkspaceProps {
   setPlacedProducts: (products: PlacedProduct[]) => void;
   scale: number;
   currentTool: string;
+  showGrid: boolean;
+  showRuler: boolean;
+  onClearAll: () => void;
 }
 
 const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
@@ -42,7 +45,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   placedProducts,
   setPlacedProducts,
   scale,
-  currentTool
+  currentTool,
+  showGrid,
+  showRuler,
+  onClearAll
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,8 +64,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [rotationStart, setRotationStart] = useState<Point | null>(null);
-  const [showGrid, setShowGrid] = useState(true);
-  const [showRuler, setShowRuler] = useState(false);
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [selectedText, setSelectedText] = useState<string | null>(null);
   const [isEditingText, setIsEditingText] = useState(false);
@@ -75,8 +79,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           setIsDrawingActive(false);
           setCurrentDrawingPoint(null);
           setPendingLineStart(null);
-          // Clean up any ghost measurements
-          drawCanvas();
+          // Force a clean redraw to remove any ghost labels
+          setTimeout(() => drawCanvas(), 10);
           toast.success('Drawing cancelled');
         } else {
           setSelectedProduct(null);
@@ -195,16 +199,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing (but not if ESC was just pressed)
-    if (isDrawingActive) {
+    // Draw current line while drawing (only when actively drawing)
+    if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
       drawCurrentLine(ctx);
     }
     
     // Draw placed products
     drawPlacedProducts(ctx);
     
-    // Draw dimensions on completed walls
-    drawDimensions(ctx);
+    // Draw dimensions on completed walls (only when not actively drawing)
+    if (!isDrawingActive) {
+      drawDimensions(ctx);
+    }
 
     // Draw text annotations
     drawTextAnnotations(ctx);
@@ -216,7 +222,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.strokeStyle = '#f3f4f6';
     ctx.lineWidth = 1 / zoom;
 
-    const gridSize = scale * 0.5;
+    const gridSize = scale * 0.25; // Finer grid snapping
     for (let x = 0; x <= width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -320,23 +326,25 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     // Draw length parallel to the line
     const length = calculateDistance(lastPoint, currentDrawingPoint);
-    const angle = Math.atan2(currentDrawingPoint.y - lastPoint.y, currentDrawingPoint.x - lastPoint.x);
-    const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
-    const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
-    
-    // Offset the text slightly above the line
-    const offsetDistance = 15 / zoom;
-    const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
-    const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
-    
-    ctx.save();
-    ctx.translate(midX + offsetX, midY + offsetY);
-    ctx.rotate(angle);
-    ctx.fillStyle = '#000000';
-    ctx.font = `bold ${14 / zoom}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
-    ctx.restore();
+    if (length > 0.01) { // Only show if length is meaningful
+      const angle = Math.atan2(currentDrawingPoint.y - lastPoint.y, currentDrawingPoint.x - lastPoint.x);
+      const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
+      const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
+      
+      // Offset the text slightly above the line
+      const offsetDistance = 20 / zoom;
+      const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
+      const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
+      
+      ctx.save();
+      ctx.translate(midX + offsetX, midY + offsetY);
+      ctx.rotate(angle);
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${14 / zoom}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
+      ctx.restore();
+    }
   };
 
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
@@ -373,26 +381,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     for (let i = 0; i < roomPoints.length; i++) {
       const nextIndex = (i + 1) % roomPoints.length;
-      if (nextIndex === 0 && isDrawingActive) continue;
+      if (nextIndex === 0 && roomPoints.length < 3) continue; // Don't show dimension for unclosed shape
 
       const point1 = roomPoints[i];
       const point2 = roomPoints[nextIndex];
       const length = calculateDistance(point1, point2);
       
-      const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
-      const midX = (point1.x + point2.x) / 2;
-      const midY = (point1.y + point2.y) / 2;
-      
-      // Offset the text parallel to the line
-      const offsetDistance = 15 / zoom;
-      const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
-      const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
-      
-      ctx.save();
-      ctx.translate(midX + offsetX, midY + offsetY);
-      ctx.rotate(angle);
-      ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
-      ctx.restore();
+      if (length > 0.01) { // Only show meaningful lengths
+        const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
+        const midX = (point1.x + point2.x) / 2;
+        const midY = (point1.y + point2.y) / 2;
+        
+        // Offset the text parallel to the line
+        const offsetDistance = 20 / zoom;
+        const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
+        const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
+        
+        ctx.save();
+        ctx.translate(midX + offsetX, midY + offsetY);
+        ctx.rotate(angle);
+        ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
+        ctx.restore();
+      }
     }
   };
 
@@ -425,7 +435,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const snapToGrid = (point: Point): Point => {
-    const gridSize = scale * 0.5;
+    const gridSize = scale * 0.25; // Finer grid snapping
     return {
       x: Math.round(point.x / gridSize) * gridSize,
       y: Math.round(point.y / gridSize) * gridSize
@@ -623,18 +633,68 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Erase wall points
+    // Erase wall points with improved detection
     const clickedPointIndex = roomPoints.findIndex(roomPoint => {
       const dx = point.x - roomPoint.x;
       const dy = point.y - roomPoint.y;
-      return Math.sqrt(dx * dx + dy * dy) <= 20;
+      return Math.sqrt(dx * dx + dy * dy) <= 25 / zoom; // Scale-aware detection
     });
 
     if (clickedPointIndex !== -1) {
       const updatedPoints = roomPoints.filter((_, index) => index !== clickedPointIndex);
       setRoomPoints(updatedPoints);
       toast.success('Wall point erased');
+      return;
     }
+
+    // Erase wall segments
+    for (let i = 0; i < roomPoints.length; i++) {
+      const nextIndex = (i + 1) % roomPoints.length;
+      if (nextIndex === 0 && isDrawingActive) continue;
+
+      const point1 = roomPoints[i];
+      const point2 = roomPoints[nextIndex];
+      
+      // Check if click is near the line segment
+      const distanceToLine = distanceFromPointToLineSegment(point, point1, point2);
+      if (distanceToLine <= 15 / zoom) {
+        // Remove this segment by removing the second point
+        const updatedPoints = roomPoints.filter((_, index) => index !== nextIndex);
+        setRoomPoints(updatedPoints);
+        toast.success('Wall segment erased');
+        return;
+      }
+    }
+  };
+
+  const distanceFromPointToLineSegment = (point: Point, lineStart: Point, lineEnd: Point): number => {
+    const A = point.x - lineStart.x;
+    const B = point.y - lineStart.y;
+    const C = lineEnd.x - lineStart.x;
+    const D = lineEnd.y - lineStart.y;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    if (lenSq !== 0) {
+      param = dot / lenSq;
+    }
+
+    let xx, yy;
+    if (param < 0) {
+      xx = lineStart.x;
+      yy = lineStart.y;
+    } else if (param > 1) {
+      xx = lineEnd.x;
+      yy = lineEnd.y;
+    } else {
+      xx = lineStart.x + param * C;
+      yy = lineStart.y + param * D;
+    }
+
+    const dx = point.x - xx;
+    const dy = point.y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
   };
 
   const handleWallDrawing = (point: Point) => {

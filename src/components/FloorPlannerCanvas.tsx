@@ -25,6 +25,9 @@ interface FloorPlannerCanvasProps {
   setPlacedProducts: (products: PlacedProduct[]) => void;
   scale: number;
   currentTool: string;
+  showGrid: boolean;
+  showRuler: boolean;
+  onClearAll: () => void;
 }
 
 const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
@@ -33,7 +36,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   placedProducts,
   setPlacedProducts,
   scale,
-  currentTool
+  currentTool,
+  showGrid,
+  showRuler,
+  onClearAll
 }) => {
   return (
     <div className="h-full w-full">
@@ -44,6 +50,9 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         setPlacedProducts={setPlacedProducts}
         scale={scale}
         currentTool={currentTool}
+        showGrid={showGrid}
+        showRuler={showRuler}
+        onClearAll={onClearAll}
       />
     </div>
   );
