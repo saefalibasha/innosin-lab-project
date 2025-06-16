@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, DoorOpen } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, DoorOpen, Edit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { isProductWithinRoom, findClosestWallSegment, getWallAngle, findOptimalDoorPosition, checkDoorConflict } from '@/utils/collisionDetection';
@@ -68,8 +68,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [isEditingText, setIsEditingText] = useState(false);
   const [editingText, setEditingText] = useState('');
 
-  // New state for doors
+  // New state for doors and walls
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
+  const [selectedWallIndex, setSelectedWallIndex] = useState<number | null>(null);
+  const [showWallLengthInput, setShowWallLengthInput] = useState(false);
+  const [customWallLength, setCustomWallLength] = useState('');
+  const [rotationAngle, setRotationAngle] = useState(0);
 
   // Optimized drawing with requestAnimationFrame
   const drawCanvas = useCallback(() => {
@@ -94,7 +98,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawRuler(ctx, canvas.width / zoom, canvas.height / zoom);
     }
     
-    // Draw room
+    // Draw room with wall selection highlights
     drawRoom(ctx);
     
     // Draw current line while drawing (only when actively drawing)
@@ -127,7 +131,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
 
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationCompass, showCollisionWarning]);
+  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationCompass, showCollisionWarning, rotationAngle]);
 
   // Debounced canvas redraw
   useEffect(() => {
@@ -157,8 +161,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         } else {
           setSelectedProduct(null);
           setSelectedText(null);
+          setSelectedWallIndex(null);
           setIsEditingText(false);
           setShowRotationCompass(false);
+          setShowWallLengthInput(false);
           setIsDragging(false);
           setIsRotating(false);
         }
@@ -173,12 +179,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         return;
       }
 
-      if (!selectedProduct && !selectedText) return;
+      if (!selectedProduct && !selectedText && selectedWallIndex === null) return;
       
       switch (e.key.toLowerCase()) {
         case 'r':
           e.preventDefault();
-          if (selectedProduct) rotateSelectedProduct();
+          if (selectedProduct) rotateSelectedProduct45();
           break;
         case 'd':
           e.preventDefault();
@@ -190,12 +196,20 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           if (selectedProduct) deleteSelectedProduct();
           if (selectedText) deleteSelectedText();
           break;
+        case 'e':
+          e.preventDefault();
+          if (selectedWallIndex !== null) {
+            setShowWallLengthInput(true);
+            const wallLength = calculateWallLength(selectedWallIndex);
+            setCustomWallLength(wallLength.toFixed(2));
+          }
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedProduct, selectedText, isDrawingActive, currentDrawingPoint, roomPoints]);
+  }, [selectedProduct, selectedText, selectedWallIndex, isDrawingActive, currentDrawingPoint, roomPoints]);
 
   // Mouse wheel zoom with smooth scaling
   useEffect(() => {
@@ -256,11 +270,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return area / (scale * scale);
   };
 
+  const calculateWallLength = (wallIndex: number): number => {
+    if (wallIndex < 0 || wallIndex >= roomPoints.length) return 0;
+    const nextIndex = (wallIndex + 1) % roomPoints.length;
+    return calculateDistance(roomPoints[wallIndex], roomPoints[nextIndex]);
+  };
+
   const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.strokeStyle = '#f3f4f6';
     ctx.lineWidth = 1 / zoom;
 
-    const gridSize = scale * 0.25; // Finer grid snapping
+    const gridSize = scale * 0.25;
     for (let x = 0; x <= width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -282,7 +302,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.lineWidth = 2 / zoom;
     ctx.font = `${12 / zoom}px sans-serif`;
 
-    // Horizontal ruler
     for (let x = 0; x <= width; x += scale) {
       const meters = x / scale;
       ctx.beginPath();
@@ -293,7 +312,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.fillText(`${meters}m`, x + 5 / zoom, 15 / zoom);
     }
 
-    // Vertical ruler
     for (let y = 0; y <= height; y += scale) {
       const meters = y / scale;
       ctx.beginPath();
@@ -327,16 +345,44 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.fill();
     }
 
-    // Draw walls
-    ctx.beginPath();
-    ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
-    for (let i = 1; i < roomPoints.length; i++) {
-      ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
+    // Draw walls with selection highlights
+    for (let i = 0; i < roomPoints.length; i++) {
+      const nextIndex = (i + 1) % roomPoints.length;
+      if (nextIndex === 0 && isDrawingActive && roomPoints.length > 2) continue;
+
+      const point1 = roomPoints[i];
+      const point2 = roomPoints[nextIndex];
+
+      // Highlight selected wall
+      if (selectedWallIndex === i) {
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 5 / zoom;
+      } else {
+        ctx.strokeStyle = '#374151';
+        ctx.lineWidth = 3 / zoom;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(point1.x, point1.y);
+      ctx.lineTo(point2.x, point2.y);
+      ctx.stroke();
+
+      // Draw wall selection handle
+      if (selectedWallIndex === i) {
+        const midX = (point1.x + point2.x) / 2;
+        const midY = (point1.y + point2.y) / 2;
+        
+        ctx.fillStyle = '#3b82f6';
+        ctx.beginPath();
+        ctx.arc(midX, midY, 8 / zoom, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(midX, midY, 4 / zoom, 0, 2 * Math.PI);
+        ctx.fill();
+      }
     }
-    if (!isDrawingActive && roomPoints.length > 2) {
-      ctx.closePath();
-    }
-    ctx.stroke();
 
     // Draw points
     ctx.fillStyle = '#374151';
@@ -362,14 +408,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw length parallel to the line
     const length = calculateDistance(lastPoint, currentDrawingPoint);
-    if (length > 0.01) { // Only show if length is meaningful
+    if (length > 0.01) {
       const angle = Math.atan2(currentDrawingPoint.y - lastPoint.y, currentDrawingPoint.x - lastPoint.x);
       const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
       const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
       
-      // Offset the text slightly above the line
       const offsetDistance = 20 / zoom;
       const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
       const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
@@ -394,18 +438,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     for (let i = 0; i < roomPoints.length; i++) {
       const nextIndex = (i + 1) % roomPoints.length;
-      if (nextIndex === 0 && roomPoints.length < 3) continue; // Don't show dimension for unclosed shape
+      if (nextIndex === 0 && roomPoints.length < 3) continue;
 
       const point1 = roomPoints[i];
       const point2 = roomPoints[nextIndex];
       const length = calculateDistance(point1, point2);
       
-      if (length > 0.01) { // Only show meaningful lengths
+      if (length > 0.01) {
         const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
         const midX = (point1.x + point2.x) / 2;
         const midY = (point1.y + point2.y) / 2;
         
-        // Offset the text parallel to the line
         const offsetDistance = 20 / zoom;
         const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
         const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
@@ -426,7 +469,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.textAlign = 'left';
       ctx.fillText(annotation.text, annotation.position.x, annotation.position.y);
       
-      // Draw selection box if selected
       if (selectedText === annotation.id) {
         const metrics = ctx.measureText(annotation.text);
         ctx.strokeStyle = '#ef4444';
@@ -441,7 +483,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     });
   };
 
-  // Enhanced product drawing with smooth selection feedback
+  // Enhanced product drawing with 45° angle indicators
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
     placedProducts.forEach(product => {
       ctx.save();
@@ -451,14 +493,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const width = product.dimensions.length * scale * (product.scale || 1);
       const height = product.dimensions.width * scale * (product.scale || 1);
 
-      // Enhanced selection highlighting
       const isSelected = selectedProduct === product.id;
       
       ctx.fillStyle = product.color;
       ctx.strokeStyle = isSelected ? '#3b82f6' : '#1f2937';
       ctx.lineWidth = (isSelected ? 3 : 1) / zoom;
       
-      // Add subtle glow effect for selected products
       if (isSelected) {
         ctx.shadowColor = '#3b82f6';
         ctx.shadowBlur = 10 / zoom;
@@ -467,11 +507,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.fillRect(-width/2, -height/2, width, height);
       ctx.strokeRect(-width/2, -height/2, width, height);
       
-      // Reset shadow
       ctx.shadowColor = 'transparent';
       ctx.shadowBlur = 0;
 
-      // Draw selection handles for selected product
       if (isSelected) {
         // Center handle for moving
         ctx.fillStyle = '#3b82f6';
@@ -479,11 +517,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         ctx.arc(0, 0, 6 / zoom, 0, 2 * Math.PI);
         ctx.fill();
         
-        // Rotation handles at corners
-        ctx.strokeStyle = '#3b82f6';
-        ctx.lineWidth = 2 / zoom;
+        // 45° angle indicators
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1 / zoom;
         ctx.setLineDash([3 / zoom, 3 / zoom]);
         
+        const radius = Math.max(width, height) / 2 + 20 / zoom;
+        for (let angle = 0; angle < 360; angle += 45) {
+          const radian = (angle * Math.PI) / 180;
+          const x1 = Math.cos(radian) * (radius - 10 / zoom);
+          const y1 = Math.sin(radian) * (radius - 10 / zoom);
+          const x2 = Math.cos(radian) * radius;
+          const y2 = Math.sin(radian) * radius;
+          
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        }
+        
+        ctx.setLineDash([]);
+        
+        // Rotation handles at corners
         const handleSize = 6 / zoom;
         const positions = [
           { x: -width/2, y: -height/2 },
@@ -495,13 +550,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         positions.forEach(pos => {
           ctx.fillStyle = '#ffffff';
           ctx.strokeStyle = '#3b82f6';
+          ctx.lineWidth = 2 / zoom;
           ctx.beginPath();
           ctx.arc(pos.x, pos.y, handleSize, 0, 2 * Math.PI);
           ctx.fill();
           ctx.stroke();
         });
-        
-        ctx.setLineDash([]);
       }
 
       // Product label
@@ -514,7 +568,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     });
   };
 
-  // Enhanced rotation compass with smooth angle display
+  // Enhanced rotation compass with 45° snap indicators
   const drawRotationCompass = (ctx: CanvasRenderingContext2D) => {
     const product = placedProducts.find(p => p.id === selectedProduct);
     if (!product) return;
@@ -525,9 +579,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const compassRadius = 80 / zoom;
     
     // Draw compass background
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.beginPath();
-    ctx.arc(0, 0, compassRadius + 10 / zoom, 0, 2 * Math.PI);
+    ctx.arc(0, 0, compassRadius + 15 / zoom, 0, 2 * Math.PI);
     ctx.fill();
     
     // Draw compass circle
@@ -537,14 +591,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.arc(0, 0, compassRadius, 0, 2 * Math.PI);
     ctx.stroke();
 
-    // Draw angle markers every 45 degrees
-    ctx.strokeStyle = '#94a3b8';
-    ctx.lineWidth = 1 / zoom;
+    // Draw 45° snap markers
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3 / zoom;
     
     for (let angle = 0; angle < 360; angle += 45) {
       const radian = (angle * Math.PI) / 180;
-      const x1 = Math.cos(radian) * (compassRadius - 10 / zoom);
-      const y1 = Math.sin(radian) * (compassRadius - 10 / zoom);
+      const x1 = Math.cos(radian) * (compassRadius - 15 / zoom);
+      const y1 = Math.sin(radian) * (compassRadius - 15 / zoom);
       const x2 = Math.cos(radian) * compassRadius;
       const y2 = Math.sin(radian) * compassRadius;
       
@@ -553,13 +607,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.lineTo(x2, y2);
       ctx.stroke();
       
-      // Add degree labels
+      // Add degree labels for main angles
       if (angle % 90 === 0) {
         ctx.fillStyle = '#374151';
         ctx.font = `bold ${12 / zoom}px sans-serif`;
         ctx.textAlign = 'center';
-        const labelX = Math.cos(radian) * (compassRadius + 20 / zoom);
-        const labelY = Math.sin(radian) * (compassRadius + 20 / zoom);
+        const labelX = Math.cos(radian) * (compassRadius + 25 / zoom);
+        const labelY = Math.sin(radian) * (compassRadius + 25 / zoom);
         ctx.fillText(`${angle}°`, labelX, labelY + 4 / zoom);
       }
     }
@@ -576,17 +630,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.lineTo(indicatorX, indicatorY);
     ctx.stroke();
 
-    // Draw angle indicator at tip
     ctx.fillStyle = '#3b82f6';
     ctx.beginPath();
-    ctx.arc(indicatorX, indicatorY, 6 / zoom, 0, 2 * Math.PI);
+    ctx.arc(indicatorX, indicatorY, 8 / zoom, 0, 2 * Math.PI);
     ctx.fill();
 
     // Draw angle text
     ctx.fillStyle = '#1f2937';
     ctx.font = `bold ${16 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`${Math.round(product.rotation)}°`, 0, -compassRadius - 30 / zoom);
+    ctx.fillText(`${Math.round(product.rotation)}°`, 0, -compassRadius - 35 / zoom);
 
     ctx.restore();
   };
@@ -600,18 +653,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const doorWidth = door.width * scale;
       const doorThickness = 8 / zoom;
       
-      // Draw door opening (gap in wall) - only if embedded
       if (door.isEmbedded) {
         ctx.fillStyle = '#ffffff';
         ctx.fillRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
         
-        // Draw door frame with enhanced styling
         ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
         ctx.lineWidth = 3 / zoom;
         ctx.strokeRect(-doorWidth/2, -doorThickness/2, doorWidth, doorThickness);
       }
       
-      // Draw door swing arc with proper direction
       ctx.strokeStyle = '#d1d5db';
       ctx.lineWidth = 1 / zoom;
       ctx.setLineDash([4 / zoom, 4 / zoom]);
@@ -624,7 +674,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // Draw door leaf with enhanced visibility
       ctx.strokeStyle = selectedDoor === door.id ? '#3b82f6' : '#8b4513';
       ctx.lineWidth = 3 / zoom;
       ctx.beginPath();
@@ -634,13 +683,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.lineTo(leafEndX, leafEndY);
       ctx.stroke();
 
-      // Draw door handle
       ctx.fillStyle = selectedDoor === door.id ? '#3b82f6' : '#666666';
       ctx.beginPath();
       ctx.arc(leafEndX * 0.8, leafEndY * 0.8, 3 / zoom, 0, 2 * Math.PI);
       ctx.fill();
 
-      // Enhanced selection indicator
       if (selectedDoor === door.id) {
         ctx.strokeStyle = '#3b82f6';
         ctx.lineWidth = 2 / zoom;
@@ -654,11 +701,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const drawCollisionWarning = (ctx: CanvasRenderingContext2D) => {
-    // Draw a semi-transparent red overlay to indicate collision
     ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
     ctx.fillRect(-pan.x, -pan.y, ctx.canvas.width / zoom, ctx.canvas.height / zoom);
     
-    // Draw warning text
     ctx.fillStyle = '#ef4444';
     ctx.font = `bold ${20 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
@@ -672,7 +717,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const snapToGrid = (point: Point): Point => {
-    const gridSize = scale * 0.25; // Finer grid snapping
+    const gridSize = scale * 0.25;
     return {
       x: Math.round(point.x / gridSize) * gridSize,
       y: Math.round(point.y / gridSize) * gridSize
@@ -689,11 +734,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return { x, y };
   };
 
-  // Enhanced mouse down handler with better product interaction
+  // Enhanced mouse down handler with wall selection
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoordinates(e);
 
-    // Right click or middle mouse for panning
     if (e.button === 2 || e.button === 1 || currentTool === 'pan') {
       e.preventDefault();
       setIsPanning(true);
@@ -714,9 +758,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  // Enhanced product selection with improved interaction detection
+  // Enhanced selection with wall selection support
   const handleSelection = (point: Point) => {
-    // Check for door selection first
+    // Check for wall selection first (when no other objects are selected)
+    if (!selectedProduct && !selectedText && !selectedDoor) {
+      const clickedWallIndex = findClickedWall(point);
+      if (clickedWallIndex !== -1) {
+        setSelectedWallIndex(clickedWallIndex);
+        toast.success(`Wall selected - Press E to edit length`);
+        return;
+      }
+    }
+
+    // Check for door selection
     const clickedDoor = doors.find(door => {
       const dx = point.x - door.position.x;
       const dy = point.y - door.position.y;
@@ -727,6 +781,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setSelectedDoor(clickedDoor.id);
       setSelectedProduct(null);
       setSelectedText(null);
+      setSelectedWallIndex(null);
       setShowRotationCompass(false);
       return;
     }
@@ -736,7 +791,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const dx = point.x - product.position.x;
       const dy = point.y - product.position.y;
       
-      // Rotate the click point to product's coordinate system
       const cos = Math.cos((-product.rotation * Math.PI) / 180);
       const sin = Math.sin((-product.rotation * Math.PI) / 180);
       const rotatedX = dx * cos - dy * sin;
@@ -752,9 +806,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setSelectedProduct(clickedProduct.id);
       setSelectedDoor(null);
       setSelectedText(null);
+      setSelectedWallIndex(null);
       setShowRotationCompass(true);
       
-      // Determine if we're clicking on center (move) or edge (rotate)
       const dx = point.x - clickedProduct.position.x;
       const dy = point.y - clickedProduct.position.y;
       const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
@@ -790,12 +844,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         setSelectedText(clickedText.id);
         setSelectedProduct(null);
         setSelectedDoor(null);
+        setSelectedWallIndex(null);
         setShowRotationCompass(false);
       } else {
         // Clear selection
         setSelectedProduct(null);
         setSelectedDoor(null);
         setSelectedText(null);
+        setSelectedWallIndex(null);
         setShowRotationCompass(false);
         setIsDragging(false);
         setIsRotating(false);
@@ -803,7 +859,23 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  // Enhanced mouse move handler with smooth interactions
+  const findClickedWall = (point: Point): number => {
+    for (let i = 0; i < roomPoints.length; i++) {
+      const nextIndex = (i + 1) % roomPoints.length;
+      if (nextIndex === 0 && isDrawingActive) continue;
+
+      const point1 = roomPoints[i];
+      const point2 = roomPoints[nextIndex];
+      
+      const distanceToLine = distanceFromPointToLineSegment(point, point1, point2);
+      if (distanceToLine <= 15 / zoom) {
+        return i;
+      }
+    }
+    return -1;
+  };
+
+  // Enhanced mouse move handler with 45° rotation snapping
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoordinates(e);
 
@@ -828,20 +900,20 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Handle product rotation
+    // Handle product rotation with 45° snapping
     if (isRotating && selectedProduct && rotationCenter && e.buttons === 1) {
       const angle = Math.atan2(y - rotationCenter.y, x - rotationCenter.x);
-      const angleDegrees = (angle * 180) / Math.PI;
+      let angleDegrees = (angle * 180) / Math.PI;
       
-      // Snap to 15-degree increments when shift is held
-      let finalAngle = (angleDegrees + 360) % 360;
-      if (e.shiftKey) {
-        finalAngle = Math.round(finalAngle / 15) * 15;
-      }
+      // Snap to 45° increments
+      angleDegrees = Math.round(angleDegrees / 45) * 45;
+      angleDegrees = (angleDegrees + 360) % 360;
+      
+      setRotationAngle(angleDegrees);
       
       const updatedProducts = placedProducts.map(p =>
         p.id === selectedProduct
-          ? { ...p, rotation: finalAngle }
+          ? { ...p, rotation: angleDegrees }
           : p
       );
       setPlacedProducts(updatedProducts);
@@ -1122,6 +1194,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Door embedded in wall');
   };
 
+  // Enhanced rotation with 45° snapping
+  const rotateSelectedProduct45 = () => {
+    if (!selectedProduct) return;
+    const updatedProducts = placedProducts.map(product =>
+      product.id === selectedProduct
+        ? { ...product, rotation: (product.rotation + 45) % 360 }
+        : product
+    );
+    setPlacedProducts(updatedProducts);
+    toast.success(`Rotated to ${((placedProducts.find(p => p.id === selectedProduct)?.rotation || 0) + 45) % 360}°`);
+  };
+
   const validateProductMove = (productId: string, newPosition: Point): boolean => {
     const product = placedProducts.find(p => p.id === productId);
     if (!product) return false;
@@ -1136,16 +1220,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const testProduct = { ...product, rotation: newRotation };
     return isProductWithinRoom(testProduct, roomPoints, scale);
-  };
-
-  const rotateSelectedProduct = () => {
-    if (!selectedProduct) return;
-    const updatedProducts = placedProducts.map(product =>
-      product.id === selectedProduct
-        ? { ...product, rotation: (product.rotation + 15) % 360 }
-        : product
-    );
-    setPlacedProducts(updatedProducts);
   };
 
   const duplicateSelectedProduct = () => {
@@ -1198,6 +1272,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setSelectedProduct(null);
     setSelectedText(null);
     setSelectedDoor(null);
+    setSelectedWallIndex(null);
     setIsDrawingActive(false);
     setCurrentDrawingPoint(null);
     toast.success('Floor plan cleared');
@@ -1225,6 +1300,36 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success(`${length}m line added`);
   };
 
+  // New wall length adjustment function
+  const applyCustomWallLength = () => {
+    const newLength = parseFloat(customWallLength);
+    if (!newLength || selectedWallIndex === null) return;
+
+    const wallIndex = selectedWallIndex;
+    const nextIndex = (wallIndex + 1) % roomPoints.length;
+    const point1 = roomPoints[wallIndex];
+    const point2 = roomPoints[nextIndex];
+    
+    // Calculate current wall direction
+    const currentLength = calculateDistance(point1, point2);
+    const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
+    
+    // Calculate new end point
+    const newPoint2 = {
+      x: point1.x + Math.cos(angle) * newLength * scale,
+      y: point1.y + Math.sin(angle) * newLength * scale
+    };
+    
+    // Update room points
+    const updatedPoints = [...roomPoints];
+    updatedPoints[nextIndex] = newPoint2;
+    setRoomPoints(updatedPoints);
+    
+    setShowWallLengthInput(false);
+    setSelectedWallIndex(null);
+    toast.success(`Wall length adjusted to ${newLength}m`);
+  };
+
   const updateSelectedText = (newText: string) => {
     if (!selectedText) return;
     const updatedAnnotations = textAnnotations.map(annotation =>
@@ -1249,7 +1354,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (currentTool === 'select') {
       if (isDragging) return 'cursor-grabbing';
       if (isRotating) return 'cursor-crosshair';
-      if (selectedProduct || selectedText) return 'cursor-grab';
+      if (selectedProduct || selectedText || selectedWallIndex !== null) return 'cursor-grab';
       return 'cursor-pointer';
     }
     return 'cursor-crosshair';
@@ -1307,8 +1412,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* Enhanced Selected Product Controls with Door Support */}
-      {(selectedProduct || selectedDoor) && (
+      {/* Enhanced Selected Object Controls */}
+      {(selectedProduct || selectedDoor || selectedWallIndex !== null) && (
         <div className="absolute top-4 right-4 flex space-x-2">
           {selectedProduct && (
             <>
@@ -1320,6 +1425,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 title="Duplicate (D)"
               >
                 <Copy className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="bg-white/90 backdrop-blur-sm shadow-lg"
+                onClick={rotateSelectedProduct45}
+                title="Rotate 45° (R)"
+              >
+                <RotateCcw className="w-4 h-4" />
               </Button>
               <Button
                 variant="destructive"
@@ -1343,6 +1457,31 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
+          {selectedWallIndex !== null && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="bg-white/90 backdrop-blur-sm shadow-lg"
+              onClick={() => {
+                setShowWallLengthInput(true);
+                const wallLength = calculateWallLength(selectedWallIndex);
+                setCustomWallLength(wallLength.toFixed(2));
+              }}
+              title="Edit Wall Length (E)"
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* Rotation Angle Display */}
+      {isRotating && selectedProduct && (
+        <div className="absolute top-20 right-4 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg px-3 py-2 border">
+          <div className="text-sm font-medium text-blue-600">
+            Rotation: {Math.round(rotationAngle)}°
+          </div>
+          <div className="text-xs text-gray-500">Snaps to 45° increments</div>
         </div>
       )}
 
@@ -1420,13 +1559,54 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Enhanced Status Bar with Door Count */}
+      {/* Wall Length Adjustment Modal */}
+      {showWallLengthInput && selectedWallIndex !== null && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-4 border border-gray-200">
+          <div className="text-sm font-medium text-gray-700 mb-2">Adjust Wall Length</div>
+          <div className="text-xs text-gray-500 mb-3">Current: {calculateWallLength(selectedWallIndex).toFixed(2)}m</div>
+          <div className="flex space-x-2">
+            <Input
+              value={customWallLength}
+              onChange={(e) => setCustomWallLength(e.target.value)}
+              placeholder="New length (m)"
+              type="number"
+              step="0.1"
+              className="w-32"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  applyCustomWallLength();
+                } else if (e.key === 'Escape') {
+                  setShowWallLengthInput(false);
+                  setSelectedWallIndex(null);
+                }
+              }}
+            />
+            <Button size="sm" onClick={applyCustomWallLength}>
+              Apply
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => {
+                setShowWallLengthInput(false);
+                setSelectedWallIndex(null);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Status Bar */}
       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded px-3 py-2 text-xs text-gray-600 border">
         <div className="flex flex-col space-y-1">
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Doors: {doors.length} | Text: {textAnnotations.length}</div>
           <div className="text-gray-500">
             Left click: Draw/Select | Right click: Pan | Mouse wheel: Zoom
-            {selectedProduct && <span className="text-blue-600 font-medium"> | Drag center: Move | Drag edges: Rotate</span>}
+            {selectedProduct && <span className="text-blue-600 font-medium"> | R: Rotate 45° | D: Duplicate</span>}
+            {selectedWallIndex !== null && <span className="text-green-600 font-medium"> | E: Edit length</span>}
             {selectedDoor && <span className="text-orange-600 font-medium"> | Door selected - Delete to remove</span>}
           </div>
         </div>
