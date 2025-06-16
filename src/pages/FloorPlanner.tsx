@@ -4,7 +4,7 @@ import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -68,22 +68,38 @@ const FloorPlanner = () => {
       tool: 'wall',
       icon: Ruler,
       title: 'Wall Tool',
-      description: 'Click to place wall points. Double-click or press ESC to finish.',
-      shortcuts: ['ESC: Finish drawing', 'Double-click: Complete room', 'Enter: Input custom length']
-    },
-    {
-      tool: 'eraser',
-      icon: Eraser,
-      title: 'Eraser Tool',
-      description: 'Click on objects or wall points to remove them.',
-      shortcuts: ['Click: Erase item']
+      description: 'Draw room walls by clicking to place points',
+      features: [
+        'Left click to place wall points',
+        'Double-click to complete room',
+        'ESC to finish drawing',
+        'Enter to input custom length',
+        'Live measurement display'
+      ]
     },
     {
       tool: 'select',
       icon: Move,
       title: 'Select Tool',
-      description: 'Select and manipulate placed objects.',
-      shortcuts: ['R: Rotate', 'D: Duplicate', 'Del: Delete']
+      description: 'Select and manipulate placed objects',
+      features: [
+        'Left click to select objects',
+        'Drag to rotate selected objects',
+        'R key to rotate 15°',
+        'D key to duplicate',
+        'Delete key to remove'
+      ]
+    },
+    {
+      tool: 'eraser',
+      icon: Eraser,
+      title: 'Eraser Tool',
+      description: 'Remove objects and wall points',
+      features: [
+        'Left click to erase items',
+        'Works on products and walls',
+        'Precise removal control'
+      ]
     }
   ];
 
@@ -174,14 +190,15 @@ const FloorPlanner = () => {
                   return (
                     <div key={instruction.tool} className="p-3 bg-white rounded-lg border">
                       <div className="flex items-center space-x-2 mb-2">
-                        <IconComponent className="w-4 h-4" />
+                        <IconComponent className="w-4 h-4 text-blue-600" />
                         <span className="font-medium text-sm">{instruction.title}</span>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2">{instruction.description}</p>
+                      <p className="text-xs text-gray-600 mb-3">{instruction.description}</p>
                       <div className="space-y-1">
-                        {instruction.shortcuts.map((shortcut, index) => (
-                          <div key={index} className="text-xs text-gray-500 bg-gray-50 px-2 py-1 rounded">
-                            {shortcut}
+                        {instruction.features.map((feature, index) => (
+                          <div key={index} className="text-xs text-gray-700 flex items-center">
+                            <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
+                            {feature}
                           </div>
                         ))}
                       </div>
@@ -189,13 +206,29 @@ const FloorPlanner = () => {
                   );
                 })}
                 
-                {/* General Instructions */}
+                {/* Basic Controls */}
                 <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <div className="font-medium text-sm text-blue-800 mb-2">General Controls</div>
+                  <div className="flex items-center space-x-2 mb-2">
+                    <MousePointer className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-sm text-blue-800">Basic Controls</span>
+                  </div>
                   <div className="space-y-1">
-                    <div className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">Mouse wheel: Zoom in/out</div>
-                    <div className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">Middle mouse: Pan canvas</div>
-                    <div className="text-xs text-blue-700 bg-blue-100 px-2 py-1 rounded">Drag items from library to place</div>
+                    <div className="text-xs text-blue-700 flex items-center">
+                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
+                      Left click to draw/select
+                    </div>
+                    <div className="text-xs text-blue-700 flex items-center">
+                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
+                      Right click to pan canvas
+                    </div>
+                    <div className="text-xs text-blue-700 flex items-center">
+                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
+                      Mouse wheel to zoom
+                    </div>
+                    <div className="text-xs text-blue-700 flex items-center">
+                      <div className="w-1 h-1 bg-blue-400 rounded-full mr-2"></div>
+                      Drag items from library to place
+                    </div>
                   </div>
                 </div>
               </CollapsibleContent>
@@ -229,6 +262,22 @@ const FloorPlanner = () => {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
+                      variant={activeTool === 'select' ? 'default' : 'outline'}
+                      className="w-full justify-start"
+                      onClick={() => setActiveTool('select')}
+                    >
+                      <Move className="w-4 h-4 mr-2" />
+                      Select & Rotate
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Select and rotate objects by dragging</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
                       variant={activeTool === 'eraser' ? 'default' : 'outline'}
                       className="w-full justify-start"
                       onClick={() => setActiveTool('eraser')}
@@ -239,22 +288,6 @@ const FloorPlanner = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Remove objects and wall points</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'select' ? 'default' : 'outline'}
-                      className="w-full justify-start"
-                      onClick={() => setActiveTool('select')}
-                    >
-                      <Move className="w-4 h-4 mr-2" />
-                      Select
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Select and manipulate objects</p>
                   </TooltipContent>
                 </Tooltip>
               </CollapsibleContent>

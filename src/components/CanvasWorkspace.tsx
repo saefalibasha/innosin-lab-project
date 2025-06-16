@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, Eraser } from 'lucide-react';
@@ -50,6 +49,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [customLength, setCustomLength] = useState('');
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
+  const [isRotating, setIsRotating] = useState(false);
+  const [rotationStart, setRotationStart] = useState<Point | null>(null);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
@@ -169,7 +170,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing with enhanced overlay
+    // Draw current line while drawing
     drawCurrentLine(ctx);
     
     // Draw placed products
@@ -254,28 +255,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Enhanced live length overlay with black font
+    // Draw length directly on the line
     const length = calculateDistance(lastPoint, currentDrawingPoint);
     const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
     const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
     
-    // Large, clear background for better visibility
-    const textWidth = 100;
-    const textHeight = 36;
-    
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-    ctx.fillRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
-    
-    // Black border for contrast
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2 / zoom;
-    ctx.strokeRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
-    
-    // Black text for measurement
     ctx.fillStyle = '#000000';
-    ctx.font = `bold ${18 / zoom}px sans-serif`;
+    ctx.font = `bold ${16 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 6);
+    ctx.fillText(`${length.toFixed(2)}m`, midX, midY - 8);
   };
 
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
@@ -308,6 +296,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     ctx.font = `bold ${12 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
+    ctx.fillStyle = '#000000';
 
     for (let i = 0; i < roomPoints.length; i++) {
       const nextIndex = (i + 1) % roomPoints.length;
@@ -320,20 +309,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const midX = (point1.x + point2.x) / 2;
       const midY = (point1.y + point2.y) / 2;
       
-      // White background with black border
-      const textWidth = 60;
-      const textHeight = 20;
-      
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.fillRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
-      
-      ctx.strokeStyle = '#000000';
-      ctx.lineWidth = 1 / zoom;
-      ctx.strokeRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
-      
-      // Black text for measurements
-      ctx.fillStyle = '#000000';
-      ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 4);
+      ctx.fillText(`${length.toFixed(2)}m`, midX, midY - 8);
     }
   };
 
@@ -364,7 +340,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoordinates(e);
 
-    if (currentTool === 'pan' || e.button === 1) {
+    // Right click or middle mouse for panning
+    if (e.button === 2 || e.button === 1 || currentTool === 'pan') {
+      e.preventDefault();
       setIsPanning(true);
       setLastPanPoint({ x: e.clientX, y: e.clientY });
       return;
@@ -374,8 +352,22 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       handleEraser({ x, y });
     } else if (currentTool === 'wall') {
       handleWallDrawing({ x, y });
-    } else {
-      handleSelection({ x, y });
+    } else if (currentTool === 'select') {
+      const clickedProduct = placedProducts.find(product => {
+        const dx = x - product.position.x;
+        const dy = y - product.position.y;
+        const width = (product.dimensions.length * scale * (product.scale || 1)) / 2;
+        const height = (product.dimensions.width * scale * (product.scale || 1)) / 2;
+        return Math.abs(dx) <= width && Math.abs(dy) <= height;
+      });
+
+      if (clickedProduct) {
+        setSelectedProduct(clickedProduct.id);
+        setIsRotating(true);
+        setRotationStart({ x, y });
+      } else {
+        setSelectedProduct(null);
+      }
     }
   };
 
@@ -390,6 +382,24 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
+    if (isRotating && selectedProduct && rotationStart) {
+      const product = placedProducts.find(p => p.id === selectedProduct);
+      if (product) {
+        const angle1 = Math.atan2(rotationStart.y - product.position.y, rotationStart.x - product.position.x);
+        const angle2 = Math.atan2(y - product.position.y, x - product.position.x);
+        const deltaAngle = (angle2 - angle1) * (180 / Math.PI);
+        
+        const updatedProducts = placedProducts.map(p =>
+          p.id === selectedProduct
+            ? { ...p, rotation: (p.rotation + deltaAngle) % 360 }
+            : p
+        );
+        setPlacedProducts(updatedProducts);
+        setRotationStart({ x, y });
+      }
+      return;
+    }
+
     if (isDrawingActive && roomPoints.length > 0) {
       const snappedPoint = snapToGrid({ x, y });
       setCurrentDrawingPoint(snappedPoint);
@@ -399,6 +409,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const handleCanvasMouseUp = () => {
     setIsPanning(false);
     setLastPanPoint(null);
+    setIsRotating(false);
+    setRotationStart(null);
+  };
+
+  // Prevent context menu on right click
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
   };
 
   const handleEraser = (point: Point) => {
@@ -443,18 +460,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const updatedPoints = [...roomPoints, snappedPoint];
       setRoomPoints(updatedPoints);
     }
-  };
-
-  const handleSelection = (point: Point) => {
-    const clickedProduct = placedProducts.find(product => {
-      const dx = point.x - product.position.x;
-      const dy = point.y - product.position.y;
-      const width = (product.dimensions.length * scale * (product.scale || 1)) / 2;
-      const height = (product.dimensions.width * scale * (product.scale || 1)) / 2;
-      return Math.abs(dx) <= width && Math.abs(dy) <= height;
-    });
-
-    setSelectedProduct(clickedProduct ? clickedProduct.id : null);
   };
 
   const handleCanvasDoubleClick = () => {
@@ -565,6 +570,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         className={`w-full h-full ${
           currentTool === 'eraser' ? 'cursor-crosshair' : 
           currentTool === 'pan' ? 'cursor-move' : 
+          currentTool === 'select' && selectedProduct ? 'cursor-grab' :
           'cursor-crosshair'
         }`}
         onMouseDown={handleCanvasMouseDown}
@@ -573,6 +579,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         onDoubleClick={handleCanvasDoubleClick}
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
+        onContextMenu={handleContextMenu}
       />
 
       {/* Room Area Display - Enhanced */}
@@ -616,15 +623,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       {/* Selected Product Controls */}
       {selectedProduct && (
         <div className="absolute top-4 right-4 flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-white/90 backdrop-blur-sm shadow-lg"
-            onClick={rotateSelectedProduct}
-            title="Rotate (R)"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -706,7 +704,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         <div className="flex flex-col space-y-1">
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length}</div>
           <div className="text-gray-500">
-            {isDrawingActive ? 'ESC=Finish, Enter=Custom Length' : selectedProduct ? 'R=Rotate, D=Duplicate, Del=Delete' : 'Select objects or start drawing'}
+            {isDrawingActive ? 'ESC=Finish, Enter=Custom Length' : selectedProduct ? 'Drag to rotate, D=Duplicate, Del=Delete' : 'Left=Draw/Select, Right=Pan'}
           </div>
         </div>
       </div>
