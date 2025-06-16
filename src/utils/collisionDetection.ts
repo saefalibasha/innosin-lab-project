@@ -1,3 +1,4 @@
+
 import { Point, PlacedProduct, Door } from '@/types/floorPlanTypes';
 
 // Check if a point is inside a polygon using ray casting algorithm
@@ -50,6 +51,38 @@ export const getRotatedRectangleCorners = (center: Point, width: number, height:
     x: center.x + corner.x * cos - corner.y * sin,
     y: center.y + corner.x * sin + corner.y * cos
   }));
+};
+
+// Calculate distance between two points
+export const calculateDistance = (point1: Point, point2: Point): number => {
+  return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+};
+
+// Calculate distance from a point to a line segment
+export const distancePointToLine = (point: Point, lineStart: Point, lineEnd: Point): number => {
+  const A = point.x - lineStart.x;
+  const B = point.y - lineStart.y;
+  const C = lineEnd.x - lineStart.x;
+  const D = lineEnd.y - lineStart.y;
+
+  const dot = A * C + B * D;
+  const lenSq = C * C + D * D;
+  
+  if (lenSq === 0) {
+    // Line start and end are the same point
+    return Math.sqrt(A * A + B * B);
+  }
+  
+  let param = dot / lenSq;
+  param = Math.max(0, Math.min(1, param));
+  
+  const xx = lineStart.x + param * C;
+  const yy = lineStart.y + param * D;
+  
+  const dx = point.x - xx;
+  const dy = point.y - yy;
+  
+  return Math.sqrt(dx * dx + dy * dy);
 };
 
 // Find the closest point on a line segment to a given point
@@ -140,4 +173,91 @@ export const checkDoorConflict = (newDoor: Door, existingDoors: Door[], doorWidt
     
     return distance < minDistance;
   });
+};
+
+// Check if two rectangles intersect (for product-product collision)
+export const doProductsIntersect = (product1: PlacedProduct, product2: PlacedProduct, scale: number): boolean => {
+  const corners1 = getRotatedRectangleCorners(
+    product1.position,
+    product1.dimensions.length * scale * (product1.scale || 1),
+    product1.dimensions.width * scale * (product1.scale || 1),
+    product1.rotation
+  );
+  
+  const corners2 = getRotatedRectangleCorners(
+    product2.position,
+    product2.dimensions.length * scale * (product2.scale || 1),
+    product2.dimensions.width * scale * (product2.scale || 1),
+    product2.rotation
+  );
+  
+  // Simple bounding box check first (optimization)
+  const bbox1 = getBoundingBox(corners1);
+  const bbox2 = getBoundingBox(corners2);
+  
+  if (!boundingBoxesIntersect(bbox1, bbox2)) return false;
+  
+  // More precise check using Separating Axis Theorem
+  return separatingAxisTest(corners1, corners2);
+};
+
+// Get bounding box for a set of points
+const getBoundingBox = (points: Point[]): { minX: number, maxX: number, minY: number, maxY: number } => {
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  
+  return {
+    minX: Math.min(...xs),
+    maxX: Math.max(...xs),
+    minY: Math.min(...ys),
+    maxY: Math.max(...ys)
+  };
+};
+
+// Check if two bounding boxes intersect
+const boundingBoxesIntersect = (bbox1: any, bbox2: any): boolean => {
+  return !(bbox1.maxX < bbox2.minX || bbox2.maxX < bbox1.minX || 
+           bbox1.maxY < bbox2.minY || bbox2.maxY < bbox1.minY);
+};
+
+// Separating Axis Theorem for precise collision detection
+const separatingAxisTest = (corners1: Point[], corners2: Point[]): boolean => {
+  const polygons = [corners1, corners2];
+  
+  for (let i = 0; i < polygons.length; i++) {
+    const polygon = polygons[i];
+    
+    for (let j = 0; j < polygon.length; j++) {
+      const current = polygon[j];
+      const next = polygon[(j + 1) % polygon.length];
+      
+      // Get the perpendicular vector (normal)
+      const normal = { x: next.y - current.y, y: current.x - next.x };
+      
+      // Project both polygons onto this axis
+      const proj1 = projectPolygon(corners1, normal);
+      const proj2 = projectPolygon(corners2, normal);
+      
+      // Check for separation
+      if (proj1.max < proj2.min || proj2.max < proj1.min) {
+        return false; // Separating axis found
+      }
+    }
+  }
+  
+  return true; // No separating axis found, polygons intersect
+};
+
+// Project polygon onto an axis
+const projectPolygon = (corners: Point[], axis: Point): { min: number, max: number } => {
+  let min = Infinity;
+  let max = -Infinity;
+  
+  for (const corner of corners) {
+    const dot = corner.x * axis.x + corner.y * axis.y;
+    min = Math.min(min, dot);
+    max = Math.max(max, dot);
+  }
+  
+  return { min, max };
 };
