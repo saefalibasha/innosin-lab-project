@@ -711,6 +711,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const newProduct: PlacedProduct = {
       ...product,
       id: `${product.id}-copy-${Date.now()}`,
+      productId: product.productId,
       position: {
         x: product.position.x + 50,
         y: product.position.y + 50
@@ -878,10 +879,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const doorPosition = findOptimalDoorPosition(point, result.segment);
     const newDoor: Door = {
       id: `door-${Date.now()}`,
+      position: point,
       wallSegmentIndex: result.index,
       wallPosition: doorPosition.wallPosition,
       rotation: doorPosition.rotation,
-      width: 0.9 // Standard door width in meters
+      width: 0.9,
+      swingDirection: 'inward',
+      isEmbedded: true
     };
 
     if (!checkDoorConflict(newDoor, doors, newDoor.width * scale)) {
@@ -1013,16 +1017,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setShowCollisionWarning(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = (e: DragEvent) => {
     e.preventDefault();
-    const productData = e.dataTransfer.getData('product');
+    const productData = e.dataTransfer?.getData('product');
     if (!productData) return;
 
     const product = JSON.parse(productData);
-    const dropPoint = getCanvasMousePosition(e.nativeEvent as any);
+    const dropPoint = getCanvasMousePosition(e);
 
     const newProduct: PlacedProduct = {
       id: `${product.id}-${Date.now()}`,
+      productId: product.id,
       name: product.name,
       position: snapToGrid(dropPoint),
       rotation: 0,
