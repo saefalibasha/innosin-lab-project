@@ -26,7 +26,6 @@ interface PlacedProduct {
 const FloorPlanner = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
-  const [isDrawingMode, setIsDrawingMode] = useState(true);
   const [scale] = useState(40);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -70,7 +69,7 @@ const FloorPlanner = () => {
       icon: Ruler,
       title: 'Wall Tool',
       description: 'Click to place wall points. Double-click or press ESC to finish.',
-      shortcuts: ['ESC: Finish drawing', 'Double-click: Complete room']
+      shortcuts: ['ESC: Finish drawing', 'Double-click: Complete room', 'Enter: Input custom length']
     },
     {
       tool: 'eraser',
@@ -101,7 +100,7 @@ const FloorPlanner = () => {
 
   const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
-      setIsDrawingMode(false);
+      // ESC handling is now in CanvasWorkspace
     }
   };
 
@@ -202,49 +201,6 @@ const FloorPlanner = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Mode Selection */}
-            <Collapsible open={openPanel === 'mode'} onOpenChange={() => setOpenPanel(openPanel === 'mode' ? '' : 'mode')}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start font-medium">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Drawing Mode
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-2 mt-2">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={isDrawingMode ? 'default' : 'outline'}
-                      className="w-full justify-start"
-                      onClick={() => setIsDrawingMode(true)}
-                    >
-                      <Ruler className="w-4 h-4 mr-2" />
-                      Draw Room
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Switch to room drawing mode</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={!isDrawingMode ? 'default' : 'outline'}
-                      className="w-full justify-start"
-                      onClick={() => setIsDrawingMode(false)}
-                    >
-                      <Move className="w-4 h-4 mr-2" />
-                      Place Products
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Switch to product placement mode</p>
-                  </TooltipContent>
-                </Tooltip>
-              </CollapsibleContent>
-            </Collapsible>
-
             {/* Drawing Tools */}
             <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
               <CollapsibleTrigger asChild>
@@ -313,20 +269,13 @@ const FloorPlanner = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-2 max-h-96 overflow-y-auto">
-                {isDrawingMode && (
-                  <div className="p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                    Switch to "Place Products" mode to use the library
-                  </div>
-                )}
                 {productLibrary.map(product => (
                   <Tooltip key={product.id}>
                     <TooltipTrigger asChild>
                       <div
-                        draggable={!isDrawingMode}
+                        draggable
                         onDragStart={(e) => handleDragStart(e, product)}
-                        className={`p-3 border rounded-lg transition-colors ${
-                          isDrawingMode ? 'opacity-50 cursor-not-allowed' : 'cursor-move hover:bg-white hover:shadow-sm'
-                        }`}
+                        className="p-3 border rounded-lg transition-colors cursor-move hover:bg-white hover:shadow-sm"
                       >
                         <div className="flex items-center space-x-2 mb-1">
                           <div 
@@ -360,8 +309,8 @@ const FloorPlanner = () => {
             setRoomPoints={setRoomPoints}
             placedProducts={placedProducts}
             setPlacedProducts={setPlacedProducts}
-            isDrawingMode={isDrawingMode}
             scale={scale}
+            currentTool={activeTool}
           />
         </div>
       </div>

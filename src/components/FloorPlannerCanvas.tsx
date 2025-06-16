@@ -23,8 +23,8 @@ interface FloorPlannerCanvasProps {
   setRoomPoints: (points: Point[]) => void;
   placedProducts: PlacedProduct[];
   setPlacedProducts: (products: PlacedProduct[]) => void;
-  isDrawingMode: boolean;
   scale: number;
+  currentTool: string;
 }
 
 const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
@@ -32,8 +32,8 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   setRoomPoints,
   placedProducts,
   setPlacedProducts,
-  isDrawingMode,
-  scale
+  scale,
+  currentTool
 }) => {
   return (
     <div className="h-full w-full">
@@ -42,9 +42,8 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         setRoomPoints={setRoomPoints}
         placedProducts={placedProducts}
         setPlacedProducts={setPlacedProducts}
-        isDrawingMode={isDrawingMode}
         scale={scale}
-        currentTool={isDrawingMode ? 'wall' : 'select'}
+        currentTool={currentTool}
       />
     </div>
   );

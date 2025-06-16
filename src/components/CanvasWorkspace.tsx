@@ -26,7 +26,6 @@ interface CanvasWorkspaceProps {
   setRoomPoints: (points: Point[]) => void;
   placedProducts: PlacedProduct[];
   setPlacedProducts: (products: PlacedProduct[]) => void;
-  isDrawingMode: boolean;
   scale: number;
   currentTool: string;
 }
@@ -36,7 +35,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   setRoomPoints,
   placedProducts,
   setPlacedProducts,
-  isDrawingMode,
   scale,
   currentTool
 }) => {
@@ -51,6 +49,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [customLength, setCustomLength] = useState('');
+  const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
@@ -61,10 +60,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         if (isDrawingActive) {
           setIsDrawingActive(false);
           setCurrentDrawingPoint(null);
+          setPendingLineStart(null);
           toast.success('Drawing cancelled');
         } else {
           setSelectedProduct(null);
         }
+        return;
+      }
+
+      // Enter to input custom length while drawing
+      if (e.key === 'Enter' && isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
+        e.preventDefault();
+        setPendingLineStart(roomPoints[roomPoints.length - 1]);
+        setShowLengthInput(true);
         return;
       }
 
@@ -89,7 +97,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedProduct, isDrawingActive]);
+  }, [selectedProduct, isDrawingActive, currentDrawingPoint, roomPoints]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -128,7 +136,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   }, [roomPoints, placedProducts, selectedProduct, zoom, pan, currentDrawingPoint]);
 
   const calculateRoomArea = (): number => {
-    if (roomPoints.length < 3) return 0;
+    if (roomPoints.length < 3 || isDrawingActive) return 0;
     
     // Use shoelace formula to calculate polygon area
     let area = 0;
@@ -167,7 +175,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw placed products
     drawPlacedProducts(ctx);
     
-    // Draw dimensions
+    // Draw dimensions on completed walls
     drawDimensions(ctx);
 
     ctx.restore();
@@ -199,6 +207,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 3 / zoom;
 
+    // Fill room if completed
     if (roomPoints.length > 2 && !isDrawingActive) {
       ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
       ctx.beginPath();
@@ -210,6 +219,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.fill();
     }
 
+    // Draw walls
     ctx.beginPath();
     ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
     for (let i = 1; i < roomPoints.length; i++) {
@@ -244,27 +254,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Enhanced live length overlay - larger and clearer
+    // Enhanced live length overlay with black font
     const length = calculateDistance(lastPoint, currentDrawingPoint);
     const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
     const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
     
-    // Larger background for better visibility
-    const textWidth = 80;
-    const textHeight = 30;
+    // Large, clear background for better visibility
+    const textWidth = 100;
+    const textHeight = 36;
     
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.fillRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
     
-    // White border for contrast
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1 / zoom;
+    // Black border for contrast
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2 / zoom;
     ctx.strokeRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
     
-    ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${16 / zoom}px sans-serif`;
+    // Black text for measurement
+    ctx.fillStyle = '#000000';
+    ctx.font = `bold ${18 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 4);
+    ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 6);
   };
 
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
@@ -295,8 +306,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const drawDimensions = (ctx: CanvasRenderingContext2D) => {
     if (roomPoints.length < 2) return;
 
-    ctx.fillStyle = '#374151';
-    ctx.font = `${10 / zoom}px sans-serif`;
+    ctx.font = `bold ${12 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
 
     for (let i = 0; i < roomPoints.length; i++) {
@@ -310,11 +320,20 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const midX = (point1.x + point2.x) / 2;
       const midY = (point1.y + point2.y) / 2;
       
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.fillRect(midX - 25, midY - 8, 50, 16);
+      // White background with black border
+      const textWidth = 60;
+      const textHeight = 20;
       
-      ctx.fillStyle = '#374151';
-      ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 3);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
+      
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 1 / zoom;
+      ctx.strokeRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
+      
+      // Black text for measurements
+      ctx.fillStyle = '#000000';
+      ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 4);
     }
   };
 
@@ -353,7 +372,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     if (currentTool === 'eraser') {
       handleEraser({ x, y });
-    } else if (currentTool === 'wall' && isDrawingMode) {
+    } else if (currentTool === 'wall') {
       handleWallDrawing({ x, y });
     } else {
       handleSelection({ x, y });
@@ -419,7 +438,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (!isDrawingActive) {
       setRoomPoints([snappedPoint]);
       setIsDrawingActive(true);
-      toast.success('Drawing started! Click to add points, ESC to finish.');
+      toast.success('Drawing started! Click to add points, ESC to finish, Enter for custom length.');
     } else {
       const updatedPoints = [...roomPoints, snappedPoint];
       setRoomPoints(updatedPoints);
@@ -517,6 +536,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Floor plan cleared');
   };
 
+  const applyCustomLength = () => {
+    const length = parseFloat(customLength);
+    if (!length || !pendingLineStart || !currentDrawingPoint) return;
+
+    const angle = Math.atan2(
+      currentDrawingPoint.y - pendingLineStart.y,
+      currentDrawingPoint.x - pendingLineStart.x
+    );
+    
+    const newPoint = {
+      x: pendingLineStart.x + Math.cos(angle) * length * scale,
+      y: pendingLineStart.y + Math.sin(angle) * length * scale
+    };
+
+    const updatedPoints = [...roomPoints, snapToGrid(newPoint)];
+    setRoomPoints(updatedPoints);
+    setShowLengthInput(false);
+    setCustomLength('');
+    setPendingLineStart(null);
+    toast.success(`${length}m line added`);
+  };
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white">
       <canvas
@@ -534,12 +575,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         onDragOver={(e) => e.preventDefault()}
       />
 
-      {/* Room Area Display */}
+      {/* Room Area Display - Enhanced */}
       {roomPoints.length >= 3 && !isDrawingActive && (
-        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-3 border">
-          <div className="text-sm font-medium text-gray-700">Room Area</div>
-          <div className="text-lg font-bold text-blue-600">
+        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-4 border border-gray-200">
+          <div className="text-sm font-medium text-gray-700 mb-1">Room Area</div>
+          <div className="text-2xl font-bold text-blue-600">
             {calculateRoomArea().toFixed(2)} m²
+          </div>
+          <div className="text-xs text-gray-500 mt-1">
+            {(calculateRoomArea() * 10.764).toFixed(1)} sq ft
           </div>
         </div>
       )}
@@ -618,23 +662,40 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
       {/* Custom Length Input */}
       {showLengthInput && (
-        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm shadow-lg rounded-lg p-4">
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-4 border border-gray-200">
+          <div className="text-sm font-medium text-gray-700 mb-2">Enter Line Length</div>
           <div className="flex space-x-2">
             <Input
               value={customLength}
               onChange={(e) => setCustomLength(e.target.value)}
               placeholder="Length (m)"
               type="number"
-              className="w-24"
+              step="0.1"
+              className="w-28"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  applyCustomLength();
+                } else if (e.key === 'Escape') {
+                  setShowLengthInput(false);
+                  setCustomLength('');
+                  setPendingLineStart(null);
+                }
+              }}
             />
-            <Button
-              size="sm"
+            <Button size="sm" onClick={applyCustomLength}>
+              Apply
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
               onClick={() => {
                 setShowLengthInput(false);
                 setCustomLength('');
+                setPendingLineStart(null);
               }}
             >
-              Apply
+              Cancel
             </Button>
           </div>
         </div>
@@ -645,7 +706,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         <div className="flex flex-col space-y-1">
           <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length}</div>
           <div className="text-gray-500">
-            {isDrawingActive ? 'ESC to finish drawing' : selectedProduct ? 'R=Rotate, D=Duplicate, Del=Delete' : 'Select objects or start drawing'}
+            {isDrawingActive ? 'ESC=Finish, Enter=Custom Length' : selectedProduct ? 'R=Rotate, D=Duplicate, Del=Delete' : 'Select objects or start drawing'}
           </div>
         </div>
       </div>
