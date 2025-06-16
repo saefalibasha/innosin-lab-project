@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2 } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, Eraser } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -52,9 +52,22 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [customLength, setCustomLength] = useState('');
 
-  // Keyboard shortcuts
+  // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // ESC to release line drawing
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        if (isDrawingActive) {
+          setIsDrawingActive(false);
+          setCurrentDrawingPoint(null);
+          toast.success('Drawing cancelled');
+        } else {
+          setSelectedProduct(null);
+        }
+        return;
+      }
+
       if (!selectedProduct) return;
       
       switch (e.key.toLowerCase()) {
@@ -71,17 +84,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           e.preventDefault();
           deleteSelectedProduct();
           break;
-        case 'escape':
-          e.preventDefault();
-          setSelectedProduct(null);
-          setIsDrawingActive(false);
-          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedProduct]);
+  }, [selectedProduct, isDrawingActive]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -119,6 +127,22 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     drawCanvas();
   }, [roomPoints, placedProducts, selectedProduct, zoom, pan, currentDrawingPoint]);
 
+  const calculateRoomArea = (): number => {
+    if (roomPoints.length < 3) return 0;
+    
+    // Use shoelace formula to calculate polygon area
+    let area = 0;
+    for (let i = 0; i < roomPoints.length; i++) {
+      const j = (i + 1) % roomPoints.length;
+      area += roomPoints[i].x * roomPoints[j].y;
+      area -= roomPoints[j].x * roomPoints[i].y;
+    }
+    area = Math.abs(area) / 2;
+    
+    // Convert from pixels to square meters
+    return area / (scale * scale);
+  };
+
   const drawCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -137,7 +161,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing
+    // Draw current line while drawing with enhanced overlay
     drawCurrentLine(ctx);
     
     // Draw placed products
@@ -220,18 +244,27 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw live length
+    // Enhanced live length overlay - larger and clearer
     const length = calculateDistance(lastPoint, currentDrawingPoint);
     const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
     const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
     
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-    ctx.fillRect(midX - 30, midY - 10, 60, 20);
+    // Larger background for better visibility
+    const textWidth = 80;
+    const textHeight = 30;
+    
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+    ctx.fillRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
+    
+    // White border for contrast
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1 / zoom;
+    ctx.strokeRect(midX - textWidth/2, midY - textHeight/2, textWidth, textHeight);
     
     ctx.fillStyle = '#ffffff';
-    ctx.font = `${12 / zoom}px sans-serif`;
+    ctx.font = `bold ${16 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 3);
+    ctx.fillText(`${length.toFixed(2)}m`, midX, midY + 4);
   };
 
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
@@ -312,13 +345,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const { x, y } = getCanvasCoordinates(e);
 
-    if (currentTool === 'pan' || e.button === 1) { // Middle mouse button
+    if (currentTool === 'pan' || e.button === 1) {
       setIsPanning(true);
       setLastPanPoint({ x: e.clientX, y: e.clientY });
       return;
     }
 
-    if (currentTool === 'wall' && isDrawingMode) {
+    if (currentTool === 'eraser') {
+      handleEraser({ x, y });
+    } else if (currentTool === 'wall' && isDrawingMode) {
       handleWallDrawing({ x, y });
     } else {
       handleSelection({ x, y });
@@ -347,15 +382,47 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setLastPanPoint(null);
   };
 
+  const handleEraser = (point: Point) => {
+    // Erase products
+    const clickedProduct = placedProducts.find(product => {
+      const dx = point.x - product.position.x;
+      const dy = point.y - product.position.y;
+      const width = (product.dimensions.length * scale * (product.scale || 1)) / 2;
+      const height = (product.dimensions.width * scale * (product.scale || 1)) / 2;
+      return Math.abs(dx) <= width && Math.abs(dy) <= height;
+    });
+
+    if (clickedProduct) {
+      const updatedProducts = placedProducts.filter(p => p.id !== clickedProduct.id);
+      setPlacedProducts(updatedProducts);
+      toast.success('Product erased');
+      return;
+    }
+
+    // Erase wall points
+    const clickedPointIndex = roomPoints.findIndex(roomPoint => {
+      const dx = point.x - roomPoint.x;
+      const dy = point.y - roomPoint.y;
+      return Math.sqrt(dx * dx + dy * dy) <= 20;
+    });
+
+    if (clickedPointIndex !== -1) {
+      const updatedPoints = roomPoints.filter((_, index) => index !== clickedPointIndex);
+      setRoomPoints(updatedPoints);
+      toast.success('Wall point erased');
+    }
+  };
+
   const handleWallDrawing = (point: Point) => {
     const snappedPoint = snapToGrid(point);
     
     if (!isDrawingActive) {
       setRoomPoints([snappedPoint]);
       setIsDrawingActive(true);
-      toast.success('Drawing started! Click to add points, double-click to finish.');
+      toast.success('Drawing started! Click to add points, ESC to finish.');
     } else {
-      setRoomPoints([...roomPoints, snappedPoint]);
+      const updatedPoints = [...roomPoints, snappedPoint];
+      setRoomPoints(updatedPoints);
     }
   };
 
@@ -398,7 +465,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         scale: 1
       };
 
-      setPlacedProducts([...placedProducts, newProduct]);
+      const updatedProducts = [...placedProducts, newProduct];
+      setPlacedProducts(updatedProducts);
       toast.success(`${productData.name} placed`);
     } catch (error) {
       console.error('Error placing product:', error);
@@ -426,23 +494,38 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       position: { x: product.position.x + 50, y: product.position.y + 50 }
     };
 
-    setPlacedProducts([...placedProducts, newProduct]);
+    const updatedProducts = [...placedProducts, newProduct];
+    setPlacedProducts(updatedProducts);
     setSelectedProduct(newProduct.id);
     toast.success('Product duplicated');
   };
 
   const deleteSelectedProduct = () => {
     if (!selectedProduct) return;
-    setPlacedProducts(placedProducts.filter(p => p.id !== selectedProduct));
+    const updatedProducts = placedProducts.filter(p => p.id !== selectedProduct);
+    setPlacedProducts(updatedProducts);
     setSelectedProduct(null);
     toast.success('Product deleted');
+  };
+
+  const clearAll = () => {
+    setRoomPoints([]);
+    setPlacedProducts([]);
+    setSelectedProduct(null);
+    setIsDrawingActive(false);
+    setCurrentDrawingPoint(null);
+    toast.success('Floor plan cleared');
   };
 
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white">
       <canvas
         ref={canvasRef}
-        className="w-full h-full cursor-crosshair"
+        className={`w-full h-full ${
+          currentTool === 'eraser' ? 'cursor-crosshair' : 
+          currentTool === 'pan' ? 'cursor-move' : 
+          'cursor-crosshair'
+        }`}
         onMouseDown={handleCanvasMouseDown}
         onMouseMove={handleCanvasMouseMove}
         onMouseUp={handleCanvasMouseUp}
@@ -451,6 +534,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         onDragOver={(e) => e.preventDefault()}
       />
 
+      {/* Room Area Display */}
+      {roomPoints.length >= 3 && !isDrawingActive && (
+        <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-3 border">
+          <div className="text-sm font-medium text-gray-700">Room Area</div>
+          <div className="text-lg font-bold text-blue-600">
+            {calculateRoomArea().toFixed(2)} m²
+          </div>
+        </div>
+      )}
+
       {/* Floating Zoom Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
         <Button
@@ -458,6 +551,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           size="icon"
           className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
           onClick={() => setZoom(prev => Math.min(prev * 1.2, 5))}
+          title="Zoom In"
         >
           <ZoomIn className="w-4 h-4" />
         </Button>
@@ -466,6 +560,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           size="icon"
           className="bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white"
           onClick={() => setZoom(prev => Math.max(prev * 0.8, 0.1))}
+          title="Zoom Out"
         >
           <ZoomOut className="w-4 h-4" />
         </Button>
@@ -482,6 +577,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             size="sm"
             className="bg-white/90 backdrop-blur-sm shadow-lg"
             onClick={rotateSelectedProduct}
+            title="Rotate (R)"
           >
             <RotateCcw className="w-4 h-4" />
           </Button>
@@ -490,6 +586,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             size="sm"
             className="bg-white/90 backdrop-blur-sm shadow-lg"
             onClick={duplicateSelectedProduct}
+            title="Duplicate (D)"
           >
             <Copy className="w-4 h-4" />
           </Button>
@@ -498,11 +595,26 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
             size="sm"
             className="bg-white/90 backdrop-blur-sm shadow-lg"
             onClick={deleteSelectedProduct}
+            title="Delete (Del)"
           >
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
       )}
+
+      {/* Clear All Button */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2">
+        <Button
+          variant="destructive"
+          size="sm"
+          className="bg-red-600/90 hover:bg-red-700 backdrop-blur-sm shadow-lg"
+          onClick={clearAll}
+          title="Clear All"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Clear All
+        </Button>
+      </div>
 
       {/* Custom Length Input */}
       {showLengthInput && (
@@ -528,10 +640,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Status Bar */}
-      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm shadow-lg rounded px-3 py-1 text-xs text-gray-600">
-        Tool: {currentTool} | Points: {roomPoints.length} | Products: {placedProducts.length}
-        {selectedProduct && ' | Press R to rotate, D to duplicate, Del to delete'}
+      {/* Enhanced Status Bar */}
+      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded px-3 py-2 text-xs text-gray-600 border">
+        <div className="flex flex-col space-y-1">
+          <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length}</div>
+          <div className="text-gray-500">
+            {isDrawingActive ? 'ESC to finish drawing' : selectedProduct ? 'R=Rotate, D=Duplicate, Del=Delete' : 'Select objects or start drawing'}
+          </div>
+        </div>
       </div>
     </div>
   );
