@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, Eraser } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, Eraser, Grid, Ruler } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -18,6 +18,13 @@ interface PlacedProduct {
   dimensions: { length: number; width: number; height: number };
   color: string;
   scale?: number;
+}
+
+interface TextAnnotation {
+  id: string;
+  position: Point;
+  text: string;
+  fontSize: number;
 }
 
 interface CanvasWorkspaceProps {
@@ -51,20 +58,30 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
   const [isRotating, setIsRotating] = useState(false);
   const [rotationStart, setRotationStart] = useState<Point | null>(null);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showRuler, setShowRuler] = useState(false);
+  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
+  const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [editingText, setEditingText] = useState('');
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      // ESC to release line drawing
+      // ESC to cleanly exit drawing mode
       if (e.key === 'Escape') {
         e.preventDefault();
         if (isDrawingActive) {
           setIsDrawingActive(false);
           setCurrentDrawingPoint(null);
           setPendingLineStart(null);
+          // Clean up any ghost measurements
+          drawCanvas();
           toast.success('Drawing cancelled');
         } else {
           setSelectedProduct(null);
+          setSelectedText(null);
+          setIsEditingText(false);
         }
         return;
       }
@@ -77,28 +94,29 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         return;
       }
 
-      if (!selectedProduct) return;
+      if (!selectedProduct && !selectedText) return;
       
       switch (e.key.toLowerCase()) {
         case 'r':
           e.preventDefault();
-          rotateSelectedProduct();
+          if (selectedProduct) rotateSelectedProduct();
           break;
         case 'd':
           e.preventDefault();
-          duplicateSelectedProduct();
+          if (selectedProduct) duplicateSelectedProduct();
           break;
         case 'delete':
         case 'backspace':
           e.preventDefault();
-          deleteSelectedProduct();
+          if (selectedProduct) deleteSelectedProduct();
+          if (selectedText) deleteSelectedText();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedProduct, isDrawingActive, currentDrawingPoint, roomPoints]);
+  }, [selectedProduct, selectedText, isDrawingActive, currentDrawingPoint, roomPoints]);
 
   // Mouse wheel zoom
   useEffect(() => {
@@ -134,7 +152,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   useEffect(() => {
     drawCanvas();
-  }, [roomPoints, placedProducts, selectedProduct, zoom, pan, currentDrawingPoint]);
+  }, [roomPoints, placedProducts, textAnnotations, selectedProduct, selectedText, zoom, pan, currentDrawingPoint, showGrid, showRuler]);
 
   const calculateRoomArea = (): number => {
     if (roomPoints.length < 3 || isDrawingActive) return 0;
@@ -164,20 +182,32 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.scale(zoom, zoom);
     ctx.translate(pan.x, pan.y);
 
-    // Draw grid
-    drawGrid(ctx, canvas.width / zoom, canvas.height / zoom);
+    // Draw grid if enabled
+    if (showGrid) {
+      drawGrid(ctx, canvas.width / zoom, canvas.height / zoom);
+    }
+    
+    // Draw ruler if enabled
+    if (showRuler) {
+      drawRuler(ctx, canvas.width / zoom, canvas.height / zoom);
+    }
     
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing
-    drawCurrentLine(ctx);
+    // Draw current line while drawing (but not if ESC was just pressed)
+    if (isDrawingActive) {
+      drawCurrentLine(ctx);
+    }
     
     // Draw placed products
     drawPlacedProducts(ctx);
     
     // Draw dimensions on completed walls
     drawDimensions(ctx);
+
+    // Draw text annotations
+    drawTextAnnotations(ctx);
 
     ctx.restore();
   };
@@ -199,6 +229,39 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.moveTo(0, y);
       ctx.lineTo(width, y);
       ctx.stroke();
+    }
+  };
+
+  const drawRuler = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.strokeStyle = '#374151';
+    ctx.fillStyle = '#374151';
+    ctx.lineWidth = 2 / zoom;
+    ctx.font = `${12 / zoom}px sans-serif`;
+
+    // Horizontal ruler
+    for (let x = 0; x <= width; x += scale) {
+      const meters = x / scale;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 20 / zoom);
+      ctx.stroke();
+      
+      ctx.fillText(`${meters}m`, x + 5 / zoom, 15 / zoom);
+    }
+
+    // Vertical ruler
+    for (let y = 0; y <= height; y += scale) {
+      const meters = y / scale;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(20 / zoom, y);
+      ctx.stroke();
+      
+      ctx.save();
+      ctx.translate(15 / zoom, y - 5 / zoom);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(`${meters}m`, 0, 0);
+      ctx.restore();
     }
   };
 
@@ -241,7 +304,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const drawCurrentLine = (ctx: CanvasRenderingContext2D) => {
-    if (!currentDrawingPoint || roomPoints.length === 0 || !isDrawingActive) return;
+    if (!currentDrawingPoint || roomPoints.length === 0) return;
 
     const lastPoint = roomPoints[roomPoints.length - 1];
     
@@ -255,15 +318,25 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Draw length directly on the line with black font
+    // Draw length parallel to the line
     const length = calculateDistance(lastPoint, currentDrawingPoint);
+    const angle = Math.atan2(currentDrawingPoint.y - lastPoint.y, currentDrawingPoint.x - lastPoint.x);
     const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
     const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
     
+    // Offset the text slightly above the line
+    const offsetDistance = 15 / zoom;
+    const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
+    const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
+    
+    ctx.save();
+    ctx.translate(midX + offsetX, midY + offsetY);
+    ctx.rotate(angle);
     ctx.fillStyle = '#000000';
-    ctx.font = `bold ${16 / zoom}px sans-serif`;
+    ctx.font = `bold ${14 / zoom}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(`${length.toFixed(2)}m`, midX, midY);
+    ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
+    ctx.restore();
   };
 
   const drawPlacedProducts = (ctx: CanvasRenderingContext2D) => {
@@ -306,12 +379,43 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const point2 = roomPoints[nextIndex];
       const length = calculateDistance(point1, point2);
       
+      const angle = Math.atan2(point2.y - point1.y, point2.x - point1.x);
       const midX = (point1.x + point2.x) / 2;
       const midY = (point1.y + point2.y) / 2;
       
-      // Display length directly on the line
-      ctx.fillText(`${length.toFixed(2)}m`, midX, midY);
+      // Offset the text parallel to the line
+      const offsetDistance = 15 / zoom;
+      const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
+      const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
+      
+      ctx.save();
+      ctx.translate(midX + offsetX, midY + offsetY);
+      ctx.rotate(angle);
+      ctx.fillText(`${length.toFixed(2)}m`, 0, 0);
+      ctx.restore();
     }
+  };
+
+  const drawTextAnnotations = (ctx: CanvasRenderingContext2D) => {
+    textAnnotations.forEach(annotation => {
+      ctx.fillStyle = selectedText === annotation.id ? '#ef4444' : '#000000';
+      ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText(annotation.text, annotation.position.x, annotation.position.y);
+      
+      // Draw selection box if selected
+      if (selectedText === annotation.id) {
+        const metrics = ctx.measureText(annotation.text);
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1 / zoom;
+        ctx.strokeRect(
+          annotation.position.x - 2,
+          annotation.position.y - annotation.fontSize / zoom,
+          metrics.width + 4,
+          annotation.fontSize / zoom + 4
+        );
+      }
+    });
   };
 
   const calculateDistance = (point1: Point, point2: Point): number => {
@@ -353,6 +457,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       handleEraser({ x, y });
     } else if (currentTool === 'wall') {
       handleWallDrawing({ x, y });
+    } else if (currentTool === 'text') {
+      handleTextPlacement({ x, y });
     } else if (currentTool === 'select') {
       const clickedProduct = placedProducts.find(product => {
         const dx = x - product.position.x;
@@ -362,14 +468,45 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         return Math.abs(dx) <= width && Math.abs(dy) <= height;
       });
 
+      const clickedText = textAnnotations.find(annotation => {
+        const ctx = canvasRef.current?.getContext('2d');
+        if (!ctx) return false;
+        ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
+        const metrics = ctx.measureText(annotation.text);
+        return x >= annotation.position.x && 
+               x <= annotation.position.x + metrics.width &&
+               y >= annotation.position.y - annotation.fontSize / zoom &&
+               y <= annotation.position.y;
+      });
+
       if (clickedProduct) {
         setSelectedProduct(clickedProduct.id);
+        setSelectedText(null);
         setIsRotating(true);
         setRotationStart({ x, y });
+      } else if (clickedText) {
+        setSelectedText(clickedText.id);
+        setSelectedProduct(null);
       } else {
         setSelectedProduct(null);
+        setSelectedText(null);
       }
     }
+  };
+
+  const handleTextPlacement = (point: Point) => {
+    const newText: TextAnnotation = {
+      id: `text-${Date.now()}`,
+      position: snapToGrid(point),
+      text: 'New Text',
+      fontSize: 16
+    };
+    
+    setTextAnnotations([...textAnnotations, newText]);
+    setSelectedText(newText.id);
+    setIsEditingText(true);
+    setEditingText(newText.text);
+    toast.success('Text annotation added');
   };
 
   const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -422,6 +559,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
+    // Move text annotations
+    if (selectedText && e.buttons === 1) {
+      const updatedAnnotations = textAnnotations.map(annotation =>
+        annotation.id === selectedText
+          ? { ...annotation, position: snapToGrid({ x, y }) }
+          : annotation
+      );
+      setTextAnnotations(updatedAnnotations);
+      return;
+    }
+
     if (isDrawingActive && roomPoints.length > 0) {
       const snappedPoint = snapToGrid({ x, y });
       setCurrentDrawingPoint(snappedPoint);
@@ -435,7 +583,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setRotationStart(null);
   };
 
-  // Prevent context menu on right click
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
   };
@@ -454,6 +601,25 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const updatedProducts = placedProducts.filter(p => p.id !== clickedProduct.id);
       setPlacedProducts(updatedProducts);
       toast.success('Product erased');
+      return;
+    }
+
+    // Erase text annotations
+    const clickedText = textAnnotations.find(annotation => {
+      const ctx = canvasRef.current?.getContext('2d');
+      if (!ctx) return false;
+      ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
+      const metrics = ctx.measureText(annotation.text);
+      return point.x >= annotation.position.x && 
+             point.x <= annotation.position.x + metrics.width &&
+             point.y >= annotation.position.y - annotation.fontSize / zoom &&
+             point.y <= annotation.position.y;
+    });
+
+    if (clickedText) {
+      const updatedAnnotations = textAnnotations.filter(a => a.id !== clickedText.id);
+      setTextAnnotations(updatedAnnotations);
+      toast.success('Text erased');
       return;
     }
 
@@ -554,10 +720,20 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Product deleted');
   };
 
+  const deleteSelectedText = () => {
+    if (!selectedText) return;
+    const updatedAnnotations = textAnnotations.filter(a => a.id !== selectedText);
+    setTextAnnotations(updatedAnnotations);
+    setSelectedText(null);
+    toast.success('Text deleted');
+  };
+
   const clearAll = () => {
     setRoomPoints([]);
     setPlacedProducts([]);
+    setTextAnnotations([]);
     setSelectedProduct(null);
+    setSelectedText(null);
     setIsDrawingActive(false);
     setCurrentDrawingPoint(null);
     toast.success('Floor plan cleared');
@@ -585,6 +761,22 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success(`${length}m line added`);
   };
 
+  const updateSelectedText = (newText: string) => {
+    if (!selectedText) return;
+    const updatedAnnotations = textAnnotations.map(annotation =>
+      annotation.id === selectedText
+        ? { ...annotation, text: newText }
+        : annotation
+    );
+    setTextAnnotations(updatedAnnotations);
+    setEditingText(newText);
+  };
+
+  const finishTextEditing = () => {
+    updateSelectedText(editingText);
+    setIsEditingText(false);
+  };
+
   return (
     <div ref={containerRef} className="relative w-full h-full bg-white">
       <canvas
@@ -592,6 +784,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         className={`w-full h-full ${
           currentTool === 'eraser' ? 'cursor-crosshair' : 
           currentTool === 'pan' ? 'cursor-move' : 
+          currentTool === 'text' ? 'cursor-text' :
           currentTool === 'select' && selectedProduct ? 'cursor-grab' :
           'cursor-crosshair'
         }`}
@@ -604,7 +797,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         onContextMenu={handleContextMenu}
       />
 
-      {/* Room Area Display - Enhanced */}
+      {/* Room Area Display */}
       {roomPoints.length >= 3 && !isDrawingActive && (
         <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-4 border border-gray-200">
           <div className="text-sm font-medium text-gray-700 mb-1">Room Area</div>
@@ -616,6 +809,40 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           </div>
         </div>
       )}
+
+      {/* Top Controls - Clear All and Grid/Ruler buttons */}
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex space-x-2">
+        <Button
+          variant="destructive"
+          size="sm"
+          className="bg-red-600/90 hover:bg-red-700 backdrop-blur-sm shadow-lg border border-red-500"
+          onClick={clearAll}
+          title="Clear All"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          Clear All
+        </Button>
+        <Button
+          variant={showGrid ? 'default' : 'outline'}
+          size="sm"
+          className="bg-white/90 backdrop-blur-sm shadow-lg"
+          onClick={() => setShowGrid(!showGrid)}
+          title="Toggle Grid"
+        >
+          <Grid className="w-4 h-4 mr-2" />
+          Grid
+        </Button>
+        <Button
+          variant={showRuler ? 'default' : 'outline'}
+          size="sm"
+          className="bg-white/90 backdrop-blur-sm shadow-lg"
+          onClick={() => setShowRuler(!showRuler)}
+          title="Toggle Ruler"
+        >
+          <Ruler className="w-4 h-4 mr-2" />
+          Ruler
+        </Button>
+      </div>
 
       {/* Floating Zoom Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
@@ -666,19 +893,38 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Clear All Button - Moved outside grid area */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
-        <Button
-          variant="destructive"
-          size="sm"
-          className="bg-red-600/90 hover:bg-red-700 backdrop-blur-sm shadow-lg border border-red-500"
-          onClick={clearAll}
-          title="Clear All"
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Clear All
-        </Button>
-      </div>
+      {/* Text Editing Modal */}
+      {isEditingText && selectedText && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white/95 backdrop-blur-sm shadow-lg rounded-lg p-4 border border-gray-200">
+          <div className="text-sm font-medium text-gray-700 mb-2">Edit Text</div>
+          <div className="flex space-x-2">
+            <Input
+              value={editingText}
+              onChange={(e) => setEditingText(e.target.value)}
+              placeholder="Enter text"
+              className="w-48"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  finishTextEditing();
+                } else if (e.key === 'Escape') {
+                  setIsEditingText(false);
+                }
+              }}
+            />
+            <Button size="sm" onClick={finishTextEditing}>
+              Save
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setIsEditingText(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Custom Length Input */}
       {showLengthInput && (
@@ -724,9 +970,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       {/* Enhanced Status Bar */}
       <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm shadow-lg rounded px-3 py-2 text-xs text-gray-600 border">
         <div className="flex flex-col space-y-1">
-          <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length}</div>
+          <div>Tool: <span className="font-medium">{currentTool}</span> | Points: {roomPoints.length} | Products: {placedProducts.length} | Text: {textAnnotations.length}</div>
           <div className="text-gray-500">
-            {isDrawingActive ? 'ESC=Finish, Enter=Custom Length' : selectedProduct ? 'Drag center=Move, Drag edges=Rotate, D=Duplicate, Del=Delete' : 'Left=Draw/Select, Right=Pan'}
+            Left click: Draw/Select | Right click: Pan | Mouse wheel: Zoom
           </div>
         </div>
       </div>

@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -144,12 +143,8 @@ const FloorPlanner = () => {
             
             <div className="flex items-center space-x-2">
               <Button variant="outline" size="sm">
-                <Grid className="w-4 h-4 mr-1" />
-                Grid
-              </Button>
-              <Button variant="outline" size="sm">
                 <Eye className="w-4 h-4 mr-1" />
-                Ruler
+                View
               </Button>
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-1" />
@@ -185,7 +180,7 @@ const FloorPlanner = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-2">
-                {/* Enhanced Tool Instructions */}
+                {/* Wall Tool */}
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="flex items-center space-x-2 mb-2">
                     <Ruler className="w-4 h-4 text-blue-600" />
@@ -193,38 +188,56 @@ const FloorPlanner = () => {
                   </div>
                   <p className="text-xs text-gray-600 mb-3">Draw room walls and boundaries</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Left click to place wall points</div>
+                    <div className="text-xs text-gray-700">• Click to place wall points</div>
                     <div className="text-xs text-gray-700">• Double-click to complete room</div>
                     <div className="text-xs text-gray-700">• ESC to finish drawing</div>
-                    <div className="text-xs text-gray-700">• Enter to input custom length</div>
+                    <div className="text-xs text-gray-700">• Enter for custom length input</div>
+                    <div className="text-xs text-gray-700">• Length shown parallel to line</div>
                   </div>
                 </div>
 
+                {/* Select & Move Tool */}
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="flex items-center space-x-2 mb-2">
                     <Move className="w-4 h-4 text-green-600" />
                     <span className="font-medium text-sm">Select & Move Tool</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Select, move, and rotate placed objects</p>
+                  <p className="text-xs text-gray-600 mb-3">Select and manipulate objects</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Left click to select objects</div>
-                    <div className="text-xs text-gray-700">• Drag to move selected objects</div>
-                    <div className="text-xs text-gray-700">• Drag with rotation handle to rotate</div>
-                    <div className="text-xs text-gray-700">• R key to rotate 15°</div>
-                    <div className="text-xs text-gray-700">• D key to duplicate</div>
+                    <div className="text-xs text-gray-700">• Click to select objects</div>
+                    <div className="text-xs text-gray-700">• Drag center to move</div>
+                    <div className="text-xs text-gray-700">• Drag edges to rotate</div>
+                    <div className="text-xs text-gray-700">• R key: rotate 15°</div>
+                    <div className="text-xs text-gray-700">• D key: duplicate</div>
+                    <div className="text-xs text-gray-700">• Delete key: remove</div>
+                  </div>
+                </div>
+
+                {/* Text Tool */}
+                <div className="p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Type className="w-4 h-4 text-purple-600" />
+                    <span className="font-medium text-sm">Text Tool</span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Add text annotations and labels</p>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-700">• Click to place text box</div>
+                    <div className="text-xs text-gray-700">• Drag to move text</div>
+                    <div className="text-xs text-gray-700">• Double-click to edit text</div>
                     <div className="text-xs text-gray-700">• Delete key to remove</div>
                   </div>
                 </div>
 
+                {/* Eraser Tool */}
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="flex items-center space-x-2 mb-2">
                     <Eraser className="w-4 h-4 text-red-600" />
                     <span className="font-medium text-sm">Eraser Tool</span>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Remove objects and wall points</p>
+                  <p className="text-xs text-gray-600 mb-3">Remove objects, text, and wall points</p>
                   <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• Left click to erase items</div>
-                    <div className="text-xs text-gray-700">• Works on products and walls</div>
+                    <div className="text-xs text-gray-700">• Click to erase items</div>
+                    <div className="text-xs text-gray-700">• Works on all placed elements</div>
                   </div>
                 </div>
                 
@@ -235,10 +248,10 @@ const FloorPlanner = () => {
                     <span className="font-medium text-sm text-blue-800">Basic Controls</span>
                   </div>
                   <div className="space-y-1">
-                    <div className="text-xs text-blue-700">• Left click to draw/select</div>
-                    <div className="text-xs text-blue-700">• Right click to pan canvas</div>
-                    <div className="text-xs text-blue-700">• Mouse wheel to zoom</div>
-                    <div className="text-xs text-blue-700">• Drag items from library to place</div>
+                    <div className="text-xs text-blue-700">• Left click: Draw/Select</div>
+                    <div className="text-xs text-blue-700">• Right click: Pan canvas</div>
+                    <div className="text-xs text-blue-700">• Mouse wheel: Zoom in/out</div>
+                    <div className="text-xs text-blue-700">• Drag from library: Place items</div>
                   </div>
                 </div>
               </CollapsibleContent>
@@ -281,7 +294,23 @@ const FloorPlanner = () => {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Select, move and rotate objects by dragging</p>
+                    <p>Select, move and rotate objects</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'text' ? 'default' : 'outline'}
+                      className="w-full justify-start"
+                      onClick={() => setActiveTool('text')}
+                    >
+                      <Type className="w-4 h-4 mr-2" />
+                      Text Tool
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add text annotations and labels</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -297,7 +326,7 @@ const FloorPlanner = () => {
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Remove objects and wall points</p>
+                    <p>Remove objects, text, and wall points</p>
                   </TooltipContent>
                 </Tooltip>
               </CollapsibleContent>
