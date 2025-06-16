@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2, Eraser, Grid, Ruler } from 'lucide-react';
+import { ZoomIn, ZoomOut, Move, RotateCcw, Copy, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
@@ -869,40 +869,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           </div>
         </div>
       )}
-
-      {/* Top Controls - Clear All and Grid/Ruler buttons */}
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10 flex space-x-2">
-        <Button
-          variant="destructive"
-          size="sm"
-          className="bg-red-600/90 hover:bg-red-700 backdrop-blur-sm shadow-lg border border-red-500"
-          onClick={clearAll}
-          title="Clear All"
-        >
-          <Trash2 className="w-4 h-4 mr-2" />
-          Clear All
-        </Button>
-        <Button
-          variant={showGrid ? 'default' : 'outline'}
-          size="sm"
-          className="bg-white/90 backdrop-blur-sm shadow-lg"
-          onClick={() => setShowGrid(!showGrid)}
-          title="Toggle Grid"
-        >
-          <Grid className="w-4 h-4 mr-2" />
-          Grid
-        </Button>
-        <Button
-          variant={showRuler ? 'default' : 'outline'}
-          size="sm"
-          className="bg-white/90 backdrop-blur-sm shadow-lg"
-          onClick={() => setShowRuler(!showRuler)}
-          title="Toggle Ruler"
-        >
-          <Ruler className="w-4 h-4 mr-2" />
-          Ruler
-        </Button>
-      </div>
 
       {/* Floating Zoom Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
