@@ -13,27 +13,34 @@ interface ProductPreviewProps {
 
 const ProductPreview: React.FC<ProductPreviewProps> = ({ name, image, description }) => {
   return (
-    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <Card className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 bg-white rounded-2xl">
       <CardContent className="p-0">
         <div className="relative overflow-hidden">
           <img 
             src={image} 
             alt={name}
-            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
           />
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         </div>
         
-        <div className="p-6">
-          <h3 className="text-xl font-semibold text-black mb-2">{name}</h3>
-          <p className="text-gray-600 mb-4 text-sm">{description}</p>
+        <div className="p-8">
+          <h3 className="text-xl font-light text-black mb-3 group-hover:text-gray-800 transition-colors duration-300">
+            {name}
+          </h3>
+          <p className="text-gray-600 mb-6 text-sm leading-relaxed font-light">
+            {description}
+          </p>
           
-          <Link to="/products">
+          <Link to="/products" className="block">
             <Button 
               variant="outline" 
-              className="w-full border-black text-black hover:bg-black hover:text-white transition-colors"
+              className="w-full border-2 border-gray-200 text-black hover:bg-black hover:text-white hover:border-black transition-all duration-300 rounded-full py-3 font-medium group-hover:shadow-lg"
             >
-              View Products <ArrowRight className="ml-2 w-4 h-4" />
+              <span className="flex items-center justify-center">
+                View Products 
+                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+              </span>
             </Button>
           </Link>
         </div>
