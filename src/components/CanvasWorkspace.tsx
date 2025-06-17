@@ -112,17 +112,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     console.log('🔧 CanvasWorkspace - Adding wall segment:', newWall);
     console.log('📊 Current wallSegments count before add:', wallSegments.length);
     
-    // Use proper functional update with correct typing
-    setWallSegments((prevWalls: WallSegment[]) => {
-      const updatedWalls = [...prevWalls, newWall];
-      console.log('📊 Updated wallSegments count after add:', updatedWalls.length);
-      console.log('✅ Wall successfully added to state:', updatedWalls.map(w => w.id));
-      return updatedWalls;
-    });
+    // Use direct array manipulation instead of functional update
+    const updatedWalls = [...wallSegments, newWall];
+    console.log('📊 Updated wallSegments count after add:', updatedWalls.length);
+    console.log('✅ Wall successfully added to state:', updatedWalls.map(w => w.id));
+    
+    setWallSegments(updatedWalls);
     
     // Force a re-render by updating drawing state
     setCurrentDrawingPoint(null);
-    toast.success(`Wall created! Total: ${wallSegments.length + 1} walls`);
+    toast.success(`Wall created! Total: ${updatedWalls.length} walls`);
   }, [wallSegments, setWallSegments]);
 
   // Helper function to find wall segment by ID
