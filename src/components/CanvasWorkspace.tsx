@@ -214,6 +214,71 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.restore();
   }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, smoothedDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, smoothedCursorPosition, showCrosshair]);
 
+  // Draw room function
+  const drawRoom = (ctx: CanvasRenderingContext2D) => {
+    if (roomPoints.length < 2) return;
+
+    ctx.strokeStyle = '#1f2937';
+    ctx.lineWidth = 3 / zoom;
+    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+
+    ctx.beginPath();
+    ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
+    
+    for (let i = 1; i < roomPoints.length; i++) {
+      ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
+    }
+    
+    if (roomPoints.length > 2 && !isDrawingActive) {
+      ctx.closePath();
+      ctx.fill();
+    }
+    
+    ctx.stroke();
+
+    // Draw room points
+    roomPoints.forEach((point, index) => {
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+  };
+
+  // Draw selected wall function
+  const drawSelectedWall = (ctx: CanvasRenderingContext2D) => {
+    if (selectedWallIndex === null || roomPoints.length < 2) return;
+
+    const nextIndex = (selectedWallIndex + 1) % roomPoints.length;
+    const point1 = roomPoints[selectedWallIndex];
+    const point2 = roomPoints[nextIndex];
+
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 5 / zoom;
+    ctx.setLineDash([10 / zoom, 5 / zoom]);
+    
+    ctx.beginPath();
+    ctx.moveTo(point1.x, point1.y);
+    ctx.lineTo(point2.x, point2.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  };
+
+  // Calculate room area function
+  const calculateRoomArea = (): number => {
+    if (roomPoints.length < 3) return 0;
+
+    let area = 0;
+    for (let i = 0; i < roomPoints.length; i++) {
+      const j = (i + 1) % roomPoints.length;
+      area += roomPoints[i].x * roomPoints[j].y;
+      area -= roomPoints[j].x * roomPoints[i].y;
+    }
+    
+    const areaInPixels = Math.abs(area) / 2;
+    return areaInPixels / (scale * scale); // Convert to square meters
+  };
+
   // Enhanced grid rendering with better alignment
   const drawPrecisionGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.strokeStyle = '#f1f5f9';
@@ -1183,6 +1248,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
   }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
+
+  useEffect(() => {
+    drawCanvas();
+  }, [drawCanvas]);
 
   return (
     <div className="relative w-full h-full bg-gray-50">
