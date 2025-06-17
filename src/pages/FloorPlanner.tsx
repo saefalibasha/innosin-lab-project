@@ -1,9 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, Type, DoorOpen, Undo, Redo, Edit } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, DoorOpen, Undo, Redo, Edit } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -364,22 +365,6 @@ const FloorPlanner = () => {
                   </div>
                 </div>
 
-                {/* Text Tool */}
-                <div className="p-3 bg-white rounded-lg border">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Type className="w-4 h-4 text-purple-600" />
-                    <span className="font-medium text-sm">Text Tool</span>
-                    <Badge variant="outline" className="text-xs">Enhanced</Badge>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">Add text annotations and labels anywhere</p>
-                  <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• <strong>Click:</strong> Place text box</div>
-                    <div className="text-xs text-gray-700">• <strong>Drag:</strong> Move text freely</div>
-                    <div className="text-xs text-gray-700">• <strong>Double-click:</strong> Edit text content</div>
-                    <div className="text-xs text-gray-700">• <strong>Delete:</strong> Remove text</div>
-                  </div>
-                </div>
-
                 {/* Eraser Tool */}
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="flex items-center space-x-2 mb-2">
@@ -427,7 +412,7 @@ const FloorPlanner = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Enhanced Drawing Tools */}
+            {/* Enhanced Drawing Tools - REMOVED TEXT TOOL */}
             <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
@@ -497,22 +482,6 @@ const FloorPlanner = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Select and adjust wall lengths</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'text' ? 'default' : 'outline'}
-                      className="w-full justify-start h-10"
-                      onClick={() => setActiveTool('text')}
-                    >
-                      <Type className="w-4 h-4 mr-3" />
-                      Text Tool
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Add text annotations and labels</p>
                   </TooltipContent>
                 </Tooltip>
 

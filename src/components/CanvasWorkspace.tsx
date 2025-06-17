@@ -92,6 +92,132 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   // Pan sensitivity - significantly reduced for smoother control
   const PAN_SENSITIVITY = 0.03; // Much more controlled panning
 
+  // Helper functions
+  const findProductAt = (point: Point): string | null => {
+    for (const product of placedProducts) {
+      const { position, rotation, dimensions } = product;
+      const productScale = product.scale || 1;
+      const width = dimensions.length * scale * productScale;
+      const height = dimensions.width * scale * productScale;
+      
+      // Transform point to product's local coordinate system
+      const dx = point.x - position.x;
+      const dy = point.y - position.y;
+      const angle = (rotation * Math.PI) / 180;
+      const localX = dx * Math.cos(-angle) - dy * Math.sin(-angle);
+      const localY = dx * Math.sin(-angle) + dy * Math.cos(-angle);
+      
+      if (Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2) {
+        return product.id;
+      }
+    }
+    return null;
+  };
+
+  const findTextAt = (point: Point): string | null => {
+    for (const annotation of textAnnotations) {
+      const distance = Math.sqrt(
+        Math.pow(point.x - annotation.position.x, 2) + 
+        Math.pow(point.y - annotation.position.y, 2)
+      );
+      if (distance < 20 / zoom) {
+        return annotation.id;
+      }
+    }
+    return null;
+  };
+
+  const findWallAt = (point: Point): number | null => {
+    if (roomPoints.length < 2) return null;
+    
+    for (let i = 0; i < roomPoints.length; i++) {
+      const nextIndex = (i + 1) % roomPoints.length;
+      if (nextIndex === 0 && roomPoints.length < 3) continue;
+      
+      const start = roomPoints[i];
+      const end = roomPoints[nextIndex];
+      
+      // Calculate distance from point to line segment
+      const A = point.x - start.x;
+      const B = point.y - start.y;
+      const C = end.x - start.x;
+      const D = end.y - start.y;
+      
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let param = -1;
+      if (lenSq !== 0) param = dot / lenSq;
+      
+      let xx, yy;
+      if (param < 0) {
+        xx = start.x;
+        yy = start.y;
+      } else if (param > 1) {
+        xx = end.x;
+        yy = end.y;
+      } else {
+        xx = start.x + param * C;
+        yy = start.y + param * D;
+      }
+      
+      const dx = point.x - xx;
+      const dy = point.y - yy;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < 10 / zoom) {
+        return i;
+      }
+    }
+    return null;
+  };
+
+  const duplicateSelectedProduct = () => {
+    if (!selectedProduct) return;
+    
+    const product = placedProducts.find(p => p.id === selectedProduct);
+    if (!product) return;
+    
+    const newProduct: PlacedProduct = {
+      ...product,
+      id: `${product.productId}-${Date.now()}`,
+      position: {
+        x: product.position.x + 50,
+        y: product.position.y + 50
+      }
+    };
+    
+    if (isProductWithinRoom(newProduct, roomPoints, scale)) {
+      setPlacedProducts([...placedProducts, newProduct]);
+      setSelectedProduct(newProduct.id);
+      toast.success('Product duplicated');
+    } else {
+      toast.error('Cannot duplicate product outside room bounds');
+    }
+  };
+
+  const deleteSelectedProduct = () => {
+    if (!selectedProduct) return;
+    setPlacedProducts(placedProducts.filter(p => p.id !== selectedProduct));
+    setSelectedProduct(null);
+    toast.success('Product deleted');
+  };
+
+  const deleteSelectedText = () => {
+    if (!selectedText) return;
+    setTextAnnotations(textAnnotations.filter(t => t.id !== selectedText));
+    setSelectedText(null);
+    toast.success('Text deleted');
+  };
+
+  const snapToGrid = (point: Point): Point => {
+    if (!showGrid) return point;
+    const gridSize = scale * 0.25;
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  };
+
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -620,15 +746,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return { x, y };
   };
 
-  const snapToGrid = (point: Point): Point => {
-    if (!showGrid) return point;
-    const gridSize = scale * 0.25;
-    return {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    };
-  };
-
   const snapToAngle = (angle: number): number => {
     const snapIncrement = 45;
     return Math.round(angle / snapIncrement) * snapIncrement;
@@ -736,9 +853,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       case 'wall-edit':
         handleWallEditToolMouseDown(point, e);
         break;
-      case 'text':
-        handleTextToolMouseDown(point, e);
-        break;
       case 'door':
         handleDoorToolMouseDown(point, e);
         break;
@@ -755,16 +869,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         setIsDrawingActive(false);
         setCurrentDrawingPoint(null);
         toast.success('Room completed');
-      }
-    } else if (currentTool === 'text') {
-      const textId = findTextAt(point);
-      if (textId) {
-        const annotation = textAnnotations.find(t => t.id === textId);
-        if (annotation) {
-          setSelectedText(textId);
-          setIsEditingText(true);
-          setEditingText(annotation.text);
-        }
       }
     }
   };
@@ -829,21 +933,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setShowWallLengthInput(true);
     } else {
       setSelectedWallIndex(null);
-    }
-  };
-
-  const handleTextToolMouseDown = (point: Point, e: MouseEvent) => {
-    const textId = findTextAt(point);
-    
-    if (!textId) {
-      const newText: TextAnnotation = {
-        id: `text-${Date.now()}`,
-        text: 'New Text',
-        position: point,
-        fontSize: 16 * zoom
-      };
-      setTextAnnotations([...textAnnotations, newText]);
-      setSelectedText(newText.id);
     }
   };
 
