@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 import { isPointInPolygon, isProductWithinRoom, getRotatedRectangleCorners, closestPointOnLineSegment, findClosestWallSegment, getWallAngle, findOptimalDoorPosition, checkDoorConflict } from '@/utils/collisionDetection';
@@ -138,7 +139,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -251,7 +252,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     setIsPanning(false);
@@ -262,7 +263,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -349,8 +350,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
         const newLength = Math.sqrt(Math.pow(currentPoint.x - wallStart.x, 2) + Math.pow(currentPoint.y - wallStart.y, 2));
 
-        const ratio = newLength / wallEditOriginalLength;
-
         const newX = wallStart.x + Math.cos(originalAngle) * newLength;
         const newY = wallStart.y + Math.sin(originalAngle) * newLength;
 
@@ -366,7 +365,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleDoubleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     if (currentTool === 'wall') {
@@ -389,12 +388,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const newText = prompt('Enter text:');
       if (newText) {
         const snapped = snapToGrid({ x: canvasX, y: canvasY });
-        setTextAnnotations(prev => [...prev, { id: Date.now().toString(), text: newText, position: snapped }]);
+        setTextAnnotations(prev => [...prev, { 
+          id: Date.now().toString(), 
+          text: newText, 
+          position: snapped,
+          fontSize: 16
+        }]);
       }
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       setRoomPoints([]);
     }
@@ -428,7 +432,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (productData) {
       try {
         const product = JSON.parse(productData);
-        const canvas = canvasRef.current;
+        const canvas = canvasRef?.current;
         if (!canvas) return;
 
         const rect = canvas.getBoundingClientRect();
@@ -443,6 +447,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         const newProduct: PlacedProduct = {
           ...product,
           id: Date.now().toString(),
+          productId: product.id,
           position: snapped,
           rotation: 0,
           scale: 1
@@ -466,7 +471,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
@@ -543,7 +548,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           rotation: optimalPosition.rotation,
           width: doorWidth,
           wallPosition: optimalPosition.wallPosition,
-          wallSegmentIndex: index
+          wallSegmentIndex: index,
+          swingDirection: 'inward',
+          isEmbedded: true
         };
 
         if (!checkDoorConflict(newDoor, doors, doorWidth)) {
@@ -559,7 +566,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const draw = () => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
@@ -602,7 +609,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const productScale = product.scale || 1;
       const length = product.dimensions.length * scale * productScale;
       const width = product.dimensions.width * scale * productScale;
-      const height = product.dimensions.height * scale * productScale;
       ctx.fillRect(-length / 2, -width / 2, length, width);
       ctx.restore();
     });
@@ -627,7 +633,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw text annotations
     textAnnotations.forEach(text => {
       ctx.fillStyle = '#000';
-      ctx.font = '16px sans-serif';
+      ctx.font = `${text.fontSize || 16}px sans-serif`;
       ctx.fillText(text.text, text.position.x, text.position.y);
     });
 
@@ -701,8 +707,37 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
+  // Create wrapper functions for native event handlers
+  const handleNativeMouseDown = (e: MouseEvent) => {
+    handleMouseDown(e as any);
+  };
+
+  const handleNativeMouseUp = (e: MouseEvent) => {
+    handleMouseUp(e as any);
+  };
+
+  const handleNativeMouseMove = (e: MouseEvent) => {
+    handleMouseMove(e as any);
+  };
+
+  const handleNativeMouseLeave = () => {
+    handleMouseLeave();
+  };
+
+  const handleNativeDoubleClick = (e: MouseEvent) => {
+    handleDoubleClick(e as any);
+  };
+
+  const handleNativeDragOver = (e: DragEvent) => {
+    handleDragOver(e as any);
+  };
+
+  const handleNativeDrop = (e: DragEvent) => {
+    handleDrop(e as any);
+  };
+
   useEffect(() => {
-    const canvas = canvasRef.current;
+    const canvas = canvasRef?.current;
     if (!canvas) return;
 
     canvas.width = 1600;
@@ -711,27 +746,29 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     draw();
 
     canvas.addEventListener('wheel', handleWheel as any);
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseleave', handleMouseLeave);
-    canvas.addEventListener('dblclick', handleDoubleClick);
-    canvas.addEventListener('dragover', handleDragOver);
-    canvas.addEventListener('drop', handleDrop);
+    canvas.addEventListener('mousedown', handleNativeMouseDown);
+    canvas.addEventListener('mouseup', handleNativeMouseUp);
+    canvas.addEventListener('mousemove', handleNativeMouseMove);
+    canvas.addEventListener('mouseleave', handleNativeMouseLeave);
+    canvas.addEventListener('dblclick', handleNativeDoubleClick);
+    canvas.addEventListener('dragover', handleNativeDragOver);
+    canvas.addEventListener('drop', handleNativeDrop);
+    canvas.addEventListener('click', handleClick as any);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
       canvas.removeEventListener('wheel', handleWheel as any);
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('mouseup', handleMouseUp);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mouseleave', handleMouseLeave);
-      canvas.removeEventListener('dblclick', handleDoubleClick);
-      canvas.removeEventListener('dragover', handleDragOver);
-      canvas.removeEventListener('drop', handleDrop);
+      canvas.removeEventListener('mousedown', handleNativeMouseDown);
+      canvas.removeEventListener('mouseup', handleNativeMouseUp);
+      canvas.removeEventListener('mousemove', handleNativeMouseMove);
+      canvas.removeEventListener('mouseleave', handleNativeMouseLeave);
+      canvas.removeEventListener('dblclick', handleNativeDoubleClick);
+      canvas.removeEventListener('dragover', handleNativeDragOver);
+      canvas.removeEventListener('drop', handleNativeDrop);
+      canvas.removeEventListener('click', handleClick as any);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [draw, handleWheel, handleMouseDown, handleMouseUp, handleMouseMove, handleMouseLeave, handleDoubleClick, handleDragOver, handleDrop, handleKeyDown]);
+  }, []);
 
   useEffect(() => {
     draw();
@@ -741,6 +778,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     <canvas
       ref={canvasRef}
       className="bg-white cursor-default"
+      onContextMenu={(e) => e.preventDefault()}
     />
   );
 };
