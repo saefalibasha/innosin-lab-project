@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 
 interface AnimatedSectionProps {
   children: React.ReactNode;
-  animation?: 'fade-in' | 'fade-in-left' | 'fade-in-right' | 'scale-in' | 'slide-up' | 'slide-in-bottom' | 'bounce-in' | 'rotate-in' | 'slide-in-left';
+  animation?: 'fade-in' | 'fade-in-left' | 'fade-in-right' | 'scale-in' | 'slide-up' | 'slide-in-bottom' | 'bounce-in' | 'rotate-in' | 'slide-in-left' | 'slide-in-right';
   delay?: number;
   duration?: string;
   className?: string;
