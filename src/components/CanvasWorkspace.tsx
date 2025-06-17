@@ -940,12 +940,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleSingleClick = (point: Point, e: MouseEvent) => {
+    console.log('🖱️ Single click detected', { currentTool, point });
+    
     // Tool-specific handling
     switch (currentTool) {
       case 'wall':
         handleWallToolMouseDown(point, e);
         break;
       case 'interior-wall':
+        console.log('🔧 Routing to interior wall handler');
         handleInteriorWallToolMouseDown(point, e);
         break;
       case 'select':
@@ -960,6 +963,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       case 'eraser':
         handleEraserToolMouseDown(point, e);
         break;
+      default:
+        console.log('⚠️ Unknown tool:', currentTool);
     }
   };
 
@@ -984,16 +989,38 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleInteriorWallToolMouseDown = (point: Point, e: MouseEvent) => {
+    console.log('🏗️ Interior wall tool clicked!', { 
+      currentTool, 
+      point, 
+      isDrawingInteriorWall,
+      interiorWallStart,
+      wallSegments: wallSegments.length 
+    });
+
     const snapPoint = findWallSnapPoint(point, roomPoints, wallSegments, 20 / zoom);
     const finalPoint = snapPoint || point;
+    
+    console.log('📍 Point selected:', { 
+      originalPoint: point, 
+      snapPoint, 
+      finalPoint, 
+      hasSnapped: !!snapPoint 
+    });
 
     if (!isDrawingInteriorWall) {
       // Start new interior wall
+      console.log('🚀 Starting new interior wall at:', finalPoint);
       setIsDrawingInteriorWall(true);
       setInteriorWallStart(finalPoint);
       setCurrentInteriorWallEnd(finalPoint);
+      toast.success('Interior wall started - click again to finish');
     } else {
       // Finish interior wall
+      console.log('🏁 Finishing interior wall', { 
+        start: interiorWallStart, 
+        end: finalPoint 
+      });
+      
       if (interiorWallStart) {
         const newWall: WallSegment = {
           id: `interior-wall-${Date.now()}`,
@@ -1003,11 +1030,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           thickness: 0.1 // 10cm default thickness
         };
         
-        setWallSegments([...wallSegments, newWall]);
+        console.log('✅ Creating new wall:', newWall);
+        console.log('📊 Current wall segments before update:', wallSegments);
+        
+        const updatedWallSegments = [...wallSegments, newWall];
+        setWallSegments(updatedWallSegments);
+        
+        console.log('📊 Wall segments after update:', updatedWallSegments);
+        
         setIsDrawingInteriorWall(false);
         setInteriorWallStart(null);
         setCurrentInteriorWallEnd(null);
-        toast.success('Interior wall added');
+        toast.success('Interior wall created!');
+      } else {
+        console.error('❌ No interior wall start point!');
+        toast.error('Error: No start point for interior wall');
       }
     }
   };

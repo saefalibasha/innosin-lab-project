@@ -27,6 +27,13 @@ const FloorPlanner = () => {
   const [showRuler, setShowRuler] = useState(false);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
+  // Add debug logging for tool changes
+  const handleToolChange = (newTool: string) => {
+    console.log('🔧 Tool changed from', activeTool, 'to', newTool);
+    setActiveTool(newTool);
+    toast.success(`${newTool} tool selected`);
+  };
+
   // Initialize history management
   const initialState: FloorPlanState = {
     roomPoints: [],
@@ -142,6 +149,118 @@ const FloorPlanner = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Enhanced Drawing Tools with Interior Walls
+  const renderToolsSection = () => (
+    <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
+      <CollapsibleTrigger asChild>
+        <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
+          <Ruler className="w-4 h-4 mr-2" />
+          Drawing Tools
+        </Button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className="space-y-2 mt-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'wall' ? 'default' : 'outline'}
+              className="w-full justify-start h-10"
+              onClick={() => handleToolChange('wall')}
+            >
+              <Home className="w-4 h-4 mr-3" />
+              Exterior Walls
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Draw main room perimeter</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'interior-wall' ? 'default' : 'outline'}
+              className="w-full justify-start h-10"
+              onClick={() => {
+                console.log('🏗️ Interior Wall button clicked!');
+                handleToolChange('interior-wall');
+              }}
+            >
+              <Minus className="w-4 h-4 mr-3" />
+              Interior Walls
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Add interior walls and divisions</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'select' ? 'default' : 'outline'}
+              className="w-full justify-start h-10"
+              onClick={() => handleToolChange('select')}
+            >
+              <Move className="w-4 h-4 mr-3" />
+              Select & Move
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Select and move objects</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'rotate' ? 'default' : 'outline'}
+              className="w-full justify-start h-10"
+              onClick={() => handleToolChange('rotate')}
+            >
+              <RotateCcw className="w-4 h-4 mr-3" />
+              Rotate Tool
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Rotate objects with 45° snapping</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'door' ? 'default' : 'outline'}
+              className="w-full justify-start h-10"
+              onClick={() => handleToolChange('door')}
+            >
+              <DoorOpen className="w-4 h-4 mr-3" />
+              Door Tool
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Place doors along walls</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'eraser' ? 'default' : 'outline'}
+              className="w-full justify-start h-10"
+              onClick={() => handleToolChange('eraser')}
+            >
+              <Eraser className="w-4 h-4 mr-3" />
+              Eraser
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Remove objects, text, and wall points</p>
+          </TooltipContent>
+        </Tooltip>
+      </CollapsibleContent>
+    </Collapsible>
+  );
 
   return (
     <TooltipProvider>
@@ -417,111 +536,7 @@ const FloorPlanner = () => {
               </Collapsible>
 
               {/* Enhanced Drawing Tools with Interior Walls */}
-              <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
-                    <Ruler className="w-4 h-4 mr-2" />
-                    Drawing Tools
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-2 mt-2">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'wall' ? 'default' : 'outline'}
-                        className="w-full justify-start h-10"
-                        onClick={() => setActiveTool('wall')}
-                      >
-                        <Home className="w-4 h-4 mr-3" />
-                        Exterior Walls
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Draw main room perimeter</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'interior-wall' ? 'default' : 'outline'}
-                        className="w-full justify-start h-10"
-                        onClick={() => setActiveTool('interior-wall')}
-                      >
-                        <Minus className="w-4 h-4 mr-3" />
-                        Interior Walls
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Add interior walls and divisions</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'select' ? 'default' : 'outline'}
-                        className="w-full justify-start h-10"
-                        onClick={() => setActiveTool('select')}
-                      >
-                        <Move className="w-4 h-4 mr-3" />
-                        Select & Move
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Select and move objects</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'rotate' ? 'default' : 'outline'}
-                        className="w-full justify-start h-10"
-                        onClick={() => setActiveTool('rotate')}
-                      >
-                        <RotateCcw className="w-4 h-4 mr-3" />
-                        Rotate Tool
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Rotate objects with 45° snapping</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'door' ? 'default' : 'outline'}
-                        className="w-full justify-start h-10"
-                        onClick={() => setActiveTool('door')}
-                      >
-                        <DoorOpen className="w-4 h-4 mr-3" />
-                        Door Tool
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Place doors along walls</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={activeTool === 'eraser' ? 'default' : 'outline'}
-                        className="w-full justify-start h-10"
-                        onClick={() => setActiveTool('eraser')}
-                      >
-                        <Eraser className="w-4 h-4 mr-3" />
-                        Eraser
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Remove objects, text, and wall points</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </CollapsibleContent>
-              </Collapsible>
+              {renderToolsSection()}
 
               {/* Enhanced Product Library */}
               <Collapsible open={openPanel === 'library'} onOpenChange={() => setOpenPanel(openPanel === 'library' ? '' : 'library')}>
@@ -567,6 +582,11 @@ const FloorPlanner = () => {
 
           {/* Main Canvas Area */}
           <div className="flex-1 relative bg-gray-50">
+            {/* Debug tool info */}
+            <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs z-50">
+              Tool: {activeTool} | Walls: {wallSegments.length}
+            </div>
+            
             <FloorPlannerCanvas
               roomPoints={roomPoints}
               setRoomPoints={setRoomPoints}
