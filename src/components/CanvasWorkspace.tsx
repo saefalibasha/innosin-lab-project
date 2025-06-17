@@ -99,28 +99,30 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   // Pan sensitivity - significantly reduced for smoother control
   const PAN_SENSITIVITY = 0.03; // Much more controlled panning
 
-  // Add state persistence debugging
+  // Enhanced state persistence debugging
   useEffect(() => {
-    console.log('📊 Wall segments state updated:', {
+    console.log('🔍 CanvasWorkspace - Wall segments state updated:', {
       count: wallSegments.length,
-      segments: wallSegments.map(w => ({ id: w.id, type: w.type }))
+      segments: wallSegments.map(w => ({ id: w.id, type: w.type, start: w.start, end: w.end }))
     });
   }, [wallSegments]);
 
-  // Helper function to add wall segment with immediate state update
+  // Fixed helper function to add wall segment with proper TypeScript typing
   const addWallSegment = useCallback((newWall: WallSegment) => {
-    console.log('🔧 Adding wall segment:', newWall);
-    console.log('📊 Current wallSegments before add:', wallSegments.length);
+    console.log('🔧 CanvasWorkspace - Adding wall segment:', newWall);
+    console.log('📊 Current wallSegments count before add:', wallSegments.length);
     
-    // Use functional update to ensure we have the latest state
-    setWallSegments(prevWalls => {
+    // Use proper functional update with correct typing
+    setWallSegments((prevWalls: WallSegment[]) => {
       const updatedWalls = [...prevWalls, newWall];
-      console.log('📊 Updated wallSegments after add:', updatedWalls.length);
+      console.log('📊 Updated wallSegments count after add:', updatedWalls.length);
+      console.log('✅ Wall successfully added to state:', updatedWalls.map(w => w.id));
       return updatedWalls;
     });
     
-    // Force a re-render by updating a dummy state
+    // Force a re-render by updating drawing state
     setCurrentDrawingPoint(null);
+    toast.success(`Wall created! Total: ${wallSegments.length + 1} walls`);
   }, [wallSegments, setWallSegments]);
 
   // Helper function to find wall segment by ID
@@ -309,7 +311,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw room (exterior walls)
     drawRoom(ctx);
     
-    // Draw interior walls - improved rendering
+    // Draw interior walls - improved rendering with enhanced logging
     drawInteriorWalls(ctx);
     
     // Draw current line while drawing exterior walls
@@ -399,44 +401,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  const drawPrecisionRuler = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.strokeStyle = '#1f2937';
-    ctx.fillStyle = '#1f2937';
-    ctx.lineWidth = 1 / zoom;
-    ctx.font = `${10 / zoom}px "Inter", sans-serif`;
-    ctx.textAlign = 'left';
-
-    // Horizontal ruler
-    for (let x = 0; x <= width; x += scale) {
-      const meters = x / scale;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 15 / zoom);
-      ctx.stroke();
-      
-      if (meters % 1 === 0) {
-        ctx.fillText(`${meters}m`, x + 2 / zoom, 12 / zoom);
-      }
-    }
-
-    // Vertical ruler
-    for (let y = 0; y <= height; y += scale) {
-      const meters = y / scale;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(15 / zoom, y);
-      ctx.stroke();
-      
-      if (meters % 1 === 0) {
-        ctx.save();
-        ctx.translate(12 / zoom, y - 2 / zoom);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`${meters}m`, 0, 0);
-        ctx.restore();
-      }
-    }
-  };
-
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
     if (roomPoints.length < 1) return;
 
@@ -474,26 +438,34 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const drawInteriorWalls = (ctx: CanvasRenderingContext2D) => {
-    console.log('🎨 Drawing interior walls:', wallSegments.length);
+    console.log('🎨 CanvasWorkspace - Drawing interior walls:', wallSegments.length);
     
     wallSegments.forEach((wall, index) => {
-      console.log(`🎨 Drawing wall ${index}:`, wall);
+      console.log(`🎨 CanvasWorkspace - Drawing wall ${index}:`, wall);
       
       ctx.strokeStyle = wall.type === WallType.INTERIOR ? '#f59e0b' : '#1f2937';
-      ctx.lineWidth = wall.type === WallType.INTERIOR ? 3 / zoom : 3 / zoom; // Made interior walls thicker for visibility
+      ctx.lineWidth = wall.type === WallType.INTERIOR ? 4 / zoom : 3 / zoom; // Made interior walls even thicker for better visibility
       
       ctx.beginPath();
       ctx.moveTo(wall.start.x, wall.start.y);
       ctx.lineTo(wall.end.x, wall.end.y);
       ctx.stroke();
       
-      // Draw endpoints with better visibility
+      // Draw endpoints with enhanced visibility
       ctx.fillStyle = wall.type === WallType.INTERIOR ? '#f59e0b' : '#1f2937';
       [wall.start, wall.end].forEach(point => {
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI); // Made endpoints larger
+        ctx.arc(point.x, point.y, 5 / zoom, 0, 2 * Math.PI); // Made endpoints even larger
         ctx.fill();
       });
+      
+      // Add wall index for debugging
+      const midX = (wall.start.x + wall.end.x) / 2;
+      const midY = (wall.start.y + wall.end.y) / 2;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${14 / zoom}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(`W${index + 1}`, midX, midY);
     });
   };
 
@@ -501,8 +473,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (!interiorWallStart || !currentInteriorWallEnd) return;
 
     ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 3 / zoom; // Made preview thicker for better visibility
-    ctx.setLineDash([6 / zoom, 6 / zoom]); // Made dashes more visible
+    ctx.lineWidth = 4 / zoom; // Made preview even thicker for better visibility
+    ctx.setLineDash([8 / zoom, 8 / zoom]); // Made dashes more visible
 
     ctx.beginPath();
     ctx.moveTo(interiorWallStart.x, interiorWallStart.y);
@@ -510,7 +482,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Show length
+    // Show length with enhanced styling
     const length = Math.sqrt(
       Math.pow(currentInteriorWallEnd.x - interiorWallStart.x, 2) +
       Math.pow(currentInteriorWallEnd.y - interiorWallStart.y, 2)
@@ -521,7 +493,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const midX = (interiorWallStart.x + currentInteriorWallEnd.x) / 2;
       const midY = (interiorWallStart.y + currentInteriorWallEnd.y) / 2;
       
-      const offsetDistance = 25 / zoom;
+      const offsetDistance = 30 / zoom;
       const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
       const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
       
@@ -529,11 +501,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.translate(midX + offsetX, midY + offsetY);
       ctx.rotate(angle);
       ctx.fillStyle = '#f59e0b';
-      ctx.font = `bold ${12 / zoom}px "Inter", sans-serif`;
+      ctx.font = `bold ${14 / zoom}px "Inter", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillRect(-25 / zoom, -10 / zoom, 50 / zoom, 20 / zoom);
+      ctx.fillRect(-30 / zoom, -12 / zoom, 60 / zoom, 24 / zoom);
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(`${length.toFixed(2)}m`, 0, 3 / zoom);
+      ctx.fillText(`${length.toFixed(2)}m`, 0, 4 / zoom);
       ctx.restore();
     }
   };
@@ -934,7 +906,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     // Reset interior wall drawing state properly
     if (isDrawingInteriorWall) {
-      console.log('🔄 Resetting interior wall drawing state');
+      console.log('🔄 CanvasWorkspace - Resetting interior wall drawing state');
       setIsDrawingInteriorWall(false);
       setInteriorWallStart(null);
       setCurrentInteriorWallEnd(null);
@@ -978,7 +950,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleSingleClick = (point: Point, e: MouseEvent) => {
-    console.log('🖱️ Single click detected', { currentTool, point });
+    console.log('🖱️ CanvasWorkspace - Single click detected', { currentTool, point });
     
     // Tool-specific handling
     switch (currentTool) {
@@ -986,7 +958,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         handleWallToolMouseDown(point, e);
         break;
       case 'interior-wall':
-        console.log('🔧 Routing to interior wall handler');
+        console.log('🔧 CanvasWorkspace - Routing to interior wall handler');
         handleInteriorWallToolMouseDown(point, e);
         break;
       case 'select':
@@ -1002,7 +974,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         handleEraserToolMouseDown(point, e);
         break;
       default:
-        console.log('⚠️ Unknown tool:', currentTool);
+        console.log('⚠️ CanvasWorkspace - Unknown tool:', currentTool);
     }
   };
 
@@ -1026,9 +998,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  // Improved interior wall handling with better state management
   const handleInteriorWallToolMouseDown = (point: Point, e: MouseEvent) => {
-    console.log('🏗️ Interior wall tool clicked!', { 
+    console.log('🏗️ CanvasWorkspace - Interior wall tool clicked!', { 
       currentTool, 
       point, 
       isDrawingInteriorWall,
@@ -1039,7 +1010,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const snapPoint = findWallSnapPoint(point, roomPoints, wallSegments, 20 / zoom);
     const finalPoint = snapPoint || point;
     
-    console.log('📍 Point selected:', { 
+    console.log('📍 CanvasWorkspace - Point selected:', { 
       originalPoint: point, 
       snapPoint, 
       finalPoint, 
@@ -1048,14 +1019,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     if (!isDrawingInteriorWall) {
       // Start new interior wall
-      console.log('🚀 Starting new interior wall at:', finalPoint);
+      console.log('🚀 CanvasWorkspace - Starting new interior wall at:', finalPoint);
       setIsDrawingInteriorWall(true);
       setInteriorWallStart(finalPoint);
       setCurrentInteriorWallEnd(finalPoint);
       toast.success('Interior wall started - click again to finish');
     } else {
       // Finish interior wall
-      console.log('🏁 Finishing interior wall', { 
+      console.log('🏁 CanvasWorkspace - Finishing interior wall', { 
         start: interiorWallStart, 
         end: finalPoint 
       });
@@ -1069,19 +1040,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           thickness: 0.1 // 10cm default thickness
         };
         
-        console.log('✅ Creating new wall:', newWall);
-        console.log('📊 Current wall segments before update:', wallSegments);
+        console.log('✅ CanvasWorkspace - Creating new wall:', newWall);
+        console.log('📊 Current wall segments before update:', wallSegments.length);
         
-        // Use the improved addWallSegment function
+        // Use the improved addWallSegment function with proper state management
         addWallSegment(newWall);
         
         // Reset interior wall drawing state
         setIsDrawingInteriorWall(false);
         setInteriorWallStart(null);
         setCurrentInteriorWallEnd(null);
-        toast.success(`Interior wall created! Total walls: ${wallSegments.length + 1}`);
+        
+        // Provide enhanced user feedback
+        console.log('🎉 CanvasWorkspace - Interior wall creation completed');
       } else {
-        console.error('❌ No interior wall start point!');
+        console.error('❌ CanvasWorkspace - No interior wall start point!');
         toast.error('Error: No start point for interior wall');
       }
     }
