@@ -23,6 +23,7 @@ interface LeadData {
   email: string;
   contact: string;
   company: string;
+  jobTitle: string;
   projectDescription: string;
 }
 
@@ -42,6 +43,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
     email: '',
     contact: '',
     company: '',
+    jobTitle: '',
     projectDescription: ''
   });
 
@@ -125,7 +127,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
       setTimeout(() => {
         setIsOpen(false);
         setStep('format');
-        setLeadData({ name: '', email: '', contact: '', company: '', projectDescription: '' });
+        setLeadData({ name: '', email: '', contact: '', company: '', jobTitle: '', projectDescription: '' });
       }, 3000);
 
     } catch (error) {
@@ -143,7 +145,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (leadData.name && leadData.email) {
+    if (isFormValid) {
       exportAsImage(exportFormat);
     }
   };
@@ -158,11 +160,12 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const stats = calculateStats();
-  const isFormValid = leadData.name && leadData.email;
+  // Updated validation to require name, email, contact, and company
+  const isFormValid = leadData.name && leadData.email && leadData.contact && leadData.company;
 
   const resetModal = () => {
     setStep('format');
-    setLeadData({ name: '', email: '', contact: '', company: '', projectDescription: '' });
+    setLeadData({ name: '', email: '', contact: '', company: '', jobTitle: '', projectDescription: '' });
   };
 
   if (step === 'success') {
@@ -272,22 +275,34 @@ const ExportModal: React.FC<ExportModalProps> = ({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact">Contact Number</Label>
+              <Label htmlFor="contact">Contact Number *</Label>
               <Input
                 id="contact"
                 value={leadData.contact}
                 onChange={handleInputChange('contact')}
                 placeholder="Your phone number"
+                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="company">Company/Organization</Label>
+              <Label htmlFor="company">Company/Organization *</Label>
               <Input
                 id="company"
                 value={leadData.company}
                 onChange={handleInputChange('company')}
                 placeholder="Your company name"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="jobTitle">Job Title</Label>
+              <Input
+                id="jobTitle"
+                value={leadData.jobTitle}
+                onChange={handleInputChange('jobTitle')}
+                placeholder="Your job title"
               />
             </div>
 
