@@ -34,7 +34,7 @@ const FloorPlanner = () => {
     toast.success(`${newTool} tool selected`);
   };
 
-  // Initialize history management
+  // Initialize history management with improved state handling
   const initialState: FloorPlanState = {
     roomPoints: [],
     placedProducts: [],
@@ -50,7 +50,28 @@ const FloorPlanner = () => {
     canRedo
   } = useFloorPlanHistory(initialState);
 
-  // Save state whenever any data changes
+  // Improved state persistence with debouncing
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+
+  const debouncedSaveState = (state: FloorPlanState) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout);
+    }
+    
+    const timeout = setTimeout(() => {
+      saveState(state);
+      console.log('💾 State saved to history:', {
+        roomPoints: state.roomPoints.length,
+        products: state.placedProducts.length,
+        doors: state.doors.length,
+        annotations: state.textAnnotations.length
+      });
+    }, 500); // 500ms debounce
+    
+    setSaveTimeout(timeout);
+  };
+
+  // Save state with debouncing to prevent interference with rapid changes
   useEffect(() => {
     const currentState: FloorPlanState = {
       roomPoints,
@@ -58,8 +79,22 @@ const FloorPlanner = () => {
       doors,
       textAnnotations
     };
-    saveState(currentState);
-  }, [roomPoints, placedProducts, doors, textAnnotations, saveState]);
+    debouncedSaveState(currentState);
+    
+    return () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+      }
+    };
+  }, [roomPoints, placedProducts, doors, textAnnotations]);
+
+  // Separate debug logging for wallSegments
+  useEffect(() => {
+    console.log('🏗️ Wall segments state changed:', {
+      count: wallSegments.length,
+      segments: wallSegments.map(w => ({ id: w.id, type: w.type }))
+    });
+  }, [wallSegments]);
 
   const handleUndo = () => {
     const previousState = undo();
@@ -191,7 +226,7 @@ const FloorPlanner = () => {
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Add interior walls and divisions</p>
+            <p>Add interior walls and room divisions - MULTIPLE WALLS SUPPORTED</p>
           </TooltipContent>
         </Tooltip>
 
@@ -425,15 +460,15 @@ const FloorPlanner = () => {
                     <div className="flex items-center space-x-2 mb-2">
                       <Minus className="w-4 h-4 text-orange-600" />
                       <span className="font-medium text-sm">Interior Wall Tool</span>
-                      <Badge variant="outline" className="text-xs">New</Badge>
+                      <Badge variant="outline" className="text-xs">Fixed</Badge>
                     </div>
-                    <p className="text-xs text-gray-600 mb-3">Add interior walls and room divisions</p>
+                    <p className="text-xs text-gray-600 mb-3">Add interior walls and room divisions - MULTIPLE WALLS SUPPORTED</p>
                     <div className="space-y-1">
                       <div className="text-xs text-gray-700">• <strong>Click:</strong> Start interior wall</div>
                       <div className="text-xs text-gray-700">• <strong>Click again:</strong> End wall segment</div>
+                      <div className="text-xs text-gray-700">• <strong>Repeat:</strong> Create multiple walls</div>
                       <div className="text-xs text-gray-700">• <strong>Snap:</strong> Auto-aligns to existing walls</div>
-                      <div className="text-xs text-gray-700">• <strong>Independent:</strong> Doesn't need to close</div>
-                      <div className="text-xs text-gray-700">• Perfect for office divisions</div>
+                      <div className="text-xs text-green-600">• <strong>Fixed:</strong> Multiple walls now persist correctly</div>
                     </div>
                   </div>
 
@@ -582,9 +617,9 @@ const FloorPlanner = () => {
 
           {/* Main Canvas Area */}
           <div className="flex-1 relative bg-gray-50">
-            {/* Debug tool info */}
+            {/* Enhanced debug info with wall count */}
             <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs z-50">
-              Tool: {activeTool} | Walls: {wallSegments.length}
+              Tool: {activeTool} | Interior Walls: {wallSegments.length} | Total Objects: {placedProducts.length + doors.length + textAnnotations.length}
             </div>
             
             <FloorPlannerCanvas

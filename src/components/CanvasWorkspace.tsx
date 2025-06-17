@@ -99,6 +99,30 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   // Pan sensitivity - significantly reduced for smoother control
   const PAN_SENSITIVITY = 0.03; // Much more controlled panning
 
+  // Add state persistence debugging
+  useEffect(() => {
+    console.log('📊 Wall segments state updated:', {
+      count: wallSegments.length,
+      segments: wallSegments.map(w => ({ id: w.id, type: w.type }))
+    });
+  }, [wallSegments]);
+
+  // Helper function to add wall segment with immediate state update
+  const addWallSegment = useCallback((newWall: WallSegment) => {
+    console.log('🔧 Adding wall segment:', newWall);
+    console.log('📊 Current wallSegments before add:', wallSegments.length);
+    
+    // Use functional update to ensure we have the latest state
+    setWallSegments(prevWalls => {
+      const updatedWalls = [...prevWalls, newWall];
+      console.log('📊 Updated wallSegments after add:', updatedWalls.length);
+      return updatedWalls;
+    });
+    
+    // Force a re-render by updating a dummy state
+    setCurrentDrawingPoint(null);
+  }, [wallSegments, setWallSegments]);
+
   // Helper function to find wall segment by ID
   const findWallSegmentById = (id: string): WallSegment | null => {
     return wallSegments.find(wall => wall.id === id) || null;
@@ -285,7 +309,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw room (exterior walls)
     drawRoom(ctx);
     
-    // Draw interior walls
+    // Draw interior walls - improved rendering
     drawInteriorWalls(ctx);
     
     // Draw current line while drawing exterior walls
@@ -450,20 +474,24 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const drawInteriorWalls = (ctx: CanvasRenderingContext2D) => {
-    wallSegments.forEach(wall => {
+    console.log('🎨 Drawing interior walls:', wallSegments.length);
+    
+    wallSegments.forEach((wall, index) => {
+      console.log(`🎨 Drawing wall ${index}:`, wall);
+      
       ctx.strokeStyle = wall.type === WallType.INTERIOR ? '#f59e0b' : '#1f2937';
-      ctx.lineWidth = wall.type === WallType.INTERIOR ? 2 / zoom : 3 / zoom;
+      ctx.lineWidth = wall.type === WallType.INTERIOR ? 3 / zoom : 3 / zoom; // Made interior walls thicker for visibility
       
       ctx.beginPath();
       ctx.moveTo(wall.start.x, wall.start.y);
       ctx.lineTo(wall.end.x, wall.end.y);
       ctx.stroke();
       
-      // Draw endpoints
+      // Draw endpoints with better visibility
       ctx.fillStyle = wall.type === WallType.INTERIOR ? '#f59e0b' : '#1f2937';
       [wall.start, wall.end].forEach(point => {
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 3 / zoom, 0, 2 * Math.PI);
+        ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI); // Made endpoints larger
         ctx.fill();
       });
     });
@@ -473,8 +501,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (!interiorWallStart || !currentInteriorWallEnd) return;
 
     ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2 / zoom;
-    ctx.setLineDash([4 / zoom, 4 / zoom]);
+    ctx.lineWidth = 3 / zoom; // Made preview thicker for better visibility
+    ctx.setLineDash([6 / zoom, 6 / zoom]); // Made dashes more visible
 
     ctx.beginPath();
     ctx.moveTo(interiorWallStart.x, interiorWallStart.y);
@@ -500,10 +528,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.save();
       ctx.translate(midX + offsetX, midY + offsetY);
       ctx.rotate(angle);
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = '#f59e0b';
       ctx.font = `bold ${12 / zoom}px "Inter", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillRect(-20 / zoom, -8 / zoom, 40 / zoom, 16 / zoom);
+      ctx.fillRect(-25 / zoom, -10 / zoom, 50 / zoom, 20 / zoom);
       ctx.fillStyle = '#ffffff';
       ctx.fillText(`${length.toFixed(2)}m`, 0, 3 / zoom);
       ctx.restore();
@@ -903,6 +931,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setIsDragging(false);
     setIsRotating(false);
     setHasStartedDrag(false);
+    
+    // Reset interior wall drawing state properly
+    if (isDrawingInteriorWall) {
+      console.log('🔄 Resetting interior wall drawing state');
+      setIsDrawingInteriorWall(false);
+      setInteriorWallStart(null);
+      setCurrentInteriorWallEnd(null);
+      toast.success('Interior wall drawing cancelled');
+    }
+    
     if (isDrawingActive) {
       toast.success('Drawing cancelled');
     }
@@ -988,6 +1026,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
+  // Improved interior wall handling with better state management
   const handleInteriorWallToolMouseDown = (point: Point, e: MouseEvent) => {
     console.log('🏗️ Interior wall tool clicked!', { 
       currentTool, 
@@ -1033,15 +1072,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         console.log('✅ Creating new wall:', newWall);
         console.log('📊 Current wall segments before update:', wallSegments);
         
-        const updatedWallSegments = [...wallSegments, newWall];
-        setWallSegments(updatedWallSegments);
+        // Use the improved addWallSegment function
+        addWallSegment(newWall);
         
-        console.log('📊 Wall segments after update:', updatedWallSegments);
-        
+        // Reset interior wall drawing state
         setIsDrawingInteriorWall(false);
         setInteriorWallStart(null);
         setCurrentInteriorWallEnd(null);
-        toast.success('Interior wall created!');
+        toast.success(`Interior wall created! Total walls: ${wallSegments.length + 1}`);
       } else {
         console.error('❌ No interior wall start point!');
         toast.error('Error: No start point for interior wall');
@@ -1357,7 +1395,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('drop', handleDrop);
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
-  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
+  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag, wallSegments, isDrawingInteriorWall]);
 
   useEffect(() => {
     let resizeTimeout: NodeJS.Timeout;
@@ -1598,6 +1636,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           </span>
         </div>
       )}
+
+      {/* Enhanced Debug Display */}
+      <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-3 py-2 rounded text-xs z-50 font-mono">
+        <div>Tool: {currentTool}</div>
+        <div>Interior Walls: {wallSegments.length}</div>
+        <div>Drawing: {isDrawingInteriorWall ? 'YES' : 'NO'}</div>
+        {isDrawingInteriorWall && (
+          <div className="text-orange-300">
+            Start: {interiorWallStart ? `${interiorWallStart.x.toFixed(0)},${interiorWallStart.y.toFixed(0)}` : 'None'}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
