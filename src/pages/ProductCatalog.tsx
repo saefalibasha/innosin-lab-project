@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,12 +18,12 @@ const ProductCatalog = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // Enhanced product data with 3D model support
+  // Enhanced product data with manufacturer categories
   const products = [
     {
       id: 'fh-001',
       name: 'Chemical Fume Hood - Standard',
-      category: 'Fume Hoods',
+      category: 'Broen-Lab',
       dimensions: '1500 × 750 × 2400mm',
       image: '/placeholder.svg',
       modelType: 'box',
@@ -33,7 +34,7 @@ const ProductCatalog = () => {
     {
       id: 'lb-001',
       name: 'Epoxy Resin Lab Bench',
-      category: 'Lab Benches',
+      category: 'Hamilton Laboratory Solutions',
       dimensions: '3000 × 750 × 850mm',
       image: '/placeholder.svg',
       modelType: 'box',
@@ -44,7 +45,7 @@ const ProductCatalog = () => {
     {
       id: 'ew-001',
       name: 'Emergency Eye Wash Station',
-      category: 'Safety Equipment',
+      category: 'Oriental Giken Inc.',
       dimensions: '600 × 400 × 1200mm',
       image: '/placeholder.svg',
       modelType: 'cone',
@@ -55,7 +56,7 @@ const ProductCatalog = () => {
     {
       id: 'ss-001',
       name: 'Emergency Safety Shower',
-      category: 'Safety Equipment',
+      category: 'Oriental Giken Inc.',
       dimensions: '900 × 900 × 2300mm',
       image: '/placeholder.svg',
       modelType: 'sphere',
@@ -66,7 +67,7 @@ const ProductCatalog = () => {
     {
       id: 'sc-001',
       name: 'Chemical Storage Cabinet',
-      category: 'Storage Solutions',
+      category: 'Innosin Lab',
       dimensions: '1200 × 600 × 1800mm',
       image: '/placeholder.svg',
       modelType: 'box',
@@ -77,7 +78,7 @@ const ProductCatalog = () => {
     {
       id: 'fh-002',
       name: 'Perchloric Acid Fume Hood',
-      category: 'Fume Hoods',
+      category: 'Broen-Lab',
       dimensions: '1800 × 750 × 2400mm',
       image: '/placeholder.svg',
       modelType: 'box',
@@ -87,7 +88,7 @@ const ProductCatalog = () => {
     }
   ];
 
-  const categories = ['all', 'Fume Hoods', 'Lab Benches', 'Safety Equipment', 'Storage Solutions'];
+  const categories = ['all', 'Broen-Lab', 'Hamilton Laboratory Solutions', 'Oriental Giken Inc.', 'Innosin Lab'];
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,7 +119,7 @@ const ProductCatalog = () => {
           </AnimatedSection>
           <AnimatedSection animation="fade-in" delay={300}>
             <p className="text-xl text-gray-600">
-              Browse our comprehensive range of laboratory equipment and furniture with 3D models
+              Browse our comprehensive range of laboratory equipment and furniture from leading manufacturers
             </p>
           </AnimatedSection>
         </div>
@@ -140,12 +141,12 @@ const ProductCatalog = () => {
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger>
                   <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="All Categories" />
+                  <SelectValue placeholder="All Manufacturers" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map(category => (
                     <SelectItem key={category} value={category}>
-                      {category === 'all' ? 'All Categories' : category}
+                      {category === 'all' ? 'All Manufacturers' : category}
                     </SelectItem>
                   ))}
                 </SelectContent>
