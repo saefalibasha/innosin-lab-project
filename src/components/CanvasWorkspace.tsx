@@ -5,13 +5,13 @@ import { toast } from 'sonner';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
-  setRoomPoints: (points: Point[]) => void;
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   placedProducts: PlacedProduct[];
-  setPlacedProducts: (products: PlacedProduct[]) => void;
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
   doors: Door[];
-  setDoors: (doors: Door[]) => void;
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
   textAnnotations: TextAnnotation[];
-  setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
   scale: number;
   currentTool: string;
   showGrid: boolean;
@@ -246,7 +246,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     if (currentTool === 'wall') {
       const snapped = snapToGrid({ x: canvasX, y: canvasY });
-      setRoomPoints((prev: Point[]) => [...prev, snapped]);
+      setRoomPoints(prev => [...prev, snapped]);
     }
   };
 
@@ -299,7 +299,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         // Collision detection with room boundaries
         const tempProduct = { ...selectedProduct, position: { x: newX, y: newY } };
         if (isProductWithinRoom(tempProduct, roomPoints, scale)) {
-          setPlacedProducts((prev: PlacedProduct[]) =>
+          setPlacedProducts(prev =>
             prev.map(p =>
               p.id === selectedProduct.id ? { ...p, position: { x: newX, y: newY } } : p
             )
@@ -313,7 +313,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         const newX = canvasX;
         const newY = canvasY;
 
-        setTextAnnotations((prev: TextAnnotation[]) =>
+        setTextAnnotations(prev =>
           prev.map(text =>
             text.id === selectedText.id ? { ...text, position: { x: newX, y: newY } } : text
           )
@@ -329,7 +329,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         // Snap to 45-degree increments
         const snappedAngle = Math.round(angle / 45) * 45;
 
-        setPlacedProducts((prev: PlacedProduct[]) =>
+        setPlacedProducts(prev =>
           prev.map(p =>
             p.id === rotatingProduct.id ? { ...p, rotation: snappedAngle } : p
           )
@@ -368,7 +368,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (!canvas) return;
 
     if (currentTool === 'wall') {
-      setRoomPoints((prev: Point[]) => {
+      setRoomPoints(prev => {
         if (prev.length > 2) {
           // Remove the last point (most recent click)
           return prev.slice(0, -1);
@@ -387,7 +387,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const newText = prompt('Enter text:');
       if (newText) {
         const snapped = snapToGrid({ x: canvasX, y: canvasY });
-        setTextAnnotations((prev: TextAnnotation[]) => [...prev, { 
+        setTextAnnotations(prev => [...prev, { 
           id: Date.now().toString(), 
           text: newText, 
           position: snapped,
@@ -404,12 +404,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     if (e.key === 'Delete') {
       if (selectedProduct) {
-        setPlacedProducts((prev: PlacedProduct[]) => prev.filter(p => p.id !== selectedProduct.id));
+        setPlacedProducts(prev => prev.filter(p => p.id !== selectedProduct.id));
         setSelectedProduct(null);
       }
 
       if (selectedText) {
-        setTextAnnotations((prev: TextAnnotation[]) => prev.filter(text => text.id !== selectedText.id));
+        setTextAnnotations(prev => prev.filter(text => text.id !== selectedText.id));
         setSelectedText(null);
       }
     }
@@ -418,7 +418,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       e.preventDefault();
       if (selectedProduct) {
         const newProduct = { ...selectedProduct, id: Date.now().toString() };
-        setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
+        setPlacedProducts(prev => [...prev, newProduct]);
         setSelectedProduct(newProduct);
         toast.success('Product duplicated');
       }
@@ -453,7 +453,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         };
 
         if (isProductWithinRoom(newProduct, roomPoints, scale)) {
-          setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
+          setPlacedProducts(prev => [...prev, newProduct]);
           toast.success(`${product.name} placed`);
         } else {
           toast.error('Cannot place product outside the room');
@@ -496,7 +496,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       });
 
       if (clickedProduct) {
-        setPlacedProducts((prev: PlacedProduct[]) => prev.filter(p => p.id !== clickedProduct.id));
+        setPlacedProducts(prev => prev.filter(p => p.id !== clickedProduct.id));
         toast.success('Product removed');
         return;
       }
@@ -514,7 +514,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       });
 
       if (clickedText) {
-        setTextAnnotations((prev: TextAnnotation[]) => prev.filter(text => text.id !== clickedText.id));
+        setTextAnnotations(prev => prev.filter(text => text.id !== clickedText.id));
         toast.success('Text removed');
         return;
       }
@@ -553,7 +553,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         };
 
         if (!checkDoorConflict(newDoor, doors, doorWidth)) {
-          setDoors((prev: Door[]) => [...prev, newDoor]);
+          setDoors(prev => [...prev, newDoor]);
           toast.success('Door placed');
         } else {
           toast.error('Door placement conflicts with existing door');
