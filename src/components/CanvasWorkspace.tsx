@@ -1388,14 +1388,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   }, [drawCanvas]);
 
   return (
-    <div className="relative w-full h-full">
-      {/* Ruler borders */}
+    <div className="relative w-full h-full bg-white">
+      {/* Ruler borders - Fixed positioning */}
       {showRuler && (
         <>
           {/* Top ruler */}
           <div className="absolute top-0 left-8 right-0 h-8 bg-gray-100 border-b border-gray-300 z-10">
             <div className="relative h-full overflow-hidden">
-              {Array.from({ length: Math.ceil(window.innerWidth / (scale * zoom)) + 1 }, (_, i) => (
+              {Array.from({ length: Math.ceil((window.innerWidth) / (scale * zoom)) + 1 }, (_, i) => (
                 <div
                   key={i}
                   className="absolute top-0 h-full border-l border-gray-400"
@@ -1417,7 +1417,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           {/* Left ruler */}
           <div className="absolute top-8 left-0 bottom-0 w-8 bg-gray-100 border-r border-gray-300 z-10">
             <div className="relative w-full h-full overflow-hidden">
-              {Array.from({ length: Math.ceil(window.innerHeight / (scale * zoom)) + 1 }, (_, i) => (
+              {Array.from({ length: Math.ceil((window.innerHeight) / (scale * zoom)) + 1 }, (_, i) => (
                 <div
                   key={i}
                   className="absolute left-0 w-full border-t border-gray-400"
@@ -1441,10 +1441,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </>
       )}
 
-      <div ref={containerRef} className={`w-full h-full ${showRuler ? 'ml-8 mt-8' : ''}`}>
+      <div 
+        ref={containerRef} 
+        className={`w-full h-full ${showRuler ? 'ml-8 mt-8' : ''}`}
+      >
         <canvas
           ref={canvasRef}
-          className="bg-white shadow-sm"
+          className="bg-white shadow-sm w-full h-full"
           style={{
             cursor: currentTool === 'wall' || currentTool === 'door' ? 'crosshair' : 
                    currentTool === 'select' ? 'default' :
@@ -1455,7 +1458,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       
       {/* Enhanced Length Input Modal */}
       {showLengthInput && (
-        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200 z-30">
           <h3 className="font-semibold text-gray-900 mb-3">Enter Wall Length</h3>
           <div className="flex space-x-2">
             <Input
@@ -1487,7 +1490,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
       {/* Enhanced Text Edit Modal */}
       {isEditingText && (
-        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
+        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200 z-30">
           <h3 className="font-semibold text-gray-900 mb-3">Edit Text</h3>
           <div className="flex space-x-2">
             <Input
@@ -1528,14 +1531,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Recenter Tool */}
-      <div className="absolute bottom-6 right-6 flex flex-col space-y-2">
+      {/* Enhanced Recenter Button */}
+      <div className="absolute bottom-6 right-6 flex flex-col space-y-2 z-30">
         <Button
           variant="outline"
           size="sm"
           onClick={recenterCanvas}
-          className="w-12 h-12 p-0 shadow-md"
-          title="Recenter canvas view"
+          className="w-12 h-12 p-0 shadow-lg bg-white hover:bg-gray-50"
+          title="Recenter canvas view (Ctrl+0)"
         >
           <Crosshair className="w-4 h-4" />
         </Button>
@@ -1543,7 +1546,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
       {/* Enhanced Room Area Display */}
       {roomPoints.length > 2 && !isDrawingActive && (
-        <div className="absolute top-6 right-6 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200">
+        <div className="absolute top-6 right-6 bg-white px-4 py-2 rounded-lg shadow-lg border border-gray-200 z-30">
           <span className="text-sm font-semibold text-gray-900">
             Room Area: {calculateDistance(roomPoints[0], roomPoints[1]) ? (function() {
               let area = 0;
