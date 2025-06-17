@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar, MapPin } from 'lucide-react';
@@ -18,6 +18,7 @@ interface Project {
 const BeforeAfterComparison = () => {
   const [currentProject, setCurrentProject] = useState(0);
   const [sliderPosition, setSliderPosition] = useState(50);
+  const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const projects: Project[] = [
@@ -53,14 +54,62 @@ const BeforeAfterComparison = () => {
     }
   ];
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const updateSliderPosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
+    const x = clientX - rect.left;
     const percentage = (x / rect.width) * 100;
     setSliderPosition(Math.max(0, Math.min(100, percentage)));
-  };
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDragging(true);
+    updateSliderPosition(e.clientX);
+  }, [updateSliderPosition]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    updateSliderPosition(e.clientX);
+  }, [isDragging, updateSliderPosition]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    setIsDragging(true);
+    const touch = e.touches[0];
+    updateSliderPosition(touch.clientX);
+  }, [updateSliderPosition]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    updateSliderPosition(touch.clientX);
+  }, [isDragging, updateSliderPosition]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      document.addEventListener('touchend', handleTouchEnd);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   const nextProject = () => {
     setCurrentProject((prev) => (prev + 1) % projects.length);
@@ -83,43 +132,56 @@ const BeforeAfterComparison = () => {
             <div className="lg:col-span-2 relative">
               <div
                 ref={containerRef}
-                className="relative w-full h-96 lg:h-[600px] overflow-hidden cursor-col-resize"
-                onMouseMove={handleMouseMove}
+                className={`relative w-full h-96 lg:h-[600px] overflow-hidden select-none ${
+                  isDragging ? 'cursor-col-resize' : 'cursor-col-resize'
+                }`}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
               >
                 {/* After Image (background) */}
                 <img
                   src={project.afterImage}
                   alt="After transformation"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  draggable={false}
                 />
                 
                 {/* Before Image (clipped) */}
                 <div
-                  className="absolute inset-0 overflow-hidden transition-all duration-300"
-                  style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
+                  className="absolute inset-0 overflow-hidden"
+                  style={{ 
+                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
+                    transition: isDragging ? 'none' : 'clip-path 0.1s ease-out'
+                  }}
                 >
                   <img
                     src={project.beforeImage}
                     alt="Before transformation"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover pointer-events-none"
+                    draggable={false}
                   />
                 </div>
 
                 {/* Slider Line */}
                 <div
-                  className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl cursor-col-resize transition-all duration-300"
-                  style={{ left: `${sliderPosition}%` }}
+                  className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl pointer-events-none"
+                  style={{ 
+                    left: `${sliderPosition}%`,
+                    transition: isDragging ? 'none' : 'left 0.1s ease-out'
+                  }}
                 >
-                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-gray-100 hover:scale-110 transition-transform duration-300">
+                  <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-gray-100 pointer-events-none ${
+                    isDragging ? 'scale-110' : 'hover:scale-110'
+                  } transition-transform duration-200`}>
                     <div className="w-6 h-6 border-l-2 border-r-2 border-gray-600"></div>
                   </div>
                 </div>
 
                 {/* Enhanced Labels */}
-                <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+                <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none">
                   BEFORE
                 </div>
-                <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg">
+                <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none">
                   AFTER
                 </div>
 
@@ -128,7 +190,7 @@ const BeforeAfterComparison = () => {
                   variant="outline"
                   size="sm"
                   onClick={prevProject}
-                  className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white border-0 shadow-xl rounded-full w-12 h-12 p-0 transition-all duration-300 hover:scale-110"
+                  className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white border-0 shadow-xl rounded-full w-12 h-12 p-0 transition-all duration-300 hover:scale-110 z-10"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
@@ -136,7 +198,7 @@ const BeforeAfterComparison = () => {
                   variant="outline"
                   size="sm"
                   onClick={nextProject}
-                  className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white border-0 shadow-xl rounded-full w-12 h-12 p-0 transition-all duration-300 hover:scale-110"
+                  className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white border-0 shadow-xl rounded-full w-12 h-12 p-0 transition-all duration-300 hover:scale-110 z-10"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </Button>
