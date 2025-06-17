@@ -1,5 +1,5 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,9 +14,18 @@ import AnimatedSection from '@/components/AnimatedSection';
 
 const ProductCatalog = () => {
   const { addItem, itemCount } = useRFQ();
+  const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
+  // Read category from URL on component mount
+  useEffect(() => {
+    const categoryFromUrl = searchParams.get('category');
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    }
+  }, [searchParams]);
 
   // Enhanced product data with manufacturer categories
   const products = [
@@ -122,6 +131,13 @@ const ProductCatalog = () => {
               Browse our comprehensive range of laboratory equipment and furniture from leading manufacturers
             </p>
           </AnimatedSection>
+          {selectedCategory !== 'all' && (
+            <AnimatedSection animation="fade-in" delay={400}>
+              <Badge variant="outline" className="mt-4 text-lg px-4 py-2">
+                Showing products from: {selectedCategory}
+              </Badge>
+            </AnimatedSection>
+          )}
         </div>
 
         {/* Filters */}
