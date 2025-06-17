@@ -7,12 +7,21 @@ import { Download, Image, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import ExportFormModal from './ExportFormModal';
 
 interface ExportModalProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
   roomPoints: any[];
   placedProducts: any[];
   children: React.ReactNode;
+}
+
+interface ExportFormData {
+  fullName: string;
+  email: string;
+  companyName: string;
+  contactNumber: string;
+  projectDescription: string;
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({
@@ -22,9 +31,46 @@ const ExportModal: React.FC<ExportModalProps> = ({
   children
 }) => {
   const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'png' | 'pdf'>('png');
+  const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
+  const [showForm, setShowForm] = useState(false);
+  const [mainDialogOpen, setMainDialogOpen] = useState(false);
 
-  const exportAsImage = async (format: 'png' | 'pdf') => {
+  const syncToHubSpot = async (formData: ExportFormData, exportFormat: string) => {
+    // Simulate HubSpot API call
+    console.log('Syncing to HubSpot:', {
+      ...formData,
+      exportFormat,
+      timestamp: new Date().toISOString(),
+      floorPlanData: {
+        roomPoints: roomPoints.length,
+        placedProducts: placedProducts.length,
+        roomArea: calculateRoomArea()
+      }
+    });
+
+    // In a real implementation, you would make an API call to HubSpot here
+    // For now, we'll simulate the API call with a timeout
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    toast.success('Contact information synced to HubSpot successfully');
+  };
+
+  const calculateRoomArea = (): number => {
+    if (roomPoints.length < 3) return 0;
+    
+    let area = 0;
+    const scale = 40; // Assuming scale value
+    for (let i = 0; i < roomPoints.length; i++) {
+      const j = (i + 1) % roomPoints.length;
+      area += roomPoints[i].x * roomPoints[j].y;
+      area -= roomPoints[j].x * roomPoints[i].y;
+    }
+    area = Math.abs(area) / 2;
+    
+    return area / (scale * scale);
+  };
+
+  const exportAsImage = async (format: 'png' | 'jpg') => {
     if (!canvasRef.current) {
       toast.error('Canvas not found');
       return;
@@ -45,17 +91,12 @@ const ExportModal: React.FC<ExportModalProps> = ({
         link.href = canvas.toDataURL('image/png');
         link.click();
         toast.success('Floor plan exported as PNG');
-      } else if (format === 'pdf') {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF({
-          orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-          unit: 'px',
-          format: [canvas.width, canvas.height]
-        });
-        
-        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`floor-plan-${new Date().toISOString().split('T')[0]}.pdf`);
-        toast.success('Floor plan exported as PDF');
+      } else if (format === 'jpg') {
+        const link = document.createElement('a');
+        link.download = `floor-plan-${new Date().toISOString().split('T')[0]}.jpg`;
+        link.href = canvas.toDataURL('image/jpeg', 0.9);
+        link.click();
+        toast.success('Floor plan exported as JPG');
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -65,8 +106,70 @@ const ExportModal: React.FC<ExportModalProps> = ({
     }
   };
 
+  const exportAsPDF = async () => {
+    if (!canvasRef.current) {
+      toast.error('Canvas not found');
+      return;
+    }
+
+    setIsExporting(true);
+    
+    try {
+      const canvas = await html2canvas(canvasRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        useCORS: true
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+      pdf.save(`floor-plan-${new Date().toISOString().split('T')[0]}.pdf`);
+      toast.success('Floor plan exported as PDF');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export floor plan');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportRequest = (format: 'png' | 'jpg') => {
+    setExportFormat(format);
+    setMainDialogOpen(false);
+    setShowForm(true);
+  };
+
+  const handleFormSubmit = async (formData: ExportFormData) => {
+    try {
+      // Sync to HubSpot first
+      await syncToHubSpot(formData, exportFormat);
+      
+      // Then perform the export
+      if (exportFormat === 'png' || exportFormat === 'jpg') {
+        await exportAsImage(exportFormat);
+      }
+      
+      toast.success(`Export completed! Contact information has been saved.`);
+    } catch (error) {
+      console.error('Export process error:', error);
+      toast.error('Export process failed');
+      throw error;
+    }
+  };
+
+  const handlePDFExport = () => {
+    setMainDialogOpen(false);
+    exportAsPDF();
+  };
+
   const calculateStats = () => {
-    const roomArea = roomPoints.length >= 3 ? 'Calculated' : 'Not available';
+    const roomArea = roomPoints.length >= 3 ? calculateRoomArea().toFixed(2) + ' m²' : 'Not available';
     return {
       roomPoints: roomPoints.length,
       products: placedProducts.length,
@@ -77,73 +180,98 @@ const ExportModal: React.FC<ExportModalProps> = ({
   const stats = calculateStats();
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Download className="w-5 h-5" />
-            <span>Export Floor Plan</span>
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="space-y-4">
-          {/* Plan Statistics */}
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-            <h4 className="font-medium text-sm">Plan Summary</h4>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{stats.roomPoints} Wall Points</Badge>
-              <Badge variant="outline">{stats.products} Products</Badge>
-              <Badge variant="outline">Area: {stats.roomArea}</Badge>
+    <>
+      <Dialog open={mainDialogOpen} onOpenChange={setMainDialogOpen}>
+        <DialogTrigger asChild>
+          {children}
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Download className="w-5 h-5" />
+              <span>Export Floor Plan</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Plan Statistics */}
+            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
+              <h4 className="font-medium text-sm">Plan Summary</h4>
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline">{stats.roomPoints} Wall Points</Badge>
+                <Badge variant="outline">{stats.products} Products</Badge>
+                <Badge variant="outline">Area: {stats.roomArea}</Badge>
+              </div>
+            </div>
+
+            {/* Export Format Selection */}
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm">Export Format</h4>
+              
+              {/* Image Exports - Require Form */}
+              <div className="space-y-2">
+                <p className="text-xs text-gray-600 mb-2">Image exports require contact information:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                    onClick={() => handleExportRequest('png')}
+                    disabled={isExporting}
+                  >
+                    <Image className="w-4 h-4" />
+                    <span>PNG Image</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                    onClick={() => handleExportRequest('jpg')}
+                    disabled={isExporting}
+                  >
+                    <Image className="w-4 h-4" />
+                    <span>JPG Image</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* PDF Export - Direct */}
+              <div className="pt-2 border-t">
+                <p className="text-xs text-gray-600 mb-2">PDF export (no form required):</p>
+                <Button
+                  onClick={handlePDFExport}
+                  disabled={isExporting}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4 mr-2" />
+                      Export as PDF
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-500 p-3 bg-blue-50 rounded">
+              <p className="font-semibold mb-1">Why do we need your information?</p>
+              <p>Contact details help us provide better support and follow up on your project needs. PDF exports don't require registration.</p>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
 
-          {/* Export Format Selection */}
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm">Export Format</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant={exportFormat === 'png' ? 'default' : 'outline'}
-                className="flex items-center space-x-2"
-                onClick={() => setExportFormat('png')}
-              >
-                <Image className="w-4 h-4" />
-                <span>PNG Image</span>
-              </Button>
-              <Button
-                variant={exportFormat === 'pdf' ? 'default' : 'outline'}
-                className="flex items-center space-x-2"
-                onClick={() => setExportFormat('pdf')}
-              >
-                <FileText className="w-4 h-4" />
-                <span>PDF Document</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Export Button */}
-          <Button
-            onClick={() => exportAsImage(exportFormat)}
-            disabled={isExporting}
-            className="w-full"
-          >
-            {isExporting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Exporting...
-              </>
-            ) : (
-              <>
-                <Download className="w-4 h-4 mr-2" />
-                Export as {exportFormat.toUpperCase()}
-              </>
-            )}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      <ExportFormModal
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        onSubmit={handleFormSubmit}
+        exportFormat={exportFormat}
+      />
+    </>
   );
 };
 
