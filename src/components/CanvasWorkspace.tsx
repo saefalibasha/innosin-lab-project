@@ -82,30 +82,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
   const [collisionWarningPos, setCollisionWarningPos] = useState<Point>({ x: 0, y: 0 });
 
-  // Enhanced cursor and crosshair states with better accuracy
+  // Cursor and crosshair states
   const [cursorPosition, setCursorPosition] = useState<Point>({ x: 0, y: 0 });
-  const [canvasMousePosition, setCanvasMousePosition] = useState<Point>({ x: 0, y: 0 });
   const [snapPoint, setSnapPoint] = useState<Point | null>(null);
   const [showSnapIndicator, setShowSnapIndicator] = useState(false);
-
-  // Enhanced eraser states
-  const [isErasing, setIsErasing] = useState(false);
-  const [erasedItems, setErasedItems] = useState<Set<string>>(new Set());
 
   // Debouncing and timing
   const [lastClickTime, setLastClickTime] = useState(0);
   const [doubleClickTimeout, setDoubleClickTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Enhanced pan sensitivity for better right-click interactions
-  const PAN_SENSITIVITY = 0.8; // Increased sensitivity for right-click panning
+  // Pan sensitivity - significantly reduced for smoother control
+  const PAN_SENSITIVITY = 0.03; // Much more controlled panning
 
-  // Ruler configuration
-  const RULER_SIZE = 30; // Size of ruler border in pixels
-
-  // Grid snapping configuration
-  const GRID_SNAP_THRESHOLD = 20; // Increased snap threshold for better usability
-
-  // Helper functions for finding elements with improved accuracy
+  // Helper functions for finding elements
   const findProductAt = (point: Point): string | null => {
     for (const product of placedProducts) {
       const { position, rotation, dimensions } = product;
@@ -121,9 +110,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const localX = dx * cos - dy * sin;
       const localY = dx * sin + dy * cos;
       
-      // Enhanced hit detection with slightly expanded bounds for better usability
-      const hitPadding = 5 / zoom;
-      if (Math.abs(localX) <= (width / 2 + hitPadding) && Math.abs(localY) <= (height / 2 + hitPadding)) {
+      if (Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2) {
         return product.id;
       }
     }
@@ -136,8 +123,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         Math.pow(point.x - annotation.position.x, 2) + 
         Math.pow(point.y - annotation.position.y, 2)
       );
-      // Enhanced hit detection for text
-      if (distance < 25 / zoom) {
+      if (distance < 20 / zoom) {
         return annotation.id;
       }
     }
@@ -172,8 +158,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       
       const distance = Math.sqrt((point.x - xx) * (point.x - xx) + (point.y - yy) * (point.y - yy));
       
-      // Enhanced hit detection for walls
-      if (distance < 15 / zoom) {
+      if (distance < 10 / zoom) {
         return i;
       }
     }
@@ -218,7 +203,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Text deleted');
   };
 
-  // Enhanced canvas drawing function with integrated ruler
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -236,37 +220,31 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     canvas.style.height = rect.height + 'px';
 
     ctx.clearRect(0, 0, rect.width, rect.height);
-
-    // Draw integrated ruler border
-    if (showRuler) {
-      drawIntegratedRuler(ctx, rect.width, rect.height);
-    }
-
-    // Set up main drawing area with ruler offset
-    const rulerOffset = showRuler ? RULER_SIZE : 0;
     ctx.save();
-    ctx.rect(rulerOffset, rulerOffset, rect.width - rulerOffset, rect.height - rulerOffset);
-    ctx.clip();
-    
     ctx.scale(zoom, zoom);
-    ctx.translate(pan.x + rulerOffset / zoom, pan.y + rulerOffset / zoom);
+    ctx.translate(pan.x, pan.y);
 
-    // Enhanced grid rendering with better alignment to intersections
+    // Enhanced grid rendering with better alignment
     if (showGrid) {
       drawPrecisionGrid(ctx, rect.width / zoom, rect.height / zoom);
+    }
+    
+    // Draw ruler if enabled with better precision
+    if (showRuler) {
+      drawPrecisionRuler(ctx, rect.width / zoom, rect.height / zoom);
     }
     
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing with enhanced snap indicator
+    // Draw current line while drawing with snap indicator
     if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
       drawCurrentLine(ctx);
     }
     
-    // Enhanced snap indicator with crosshair accuracy
+    // Draw snap indicator
     if (showSnapIndicator && snapPoint) {
-      drawEnhancedSnapIndicator(ctx);
+      drawSnapIndicator(ctx);
     }
     
     // Draw doors
@@ -298,153 +276,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawSelectedWall(ctx);
     }
 
-    // Draw crosshair cursor for precise positioning
-    if (currentTool === 'wall' || currentTool === 'door') {
-      drawAccurateCrosshair(ctx);
-    }
-
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, canvasMousePosition, snapPoint, showSnapIndicator]);
+  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, cursorPosition, snapPoint, showSnapIndicator]);
 
-  // Enhanced integrated ruler with dynamic scaling
-  const drawIntegratedRuler = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(0, 0, width, RULER_SIZE);
-    ctx.fillRect(0, 0, RULER_SIZE, height);
-    
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, RULER_SIZE);
-    ctx.lineTo(width, RULER_SIZE);
-    ctx.moveTo(RULER_SIZE, 0);
-    ctx.lineTo(RULER_SIZE, height);
-    ctx.stroke();
-
-    ctx.strokeStyle = '#64748b';
-    ctx.fillStyle = '#64748b';
-    ctx.font = `${Math.max(9, 12 * zoom)}px "Inter", sans-serif`;
-    ctx.textAlign = 'center';
-
-    // Dynamic ruler scaling based on zoom level
-    const rulerScale = Math.max(0.25, 1 / zoom);
-    const majorTick = scale * rulerScale;
-    const minorTick = majorTick / 4;
-
-    // Horizontal ruler
-    const startX = Math.floor((-pan.x - RULER_SIZE / zoom) / majorTick) * majorTick;
-    for (let x = startX; x <= (width - RULER_SIZE) / zoom - pan.x; x += minorTick) {
-      const screenX = (x + pan.x) * zoom + RULER_SIZE;
-      if (screenX < RULER_SIZE) continue;
-      
-      const isMajor = Math.abs(x % majorTick) < 0.001;
-      const tickHeight = isMajor ? RULER_SIZE * 0.6 : RULER_SIZE * 0.3;
-      
-      ctx.beginPath();
-      ctx.moveTo(screenX, RULER_SIZE);
-      ctx.lineTo(screenX, RULER_SIZE - tickHeight);
-      ctx.stroke();
-      
-      if (isMajor && zoom > 0.5) {
-        const meters = x / scale;
-        ctx.fillText(`${meters.toFixed(0)}m`, screenX, RULER_SIZE - tickHeight - 5);
-      }
-    }
-
-    // Vertical ruler
-    const startY = Math.floor((-pan.y - RULER_SIZE / zoom) / majorTick) * majorTick;
-    for (let y = startY; y <= (height - RULER_SIZE) / zoom - pan.y; y += minorTick) {
-      const screenY = (y + pan.y) * zoom + RULER_SIZE;
-      if (screenY < RULER_SIZE) continue;
-      
-      const isMajor = Math.abs(y % majorTick) < 0.001;
-      const tickWidth = isMajor ? RULER_SIZE * 0.6 : RULER_SIZE * 0.3;
-      
-      ctx.beginPath();
-      ctx.moveTo(RULER_SIZE, screenY);
-      ctx.lineTo(RULER_SIZE - tickWidth, screenY);
-      ctx.stroke();
-      
-      if (isMajor && zoom > 0.5) {
-        const meters = y / scale;
-        ctx.save();
-        ctx.translate(RULER_SIZE - tickWidth - 15, screenY);
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`${meters.toFixed(0)}m`, 0, 0);
-        ctx.restore();
-      }
-    }
-  };
-
-  // Enhanced grid with intersection-based snapping
-  const drawPrecisionGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
-    ctx.strokeStyle = '#f1f5f9';
-    ctx.lineWidth = 0.5 / zoom;
-
-    const gridSize = scale * 0.25;
-    const rulerOffset = showRuler ? RULER_SIZE / zoom : 0;
-    const startX = Math.floor((-pan.x - rulerOffset) / gridSize) * gridSize;
-    const startY = Math.floor((-pan.y - rulerOffset) / gridSize) * gridSize;
-    
-    // Draw minor grid lines
-    for (let x = startX; x <= width / zoom - pan.x; x += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, -pan.y - rulerOffset);
-      ctx.lineTo(x, height / zoom - pan.y);
-      ctx.stroke();
-    }
-
-    for (let y = startY; y <= height / zoom - pan.y; y += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(-pan.x - rulerOffset, y);
-      ctx.lineTo(width / zoom - pan.x, y);
-      ctx.stroke();
-    }
-
-    // Draw major grid lines every meter with intersection highlights
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 1 / zoom;
-    
-    const majorGridSize = scale;
-    const majorStartX = Math.floor((-pan.x - rulerOffset) / majorGridSize) * majorGridSize;
-    const majorStartY = Math.floor((-pan.y - rulerOffset) / majorGridSize) * majorGridSize;
-    
-    for (let x = majorStartX; x <= width / zoom - pan.x; x += majorGridSize) {
-      ctx.beginPath();
-      ctx.moveTo(x, -pan.y - rulerOffset);
-      ctx.lineTo(x, height / zoom - pan.y);
-      ctx.stroke();
-    }
-
-    for (let y = majorStartY; y <= height / zoom - pan.y; y += majorGridSize) {
-      ctx.beginPath();
-      ctx.moveTo(-pan.x - rulerOffset, y);
-      ctx.lineTo(width / zoom - pan.x, y);
-      ctx.stroke();
-    }
-
-    // Highlight grid intersections for better snap visibility
-    ctx.fillStyle = '#cbd5e1';
-    for (let x = majorStartX; x <= width / zoom - pan.x; x += majorGridSize) {
-      for (let y = majorStartY; y <= height / zoom - pan.y; y += majorGridSize) {
-        ctx.beginPath();
-        ctx.arc(x, y, 1 / zoom, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
-  };
-
-  // Enhanced snap indicator with accurate crosshair
-  const drawEnhancedSnapIndicator = (ctx: CanvasRenderingContext2D) => {
+  const drawSnapIndicator = (ctx: CanvasRenderingContext2D) => {
     if (!snapPoint) return;
     
-    // Animated pulsing circle
-    const time = Date.now() * 0.008;
-    const pulse = (Math.sin(time) + 1) * 0.5;
-    const radius = (10 + pulse * 6) / zoom;
+    // Draw pulsing circle at snap point
+    const time = Date.now() * 0.01;
+    const pulse = (Math.sin(time) + 1) * 0.5; // 0 to 1
+    const radius = (8 + pulse * 4) / zoom;
     
     ctx.save();
-    ctx.fillStyle = `rgba(59, 130, 246, ${0.7 + pulse * 0.3})`;
+    ctx.fillStyle = `rgba(59, 130, 246, ${0.6 + pulse * 0.4})`;
     ctx.strokeStyle = '#3b82f6';
     ctx.lineWidth = 2 / zoom;
     
@@ -453,19 +297,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.fill();
     ctx.stroke();
     
-    // Enhanced crosshair with precise alignment
-    const crossSize = 16 / zoom;
-    ctx.lineWidth = 3 / zoom;
-    ctx.strokeStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(snapPoint.x - crossSize, snapPoint.y);
-    ctx.lineTo(snapPoint.x + crossSize, snapPoint.y);
-    ctx.moveTo(snapPoint.x, snapPoint.y - crossSize);
-    ctx.lineTo(snapPoint.x, snapPoint.y + crossSize);
-    ctx.stroke();
-    
-    ctx.lineWidth = 1 / zoom;
-    ctx.strokeStyle = '#3b82f6';
+    // Draw crosshair
+    const crossSize = 12 / zoom;
     ctx.beginPath();
     ctx.moveTo(snapPoint.x - crossSize, snapPoint.y);
     ctx.lineTo(snapPoint.x + crossSize, snapPoint.y);
@@ -476,32 +309,87 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.restore();
   };
 
-  // Accurate crosshair cursor rendering
-  const drawAccurateCrosshair = (ctx: CanvasRenderingContext2D) => {
-    const crosshairSize = 20 / zoom;
-    const x = canvasMousePosition.x;
-    const y = canvasMousePosition.y;
+  const drawPrecisionGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 0.5 / zoom;
+
+    const gridSize = scale * 0.25;
+    const startX = Math.floor(-pan.x / gridSize) * gridSize;
+    const startY = Math.floor(-pan.y / gridSize) * gridSize;
     
-    ctx.save();
-    ctx.strokeStyle = '#ef4444';
+    for (let x = startX; x <= width - pan.x; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, -pan.y);
+      ctx.lineTo(x, height - pan.y);
+      ctx.stroke();
+    }
+
+    for (let y = startY; y <= height - pan.y; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(-pan.x, y);
+      ctx.lineTo(width - pan.x, y);
+      ctx.stroke();
+    }
+
+    // Draw major grid lines every meter
+    ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1 / zoom;
-    ctx.setLineDash([4 / zoom, 4 / zoom]);
     
-    ctx.beginPath();
-    ctx.moveTo(x - crosshairSize, y);
-    ctx.lineTo(x + crosshairSize, y);
-    ctx.moveTo(x, y - crosshairSize);
-    ctx.lineTo(x, y + crosshairSize);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    const majorGridSize = scale;
+    const majorStartX = Math.floor(-pan.x / majorGridSize) * majorGridSize;
+    const majorStartY = Math.floor(-pan.y / majorGridSize) * majorGridSize;
     
-    // Center dot for precision
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(x, y, 2 / zoom, 0, 2 * Math.PI);
-    ctx.fill();
-    
-    ctx.restore();
+    for (let x = majorStartX; x <= width - pan.x; x += majorGridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, -pan.y);
+      ctx.lineTo(x, height - pan.y);
+      ctx.stroke();
+    }
+
+    for (let y = majorStartY; y <= height - pan.y; y += majorGridSize) {
+      ctx.beginPath();
+      ctx.moveTo(-pan.x, y);
+      ctx.lineTo(width - pan.x, y);
+      ctx.stroke();
+    }
+  };
+
+  const drawPrecisionRuler = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.strokeStyle = '#1f2937';
+    ctx.fillStyle = '#1f2937';
+    ctx.lineWidth = 1 / zoom;
+    ctx.font = `${10 / zoom}px "Inter", sans-serif`;
+    ctx.textAlign = 'left';
+
+    // Horizontal ruler
+    for (let x = 0; x <= width; x += scale) {
+      const meters = x / scale;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 15 / zoom);
+      ctx.stroke();
+      
+      if (meters % 1 === 0) {
+        ctx.fillText(`${meters}m`, x + 2 / zoom, 12 / zoom);
+      }
+    }
+
+    // Vertical ruler
+    for (let y = 0; y <= height; y += scale) {
+      const meters = y / scale;
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(15 / zoom, y);
+      ctx.stroke();
+      
+      if (meters % 1 === 0) {
+        ctx.save();
+        ctx.translate(12 / zoom, y - 2 / zoom);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText(`${meters}m`, 0, 0);
+        ctx.restore();
+      }
+    }
   };
 
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
@@ -526,47 +414,17 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     for (let i = 1; i < roomPoints.length; i++) {
       ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
     }
-    
-    // Auto-close shape when near first point
     if (!isDrawingActive && roomPoints.length > 2) {
       ctx.closePath();
-    } else if (isDrawingActive && currentDrawingPoint && roomPoints.length > 2) {
-      const firstPoint = roomPoints[0];
-      const distance = Math.sqrt(
-        Math.pow(currentDrawingPoint.x - firstPoint.x, 2) + 
-        Math.pow(currentDrawingPoint.y - firstPoint.y, 2)
-      );
-      
-      // Show preview of closing line when near first point
-      if (distance < 30 / zoom) {
-        ctx.save();
-        ctx.setLineDash([6 / zoom, 6 / zoom]);
-        ctx.strokeStyle = '#10b981';
-        ctx.beginPath();
-        ctx.moveTo(currentDrawingPoint.x, currentDrawingPoint.y);
-        ctx.lineTo(firstPoint.x, firstPoint.y);
-        ctx.stroke();
-        ctx.restore();
-      }
     }
-    
     ctx.stroke();
 
     // Draw points with better visibility
     ctx.fillStyle = '#1f2937';
-    roomPoints.forEach((point, index) => {
+    roomPoints.forEach(point => {
       ctx.beginPath();
-      ctx.arc(point.x, point.y, 4 / zoom, 0, 2 * Math.PI);
+      ctx.arc(point.x, point.y, 3 / zoom, 0, 2 * Math.PI);
       ctx.fill();
-      
-      // Highlight first point for closing reference
-      if (index === 0 && isDrawingActive && roomPoints.length > 2) {
-        ctx.strokeStyle = '#10b981';
-        ctx.lineWidth = 2 / zoom;
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 8 / zoom, 0, 2 * Math.PI);
-        ctx.stroke();
-      }
     });
   };
 
@@ -656,12 +514,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const width = dimensions.length * scale * productScale;
       const height = dimensions.width * scale * productScale;
       
-      // Skip erased items during drag erase
-      if (isErasing && erasedItems.has(id)) {
-        ctx.save();
-        ctx.globalAlpha = 0.3;
-      }
-      
       ctx.save();
       ctx.translate(position.x, position.y);
       ctx.rotate((rotation * Math.PI) / 180);
@@ -689,10 +541,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       }
       
       ctx.restore();
-      
-      if (isErasing && erasedItems.has(id)) {
-        ctx.restore();
-      }
     });
   };
 
@@ -796,12 +644,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const drawTextAnnotations = (ctx: CanvasRenderingContext2D) => {
     textAnnotations.forEach(annotation => {
-      // Skip erased text during drag erase
-      if (isErasing && erasedItems.has(annotation.id)) {
-        ctx.save();
-        ctx.globalAlpha = 0.3;
-      }
-      
       ctx.fillStyle = selectedText === annotation.id ? '#ef4444' : '#000000';
       ctx.font = `${annotation.fontSize / zoom}px sans-serif`;
       ctx.textAlign = 'left';
@@ -817,10 +659,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           metrics.width + 4,
           annotation.fontSize / zoom + 4
         );
-      }
-      
-      if (isErasing && erasedItems.has(annotation.id)) {
-        ctx.restore();
       }
     });
   };
@@ -845,78 +683,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.moveTo(point1.x, point1.y);
     ctx.lineTo(point2.x, point2.y);
     ctx.stroke();
-  };
-
-  // Enhanced distance calculation
-  const calculateDistance = (point1: Point, point2: Point): number => {
-    const dx = point2.x - point1.x;
-    const dy = point2.y - point1.y;
-    return Math.sqrt(dx * dx + dy * dy) / scale;
-  };
-
-  // Enhanced mouse position calculation with ruler offset consideration
-  const getCanvasMousePosition = (e: MouseEvent): Point => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-
-    const rect = canvas.getBoundingClientRect();
-    const rulerOffset = showRuler ? RULER_SIZE : 0;
-    const x = (e.clientX - rect.left - rulerOffset) / zoom - pan.x;
-    const y = (e.clientY - rect.top - rulerOffset) / zoom - pan.y;
-    
-    return { x, y };
-  };
-
-  // Enhanced grid snapping to intersections
-  const snapToGridIntersection = (point: Point): { snappedPoint: Point; distance: number } => {
-    if (!showGrid) return { snappedPoint: point, distance: Infinity };
-    
-    const gridSize = scale * 0.25;
-    const snappedPoint = {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    };
-    
-    const distance = Math.sqrt(
-      Math.pow(point.x - snappedPoint.x, 2) + 
-      Math.pow(point.y - snappedPoint.y, 2)
-    );
-    
-    return { snappedPoint, distance };
-  };
-
-  // Enhanced angle snapping
-  const snapToAngle = (angle: number): number => {
-    const snapIncrement = 45;
-    return Math.round(angle / snapIncrement) * snapIncrement;
-  };
-
-  // Enhanced eraser functionality with drag support
-  const performErase = (point: Point) => {
-    const productId = findProductAt(point);
-    const textId = findTextAt(point);
-    const wallIndex = findWallAt(point);
-    
-    if (productId && !erasedItems.has(productId)) {
-      if (isErasing) {
-        setErasedItems(prev => new Set(prev).add(productId));
-      } else {
-        setPlacedProducts(placedProducts.filter(p => p.id !== productId));
-        toast.success('Product erased');
-      }
-    } else if (textId && !erasedItems.has(textId)) {
-      if (isErasing) {
-        setErasedItems(prev => new Set(prev).add(textId));
-      } else {
-        setTextAnnotations(textAnnotations.filter(t => t.id !== textId));
-        toast.success('Text erased');
-      }
-    } else if (wallIndex !== null) {
-      // Erase wall point
-      const newRoomPoints = roomPoints.filter((_, index) => index !== wallIndex);
-      setRoomPoints(newRoomPoints);
-      toast.success('Wall point erased');
-    }
   };
 
   // Recenter function to center the view on the room layout
@@ -962,7 +728,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (!canvas) return;
 
     const rect = canvas.getBoundingClientRect();
-    const rulerOffset = showRuler ? RULER_SIZE : 0;
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     
@@ -971,20 +736,66 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     // Calculate appropriate zoom level with padding
     const padding = 100;
-    const zoomX = (rect.width - rulerOffset - padding) / contentWidth;
-    const zoomY = (rect.height - rulerOffset - padding) / contentHeight;
+    const zoomX = (rect.width - padding) / contentWidth;
+    const zoomY = (rect.height - padding) / contentHeight;
     const newZoom = Math.min(Math.max(Math.min(zoomX, zoomY), 0.1), 3);
     
     setZoom(newZoom);
     setPan({
-      x: (rect.width - rulerOffset) / 2 / newZoom - centerX,
-      y: (rect.height - rulerOffset) / 2 / newZoom - centerY
+      x: rect.width / 2 / newZoom - centerX,
+      y: rect.height / 2 / newZoom - centerY
     });
     
     toast.success('Canvas recentered and zoomed to fit');
   };
 
-  // Enhanced keyboard shortcuts
+  const calculateDistance = (point1: Point, point2: Point): number => {
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
+    return Math.sqrt(dx * dx + dy * dy) / scale;
+  };
+
+  const getCanvasMousePosition = (e: MouseEvent): Point => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom - pan.x;
+    const y = (e.clientY - rect.top) / zoom - pan.y;
+    
+    return { x, y };
+  };
+
+  const snapToGrid = (point: Point): Point => {
+    if (!showGrid) return point;
+    const gridSize = scale * 0.25;
+    return {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+  };
+
+  const findNearestGridPoint = (point: Point): { snappedPoint: Point; distance: number } => {
+    const gridSize = scale * 0.25;
+    const snappedPoint = {
+      x: Math.round(point.x / gridSize) * gridSize,
+      y: Math.round(point.y / gridSize) * gridSize
+    };
+    
+    const distance = Math.sqrt(
+      Math.pow(point.x - snappedPoint.x, 2) + 
+      Math.pow(point.y - snappedPoint.y, 2)
+    );
+    
+    return { snappedPoint, distance };
+  };
+
+  const snapToAngle = (angle: number): number => {
+    const snapIncrement = 45;
+    return Math.round(angle / snapIncrement) * snapIncrement;
+  };
+
+  // Enhanced keyboard shortcuts with improved sensitivity
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       // ESC to cleanly exit any active mode
@@ -1037,27 +848,23 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setHasStartedDrag(false);
     setShowSnapIndicator(false);
     setSnapPoint(null);
-    setIsErasing(false);
-    setErasedItems(new Set());
     if (isDrawingActive) {
       toast.success('Drawing cancelled');
     }
   };
 
-  // Enhanced mouse event handlers
+  // Mouse event handlers with improved sensitivity and snap detection
   const handleMouseDown = (e: MouseEvent) => {
     const rawPoint = getCanvasMousePosition(e);
     const currentTime = Date.now();
 
-    // Update canvas mouse position for crosshair
-    setCanvasMousePosition(rawPoint);
-
-    // Enhanced grid snapping for wall tool
+    // Handle grid snapping for wall tool
     let point = rawPoint;
     if (currentTool === 'wall' && showGrid) {
-      const { snappedPoint, distance } = snapToGridIntersection(rawPoint);
+      const snapThreshold = 15 / zoom; // Snap threshold in pixels
+      const { snappedPoint, distance } = findNearestGridPoint(rawPoint);
       
-      if (distance < GRID_SNAP_THRESHOLD / zoom) {
+      if (distance < snapThreshold) {
         point = snappedPoint;
         setSnapPoint(snappedPoint);
         setShowSnapIndicator(true);
@@ -1067,10 +874,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       }
     }
 
-    // Enhanced right-click panning with increased sensitivity
+    // Handle right click for panning with reduced sensitivity
     if (e.button === 2) {
       setIsPanning(true);
-      setLastPanPoint(rawPoint);
+      setLastPanPoint(getCanvasMousePosition(e));
       return;
     }
 
@@ -1122,31 +929,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const handleDoubleClick = (point: Point, e: MouseEvent) => {
     if (currentTool === 'wall' && isDrawingActive) {
-      // Enhanced auto-close functionality
+      // Double click - finish room
       if (roomPoints.length > 2) {
-        // Check if we're close to the first point for auto-closing
-        const firstPoint = roomPoints[0];
-        const distance = Math.sqrt(
-          Math.pow(point.x - firstPoint.x, 2) + 
-          Math.pow(point.y - firstPoint.y, 2)
-        );
-        
-        if (distance < 30 / zoom) {
-          // Auto-close to first point
-          setIsDrawingActive(false);
-          setCurrentDrawingPoint(null);
-          setShowSnapIndicator(false);
-          setSnapPoint(null);
-          toast.success('Room completed and closed');
-        } else {
-          // Regular completion
-          setRoomPoints([...roomPoints, point]);
-          setIsDrawingActive(false);
-          setCurrentDrawingPoint(null);
-          setShowSnapIndicator(false);
-          setSnapPoint(null);
-          toast.success('Room completed');
-        }
+        setIsDrawingActive(false);
+        setCurrentDrawingPoint(null);
+        setShowSnapIndicator(false);
+        setSnapPoint(null);
+        toast.success('Room completed');
       }
     } else if (currentTool === 'text') {
       const textId = findTextAt(point);
@@ -1166,24 +955,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setIsDrawingActive(true);
       setRoomPoints([point]);
     } else {
-      // Check for auto-close when clicking near first point
-      if (roomPoints.length > 2) {
-        const firstPoint = roomPoints[0];
-        const distance = Math.sqrt(
-          Math.pow(point.x - firstPoint.x, 2) + 
-          Math.pow(point.y - firstPoint.y, 2)
-        );
-        
-        if (distance < 30 / zoom) {
-          // Auto-close shape
-          setIsDrawingActive(false);
-          setCurrentDrawingPoint(null);
-          setShowSnapIndicator(false);
-          setSnapPoint(null);
-          toast.success('Room completed and closed');
-          return;
-        }
-      }
       setRoomPoints([...roomPoints, point]);
     }
   };
@@ -1281,23 +1052,29 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  // Enhanced eraser tool with drag support
   const handleEraserToolMouseDown = (point: Point, e: MouseEvent) => {
-    setIsErasing(true);
-    setErasedItems(new Set());
-    performErase(point);
+    const productId = findProductAt(point);
+    const textId = findTextAt(point);
+    
+    if (productId) {
+      setPlacedProducts(placedProducts.filter(p => p.id !== productId));
+      toast.success('Product erased');
+    } else if (textId) {
+      setTextAnnotations(textAnnotations.filter(t => t.id !== textId));
+      toast.success('Text erased');
+    }
   };
 
   const handleMouseMove = (e: MouseEvent) => {
     const rawPoint = getCanvasMousePosition(e);
     setCursorPosition(rawPoint);
-    setCanvasMousePosition(rawPoint);
 
-    // Enhanced grid snapping with visual feedback
+    // Handle grid snapping for wall tool with visual feedback
     if (currentTool === 'wall' && showGrid && isDrawingActive) {
-      const { snappedPoint, distance } = snapToGridIntersection(rawPoint);
+      const snapThreshold = 15 / zoom;
+      const { snappedPoint, distance } = findNearestGridPoint(rawPoint);
       
-      if (distance < GRID_SNAP_THRESHOLD / zoom) {
+      if (distance < snapThreshold) {
         setCurrentDrawingPoint(snappedPoint);
         setSnapPoint(snappedPoint);
         setShowSnapIndicator(true);
@@ -1310,9 +1087,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setCurrentDrawingPoint(rawPoint);
     }
 
-    // Enhanced panning with increased sensitivity
     if (isPanning && lastPanPoint) {
-      const currentPoint = rawPoint;
+      const currentPoint = getCanvasMousePosition(e);
       const deltaX = (currentPoint.x - lastPanPoint.x) * PAN_SENSITIVITY;
       const deltaY = (currentPoint.y - lastPanPoint.y) * PAN_SENSITIVITY;
       
@@ -1324,13 +1100,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Use snapped point for interactions when appropriate
+    // Use snapped point for other interactions when appropriate
     const point = (currentTool === 'wall' && showGrid) ? (snapPoint || rawPoint) : rawPoint;
-
-    // Enhanced drag erasing
-    if (currentTool === 'eraser' && isErasing) {
-      performErase(point);
-    }
 
     // Improved drag handling with threshold
     if (currentTool === 'select' && isDragging && !hasStartedDrag && dragStart) {
@@ -1433,16 +1204,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setDragStart(null);
     setHasStartedDrag(false);
     setShowCollisionWarning(false);
-    
-    // Finalize erasing
-    if (isErasing && erasedItems.size > 0) {
-      setPlacedProducts(prev => prev.filter(p => !erasedItems.has(p.id)));
-      setTextAnnotations(prev => prev.filter(t => !erasedItems.has(t.id)));
-      toast.success(`${erasedItems.size} item(s) erased`);
-    }
-    setIsErasing(false);
-    setErasedItems(new Set());
-    
     // Keep snap indicator when drawing
     if (currentTool !== 'wall' || !isDrawingActive) {
       setShowSnapIndicator(false);
@@ -1458,14 +1219,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const product = JSON.parse(productData);
     const dropPoint = getCanvasMousePosition(e);
 
-    // Enhanced snap to grid for dropped products
-    const finalPoint = showGrid ? snapToGridIntersection(dropPoint).snappedPoint : dropPoint;
-
     const newProduct: PlacedProduct = {
       id: `${product.id}-${Date.now()}`,
       productId: product.id,
       name: product.name,
-      position: finalPoint,
+      position: snapToGrid(dropPoint),
       rotation: 0,
       dimensions: product.dimensions,
       color: product.color,
@@ -1554,7 +1312,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('drop', handleDrop);
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
-  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag, showGrid, isErasing]);
+  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag, showGrid]);
 
   useEffect(() => {
     let resizeTimeout: NodeJS.Timeout;
@@ -1589,9 +1347,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       
       // Get mouse position for zoom centering
       const rect = canvas.getBoundingClientRect();
-      const rulerOffset = showRuler ? RULER_SIZE : 0;
-      const mouseX = e.clientX - rect.left - rulerOffset;
-      const mouseY = e.clientY - rect.top - rulerOffset;
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
       
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = Math.min(Math.max(zoom * delta, 0.1), 5);
@@ -1607,7 +1364,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     canvas.addEventListener('wheel', handleWheel, { passive: false });
     return () => canvas.removeEventListener('wheel', handleWheel);
-  }, [zoom, pan, showRuler]);
+  }, [zoom, pan]);
 
   useEffect(() => {
     if (animationFrameRef.current) {
@@ -1629,10 +1386,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           ref={canvasRef}
           className="bg-white shadow-sm"
           style={{
-            cursor: currentTool === 'wall' || currentTool === 'door' ? 'none' : 
+            cursor: currentTool === 'wall' || currentTool === 'door' ? 'crosshair' : 
                    currentTool === 'select' ? 'default' :
-                   currentTool === 'rotate' ? 'grab' :
-                   currentTool === 'eraser' ? 'crosshair' : 'crosshair'
+                   currentTool === 'rotate' ? 'grab' : 'crosshair'
           }}
         />
       </div>
@@ -1774,22 +1530,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Enhanced Grid Snap Status Indicator */}
+      {/* Grid Snap Status Indicator */}
       {currentTool === 'wall' && showGrid && (
         <div className="absolute bottom-6 left-6 bg-white px-3 py-2 rounded-lg shadow-lg border border-gray-200">
           <span className="text-xs font-medium text-gray-700 flex items-center">
-            <div className={`w-2 h-2 rounded-full mr-2 ${showSnapIndicator ? 'bg-blue-500 animate-pulse' : 'bg-gray-400'}`}></div>
+            <div className={`w-2 h-2 rounded-full mr-2 ${showSnapIndicator ? 'bg-blue-500' : 'bg-gray-400'}`}></div>
             Grid Snap: {showSnapIndicator ? 'Active' : 'Ready'}
-          </span>
-        </div>
-      )}
-
-      {/* Eraser Status Indicator */}
-      {currentTool === 'eraser' && isErasing && (
-        <div className="absolute bottom-6 left-6 bg-red-50 px-3 py-2 rounded-lg shadow-lg border border-red-200">
-          <span className="text-xs font-medium text-red-700 flex items-center">
-            <div className="w-2 h-2 rounded-full mr-2 bg-red-500 animate-pulse"></div>
-            Erasing... {erasedItems.size} item(s) selected
           </span>
         </div>
       )}
