@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,10 +27,10 @@ const Navigation = () => {
       name: 'Products', 
       path: '/products',
       dropdown: [
-        { name: 'Fume Hoods', path: '/products?category=fume-hoods' },
-        { name: 'Lab Benches', path: '/products?category=lab-benches' },
-        { name: 'Storage Solutions', path: '/products?category=storage' },
-        { name: 'Safety Equipment', path: '/products?category=safety' },
+        { name: 'Broen-Lab', path: '/products?category=Broen-Lab' },
+        { name: 'Hamilton Laboratory Solutions', path: '/products?category=Hamilton%20Laboratory%20Solutions' },
+        { name: 'Oriental Giken Inc.', path: '/products?category=Oriental%20Giken%20Inc.' },
+        { name: 'Innosin Lab', path: '/products?category=Innosin%20Lab' },
         { name: 'All Products', path: '/products' },
       ]
     },
@@ -41,9 +40,10 @@ const Navigation = () => {
   ];
 
   const searchData = [
-    'Fume Hoods', 'Lab Benches', 'Storage Cabinet', 'Safety Equipment',
+    'Broen-Lab', 'Hamilton Laboratory Solutions', 'Oriental Giken Inc.', 'Innosin Lab',
     'Floor Planner', 'About Us', 'Contact', 'Chemical Fume Hood',
-    'Biological Safety Cabinet', 'Laboratory Workbench', 'Eye Wash Station'
+    'Biological Safety Cabinet', 'Laboratory Workbench', 'Eye Wash Station',
+    'Epoxy Resin Lab Bench', 'Emergency Eye Wash Station', 'Safety Shower', 'Storage Cabinet'
   ];
 
   const handleSearch = (query: string) => {
