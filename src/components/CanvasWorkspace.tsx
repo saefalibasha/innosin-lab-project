@@ -87,12 +87,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [snapPoint, setSnapPoint] = useState<Point | null>(null);
   const [showSnapIndicator, setShowSnapIndicator] = useState(false);
 
+  // Eraser states
+  const [isErasing, setIsErasing] = useState(false);
+  const [eraserPath, setEraserPath] = useState<Point[]>([]);
+
   // Debouncing and timing
   const [lastClickTime, setLastClickTime] = useState(0);
   const [doubleClickTimeout, setDoubleClickTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Pan sensitivity - significantly reduced for smoother control
-  const PAN_SENSITIVITY = 0.03; // Much more controlled panning
+  const PAN_SENSITIVITY = 0.8;
 
   // Helper functions for finding elements
   const findProductAt = (point: Point): string | null => {
@@ -158,7 +162,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       
       const distance = Math.sqrt((point.x - xx) * (point.x - xx) + (point.y - yy) * (point.y - yy));
       
-      if (distance < 10 / zoom) {
+      if (distance < 15 / zoom) { // Increased hit detection area
+        return i;
+      }
+    }
+    return null;
+  };
+
+  const findWallPointAt = (point: Point): number | null => {
+    for (let i = 0; i < roomPoints.length; i++) {
+      const wallPoint = roomPoints[i];
+      const distance = Math.sqrt(
+        Math.pow(point.x - wallPoint.x, 2) + 
+        Math.pow(point.y - wallPoint.y, 2)
+      );
+      if (distance < 15 / zoom) {
         return i;
       }
     }
@@ -201,6 +219,58 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setTextAnnotations(textAnnotations.filter(t => t.id !== selectedText));
     setSelectedText(null);
     toast.success('Text deleted');
+  };
+
+  // Enhanced eraser functions
+  const eraseAtPoint = (point: Point) => {
+    let erased = false;
+
+    // Check for products to erase
+    const productId = findProductAt(point);
+    if (productId) {
+      setPlacedProducts(prev => prev.filter(p => p.id !== productId));
+      erased = true;
+    }
+
+    // Check for text to erase
+    const textId = findTextAt(point);
+    if (textId) {
+      setTextAnnotations(prev => prev.filter(t => t.id !== textId));
+      erased = true;
+    }
+
+    // Check for wall points to erase
+    const wallPointIndex = findWallPointAt(point);
+    if (wallPointIndex !== null && roomPoints.length > 2) {
+      const newRoomPoints = roomPoints.filter((_, index) => index !== wallPointIndex);
+      setRoomPoints(newRoomPoints);
+      erased = true;
+    }
+
+    // Check for wall segments to erase (if no wall points were found)
+    if (!erased) {
+      const wallIndex = findWallAt(point);
+      if (wallIndex !== null) {
+        // Remove the wall segment by removing one of its points
+        const newRoomPoints = roomPoints.filter((_, index) => index !== wallIndex);
+        if (newRoomPoints.length >= 2) {
+          setRoomPoints(newRoomPoints);
+          erased = true;
+        }
+      }
+    }
+
+    return erased;
+  };
+
+  const eraseAlongPath = (path: Point[]) => {
+    let totalErased = 0;
+    path.forEach(point => {
+      if (eraseAtPoint(point)) {
+        totalErased++;
+      }
+    });
+    return totalErased;
   };
 
   const drawCanvas = useCallback(() => {
@@ -276,8 +346,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawSelectedWall(ctx);
     }
 
+    // Draw eraser path
+    if (isErasing && eraserPath.length > 1) {
+      drawEraserPath(ctx);
+    }
+
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, cursorPosition, snapPoint, showSnapIndicator]);
+  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, cursorPosition, snapPoint, showSnapIndicator, isErasing, eraserPath]);
 
   const drawSnapIndicator = (ctx: CanvasRenderingContext2D) => {
     if (!snapPoint) return;
@@ -304,6 +379,25 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.lineTo(snapPoint.x + crossSize, snapPoint.y);
     ctx.moveTo(snapPoint.x, snapPoint.y - crossSize);
     ctx.lineTo(snapPoint.x, snapPoint.y + crossSize);
+    ctx.stroke();
+    
+    ctx.restore();
+  };
+
+  const drawEraserPath = (ctx: CanvasRenderingContext2D) => {
+    if (eraserPath.length < 2) return;
+    
+    ctx.save();
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 3 / zoom;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    ctx.beginPath();
+    ctx.moveTo(eraserPath[0].x, eraserPath[0].y);
+    for (let i = 1; i < eraserPath.length; i++) {
+      ctx.lineTo(eraserPath[i].x, eraserPath[i].y);
+    }
     ctx.stroke();
     
     ctx.restore();
@@ -766,30 +860,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return { x, y };
   };
 
-  const snapToGrid = (point: Point): Point => {
-    if (!showGrid) return point;
-    const gridSize = scale * 0.25;
-    return {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    };
-  };
-
-  const findNearestGridPoint = (point: Point): { snappedPoint: Point; distance: number } => {
-    const gridSize = scale * 0.25;
-    const snappedPoint = {
-      x: Math.round(point.x / gridSize) * gridSize,
-      y: Math.round(point.y / gridSize) * gridSize
-    };
-    
-    const distance = Math.sqrt(
-      Math.pow(point.x - snappedPoint.x, 2) + 
-      Math.pow(point.y - snappedPoint.y, 2)
-    );
-    
-    return { snappedPoint, distance };
-  };
-
   const snapToAngle = (angle: number): number => {
     const snapIncrement = 45;
     return Math.round(angle / snapIncrement) * snapIncrement;
@@ -848,6 +918,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setHasStartedDrag(false);
     setShowSnapIndicator(false);
     setSnapPoint(null);
+    setIsErasing(false);
+    setEraserPath([]);
     if (isDrawingActive) {
       toast.success('Drawing cancelled');
     }
@@ -861,7 +933,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Handle grid snapping for wall tool
     let point = rawPoint;
     if (currentTool === 'wall' && showGrid) {
-      const snapThreshold = 15 / zoom; // Snap threshold in pixels
+      const snapThreshold = 15 / zoom;
       const { snappedPoint, distance } = findNearestGridPoint(rawPoint);
       
       if (distance < snapThreshold) {
@@ -929,13 +1001,29 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const handleDoubleClick = (point: Point, e: MouseEvent) => {
     if (currentTool === 'wall' && isDrawingActive) {
-      // Double click - finish room
+      // Auto-close the room if we're close to the first point
       if (roomPoints.length > 2) {
-        setIsDrawingActive(false);
-        setCurrentDrawingPoint(null);
-        setShowSnapIndicator(false);
-        setSnapPoint(null);
-        toast.success('Room completed');
+        const firstPoint = roomPoints[0];
+        const distance = Math.sqrt(
+          Math.pow(point.x - firstPoint.x, 2) + 
+          Math.pow(point.y - firstPoint.y, 2)
+        );
+        
+        // If close to first point, close the room
+        if (distance < 30 / zoom) {
+          setIsDrawingActive(false);
+          setCurrentDrawingPoint(null);
+          setShowSnapIndicator(false);
+          setSnapPoint(null);
+          toast.success('Room completed and closed');
+        } else {
+          // Otherwise just finish the room
+          setIsDrawingActive(false);
+          setCurrentDrawingPoint(null);
+          setShowSnapIndicator(false);
+          setSnapPoint(null);
+          toast.success('Room completed');
+        }
       }
     } else if (currentTool === 'text') {
       const textId = findTextAt(point);
@@ -951,11 +1039,35 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleWallToolMouseDown = (point: Point, e: MouseEvent) => {
+    // Always snap to grid for wall tool
+    const snappedPoint = snapToGrid(point);
+    
     if (!isDrawingActive) {
       setIsDrawingActive(true);
-      setRoomPoints([point]);
+      setRoomPoints([snappedPoint]);
+      setShowSnapIndicator(false);
+      setSnapPoint(null);
     } else {
-      setRoomPoints([...roomPoints, point]);
+      // Check if we're close to the first point to auto-close
+      if (roomPoints.length > 2) {
+        const firstPoint = roomPoints[0];
+        const distance = Math.sqrt(
+          Math.pow(snappedPoint.x - firstPoint.x, 2) + 
+          Math.pow(snappedPoint.y - firstPoint.y, 2)
+        );
+        
+        if (distance < 20 / zoom) {
+          // Close the room by not adding the point, just finishing
+          setIsDrawingActive(false);
+          setCurrentDrawingPoint(null);
+          setShowSnapIndicator(false);
+          setSnapPoint(null);
+          toast.success('Room completed and closed');
+          return;
+        }
+      }
+      
+      setRoomPoints([...roomPoints, snappedPoint]);
     }
   };
 
@@ -1053,15 +1165,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleEraserToolMouseDown = (point: Point, e: MouseEvent) => {
-    const productId = findProductAt(point);
-    const textId = findTextAt(point);
+    setIsErasing(true);
+    setEraserPath([point]);
     
-    if (productId) {
-      setPlacedProducts(placedProducts.filter(p => p.id !== productId));
-      toast.success('Product erased');
-    } else if (textId) {
-      setTextAnnotations(textAnnotations.filter(t => t.id !== textId));
-      toast.success('Text erased');
+    // Immediate erase at click point
+    const erased = eraseAtPoint(point);
+    if (erased) {
+      toast.success('Item erased');
     }
   };
 
@@ -1084,7 +1194,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         setSnapPoint(null);
       }
     } else if (currentTool === 'wall' && isDrawingActive) {
-      setCurrentDrawingPoint(rawPoint);
+      const snappedPoint = snapToGrid(rawPoint);
+      setCurrentDrawingPoint(snappedPoint);
     }
 
     if (isPanning && lastPanPoint) {
@@ -1100,8 +1211,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       return;
     }
 
-    // Use snapped point for other interactions when appropriate
     const point = (currentTool === 'wall' && showGrid) ? (snapPoint || rawPoint) : rawPoint;
+
+    // Eraser drag handling
+    if (currentTool === 'eraser' && isErasing) {
+      setEraserPath(prev => [...prev, point]);
+      eraseAtPoint(point);
+    }
 
     // Improved drag handling with threshold
     if (currentTool === 'select' && isDragging && !hasStartedDrag && dragStart) {
@@ -1204,6 +1320,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setDragStart(null);
     setHasStartedDrag(false);
     setShowCollisionWarning(false);
+    setIsErasing(false);
+    
+    // Show toast for eraser results
+    if (currentTool === 'eraser' && eraserPath.length > 1) {
+      const erased = eraseAlongPath(eraserPath);
+      if (erased > 0) {
+        toast.success(`Erased ${erased} items`);
+      }
+    }
+    
+    setEraserPath([]);
+    
     // Keep snap indicator when drawing
     if (currentTool !== 'wall' || !isDrawingActive) {
       setShowSnapIndicator(false);
@@ -1256,7 +1384,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       y: lastPoint.y + Math.sin(angle) * length * scale
     };
 
-    setRoomPoints([...roomPoints, newPoint]);
+    // Snap the calculated point to grid
+    const snappedNewPoint = snapToGrid(newPoint);
+    
+    setRoomPoints([...roomPoints, snappedNewPoint]);
     setShowLengthInput(false);
     setCustomLength('');
     setPendingLineStart(null);
@@ -1284,8 +1415,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       y: startPoint.y + Math.sin(angle) * length * scale
     };
 
+    // Snap the new end point to grid
+    const snappedNewEndPoint = snapToGrid(newEndPoint);
+
     const newRoomPoints = [...roomPoints];
-    newRoomPoints[nextIndex] = newEndPoint;
+    newRoomPoints[nextIndex] = snappedNewEndPoint;
     setRoomPoints(newRoomPoints);
     
     setShowWallLengthInput(false);
@@ -1312,7 +1446,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('drop', handleDrop);
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
-  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag, showGrid]);
+  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag, showGrid, isErasing]);
 
   useEffect(() => {
     let resizeTimeout: NodeJS.Timeout;
@@ -1388,7 +1522,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           style={{
             cursor: currentTool === 'wall' || currentTool === 'door' ? 'crosshair' : 
                    currentTool === 'select' ? 'default' :
-                   currentTool === 'rotate' ? 'grab' : 'crosshair'
+                   currentTool === 'rotate' ? 'grab' : 
+                   currentTool === 'eraser' ? 'cell' : 'crosshair'
           }}
         />
       </div>
