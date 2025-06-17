@@ -130,6 +130,133 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     return snapPointToGrid(rawPoint);
   }, [screenToCanvas, snapPointToGrid]);
 
+  // Helper functions
+  const findProductAt = (point: Point): string | null => {
+    for (const product of placedProducts) {
+      const { position, dimensions, rotation } = product;
+      const productScale = product.scale || 1;
+      const width = dimensions.length * scale * productScale;
+      const height = dimensions.width * scale * productScale;
+      
+      // Transform point to product's local coordinate system
+      const dx = point.x - position.x;
+      const dy = point.y - position.y;
+      const rotRad = (rotation * Math.PI) / 180;
+      const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
+      const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
+      
+      if (Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2) {
+        return product.id;
+      }
+    }
+    return null;
+  };
+
+  const findTextAt = (point: Point): string | null => {
+    for (const annotation of textAnnotations) {
+      const distance = Math.sqrt(
+        Math.pow(point.x - annotation.position.x, 2) + 
+        Math.pow(point.y - annotation.position.y, 2)
+      );
+      if (distance <= 20) {
+        return annotation.id;
+      }
+    }
+    return null;
+  };
+
+  const findWallAt = (point: Point): number | null => {
+    if (roomPoints.length < 2) return null;
+    
+    const threshold = 20;
+    for (let i = 0; i < roomPoints.length; i++) {
+      const nextIndex = (i + 1) % roomPoints.length;
+      if (nextIndex === 0 && roomPoints.length < 3) continue;
+      
+      const p1 = roomPoints[i];
+      const p2 = roomPoints[nextIndex];
+      
+      // Calculate distance from point to line segment
+      const A = point.x - p1.x;
+      const B = point.y - p1.y;
+      const C = p2.x - p1.x;
+      const D = p2.y - p1.y;
+      
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      let param = -1;
+      if (lenSq !== 0) param = dot / lenSq;
+      
+      let xx, yy;
+      if (param < 0) {
+        xx = p1.x;
+        yy = p1.y;
+      } else if (param > 1) {
+        xx = p2.x;
+        yy = p2.y;
+      } else {
+        xx = p1.x + param * C;
+        yy = p1.y + param * D;
+      }
+      
+      const dx = point.x - xx;
+      const dy = point.y - yy;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance <= threshold) {
+        return i;
+      }
+    }
+    return null;
+  };
+
+  const duplicateSelectedProduct = () => {
+    if (!selectedProduct) return;
+    
+    const product = placedProducts.find(p => p.id === selectedProduct);
+    if (!product) return;
+    
+    const duplicatedProduct: PlacedProduct = {
+      ...product,
+      id: `${product.productId}-${Date.now()}`,
+      position: {
+        x: product.position.x + 50,
+        y: product.position.y + 50
+      }
+    };
+    
+    if (isProductWithinRoom(duplicatedProduct, roomPoints, scale)) {
+      setPlacedProducts([...placedProducts, duplicatedProduct]);
+      setSelectedProduct(duplicatedProduct.id);
+      toast.success('Product duplicated');
+    } else {
+      toast.error('Cannot duplicate product outside room bounds');
+    }
+  };
+
+  const deleteSelectedProduct = () => {
+    if (!selectedProduct) return;
+    
+    setPlacedProducts(placedProducts.filter(p => p.id !== selectedProduct));
+    setSelectedProduct(null);
+    toast.success('Product deleted');
+  };
+
+  const deleteSelectedText = () => {
+    if (!selectedText) return;
+    
+    setTextAnnotations(textAnnotations.filter(t => t.id !== selectedText));
+    setSelectedText(null);
+    toast.success('Text deleted');
+  };
+
+  // Calculate distance helper
+  const calculateDistance = (point1: Point, point2: Point): number => {
+    const dx = point2.x - point1.x;
+    const dy = point2.y - point1.y;
+    return Math.sqrt(dx * dx + dy * dy) / scale;
+  };
+
   // Enhanced drawing functions with proper layering
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -364,46 +491,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     ctx.setLineDash([]);
     ctx.restore();
-  };
-
-  const duplicateSelectedProduct = () => {
-    if (!selectedProduct) return;
-    
-    const product = placedProducts.find(p => p.id === selectedProduct);
-    if (!product) return;
-    
-    const duplicatedProduct: PlacedProduct = {
-      ...product,
-      id: `${product.productId}-${Date.now()}`,
-      position: {
-        x: product.position.x + 50,
-        y: product.position.y + 50
-      }
-    };
-    
-    if (isProductWithinRoom(duplicatedProduct, roomPoints, scale)) {
-      setPlacedProducts([...placedProducts, duplicatedProduct]);
-      setSelectedProduct(duplicatedProduct.id);
-      toast.success('Product duplicated');
-    } else {
-      toast.error('Cannot duplicate product outside room bounds');
-    }
-  };
-
-  const deleteSelectedProduct = () => {
-    if (!selectedProduct) return;
-    
-    setPlacedProducts(placedProducts.filter(p => p.id !== selectedProduct));
-    setSelectedProduct(null);
-    toast.success('Product deleted');
-  };
-
-  const deleteSelectedText = () => {
-    if (!selectedText) return;
-    
-    setTextAnnotations(textAnnotations.filter(t => t.id !== selectedText));
-    setSelectedText(null);
-    toast.success('Text deleted');
   };
 
   const drawRoom = (ctx: CanvasRenderingContext2D) => {
@@ -699,6 +786,40 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.stroke();
   };
 
+  // Mouse event handlers
+  const handleMouseDown = useCallback((e: MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const canvasPos = getCanvasMousePosition(e);
+    const currentTime = Date.now();
+    const isDoubleClick = currentTime - lastClickTime < 300;
+    
+    // Clear any existing timeout
+    if (doubleClickTimeout) {
+      clearTimeout(doubleClickTimeout);
+      setDoubleClickTimeout(null);
+    }
+
+    if (e.button === 0) { // Left click
+      if (isDoubleClick) {
+        handleDoubleClick(canvasPos, e);
+        setLastClickTime(0);
+      } else {
+        const timeout = setTimeout(() => {
+          handleSingleClick(canvasPos, e);
+          setDoubleClickTimeout(null);
+        }, 300);
+        setDoubleClickTimeout(timeout);
+        setLastClickTime(currentTime);
+      }
+    } else if (e.button === 1 || e.button === 2) { // Middle or right click for panning
+      setIsPanning(true);
+      setIsMiddleMousePanning(e.button === 1);
+      setLastPanPoint(screenToCanvas({ x: e.clientX, y: e.clientY }));
+    }
+  }, [currentTool, getCanvasMousePosition, lastClickTime, doubleClickTimeout]);
+
   const handleWallToolMouseDown = (point: Point, e: MouseEvent) => {
     if (!isDrawingActive) {
       setIsDrawingActive(true);
@@ -906,7 +1027,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       id: `${product.id}-${Date.now()}`,
       productId: product.id,
       name: product.name,
-      position: snapToGrid ? dropPoint : snapToGrid(dropPoint),
+      position: snapToGrid ? dropPoint : snapPointToGrid(dropPoint),
       rotation: 0,
       dimensions: product.dimensions,
       color: product.color,
@@ -1027,85 +1148,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const snapToAngle = (angle: number): number => {
     const snapIncrement = 45;
     return Math.round(angle / snapIncrement) * snapIncrement;
-  };
-
-  const findProductAt = (point: Point): string | null => {
-    for (const product of placedProducts) {
-      const { position, dimensions, rotation } = product;
-      const productScale = product.scale || 1;
-      const width = dimensions.length * scale * productScale;
-      const height = dimensions.width * scale * productScale;
-      
-      // Transform point to product's local coordinate system
-      const dx = point.x - position.x;
-      const dy = point.y - position.y;
-      const rotRad = (rotation * Math.PI) / 180;
-      const localX = dx * Math.cos(-rotRad) - dy * Math.sin(-rotRad);
-      const localY = dx * Math.sin(-rotRad) + dy * Math.cos(-rotRad);
-      
-      if (Math.abs(localX) <= width / 2 && Math.abs(localY) <= height / 2) {
-        return product.id;
-      }
-    }
-    return null;
-  };
-
-  const findTextAt = (point: Point): string | null => {
-    for (const annotation of textAnnotations) {
-      const distance = Math.sqrt(
-        Math.pow(point.x - annotation.position.x, 2) + 
-        Math.pow(point.y - annotation.position.y, 2)
-      );
-      if (distance <= 20) {
-        return annotation.id;
-      }
-    }
-    return null;
-  };
-
-  const findWallAt = (point: Point): number | null => {
-    if (roomPoints.length < 2) return null;
-    
-    const threshold = 20;
-    for (let i = 0; i < roomPoints.length; i++) {
-      const nextIndex = (i + 1) % roomPoints.length;
-      if (nextIndex === 0 && roomPoints.length < 3) continue;
-      
-      const p1 = roomPoints[i];
-      const p2 = roomPoints[nextIndex];
-      
-      // Calculate distance from point to line segment
-      const A = point.x - p1.x;
-      const B = point.y - p1.y;
-      const C = p2.x - p1.x;
-      const D = p2.y - p1.y;
-      
-      const dot = A * C + B * D;
-      const lenSq = C * C + D * D;
-      let param = -1;
-      if (lenSq !== 0) param = dot / lenSq;
-      
-      let xx, yy;
-      if (param < 0) {
-        xx = p1.x;
-        yy = p1.y;
-      } else if (param > 1) {
-        xx = p2.x;
-        yy = p2.y;
-      } else {
-        xx = p1.x + param * C;
-        yy = p1.y + param * D;
-      }
-      
-      const dx = point.x - xx;
-      const dy = point.y - yy;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance <= threshold) {
-        return i;
-      }
-    }
-    return null;
   };
 
   const handleMouseMove = (e: MouseEvent) => {
@@ -1247,13 +1289,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     toast.success('Canvas recentered and zoomed to fit');
   };
 
-  // Calculate distance helper
-  const calculateDistance = (point1: Point, point2: Point): number => {
-    const dx = point2.x - point1.x;
-    const dy = point2.y - point1.y;
-    return Math.sqrt(dx * dx + dy * dy) / scale;
-  };
-
   // Set up event listeners
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1279,7 +1314,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('drop', handleDrop);
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
-  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, isMiddleMousePanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
+  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, isMiddleMousePanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag, handleMouseDown]);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
