@@ -906,7 +906,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       id: `${product.id}-${Date.now()}`,
       productId: product.id,
       name: product.name,
-      position: snapToGrid ? dropPoint : snapToGrid(dropPoint),
+      position: snapToGrid ? dropPoint : snapPointToGrid(dropPoint),
       rotation: 0,
       dimensions: product.dimensions,
       color: product.color,
@@ -1264,6 +1264,50 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                          currentTool === 'select' ? 'default' :
                          currentTool === 'rotate' ? 'grab' : 'crosshair';
 
+    const handleMouseDown = useCallback((e: MouseEvent) => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const point = getCanvasMousePosition(e);
+      const currentTime = Date.now();
+
+      // Handle right-click for panning
+      if (e.button === 2) {
+        setIsPanning(true);
+        setLastPanPoint(screenToCanvas({ x: e.clientX, y: e.clientY }));
+        return;
+      }
+
+      // Handle middle mouse button for panning
+      if (e.button === 1) {
+        e.preventDefault();
+        setIsMiddleMousePanning(true);
+        setLastPanPoint(screenToCanvas({ x: e.clientX, y: e.clientY }));
+        return;
+      }
+
+      // Handle left-click (button 0)
+      if (e.button !== 0) return;
+
+      // Double-click detection
+      if (currentTime - lastClickTime < 300) {
+        if (doubleClickTimeout) {
+          clearTimeout(doubleClickTimeout);
+          setDoubleClickTimeout(null);
+        }
+        handleDoubleClick(point, e);
+        return;
+      }
+
+      // Single click with delay to detect double-click
+      setLastClickTime(currentTime);
+      const timeout = setTimeout(() => {
+        handleSingleClick(point, e);
+        setDoubleClickTimeout(null);
+      }, 300);
+      setDoubleClickTimeout(timeout);
+    }, [getCanvasMousePosition, screenToCanvas, lastClickTime, doubleClickTimeout]);
+
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseup', handleMouseUp);
@@ -1279,7 +1323,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       canvas.removeEventListener('drop', handleDrop);
       canvas.removeEventListener('dragover', (e) => e.preventDefault());
     };
-  }, [currentTool, isDrawingActive, isDragging, isRotating, isPanning, isMiddleMousePanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
+  }, [handleMouseDown, currentTool, isDrawingActive, isDragging, isRotating, isPanning, isMiddleMousePanning, selectedProduct, selectedText, selectedWallIndex, roomPoints, placedProducts, textAnnotations, doors, hasStartedDrag]);
 
   // Enhanced keyboard shortcuts
   useEffect(() => {
