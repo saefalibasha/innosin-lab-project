@@ -244,11 +244,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawPrecisionGrid(ctx, rect.width / zoom, rect.height / zoom);
     }
     
-    // Draw ruler if enabled with better precision
-    if (showRuler) {
-      drawPrecisionRuler(ctx, rect.width / zoom, rect.height / zoom);
-    }
-    
     // Draw room
     drawRoom(ctx);
     
@@ -795,12 +790,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     setPendingLineStart(null);
     setSelectedProduct(null);
     setSelectedText(null);
-    setSelectedWallIndex(null);
     setIsEditingText(false);
     setShowRotationHandle(false);
     setIsDragging(false);
     setIsRotating(false);
-    setShowWallLengthInput(false);
     setHasStartedDrag(false);
     if (isDrawingActive) {
       toast.success('Drawing cancelled');
@@ -849,9 +842,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         break;
       case 'rotate':
         handleRotateToolMouseDown(point, e);
-        break;
-      case 'wall-edit':
-        handleWallEditToolMouseDown(point, e);
         break;
       case 'door':
         handleDoorToolMouseDown(point, e);
@@ -920,19 +910,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     } else {
       setSelectedProduct(null);
       setShowRotationHandle(false);
-    }
-  };
-
-  const handleWallEditToolMouseDown = (point: Point, e: MouseEvent) => {
-    const wallIndex = findWallAt(point);
-    if (wallIndex !== null) {
-      setSelectedWallIndex(wallIndex);
-      const nextIndex = (wallIndex + 1) % roomPoints.length;
-      const currentLength = calculateDistance(roomPoints[wallIndex], roomPoints[nextIndex]);
-      setCustomWallLength(currentLength.toFixed(2));
-      setShowWallLengthInput(true);
-    } else {
-      setSelectedWallIndex(null);
     }
   };
 
@@ -1266,8 +1243,60 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   }, [drawCanvas]);
 
   return (
-    <div className="relative w-full h-full bg-gray-50">
-      <div ref={containerRef} className="w-full h-full">
+    <div className="relative w-full h-full">
+      {/* Ruler borders */}
+      {showRuler && (
+        <>
+          {/* Top ruler */}
+          <div className="absolute top-0 left-8 right-0 h-8 bg-gray-100 border-b border-gray-300 z-10">
+            <div className="relative h-full overflow-hidden">
+              {Array.from({ length: Math.ceil(window.innerWidth / (scale * zoom)) + 1 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute top-0 h-full border-l border-gray-400"
+                  style={{
+                    left: `${i * scale * zoom + pan.x * zoom}px`,
+                    transform: pan.x * zoom + i * scale * zoom < 0 ? 'translateX(100%)' : 'none'
+                  }}
+                >
+                  {i % 1 === 0 && (
+                    <span className="absolute top-1 left-1 text-xs text-gray-600">
+                      {i}m
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Left ruler */}
+          <div className="absolute top-8 left-0 bottom-0 w-8 bg-gray-100 border-r border-gray-300 z-10">
+            <div className="relative w-full h-full overflow-hidden">
+              {Array.from({ length: Math.ceil(window.innerHeight / (scale * zoom)) + 1 }, (_, i) => (
+                <div
+                  key={i}
+                  className="absolute left-0 w-full border-t border-gray-400"
+                  style={{
+                    top: `${i * scale * zoom + pan.y * zoom}px`,
+                    transform: pan.y * zoom + i * scale * zoom < 0 ? 'translateY(100%)' : 'none'
+                  }}
+                >
+                  {i % 1 === 0 && (
+                    <span className="absolute left-1 top-1 text-xs text-gray-600 transform -rotate-90 origin-left">
+                      {i}m
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Corner piece */}
+          <div className="absolute top-0 left-0 w-8 h-8 bg-gray-200 border-r border-b border-gray-300 z-20"></div>
+        </>
+      )}
+
+      <div ref={containerRef} className={`w-full h-full ${showRuler ? 'ml-8 mt-8' : ''}`}>
         <canvas
           ref={canvasRef}
           className="bg-white shadow-sm"
@@ -1302,37 +1331,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
                 setShowLengthInput(false);
                 setCustomLength('');
                 setPendingLineStart(null);
-              }}
-              className="px-4"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Enhanced Wall Length Input Modal */}
-      {showWallLengthInput && (
-        <div className="absolute top-6 left-6 bg-white p-4 rounded-lg shadow-lg border border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-3">Edit Wall Length</h3>
-          <div className="flex space-x-2">
-            <Input
-              type="number"
-              value={customWallLength}
-              onChange={(e) => setCustomWallLength(e.target.value)}
-              placeholder="Length in meters"
-              className="w-36 text-sm"
-              autoFocus
-            />
-            <Button onClick={handleWallLengthSubmit} size="sm" className="px-4">
-              Apply
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setShowWallLengthInput(false);
-                setSelectedWallIndex(null);
               }}
               className="px-4"
             >

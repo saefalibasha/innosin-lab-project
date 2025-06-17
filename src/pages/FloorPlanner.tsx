@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, DoorOpen, Undo, Redo, Edit } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, DoorOpen, Undo, Redo } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
@@ -332,22 +331,6 @@ const FloorPlanner = () => {
                   </div>
                 </div>
 
-                {/* Wall Edit Tool */}
-                <div className="p-3 bg-white rounded-lg border">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <Edit className="w-4 h-4 text-orange-600" />
-                    <span className="font-medium text-sm">Wall Edit Tool</span>
-                    <Badge variant="outline" className="text-xs">New</Badge>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">Select and adjust wall lengths precisely</p>
-                  <div className="space-y-1">
-                    <div className="text-xs text-gray-700">• <strong>Click wall:</strong> Select wall segment</div>
-                    <div className="text-xs text-gray-700">• <strong>Input length:</strong> Manual dimension control</div>
-                    <div className="text-xs text-gray-700">• <strong>Auto-redraw:</strong> Proportional adjustment</div>
-                    <div className="text-xs text-gray-700">• <strong>Visual highlight:</strong> Shows selected wall</div>
-                  </div>
-                </div>
-
                 {/* Door Tool */}
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="flex items-center space-x-2 mb-2">
@@ -412,7 +395,7 @@ const FloorPlanner = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Enhanced Drawing Tools - REMOVED TEXT TOOL */}
+            {/* Enhanced Drawing Tools - NO WALL EDIT TOOL */}
             <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
@@ -466,22 +449,6 @@ const FloorPlanner = () => {
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Rotate objects with 45° snapping</p>
-                  </TooltipContent>
-                </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={activeTool === 'wall-edit' ? 'default' : 'outline'}
-                      className="w-full justify-start h-10"
-                      onClick={() => setActiveTool('wall-edit')}
-                    >
-                      <Edit className="w-4 h-4 mr-3" />
-                      Wall Edit
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Select and adjust wall lengths</p>
                   </TooltipContent>
                 </Tooltip>
 
