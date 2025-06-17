@@ -899,14 +899,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     if (productId && !erasedItems.has(productId)) {
       if (isErasing) {
-        setErasedItems(prev => new Set([...prev, productId]));
+        setErasedItems(prev => new Set(prev).add(productId));
       } else {
         setPlacedProducts(placedProducts.filter(p => p.id !== productId));
         toast.success('Product erased');
       }
     } else if (textId && !erasedItems.has(textId)) {
       if (isErasing) {
-        setErasedItems(prev => new Set([...prev, textId]));
+        setErasedItems(prev => new Set(prev).add(textId));
       } else {
         setTextAnnotations(textAnnotations.filter(t => t.id !== textId));
         toast.success('Text erased');
