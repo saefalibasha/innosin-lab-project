@@ -16,6 +16,7 @@ import { RFQProvider } from "./contexts/RFQContext";
 import Navigation from "./components/Navigation";
 import LiveChat from "./components/LiveChat";
 import Footer from "./components/Footer";
+import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <div className="min-h-screen flex flex-col">
             <Navigation />
             <main className="flex-1">
