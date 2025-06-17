@@ -531,6 +531,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       
       const newProduct: PlacedProduct = {
         id: `${productData.id}-${Date.now()}`,
+        productId: productData.id,
         name: productData.name,
         dimensions: productData.dimensions,
         position: canvasPoint,
