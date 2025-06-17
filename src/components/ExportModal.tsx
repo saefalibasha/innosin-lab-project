@@ -19,11 +19,10 @@ interface ExportModalProps {
 }
 
 interface LeadData {
-  fullName: string;
+  name: string;
   email: string;
-  companyName: string;
-  contactNumber: string;
-  jobTitle: string;
+  contact: string;
+  company: string;
   projectDescription: string;
 }
 
@@ -35,14 +34,14 @@ const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [exportFormat, setExportFormat] = useState<'png' | 'pdf'>('png');
   const [step, setStep] = useState<'format' | 'form' | 'success'>('format');
   const [leadData, setLeadData] = useState<LeadData>({
-    fullName: '',
+    name: '',
     email: '',
-    companyName: '',
-    contactNumber: '',
-    jobTitle: '',
+    contact: '',
+    company: '',
     projectDescription: ''
   });
 
@@ -53,39 +52,19 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const submitToHubSpot = async (leadData: LeadData, planData: any) => {
-    // Enhanced HubSpot submission with all required fields
+    // Simulate HubSpot API call (replace with actual HubSpot integration)
     const hubspotData = {
-      // Required contact information
-      firstname: leadData.fullName.split(' ')[0],
-      lastname: leadData.fullName.split(' ').slice(1).join(' ') || leadData.fullName,
-      email: leadData.email,
-      company: leadData.companyName,
-      phone: leadData.contactNumber,
-      jobtitle: leadData.jobTitle,
-      
-      // Project and plan details
-      project_description: leadData.projectDescription,
-      floor_plan_data: JSON.stringify(planData),
-      export_format: exportFormat.toUpperCase(),
-      submission_source: 'Floor Planner Export',
-      submitted_at: new Date().toISOString(),
-      
-      // Plan statistics
-      room_points_count: planData.roomPoints,
-      products_count: planData.placedProducts,
-      
-      // Lead source tracking
-      lead_source: 'Floor Planner Tool',
-      lead_status: 'New Export Request'
+      ...leadData,
+      floorPlanData: planData,
+      submittedAt: new Date().toISOString(),
+      source: 'Floor Planner Export',
+      exportFormat: exportFormat.toUpperCase()
     };
 
-    console.log('Submitting enhanced lead data to HubSpot:', hubspotData);
+    console.log('Submitting to HubSpot:', hubspotData);
 
-    // Simulate HubSpot API call with workflow trigger
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Log successful submission
-    console.log('HubSpot submission successful - Contact created and workflow triggered');
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
     
     return hubspotData;
   };
@@ -99,7 +78,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
     setIsExporting(true);
     
     try {
-      // Generate comprehensive plan data for HubSpot
+      // Generate plan data for HubSpot
       const planData = {
         timestamp: new Date().toISOString(),
         roomPoints: roomPoints.length,
@@ -107,35 +86,28 @@ const ExportModal: React.FC<ExportModalProps> = ({
         products: placedProducts.map(p => ({
           name: p.name,
           position: p.position,
-          rotation: p.rotation,
-          dimensions: p.dimensions
-        })),
-        exportFormat: format,
-        canvasDimensions: {
-          width: canvasRef.current.width,
-          height: canvasRef.current.height
-        }
+          rotation: p.rotation
+        }))
       };
 
-      // Submit to HubSpot with enhanced data
+      // Submit to HubSpot first
       await submitToHubSpot(leadData, planData);
 
-      // Generate high-quality export
+      // Then generate and download the file
       const canvas = await html2canvas(canvasRef.current, {
         backgroundColor: '#ffffff',
-        scale: 3, // Higher quality export
-        useCORS: true,
-        allowTaint: true
+        scale: 2,
+        useCORS: true
       });
 
       if (format === 'png') {
         const link = document.createElement('a');
-        link.download = `floor-plan-${leadData.companyName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
+        link.download = `floor-plan-${new Date().toISOString().split('T')[0]}.png`;
+        link.href = canvas.toDataURL('image/png');
         link.click();
-        toast.success('Floor plan exported as PNG and lead submitted to HubSpot!');
+        toast.success('Floor plan exported as PNG and lead captured!');
       } else if (format === 'pdf') {
-        const imgData = canvas.toDataURL('image/png', 1.0);
+        const imgData = canvas.toDataURL('image/png');
         const pdf = new jsPDF({
           orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
           unit: 'px',
@@ -143,8 +115,8 @@ const ExportModal: React.FC<ExportModalProps> = ({
         });
         
         pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-        pdf.save(`floor-plan-${leadData.companyName.replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`);
-        toast.success('Floor plan exported as PDF and lead submitted to HubSpot!');
+        pdf.save(`floor-plan-${new Date().toISOString().split('T')[0]}.pdf`);
+        toast.success('Floor plan exported as PDF and lead captured!');
       }
 
       setStep('success');
@@ -153,19 +125,12 @@ const ExportModal: React.FC<ExportModalProps> = ({
       setTimeout(() => {
         setIsOpen(false);
         setStep('format');
-        setLeadData({ 
-          fullName: '', 
-          email: '', 
-          companyName: '', 
-          contactNumber: '', 
-          jobTitle: '', 
-          projectDescription: '' 
-        });
-      }, 3500);
+        setLeadData({ name: '', email: '', contact: '', company: '', projectDescription: '' });
+      }, 3000);
 
     } catch (error) {
       console.error('Export error:', error);
-      toast.error('Failed to export floor plan. Please try again.');
+      toast.error('Failed to export floor plan');
     } finally {
       setIsExporting(false);
     }
@@ -178,10 +143,8 @@ const ExportModal: React.FC<ExportModalProps> = ({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isFormValid) {
+    if (leadData.name && leadData.email) {
       exportAsImage(exportFormat);
-    } else {
-      toast.error('Please fill in all required fields');
     }
   };
 
@@ -195,18 +158,11 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const stats = calculateStats();
-  const isFormValid = leadData.fullName && leadData.email && leadData.companyName && leadData.contactNumber && leadData.jobTitle;
+  const isFormValid = leadData.name && leadData.email;
 
   const resetModal = () => {
     setStep('format');
-    setLeadData({ 
-      fullName: '', 
-      email: '', 
-      companyName: '', 
-      contactNumber: '', 
-      jobTitle: '', 
-      projectDescription: '' 
-    });
+    setLeadData({ name: '', email: '', contact: '', company: '', projectDescription: '' });
   };
 
   if (step === 'success') {
@@ -221,10 +177,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
             <div>
               <h3 className="text-lg font-medium">Export Successful!</h3>
               <p className="text-gray-600 mt-2">
-                Your floor plan has been downloaded and your contact information has been submitted to HubSpot.
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Our team will follow up with you shortly regarding your project.
+                Your floor plan has been downloaded and your information has been sent to our team.
               </p>
             </div>
           </div>
@@ -238,7 +191,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Download className="w-5 h-5" />
@@ -291,73 +244,60 @@ const ExportModal: React.FC<ExportModalProps> = ({
                 <span className="font-medium text-blue-800">Contact Information Required</span>
               </div>
               <p className="text-blue-700 text-xs">
-                Please complete all required fields to receive your {exportFormat.toUpperCase()} export and connect with our team.
+                Please provide your contact details to receive your {exportFormat.toUpperCase()} export.
               </p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name *</Label>
+              <Label htmlFor="name">Name *</Label>
               <Input
-                id="fullName"
-                value={leadData.fullName}
-                onChange={handleInputChange('fullName')}
-                placeholder="Enter your full name"
+                id="name"
+                value={leadData.name}
+                onChange={handleInputChange('name')}
+                placeholder="Your full name"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address *</Label>
+              <Label htmlFor="email">Email *</Label>
               <Input
                 id="email"
                 type="email"
                 value={leadData.email}
                 onChange={handleInputChange('email')}
-                placeholder="your.email@company.com"
+                placeholder="your@email.com"
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="companyName">Company Name *</Label>
+              <Label htmlFor="contact">Contact Number</Label>
               <Input
-                id="companyName"
-                value={leadData.companyName}
-                onChange={handleInputChange('companyName')}
-                placeholder="Your company or organization"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contactNumber">Contact Number *</Label>
-              <Input
-                id="contactNumber"
-                value={leadData.contactNumber}
-                onChange={handleInputChange('contactNumber')}
+                id="contact"
+                value={leadData.contact}
+                onChange={handleInputChange('contact')}
                 placeholder="Your phone number"
-                required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="jobTitle">Job Title *</Label>
+              <Label htmlFor="company">Company/Organization</Label>
               <Input
-                id="jobTitle"
-                value={leadData.jobTitle}
-                onChange={handleInputChange('jobTitle')}
-                placeholder="Your position/role"
-                required
+                id="company"
+                value={leadData.company}
+                onChange={handleInputChange('company')}
+                placeholder="Your company name"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="projectDescription">Project Description / Notes</Label>
+              <Label htmlFor="projectDescription">Project Description or Notes</Label>
               <Textarea
                 id="projectDescription"
                 value={leadData.projectDescription}
                 onChange={handleInputChange('projectDescription')}
-                placeholder="Tell us about your project requirements, timeline, or specific needs..."
+                placeholder="Tell us about your project requirements..."
                 rows={3}
               />
             </div>
@@ -379,7 +319,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
                 {isExporting ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
+                    Exporting...
                   </>
                 ) : (
                   <>
