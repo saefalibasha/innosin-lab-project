@@ -4,6 +4,7 @@ import { Award, Users, Lightbulb, Heart } from 'lucide-react';
 import CompanyTimeline from '@/components/CompanyTimeline';
 import ProcessInfographic from '@/components/ProcessInfographic';
 import CertificationBadges from '@/components/CertificationBadges';
+import AnimatedSection from '@/components/AnimatedSection';
 
 const About = () => {
   const values = [
@@ -52,13 +53,17 @@ const About = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-            About Innosin Lab
-          </h1>
-          <p className="text-xl text-gray-600 leading-relaxed">
-            We're passionate about creating innovative laboratory solutions that advance scientific discovery. 
-            Our mission is to design and manufacture world-class laboratory furniture and safety equipment.
-          </p>
+          <AnimatedSection animation="fade-in" delay={100}>
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              About Innosin Lab
+            </h1>
+          </AnimatedSection>
+          <AnimatedSection animation="fade-in" delay={300}>
+            <p className="text-xl text-gray-600 leading-relaxed">
+              We're passionate about creating innovative laboratory solutions that advance scientific discovery. 
+              Our mission is to design and manufacture world-class laboratory furniture and safety equipment.
+            </p>
+          </AnimatedSection>
         </div>
       </section>
 
@@ -66,23 +71,31 @@ const About = () => {
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="prose prose-lg max-w-none">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Story</h2>
+            <AnimatedSection animation="slide-up" delay={100}>
+              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Story</h2>
+            </AnimatedSection>
             <div className="text-gray-600 space-y-6">
-              <p>
-                Founded in 2010, Innosin Lab emerged from a simple idea: what if laboratories could be designed 
-                to truly enhance scientific productivity and safety? Our founders, experienced engineers and 
-                scientists, set out to revolutionize laboratory environments.
-              </p>
-              <p>
-                Starting with a focus on fume hoods and safety equipment, we quickly expanded our expertise to 
-                include comprehensive laboratory planning and custom furniture solutions. We believed that every 
-                researcher deserved a workspace designed for both safety and efficiency.
-              </p>
-              <p>
-                Today, we're proud to serve research institutions, universities, and industrial laboratories 
-                worldwide, helping them create environments where breakthrough discoveries happen. Our commitment 
-                to innovation, quality, and safety continues to drive us forward.
-              </p>
+              <AnimatedSection animation="fade-in-left" delay={200}>
+                <p>
+                  Founded in 2010, Innosin Lab emerged from a simple idea: what if laboratories could be designed 
+                  to truly enhance scientific productivity and safety? Our founders, experienced engineers and 
+                  scientists, set out to revolutionize laboratory environments.
+                </p>
+              </AnimatedSection>
+              <AnimatedSection animation="fade-in-right" delay={400}>
+                <p>
+                  Starting with a focus on fume hoods and safety equipment, we quickly expanded our expertise to 
+                  include comprehensive laboratory planning and custom furniture solutions. We believed that every 
+                  researcher deserved a workspace designed for both safety and efficiency.
+                </p>
+              </AnimatedSection>
+              <AnimatedSection animation="fade-in-left" delay={600}>
+                <p>
+                  Today, we're proud to serve research institutions, universities, and industrial laboratories 
+                  worldwide, helping them create environments where breakthrough discoveries happen. Our commitment 
+                  to innovation, quality, and safety continues to drive us forward.
+                </p>
+              </AnimatedSection>
             </div>
           </div>
         </div>
@@ -91,41 +104,51 @@ const About = () => {
       {/* Company Timeline */}
       <section className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <CompanyTimeline />
+          <AnimatedSection animation="scale-in" delay={100}>
+            <CompanyTimeline />
+          </AnimatedSection>
         </div>
       </section>
 
       {/* Process Infographic */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ProcessInfographic />
+          <AnimatedSection animation="bounce-in" delay={200}>
+            <ProcessInfographic />
+          </AnimatedSection>
         </div>
       </section>
 
       {/* Certifications */}
       <section className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <CertificationBadges />
+          <AnimatedSection animation="rotate-in" delay={100}>
+            <CertificationBadges />
+          </AnimatedSection>
         </div>
       </section>
 
       {/* Values Section */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Values</h2>
-            <p className="text-xl text-gray-600">The principles that guide everything we do</p>
-          </div>
+          <AnimatedSection animation="fade-in" delay={100}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Values</h2>
+              <p className="text-xl text-gray-600">The principles that guide everything we do</p>
+            </div>
+          </AnimatedSection>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
-              <div key={index} className="text-center">
-                <div className="flex justify-center mb-4 text-black">
-                  {value.icon}
+              <AnimatedSection key={index} animation="slide-up" delay={200 + index * 100}>
+                <div className="text-center">
+                  <div className="flex justify-center mb-4 text-black">
+                    {value.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
+                  <p className="text-gray-600">{value.description}</p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
-                <p className="text-gray-600">{value.description}</p>
-              </div>
+              </AnimatedSection>
             ))}
           </div>
         </div>
@@ -134,23 +157,27 @@ const About = () => {
       {/* Team Section */}
       <section className="bg-gray-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
-            <p className="text-xl text-gray-600">The talented people behind Innosin Lab</p>
-          </div>
+          <AnimatedSection animation="fade-in" delay={100}>
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
+              <p className="text-xl text-gray-600">The talented people behind Innosin Lab</p>
+            </div>
+          </AnimatedSection>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {team.map((member, index) => (
-              <div key={index} className="text-center">
-                <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
-                  <span className="text-2xl font-bold text-white">
-                    {member.name.split(' ').map(n => n[0]).join('')}
-                  </span>
+              <AnimatedSection key={index} animation="bounce-in" delay={200 + index * 150}>
+                <div className="text-center">
+                  <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
+                    <span className="text-2xl font-bold text-white">
+                      {member.name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{member.name}</h3>
+                  <p className="text-black font-medium mb-3">{member.role}</p>
+                  <p className="text-gray-600">{member.description}</p>
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{member.name}</h3>
-                <p className="text-black font-medium mb-3">{member.role}</p>
-                <p className="text-gray-600">{member.description}</p>
-              </div>
+              </AnimatedSection>
             ))}
           </div>
         </div>
@@ -159,12 +186,14 @@ const About = () => {
       {/* CTA Section */}
       <section className="bg-black py-16">
         <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Ready to Transform Your Laboratory?
-          </h2>
-          <p className="text-xl text-gray-300">
-            Discover how our innovative solutions can enhance your research environment.
-          </p>
+          <AnimatedSection animation="scale-in" delay={100}>
+            <h2 className="text-3xl font-bold text-white mb-4">
+              Ready to Transform Your Laboratory?
+            </h2>
+            <p className="text-xl text-gray-300">
+              Discover how our innovative solutions can enhance your research environment.
+            </p>
+          </AnimatedSection>
         </div>
       </section>
     </div>
