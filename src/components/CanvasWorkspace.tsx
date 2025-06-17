@@ -99,7 +99,38 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   // Pan sensitivity - significantly reduced for smoother control
   const PAN_SENSITIVITY = 0.03; // Much more controlled panning
 
-  // Helper functions
+  // Helper function to find wall segment by ID
+  const findWallSegmentById = (id: string): WallSegment | null => {
+    return wallSegments.find(wall => wall.id === id) || null;
+  };
+
+  // Helper function to get wall segment from room points
+  const getRoomWallSegment = (index: number): [Point, Point] | null => {
+    if (roomPoints.length < 2 || index >= roomPoints.length) return null;
+    const nextIndex = (index + 1) % roomPoints.length;
+    return [roomPoints[index], roomPoints[nextIndex]];
+  };
+
+  // Helper function to find wall segment (room or interior) by ID
+  const findWallById = (id: string): { segment: [Point, Point], type: WallType } | null => {
+    // Check if it's a room wall
+    if (id.startsWith('room-wall-')) {
+      const index = parseInt(id.replace('room-wall-', ''));
+      const segment = getRoomWallSegment(index);
+      if (segment) {
+        return { segment, type: WallType.EXTERIOR };
+      }
+    }
+    
+    // Check interior walls
+    const wall = findWallSegmentById(id);
+    if (wall) {
+      return { segment: [wall.start, wall.end], type: wall.type };
+    }
+    
+    return null;
+  };
+
   const findProductAt = (point: Point): string | null => {
     for (const product of placedProducts) {
       const { position, rotation, dimensions } = product;
@@ -193,7 +224,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       }
     };
     
-    if (isProductWithinRoom(newProduct, roomPoints, scale)) {
+    if (isProductWithinRoom(newProduct, roomPoints, wallSegments, scale)) {
       setPlacedProducts([...placedProducts, newProduct]);
       setSelectedProduct(newProduct.id);
       toast.success('Product duplicated');
@@ -660,10 +691,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const drawDoors = (ctx: CanvasRenderingContext2D) => {
     doors.forEach(door => {
-      if (door.wallSegmentIndex >= roomPoints.length) return;
+      // Find the wall segment this door is attached to
+      const wallInfo = findWallById(door.wallSegmentId);
+      if (!wallInfo) return;
       
-      const wallStart = roomPoints[door.wallSegmentIndex];
-      const wallEnd = roomPoints[(door.wallSegmentIndex + 1) % roomPoints.length];
+      const [wallStart, wallEnd] = wallInfo.segment;
       
       const doorX = wallStart.x + (wallEnd.x - wallStart.x) * door.wallPosition;
       const doorY = wallStart.y + (wallEnd.y - wallStart.y) * door.wallPosition;
@@ -1022,14 +1054,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   };
 
   const handleDoorToolMouseDown = (point: Point, e: MouseEvent) => {
-    const result = findClosestWallSegment(point, roomPoints);
+    const result = findClosestWallSegment(point, roomPoints, wallSegments);
     if (!result) return;
 
     const doorPosition = findOptimalDoorPosition(point, result.segment);
     const newDoor: Door = {
       id: `door-${Date.now()}`,
       position: point,
-      wallSegmentIndex: result.index,
+      wallSegmentId: result.id,
       wallPosition: doorPosition.wallPosition,
       rotation: doorPosition.rotation,
       width: 0.9,
