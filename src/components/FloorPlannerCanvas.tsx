@@ -1,11 +1,13 @@
 
 import React from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
-import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];
   setRoomPoints: (points: Point[]) => void;
+  wallSegments: WallSegment[];
+  setWallSegments: (segments: WallSegment[]) => void;
   placedProducts: PlacedProduct[];
   setPlacedProducts: (products: PlacedProduct[]) => void;
   doors: Door[];
@@ -23,6 +25,8 @@ interface FloorPlannerCanvasProps {
 const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   roomPoints,
   setRoomPoints,
+  wallSegments,
+  setWallSegments,
   placedProducts,
   setPlacedProducts,
   doors,
@@ -41,6 +45,8 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
       <CanvasWorkspace
         roomPoints={roomPoints}
         setRoomPoints={setRoomPoints}
+        wallSegments={wallSegments}
+        setWallSegments={setWallSegments}
         placedProducts={placedProducts}
         setPlacedProducts={setPlacedProducts}
         doors={doors}

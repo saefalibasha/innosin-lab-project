@@ -3,17 +3,18 @@ import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, DoorOpen, Undo, Redo } from 'lucide-react';
+import { Ruler, Move, ChevronLeft, ChevronRight, Maximize, Grid, Eye, Download, Send, Settings, Eraser, Trash2, HelpCircle, RotateCcw, Copy, MousePointer, DoorOpen, Undo, Redo, Home, Minus } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import ExportModal from '@/components/ExportModal';
 import SendPlanModal from '@/components/SendPlanModal';
 import { useFloorPlanHistory, FloorPlanState } from '@/hooks/useFloorPlanHistory';
-import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, WallType } from '@/types/floorPlanTypes';
 
 const FloorPlanner = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
+  const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
@@ -119,6 +120,7 @@ const FloorPlanner = () => {
 
   const handleClearAll = () => {
     setRoomPoints([]);
+    setWallSegments([]);
     setPlacedProducts([]);
     setDoors([]);
     setTextAnnotations([]);
@@ -280,20 +282,37 @@ const FloorPlanner = () => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-3 mt-2">
-                {/* Wall Tool */}
+                {/* Exterior Wall Tool */}
                 <div className="p-3 bg-white rounded-lg border">
                   <div className="flex items-center space-x-2 mb-2">
-                    <Ruler className="w-4 h-4 text-blue-600" />
-                    <span className="font-medium text-sm">Wall Tool</span>
-                    <Badge variant="outline" className="text-xs">Active</Badge>
+                    <Home className="w-4 h-4 text-blue-600" />
+                    <span className="font-medium text-sm">Exterior Wall Tool</span>
+                    <Badge variant="outline" className="text-xs">Primary</Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-3">Draw room walls and boundaries with precision</p>
+                  <p className="text-xs text-gray-600 mb-3">Draw the main room perimeter and boundaries</p>
                   <div className="space-y-1">
                     <div className="text-xs text-gray-700">• <strong>Click:</strong> Place wall points</div>
                     <div className="text-xs text-gray-700">• <strong>Double-click:</strong> Complete room</div>
                     <div className="text-xs text-gray-700">• <strong>ESC:</strong> Finish drawing</div>
                     <div className="text-xs text-gray-700">• <strong>Enter:</strong> Custom length input</div>
                     <div className="text-xs text-gray-700">• Auto-displays length parallel to line</div>
+                  </div>
+                </div>
+
+                {/* Interior Wall Tool */}
+                <div className="p-3 bg-white rounded-lg border">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <Minus className="w-4 h-4 text-orange-600" />
+                    <span className="font-medium text-sm">Interior Wall Tool</span>
+                    <Badge variant="outline" className="text-xs">New</Badge>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">Add interior walls and room divisions</p>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-700">• <strong>Click:</strong> Start interior wall</div>
+                    <div className="text-xs text-gray-700">• <strong>Click again:</strong> End wall segment</div>
+                    <div className="text-xs text-gray-700">• <strong>Snap:</strong> Auto-aligns to existing walls</div>
+                    <div className="text-xs text-gray-700">• <strong>Independent:</strong> Doesn't need to close</div>
+                    <div className="text-xs text-gray-700">• Perfect for office divisions</div>
                   </div>
                 </div>
 
@@ -395,7 +414,7 @@ const FloorPlanner = () => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Enhanced Drawing Tools - NO WALL EDIT TOOL */}
+            {/* Enhanced Drawing Tools with Interior Walls */}
             <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start font-semibold text-gray-900 hover:bg-gray-50">
@@ -411,12 +430,28 @@ const FloorPlanner = () => {
                       className="w-full justify-start h-10"
                       onClick={() => setActiveTool('wall')}
                     >
-                      <Ruler className="w-4 h-4 mr-3" />
-                      Wall Tool
+                      <Home className="w-4 h-4 mr-3" />
+                      Exterior Walls
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Draw walls and room outlines</p>
+                    <p>Draw main room perimeter</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeTool === 'interior-wall' ? 'default' : 'outline'}
+                      className="w-full justify-start h-10"
+                      onClick={() => setActiveTool('interior-wall')}
+                    >
+                      <Minus className="w-4 h-4 mr-3" />
+                      Interior Walls
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add interior walls and divisions</p>
                   </TooltipContent>
                 </Tooltip>
 
@@ -533,6 +568,8 @@ const FloorPlanner = () => {
           <FloorPlannerCanvas
             roomPoints={roomPoints}
             setRoomPoints={setRoomPoints}
+            wallSegments={wallSegments}
+            setWallSegments={setWallSegments}
             placedProducts={placedProducts}
             setPlacedProducts={setPlacedProducts}
             doors={doors}

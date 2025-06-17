@@ -4,6 +4,19 @@ export interface Point {
   y: number;
 }
 
+export enum WallType {
+  EXTERIOR = 'exterior',
+  INTERIOR = 'interior'
+}
+
+export interface WallSegment {
+  id: string;
+  start: Point;
+  end: Point;
+  type: WallType;
+  thickness?: number;
+}
+
 export interface PlacedProduct {
   id: string;
   productId: string;
@@ -21,9 +34,9 @@ export interface Door {
   rotation: number;
   width: number; // in meters
   swingDirection: 'inward' | 'outward';
-  wallSegmentIndex: number;
-  isEmbedded: boolean; // indicates if door is properly embedded in wall
+  wallSegmentId: string; // reference to wall segment instead of index
   wallPosition: number; // position along the wall segment (0-1)
+  isEmbedded: boolean;
 }
 
 export interface TextAnnotation {

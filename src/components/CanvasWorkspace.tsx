@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Move, RotateCcw, Copy, Trash2, DoorOpen, Crosshair } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { isProductWithinRoom, findClosestWallSegment, getWallAngle, findOptimalDoorPosition, checkDoorConflict } from '@/utils/collisionDetection';
-import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
+import { isProductWithinRoom, findClosestWallSegment, getWallAngle, findOptimalDoorPosition, checkDoorConflict, findWallSnapPoint } from '@/utils/collisionDetection';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, WallType } from '@/types/floorPlanTypes';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
   setRoomPoints: (points: Point[]) => void;
+  wallSegments: WallSegment[];
+  setWallSegments: (segments: WallSegment[]) => void;
   placedProducts: PlacedProduct[];
   setPlacedProducts: (products: PlacedProduct[]) => void;
   doors: Door[];
@@ -26,6 +28,8 @@ interface CanvasWorkspaceProps {
 const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   roomPoints,
   setRoomPoints,
+  wallSegments,
+  setWallSegments,
   placedProducts,
   setPlacedProducts,
   doors,
@@ -56,7 +60,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [customLength, setCustomLength] = useState('');
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
-  
+  const [isDrawingInteriorWall, setIsDrawingInteriorWall] = useState(false);
+  const [interiorWallStart, setInteriorWallStart] = useState<Point | null>(null);
+  const [currentInteriorWallEnd, setCurrentInteriorWallEnd] = useState<Point | null>(null);
+
   // Movement and rotation states with improved sensitivity
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
@@ -239,17 +246,25 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     ctx.scale(zoom, zoom);
     ctx.translate(pan.x, pan.y);
 
-    // Enhanced grid rendering with better alignment
+    // Enhanced grid rendering
     if (showGrid) {
       drawPrecisionGrid(ctx, rect.width / zoom, rect.height / zoom);
     }
     
-    // Draw room
+    // Draw room (exterior walls)
     drawRoom(ctx);
     
-    // Draw current line while drawing
-    if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
+    // Draw interior walls
+    drawInteriorWalls(ctx);
+    
+    // Draw current line while drawing exterior walls
+    if (currentTool === 'wall' && isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
       drawCurrentLine(ctx);
+    }
+    
+    // Draw current interior wall being drawn
+    if (currentTool === 'interior-wall' && isDrawingInteriorWall && interiorWallStart && currentInteriorWallEnd) {
+      drawCurrentInteriorWall(ctx);
     }
     
     // Draw doors
@@ -282,7 +297,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
 
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, cursorPosition]);
+  }, [roomPoints, wallSegments, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, isDrawingInteriorWall, interiorWallStart, currentInteriorWallEnd, showRotationHandle, showCollisionWarning, currentTool, cursorPosition]);
 
   const drawPrecisionGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.strokeStyle = '#f1f5f9';
@@ -401,6 +416,67 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.arc(point.x, point.y, 3 / zoom, 0, 2 * Math.PI);
       ctx.fill();
     });
+  };
+
+  const drawInteriorWalls = (ctx: CanvasRenderingContext2D) => {
+    wallSegments.forEach(wall => {
+      ctx.strokeStyle = wall.type === WallType.INTERIOR ? '#f59e0b' : '#1f2937';
+      ctx.lineWidth = wall.type === WallType.INTERIOR ? 2 / zoom : 3 / zoom;
+      
+      ctx.beginPath();
+      ctx.moveTo(wall.start.x, wall.start.y);
+      ctx.lineTo(wall.end.x, wall.end.y);
+      ctx.stroke();
+      
+      // Draw endpoints
+      ctx.fillStyle = wall.type === WallType.INTERIOR ? '#f59e0b' : '#1f2937';
+      [wall.start, wall.end].forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3 / zoom, 0, 2 * Math.PI);
+        ctx.fill();
+      });
+    });
+  };
+
+  const drawCurrentInteriorWall = (ctx: CanvasRenderingContext2D) => {
+    if (!interiorWallStart || !currentInteriorWallEnd) return;
+
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 2 / zoom;
+    ctx.setLineDash([4 / zoom, 4 / zoom]);
+
+    ctx.beginPath();
+    ctx.moveTo(interiorWallStart.x, interiorWallStart.y);
+    ctx.lineTo(currentInteriorWallEnd.x, currentInteriorWallEnd.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Show length
+    const length = Math.sqrt(
+      Math.pow(currentInteriorWallEnd.x - interiorWallStart.x, 2) +
+      Math.pow(currentInteriorWallEnd.y - interiorWallStart.y, 2)
+    ) / scale;
+
+    if (length > 0.01) {
+      const angle = Math.atan2(currentInteriorWallEnd.y - interiorWallStart.y, currentInteriorWallEnd.x - interiorWallStart.x);
+      const midX = (interiorWallStart.x + currentInteriorWallEnd.x) / 2;
+      const midY = (interiorWallStart.y + currentInteriorWallEnd.y) / 2;
+      
+      const offsetDistance = 25 / zoom;
+      const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
+      const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
+      
+      ctx.save();
+      ctx.translate(midX + offsetX, midY + offsetY);
+      ctx.rotate(angle);
+      ctx.fillStyle = '#000000';
+      ctx.font = `bold ${12 / zoom}px "Inter", sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillRect(-20 / zoom, -8 / zoom, 40 / zoom, 16 / zoom);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(`${length.toFixed(2)}m`, 0, 3 / zoom);
+      ctx.restore();
+    }
   };
 
   const drawCurrentLine = (ctx: CanvasRenderingContext2D) => {
@@ -837,6 +913,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       case 'wall':
         handleWallToolMouseDown(point, e);
         break;
+      case 'interior-wall':
+        handleInteriorWallToolMouseDown(point, e);
+        break;
       case 'select':
         handleSelectToolMouseDown(point, e);
         break;
@@ -869,6 +948,35 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setRoomPoints([point]);
     } else {
       setRoomPoints([...roomPoints, point]);
+    }
+  };
+
+  const handleInteriorWallToolMouseDown = (point: Point, e: MouseEvent) => {
+    const snapPoint = findWallSnapPoint(point, roomPoints, wallSegments, 20 / zoom);
+    const finalPoint = snapPoint || point;
+
+    if (!isDrawingInteriorWall) {
+      // Start new interior wall
+      setIsDrawingInteriorWall(true);
+      setInteriorWallStart(finalPoint);
+      setCurrentInteriorWallEnd(finalPoint);
+    } else {
+      // Finish interior wall
+      if (interiorWallStart) {
+        const newWall: WallSegment = {
+          id: `interior-wall-${Date.now()}`,
+          start: interiorWallStart,
+          end: finalPoint,
+          type: WallType.INTERIOR,
+          thickness: 0.1 // 10cm default thickness
+        };
+        
+        setWallSegments([...wallSegments, newWall]);
+        setIsDrawingInteriorWall(false);
+        setInteriorWallStart(null);
+        setCurrentInteriorWallEnd(null);
+        toast.success('Interior wall added');
+      }
     }
   };
 
@@ -971,6 +1079,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setCurrentDrawingPoint(point);
     }
 
+    if (currentTool === 'interior-wall' && isDrawingInteriorWall) {
+      const snapPoint = findWallSnapPoint(point, roomPoints, wallSegments, 20 / zoom);
+      setCurrentInteriorWallEnd(snapPoint || point);
+    }
+
     // Improved drag handling with threshold
     if (currentTool === 'select' && isDragging && !hasStartedDrag && dragStart) {
       const distance = Math.sqrt(
@@ -1008,7 +1121,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const updatedProduct = { ...product, position: newPosition };
 
-    if (isProductWithinRoom(updatedProduct, roomPoints, scale)) {
+    if (isProductWithinRoom(updatedProduct, roomPoints, wallSegments, scale)) {
       setPlacedProducts(placedProducts.map(p => 
         p.id === selectedProduct ? updatedProduct : p
       ));
@@ -1053,7 +1166,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const updatedProduct = { ...product, rotation: snappedAngle };
 
-    if (isProductWithinRoom(updatedProduct, roomPoints, scale)) {
+    if (isProductWithinRoom(updatedProduct, roomPoints, wallSegments, scale)) {
       setPlacedProducts(placedProducts.map(p => 
         p.id === selectedProduct ? updatedProduct : p
       ));
@@ -1093,11 +1206,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       scale: 1
     };
 
-    if (isProductWithinRoom(newProduct, roomPoints, scale)) {
+    if (isProductWithinRoom(newProduct, roomPoints, wallSegments, scale)) {
       setPlacedProducts([...placedProducts, newProduct]);
       toast.success(`${product.name} placed`);
     } else {
-      toast.error('Cannot place product outside room bounds');
+      toast.error('Cannot place product outside room bounds or overlapping walls');
     }
   };
 
