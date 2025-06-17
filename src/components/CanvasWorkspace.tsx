@@ -44,23 +44,26 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   
-  // Interaction states
+  // Enhanced interaction states with smoothing
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [smoothedPan, setSmoothedPan] = useState({ x: 0, y: 0 });
+  const [targetPan, setTargetPan] = useState({ x: 0, y: 0 });
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
   const [selectedDoor, setSelectedDoor] = useState<string | null>(null);
   const [isDrawingActive, setIsDrawingActive] = useState(false);
   const [currentDrawingPoint, setCurrentDrawingPoint] = useState<Point | null>(null);
+  const [smoothedDrawingPoint, setSmoothedDrawingPoint] = useState<Point | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [lastPanPoint, setLastPanPoint] = useState<Point | null>(null);
   const [showLengthInput, setShowLengthInput] = useState(false);
   const [customLength, setCustomLength] = useState('');
   const [pendingLineStart, setPendingLineStart] = useState<Point | null>(null);
   
-  // Movement and rotation states with improved sensitivity
+  // Enhanced movement and rotation states with improved precision
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<Point | null>(null);
-  const [dragThreshold] = useState(5); // Reduced threshold for better precision
+  const [dragThreshold] = useState(3); // Reduced for better precision
   const [hasStartedDrag, setHasStartedDrag] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [rotationCenter, setRotationCenter] = useState<Point | null>(null);
@@ -82,16 +85,58 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [showCollisionWarning, setShowCollisionWarning] = useState(false);
   const [collisionWarningPos, setCollisionWarningPos] = useState<Point>({ x: 0, y: 0 });
 
-  // Cursor and crosshair states
+  // Enhanced cursor and crosshair states
   const [cursorPosition, setCursorPosition] = useState<Point>({ x: 0, y: 0 });
+  const [smoothedCursorPosition, setSmoothedCursorPosition] = useState<Point>({ x: 0, y: 0 });
   const [showCrosshair, setShowCrosshair] = useState(false);
 
   // Debouncing and timing
   const [lastClickTime, setLastClickTime] = useState(0);
   const [doubleClickTimeout, setDoubleClickTimeout] = useState<NodeJS.Timeout | null>(null);
 
-  // Pan sensitivity - much more controlled
-  const PAN_SENSITIVITY = 0.3; // Reduced from default 1.0
+  // Enhanced sensitivity controls
+  const PAN_SENSITIVITY = 0.15; // Further reduced for better control
+  const SMOOTHING_FACTOR = 0.15; // For motion smoothing
+  const CURSOR_SMOOTHING_FACTOR = 0.3; // For cursor smoothing
+  const MIN_MOVEMENT_THRESHOLD = 1; // Minimum pixel movement to register
+
+  // Motion smoothing animation loop
+  useEffect(() => {
+    const smoothingLoop = () => {
+      // Smooth pan movement
+      setSmoothedPan(prev => ({
+        x: prev.x + (targetPan.x - prev.x) * SMOOTHING_FACTOR,
+        y: prev.y + (targetPan.y - prev.y) * SMOOTHING_FACTOR
+      }));
+
+      // Smooth cursor movement for drawing
+      if (currentDrawingPoint) {
+        setSmoothedDrawingPoint(prev => {
+          if (!prev) return currentDrawingPoint;
+          return {
+            x: prev.x + (currentDrawingPoint.x - prev.x) * CURSOR_SMOOTHING_FACTOR,
+            y: prev.y + (currentDrawingPoint.y - prev.y) * CURSOR_SMOOTHING_FACTOR
+          };
+        });
+      }
+
+      // Smooth cursor position
+      setSmoothedCursorPosition(prev => ({
+        x: prev.x + (cursorPosition.x - prev.x) * CURSOR_SMOOTHING_FACTOR,
+        y: prev.y + (cursorPosition.y - prev.y) * CURSOR_SMOOTHING_FACTOR
+      }));
+
+      requestAnimationFrame(smoothingLoop);
+    };
+
+    const smoothingId = requestAnimationFrame(smoothingLoop);
+    return () => cancelAnimationFrame(smoothingId);
+  }, [targetPan, currentDrawingPoint, cursorPosition]);
+
+  // Update actual pan with smoothed values
+  useEffect(() => {
+    setPan(smoothedPan);
+  }, [smoothedPan]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -127,8 +172,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     // Draw room
     drawRoom(ctx);
     
-    // Draw current line while drawing with precise crosshair
-    if (isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
+    // Draw current line while drawing with smoothed position
+    if (isDrawingActive && smoothedDrawingPoint && roomPoints.length > 0) {
       drawCurrentLineWithCrosshair(ctx);
     }
     
@@ -161,15 +206,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       drawSelectedWall(ctx);
     }
 
-    // Draw precise crosshair when needed
+    // Draw enhanced crosshair when needed
     if (showCrosshair && (currentTool === 'wall' || currentTool === 'door')) {
-      drawPreciseCrosshair(ctx);
+      drawEnhancedCrosshair(ctx);
     }
 
     ctx.restore();
-  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, currentDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, cursorPosition, showCrosshair]);
+  }, [roomPoints, placedProducts, textAnnotations, doors, selectedProduct, selectedText, selectedDoor, selectedWallIndex, zoom, pan, smoothedDrawingPoint, showGrid, showRuler, isDrawingActive, showRotationHandle, showCollisionWarning, currentTool, smoothedCursorPosition, showCrosshair]);
 
-  // Enhanced precision grid
+  // Enhanced grid rendering with better alignment
   const drawPrecisionGrid = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.strokeStyle = '#f1f5f9';
     ctx.lineWidth = 0.5 / zoom;
@@ -253,235 +298,90 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  const drawPreciseCrosshair = (ctx: CanvasRenderingContext2D) => {
-    const size = 20 / zoom;
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 1 / zoom;
-    ctx.setLineDash([3 / zoom, 3 / zoom]);
-
-    ctx.beginPath();
-    ctx.moveTo(cursorPosition.x - size, cursorPosition.y);
-    ctx.lineTo(cursorPosition.x + size, cursorPosition.y);
-    ctx.moveTo(cursorPosition.x, cursorPosition.y - size);
-    ctx.lineTo(cursorPosition.x, cursorPosition.y + size);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Center dot
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(cursorPosition.x, cursorPosition.y, 2 / zoom, 0, 2 * Math.PI);
-    ctx.fill();
-  };
-
-  // Enhanced keyboard shortcuts with improved sensitivity
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // ESC to cleanly exit any active mode
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        resetAllStates();
-        return;
-      }
-
-      // Enter to input custom length while drawing
-      if (e.key === 'Enter' && isDrawingActive && currentDrawingPoint && roomPoints.length > 0) {
-        e.preventDefault();
-        setPendingLineStart(roomPoints[roomPoints.length - 1]);
-        setShowLengthInput(true);
-        return;
-      }
-
-      if (!selectedProduct && !selectedText) return;
-      
-      switch (e.key.toLowerCase()) {
-        case 'd':
-          e.preventDefault();
-          if (selectedProduct && currentTool === 'select') duplicateSelectedProduct();
-          break;
-        case 'delete':
-        case 'backspace':
-          e.preventDefault();
-          if (selectedProduct) deleteSelectedProduct();
-          if (selectedText) deleteSelectedText();
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [selectedProduct, selectedText, isDrawingActive, currentDrawingPoint, roomPoints, currentTool]);
-
-  const resetAllStates = () => {
-    setIsDrawingActive(false);
-    setCurrentDrawingPoint(null);
-    setPendingLineStart(null);
-    setSelectedProduct(null);
-    setSelectedText(null);
-    setSelectedWallIndex(null);
-    setIsEditingText(false);
-    setShowRotationHandle(false);
-    setIsDragging(false);
-    setIsRotating(false);
-    setShowWallLengthInput(false);
-    setHasStartedDrag(false);
-    setShowCrosshair(false);
-    if (isDrawingActive) {
-      toast.success('Drawing cancelled');
-    }
-  };
-
-  // Canvas setup and event handling
-  useEffect(() => {
-    let resizeTimeout: NodeJS.Timeout;
+  // Enhanced crosshair with pixel-perfect accuracy
+  const drawEnhancedCrosshair = (ctx: CanvasRenderingContext2D) => {
+    const size = 25 / zoom;
+    const position = smoothedCursorPosition;
     
-    const resizeCanvas = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        const canvas = canvasRef.current;
-        const container = containerRef.current;
-        if (!canvas || !container) return;
-
-        const rect = container.getBoundingClientRect();
-        canvas.style.width = rect.width + 'px';
-        canvas.style.height = rect.height + 'px';
-      }, 100);
-    };
-
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-    return () => {
-      window.removeEventListener('resize', resizeCanvas);
-      clearTimeout(resizeTimeout);
-    };
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      setZoom(prev => Math.min(Math.max(prev * delta, 0.1), 5));
-    };
-
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
-    return () => canvas.removeEventListener('wheel', handleWheel);
-  }, []);
-
-  useEffect(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-    }
-    animationFrameRef.current = requestAnimationFrame(drawCanvas);
-    
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, [drawCanvas]);
-
-  const calculateRoomArea = (): number => {
-    if (roomPoints.length < 3 || isDrawingActive) return 0;
-    
-    let area = 0;
-    for (let i = 0; i < roomPoints.length; i++) {
-      const j = (i + 1) % roomPoints.length;
-      area += roomPoints[i].x * roomPoints[j].y;
-      area -= roomPoints[j].x * roomPoints[i].y;
-    }
-    area = Math.abs(area) / 2;
-    
-    return area / (scale * scale);
-  };
-
-  const drawRoom = (ctx: CanvasRenderingContext2D) => {
-    if (roomPoints.length < 1) return;
-
-    ctx.strokeStyle = '#1f2937';
-    ctx.lineWidth = 3 / zoom;
-
-    if (roomPoints.length > 2 && !isDrawingActive) {
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
-      ctx.beginPath();
-      ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
-      for (let i = 1; i < roomPoints.length; i++) {
-        ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
-      }
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    ctx.beginPath();
-    ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
-    for (let i = 1; i < roomPoints.length; i++) {
-      ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
-    }
-    if (!isDrawingActive && roomPoints.length > 2) {
-      ctx.closePath();
-    }
-    ctx.stroke();
-
-    // Draw points with better visibility
-    ctx.fillStyle = '#1f2937';
-    roomPoints.forEach(point => {
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 3 / zoom, 0, 2 * Math.PI);
-      ctx.fill();
-    });
-  };
-
-  const drawSelectedWall = (ctx: CanvasRenderingContext2D) => {
-    if (selectedWallIndex === null || roomPoints.length < 2) return;
-
-    const nextIndex = (selectedWallIndex + 1) % roomPoints.length;
-    const point1 = roomPoints[selectedWallIndex];
-    const point2 = roomPoints[nextIndex];
-
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 5 / zoom;
-    ctx.beginPath();
-    ctx.moveTo(point1.x, point1.y);
-    ctx.lineTo(point2.x, point2.y);
-    ctx.stroke();
-  };
-
-  const drawCurrentLineWithCrosshair = (ctx: CanvasRenderingContext2D) => {
-    if (!currentDrawingPoint || roomPoints.length === 0) return;
-
-    const lastPoint = roomPoints[roomPoints.length - 1];
+    // Pixel-perfect positioning
+    const pixelX = Math.round(position.x * zoom) / zoom;
+    const pixelY = Math.round(position.y * zoom) / zoom;
     
     ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 2 / zoom;
+    ctx.lineWidth = 1.5 / zoom;
     ctx.setLineDash([4 / zoom, 4 / zoom]);
 
     ctx.beginPath();
-    ctx.moveTo(lastPoint.x, lastPoint.y);
-    ctx.lineTo(currentDrawingPoint.x, currentDrawingPoint.y);
+    ctx.moveTo(pixelX - size, pixelY);
+    ctx.lineTo(pixelX + size, pixelY);
+    ctx.moveTo(pixelX, pixelY - size);
+    ctx.lineTo(pixelX, pixelY + size);
     ctx.stroke();
     ctx.setLineDash([]);
 
-    const length = calculateDistance(lastPoint, currentDrawingPoint);
+    // Enhanced center dot with glow effect
+    ctx.fillStyle = '#ef4444';
+    ctx.shadowColor = '#ef4444';
+    ctx.shadowBlur = 3 / zoom;
+    ctx.beginPath();
+    ctx.arc(pixelX, pixelY, 2.5 / zoom, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Coordinate display for precision
+    if (currentTool === 'wall') {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      ctx.font = `${10 / zoom}px "Inter", sans-serif`;
+      ctx.textAlign = 'left';
+      const coordText = `${(pixelX / scale).toFixed(2)}, ${(pixelY / scale).toFixed(2)}m`;
+      ctx.fillText(coordText, pixelX + 15 / zoom, pixelY - 10 / zoom);
+    }
+  };
+
+  const drawCurrentLineWithCrosshair = (ctx: CanvasRenderingContext2D) => {
+    if (!smoothedDrawingPoint || roomPoints.length === 0) return;
+
+    const lastPoint = roomPoints[roomPoints.length - 1];
+    
+    // Enhanced line rendering with anti-aliasing
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2.5 / zoom;
+    ctx.setLineDash([6 / zoom, 4 / zoom]);
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(lastPoint.x, lastPoint.y);
+    ctx.lineTo(smoothedDrawingPoint.x, smoothedDrawingPoint.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const length = calculateDistance(lastPoint, smoothedDrawingPoint);
     if (length > 0.01) {
-      const angle = Math.atan2(currentDrawingPoint.y - lastPoint.y, currentDrawingPoint.x - lastPoint.x);
-      const midX = (lastPoint.x + currentDrawingPoint.x) / 2;
-      const midY = (lastPoint.y + currentDrawingPoint.y) / 2;
+      const angle = Math.atan2(smoothedDrawingPoint.y - lastPoint.y, smoothedDrawingPoint.x - lastPoint.x);
+      const midX = (lastPoint.x + smoothedDrawingPoint.x) / 2;
+      const midY = (lastPoint.y + smoothedDrawingPoint.y) / 2;
       
-      const offsetDistance = 25 / zoom;
+      const offsetDistance = 30 / zoom;
       const offsetX = Math.cos(angle + Math.PI / 2) * offsetDistance;
       const offsetY = Math.sin(angle + Math.PI / 2) * offsetDistance;
       
       ctx.save();
       ctx.translate(midX + offsetX, midY + offsetY);
       ctx.rotate(angle);
+      
+      // Enhanced dimension display
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+      ctx.strokeStyle = '#e5e7eb';
+      ctx.lineWidth = 1 / zoom;
+      const textWidth = 45 / zoom;
+      const textHeight = 18 / zoom;
+      ctx.fillRect(-textWidth / 2, -textHeight / 2, textWidth, textHeight);
+      ctx.strokeRect(-textWidth / 2, -textHeight / 2, textWidth, textHeight);
+      
       ctx.fillStyle = '#000000';
       ctx.font = `bold ${12 / zoom}px "Inter", sans-serif`;
       ctx.textAlign = 'center';
-      ctx.fillRect(-20 / zoom, -8 / zoom, 40 / zoom, 16 / zoom);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(`${length.toFixed(2)}m`, 0, 3 / zoom);
+      ctx.fillText(`${length.toFixed(2)}m`, 0, 4 / zoom);
       ctx.restore();
     }
   };
@@ -704,7 +604,11 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const x = (e.clientX - rect.left) / zoom - pan.x;
     const y = (e.clientY - rect.top) / zoom - pan.y;
     
-    return { x, y };
+    // Pixel-perfect positioning
+    const pixelX = Math.round(x * zoom) / zoom;
+    const pixelY = Math.round(y * zoom) / zoom;
+    
+    return { x: pixelX, y: pixelY };
   };
 
   const snapToGrid = (point: Point): Point => {
@@ -1040,20 +944,32 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const handleMouseMove = (e: MouseEvent) => {
     const point = snapToGrid(getCanvasMousePosition(e));
-    setCursorPosition(point);
+    
+    // Apply motion threshold to reduce jitter
+    const distance = Math.sqrt(
+      Math.pow(point.x - cursorPosition.x, 2) + Math.pow(point.y - cursorPosition.y, 2)
+    );
+    
+    if (distance > MIN_MOVEMENT_THRESHOLD || currentTool === 'wall') {
+      setCursorPosition(point);
+    }
 
     // Show crosshair for precision tools
     setShowCrosshair(currentTool === 'wall' || currentTool === 'door');
 
+    // Enhanced panning with reduced sensitivity and smoothing
     if (isPanning && lastPanPoint) {
       const currentPoint = getCanvasMousePosition(e);
       const deltaX = (currentPoint.x - lastPanPoint.x) * PAN_SENSITIVITY;
       const deltaY = (currentPoint.y - lastPanPoint.y) * PAN_SENSITIVITY;
       
-      setPan(prev => ({
-        x: prev.x + deltaX,
-        y: prev.y + deltaY
-      }));
+      // Apply minimum movement threshold for panning
+      if (Math.abs(deltaX) > MIN_MOVEMENT_THRESHOLD || Math.abs(deltaY) > MIN_MOVEMENT_THRESHOLD) {
+        setTargetPan(prev => ({
+          x: prev.x + deltaX,
+          y: prev.y + deltaY
+        }));
+      }
       setLastPanPoint(currentPoint);
       return;
     }
@@ -1062,7 +978,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setCurrentDrawingPoint(point);
     }
 
-    // Improved drag handling with threshold
+    // Improved drag handling with enhanced threshold
     if (currentTool === 'select' && isDragging && !hasStartedDrag && dragStart) {
       const distance = Math.sqrt(
         Math.pow(point.x - dragStart.x, 2) + Math.pow(point.y - dragStart.y, 2)
