@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -19,11 +20,14 @@ const ProductCatalog = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
-  // Read category from URL on component mount
+  // Read category from URL on component mount and handle navigation changes
   useEffect(() => {
     const categoryFromUrl = searchParams.get('category');
     if (categoryFromUrl) {
       setSelectedCategory(categoryFromUrl);
+    } else {
+      // Reset to 'all' when no category parameter is present (e.g., "All Products" link)
+      setSelectedCategory('all');
     }
   }, [searchParams]);
 
