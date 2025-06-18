@@ -1,3 +1,4 @@
+
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,6 +11,9 @@ import {
 } from "@/components/ui/carousel";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import VideoHero from "@/components/VideoHero";
+import BeforeAfterComparison from "@/components/BeforeAfterComparison";
+import ShopTheLook from "@/components/ShopTheLook";
 
 const Index = () => {
   const heroImages = [
@@ -151,6 +155,39 @@ const Index = () => {
               </Link>
             </Button>
           </div>
+        </div>
+      </section>
+
+      {/* Video Hero Section */}
+      <VideoHero />
+
+      {/* Before/After Comparison Section */}
+      <section className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-light text-black mb-6 tracking-tight">
+              Transforming <span className="font-bold">Laboratories</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light">
+              See how we've revolutionized research environments across Singapore and beyond
+            </p>
+          </div>
+          <BeforeAfterComparison />
+        </div>
+      </section>
+
+      {/* Shop the Look Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-light text-black mb-6 tracking-tight">
+              Shop the <span className="font-bold">Look</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light">
+              Click on the equipment in this laboratory to discover our products and their specifications
+            </p>
+          </div>
+          <ShopTheLook />
         </div>
       </section>
 
