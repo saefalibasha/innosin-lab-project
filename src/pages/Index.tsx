@@ -1,4 +1,3 @@
-
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,24 +20,28 @@ const Index = () => {
 
   const collections = [
     {
-      title: "Laboratory Furniture",
-      description: "Premium quality furniture designed for modern research environments",
-      icon: "🧪"
+      title: "Broen-Lab",
+      description: "Advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
+      icon: "💨",
+      category: "Broen-Lab"
     },
     {
-      title: "Safety Equipment", 
-      description: "Advanced safety solutions for laboratory environments",
-      icon: "🛡️"
+      title: "Hamilton Laboratory Solutions", 
+      description: "Premium laboratory furniture and benches with chemical-resistant surfaces",
+      icon: "🧪",
+      category: "Hamilton Laboratory Solutions"
     },
     {
-      title: "Storage Solutions",
-      description: "Comprehensive storage systems for chemicals and equipment",
-      icon: "📦"
+      title: "Oriental Giken Inc.",
+      description: "Emergency safety equipment including eye wash stations and safety showers",
+      icon: "🛡️",
+      category: "Oriental Giken Inc."
     },
     {
-      title: "Ventilation Systems",
-      description: "State-of-the-art fume hoods and ventilation equipment",
-      icon: "💨"
+      title: "Innosin Lab",
+      description: "Comprehensive storage solutions and laboratory equipment for modern research facilities",
+      icon: "📦",
+      category: "Innosin Lab"
     }
   ];
 
@@ -116,27 +119,28 @@ const Index = () => {
               Product <span className="font-bold">Collections</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light">
-              Explore our comprehensive range of laboratory solutions designed to meet 
-              the highest industry standards
+              Explore our comprehensive range of laboratory solutions from leading manufacturers
             </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {collections.map((collection, index) => (
-              <Card key={index} className="group hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300">
-                <CardContent className="p-8 text-center">
-                  <div className="text-4xl mb-6">{collection.icon}</div>
-                  <h3 className="text-xl font-semibold text-black mb-4 group-hover:text-gray-800 transition-colors">
-                    {collection.title}
-                  </h3>
-                  <p className="text-gray-600 text-sm leading-relaxed mb-6 font-light">
-                    {collection.description}
-                  </p>
-                  <div className="flex justify-center">
-                    <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-black group-hover:translate-x-1 transition-all duration-300" />
-                  </div>
-                </CardContent>
-              </Card>
+              <Link key={index} to={`/products?category=${encodeURIComponent(collection.category)}`}>
+                <Card className="group hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-gray-300 h-full">
+                  <CardContent className="p-8 text-center">
+                    <div className="text-4xl mb-6">{collection.icon}</div>
+                    <h3 className="text-xl font-semibold text-black mb-4 group-hover:text-gray-800 transition-colors">
+                      {collection.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-6 font-light">
+                      {collection.description}
+                    </p>
+                    <div className="flex justify-center">
+                      <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-black group-hover:translate-x-1 transition-all duration-300" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
           
