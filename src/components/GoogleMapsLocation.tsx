@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Phone, Navigation, Mail } from 'lucide-react';
 
 const GoogleMapsLocation = () => {
@@ -48,31 +48,31 @@ const GoogleMapsLocation = () => {
 
   const contactDetails = [
     {
-      icon: <MapPin className="w-5 h-5" />,
+      icon: <MapPin className="w-4 h-4" />,
       label: 'Address',
       value: selectedOffice.address,
       action: () => window.open(getDirectionsUrl(selectedOffice.address), '_blank')
     },
     {
-      icon: <Phone className="w-5 h-5" />,
+      icon: <Phone className="w-4 h-4" />,
       label: 'Phone',
       value: '(+607) 863 3535',
       action: () => window.open('tel:+6078633535')
     },
     {
-      icon: <Mail className="w-5 h-5" />,
+      icon: <Mail className="w-4 h-4" />,
       label: 'Sales Enquiry',
       value: 'enquiry@innosinlab.com',
       action: () => window.open('mailto:enquiry@innosinlab.com')
     },
     {
-      icon: <Mail className="w-5 h-5" />,
+      icon: <Mail className="w-4 h-4" />,
       label: 'General Info',
       value: 'info@innosinlab.com',
       action: () => window.open('mailto:info@innosinlab.com')
     },
     {
-      icon: <Navigation className="w-5 h-5" />,
+      icon: <Navigation className="w-4 h-4" />,
       label: 'Get Directions',
       value: 'Open in Google Maps',
       action: () => window.open(getDirectionsUrl(selectedOffice.address), '_blank')
@@ -80,131 +80,135 @@ const GoogleMapsLocation = () => {
   ];
 
   return (
-    <div className="space-y-8">
-      {/* Office Selection Tabs */}
-      <Tabs defaultValue="johor" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+    <div className="space-y-6">
+      {/* Office Selection Buttons */}
+      <div className="flex flex-col items-center space-y-4">
+        <h2 className="text-2xl font-bold text-center">Our Office Locations</h2>
+        <div className="flex flex-wrap justify-center gap-3">
           {offices.map((office) => (
-            <TabsTrigger
+            <Button
               key={office.id}
-              value={office.id}
               onClick={() => setSelectedOffice(office)}
-              className="flex flex-col items-center py-3"
+              variant={selectedOffice.id === office.id ? "default" : "outline"}
+              className={`px-6 py-3 h-auto flex flex-col items-center space-y-1 ${
+                selectedOffice.id === office.id 
+                  ? "bg-blue-600 hover:bg-blue-700" 
+                  : "hover:bg-gray-50"
+              }`}
             >
-              <span className="font-medium">{office.name.split(' ')[0]}</span>
+              <span className="font-semibold text-sm">{office.name}</span>
               {office.type === 'Headquarters' && (
-                <Badge variant="secondary" className="text-xs mt-1">HQ</Badge>
+                <Badge variant="secondary" className="text-xs">HQ</Badge>
               )}
-            </TabsTrigger>
+            </Button>
           ))}
-        </TabsList>
+        </div>
+      </div>
 
-        {offices.map((office) => (
-          <TabsContent key={office.id} value={office.id} className="mt-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Map */}
-              <Card className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="relative h-96">
-                    <iframe
-                      src={getMapEmbedUrl(office)}
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      allowFullScreen
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      title={`${office.name} Location`}
-                    />
-                    
-                    {/* Overlay with company info */}
-                    <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-4 rounded-lg shadow-lg max-w-xs">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
-                          <span className="text-white font-bold text-sm">IL</span>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-sm">Innosin Lab Pte. Ltd.</h4>
-                          <Badge variant="secondary" className="text-xs">
-                            {office.type}
-                          </Badge>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-600">
-                        Professional laboratory equipment and furniture solutions
-                      </p>
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
+        {/* Map - Takes 7 columns on large screens */}
+        <div className="lg:col-span-7">
+          <Card className="overflow-hidden">
+            <CardContent className="p-0">
+              <div className="relative h-[500px]">
+                <iframe
+                  src={getMapEmbedUrl(selectedOffice)}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title={`${selectedOffice.name} Location`}
+                />
+                
+                {/* Overlay with company info */}
+                <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg max-w-xs">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="w-6 h-6 bg-black rounded-sm flex items-center justify-center">
+                      <span className="text-white font-bold text-xs">IL</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">Innosin Lab Pte. Ltd.</h4>
+                      <Badge variant="secondary" className="text-xs">
+                        {selectedOffice.type}
+                      </Badge>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Location Details */}
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <MapPin className="w-5 h-5" />
-                      <span>Visit Our {office.name}</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {contactDetails.map((detail, index) => (
-                      <div
-                        key={index}
-                        className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                        onClick={detail.action}
-                      >
-                        <div className="text-blue-600 mt-1">
-                          {detail.icon}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">{detail.label}</h4>
-                          <p className="text-gray-600 text-sm">{detail.value}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Clock className="w-5 h-5" />
-                      <span>Business Hours</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {businessHours.map((schedule, index) => (
-                        <div key={index} className="flex justify-between items-center py-2">
-                          <span className="font-medium text-gray-900">{schedule.day}</span>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-gray-600 text-sm">{schedule.hours}</span>
-                            <Badge 
-                              variant={schedule.status === 'Open' ? 'default' : 
-                                      schedule.status === 'Limited' ? 'secondary' : 'outline'}
-                              className="text-xs"
-                            >
-                              {schedule.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        <strong>Note:</strong> For project consultations and site visits, 
-                        please schedule an appointment in advance via phone or email.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                  <p className="text-xs text-gray-600">
+                    Professional laboratory equipment and furniture solutions
+                  </p>
+                </div>
               </div>
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Contact Details - Takes 3 columns on large screens */}
+        <div className="lg:col-span-3 space-y-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <MapPin className="w-5 h-5" />
+                <span>{selectedOffice.name}</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {contactDetails.map((detail, index) => (
+                <div
+                  key={index}
+                  className="flex items-start space-x-2 p-2 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={detail.action}
+                >
+                  <div className="text-blue-600 mt-0.5">
+                    {detail.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-900 text-sm">{detail.label}</h4>
+                    <p className="text-gray-600 text-xs break-words">{detail.value}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center space-x-2 text-lg">
+                <Clock className="w-5 h-5" />
+                <span>Business Hours</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {businessHours.map((schedule, index) => (
+                  <div key={index} className="flex justify-between items-center py-1">
+                    <span className="font-medium text-gray-900 text-sm">{schedule.day}</span>
+                    <div className="flex items-center space-x-1">
+                      <span className="text-gray-600 text-xs">{schedule.hours}</span>
+                      <Badge 
+                        variant={schedule.status === 'Open' ? 'default' : 
+                                schedule.status === 'Limited' ? 'secondary' : 'outline'}
+                        className="text-xs"
+                      >
+                        {schedule.status}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+                <p className="text-xs text-blue-800">
+                  <strong>Note:</strong> For project consultations and site visits, 
+                  please schedule an appointment in advance via phone or email.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
