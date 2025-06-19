@@ -11,30 +11,19 @@ interface GLBModelProps {
 
 const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   const [hovered, setHovered] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
   const { camera } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   
   console.log('Attempting to load GLB model from:', modelPath);
   
-  // Special debugging for bl-hes-bench-001
-  if (modelPath.includes('bl-hes-bench-001')) {
-    console.log('🔍 DEBUGGING bl-hes-bench-001 specifically');
-    console.log('🔍 Full model path:', modelPath);
-    console.log('🔍 Expected path: /products/bl-hes-bench-001/model.glb');
-  }
-  
   try {
     const { scene } = useGLTF(modelPath);
     console.log('Successfully loaded GLB model:', modelPath);
     
-    // Special success log for bl-hes-bench-001
-    if (modelPath.includes('bl-hes-bench-001')) {
-      console.log('✅ bl-hes-bench-001 GLB model loaded successfully!');
-    }
-    
     // Auto-center and scale the model
     useEffect(() => {
-      if (scene && groupRef.current) {
+      if (scene && groupRef.current && !isLoaded) {
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
         
@@ -43,45 +32,44 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        // Center the model
-        modelClone.position.set(-center.x, -center.y, -center.z);
-        
-        // Scale the model to fit nicely in the viewport
-        const maxDimension = Math.max(size.x, size.y, size.z);
-        const targetSize = 2; // Target size for the model
-        const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-        modelClone.scale.setScalar(scale);
-        
-        // Clear previous children and add the centered/scaled model
-        groupRef.current.clear();
-        groupRef.current.add(modelClone);
-        
-        console.log('Model centered and scaled:', { center, size, scale });
-        
-        // Adjust camera position based on model size
-        const distance = Math.max(3, maxDimension * 1.5);
-        camera.position.set(0, 0, distance);
-        camera.updateProjectionMatrix();
+        // Only proceed if we have valid dimensions
+        if (size.length() > 0) {
+          // Center the model
+          modelClone.position.set(-center.x, -center.y, -center.z);
+          
+          // Scale the model to fit nicely in the viewport
+          const maxDimension = Math.max(size.x, size.y, size.z);
+          const targetSize = 2.5; // Slightly larger target size for better visibility
+          const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          modelClone.scale.setScalar(scale);
+          
+          // Clear previous children and add the centered/scaled model
+          groupRef.current.clear();
+          groupRef.current.add(modelClone);
+          
+          console.log('Model centered and scaled:', { center, size, scale, maxDimension });
+          
+          // Adjust camera position based on model size
+          const distance = Math.max(4, targetSize * 1.8);
+          camera.position.set(distance * 0.7, distance * 0.5, distance);
+          camera.lookAt(0, 0, 0);
+          camera.updateProjectionMatrix();
+          
+          setIsLoaded(true);
+        }
       }
-    }, [scene, camera]);
+    }, [scene, camera, isLoaded]);
     
     return (
       <group 
         ref={groupRef}
-        scale={hovered ? 1.05 : 1}
+        scale={hovered ? 1.02 : 1}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       />
     );
   } catch (error) {
     console.log(`Failed to load GLB model: ${modelPath}, using fallback. Error:`, error);
-    
-    // Special error log for bl-hes-bench-001
-    if (modelPath.includes('bl-hes-bench-001')) {
-      console.log('❌ bl-hes-bench-001 GLB model failed to load!');
-      console.log('❌ Error details:', error);
-    }
-    
     return <FallbackModel />;
   }
 };
@@ -91,12 +79,12 @@ const FallbackModel: React.FC = () => {
   
   return (
     <Box
-      args={[1.5, 1.5, 1.5]}
-      scale={hovered ? 1.1 : 1}
+      args={[2, 2, 2]}
+      scale={hovered ? 1.05 : 1}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     >
-      <meshStandardMaterial color="#4F46E5" />
+      <meshStandardMaterial color="#6366f1" />
     </Box>
   );
 };
@@ -127,21 +115,26 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
 }) => {
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
-  // Special debugging for bl-hes-bench-001
-  if (modelPath.includes('bl-hes-bench-001')) {
-    console.log('🔍 Enhanced3DViewer: Rendering bl-hes-bench-001');
-  }
-  
   return (
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Canvas camera={{ position: [0, 0, 3], fov: 50 }}>
+        <Canvas 
+          camera={{ position: [4, 3, 4], fov: 45 }}
+          gl={{ antialias: true, alpha: true }}
+        >
           <Suspense fallback={null}>
             <Environment preset="studio" />
-            <ambientLight intensity={0.7} />
-            <directionalLight position={[10, 10, 5]} intensity={1.2} />
-            <directionalLight position={[-10, -10, -5]} intensity={0.8} />
-            <pointLight position={[0, 10, 0]} intensity={0.6} />
+            <ambientLight intensity={0.4} />
+            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+            <directionalLight position={[-10, -10, -5]} intensity={0.5} />
+            <pointLight position={[0, 10, 0]} intensity={0.3} />
+            <spotLight 
+              position={[0, 15, 0]} 
+              angle={0.3} 
+              penumbra={1} 
+              intensity={0.5}
+              castShadow
+            />
             
             <GLBModel modelPath={modelPath} />
             
@@ -150,12 +143,13 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={false}
               enableRotate={true}
               autoRotate={false}
-              maxPolarAngle={Math.PI / 2}
+              maxPolarAngle={Math.PI / 1.8}
               minPolarAngle={Math.PI / 6}
-              minDistance={1.5}
-              maxDistance={8}
+              minDistance={2}
+              maxDistance={12}
               enableDamping={true}
               dampingFactor={0.05}
+              target={[0, 0, 0]}
             />
           </Suspense>
         </Canvas>

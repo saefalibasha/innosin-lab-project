@@ -225,6 +225,21 @@ export const productConfigs: Omit<Product, 'modelPath' | 'thumbnail' | 'images'>
   }
 ];
 
+// Mapping of product IDs to their actual GLB file names
+const glbFileMapping: Record<string, string> = {
+  'bl-hes-bench-001': 'model.glb', // This one exists as model.glb
+  'bl-hes-wall-002': 'model.glb', // Check if this exists, fallback if not
+  'bl-ebs-recessed-003': 'model.glb', // This one exists as model.glb
+  'bl-fcs-bowl-004': 'model.glb',
+  'bl-fcs-handheld-005': 'model.glb',
+  'bl-bs-wall-006': 'model.glb',
+  'bl-bmf-metal-007': 'model.glb',
+  'bl-bmf-lever-008': 'model.glb',
+  'bl-bmf-column-009': 'model.glb',
+  'bl-bmm-two-010': 'model.glb',
+  'bl-bmm-single-011': 'model.glb'
+};
+
 // Check if asset exists (simplified for now, in production you'd use proper asset detection)
 const checkAssetExists = async (path: string): Promise<boolean> => {
   try {
@@ -235,17 +250,49 @@ const checkAssetExists = async (path: string): Promise<boolean> => {
   }
 };
 
+// Find the actual GLB file for a product
+const findGLBFile = async (productId: string): Promise<string | null> => {
+  const basePath = `/products/${productId}`;
+  
+  // Try the mapped filename first
+  const mappedFile = glbFileMapping[productId];
+  if (mappedFile) {
+    const mappedPath = `${basePath}/${mappedFile}`;
+    if (await checkAssetExists(mappedPath)) {
+      return mappedPath;
+    }
+  }
+  
+  // Try common GLB filenames
+  const possibleGLBNames = [
+    'model.glb',
+    `${productId}.glb`,
+    'product.glb',
+    'mesh.glb'
+  ];
+  
+  for (const filename of possibleGLBNames) {
+    const glbPath = `${basePath}/${filename}`;
+    if (await checkAssetExists(glbPath)) {
+      console.log(`Found GLB file for ${productId}: ${glbPath}`);
+      return glbPath;
+    }
+  }
+  
+  console.log(`No GLB file found for ${productId}`);
+  return null;
+};
+
 // Generate full product data with asset paths
 export const generateProducts = async (): Promise<Product[]> => {
   const products: Product[] = [];
   
   for (const config of productConfigs) {
-    const basePath = `/products/${config.id}`;
-    
-    // Try to find GLB model
-    const modelPath = `${basePath}/model.glb`;
+    // Find the actual GLB file
+    const modelPath = await findGLBFile(config.id) || `/products/${config.id}/model.glb`;
     
     // Try to find thumbnail
+    const basePath = `/products/${config.id}`;
     const possibleThumbnails = [
       `${basePath}/thumbnail.jpg`,
       `${basePath}/thumbnail.png`,
@@ -292,10 +339,14 @@ export const generateProducts = async (): Promise<Product[]> => {
 // Synchronous version for immediate use (uses fallbacks)
 export const getProductsSync = (): Product[] => {
   const products = productConfigs.map(config => {
+    // Use the mapping to get the correct GLB file path
+    const glbFileName = glbFileMapping[config.id] || 'model.glb';
+    const modelPath = `/products/${config.id}/${glbFileName}`;
+    
     const product = {
       ...config,
-      modelPath: `/products/${config.id}/model.glb`,
-      thumbnail: `/products/${config.id}/thumbnail.webp`, // Changed to webp for bl-hes-bench-001
+      modelPath,
+      thumbnail: `/products/${config.id}/thumbnail.webp`,
       images: [
         `/products/${config.id}/images/front.jpg`,
         `/products/${config.id}/images/side.jpg`,
