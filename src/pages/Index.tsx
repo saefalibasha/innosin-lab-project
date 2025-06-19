@@ -1,4 +1,3 @@
-
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,6 +13,7 @@ import { useState } from "react";
 import VideoHero from "@/components/VideoHero";
 import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import ShopTheLook from "@/components/ShopTheLook";
+import LabTransformCTA from "@/components/LabTransformCTA";
 
 const Index = () => {
   const collections = [
@@ -82,7 +82,7 @@ const Index = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Button asChild variant="outline" size="lg" className="btn-pulse">
+            <Button asChild variant="outline" size="lg" className="animate-pulse-subtle">
               <Link to="/products">
                 View All Products
               </Link>
@@ -125,37 +125,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Improved CTA Section with better transition */}
-      <section className="section bg-gradient-to-br from-sea-light via-sea to-sea-dark relative overflow-hidden">
-        {/* Decorative elements for better transition */}
-        <div className="absolute inset-0 opacity-20">
-          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <path d="M0,20 C30,10 70,30 100,20 L100,100 L0,100 Z" fill="currentColor" />
-          </svg>
-        </div>
-        
-        <div className="container-custom text-center relative z-10">
-          <h2 className="text-4xl font-serif font-bold text-white mb-6 tracking-tight animate-fade-in">
-            Ready to Transform Your <span className="text-sand-light">Laboratory?</span>
-          </h2>
-          <p className="text-xl text-blue-100 mb-12 max-w-2xl mx-auto font-light leading-relaxed animate-fade-in animate-delay-200">
-            Let's collaborate to create a laboratory solution that exceeds your expectations 
-            and elevates your research capabilities.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center animate-scale-in animate-delay-500">
-            <Button asChild variant="hero" size="lg" className="animate-float">
-              <Link to="/contact">
-                Get Started <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
-              <Link to="/floor-planner">
-                Try Floor Planner
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </section>
+      {/* Ready to Transform Your Laboratory CTA Section */}
+      <LabTransformCTA />
     </div>
   );
 };

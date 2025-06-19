@@ -7,7 +7,7 @@ import { MapPin, Phone, Mail, Clock, Facebook, Twitter, Linkedin, Instagram } fr
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-br from-sea-dark via-primary to-sea text-white relative overflow-hidden">
+    <footer className="bg-gradient-to-br from-primary via-sea to-sea-dark text-white relative overflow-hidden">
       {/* Decorative wave pattern for smooth transition */}
       <div className="absolute top-0 left-0 w-full overflow-hidden">
         <svg className="relative block w-full h-16" viewBox="0 0 1200 120" preserveAspectRatio="none">
@@ -113,8 +113,8 @@ const Footer = () => {
                   placeholder="Enter your email"
                   className="bg-white/10 border-white/30 text-white placeholder-blue-200 focus:border-white/60 backdrop-blur-sm focus:bg-white/15 transition-all duration-300"
                 />
-                <Button className="bg-white/20 text-white border border-white/30 hover:bg-white hover:text-sea transition-all duration-300 hover:scale-105 font-semibold backdrop-blur-sm">
-                  Subscribe to Newsletter
+                <Button className="bg-sea text-white hover:bg-sea-dark transition-all duration-300 hover:scale-105 font-semibold">
+                  Subscribe
                 </Button>
               </div>
               
