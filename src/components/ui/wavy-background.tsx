@@ -14,6 +14,7 @@ export const WavyBackground = ({
   blur = 10,
   speed = "fast",
   waveOpacity = 0.5,
+  pushWavesUp = false,
   ...props
 }: {
   children?: any;
@@ -25,6 +26,7 @@ export const WavyBackground = ({
   blur?: number;
   speed?: "slow" | "fast";
   waveOpacity?: number;
+  pushWavesUp?: boolean;
   [key: string]: any;
 }) => {
   const noise = createNoise3D();
@@ -63,24 +65,26 @@ export const WavyBackground = ({
   };
 
   const waveColors = colors ?? [
-    "#38bdf8",
-    "#818cf8",
-    "#c084fc",
-    "#e879f9",
-    "#22d3ee",
+    "#2563eb",
+    "#1d4ed8",
+    "#1e40af",
+    "#1e3a8a",
+    "#312e81",
   ];
   
   const drawWave = (n: number) => {
     nt += getSpeed();
     for (i = 0; i < n; i++) {
       ctx.beginPath();
-      ctx.lineWidth = waveWidth || 70;
+      ctx.lineWidth = waveWidth || 80;
       ctx.strokeStyle = waveColors[i % waveColors.length];
-      for (x = 0; x < w; x += 3) {
-        // Create multiple wave layers at different heights for depth
-        var y1 = noise(x / 600, 0.3 * i, nt) * 80;
-        var y2 = noise(x / 800, 0.5 * i, nt + 0.5) * 60;
-        var finalY = y1 + y2 + h * (0.3 + i * 0.1); // Distribute waves across different heights
+      for (x = 0; x < w; x += 2) {
+        var y1 = noise(x / 600, 0.3 * i, nt) * 100;
+        var y2 = noise(x / 800, 0.5 * i, nt + 0.5) * 80;
+        // Push waves up when pushWavesUp is true
+        var finalY = pushWavesUp 
+          ? y1 + y2 + h * (0.1 + i * 0.08) 
+          : y1 + y2 + h * (0.3 + i * 0.1);
         ctx.lineTo(x, finalY);
       }
       ctx.stroke();
@@ -90,10 +94,10 @@ export const WavyBackground = ({
 
   let animationId: number;
   const render = () => {
-    ctx.fillStyle = backgroundFill || "hsl(200, 85%, 45%)";
+    ctx.fillStyle = backgroundFill || "hsl(200, 85%, 30%)";
     ctx.globalAlpha = waveOpacity || 0.9;
     ctx.fillRect(0, 0, w, h);
-    drawWave(6); // Increased number of wave layers
+    drawWave(7);
     animationId = requestAnimationFrame(render);
   };
 
