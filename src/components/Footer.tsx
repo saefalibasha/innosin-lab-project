@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { WavyBackground } from '@/components/ui/wavy-background';
 const Footer = () => {
   return (
     <footer className="relative overflow-hidden">
-      {/* Optimized Wavy Background */}
+      {/* Compact Wavy Background */}
       <WavyBackground
         colors={["#0891b2", "#0e7490", "#155e75", "#164e63", "#083344"]}
         waveWidth={40}
@@ -17,14 +16,14 @@ const Footer = () => {
         blur={8}
         speed="slow"
         waveOpacity={0.7}
-        containerClassName="min-h-[280px]"
-        className="flex items-center justify-center w-full h-full"
+        containerClassName=""
+        className="flex items-start w-full h-full"
       >
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-white">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Company Info */}
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center space-x-3 mb-4">
+            <div className="space-y-3 animate-fade-in">
+              <div className="flex items-center space-x-3 mb-3">
                 <div className="w-12 h-12 flex items-center justify-center">
                   <img 
                     src="/innosin-logo.png" 
@@ -38,6 +37,7 @@ const Footer = () => {
                 Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.
               </p>
               <div className="space-y-2">
+                
                 <div className="flex items-center space-x-3 group cursor-pointer">
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
                     <MapPin className="w-4 h-4 text-white" />
@@ -60,9 +60,10 @@ const Footer = () => {
             </div>
 
             {/* Quick Links */}
-            <div className="space-y-4 animate-fade-in animate-delay-200">
+            <div className="space-y-3 animate-fade-in animate-delay-200">
               <h4 className="text-xl font-serif font-semibold text-white">Quick Links</h4>
-              <nav className="space-y-2">
+              <nav className="space-y-1">
+                
                 {[
                   { name: 'Home', path: '/' },
                   { name: 'Products', path: '/products' },
@@ -86,9 +87,10 @@ const Footer = () => {
             </div>
 
             {/* Services */}
-            <div className="space-y-4 animate-fade-in animate-delay-300">
+            <div className="space-y-3 animate-fade-in animate-delay-300">
               <h4 className="text-xl font-serif font-semibold text-white">Services</h4>
-              <nav className="space-y-2">
+              <nav className="space-y-1">
+                
                 {[
                   'Laboratory Design',
                   'Equipment Installation',
@@ -110,12 +112,12 @@ const Footer = () => {
             </div>
 
             {/* Newsletter & Social */}
-            <div className="space-y-4 animate-fade-in animate-delay-500">
+            <div className="space-y-3 animate-fade-in animate-delay-500">
               <h4 className="text-xl font-serif font-semibold text-white">Stay Connected</h4>
               <p className="text-white/90 font-light leading-relaxed">
                 Stay updated with our latest products and industry insights.
               </p>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="flex flex-col space-y-2">
                   <Input
                     type="email"
@@ -128,7 +130,8 @@ const Footer = () => {
                 </div>
                 
                 {/* Social Media Icons */}
-                <div className="flex space-x-4 pt-2">
+                <div className="flex space-x-4 pt-1">
+                  
                   {[
                     { icon: Facebook, label: 'Facebook' },
                     { icon: Twitter, label: 'Twitter' },
@@ -150,7 +153,7 @@ const Footer = () => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-white/20 mt-8 pt-6 animate-fade-in animate-delay-700">
+          <div className="border-t border-white/20 mt-4 pt-3 animate-fade-in animate-delay-700">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <p className="text-white/90 font-light">
                 © 2024 Innosin Lab. All rights reserved.
