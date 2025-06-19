@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -43,7 +42,7 @@ const ProductCatalog = () => {
       name: product.name,
       category: product.category,
       dimensions: product.dimensions,
-      image: product.image
+      image: product.thumbnail
     });
     toast.success(`${product.name} added to quote request`);
   };
