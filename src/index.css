@@ -147,15 +147,31 @@
     transform: translateX(0); 
   }
   50% { 
-    transform: translateX(-25px); 
+    transform: translateX(-40px); 
   }
   100% { 
     transform: translateX(0); 
   }
 }
 
+@keyframes waveMotionDelayed {
+  0% { 
+    transform: translateX(10px); 
+  }
+  50% { 
+    transform: translateX(-30px); 
+  }
+  100% { 
+    transform: translateX(10px); 
+  }
+}
+
 .animate-enhanced-wave-motion {
   animation: waveMotion 6s ease-in-out infinite;
+}
+
+.animate-enhanced-wave-motion-delayed {
+  animation: waveMotionDelayed 6s ease-in-out infinite 0.5s;
 }
 
 /* Custom Animations */

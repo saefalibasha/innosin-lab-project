@@ -1,102 +1,155 @@
 
 import React from 'react';
-import { Award, Users, Lightbulb, Heart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { ArrowRight, Award, Users, Globe, Target } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import CompanyTimeline from '@/components/CompanyTimeline';
-import ProcessInfographic from '@/components/ProcessInfographic';
 import CertificationBadges from '@/components/CertificationBadges';
-import AnimatedSection from '@/components/AnimatedSection';
+import GoogleMapsLocation from '@/components/GoogleMapsLocation';
+import LabTransformCTA from '@/components/LabTransformCTA';
 
 const About = () => {
   const values = [
     {
-      icon: <Lightbulb className="w-8 h-8" />,
-      title: 'Innovation',
-      description: 'We constantly push the boundaries of design and technology to create products that inspire.'
+      icon: Award,
+      title: "Excellence",
+      description: "We maintain the highest standards in every aspect of our work, from design to implementation and beyond."
     },
     {
-      icon: <Award className="w-8 h-8" />,
-      title: 'Quality',
-      description: 'Every product is crafted with meticulous attention to detail and the highest standards.'
+      icon: Users,
+      title: "Collaboration",
+      description: "We work closely with our clients to understand their unique needs and deliver tailored solutions."
     },
     {
-      icon: <Users className="w-8 h-8" />,
-      title: 'Community',
-      description: 'We believe in building lasting relationships with our customers and partners.'
+      icon: Globe,
+      title: "Innovation",
+      description: "We continuously evolve our offerings to incorporate the latest technologies and industry best practices."
     },
     {
-      icon: <Heart className="w-8 h-8" />,
-      title: 'Passion',
-      description: 'Our love for design and craftsmanship drives everything we do.'
+      icon: Target,
+      title: "Precision",
+      description: "Every detail matters in laboratory environments. We ensure accuracy and precision in all our deliverables."
     }
   ];
 
-  const team = [
-    {
-      name: 'Sarah Johnson',
-      role: 'Founder & CEO',
-      description: 'Visionary leader with 15+ years in design and technology.'
-    },
-    {
-      name: 'Michael Chen',
-      role: 'Head of Design',
-      description: 'Award-winning designer specializing in 3D modeling and visualization.'
-    },
-    {
-      name: 'Emily Rodriguez',
-      role: 'Technology Director',
-      description: 'Expert in web technologies and 3D rendering systems.'
-    }
+  const stats = [
+    { number: "500+", label: "Projects Completed" },
+    { number: "15+", label: "Years of Experience" },
+    { number: "50+", label: "Research Institutions" },
+    { number: "95%", label: "Client Satisfaction" }
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pt-16">
       {/* Hero Section */}
-      <section className="wave-bg py-20">
-        <div className="max-w-4xl mx-auto text-center container-custom">
-          <AnimatedSection animation="fade-in" delay={100}>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">
-              About Innosin Lab
+      <section className="section bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden">
+        <div className="container-custom">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-5xl md:text-6xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
+              Pioneering Laboratory <span className="text-sea">Excellence</span>
             </h1>
-          </AnimatedSection>
-          <AnimatedSection animation="fade-in" delay={300}>
-            <p className="text-xl text-blue-100 leading-relaxed">
-              We're passionate about creating innovative laboratory solutions that advance scientific discovery. 
-              Our mission is to design and manufacture world-class laboratory furniture and safety equipment.
+            <p className="text-xl text-muted-foreground mb-12 leading-relaxed font-light animate-fade-in animate-delay-200">
+              For over 15 years, Innosin Lab has been transforming research environments across Singapore and beyond, 
+              delivering world-class laboratory solutions that empower scientific discovery and innovation.
             </p>
-          </AnimatedSection>
+            <div className="flex flex-col sm:flex-row gap-6 justify-center animate-scale-in animate-delay-300">
+              <Button asChild variant="default" size="lg">
+                <Link to="/contact">
+                  Get in Touch <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/products">
+                  View Our Solutions
+                </Link>
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Story Section */}
-      <section className="section">
-        <div className="max-w-4xl mx-auto container-custom">
-          <div className="prose prose-lg max-w-none">
-            <AnimatedSection animation="slide-up" delay={100}>
-              <h2 className="text-3xl font-serif font-bold text-primary mb-8 text-center">Our Story</h2>
-            </AnimatedSection>
-            <div className="text-muted-foreground space-y-6">
-              <AnimatedSection animation="fade-in-left" delay={200}>
-                <p>
-                  Founded in 2010, Innosin Lab emerged from a simple idea: what if laboratories could be designed 
-                  to truly enhance scientific productivity and safety? Our founders, experienced engineers and 
-                  scientists, set out to revolutionize laboratory environments.
-                </p>
-              </AnimatedSection>
-              <AnimatedSection animation="fade-in-right" delay={400}>
-                <p>
-                  Starting with a focus on fume hoods and safety equipment, we quickly expanded our expertise to 
-                  include comprehensive laboratory planning and custom furniture solutions. We believed that every 
-                  researcher deserved a workspace designed for both safety and efficiency.
-                </p>
-              </AnimatedSection>
-              <AnimatedSection animation="fade-in-left" delay={600}>
-                <p>
-                  Today, we're proud to serve research institutions, universities, and industrial laboratories 
-                  worldwide, helping them create environments where breakthrough discoveries happen. Our commitment 
-                  to innovation, quality, and safety continues to drive us forward.
-                </p>
-              </AnimatedSection>
+      {/* Stats Section */}
+      <section className="section bg-background">
+        <div className="container-custom">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
+                <div className="text-4xl md:text-5xl font-serif font-bold text-sea mb-2">
+                  {stat.number}
+                </div>
+                <p className="text-muted-foreground font-medium">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mission & Vision */}
+      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+        <div className="container-custom">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="animate-fade-in">
+              <h2 className="text-4xl font-serif font-bold text-primary mb-6">
+                Our <span className="text-sea">Mission</span>
+              </h2>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                To empower scientific advancement by providing innovative, high-quality laboratory solutions 
+                that enable researchers to focus on what matters most - their groundbreaking discoveries.
+              </p>
+              <h3 className="text-2xl font-serif font-semibold text-primary mb-4">
+                Our <span className="text-sea">Vision</span>
+              </h3>
+              <p className="text-lg text-muted-foreground leading-relaxed">
+                To be the leading laboratory solutions provider in Southeast Asia, recognized for our 
+                commitment to excellence, innovation, and customer satisfaction.
+              </p>
             </div>
+            <div className="animate-fade-in-right animate-delay-300">
+              <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
+                <img 
+                  src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=600&h=400&fit=crop" 
+                  alt="Modern laboratory" 
+                  className="w-full h-64 object-cover rounded-lg mb-6"
+                />
+                <blockquote className="text-lg italic text-muted-foreground">
+                  "Innovation distinguishes between a leader and a follower. At Innosin Lab, 
+                  we choose to lead through excellence and innovation."
+                </blockquote>
+                <cite className="block mt-4 text-sea font-semibold">- Innosin Lab Leadership Team</cite>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Values Section */}
+      <section className="section bg-background">
+        <div className="container-custom">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
+              Our Core <span className="text-sea">Values</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
+              These fundamental principles guide everything we do and shape our commitment to excellence.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {values.map((value, index) => (
+              <Card key={index} className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: `${100 + index * 100}ms`}}>
+                <CardContent className="p-6">
+                  <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <value.icon className="w-8 h-8 text-sea" />
+                  </div>
+                  <h3 className="text-xl font-serif font-semibold text-primary mb-3">
+                    {value.title}
+                  </h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {value.description}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </section>
@@ -104,98 +157,56 @@ const About = () => {
       {/* Company Timeline */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
         <div className="container-custom">
-          <AnimatedSection animation="scale-in" delay={100}>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
+              Our <span className="text-sea">Journey</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
+              From humble beginnings to industry leadership - explore the milestones that have shaped our story.
+            </p>
+          </div>
+          <div className="animate-scale-in animate-delay-300">
             <CompanyTimeline />
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Process Infographic */}
-      <section className="section">
-        <div className="container-custom">
-          <AnimatedSection animation="bounce-in" delay={200}>
-            <ProcessInfographic />
-          </AnimatedSection>
+          </div>
         </div>
       </section>
 
       {/* Certifications */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+      <section className="section bg-background">
         <div className="container-custom">
-          <AnimatedSection animation="rotate-in" delay={100}>
-            <CertificationBadges />
-          </AnimatedSection>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="section">
-        <div className="container-custom">
-          <AnimatedSection animation="fade-in" delay={100}>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-serif font-bold text-primary mb-4">Our Values</h2>
-              <p className="text-xl text-muted-foreground">The principles that guide everything we do</p>
-            </div>
-          </AnimatedSection>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => (
-              <AnimatedSection key={index} animation="slide-up" delay={200 + index * 100}>
-                <div className="text-center glass-card p-6 rounded-lg hover:shadow-xl transition-all duration-300 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
-                  <div className="flex justify-center mb-4 text-sea">
-                    {value.icon}
-                  </div>
-                  <h3 className="text-xl font-serif font-semibold text-primary mb-3">{value.title}</h3>
-                  <p className="text-muted-foreground">{value.description}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background">
-        <div className="container-custom">
-          <AnimatedSection animation="fade-in" delay={100}>
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-serif font-bold text-primary mb-4">Meet Our Team</h2>
-              <p className="text-xl text-muted-foreground">The talented people behind Innosin Lab</p>
-            </div>
-          </AnimatedSection>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {team.map((member, index) => (
-              <AnimatedSection key={index} animation="bounce-in" delay={200 + index * 150}>
-                <div className="text-center glass-card p-6 rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
-                  <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-sea to-sea-dark rounded-full flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">
-                      {member.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <h3 className="text-xl font-serif font-semibold text-primary mb-2">{member.name}</h3>
-                  <p className="text-sea font-medium mb-3">{member.role}</p>
-                  <p className="text-muted-foreground">{member.description}</p>
-                </div>
-              </AnimatedSection>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="wave-bg py-16">
-        <div className="max-w-4xl mx-auto text-center container-custom">
-          <AnimatedSection animation="scale-in" delay={100}>
-            <h2 className="text-3xl font-serif font-bold text-white mb-4">
-              Ready to Transform Your Laboratory?
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
+              Quality <span className="text-sea">Assurance</span>
             </h2>
-            <p className="text-xl text-blue-100">
-              Discover how our innovative solutions can enhance your research environment.
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
+              Our certifications and partnerships demonstrate our commitment to the highest industry standards.
             </p>
-          </AnimatedSection>
+          </div>
+          <div className="animate-fade-in animate-delay-300">
+            <CertificationBadges />
+          </div>
         </div>
       </section>
+
+      {/* Location */}
+      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+        <div className="container-custom">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
+              Visit Our <span className="text-sea">Location</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
+              Located in the heart of Singapore, we're easily accessible and ready to serve your laboratory needs.
+            </p>
+          </div>
+          <div className="animate-scale-in animate-delay-300">
+            <GoogleMapsLocation />
+          </div>
+        </div>
+      </section>
+
+      {/* Ready to Transform Your Laboratory CTA */}
+      <LabTransformCTA />
     </div>
   );
 };

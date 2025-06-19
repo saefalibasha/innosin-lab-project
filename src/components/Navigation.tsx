@@ -80,20 +80,20 @@ const Navigation = () => {
                   <NavigationMenuItem key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
                     {item.dropdown ? (
                       <>
-                        <NavigationMenuTrigger className={`font-medium transition-all duration-300 hover:text-sea ${
+                        <NavigationMenuTrigger className={`font-medium transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent ${
                           isActive(item.path)
-                            ? 'text-sea border-b-2 border-sea'
+                            ? 'text-sea'
                             : 'text-muted-foreground hover:text-sea'
                         }`}>
                           {item.name}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
-                          <div className="grid w-[400px] gap-2 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white/95 backdrop-blur-lg border border-sea/20 shadow-xl rounded-lg">
+                          <div className="grid w-[400px] gap-2 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] glass-card border border-sea/20 shadow-xl rounded-lg">
                             {item.dropdown.map((dropdownItem, dropIndex) => (
                               <Link
                                 key={dropdownItem.name}
                                 to={dropdownItem.path}
-                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-all duration-300 hover:bg-sea/10 hover:text-sea text-sea-dark animate-fade-in group"
+                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-all duration-300 hover:bg-sea/10 hover:text-sea text-muted-foreground animate-fade-in group"
                                 style={{animationDelay: `${dropIndex * 50}ms`}}
                               >
                                 <div className="text-sm font-medium leading-none group-hover:text-sea transition-colors">
@@ -109,7 +109,7 @@ const Navigation = () => {
                         to={item.path}
                         className={`font-medium transition-all duration-300 px-3 py-2 rounded-md hover:bg-sea/10 ${
                           isActive(item.path)
-                            ? 'text-sea bg-sea/10 border-b-2 border-sea'
+                            ? 'text-sea bg-sea/10'
                             : 'text-muted-foreground hover:text-sea'
                         }`}
                       >

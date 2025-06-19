@@ -3,15 +3,19 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Phone, Mail, Clock, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-br from-primary via-sea to-sea-dark text-white relative overflow-hidden">
-      {/* Decorative wave pattern for smooth transition */}
+    <footer className="bg-gradient-to-br from-sea via-sea-dark to-primary text-white relative overflow-hidden">
+      {/* Single Translucent Wave for smooth transition */}
       <div className="absolute top-0 left-0 w-full overflow-hidden">
-        <svg className="relative block w-full h-16" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,0 C300,80 900,40 1200,80 L1200,120 L0,120 Z" fill="currentColor" fillOpacity="0.1" />
+        <svg className="relative block w-full h-20" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path 
+            d="M0,0 C300,80 900,40 1200,80 L1200,120 L0,120 Z" 
+            fill="white" 
+            fillOpacity="0.1" 
+          />
         </svg>
       </div>
       
@@ -113,7 +117,7 @@ const Footer = () => {
                   placeholder="Enter your email"
                   className="bg-white/10 border-white/30 text-white placeholder-blue-200 focus:border-white/60 backdrop-blur-sm focus:bg-white/15 transition-all duration-300"
                 />
-                <Button className="bg-sea text-white hover:bg-sea-dark transition-all duration-300 hover:scale-105 font-semibold">
+                <Button className="bg-white text-sea hover:bg-white/90 transition-all duration-300 hover:scale-105 font-semibold">
                   Subscribe
                 </Button>
               </div>
