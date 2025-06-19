@@ -4,9 +4,9 @@ export interface Product {
   name: string;
   category: string;
   dimensions: string;
-  image: string;
-  modelType: 'box' | 'sphere' | 'cone';
-  modelColor: string;
+  modelPath: string; // Path to .glb file
+  thumbnail: string; // Main product image
+  images: string[]; // Array of additional product images
   description: string;
   specifications: string[];
 }

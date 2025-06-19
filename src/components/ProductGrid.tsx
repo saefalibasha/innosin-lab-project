@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ShoppingCart, Maximize } from 'lucide-react';
-import Product3DViewer from '@/components/Product3DViewer';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShoppingCart } from 'lucide-react';
+import Enhanced3DViewer from '@/components/Enhanced3DViewer';
+import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import { Product } from '@/types/product';
 
@@ -21,33 +22,30 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
         <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
           <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group">
             <CardHeader className="p-0">
-              <div className="relative">
-                <Product3DViewer
-                  productType={product.modelType}
-                  color={product.modelColor}
-                  className="w-full h-48"
-                />
-                <div className="absolute top-2 right-2 flex space-x-2">
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white">
-                        <Maximize className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
-                      <DialogHeader>
-                        <DialogTitle className="font-serif">{product.name} - 3D View</DialogTitle>
-                      </DialogHeader>
-                      <Product3DViewer
-                        productType={product.modelType}
-                        color={product.modelColor}
-                        className="w-full h-96"
-                      />
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              </div>
+              <Tabs defaultValue="3d" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="3d">3D Model</TabsTrigger>
+                  <TabsTrigger value="images">Photos</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="3d" className="mt-0">
+                  <Enhanced3DViewer
+                    modelPath={product.modelPath}
+                    className="w-full h-48"
+                  />
+                </TabsContent>
+                
+                <TabsContent value="images" className="mt-0">
+                  <ProductImageGallery
+                    images={product.images}
+                    thumbnail={product.thumbnail}
+                    productName={product.name}
+                    className="w-full h-48"
+                  />
+                </TabsContent>
+              </Tabs>
             </CardHeader>
+            
             <CardContent className="p-6">
               <div className="mb-3">
                 <Badge variant="outline" className="mb-2 border-sea text-sea">
