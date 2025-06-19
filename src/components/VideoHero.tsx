@@ -31,7 +31,7 @@ const VideoHero = () => {
           blur={8}
           speed="slow"
           waveOpacity={0.7}
-          containerClassName="min-h-[50vh]"
+          containerClassName="min-h-[35vh]"
           className="flex items-center justify-center w-full h-full"
         >
           {/* Company Name in Top Left */}
