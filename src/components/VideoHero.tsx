@@ -29,31 +29,31 @@ const VideoHero = () => {
           }}
         />
         
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-50" />
+        {/* Ocean gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-sea/70 via-sea-dark/50 to-sea/60" />
       </div>
 
       {/* Content Overlay */}
       <div className="relative z-10 h-full flex items-center justify-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-          <h1 className="text-6xl md:text-8xl font-light mb-4 leading-tight tracking-wide">
+          <h1 className="text-6xl md:text-8xl font-serif font-light mb-4 leading-tight tracking-wide animate-fade-in">
             Precision.
-            <span className="block font-bold">Innovation.</span>
+            <span className="block font-bold animate-float">Innovation.</span>
           </h1>
           
-          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-gray-200 font-light">
+          <p className="text-xl md:text-2xl mb-12 max-w-3xl mx-auto text-blue-100 font-light animate-fade-in-right animate-delay-300">
             Empowering scientific breakthroughs with high-quality lab solutions.
             Transform your research environment with cutting-edge equipment and design.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12">
-            <Button asChild size="lg" className="bg-white text-black hover:bg-gray-200 text-lg px-8 py-4 font-medium">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-12 animate-scale-in animate-delay-500">
+            <Button asChild variant="hero" size="lg">
               <Link to="/products">
                 Explore Solutions <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
             
-            <Button asChild variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-black text-lg px-8 py-4 font-medium">
+            <Button asChild variant="outline" size="lg" className="border-2 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm">
               <Link to="/contact">
                 Schedule Consultation
               </Link>
@@ -61,11 +61,11 @@ const VideoHero = () => {
           </div>
 
           {/* Video Play Button (optional) */}
-          <div className="flex justify-center">
+          <div className="flex justify-center animate-bounce-in animate-delay-700">
             <Button
               variant="ghost"
               size="lg"
-              className="text-white hover:bg-white hover:bg-opacity-20 rounded-full"
+              className="text-white hover:bg-white/20 rounded-full glass-card animate-pulse-slow"
             >
               <Play className="w-6 h-6 mr-2" />
               Watch Our Story
@@ -77,8 +77,8 @@ const VideoHero = () => {
       {/* Scroll Indicator */}
       <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
         <div className="flex flex-col items-center">
-          <span className="text-sm mb-2">Scroll Down</span>
-          <div className="w-0.5 h-8 bg-white opacity-75"></div>
+          <span className="text-sm mb-2 font-light">Scroll Down</span>
+          <div className="w-0.5 h-8 bg-white/75 rounded-full"></div>
         </div>
       </div>
     </section>

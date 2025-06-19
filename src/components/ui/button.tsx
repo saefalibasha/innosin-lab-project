@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -9,15 +10,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-full transition-all duration-300 hover:scale-105",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
+          "bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-full transition-all duration-300 hover:scale-105",
+        ghost: "hover:bg-accent hover:text-accent-foreground transition-all duration-300",
         link: "text-primary underline-offset-4 hover:underline",
+        hero: "px-8 py-4 rounded-full font-medium text-lg transition-all duration-300 glass-card hover:scale-105 hover:shadow-xl backdrop-blur-16",
+        heroSolid: "px-8 py-4 rounded-full font-medium text-lg transition-all duration-300 bg-gradient-to-r from-sea to-sea-dark text-white hover:scale-105 hover:shadow-xl hover:from-sea-dark hover:to-sea active:scale-95",
+        glow: "bg-primary text-primary-foreground hover:bg-primary/90 rounded-full transition-all duration-300 hover:scale-105 animate-button-glow"
       },
       size: {
         default: "h-10 px-4 py-2",

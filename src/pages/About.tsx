@@ -49,17 +49,17 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-gray-50 to-gray-100 py-20">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+      <section className="wave-bg py-20">
+        <div className="max-w-4xl mx-auto text-center container-custom">
           <AnimatedSection animation="fade-in" delay={100}>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold text-white mb-6">
               About Innosin Lab
             </h1>
           </AnimatedSection>
           <AnimatedSection animation="fade-in" delay={300}>
-            <p className="text-xl text-gray-600 leading-relaxed">
+            <p className="text-xl text-blue-100 leading-relaxed">
               We're passionate about creating innovative laboratory solutions that advance scientific discovery. 
               Our mission is to design and manufacture world-class laboratory furniture and safety equipment.
             </p>
@@ -68,13 +68,13 @@ const About = () => {
       </section>
 
       {/* Story Section */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section">
+        <div className="max-w-4xl mx-auto container-custom">
           <div className="prose prose-lg max-w-none">
             <AnimatedSection animation="slide-up" delay={100}>
-              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Story</h2>
+              <h2 className="text-3xl font-serif font-bold text-primary mb-8 text-center">Our Story</h2>
             </AnimatedSection>
-            <div className="text-gray-600 space-y-6">
+            <div className="text-muted-foreground space-y-6">
               <AnimatedSection animation="fade-in-left" delay={200}>
                 <p>
                   Founded in 2010, Innosin Lab emerged from a simple idea: what if laboratories could be designed 
@@ -102,8 +102,8 @@ const About = () => {
       </section>
 
       {/* Company Timeline */}
-      <section className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+        <div className="container-custom">
           <AnimatedSection animation="scale-in" delay={100}>
             <CompanyTimeline />
           </AnimatedSection>
@@ -111,8 +111,8 @@ const About = () => {
       </section>
 
       {/* Process Infographic */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section">
+        <div className="container-custom">
           <AnimatedSection animation="bounce-in" delay={200}>
             <ProcessInfographic />
           </AnimatedSection>
@@ -120,8 +120,8 @@ const About = () => {
       </section>
 
       {/* Certifications */}
-      <section className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+        <div className="container-custom">
           <AnimatedSection animation="rotate-in" delay={100}>
             <CertificationBadges />
           </AnimatedSection>
@@ -129,24 +129,24 @@ const About = () => {
       </section>
 
       {/* Values Section */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section">
+        <div className="container-custom">
           <AnimatedSection animation="fade-in" delay={100}>
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Our Values</h2>
-              <p className="text-xl text-gray-600">The principles that guide everything we do</p>
+              <h2 className="text-3xl font-serif font-bold text-primary mb-4">Our Values</h2>
+              <p className="text-xl text-muted-foreground">The principles that guide everything we do</p>
             </div>
           </AnimatedSection>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value, index) => (
               <AnimatedSection key={index} animation="slide-up" delay={200 + index * 100}>
-                <div className="text-center">
-                  <div className="flex justify-center mb-4 text-black">
+                <div className="text-center glass-card p-6 rounded-lg hover:shadow-xl transition-all duration-300 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
+                  <div className="flex justify-center mb-4 text-sea">
                     {value.icon}
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-3">{value.title}</h3>
-                  <p className="text-gray-600">{value.description}</p>
+                  <h3 className="text-xl font-serif font-semibold text-primary mb-3">{value.title}</h3>
+                  <p className="text-muted-foreground">{value.description}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -155,27 +155,27 @@ const About = () => {
       </section>
 
       {/* Team Section */}
-      <section className="bg-gray-50 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+        <div className="container-custom">
           <AnimatedSection animation="fade-in" delay={100}>
             <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
-              <p className="text-xl text-gray-600">The talented people behind Innosin Lab</p>
+              <h2 className="text-3xl font-serif font-bold text-primary mb-4">Meet Our Team</h2>
+              <p className="text-xl text-muted-foreground">The talented people behind Innosin Lab</p>
             </div>
           </AnimatedSection>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {team.map((member, index) => (
               <AnimatedSection key={index} animation="bounce-in" delay={200 + index * 150}>
-                <div className="text-center">
-                  <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-gray-400 to-gray-600 rounded-full flex items-center justify-center">
+                <div className="text-center glass-card p-6 rounded-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+                  <div className="w-32 h-32 mx-auto mb-4 bg-gradient-to-br from-sea to-sea-dark rounded-full flex items-center justify-center">
                     <span className="text-2xl font-bold text-white">
                       {member.name.split(' ').map(n => n[0]).join('')}
                     </span>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{member.name}</h3>
-                  <p className="text-black font-medium mb-3">{member.role}</p>
-                  <p className="text-gray-600">{member.description}</p>
+                  <h3 className="text-xl font-serif font-semibold text-primary mb-2">{member.name}</h3>
+                  <p className="text-sea font-medium mb-3">{member.role}</p>
+                  <p className="text-muted-foreground">{member.description}</p>
                 </div>
               </AnimatedSection>
             ))}
@@ -184,13 +184,13 @@ const About = () => {
       </section>
 
       {/* CTA Section */}
-      <section className="bg-black py-16">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+      <section className="wave-bg py-16">
+        <div className="max-w-4xl mx-auto text-center container-custom">
           <AnimatedSection animation="scale-in" delay={100}>
-            <h2 className="text-3xl font-bold text-white mb-4">
+            <h2 className="text-3xl font-serif font-bold text-white mb-4">
               Ready to Transform Your Laboratory?
             </h2>
-            <p className="text-xl text-gray-300">
+            <p className="text-xl text-blue-100">
               Discover how our innovative solutions can enhance your research environment.
             </p>
           </AnimatedSection>

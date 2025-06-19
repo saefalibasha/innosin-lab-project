@@ -72,53 +72,53 @@ const RFQCart = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <Navigation />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="container-custom py-12">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Request for Quotation</h1>
-          <p className="text-xl text-gray-600">
+          <h1 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">Request for Quotation</h1>
+          <p className="text-xl text-muted-foreground animate-fade-in animate-delay-200">
             Review your selected products and submit your quote request
           </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <Card>
+          <div className="lg:col-span-2 animate-fade-in-left animate-delay-300">
+            <Card className="glass-card hover:shadow-xl transition-all duration-300">
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
+                <CardTitle className="flex items-center font-serif">
+                  <ShoppingCart className="w-5 h-5 mr-2 text-sea" />
                   Selected Products ({itemCount} items)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {items.length === 0 ? (
                   <div className="text-center py-12">
-                    <ShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-600 text-lg mb-4">Your cart is empty</p>
-                    <Button asChild>
+                    <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground text-lg mb-4">Your cart is empty</p>
+                    <Button asChild variant="heroSolid">
                       <a href="/products">Browse Products</a>
                     </Button>
                   </div>
                 ) : (
                   <div className="space-y-6">
                     {items.map((item, index) => (
-                      <div key={item.id}>
+                      <div key={item.id} className={`animate-fade-in`} style={{animationDelay: `${400 + index * 100}ms`}}>
                         <div className="flex items-start space-x-4">
                           <img
                             src={item.image}
                             alt={item.name}
-                            className="w-20 h-20 object-cover rounded-lg"
+                            className="w-20 h-20 object-cover rounded-lg shadow-md"
                           />
                           
                           <div className="flex-1">
                             <div className="flex justify-between items-start mb-2">
                               <div>
-                                <h3 className="font-semibold text-lg">{item.name}</h3>
-                                <Badge variant="outline" className="mt-1">
+                                <h3 className="font-semibold text-lg text-primary">{item.name}</h3>
+                                <Badge variant="outline" className="mt-1 border-sea text-sea">
                                   {item.category}
                                 </Badge>
                               </div>
@@ -126,13 +126,13 @@ const RFQCart = () => {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => removeItem(item.id)}
-                                className="text-red-600 hover:text-red-700"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                             
-                            <p className="text-sm text-gray-600 mb-3">
+                            <p className="text-sm text-muted-foreground mb-3">
                               Dimensions: {item.dimensions}
                             </p>
                             
@@ -145,14 +145,16 @@ const RFQCart = () => {
                                   size="sm"
                                   onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                                   disabled={item.quantity <= 1}
+                                  className="hover:border-sea"
                                 >
                                   <Minus className="w-3 h-3" />
                                 </Button>
-                                <span className="w-8 text-center">{item.quantity}</span>
+                                <span className="w-8 text-center font-medium">{item.quantity}</span>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                  className="hover:border-sea"
                                 >
                                   <Plus className="w-3 h-3" />
                                 </Button>
@@ -166,7 +168,7 @@ const RFQCart = () => {
                                 placeholder="Any specific requirements or customizations..."
                                 value={item.notes}
                                 onChange={(e) => handleNotesChange(item.id, e.target.value)}
-                                className="mt-1"
+                                className="mt-1 focus:border-sea transition-all duration-300"
                                 rows={2}
                               />
                             </div>
@@ -193,10 +195,10 @@ const RFQCart = () => {
           </div>
 
           {/* Contact Form */}
-          <div className="lg:col-span-1">
-            <Card>
+          <div className="lg:col-span-1 animate-fade-in-right animate-delay-500">
+            <Card className="glass-card hover:shadow-xl transition-all duration-300">
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
+                <CardTitle className="font-serif text-primary">Contact Information</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmitRFQ} className="space-y-4">
@@ -208,6 +210,7 @@ const RFQCart = () => {
                       value={contactForm.name}
                       onChange={(e) => handleContactFormChange('name', e.target.value)}
                       placeholder="John Doe"
+                      className="focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
@@ -219,6 +222,7 @@ const RFQCart = () => {
                       value={contactForm.company}
                       onChange={(e) => handleContactFormChange('company', e.target.value)}
                       placeholder="Your Company Name"
+                      className="focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
@@ -231,6 +235,7 @@ const RFQCart = () => {
                       value={contactForm.email}
                       onChange={(e) => handleContactFormChange('email', e.target.value)}
                       placeholder="john@company.com"
+                      className="focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
@@ -242,6 +247,7 @@ const RFQCart = () => {
                       value={contactForm.phone}
                       onChange={(e) => handleContactFormChange('phone', e.target.value)}
                       placeholder="+65 XXXX XXXX"
+                      className="focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
@@ -253,6 +259,7 @@ const RFQCart = () => {
                       onChange={(e) => handleContactFormChange('message', e.target.value)}
                       placeholder="Tell us about your project requirements, timeline, or any specific needs..."
                       rows={4}
+                      className="focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
@@ -273,14 +280,14 @@ const RFQCart = () => {
                   
                   <Button
                     type="submit"
-                    className="w-full bg-black hover:bg-gray-800"
+                    className="w-full bg-sea hover:bg-sea-dark animate-float"
                     disabled={items.length === 0}
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Submit Quote Request
                   </Button>
                   
-                  <p className="text-xs text-gray-600 text-center">
+                  <p className="text-xs text-muted-foreground text-center">
                     We'll respond to your quote request within 24 hours
                   </p>
                 </form>
@@ -290,39 +297,39 @@ const RFQCart = () => {
         </div>
 
         {/* Information Section */}
-        <div className="mt-12">
-          <Card>
+        <div className="mt-12 animate-bounce-in animate-delay-700">
+          <Card className="glass-card">
             <CardHeader>
-              <CardTitle>What happens next?</CardTitle>
+              <CardTitle className="font-serif text-primary">What happens next?</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-blue-600 font-bold">1</span>
+                <div className="text-center animate-fade-in" style={{animationDelay: '800ms'}}>
+                  <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-sea font-bold">1</span>
                   </div>
-                  <h3 className="font-semibold mb-2">Review & Assessment</h3>
-                  <p className="text-gray-600 text-sm">
+                  <h3 className="font-semibold mb-2 text-primary">Review & Assessment</h3>
+                  <p className="text-muted-foreground text-sm">
                     Our team will review your requirements and assess the best solutions for your laboratory needs.
                   </p>
                 </div>
                 
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-blue-600 font-bold">2</span>
+                <div className="text-center animate-fade-in" style={{animationDelay: '900ms'}}>
+                  <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-sea font-bold">2</span>
                   </div>
-                  <h3 className="font-semibold mb-2">Custom Quotation</h3>
-                  <p className="text-gray-600 text-sm">
+                  <h3 className="font-semibold mb-2 text-primary">Custom Quotation</h3>
+                  <p className="text-muted-foreground text-sm">
                     We'll prepare a detailed quotation including pricing, specifications, and delivery timeline.
                   </p>
                 </div>
                 
-                <div className="text-center">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <span className="text-blue-600 font-bold">3</span>
+                <div className="text-center animate-fade-in" style={{animationDelay: '1000ms'}}>
+                  <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-sea font-bold">3</span>
                   </div>
-                  <h3 className="font-semibold mb-2">Consultation</h3>
-                  <p className="text-gray-600 text-sm">
+                  <h3 className="font-semibold mb-2 text-primary">Consultation</h3>
+                  <p className="text-muted-foreground text-sm">
                     Our experts will schedule a consultation to discuss your project and finalize the details.
                   </p>
                 </div>

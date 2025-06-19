@@ -32,14 +32,14 @@ const Contact = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="container-custom py-12">
       {/* Header */}
       <div className="text-center mb-16">
         <AnimatedSection animation="fade-in" delay={100}>
-          <h1 className="text-4xl font-bold text-black mb-4">Contact Us</h1>
+          <h1 className="text-4xl font-serif font-bold text-primary mb-4">Contact Us</h1>
         </AnimatedSection>
         <AnimatedSection animation="fade-in" delay={300}>
-          <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Have questions about our products or need support? We'd love to hear from you. 
             Send us a message and we'll respond as soon as possible.
           </p>
@@ -56,15 +56,15 @@ const Contact = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
         {/* Contact Form */}
         <AnimatedSection animation="fade-in-left" delay={300}>
-          <Card className="shadow-lg">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl">Send us a message</CardTitle>
+              <CardTitle className="text-2xl font-serif text-primary">Send us a message</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                       Full Name
                     </label>
                     <Input
@@ -75,10 +75,11 @@ const Contact = () => {
                       value={formData.name}
                       onChange={handleInputChange}
                       placeholder="John Doe"
+                      className="transition-all duration-300 focus:border-sea"
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
                       Email Address
                     </label>
                     <Input
@@ -89,12 +90,13 @@ const Contact = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder="john@example.com"
+                      className="transition-all duration-300 focus:border-sea"
                     />
                   </div>
                 </div>
                 
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
                     Subject
                   </label>
                   <Input
@@ -105,11 +107,12 @@ const Contact = () => {
                     value={formData.subject}
                     onChange={handleInputChange}
                     placeholder="How can we help you?"
+                    className="transition-all duration-300 focus:border-sea"
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
                     Message
                   </label>
                   <Textarea
@@ -120,10 +123,11 @@ const Contact = () => {
                     value={formData.message}
                     onChange={handleInputChange}
                     placeholder="Tell us more about your inquiry..."
+                    className="transition-all duration-300 focus:border-sea"
                   />
                 </div>
                 
-                <Button type="submit" size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
+                <Button type="submit" size="lg" className="w-full bg-sea hover:bg-sea-dark animate-float">
                   Send Message
                 </Button>
               </form>
@@ -133,15 +137,15 @@ const Contact = () => {
 
         {/* Quick Contact Info */}
         <AnimatedSection animation="fade-in-right" delay={400}>
-          <Card className="shadow-lg">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl">Get in Touch</CardTitle>
+              <CardTitle className="text-2xl font-serif text-primary">Get in Touch</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <AnimatedSection animation="slide-up" delay={500}>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Laboratory Consultation</h3>
-                  <p className="text-gray-600">
+                  <h3 className="font-semibold text-lg mb-2 text-sea">Laboratory Consultation</h3>
+                  <p className="text-muted-foreground">
                     Schedule a consultation with our experts to discuss your laboratory design and equipment needs.
                   </p>
                 </div>
@@ -149,8 +153,8 @@ const Contact = () => {
               
               <AnimatedSection animation="slide-up" delay={600}>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Emergency Support</h3>
-                  <p className="text-gray-600">
+                  <h3 className="font-semibold text-lg mb-2 text-sea">Emergency Support</h3>
+                  <p className="text-muted-foreground">
                     For urgent equipment issues or safety concerns, contact our 24/7 emergency support line.
                   </p>
                 </div>
@@ -158,8 +162,8 @@ const Contact = () => {
               
               <AnimatedSection animation="slide-up" delay={700}>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">Project Inquiries</h3>
-                  <p className="text-gray-600">
+                  <h3 className="font-semibold text-lg mb-2 text-sea">Project Inquiries</h3>
+                  <p className="text-muted-foreground">
                     Ready to start your laboratory project? Let's discuss your requirements and timeline.
                   </p>
                 </div>
