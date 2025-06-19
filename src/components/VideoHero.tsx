@@ -6,11 +6,13 @@ import { Link } from 'react-router-dom';
 
 const VideoHero = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
       setScrolled(scrollPosition > 100);
+      setScrollY(scrollPosition);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -86,24 +88,27 @@ const VideoHero = () => {
             </Button>
           </div>
 
-          {/* Video Play Button (optional) */}
+          {/* Updated "Our Story" Button */}
           <div className="flex justify-center mb-8 animate-bounce-in animate-delay-700">
-            <Button
-              variant="ghost"
-              size="lg"
-              className="text-white hover:bg-white/20 rounded-full backdrop-blur-md border border-white/20 animate-pulse-slow"
-            >
-              <Play className="w-6 h-6 mr-2" />
-              Watch Our Story
+            <Button asChild variant="ghost" size="lg" className="text-white hover:bg-white/20 rounded-full backdrop-blur-md border border-white/20">
+              <Link to="/about">
+                <Play className="w-6 h-6 mr-2" />
+                Our Story
+              </Link>
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Scroll Indicator - hidden when scrolled */}
-      <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white transition-all duration-500 ${scrolled ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0 animate-bounce'}`}>
+      {/* Enhanced Scroll Indicator - follows user on scroll */}
+      <div 
+        className={`fixed bottom-8 left-1/2 transform -translate-x-1/2 text-white transition-all duration-500 z-20 ${
+          scrollY > window.innerHeight ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0'
+        }`}
+        style={{ transform: `translateX(-50%) translateY(${Math.min(scrollY * 0.5, 50)}px)` }}
+      >
         <div 
-          className="flex flex-col items-center cursor-pointer group"
+          className="flex flex-col items-center cursor-pointer group animate-bounce"
           onClick={scrollToNext}
         >
           <span className="text-sm mb-3 font-light tracking-wide opacity-90 group-hover:opacity-100 transition-opacity">
@@ -114,6 +119,20 @@ const VideoHero = () => {
             <div className="w-0.5 h-8 bg-white/60 rounded-full group-hover:bg-white/80 transition-colors"></div>
           </div>
         </div>
+      </div>
+
+      {/* Animated Wave Bottom Edge */}
+      <div className="absolute bottom-0 left-0 w-full overflow-hidden z-15">
+        <svg 
+          className="relative block w-full h-20 animate-wave-motion" 
+          viewBox="0 0 1200 120" 
+          preserveAspectRatio="none"
+        >
+          <path 
+            d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
+            fill="#ffffff"
+          />
+        </svg>
       </div>
     </section>
   );
