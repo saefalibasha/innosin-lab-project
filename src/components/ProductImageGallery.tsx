@@ -73,12 +73,12 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   };
 
   return (
-    <div className={`${className} relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
+    <div className={`${className} relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex items-center justify-center`}>
       {!imageError ? (
         <img
           src={currentImage}
           alt={`${productName} - Image ${currentImageIndex + 1}`}
-          className="w-full h-full object-cover"
+          className="max-w-full max-h-full object-contain"
           onError={handleImageError}
           onLoad={handleImageLoad}
         />
@@ -86,7 +86,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
           <Image className="w-12 h-12 mb-2" />
           <span className="text-xs">Image not found</span>
-          <span className="text-xs mt-1">{currentImage}</span>
+          <span className="text-xs mt-1 px-2 text-center break-all">{currentImage}</span>
         </div>
       )}
       
@@ -96,7 +96,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <Button
             size="sm"
             variant="secondary"
-            className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/90 hover:bg-white"
+            className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
             onClick={prevImage}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -105,7 +105,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <Button
             size="sm"
             variant="secondary"
-            className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/90 hover:bg-white"
+            className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
             onClick={nextImage}
           >
             <ChevronRight className="w-4 h-4" />
@@ -132,7 +132,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <Button
             size="sm"
             variant="secondary"
-            className="absolute top-2 right-2 bg-white/90 hover:bg-white"
+            className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-lg"
           >
             <Maximize className="w-4 h-4" />
           </Button>
@@ -143,18 +143,20 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           </DialogHeader>
           <div className="relative">
             {!imageError ? (
-              <img
-                src={currentImage}
-                alt={`${productName} - Full size`}
-                className="w-full h-96 object-contain"
-                onError={handleImageError}
-                onLoad={handleImageLoad}
-              />
+              <div className="w-full h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center">
+                <img
+                  src={currentImage}
+                  alt={`${productName} - Full size`}
+                  className="max-w-full max-h-full object-contain"
+                  onError={handleImageError}
+                  onLoad={handleImageLoad}
+                />
+              </div>
             ) : (
               <div className="w-full h-96 flex flex-col items-center justify-center text-muted-foreground bg-gray-100 rounded">
                 <Image className="w-16 h-16 mb-2" />
                 <span>Image not available</span>
-                <span className="text-sm mt-1">{currentImage}</span>
+                <span className="text-sm mt-1 px-4 text-center break-all">{currentImage}</span>
               </div>
             )}
             
@@ -165,13 +167,13 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
                     key={index}
                     className={`w-16 h-16 rounded overflow-hidden border-2 transition-colors ${
                       index === currentImageIndex ? 'border-sea' : 'border-transparent'
-                    }`}
+                    } bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center`}
                     onClick={() => setCurrentImageIndex(index)}
                   >
                     <img
                       src={img}
                       alt={`${productName} thumbnail ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="max-w-full max-h-full object-contain"
                     />
                   </button>
                 ))}

@@ -32,7 +32,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 <TabsContent value="3d" className="mt-0">
                   <Enhanced3DViewer
                     modelPath={product.modelPath}
-                    className="w-full h-48"
+                    className="w-full h-64"
                   />
                 </TabsContent>
                 
@@ -41,7 +41,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                     images={product.images}
                     thumbnail={product.thumbnail}
                     productName={product.name}
-                    className="w-full h-48"
+                    className="w-full h-64"
                   />
                 </TabsContent>
               </Tabs>
