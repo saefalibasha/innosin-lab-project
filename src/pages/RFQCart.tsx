@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { toast } from 'sonner';
 import AnimatedSection from '@/components/AnimatedSection';
 
 const RFQCart = () => {
-  const { items, removeItem, updateQuantity, clearCart, itemCount } = useRFQ();
+  const { items, removeItem, updateItem, clearCart, itemCount } = useRFQ();
   const [contactInfo, setContactInfo] = useState({
     name: '',
     email: '',
@@ -22,6 +21,10 @@ const RFQCart = () => {
 
   const handleContactChange = (field: string, value: string) => {
     setContactInfo(prev => ({ ...prev, [field]: value }));
+  };
+
+  const updateQuantity = (id: string, quantity: number) => {
+    updateItem(id, { quantity });
   };
 
   const handleSubmitRFQ = () => {
