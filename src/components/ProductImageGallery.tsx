@@ -20,9 +20,15 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
   
+  console.log('ProductImageGallery rendering for:', productName);
+  console.log('Thumbnail path:', thumbnail);
+  console.log('Additional images:', images);
+  
   // Use thumbnail as fallback if no images or if main image fails
   const displayImages = images.length > 0 ? images : [thumbnail];
   const currentImage = displayImages[currentImageIndex];
+
+  console.log('Current image to display:', currentImage);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
@@ -33,7 +39,13 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   };
 
   const handleImageError = () => {
+    console.log('Image failed to load:', currentImage);
     setImageError(true);
+  };
+
+  const handleImageLoad = () => {
+    console.log('Image loaded successfully:', currentImage);
+    setImageError(false);
   };
 
   return (
@@ -44,10 +56,13 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           alt={`${productName} - Image ${currentImageIndex + 1}`}
           className="w-full h-full object-cover"
           onError={handleImageError}
+          onLoad={handleImageLoad}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-          <Image className="w-12 h-12" />
+        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+          <Image className="w-12 h-12 mb-2" />
+          <span className="text-xs">Image not found</span>
+          <span className="text-xs mt-1">{currentImage}</span>
         </div>
       )}
       
@@ -109,10 +124,13 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
                 alt={`${productName} - Full size`}
                 className="w-full h-96 object-contain"
                 onError={handleImageError}
+                onLoad={handleImageLoad}
               />
             ) : (
-              <div className="w-full h-96 flex items-center justify-center text-muted-foreground bg-gray-100 rounded">
-                <Image className="w-16 h-16" />
+              <div className="w-full h-96 flex flex-col items-center justify-center text-muted-foreground bg-gray-100 rounded">
+                <Image className="w-16 h-16 mb-2" />
+                <span>Image not available</span>
+                <span className="text-sm mt-1">{currentImage}</span>
               </div>
             )}
             

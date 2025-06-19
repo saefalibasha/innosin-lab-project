@@ -291,16 +291,29 @@ export const generateProducts = async (): Promise<Product[]> => {
 
 // Synchronous version for immediate use (uses fallbacks)
 export const getProductsSync = (): Product[] => {
-  return productConfigs.map(config => ({
-    ...config,
-    modelPath: `/products/${config.id}/model.glb`,
-    thumbnail: `/products/${config.id}/thumbnail.jpg`,
-    images: [
-      `/products/${config.id}/images/front.jpg`,
-      `/products/${config.id}/images/side.jpg`,
-      `/products/${config.id}/images/detail.jpg`
-    ]
-  }));
+  const products = productConfigs.map(config => {
+    const product = {
+      ...config,
+      modelPath: `/products/${config.id}/model.glb`,
+      thumbnail: `/products/${config.id}/thumbnail.webp`, // Changed to webp for bl-hes-bench-001
+      images: [
+        `/products/${config.id}/images/front.jpg`,
+        `/products/${config.id}/images/side.jpg`,
+        `/products/${config.id}/images/detail.jpg`
+      ]
+    };
+    
+    console.log(`Product ${config.id}:`, {
+      modelPath: product.modelPath,
+      thumbnail: product.thumbnail,
+      images: product.images
+    });
+    
+    return product;
+  });
+  
+  console.log('Generated products:', products);
+  return products;
 };
 
 // Generate unique categories from products

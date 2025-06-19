@@ -11,8 +11,11 @@ interface GLBModelProps {
 const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   const [hovered, setHovered] = useState(false);
   
+  console.log('Attempting to load GLB model from:', modelPath);
+  
   try {
     const { scene } = useGLTF(modelPath);
+    console.log('Successfully loaded GLB model:', modelPath);
     
     return (
       <primitive 
@@ -23,7 +26,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
       />
     );
   } catch (error) {
-    console.log(`Failed to load GLB model: ${modelPath}, using fallback`);
+    console.log(`Failed to load GLB model: ${modelPath}, using fallback. Error:`, error);
     return <FallbackModel />;
   }
 };
@@ -49,11 +52,14 @@ const LoadingFallback: React.FC = () => (
   </div>
 );
 
-const ErrorFallback: React.FC = () => (
-  <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
-    <FallbackModel />
-  </div>
-);
+const ErrorFallback: React.FC = () => {
+  console.log('Error boundary triggered for 3D model');
+  return (
+    <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
+      <FallbackModel />
+    </div>
+  );
+};
 
 interface Enhanced3DViewerProps {
   modelPath: string;
@@ -64,6 +70,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   modelPath,
   className = "w-full h-64" 
 }) => {
+  console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
+  
   return (
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
