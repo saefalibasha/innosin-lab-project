@@ -65,9 +65,13 @@ const Navigation = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2 group animate-fade-in">
-            <div className="w-8 h-8 bg-gradient-to-br from-sea to-sea-dark rounded-sm flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
-              <span className="text-white font-bold text-sm">IL</span>
+          <Link to="/" className="flex items-center space-x-3 group animate-fade-in">
+            <div className="w-10 h-10 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+              <img 
+                src="/innosin-logo.png" 
+                alt="Innosin Lab" 
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <span className="font-serif font-bold text-xl text-primary group-hover:text-sea transition-colors duration-300">Innosin Lab</span>
           </Link>
@@ -80,11 +84,7 @@ const Navigation = () => {
                   <NavigationMenuItem key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
                     {item.dropdown ? (
                       <>
-                        <NavigationMenuTrigger className={`font-medium transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent ${
-                          isActive(item.path)
-                            ? 'text-sea'
-                            : 'text-muted-foreground hover:text-sea'
-                        }`}>
+                        <NavigationMenuTrigger className={`font-medium transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent text-muted-foreground hover:text-sea`}>
                           {item.name}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>

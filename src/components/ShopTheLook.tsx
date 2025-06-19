@@ -109,6 +109,16 @@ const ShopTheLook = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <div className="text-center mb-8">
+        <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
+          Build This <span className="text-sea">Lab</span>
+        </h2>
+        <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+          Explore our past projects fitted with premium laboratory furniture and equipment. 
+          Click on the interactive points to discover the products used in this real laboratory setup.
+        </p>
+      </div>
+      
       <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
         <CardContent className="p-0">
           <div className="relative">

@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
 @tailwind base;
@@ -141,37 +140,37 @@
   }
 }
 
-/* Enhanced Wave Animation */
+/* Enhanced Wave Animation with center-focused movement */
 @keyframes waveMotion {
   0% { 
-    transform: translateX(0); 
+    transform: translateX(-20px) translateY(0); 
   }
   50% { 
-    transform: translateX(-40px); 
+    transform: translateX(0) translateY(-5px); 
   }
   100% { 
-    transform: translateX(0); 
+    transform: translateX(-20px) translateY(0); 
   }
 }
 
 @keyframes waveMotionDelayed {
   0% { 
-    transform: translateX(10px); 
+    transform: translateX(-10px) translateY(2px); 
   }
   50% { 
-    transform: translateX(-30px); 
+    transform: translateX(10px) translateY(-3px); 
   }
   100% { 
-    transform: translateX(10px); 
+    transform: translateX(-10px) translateY(2px); 
   }
 }
 
 .animate-enhanced-wave-motion {
-  animation: waveMotion 6s ease-in-out infinite;
+  animation: waveMotion 4s ease-in-out infinite;
 }
 
 .animate-enhanced-wave-motion-delayed {
-  animation: waveMotionDelayed 6s ease-in-out infinite 0.5s;
+  animation: waveMotionDelayed 4s ease-in-out infinite 0.5s;
 }
 
 /* Custom Animations */

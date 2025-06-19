@@ -108,17 +108,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Shop the Look Section */}
+      {/* Build This Lab Section */}
       <section className="section bg-background">
         <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
-              Shop the <span className="text-sea">Look</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light animate-fade-in animate-delay-200">
-              Click on the equipment in this laboratory to discover our products and their specifications
-            </p>
-          </div>
           <div className="animate-fade-in-right animate-delay-300">
             <ShopTheLook />
           </div>

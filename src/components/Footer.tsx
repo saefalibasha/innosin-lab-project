@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,10 +6,10 @@ import { MapPin, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from 'luc
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-br from-sea via-sea-dark to-primary text-white relative overflow-hidden">
-      {/* Single Translucent Wave for smooth transition */}
+    <footer className="bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 text-white relative overflow-hidden">
+      {/* Higher Translucent Wave for smooth transition */}
       <div className="absolute top-0 left-0 w-full overflow-hidden">
-        <svg className="relative block w-full h-20" viewBox="0 0 1200 120" preserveAspectRatio="none">
+        <svg className="relative block w-full h-32" viewBox="0 0 1200 120" preserveAspectRatio="none">
           <path 
             d="M0,0 C300,80 900,40 1200,80 L1200,120 L0,120 Z" 
             fill="white" 
@@ -19,44 +18,48 @@ const Footer = () => {
         </svg>
       </div>
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="space-y-6 animate-fade-in">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">IL</span>
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 flex items-center justify-center">
+                <img 
+                  src="/innosin-logo.png" 
+                  alt="Innosin Lab" 
+                  className="w-10 h-10 object-contain"
+                />
               </div>
-              <h3 className="text-2xl font-serif font-bold">Innosin Lab</h3>
+              <h3 className="text-2xl font-serif font-bold text-white">Innosin Lab</h3>
             </div>
-            <p className="text-blue-100 leading-relaxed font-light">
+            <p className="text-gray-300 leading-relaxed font-light">
               Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.
             </p>
             <div className="space-y-3">
               <div className="flex items-center space-x-3 group cursor-pointer">
                 <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <MapPin className="w-4 h-4" />
+                  <MapPin className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-blue-100 group-hover:text-white transition-colors">Singapore</span>
+                <span className="text-gray-300 group-hover:text-white transition-colors">Singapore</span>
               </div>
               <div className="flex items-center space-x-3 group cursor-pointer">
                 <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Phone className="w-4 h-4" />
+                  <Phone className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-blue-100 group-hover:text-white transition-colors">+65 1234 5678</span>
+                <span className="text-gray-300 group-hover:text-white transition-colors">+65 1234 5678</span>
               </div>
               <div className="flex items-center space-x-3 group cursor-pointer">
                 <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors">
-                  <Mail className="w-4 h-4" />
+                  <Mail className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-blue-100 group-hover:text-white transition-colors">info@innosinlab.com</span>
+                <span className="text-gray-300 group-hover:text-white transition-colors">info@innosinlab.com</span>
               </div>
             </div>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-6 animate-fade-in animate-delay-200">
-            <h4 className="text-xl font-serif font-semibold">Quick Links</h4>
+            <h4 className="text-xl font-serif font-semibold text-white">Quick Links</h4>
             <nav className="space-y-3">
               {[
                 { name: 'Home', path: '/' },
@@ -69,7 +72,7 @@ const Footer = () => {
                 <Link 
                   key={link.name}
                   to={link.path} 
-                  className="block text-blue-100 hover:text-white transition-all duration-300 hover:translate-x-1 group animate-fade-in"
+                  className="block text-gray-300 hover:text-white transition-all duration-300 hover:translate-x-1 group animate-fade-in"
                   style={{animationDelay: `${300 + index * 50}ms`}}
                 >
                   <span className="border-b border-transparent group-hover:border-white/50 transition-colors">
@@ -82,7 +85,7 @@ const Footer = () => {
 
           {/* Services */}
           <div className="space-y-6 animate-fade-in animate-delay-300">
-            <h4 className="text-xl font-serif font-semibold">Services</h4>
+            <h4 className="text-xl font-serif font-semibold text-white">Services</h4>
             <nav className="space-y-3">
               {[
                 'Laboratory Design',
@@ -93,7 +96,7 @@ const Footer = () => {
               ].map((service, index) => (
                 <div 
                   key={service}
-                  className="text-blue-100 hover:text-white transition-colors cursor-pointer group animate-fade-in"
+                  className="text-gray-300 hover:text-white transition-colors cursor-pointer group animate-fade-in"
                   style={{animationDelay: `${400 + index * 50}ms`}}
                 >
                   <span className="border-b border-transparent group-hover:border-white/50 transition-colors">
@@ -106,8 +109,8 @@ const Footer = () => {
 
           {/* Newsletter & Social */}
           <div className="space-y-6 animate-fade-in animate-delay-500">
-            <h4 className="text-xl font-serif font-semibold">Stay Connected</h4>
-            <p className="text-blue-100 font-light leading-relaxed">
+            <h4 className="text-xl font-serif font-semibold text-white">Stay Connected</h4>
+            <p className="text-gray-300 font-light leading-relaxed">
               Stay updated with our latest products and industry insights.
             </p>
             <div className="space-y-4">
@@ -115,9 +118,9 @@ const Footer = () => {
                 <Input
                   type="email"
                   placeholder="Enter your email"
-                  className="bg-white/10 border-white/30 text-white placeholder-blue-200 focus:border-white/60 backdrop-blur-sm focus:bg-white/15 transition-all duration-300"
+                  className="bg-white/10 border-white/30 text-white placeholder-gray-400 focus:border-white/60 backdrop-blur-sm focus:bg-white/15 transition-all duration-300"
                 />
-                <Button className="bg-white text-sea hover:bg-white/90 transition-all duration-300 hover:scale-105 font-semibold">
+                <Button className="bg-white text-slate-800 hover:bg-gray-100 transition-all duration-300 hover:scale-105 font-semibold">
                   Subscribe
                 </Button>
               </div>
@@ -147,14 +150,14 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-white/20 mt-16 pt-8 animate-fade-in animate-delay-700">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-            <p className="text-blue-200 font-light">
+            <p className="text-gray-300 font-light">
               © 2024 Innosin Lab. All rights reserved.
             </p>
             <div className="flex space-x-8">
-              <Link to="/privacy" className="text-blue-200 hover:text-white transition-colors hover:underline">
+              <Link to="/privacy" className="text-gray-300 hover:text-white transition-colors hover:underline">
                 Privacy Policy
               </Link>
-              <Link to="/terms" className="text-blue-200 hover:text-white transition-colors hover:underline">
+              <Link to="/terms" className="text-gray-300 hover:text-white transition-colors hover:underline">
                 Terms of Service
               </Link>
             </div>

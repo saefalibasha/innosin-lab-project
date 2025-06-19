@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, ArrowDown } from 'lucide-react';
@@ -112,16 +111,16 @@ const VideoHero = () => {
           </div>
         </div>
 
-        {/* Enhanced Wave Animation with Translucent Trail */}
-        <div className="absolute bottom-8 left-0 w-full overflow-hidden z-15">
-          {/* Main wave */}
+        {/* Enhanced Wave Animation with better shape and movement */}
+        <div className="absolute bottom-6 left-0 w-full overflow-hidden z-15">
+          {/* Main wave with thicker sides, thinner middle */}
           <svg 
-            className="relative block w-full h-16 animate-enhanced-wave-motion" 
+            className="relative block w-full h-20 animate-enhanced-wave-motion" 
             viewBox="0 0 1200 120" 
             preserveAspectRatio="none"
           >
             <path 
-              d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
+              d="M0,60 C150,20 300,40 400,50 C500,60 600,65 700,60 C800,55 900,45 1050,20 C1100,10 1150,30 1200,50 L1200,120 L0,120 Z" 
               fill="#ffffff"
               fillOpacity="0.9"
             />
@@ -129,12 +128,12 @@ const VideoHero = () => {
           
           {/* Translucent trailing wave */}
           <svg 
-            className="absolute top-0 block w-full h-16 animate-enhanced-wave-motion-delayed" 
+            className="absolute top-0 block w-full h-20 animate-enhanced-wave-motion-delayed" 
             viewBox="0 0 1200 120" 
             preserveAspectRatio="none"
           >
             <path 
-              d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z" 
+              d="M0,70 C150,30 300,50 400,60 C500,70 600,75 700,70 C800,65 900,55 1050,30 C1100,20 1150,40 1200,60 L1200,120 L0,120 Z" 
               fill="#ffffff"
               fillOpacity="0.3"
             />
