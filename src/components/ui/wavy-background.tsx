@@ -42,11 +42,11 @@ export const WavyBackground = ({
   const getSpeed = () => {
     switch (speed) {
       case "slow":
-        return 0.0008;
+        return 0.0006;
       case "fast":
-        return 0.0012;
+        return 0.001;
       default:
-        return 0.0008;
+        return 0.0006;
     }
   };
 
@@ -65,37 +65,39 @@ export const WavyBackground = ({
     render();
   };
 
+  // Colors inspired by the reference image - purple to blue gradient
   const waveColors = colors ?? [
-    "hsl(200, 90%, 45%)",
-    "hsl(200, 85%, 35%)", 
-    "hsl(200, 80%, 30%)",
-    "hsl(200, 75%, 25%)"
+    "hsl(280, 80%, 60%)",
+    "hsl(260, 85%, 55%)", 
+    "hsl(240, 90%, 50%)",
+    "hsl(220, 95%, 45%)",
+    "hsl(200, 100%, 40%)"
   ];
   
   const drawWave = (n: number) => {
     nt += getSpeed();
     
-    // Create smooth flowing waves like in the reference
+    // Create smaller, more subtle waves
     for (i = 0; i < n; i++) {
       ctx.beginPath();
-      ctx.lineWidth = waveWidth || 120; // Increased for smoother appearance
+      ctx.lineWidth = waveWidth || 80; // Reduced from 120
       ctx.strokeStyle = waveColors[i % waveColors.length];
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       
-      // Create smoother wave path
+      // Create smoother wave path with reduced amplitude
       let firstPoint = true;
-      for (x = 0; x <= w; x += 1) {
-        // Multiple noise layers for more complex, flowing waves
-        var y1 = noise(x / 1200, 0.2 * i, nt) * 60;
-        var y2 = noise(x / 800, 0.4 * i, nt * 0.8) * 40;
-        var y3 = noise(x / 400, 0.6 * i, nt * 1.2) * 20;
+      for (x = 0; x <= w; x += 2) {
+        // Reduced wave amplitude for smaller waves
+        var y1 = noise(x / 1000, 0.3 * i, nt) * 30; // Reduced from 60
+        var y2 = noise(x / 600, 0.5 * i, nt * 0.7) * 20; // Reduced from 40
+        var y3 = noise(x / 300, 0.7 * i, nt * 1.1) * 10; // Reduced from 20
         
         var combinedY = y1 + y2 + y3;
         
         var finalY = pushWavesUp 
-          ? combinedY + h * (0.2 + i * 0.15) 
-          : combinedY + h * (0.5 + i * 0.1);
+          ? combinedY + h * (0.3 + i * 0.12) 
+          : combinedY + h * (0.6 + i * 0.08);
           
         if (firstPoint) {
           ctx.moveTo(x, finalY);
@@ -111,18 +113,19 @@ export const WavyBackground = ({
 
   let animationId: number;
   const render = () => {
-    // Create gradient background similar to reference
+    // Create gradient background similar to reference with purple-blue gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, h);
-    gradient.addColorStop(0, backgroundFill || "hsl(200, 85%, 20%)");
-    gradient.addColorStop(0.5, backgroundFill || "hsl(200, 85%, 25%)");
-    gradient.addColorStop(1, backgroundFill || "hsl(200, 85%, 30%)");
+    gradient.addColorStop(0, backgroundFill || "hsl(280, 60%, 15%)");
+    gradient.addColorStop(0.3, backgroundFill || "hsl(260, 70%, 20%)");
+    gradient.addColorStop(0.7, backgroundFill || "hsl(240, 80%, 25%)");
+    gradient.addColorStop(1, backgroundFill || "hsl(220, 90%, 30%)");
     
     ctx.fillStyle = gradient;
     ctx.globalAlpha = 1;
     ctx.fillRect(0, 0, w, h);
     
-    ctx.globalAlpha = waveOpacity || 0.8;
-    drawWave(3);
+    ctx.globalAlpha = waveOpacity || 0.6;
+    drawWave(4); // Reduced from 3 to 4 for more subtle layering
     animationId = requestAnimationFrame(render);
   };
 

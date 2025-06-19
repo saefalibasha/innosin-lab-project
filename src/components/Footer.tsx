@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,14 +9,14 @@ import { WavyBackground } from '@/components/ui/wavy-background';
 const Footer = () => {
   return (
     <footer className="relative overflow-hidden">
-      {/* Flowing Wavy Background */}
+      {/* Flowing Wavy Background with sea theme colors */}
       <WavyBackground
         colors={["hsl(200, 90%, 45%)", "hsl(200, 85%, 35%)", "hsl(200, 80%, 30%)", "hsl(200, 75%, 25%)"]}
-        waveWidth={120}
+        waveWidth={80}
         backgroundFill="hsl(200, 85%, 25%)"
         blur={3}
         speed="slow"
-        waveOpacity={0.9}
+        waveOpacity={0.8}
         containerClassName="h-auto min-h-0"
         className="flex items-start w-full h-full"
       >
