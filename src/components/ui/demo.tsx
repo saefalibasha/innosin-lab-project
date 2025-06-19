@@ -1,6 +1,6 @@
 
 import { Home, User, Briefcase, FileText, ShoppingCart } from 'lucide-react'
-import { TubelightNavBar } from "@/components/ui/tubelight-navbar"
+import { NavBar } from "@/components/ui/tubelight-navbar"
 
 export function TubelightNavBarDemo() {
   const navItems = [
@@ -11,5 +11,5 @@ export function TubelightNavBarDemo() {
     { name: 'Contact', url: '/contact', icon: ShoppingCart }
   ]
 
-  return <TubelightNavBar items={navItems} />
+  return <NavBar items={navItems} />
 }
