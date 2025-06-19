@@ -9,8 +9,8 @@ import { WavyBackground } from '@/components/ui/wavy-background';
 const Footer = () => {
   return (
     <footer className="bg-sea text-white relative overflow-hidden">
-      {/* Wavy Background Section */}
-      <div className="relative h-40 overflow-hidden">
+      {/* Wavy Background Section - Fixed height */}
+      <div className="relative h-20 overflow-hidden">
         <WavyBackground
           colors={["#0891b2", "#0e7490", "#155e75", "#164e63", "#083344"]}
           waveWidth={30}
@@ -18,12 +18,12 @@ const Footer = () => {
           blur={6}
           speed="slow"
           waveOpacity={0.4}
-          containerClassName="h-40"
+          containerClassName="h-20"
           className="w-full h-full"
         />
       </div>
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="space-y-6 animate-fade-in">
