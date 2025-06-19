@@ -27,7 +27,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
         
-        // Calculate bounding box
+        // Calculate bounding box with more precision
         const box = new THREE.Box3().setFromObject(modelClone);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
@@ -37,15 +37,15 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           // Center the model at origin
           modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // Scale the model to fit nicely in the viewport
+          // Improved scaling to ensure model fits completely in viewport
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 2.5; // Optimal target size for better visibility
+          const targetSize = 3; // Increased target size for better visibility
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
-          // Position the scaled model so its bottom sits on the ground
+          // Position the scaled model to sit properly in the view
           const scaledSize = size.clone().multiplyScalar(scale);
-          modelClone.position.y = scaledSize.y / 2 - center.y * scale;
+          modelClone.position.y = -scaledSize.y / 2; // Center vertically
           
           // Clear previous children and add the centered/scaled model
           groupRef.current.clear();
@@ -53,9 +53,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Improved camera positioning for better viewing angle
-          const distance = Math.max(4, targetSize * 1.8);
-          camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
+          // Better camera positioning to ensure full model visibility
+          const distance = Math.max(5, targetSize * 2);
+          camera.position.set(distance * 0.7, distance * 0.4, distance * 0.7);
           camera.lookAt(0, 0, 0);
           camera.updateProjectionMatrix();
           
@@ -102,7 +102,7 @@ const LoadingFallback: React.FC = () => (
 const ErrorFallback: React.FC = () => {
   console.log('Error boundary triggered for 3D model');
   return (
-    <div className="flex items-center justify-center h-full bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg">
+    <div className="flex items-center justify-center h-full bg-white rounded-lg">
       <FallbackModel />
     </div>
   );
@@ -120,35 +120,31 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
   return (
-    <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
+    <div className={`${className} bg-white rounded-lg overflow-hidden border border-gray-100`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [4, 3, 4], fov: 50 }}
+          camera={{ position: [5, 3, 5], fov: 45 }}
           gl={{ 
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.0 // Reduced from 1.2 to prevent oversaturation
+            toneMappingExposure: 0.8
           }}
         >
           <Suspense fallback={null}>
-            <Environment preset="studio" environmentIntensity={0.25} />
+            <Environment preset="studio" environmentIntensity={0.2} />
             
-            {/* Optimized lighting to prevent oversaturation */}
-            <ambientLight intensity={0.15} />
+            {/* Balanced lighting to prevent oversaturation */}
+            <ambientLight intensity={0.3} />
             <directionalLight 
               position={[5, 8, 5]} 
-              intensity={0.4} 
+              intensity={0.5} 
               castShadow 
               shadow-mapSize={[1024, 1024]}
             />
             <directionalLight 
               position={[-5, 3, -5]} 
-              intensity={0.2} 
-            />
-            <pointLight 
-              position={[0, 8, 0]} 
-              intensity={0.15} 
+              intensity={0.3} 
             />
             
             <GLBModel modelPath={modelPath} />
@@ -158,10 +154,10 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={false}
               enableRotate={true}
               autoRotate={false}
-              maxPolarAngle={Math.PI / 1.5}
+              maxPolarAngle={Math.PI / 1.2}
               minPolarAngle={Math.PI / 8}
-              minDistance={2.5}
-              maxDistance={12}
+              minDistance={3}
+              maxDistance={15}
               enableDamping={true}
               dampingFactor={0.05}
               target={[0, 0, 0]}

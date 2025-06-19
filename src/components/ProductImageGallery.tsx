@@ -73,17 +73,17 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   };
 
   return (
-    <div className={`${className} relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden flex items-center justify-center`}>
+    <div className={`${className} relative bg-white rounded-lg overflow-hidden border border-gray-100 flex items-center justify-center`}>
       {!imageError ? (
         <img
           src={currentImage}
           alt={`${productName} - Image ${currentImageIndex + 1}`}
-          className="max-w-full max-h-full object-contain"
+          className="max-w-full max-h-full object-contain drop-shadow-sm"
           onError={handleImageError}
           onLoad={handleImageLoad}
         />
       ) : (
-        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-gray-50">
           <Image className="w-12 h-12 mb-2" />
           <span className="text-xs">Image not found</span>
           <span className="text-xs mt-1 px-2 text-center break-all">{currentImage}</span>
@@ -96,7 +96,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <Button
             size="sm"
             variant="secondary"
-            className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
+            className="absolute top-1/2 left-2 transform -translate-y-1/2 bg-white/95 hover:bg-white shadow-md border border-gray-200"
             onClick={prevImage}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -105,7 +105,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <Button
             size="sm"
             variant="secondary"
-            className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
+            className="absolute top-1/2 right-2 transform -translate-y-1/2 bg-white/95 hover:bg-white shadow-md border border-gray-200"
             onClick={nextImage}
           >
             <ChevronRight className="w-4 h-4" />
@@ -116,8 +116,8 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             {displayImages.map((_, index) => (
               <button
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                className={`w-2 h-2 rounded-full transition-colors shadow-sm ${
+                  index === currentImageIndex ? 'bg-sea' : 'bg-gray-300'
                 }`}
                 onClick={() => setCurrentImageIndex(index)}
               />
@@ -132,7 +132,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <Button
             size="sm"
             variant="secondary"
-            className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-lg"
+            className="absolute top-2 right-2 bg-white/95 hover:bg-white shadow-md border border-gray-200"
           >
             <Maximize className="w-4 h-4" />
           </Button>
@@ -143,17 +143,17 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           </DialogHeader>
           <div className="relative">
             {!imageError ? (
-              <div className="w-full h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center">
+              <div className="w-full h-96 bg-white rounded-lg border border-gray-100 flex items-center justify-center">
                 <img
                   src={currentImage}
                   alt={`${productName} - Full size`}
-                  className="max-w-full max-h-full object-contain"
+                  className="max-w-full max-h-full object-contain drop-shadow-sm"
                   onError={handleImageError}
                   onLoad={handleImageLoad}
                 />
               </div>
             ) : (
-              <div className="w-full h-96 flex flex-col items-center justify-center text-muted-foreground bg-gray-100 rounded">
+              <div className="w-full h-96 flex flex-col items-center justify-center text-muted-foreground bg-gray-50 rounded border border-gray-100">
                 <Image className="w-16 h-16 mb-2" />
                 <span>Image not available</span>
                 <span className="text-sm mt-1 px-4 text-center break-all">{currentImage}</span>
@@ -166,8 +166,8 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
                   <button
                     key={index}
                     className={`w-16 h-16 rounded overflow-hidden border-2 transition-colors ${
-                      index === currentImageIndex ? 'border-sea' : 'border-transparent'
-                    } bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center`}
+                      index === currentImageIndex ? 'border-sea' : 'border-gray-200'
+                    } bg-white flex items-center justify-center`}
                     onClick={() => setCurrentImageIndex(index)}
                   >
                     <img
