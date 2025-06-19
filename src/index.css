@@ -168,14 +168,30 @@
 
   @keyframes waveMotion {
     0% { transform: translateX(0); }
-    50% { transform: translateX(-10px); }
+    25% { transform: translateX(-25px); }
+    50% { transform: translateX(-15px); }
+    75% { transform: translateX(-35px); }
     100% { transform: translateX(0); }
+  }
+
+  @keyframes enhancedWaveMotion {
+    0% { transform: translateX(0) scale(1); }
+    25% { transform: translateX(-40px) scale(1.02); }
+    50% { transform: translateX(-20px) scale(0.98); }
+    75% { transform: translateX(-50px) scale(1.01); }
+    100% { transform: translateX(0) scale(1); }
   }
 
   @keyframes button-glow {
     0% { box-shadow: 0 0 5px rgba(30, 136, 229, 0.5); }
     50% { box-shadow: 0 0 20px rgba(30, 136, 229, 0.8); }
     100% { box-shadow: 0 0 5px rgba(30, 136, 229, 0.5); }
+  }
+
+  @keyframes button-pulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(30, 136, 229, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(30, 136, 229, 0); }
   }
 
   @keyframes scale-in {
@@ -254,7 +270,9 @@
   .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
   .animate-wave { animation: wave 12s linear infinite; }
   .animate-wave-motion { animation: waveMotion 5s ease-in-out infinite; }
+  .animate-enhanced-wave-motion { animation: enhancedWaveMotion 6s ease-in-out infinite; }
   .animate-button-glow { animation: button-glow 3s ease-in-out infinite; }
+  .animate-button-pulse { animation: button-pulse 2s infinite; }
   .animate-scale-in { animation: scale-in 0.6s ease-out; }
   .animate-bounce-in { animation: bounce-in 0.8s ease-out; }
   .animate-rotate-in { animation: rotate-in 0.8s ease-out; }
@@ -288,6 +306,10 @@
 
   .btn-glow {
     @apply animate-button-glow;
+  }
+
+  .btn-pulse {
+    @apply animate-button-pulse;
   }
 
   /* Section Styling */

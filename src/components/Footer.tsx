@@ -7,15 +7,15 @@ import { MapPin, Phone, Mail, Clock, Facebook, Twitter, Linkedin, Instagram } fr
 
 const Footer = () => {
   return (
-    <footer className="bg-gradient-to-br from-sea-dark to-primary text-white relative overflow-hidden">
-      {/* Decorative wave pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d="M0,0 C30,20 70,0 100,20 L100,100 L0,100 Z" fill="currentColor" />
+    <footer className="bg-gradient-to-br from-sea-dark via-primary to-sea text-white relative overflow-hidden">
+      {/* Decorative wave pattern for smooth transition */}
+      <div className="absolute top-0 left-0 w-full overflow-hidden">
+        <svg className="relative block w-full h-16" viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 C300,80 900,40 1200,80 L1200,120 L0,120 Z" fill="currentColor" fillOpacity="0.1" />
         </svg>
       </div>
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
           {/* Company Info */}
           <div className="space-y-6 animate-fade-in">
@@ -107,14 +107,14 @@ const Footer = () => {
               Stay updated with our latest products and industry insights.
             </p>
             <div className="space-y-4">
-              <div className="flex space-x-2">
+              <div className="flex flex-col space-y-3">
                 <Input
                   type="email"
                   placeholder="Enter your email"
-                  className="bg-white/10 border-white/20 text-white placeholder-blue-200 focus:border-white/40 backdrop-blur-sm"
+                  className="bg-white/10 border-white/30 text-white placeholder-blue-200 focus:border-white/60 backdrop-blur-sm focus:bg-white/15 transition-all duration-300"
                 />
-                <Button className="bg-white text-sea hover:bg-white/90 hover:scale-105 transition-all duration-300 font-semibold px-6">
-                  Subscribe
+                <Button className="bg-white/20 text-white border border-white/30 hover:bg-white hover:text-sea transition-all duration-300 hover:scale-105 font-semibold backdrop-blur-sm">
+                  Subscribe to Newsletter
                 </Button>
               </div>
               
@@ -128,7 +128,7 @@ const Footer = () => {
                 ].map(({ icon: Icon, label }, index) => (
                   <button
                     key={label}
-                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group animate-bounce-in"
+                    className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group animate-bounce-in backdrop-blur-sm border border-white/20 hover:border-white/40"
                     style={{animationDelay: `${600 + index * 100}ms`}}
                     aria-label={label}
                   >
@@ -141,7 +141,7 @@ const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t border-white/20 mt-12 pt-8 animate-fade-in animate-delay-700">
+        <div className="border-t border-white/20 mt-16 pt-8 animate-fade-in animate-delay-700">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-blue-200 font-light">
               © 2024 Innosin Lab. All rights reserved.

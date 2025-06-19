@@ -49,7 +49,7 @@ const Index = () => {
       <VideoHero />
 
       {/* Product Collections Section */}
-      <section className="section bg-background">
+      <section className="section bg-background relative">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
@@ -82,7 +82,7 @@ const Index = () => {
           </div>
           
           <div className="text-center mt-12">
-            <Button asChild variant="outline" size="lg" className="btn-glow">
+            <Button asChild variant="outline" size="lg" className="btn-pulse">
               <Link to="/products">
                 View All Products
               </Link>
@@ -125,9 +125,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="section wave-bg">
-        <div className="container-custom text-center">
+      {/* Improved CTA Section with better transition */}
+      <section className="section bg-gradient-to-br from-sea-light via-sea to-sea-dark relative overflow-hidden">
+        {/* Decorative elements for better transition */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path d="M0,20 C30,10 70,30 100,20 L100,100 L0,100 Z" fill="currentColor" />
+          </svg>
+        </div>
+        
+        <div className="container-custom text-center relative z-10">
           <h2 className="text-4xl font-serif font-bold text-white mb-6 tracking-tight animate-fade-in">
             Ready to Transform Your <span className="text-sand-light">Laboratory?</span>
           </h2>

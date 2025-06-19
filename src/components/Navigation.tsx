@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -89,15 +88,17 @@ const Navigation = () => {
                           {item.name}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
-                          <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] glass-card">
+                          <div className="grid w-[400px] gap-2 p-6 md:w-[500px] md:grid-cols-2 lg:w-[600px] bg-white/95 backdrop-blur-lg border border-sea/20 shadow-xl rounded-lg">
                             {item.dropdown.map((dropdownItem, dropIndex) => (
                               <Link
                                 key={dropdownItem.name}
                                 to={dropdownItem.path}
-                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-all duration-300 hover:bg-sea/10 hover:text-sea animate-fade-in"
+                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-all duration-300 hover:bg-sea/10 hover:text-sea text-sea-dark animate-fade-in group"
                                 style={{animationDelay: `${dropIndex * 50}ms`}}
                               >
-                                <div className="text-sm font-medium leading-none">{dropdownItem.name}</div>
+                                <div className="text-sm font-medium leading-none group-hover:text-sea transition-colors">
+                                  {dropdownItem.name}
+                                </div>
                               </Link>
                             ))}
                           </div>

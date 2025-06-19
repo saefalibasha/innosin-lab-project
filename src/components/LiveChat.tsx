@@ -66,12 +66,12 @@ const LiveChat = () => {
     return (
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          className="rounded-full w-14 h-14 bg-black hover:bg-gray-800 shadow-lg"
+          className="rounded-full w-14 h-14 bg-sea hover:bg-sea-dark shadow-xl border-2 border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-110"
           onClick={() => setIsOpen(true)}
         >
           <MessageCircle className="w-6 h-6 text-white" />
         </Button>
-        <Badge className="absolute -top-2 -left-2 bg-red-500">
+        <Badge className="absolute -top-2 -left-2 bg-green-500 text-white animate-pulse">
           Live
         </Badge>
       </div>
@@ -80,17 +80,17 @@ const LiveChat = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <Card className={`w-80 ${isMinimized ? 'h-16' : 'h-96'} shadow-xl transition-all`}>
-        <CardHeader className="p-4 bg-black text-white rounded-t-lg flex flex-row items-center justify-between">
+      <Card className={`w-80 ${isMinimized ? 'h-16' : 'h-96'} shadow-2xl transition-all glass-card border-sea/20`}>
+        <CardHeader className="p-4 bg-gradient-to-r from-sea to-sea-dark text-white rounded-t-lg flex flex-row items-center justify-between">
           <CardTitle className="text-sm font-medium">Live Chat Support</CardTitle>
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-green-500 text-white text-xs">
+            <Badge variant="secondary" className="bg-green-500 text-white text-xs animate-pulse">
               Online
             </Badge>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-white hover:bg-gray-700"
+              className="h-6 w-6 p-0 text-white hover:bg-white/20 transition-colors"
               onClick={() => setIsMinimized(!isMinimized)}
             >
               <Minimize2 className="w-3 h-3" />
@@ -98,7 +98,7 @@ const LiveChat = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-white hover:bg-gray-700"
+              className="h-6 w-6 p-0 text-white hover:bg-white/20 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <X className="w-3 h-3" />
@@ -109,17 +109,17 @@ const LiveChat = () => {
         {!isMinimized && (
           <CardContent className="p-0 flex flex-col h-80">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-white to-sea-light/10">
               {messages.map(msg => (
                 <div
                   key={msg.id}
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-xs p-3 rounded-lg text-sm ${
+                    className={`max-w-xs p-3 rounded-lg text-sm transition-all duration-300 ${
                       msg.sender === 'user'
-                        ? 'bg-black text-white'
-                        : 'bg-gray-100 text-gray-900'
+                        ? 'bg-sea text-white shadow-md'
+                        : 'bg-white/80 text-sea-dark border border-sea/20 backdrop-blur-sm'
                     }`}
                   >
                     {msg.message}
@@ -129,14 +129,14 @@ const LiveChat = () => {
             </div>
 
             {/* Quick Responses */}
-            <div className="p-2 border-t">
+            <div className="p-2 border-t border-sea/20 bg-white/50 backdrop-blur-sm">
               <div className="flex flex-wrap gap-1 mb-2">
                 {quickResponses.map(response => (
                   <Button
                     key={response}
                     variant="outline"
                     size="sm"
-                    className="text-xs h-6"
+                    className="text-xs h-6 border-sea/30 text-sea hover:bg-sea hover:text-white transition-all duration-300"
                     onClick={() => handleQuickResponse(response)}
                   >
                     {response}
@@ -146,18 +146,18 @@ const LiveChat = () => {
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t">
+            <div className="p-4 border-t border-sea/20 bg-white/80 backdrop-blur-sm">
               <div className="flex space-x-2">
                 <Input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="flex-1 text-sm"
+                  className="flex-1 text-sm border-sea/30 focus:border-sea"
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 />
                 <Button
                   size="sm"
-                  className="bg-black hover:bg-gray-800"
+                  className="bg-sea hover:bg-sea-dark transition-all duration-300"
                   onClick={handleSendMessage}
                 >
                   <Send className="w-4 h-4" />
