@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Box, Environment } from '@react-three/drei';
@@ -98,7 +99,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   return (
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
+        <Canvas camera={{ position: [0, 0, 2.5], fov: 45 }}>
           <Suspense fallback={null}>
             <Environment preset="studio" />
             <ambientLight intensity={0.6} />
@@ -114,6 +115,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotate={false}
               maxPolarAngle={Math.PI / 2}
               minPolarAngle={Math.PI / 4}
+              minDistance={1}
+              maxDistance={6}
             />
           </Suspense>
         </Canvas>
