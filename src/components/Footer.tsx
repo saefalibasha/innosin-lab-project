@@ -17,10 +17,10 @@ const Footer = () => {
         blur={8}
         speed="slow"
         waveOpacity={0.7}
-        containerClassName="min-h-[600px]"
+        containerClassName="min-h-[400px]"
         className="flex items-center justify-center w-full h-full"
       >
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-white">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
             {/* Company Info */}
             <div className="space-y-6 animate-fade-in">
