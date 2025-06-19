@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -5,19 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ShoppingCart, Search, Filter, Eye, Maximize } from 'lucide-react';
+import { ShoppingCart, Search, Filter, Maximize } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Product3DViewer from '@/components/Product3DViewer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import AnimatedSection from '@/components/AnimatedSection';
+import { products, getCategories } from '@/data/products';
+import { Product } from '@/types/product';
 
 const ProductCatalog = () => {
   const { addItem, itemCount } = useRFQ();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   // Read category from URL on component mount and handle navigation changes
   useEffect(() => {
@@ -30,77 +32,7 @@ const ProductCatalog = () => {
     }
   }, [searchParams]);
 
-  // Enhanced product data with manufacturer categories
-  const products = [
-    {
-      id: 'fh-001',
-      name: 'Chemical Fume Hood - Standard',
-      category: 'Broen-Lab',
-      dimensions: '1500 × 750 × 2400mm',
-      image: '/placeholder.svg',
-      modelType: 'box',
-      modelColor: '#1E88E5',
-      description: 'Standard chemical fume hood with variable air volume control and energy-efficient design.',
-      specifications: ['VAV Control', 'Energy Efficient', 'ASHRAE 110 Compliant']
-    },
-    {
-      id: 'lb-001',
-      name: 'Epoxy Resin Lab Bench',
-      category: 'Hamilton Laboratory Solutions',
-      dimensions: '3000 × 750 × 850mm',
-      image: '/placeholder.svg',
-      modelType: 'box',
-      modelColor: '#1E88E5',
-      description: 'Chemical-resistant epoxy resin lab bench with integrated utilities.',
-      specifications: ['Chemical Resistant', 'Integrated Utilities', 'Modular Design']
-    },
-    {
-      id: 'ew-001',
-      name: 'Emergency Eye Wash Station',
-      category: 'Oriental Giken Inc.',
-      dimensions: '600 × 400 × 1200mm',
-      image: '/placeholder.svg',
-      modelType: 'cone',
-      modelColor: '#1E88E5',
-      description: 'ANSI Z358.1 compliant emergency eye wash station with stainless steel construction.',
-      specifications: ['ANSI Z358.1', 'Stainless Steel', 'Hands-Free Operation']
-    },
-    {
-      id: 'ss-001',
-      name: 'Emergency Safety Shower',
-      category: 'Oriental Giken Inc.',
-      dimensions: '900 × 900 × 2300mm',
-      image: '/placeholder.svg',
-      modelType: 'sphere',
-      modelColor: '#1E88E5',
-      description: 'Emergency safety shower with thermostatic mixing valve and freeze protection.',
-      specifications: ['Thermostatic Valve', 'Freeze Protection', 'Easy Maintenance']
-    },
-    {
-      id: 'sc-001',
-      name: 'Chemical Storage Cabinet',
-      category: 'Innosin Lab',
-      dimensions: '1200 × 600 × 1800mm',
-      image: '/placeholder.svg',
-      modelType: 'box',
-      modelColor: '#1E88E5',
-      description: 'Fire-resistant chemical storage cabinet with ventilation system.',
-      specifications: ['Fire Resistant', 'Ventilated', 'Multiple Shelves']
-    },
-    {
-      id: 'fh-002',
-      name: 'Perchloric Acid Fume Hood',
-      category: 'Broen-Lab',
-      dimensions: '1800 × 750 × 2400mm',
-      image: '/placeholder.svg',
-      modelType: 'box',
-      modelColor: '#1E88E5',
-      description: 'Specialized fume hood for perchloric acid applications with wash-down system.',
-      specifications: ['Wash-down System', 'Specialized Design', 'Corrosion Resistant']
-    }
-  ];
-
-  const categories = ['all', 'Broen-Lab', 'Hamilton Laboratory Solutions', 'Oriental Giken Inc.', 'Innosin Lab'];
+  const categories = getCategories();
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,7 +41,7 @@ const ProductCatalog = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleAddToQuote = (product: typeof products[0]) => {
+  const handleAddToQuote = (product: Product) => {
     addItem({
       id: product.id,
       name: product.name,
@@ -188,7 +120,7 @@ const ProductCatalog = () => {
                 <CardHeader className="p-0">
                   <div className="relative">
                     <Product3DViewer
-                      productType={product.modelType as any}
+                      productType={product.modelType}
                       color={product.modelColor}
                       className="w-full h-48"
                     />
@@ -204,7 +136,7 @@ const ProductCatalog = () => {
                             <DialogTitle className="font-serif">{product.name} - 3D View</DialogTitle>
                           </DialogHeader>
                           <Product3DViewer
-                            productType={product.modelType as any}
+                            productType={product.modelType}
                             color={product.modelColor}
                             className="w-full h-96"
                           />
