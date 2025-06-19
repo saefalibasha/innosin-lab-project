@@ -1,10 +1,29 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, ArrowDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const VideoHero = () => {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setScrolled(scrollPosition > 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToNext = () => {
+    window.scrollTo({
+      top: window.innerHeight,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <section className="relative h-screen overflow-hidden">
       {/* Video Background */}
@@ -81,9 +100,12 @@ const VideoHero = () => {
         </div>
       </div>
 
-      {/* Enhanced Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-        <div className="flex flex-col items-center cursor-pointer group">
+      {/* Enhanced Scroll Indicator - hidden when scrolled */}
+      <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white transition-all duration-500 ${scrolled ? 'opacity-0 translate-y-4 pointer-events-none' : 'opacity-100 translate-y-0 animate-bounce'}`}>
+        <div 
+          className="flex flex-col items-center cursor-pointer group"
+          onClick={scrollToNext}
+        >
           <span className="text-sm mb-3 font-light tracking-wide opacity-90 group-hover:opacity-100 transition-opacity">
             Scroll Down
           </span>

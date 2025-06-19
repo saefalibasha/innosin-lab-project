@@ -1,3 +1,4 @@
+
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,12 +16,6 @@ import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import ShopTheLook from "@/components/ShopTheLook";
 
 const Index = () => {
-  const heroImages = [
-    "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1920&h=800&fit=crop",
-    "https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=1920&h=800&fit=crop",
-    "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=1920&h=800&fit=crop"
-  ];
-
   const collections = [
     {
       title: "Broen-Lab",
@@ -50,77 +45,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero Section with Carousel */}
-      <section className="relative h-[80vh] overflow-hidden wave-bg">
-        <Carousel className="w-full h-full">
-          <CarouselContent>
-            {heroImages.map((image, index) => (
-              <CarouselItem key={index}>
-                <div className="relative h-[80vh]">
-                  <img 
-                    src={image} 
-                    alt={`Laboratory ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-r from-sea/80 via-sea/60 to-transparent" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center text-white max-w-4xl px-4 animate-fade-in">
-                      <h1 className="text-5xl md:text-7xl font-serif font-bold mb-6 tracking-tight animate-slide-in-bottom animate-delay-200">
-                        Precision in Every
-                        <span className="block font-bold text-sand-light animate-float">Product</span>
-                      </h1>
-                      <p className="text-xl md:text-2xl font-light max-w-2xl mx-auto animate-fade-in-right animate-delay-500">
-                        Professional laboratory solutions designed for excellence and innovation
-                      </p>
-                      <div className="mt-8 animate-scale-in animate-delay-700">
-                        <Button asChild variant="hero" size="lg">
-                          <Link to="/products">
-                            Explore Solutions <ArrowRight className="ml-2 w-5 h-5" />
-                          </Link>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          <CarouselPrevious className="left-8 glass-card" />
-          <CarouselNext className="right-8 glass-card" />
-        </Carousel>
-      </section>
-
-      {/* Company Introduction Section */}
-      <section className="section bg-gradient-to-b from-background to-secondary/30">
-        <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-in-left">
-              <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight">
-                Leading the Way in <span className="text-sea">Lab Solutions</span>
-              </h2>
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed font-light">
-                For over 15 years, Innosin Lab has been at the forefront of laboratory innovation, 
-                providing comprehensive solutions that enhance research capabilities and ensure 
-                optimal safety standards. From cutting-edge furniture to complete facility design, 
-                we deliver unparalleled quality and precision in every project.
-              </p>
-              <Button asChild variant="heroSolid" className="animate-float">
-                <Link to="/about">
-                  Our Story <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-            </div>
-            <div className="relative animate-fade-in-right animate-delay-300">
-              <img 
-                src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=400&fit=crop"
-                alt="Modern Laboratory"
-                className="w-full h-96 object-cover rounded-2xl shadow-lg hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-sea/20 to-transparent rounded-2xl"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Video Hero Section */}
+      <VideoHero />
 
       {/* Product Collections Section */}
       <section className="section bg-background">
@@ -164,9 +90,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-
-      {/* Video Hero Section */}
-      <VideoHero />
 
       {/* Before/After Comparison Section */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
