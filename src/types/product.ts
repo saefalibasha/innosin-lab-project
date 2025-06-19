@@ -7,6 +7,7 @@ export interface Product {
   modelPath: string; // Path to .glb file
   thumbnail: string; // Main product image
   images: string[]; // Array of additional product images
-  description: string;
+  description: string; // Short description for grid view
+  fullDescription: string; // Detailed description for detail page
   specifications: string[];
 }

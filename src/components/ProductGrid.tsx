@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart } from 'lucide-react';
+import { ShoppingCart, Eye } from 'lucide-react';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -47,26 +48,22 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
             </CardHeader>
             
             <CardContent className="p-6">
-              <div className="mb-3">
+              <div className="mb-4">
                 <Badge variant="outline" className="mb-2 border-sea text-sea">
                   {product.category}
                 </Badge>
-                <CardTitle className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
+                <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
                   {product.name}
-                </CardTitle>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Dimensions: {product.dimensions}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {product.description}
                 </p>
               </div>
-              
-              <p className="text-muted-foreground text-sm mb-4">
-                {product.description}
-              </p>
               
               <div className="mb-4">
                 <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {product.specifications.map((spec, index) => (
+                  {product.specifications.slice(0, 3).map((spec, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {spec}
                     </Badge>
@@ -74,13 +71,21 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 </div>
               </div>
               
-              <Button
-                onClick={() => onAddToQuote(product)}
-                className="w-full bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-105"
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Add to Quote
-              </Button>
+              <div className="flex gap-2">
+                <Link to={`/products/${product.id}`} className="flex-1">
+                  <Button variant="outline" className="w-full">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Details
+                  </Button>
+                </Link>
+                <Button
+                  onClick={() => onAddToQuote(product)}
+                  className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Quote
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </AnimatedSection>
