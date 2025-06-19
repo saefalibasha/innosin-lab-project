@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -122,7 +123,7 @@ const Navigation = () => {
             </NavigationMenu>
           </div>
 
-          {/* Search Bar & RFQ Cart */}
+          {/* Search Bar & Mobile Menu */}
           <div className="flex items-center space-x-4">
             {/* Search Bar */}
             <div className="relative hidden lg:block animate-fade-in-right animate-delay-300">
@@ -155,18 +156,6 @@ const Navigation = () => {
               )}
             </div>
 
-            <Link to="/rfq-cart" className="animate-fade-in animate-delay-500">
-              <Button variant="outline" size="sm" className="relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                RFQ Cart
-                {itemCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse-slow bg-sea hover:bg-sea-dark">
-                    {itemCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
-
             {/* Mobile menu trigger */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
@@ -185,6 +174,19 @@ const Navigation = () => {
                       className="pl-10 glass-card border-sea/20 focus:border-sea"
                     />
                   </div>
+                  
+                  {/* Mobile RFQ Cart */}
+                  <Link to="/rfq-cart" onClick={() => setIsOpen(false)} className="animate-fade-in">
+                    <Button variant="outline" size="sm" className="w-full relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300">
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      RFQ Cart
+                      {itemCount > 0 && (
+                        <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse-slow bg-sea hover:bg-sea-dark">
+                          {itemCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </Link>
                   
                   {navItems.map((item, index) => (
                     <div key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
@@ -221,6 +223,20 @@ const Navigation = () => {
             </Sheet>
           </div>
         </div>
+      </div>
+
+      {/* Fixed RFQ Cart in Top Right - Desktop Only */}
+      <div className="hidden md:block fixed top-20 right-6 z-40 animate-fade-in animate-delay-500">
+        <Link to="/rfq-cart">
+          <Button variant="outline" size="sm" className="relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105 shadow-lg">
+            <ShoppingCart className="w-4 h-4" />
+            {itemCount > 0 && (
+              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse-slow bg-sea hover:bg-sea-dark border-0">
+                {itemCount}
+              </Badge>
+            )}
+          </Button>
+        </Link>
       </div>
     </nav>
   );

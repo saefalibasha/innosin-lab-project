@@ -23,20 +23,20 @@ const VideoHero = () => {
   return (
     <>
       <section className="relative overflow-hidden">
-        {/* Compact Wavy Background with Sea Colors */}
+        {/* Enhanced Wavy Background with Sea Colors */}
         <WavyBackground
-          colors={["hsl(200, 85%, 45%)", "hsl(200, 85%, 40%)", "hsl(200, 85%, 50%)", "hsl(200, 85%, 35%)", "hsl(200, 85%, 55%)"]}
-          waveWidth={40}
+          colors={["hsl(200, 85%, 45%)", "hsl(200, 85%, 40%)", "hsl(200, 85%, 50%)", "hsl(200, 85%, 35%)", "hsl(200, 85%, 55%)", "hsl(200, 85%, 60%)"]}
+          waveWidth={70}
           backgroundFill="hsl(200, 85%, 45%)"
-          blur={8}
+          blur={5}
           speed="slow"
-          waveOpacity={0.7}
-          containerClassName="min-h-[45vh]"
+          waveOpacity={0.9}
+          containerClassName="min-h-[35vh]"
           className="flex items-center justify-center w-full h-full"
         >
           {/* Company Name in Top Left */}
-          <div className="absolute top-6 left-6 z-20 animate-fade-in">
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-serif font-bold text-white/95 tracking-wider">
+          <div className="absolute top-4 left-4 z-20 animate-fade-in">
+            <h1 className="text-lg md:text-xl lg:text-2xl font-serif font-bold text-white/95 tracking-wider">
               INNOSIN LAB
             </h1>
           </div>
@@ -44,27 +44,27 @@ const VideoHero = () => {
           {/* Content Overlay */}
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
             {/* Large, bold main title */}
-            <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold mb-2 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
               <span className="block">Precision.</span>
               <span className="block text-sand-light animate-float">Innovation.</span>
               <span className="block text-white/90">Excellence.</span>
             </h2>
             
             {/* Subtext/description */}
-            <p className="text-lg md:text-xl lg:text-2xl mb-4 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
+            <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
               Empowering scientific breakthroughs with high-quality lab solutions.
               <span className="block mt-1">Transform your research environment with cutting-edge equipment and design.</span>
             </p>
             
             {/* Two CTA buttons side by side */}
-            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mb-4 animate-scale-in animate-delay-500">
-              <Button asChild variant="heroSolid" size="lg" className="min-w-[240px] h-14 text-lg">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-2 animate-scale-in animate-delay-500">
+              <Button asChild variant="heroSolid" size="lg" className="min-w-[200px] h-12 text-base">
                 <Link to="/products">
-                  Explore Solutions <ArrowRight className="ml-2 w-6 h-6" />
+                  Explore Solutions <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
               
-              <Button asChild variant="hero" size="lg" className="min-w-[240px] h-14 text-lg">
+              <Button asChild variant="hero" size="lg" className="min-w-[200px] h-12 text-base">
                 <Link to="/contact">
                   Schedule Consultation
                 </Link>
@@ -75,35 +75,35 @@ const VideoHero = () => {
       </section>
 
       {/* Our Story Section */}
-      <section className="py-6 bg-gradient-to-b from-background to-secondary/30 relative">
+      <section className="py-3 bg-gradient-to-b from-background to-secondary/30 relative">
         <div className="container-custom text-center">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-serif font-bold text-primary mb-4 tracking-tight animate-fade-in">
+            <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2 tracking-tight animate-fade-in">
               Our <span className="text-sea">Story</span>
             </h2>
-            <p className="text-base text-muted-foreground mb-6 leading-relaxed animate-fade-in animate-delay-200">
+            <p className="text-sm text-muted-foreground mb-3 leading-relaxed animate-fade-in animate-delay-200">
               For over a decade, Innosin Lab has been at the forefront of laboratory innovation, 
               transforming research environments across Singapore and beyond. Our journey began with 
               a simple mission: to provide world-class laboratory solutions that empower scientific discovery.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div className="animate-fade-in animate-delay-300">
-                <div className="text-2xl font-bold text-sea mb-1">500+</div>
-                <p className="text-muted-foreground">Projects Completed</p>
+                <div className="text-xl font-bold text-sea mb-1">500+</div>
+                <p className="text-muted-foreground text-sm">Projects Completed</p>
               </div>
               <div className="animate-fade-in animate-delay-500">
-                <div className="text-2xl font-bold text-sea mb-1">15+</div>
-                <p className="text-muted-foreground">Years of Excellence</p>
+                <div className="text-xl font-bold text-sea mb-1">15+</div>
+                <p className="text-muted-foreground text-sm">Years of Excellence</p>
               </div>
               <div className="animate-fade-in animate-delay-700">
-                <div className="text-2xl font-bold text-sea mb-1">50+</div>
-                <p className="text-muted-foreground">Research Institutions</p>
+                <div className="text-xl font-bold text-sea mb-1">50+</div>
+                <p className="text-muted-foreground text-sm">Research Institutions</p>
               </div>
             </div>
             <div className="animate-scale-in animate-delay-500">
-              <Button asChild variant="outline" size="lg" className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
+              <Button asChild variant="outline" size="default" className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
                 <Link to="/about">
-                  <Play className="w-5 h-5 mr-2" />
+                  <Play className="w-4 h-4 mr-2" />
                   Watch Our Story
                 </Link>
               </Button>

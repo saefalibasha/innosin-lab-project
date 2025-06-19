@@ -69,15 +69,19 @@ export const WavyBackground = ({
     "#e879f9",
     "#22d3ee",
   ];
+  
   const drawWave = (n: number) => {
     nt += getSpeed();
     for (i = 0; i < n; i++) {
       ctx.beginPath();
-      ctx.lineWidth = waveWidth || 50;
+      ctx.lineWidth = waveWidth || 70;
       ctx.strokeStyle = waveColors[i % waveColors.length];
-      for (x = 0; x < w; x += 5) {
-        var y = noise(x / 800, 0.3 * i, nt) * 100;
-        ctx.lineTo(x, y + h * 0.5); // adjust for height, currently at 50% of the container
+      for (x = 0; x < w; x += 3) {
+        // Create multiple wave layers at different heights for depth
+        var y1 = noise(x / 600, 0.3 * i, nt) * 80;
+        var y2 = noise(x / 800, 0.5 * i, nt + 0.5) * 60;
+        var finalY = y1 + y2 + h * (0.3 + i * 0.1); // Distribute waves across different heights
+        ctx.lineTo(x, finalY);
       }
       ctx.stroke();
       ctx.closePath();
@@ -86,10 +90,10 @@ export const WavyBackground = ({
 
   let animationId: number;
   const render = () => {
-    ctx.fillStyle = backgroundFill || "black";
-    ctx.globalAlpha = waveOpacity || 0.5;
+    ctx.fillStyle = backgroundFill || "hsl(200, 85%, 45%)";
+    ctx.globalAlpha = waveOpacity || 0.9;
     ctx.fillRect(0, 0, w, h);
-    drawWave(5);
+    drawWave(6); // Increased number of wave layers
     animationId = requestAnimationFrame(render);
   };
 
@@ -102,7 +106,6 @@ export const WavyBackground = ({
 
   const [isSafari, setIsSafari] = useState(false);
   useEffect(() => {
-    // I'm sorry but i have got to support it on safari.
     setIsSafari(
       typeof window !== "undefined" &&
         navigator.userAgent.includes("Safari") &&
@@ -113,7 +116,7 @@ export const WavyBackground = ({
   return (
     <div
       className={cn(
-        "h-screen flex flex-col items-center justify-center",
+        "relative flex flex-col items-center justify-center",
         containerClassName
       )}
     >
