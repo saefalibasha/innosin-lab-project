@@ -14,6 +14,7 @@ import RFQCart from "./pages/RFQCart";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import Navigation from "./components/Navigation";
+import { TubelightNavBarDemo } from "./components/ui/demo";
 import LiveChat from "./components/LiveChat";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
@@ -30,6 +31,7 @@ const App = () => (
           <ScrollToTop />
           <div className="min-h-screen flex flex-col">
             <Navigation />
+            <TubelightNavBarDemo />
             <main className="flex-1">
               <Routes>
                 <Route path="/" element={<Index />} />

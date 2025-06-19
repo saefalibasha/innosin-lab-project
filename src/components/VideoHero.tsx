@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, ArrowDown } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const VideoHero = () => {
@@ -17,13 +18,6 @@ const VideoHero = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const scrollToNext = () => {
-    window.scrollTo({
-      top: window.innerHeight,
-      behavior: 'smooth'
-    });
-  };
 
   return (
     <>
@@ -55,8 +49,8 @@ const VideoHero = () => {
         {/* Content Overlay */}
         <div className="relative z-10 h-full flex items-center justify-center">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-            {/* Small heading/category label */}
-            <div className="inline-block px-6 py-3 bg-white/10 backdrop-blur-lg rounded-full border border-white/20 mb-8 animate-fade-in">
+            {/* Small heading/category label - moved down slightly */}
+            <div className="inline-block px-6 py-3 bg-white/10 backdrop-blur-lg rounded-full border border-white/20 mb-12 mt-8 animate-fade-in">
               <span className="text-sm font-medium text-white/95 tracking-widest uppercase">Laboratory Excellence</span>
             </div>
             
@@ -86,27 +80,6 @@ const VideoHero = () => {
                   Schedule Consultation
                 </Link>
               </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Enhanced Scroll Indicator */}
-        <div 
-          className={`fixed bottom-12 left-1/2 transform -translate-x-1/2 text-white transition-all duration-500 z-20 ${
-            scrollY > window.innerHeight * 0.8 ? 'opacity-0 translate-y-8 pointer-events-none' : 'opacity-100 translate-y-0'
-          }`}
-          style={{ transform: `translateX(-50%) translateY(${Math.min(scrollY * 0.3, 30)}px)` }}
-        >
-          <div 
-            className="flex flex-col items-center cursor-pointer group animate-bounce"
-            onClick={scrollToNext}
-          >
-            <span className="text-sm mb-4 font-light tracking-wide opacity-90 group-hover:opacity-100 transition-opacity">
-              Scroll Down
-            </span>
-            <div className="flex flex-col items-center">
-              <ArrowDown className="w-6 h-6 mb-2 animate-float" />
-              <div className="w-0.5 h-10 bg-white/60 rounded-full group-hover:bg-white/80 transition-colors"></div>
             </div>
           </div>
         </div>
