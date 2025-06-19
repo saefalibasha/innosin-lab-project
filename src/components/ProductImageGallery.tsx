@@ -24,6 +24,16 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   console.log('Thumbnail path:', thumbnail);
   console.log('Additional images:', images);
   
+  // Special debugging for bl-hes-bench-001
+  if (productName.includes('Hand-Held Eye Shower') && productName.includes('Bench Mounted')) {
+    console.log('🔍 DEBUGGING bl-hes-bench-001 image gallery');
+    console.log('🔍 Product name:', productName);
+    console.log('🔍 Thumbnail path:', thumbnail);
+    console.log('🔍 Expected thumbnail: /products/bl-hes-bench-001/thumbnail.webp');
+    console.log('🔍 Additional images:', images);
+    console.log('🔍 Expected image folder: /products/bl-hes-bench-001/images/');
+  }
+  
   // Use thumbnail as fallback if no images or if main image fails
   const displayImages = images.length > 0 ? images : [thumbnail];
   const currentImage = displayImages[currentImageIndex];
@@ -40,11 +50,25 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
 
   const handleImageError = () => {
     console.log('Image failed to load:', currentImage);
+    
+    // Special error log for bl-hes-bench-001
+    if (productName.includes('Hand-Held Eye Shower') && productName.includes('Bench Mounted')) {
+      console.log('❌ bl-hes-bench-001 image failed to load!');
+      console.log('❌ Failed image path:', currentImage);
+    }
+    
     setImageError(true);
   };
 
   const handleImageLoad = () => {
     console.log('Image loaded successfully:', currentImage);
+    
+    // Special success log for bl-hes-bench-001
+    if (productName.includes('Hand-Held Eye Shower') && productName.includes('Bench Mounted')) {
+      console.log('✅ bl-hes-bench-001 image loaded successfully!');
+      console.log('✅ Loaded image path:', currentImage);
+    }
+    
     setImageError(false);
   };
 
