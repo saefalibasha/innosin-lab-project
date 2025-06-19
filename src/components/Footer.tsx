@@ -8,14 +8,14 @@ import { WavyBackground } from '@/components/ui/wavy-background';
 const Footer = () => {
   return (
     <footer className="relative overflow-hidden">
-      {/* Simplified Wavy Background */}
+      {/* Flowing Wavy Background */}
       <WavyBackground
-        colors={["hsl(200, 85%, 32%)", "hsl(200, 85%, 28%)", "hsl(200, 85%, 25%)", "hsl(200, 85%, 22%)"]}
-        waveWidth={60}
-        backgroundFill="hsl(200, 85%, 30%)"
-        blur={2}
+        colors={["hsl(200, 90%, 45%)", "hsl(200, 85%, 35%)", "hsl(200, 80%, 30%)", "hsl(200, 75%, 25%)"]}
+        waveWidth={120}
+        backgroundFill="hsl(200, 85%, 25%)"
+        blur={3}
         speed="slow"
-        waveOpacity={0.8}
+        waveOpacity={0.9}
         containerClassName="h-auto min-h-0"
         className="flex items-start w-full h-full"
       >
