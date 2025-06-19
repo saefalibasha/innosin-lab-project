@@ -4,12 +4,10 @@ import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ShoppingCart, Package, Ruler } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
-import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import { products } from '@/data/products';
 
@@ -57,31 +55,13 @@ const ProductDetail = () => {
         </AnimatedSection>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column - Media */}
+          {/* Left Column - 3D Model */}
           <div className="space-y-6">
             <AnimatedSection animation="slide-in-left" delay={200}>
-              <Tabs defaultValue="3d" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4">
-                  <TabsTrigger value="3d">3D Model</TabsTrigger>
-                  <TabsTrigger value="images">Photo Gallery</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="3d">
-                  <Enhanced3DViewer
-                    modelPath={product.modelPath}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
-                </TabsContent>
-                
-                <TabsContent value="images">
-                  <ProductImageGallery
-                    images={product.images}
-                    thumbnail={product.thumbnail}
-                    productName={product.name}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
-                </TabsContent>
-              </Tabs>
+              <Enhanced3DViewer
+                modelPath={product.modelPath}
+                className="w-full h-96 lg:h-[500px]"
+              />
             </AnimatedSection>
           </div>
 

@@ -4,9 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShoppingCart, Eye } from 'lucide-react';
-import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import { Product } from '@/types/product';
@@ -23,28 +21,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
         <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
           <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group">
             <CardHeader className="p-0">
-              <Tabs defaultValue="3d" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="3d">3D Model</TabsTrigger>
-                  <TabsTrigger value="images">Photos</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="3d" className="mt-0">
-                  <Enhanced3DViewer
-                    modelPath={product.modelPath}
-                    className="w-full h-64"
-                  />
-                </TabsContent>
-                
-                <TabsContent value="images" className="mt-0">
-                  <ProductImageGallery
-                    images={product.images}
-                    thumbnail={product.thumbnail}
-                    productName={product.name}
-                    className="w-full h-64"
-                  />
-                </TabsContent>
-              </Tabs>
+              <ProductImageGallery
+                images={product.images}
+                thumbnail={product.thumbnail}
+                productName={product.name}
+                className="w-full h-64"
+              />
             </CardHeader>
             
             <CardContent className="p-6">

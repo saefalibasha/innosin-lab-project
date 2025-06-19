@@ -39,7 +39,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           // Scale the model to fit nicely in the viewport
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 2.5; // Slightly larger target size for better visibility
+          const targetSize = 3; // Increased target size for better visibility
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
@@ -49,9 +49,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Adjust camera position based on model size
-          const distance = Math.max(4, targetSize * 1.8);
-          camera.position.set(distance * 0.7, distance * 0.5, distance);
+          // Improved camera positioning based on model size
+          const distance = Math.max(5, targetSize * 2);
+          camera.position.set(distance * 0.8, distance * 0.6, distance * 0.8);
           camera.lookAt(0, 0, 0);
           camera.updateProjectionMatrix();
           
@@ -63,7 +63,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
     return (
       <group 
         ref={groupRef}
-        scale={hovered ? 1.02 : 1}
+        scale={hovered ? 1.01 : 1}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       />
@@ -119,20 +119,38 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [4, 3, 4], fov: 45 }}
-          gl={{ antialias: true, alpha: true }}
+          camera={{ position: [5, 4, 5], fov: 50 }}
+          gl={{ 
+            antialias: true, 
+            alpha: true,
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.2
+          }}
         >
           <Suspense fallback={null}>
-            <Environment preset="studio" />
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
-            <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-            <pointLight position={[0, 10, 0]} intensity={0.3} />
+            <Environment preset="city" environmentIntensity={0.3} />
+            
+            {/* Reduced lighting to prevent oversaturation */}
+            <ambientLight intensity={0.2} />
+            <directionalLight 
+              position={[10, 10, 5]} 
+              intensity={0.6} 
+              castShadow 
+              shadow-mapSize={[1024, 1024]}
+            />
+            <directionalLight 
+              position={[-10, -10, -5]} 
+              intensity={0.3} 
+            />
+            <pointLight 
+              position={[0, 10, 0]} 
+              intensity={0.2} 
+            />
             <spotLight 
               position={[0, 15, 0]} 
               angle={0.3} 
               penumbra={1} 
-              intensity={0.5}
+              intensity={0.3}
               castShadow
             />
             
@@ -143,12 +161,12 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={false}
               enableRotate={true}
               autoRotate={false}
-              maxPolarAngle={Math.PI / 1.8}
-              minPolarAngle={Math.PI / 6}
-              minDistance={2}
-              maxDistance={12}
+              maxPolarAngle={Math.PI / 1.5}
+              minPolarAngle={Math.PI / 8}
+              minDistance={3}
+              maxDistance={15}
               enableDamping={true}
-              dampingFactor={0.05}
+              dampingFactor={0.08}
               target={[0, 0, 0]}
             />
           </Suspense>
