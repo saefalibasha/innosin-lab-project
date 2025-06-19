@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -61,39 +62,40 @@ const Navigation = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+    <nav className="glass-card border-b border-sea/10 sticky top-0 z-50 shadow-lg backdrop-blur-16 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-black rounded-sm flex items-center justify-center">
+          <Link to="/" className="flex items-center space-x-2 group animate-fade-in">
+            <div className="w-8 h-8 bg-gradient-to-br from-sea to-sea-dark rounded-sm flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg">
               <span className="text-white font-bold text-sm">IL</span>
             </div>
-            <span className="font-bold text-xl text-black">Innosin Lab</span>
+            <span className="font-serif font-bold text-xl text-primary group-hover:text-sea transition-colors duration-300">Innosin Lab</span>
           </Link>
 
           {/* Desktop Navigation with Dropdowns */}
           <div className="hidden md:flex items-center space-x-6">
             <NavigationMenu>
               <NavigationMenuList>
-                {navItems.map((item) => (
-                  <NavigationMenuItem key={item.name}>
+                {navItems.map((item, index) => (
+                  <NavigationMenuItem key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
                     {item.dropdown ? (
                       <>
-                        <NavigationMenuTrigger className={`font-medium transition-colors ${
+                        <NavigationMenuTrigger className={`font-medium transition-all duration-300 hover:text-sea ${
                           isActive(item.path)
-                            ? 'text-black border-b-2 border-black'
-                            : 'text-gray-600 hover:text-black'
+                            ? 'text-sea border-b-2 border-sea'
+                            : 'text-muted-foreground hover:text-sea'
                         }`}>
                           {item.name}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
-                          <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                            {item.dropdown.map((dropdownItem) => (
+                          <div className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px] glass-card">
+                            {item.dropdown.map((dropdownItem, dropIndex) => (
                               <Link
                                 key={dropdownItem.name}
                                 to={dropdownItem.path}
-                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-gray-100 hover:text-black"
+                                className="block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-all duration-300 hover:bg-sea/10 hover:text-sea animate-fade-in"
+                                style={{animationDelay: `${dropIndex * 50}ms`}}
                               >
                                 <div className="text-sm font-medium leading-none">{dropdownItem.name}</div>
                               </Link>
@@ -104,10 +106,10 @@ const Navigation = () => {
                     ) : (
                       <Link
                         to={item.path}
-                        className={`font-medium transition-colors px-3 py-2 ${
+                        className={`font-medium transition-all duration-300 px-3 py-2 rounded-md hover:bg-sea/10 ${
                           isActive(item.path)
-                            ? 'text-black border-b-2 border-black pb-1'
-                            : 'text-gray-600 hover:text-black'
+                            ? 'text-sea bg-sea/10 border-b-2 border-sea'
+                            : 'text-muted-foreground hover:text-sea'
                         }`}
                       >
                         {item.name}
@@ -122,23 +124,24 @@ const Navigation = () => {
           {/* Search Bar & RFQ Cart */}
           <div className="flex items-center space-x-4">
             {/* Search Bar */}
-            <div className="relative hidden lg:block">
+            <div className="relative hidden lg:block animate-fade-in-right animate-delay-300">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   type="text"
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-64 glass-card border-sea/20 focus:border-sea transition-all duration-300"
                 />
               </div>
               {searchSuggestions.length > 0 && (
-                <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                <div className="absolute top-full mt-1 w-full glass-card border border-sea/20 rounded-md shadow-lg z-50 animate-fade-in">
                   {searchSuggestions.map((suggestion, index) => (
                     <div
                       key={index}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      className="px-4 py-2 hover:bg-sea/10 cursor-pointer text-sm transition-colors duration-200 animate-fade-in"
+                      style={{animationDelay: `${index * 50}ms`}}
                       onClick={() => {
                         setSearchQuery(suggestion);
                         setSearchSuggestions([]);
@@ -151,12 +154,12 @@ const Navigation = () => {
               )}
             </div>
 
-            <Link to="/rfq-cart">
-              <Button variant="outline" size="sm" className="relative">
+            <Link to="/rfq-cart" className="animate-fade-in animate-delay-500">
+              <Button variant="outline" size="sm" className="relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 RFQ Cart
                 {itemCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse-slow bg-sea hover:bg-sea-dark">
                     {itemCount}
                   </Badge>
                 )}
@@ -166,43 +169,44 @@ const Navigation = () => {
             {/* Mobile menu trigger */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="md:hidden">
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="glass-card border-sea/20 hover:bg-sea/10 transition-all duration-300">
                   <Menu className="w-4 h-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+              <SheetContent side="right" className="w-[300px] sm:w-[400px] glass-card">
                 <div className="flex flex-col space-y-4 mt-8">
                   {/* Mobile Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <div className="relative animate-fade-in">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                       type="text"
                       placeholder="Search..."
-                      className="pl-10"
+                      className="pl-10 glass-card border-sea/20 focus:border-sea"
                     />
                   </div>
                   
-                  {navItems.map((item) => (
-                    <div key={item.name}>
+                  {navItems.map((item, index) => (
+                    <div key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
                       <Link
                         to={item.path}
                         onClick={() => setIsOpen(false)}
-                        className={`font-medium py-2 px-4 rounded transition-colors block ${
+                        className={`font-medium py-2 px-4 rounded-md transition-all duration-300 block hover:bg-sea/10 ${
                           isActive(item.path)
-                            ? 'bg-black text-white'
-                            : 'text-gray-600 hover:bg-gray-100'
+                            ? 'bg-sea text-white shadow-lg'
+                            : 'text-muted-foreground hover:text-sea'
                         }`}
                       >
                         {item.name}
                       </Link>
                       {item.dropdown && (
                         <div className="ml-4 mt-2 space-y-1">
-                          {item.dropdown.map((dropdownItem) => (
+                          {item.dropdown.map((dropdownItem, dropIndex) => (
                             <Link
                               key={dropdownItem.name}
                               to={dropdownItem.path}
                               onClick={() => setIsOpen(false)}
-                              className="block py-1 px-2 text-sm text-gray-500 hover:text-black"
+                              className="block py-1 px-2 text-sm text-muted-foreground hover:text-sea transition-colors duration-200 rounded animate-fade-in"
+                              style={{animationDelay: `${200 + dropIndex * 50}ms`}}
                             >
                               {dropdownItem.name}
                             </Link>

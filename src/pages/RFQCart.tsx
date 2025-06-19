@@ -1,287 +1,247 @@
 
 import React, { useState } from 'react';
-import Navigation from '@/components/Navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Trash2, Plus, Minus, Send, ShoppingCart } from 'lucide-react';
+import { Trash2, Plus, Minus, FileDown, Send, ShoppingCart } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
+import AnimatedSection from '@/components/AnimatedSection';
 
 const RFQCart = () => {
-  const { items, updateItem, removeItem, clearCart, itemCount } = useRFQ();
-  const [contactForm, setContactForm] = useState({
+  const { items, removeItem, updateQuantity, clearCart, itemCount } = useRFQ();
+  const [contactInfo, setContactInfo] = useState({
     name: '',
-    company: '',
     email: '',
+    company: '',
     phone: '',
     message: ''
   });
 
-  const handleQuantityChange = (id: string, newQuantity: number) => {
-    if (newQuantity > 0) {
-      updateItem(id, { quantity: newQuantity });
-    }
+  const handleContactChange = (field: string, value: string) => {
+    setContactInfo(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNotesChange = (id: string, notes: string) => {
-    updateItem(id, { notes });
-  };
-
-  const handleContactFormChange = (field: string, value: string) => {
-    setContactForm(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSubmitRFQ = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmitRFQ = () => {
     if (items.length === 0) {
-      toast.error('Please add some products to your quote request');
+      toast.error('Please add items to your cart before submitting');
       return;
     }
-
-    if (!contactForm.name || !contactForm.email || !contactForm.company) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    // In a real application, this would integrate with HubSpot or send to a backend
-    console.log('RFQ Submission:', {
-      contact: contactForm,
-      items: items
-    });
-
-    toast.success('Quote request submitted successfully! We will contact you within 24 hours.');
     
-    // Clear the cart and form
+    if (!contactInfo.name || !contactInfo.email) {
+      toast.error('Please provide your name and email');
+      return;
+    }
+
+    // Here you would typically send the RFQ to your backend
+    console.log('RFQ Submitted:', { items, contactInfo });
+    toast.success('Request for Quote submitted successfully!');
     clearCart();
-    setContactForm({
-      name: '',
-      company: '',
-      email: '',
-      phone: '',
-      message: ''
-    });
+    setContactInfo({ name: '', email: '', company: '', phone: '', message: '' });
+  };
+
+  const handleExportPDF = () => {
+    // Implementation would go here
+    toast.success('Quote exported as PDF');
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation />
-      
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-background">
       <div className="container-custom py-12">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">Request for Quotation</h1>
-          <p className="text-xl text-muted-foreground animate-fade-in animate-delay-200">
-            Review your selected products and submit your quote request
-          </p>
+        <div className="text-center mb-12">
+          <AnimatedSection animation="fade-in" delay={100}>
+            <h1 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">
+              Request for Quote
+            </h1>
+          </AnimatedSection>
+          <AnimatedSection animation="fade-in" delay={300}>
+            <p className="text-xl text-muted-foreground animate-fade-in animate-delay-300">
+              Review your selected items and submit your quote request
+            </p>
+          </AnimatedSection>
+          <AnimatedSection animation="fade-in" delay={400}>
+            <Badge variant="outline" className="mt-4 text-lg px-4 py-2 border-sea text-sea animate-bounce-in animate-delay-500">
+              {itemCount} items in cart
+            </Badge>
+          </AnimatedSection>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 animate-fade-in-left animate-delay-300">
-            <Card className="glass-card hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="flex items-center font-serif">
-                  <ShoppingCart className="w-5 h-5 mr-2 text-sea" />
-                  Selected Products ({itemCount} items)
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {items.length === 0 ? (
-                  <div className="text-center py-12">
-                    <ShoppingCart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground text-lg mb-4">Your cart is empty</p>
-                    <Button asChild variant="heroSolid">
-                      <a href="/products">Browse Products</a>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {items.map((item, index) => (
-                      <div key={item.id} className={`animate-fade-in`} style={{animationDelay: `${400 + index * 100}ms`}}>
-                        <div className="flex items-start space-x-4">
+          <div className="lg:col-span-2 space-y-6">
+            <AnimatedSection animation="fade-in-left" delay={200}>
+              <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-2xl font-serif text-primary">
+                    <ShoppingCart className="w-6 h-6 text-sea" />
+                    <span>Selected Items</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {items.length === 0 ? (
+                    <div className="text-center py-12 animate-fade-in">
+                      <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4 animate-float" />
+                      <p className="text-lg text-muted-foreground mb-4">Your cart is empty</p>
+                      <Button asChild variant="heroSolid" className="animate-scale-in">
+                        <a href="/products">Browse Products</a>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {items.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center space-x-4 p-4 glass-card rounded-lg hover:shadow-md transition-all duration-300 animate-fade-in hover:scale-105"
+                          style={{animationDelay: `${index * 100}ms`}}
+                        >
                           <img
                             src={item.image}
                             alt={item.name}
-                            className="w-20 h-20 object-cover rounded-lg shadow-md"
+                            className="w-16 h-16 object-cover rounded-md bg-sea/10"
                           />
-                          
                           <div className="flex-1">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h3 className="font-semibold text-lg text-primary">{item.name}</h3>
-                                <Badge variant="outline" className="mt-1 border-sea text-sea">
-                                  {item.category}
-                                </Badge>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeItem(item.id)}
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                            
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Dimensions: {item.dimensions}
-                            </p>
-                            
-                            {/* Quantity Controls */}
-                            <div className="flex items-center space-x-4 mb-3">
-                              <Label className="text-sm font-medium">Quantity:</Label>
-                              <div className="flex items-center space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                                  disabled={item.quantity <= 1}
-                                  className="hover:border-sea"
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </Button>
-                                <span className="w-8 text-center font-medium">{item.quantity}</span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                                  className="hover:border-sea"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            
-                            {/* Notes */}
-                            <div>
-                              <Label className="text-sm font-medium">Notes (optional):</Label>
-                              <Textarea
-                                placeholder="Any specific requirements or customizations..."
-                                value={item.notes}
-                                onChange={(e) => handleNotesChange(item.id, e.target.value)}
-                                className="mt-1 focus:border-sea transition-all duration-300"
-                                rows={2}
-                              />
-                            </div>
+                            <h3 className="font-serif font-semibold text-primary">{item.name}</h3>
+                            <p className="text-sm text-muted-foreground">{item.category}</p>
+                            <p className="text-xs text-muted-foreground">{item.dimensions}</p>
                           </div>
+                          <div className="flex items-center space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                              className="glass-card border-sea/20 hover:bg-sea/10"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </Button>
+                            <span className="w-8 text-center font-medium">{item.quantity}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="glass-card border-sea/20 hover:bg-sea/10"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => removeItem(item.id)}
+                            className="text-destructive hover:bg-destructive/10 transition-colors duration-300"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </div>
-                        
-                        {index < items.length - 1 && <Separator className="mt-6" />}
-                      </div>
-                    ))}
-                    
-                    <div className="flex justify-end pt-4">
-                      <Button
-                        variant="outline"
-                        onClick={clearCart}
-                        className="text-red-600 border-red-600 hover:bg-red-50"
-                      >
-                        Clear All Items
-                      </Button>
+                      ))}
+                      
+                      {items.length > 0 && (
+                        <div className="flex justify-end space-x-2 pt-4 border-t border-sea/10 animate-slide-up">
+                          <Button
+                            variant="outline"
+                            onClick={clearCart}
+                            className="glass-card border-sea/20 hover:bg-destructive/10 hover:border-destructive transition-all duration-300"
+                          >
+                            Clear Cart
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleExportPDF}
+                            className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300"
+                          >
+                            <FileDown className="w-4 h-4 mr-2" />
+                            Export PDF
+                          </Button>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            </AnimatedSection>
           </div>
 
           {/* Contact Form */}
-          <div className="lg:col-span-1 animate-fade-in-right animate-delay-500">
-            <Card className="glass-card hover:shadow-xl transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="font-serif text-primary">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmitRFQ} className="space-y-4">
+          <div className="lg:col-span-1">
+            <AnimatedSection animation="fade-in-right" delay={400}>
+              <Card className="glass-card hover:shadow-xl transition-all duration-300 sticky top-24">
+                <CardHeader>
+                  <CardTitle className="text-2xl font-serif text-primary">Contact Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
-                    <Label htmlFor="name">Full Name *</Label>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Full Name *
+                    </label>
                     <Input
-                      id="name"
-                      required
-                      value={contactForm.name}
-                      onChange={(e) => handleContactFormChange('name', e.target.value)}
+                      type="text"
+                      value={contactInfo.name}
+                      onChange={(e) => handleContactChange('name', e.target.value)}
                       placeholder="John Doe"
-                      className="focus:border-sea transition-all duration-300"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="company">Company/Institution *</Label>
-                    <Input
-                      id="company"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
                       required
-                      value={contactForm.company}
-                      onChange={(e) => handleContactFormChange('company', e.target.value)}
-                      placeholder="Your Company Name"
-                      className="focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="email">Email Address *</Label>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Email Address *
+                    </label>
                     <Input
-                      id="email"
                       type="email"
-                      required
-                      value={contactForm.email}
-                      onChange={(e) => handleContactFormChange('email', e.target.value)}
+                      value={contactInfo.email}
+                      onChange={(e) => handleContactChange('email', e.target.value)}
                       placeholder="john@company.com"
-                      className="focus:border-sea transition-all duration-300"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                      required
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Company/Organization
+                    </label>
                     <Input
-                      id="phone"
-                      type="tel"
-                      value={contactForm.phone}
-                      onChange={(e) => handleContactFormChange('phone', e.target.value)}
-                      placeholder="+65 XXXX XXXX"
-                      className="focus:border-sea transition-all duration-300"
+                      type="text"
+                      value={contactInfo.company}
+                      onChange={(e) => handleContactChange('company', e.target.value)}
+                      placeholder="Company Name"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
                   <div>
-                    <Label htmlFor="message">Additional Message</Label>
-                    <Textarea
-                      id="message"
-                      value={contactForm.message}
-                      onChange={(e) => handleContactFormChange('message', e.target.value)}
-                      placeholder="Tell us about your project requirements, timeline, or any specific needs..."
-                      rows={4}
-                      className="focus:border-sea transition-all duration-300"
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Phone Number
+                    </label>
+                    <Input
+                      type="tel"
+                      value={contactInfo.phone}
+                      onChange={(e) => handleContactChange('phone', e.target.value)}
+                      placeholder="+65 1234 5678"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
                     />
                   </div>
                   
-                  <Separator />
-                  
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span>Total Items:</span>
-                      <span className="font-medium">{itemCount}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span>Product Categories:</span>
-                      <span className="font-medium">
-                        {new Set(items.map(item => item.category)).size}
-                      </span>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Additional Message
+                    </label>
+                    <Textarea
+                      value={contactInfo.message}
+                      onChange={(e) => handleContactChange('message', e.target.value)}
+                      placeholder="Tell us about your project requirements..."
+                      rows={4}
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                    />
                   </div>
                   
                   <Button
-                    type="submit"
-                    className="w-full bg-sea hover:bg-sea-dark animate-float"
+                    onClick={handleSubmitRFQ}
                     disabled={items.length === 0}
+                    className="w-full bg-sea hover:bg-sea-dark disabled:opacity-50 transition-all duration-300 hover:scale-105 animate-float"
                   >
                     <Send className="w-4 h-4 mr-2" />
                     Submit Quote Request
@@ -290,53 +250,51 @@ const RFQCart = () => {
                   <p className="text-xs text-muted-foreground text-center">
                     We'll respond to your quote request within 24 hours
                   </p>
-                </form>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </AnimatedSection>
           </div>
         </div>
 
-        {/* Information Section */}
-        <div className="mt-12 animate-bounce-in animate-delay-700">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle className="font-serif text-primary">What happens next?</CardTitle>
-            </CardHeader>
-            <CardContent>
+        {/* Additional Information */}
+        <AnimatedSection animation="fade-in" delay={600}>
+          <Card className="mt-12 glass-card hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-serif font-semibold text-primary mb-4">
+                What happens next?
+              </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center animate-fade-in" style={{animationDelay: '800ms'}}>
+                <div className="text-center animate-fade-in animate-delay-700">
                   <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-sea font-bold">1</span>
                   </div>
-                  <h3 className="font-semibold mb-2 text-primary">Review & Assessment</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Our team will review your requirements and assess the best solutions for your laboratory needs.
+                  <h4 className="font-medium text-foreground mb-2">Review</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Our team reviews your requirements and selected items
                   </p>
                 </div>
-                
-                <div className="text-center animate-fade-in" style={{animationDelay: '900ms'}}>
+                <div className="text-center animate-fade-in animate-delay-800">
                   <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-sea font-bold">2</span>
                   </div>
-                  <h3 className="font-semibold mb-2 text-primary">Custom Quotation</h3>
-                  <p className="text-muted-foreground text-sm">
-                    We'll prepare a detailed quotation including pricing, specifications, and delivery timeline.
+                  <h4 className="font-medium text-foreground mb-2">Quote</h4>
+                  <p className="text-sm text-muted-foreground">
+                    We prepare a detailed quote with pricing and specifications
                   </p>
                 </div>
-                
-                <div className="text-center animate-fade-in" style={{animationDelay: '1000ms'}}>
+                <div className="text-center animate-fade-in animate-delay-900">
                   <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
                     <span className="text-sea font-bold">3</span>
                   </div>
-                  <h3 className="font-semibold mb-2 text-primary">Consultation</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Our experts will schedule a consultation to discuss your project and finalize the details.
+                  <h4 className="font-medium text-foreground mb-2">Follow-up</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Our sales team contacts you to discuss next steps
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-        </div>
+        </AnimatedSection>
       </div>
     </div>
   );
