@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,10 +17,10 @@ const Footer = () => {
         blur={8}
         speed="slow"
         waveOpacity={0.7}
-        containerClassName=""
-        className="flex items-start w-full h-full"
+        containerClassName="min-h-0"
+        className="flex items-start w-full h-auto"
       >
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-white">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white w-full">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Company Info */}
             <div className="space-y-3 animate-fade-in">
@@ -153,7 +154,7 @@ const Footer = () => {
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-white/20 mt-4 pt-3 animate-fade-in animate-delay-700">
+          <div className="border-t border-white/20 mt-6 pt-4 animate-fade-in animate-delay-700">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
               <p className="text-white/90 font-light">
                 © 2024 Innosin Lab. All rights reserved.
