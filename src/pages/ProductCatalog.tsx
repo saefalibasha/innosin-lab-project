@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -124,7 +123,7 @@ const ProductCatalog = () => {
   return (
     <div className="min-h-screen bg-background">
       
-      <div className="container-custom py-12">
+      <div className="container-custom py-12 pt-20">
         {/* Header */}
         <div className="text-center mb-12">
           <AnimatedSection animation="fade-in" delay={100}>
@@ -255,10 +254,10 @@ const ProductCatalog = () => {
           ))}
         </div>
 
-        {/* Quote Cart Summary */}
+        {/* Quote Cart Summary - Fixed positioning to avoid header conflict */}
         {itemCount > 0 && (
           <AnimatedSection animation="slide-in-right" delay={0}>
-            <div className="fixed bottom-6 right-6 glass-card text-foreground p-4 rounded-lg shadow-lg animate-float">
+            <div className="fixed bottom-6 right-6 glass-card text-foreground p-4 rounded-lg shadow-lg animate-float z-40">
               <div className="flex items-center space-x-3">
                 <ShoppingCart className="w-5 h-5 text-sea" />
                 <span>{itemCount} items in quote</span>

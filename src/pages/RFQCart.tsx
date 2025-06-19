@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,7 +53,7 @@ const RFQCart = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-background">
-      <div className="container-custom py-12">
+      <div className="container-custom py-12 pt-20">
         {/* Header */}
         <div className="text-center mb-12">
           <AnimatedSection animation="fade-in" delay={100}>
@@ -166,10 +167,10 @@ const RFQCart = () => {
             </AnimatedSection>
           </div>
 
-          {/* Contact Form */}
+          {/* Contact Form - Fixed sticky positioning to avoid header conflict */}
           <div className="lg:col-span-1">
             <AnimatedSection animation="fade-in-right" delay={400}>
-              <Card className="glass-card hover:shadow-xl transition-all duration-300 sticky top-24">
+              <Card className="glass-card hover:shadow-xl transition-all duration-300 sticky" style={{ top: '6rem' }}>
                 <CardHeader>
                   <CardTitle className="text-2xl font-serif text-primary">Contact Information</CardTitle>
                 </CardHeader>

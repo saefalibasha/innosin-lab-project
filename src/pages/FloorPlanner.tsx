@@ -300,8 +300,8 @@ const FloorPlanner = () => {
   return (
     <TooltipProvider>
       <div className={`h-screen bg-gray-50 flex flex-col ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
-        {/* Enhanced Top Toolbar - Fixed positioning */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 z-40 flex-shrink-0">
+        {/* Enhanced Top Toolbar - Adjusted top positioning to avoid header conflict */}
+        <div className="bg-white border-b border-gray-200 px-4 py-3 z-40 flex-shrink-0" style={{ marginTop: isFullScreen ? '0' : '5rem' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Button
