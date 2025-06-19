@@ -6,6 +6,8 @@ import { motion } from "framer-motion"
 import { Link, useLocation } from "react-router-dom"
 import { LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useRFQ } from "@/contexts/RFQContext"
+import { Badge } from "@/components/ui/badge"
 
 interface NavItem {
   name: string
@@ -22,6 +24,7 @@ export function NavBar({ items, className }: NavBarProps) {
   const location = useLocation()
   const [activeTab, setActiveTab] = useState(items[0].name)
   const [isMobile, setIsMobile] = useState(false)
+  const { itemCount } = useRFQ()
 
   useEffect(() => {
     // Set active tab based on current route
@@ -52,6 +55,7 @@ export function NavBar({ items, className }: NavBarProps) {
         {items.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.name
+          const isRFQCart = item.name === 'RFQ Cart'
 
           return (
             <Link
@@ -64,10 +68,28 @@ export function NavBar({ items, className }: NavBarProps) {
                 isActive && "text-white",
               )}
             >
-              <span className="hidden md:inline">{item.name}</span>
-              <span className="md:hidden">
-                <Icon size={18} strokeWidth={2.5} />
-              </span>
+              <div className="flex items-center space-x-2">
+                <span className="hidden md:inline">{item.name}</span>
+                <span className="md:hidden relative">
+                  <Icon size={18} strokeWidth={2.5} />
+                  {isRFQCart && itemCount > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-xs bg-sea hover:bg-sea-dark border-0"
+                    >
+                      {itemCount}
+                    </Badge>
+                  )}
+                </span>
+                {isRFQCart && itemCount > 0 && !isMobile && (
+                  <Badge 
+                    variant="destructive" 
+                    className="h-4 w-4 flex items-center justify-center p-0 text-xs bg-sea hover:bg-sea-dark border-0"
+                  >
+                    {itemCount}
+                  </Badge>
+                )}
+              </div>
               {isActive && (
                 <motion.div
                   layoutId="lamp"

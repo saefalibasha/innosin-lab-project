@@ -32,7 +32,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="container-custom py-12">
+    <div className="container-custom py-12 pt-20">
       {/* Header */}
       <div className="text-center mb-16">
         <AnimatedSection animation="fade-in" delay={100}>

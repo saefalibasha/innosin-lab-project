@@ -8,7 +8,8 @@ export function TubelightNavBarDemo() {
     { name: 'Products', url: '/products', icon: Briefcase },
     { name: 'Floor Planner', url: '/floor-planner', icon: FileText },
     { name: 'About', url: '/about', icon: User },
-    { name: 'Contact', url: '/contact', icon: ShoppingCart }
+    { name: 'Contact', url: '/contact', icon: User },
+    { name: 'RFQ Cart', url: '/rfq-cart', icon: ShoppingCart }
   ]
 
   return <NavBar items={navItems} />
