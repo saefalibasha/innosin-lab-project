@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,18 +8,18 @@ import { WavyBackground } from '@/components/ui/wavy-background';
 const Footer = () => {
   return (
     <footer className="relative overflow-hidden">
-      {/* Enhanced Wavy Background with Darker Sea Colors */}
+      {/* Simplified Wavy Background */}
       <WavyBackground
-        colors={["hsl(200, 85%, 35%)", "hsl(200, 85%, 30%)", "hsl(200, 85%, 25%)", "hsl(200, 85%, 20%)", "hsl(200, 85%, 28%)", "hsl(200, 85%, 32%)"]}
-        waveWidth={80}
+        colors={["hsl(200, 85%, 32%)", "hsl(200, 85%, 28%)", "hsl(200, 85%, 25%)", "hsl(200, 85%, 22%)"]}
+        waveWidth={60}
         backgroundFill="hsl(200, 85%, 30%)"
-        blur={4}
+        blur={2}
         speed="slow"
-        waveOpacity={0.9}
+        waveOpacity={0.8}
         containerClassName="h-auto min-h-0"
         className="flex items-start w-full h-full"
       >
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-white">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Company Info */}
             <div className="space-y-3 animate-fade-in">

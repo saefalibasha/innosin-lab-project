@@ -11,9 +11,9 @@ export const WavyBackground = ({
   colors,
   waveWidth,
   backgroundFill,
-  blur = 10,
+  blur = 2,
   speed = "fast",
-  waveOpacity = 0.5,
+  waveOpacity = 0.8,
   pushWavesUp = false,
   ...props
 }: {
@@ -38,12 +38,13 @@ export const WavyBackground = ({
     ctx: any,
     canvas: any;
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   const getSpeed = () => {
     switch (speed) {
       case "slow":
         return 0.001;
       case "fast":
-        return 0.002;
+        return 0.0015;
       default:
         return 0.001;
     }
@@ -65,26 +66,23 @@ export const WavyBackground = ({
   };
 
   const waveColors = colors ?? [
-    "#2563eb",
-    "#1d4ed8",
-    "#1e40af",
-    "#1e3a8a",
-    "#312e81",
+    "hsl(200, 85%, 32%)",
+    "hsl(200, 85%, 28%)", 
+    "hsl(200, 85%, 25%)",
+    "hsl(200, 85%, 22%)"
   ];
   
   const drawWave = (n: number) => {
     nt += getSpeed();
     for (i = 0; i < n; i++) {
       ctx.beginPath();
-      ctx.lineWidth = waveWidth || 80;
+      ctx.lineWidth = waveWidth || 60;
       ctx.strokeStyle = waveColors[i % waveColors.length];
-      for (x = 0; x < w; x += 2) {
-        var y1 = noise(x / 600, 0.3 * i, nt) * 100;
-        var y2 = noise(x / 800, 0.5 * i, nt + 0.5) * 80;
-        // Push waves up when pushWavesUp is true
+      for (x = 0; x < w; x += 3) {
+        var y = noise(x / 800, 0.4 * i, nt) * 80;
         var finalY = pushWavesUp 
-          ? y1 + y2 + h * (0.1 + i * 0.08) 
-          : y1 + y2 + h * (0.3 + i * 0.1);
+          ? y + h * (0.15 + i * 0.1) 
+          : y + h * (0.4 + i * 0.12);
         ctx.lineTo(x, finalY);
       }
       ctx.stroke();
@@ -95,9 +93,9 @@ export const WavyBackground = ({
   let animationId: number;
   const render = () => {
     ctx.fillStyle = backgroundFill || "hsl(200, 85%, 30%)";
-    ctx.globalAlpha = waveOpacity || 0.9;
+    ctx.globalAlpha = waveOpacity || 0.8;
     ctx.fillRect(0, 0, w, h);
-    drawWave(7);
+    drawWave(4);
     animationId = requestAnimationFrame(render);
   };
 

@@ -23,14 +23,14 @@ const VideoHero = () => {
   return (
     <>
       <section className="relative overflow-hidden">
-        {/* Enhanced Wavy Background with Darker Sea Colors */}
+        {/* Simplified Wavy Background */}
         <WavyBackground
-          colors={["hsl(200, 85%, 35%)", "hsl(200, 85%, 30%)", "hsl(200, 85%, 25%)", "hsl(200, 85%, 20%)", "hsl(200, 85%, 28%)", "hsl(200, 85%, 32%)"]}
-          waveWidth={80}
+          colors={["hsl(200, 85%, 32%)", "hsl(200, 85%, 28%)", "hsl(200, 85%, 25%)", "hsl(200, 85%, 22%)"]}
+          waveWidth={60}
           backgroundFill="hsl(200, 85%, 30%)"
-          blur={4}
+          blur={2}
           speed="slow"
-          waveOpacity={0.9}
+          waveOpacity={0.8}
           pushWavesUp={true}
           containerClassName="min-h-[35vh]"
           className="flex items-center justify-center w-full h-full"
@@ -42,8 +42,8 @@ const VideoHero = () => {
             </h1>
           </div>
 
-          {/* Content Overlay - Added top padding to ensure it's below header */}
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-16">
+          {/* Content Overlay - Increased top padding to move content lower */}
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-28">
             {/* Large, bold main title */}
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
               <span className="block">Precision.</span>
