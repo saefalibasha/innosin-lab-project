@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { WavyBackground } from '@/components/ui/wavy-background';
 
 const VideoHero = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -22,34 +23,20 @@ const VideoHero = () => {
   return (
     <>
       <section className="relative h-screen overflow-hidden">
-        {/* Video Background */}
-        <div className="absolute inset-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-          >
-            <source src="/placeholder-lab-video.mp4" type="video/mp4" />
-          </video>
-          
-          {/* Fallback background image */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: 'url(https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=1920&h=1080&fit=crop)'
-            }}
-          />
-          
-          {/* Enhanced gradient overlay for better text contrast */}
-          <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-sea-dark/50 to-black/60" />
-        </div>
-
-        {/* Content Overlay */}
-        <div className="relative z-10 h-full flex items-center justify-center">
+        {/* Wavy Background with sea-themed colors */}
+        <WavyBackground
+          colors={["#0891b2", "#0e7490", "#155e75", "#164e63", "#083344"]}
+          waveWidth={40}
+          backgroundFill="#0c4a6e"
+          blur={8}
+          speed="slow"
+          waveOpacity={0.7}
+          containerClassName="h-screen"
+          className="flex items-center justify-center w-full h-full"
+        >
+          {/* Content Overlay */}
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-            {/* Small heading/category label - moved down slightly */}
+            {/* Small heading/category label */}
             <div className="inline-block px-6 py-3 bg-white/10 backdrop-blur-lg rounded-full border border-white/20 mb-12 mt-8 animate-fade-in">
               <span className="text-sm font-medium text-white/95 tracking-widest uppercase">Laboratory Excellence</span>
             </div>
@@ -82,36 +69,7 @@ const VideoHero = () => {
               </Button>
             </div>
           </div>
-        </div>
-
-        {/* Enhanced Wave Animation with better shape and movement */}
-        <div className="absolute bottom-6 left-0 w-full overflow-hidden z-15">
-          {/* Main wave with thicker sides, thinner middle */}
-          <svg 
-            className="relative block w-full h-20 animate-enhanced-wave-motion" 
-            viewBox="0 0 1200 120" 
-            preserveAspectRatio="none"
-          >
-            <path 
-              d="M0,60 C150,20 300,40 400,50 C500,60 600,65 700,60 C800,55 900,45 1050,20 C1100,10 1150,30 1200,50 L1200,120 L0,120 Z" 
-              fill="#ffffff"
-              fillOpacity="0.9"
-            />
-          </svg>
-          
-          {/* Translucent trailing wave */}
-          <svg 
-            className="absolute top-0 block w-full h-20 animate-enhanced-wave-motion-delayed" 
-            viewBox="0 0 1200 120" 
-            preserveAspectRatio="none"
-          >
-            <path 
-              d="M0,70 C150,30 300,50 400,60 C500,70 600,75 700,70 C800,65 900,55 1050,30 C1100,20 1150,40 1200,60 L1200,120 L0,120 Z" 
-              fill="#ffffff"
-              fillOpacity="0.3"
-            />
-          </svg>
-        </div>
+        </WavyBackground>
       </section>
 
       {/* Our Story Section */}

@@ -4,19 +4,23 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { WavyBackground } from '@/components/ui/wavy-background';
 
 const Footer = () => {
   return (
     <footer className="bg-sea text-white relative overflow-hidden">
-      {/* Higher Translucent Wave for smooth transition */}
-      <div className="absolute top-0 left-0 w-full overflow-hidden">
-        <svg className="relative block w-full h-32" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path 
-            d="M0,0 C300,80 900,40 1200,80 L1200,120 L0,120 Z" 
-            fill="white" 
-            fillOpacity="0.1" 
-          />
-        </svg>
+      {/* Wavy Background Section */}
+      <div className="relative h-40 overflow-hidden">
+        <WavyBackground
+          colors={["#0891b2", "#0e7490", "#155e75", "#164e63", "#083344"]}
+          waveWidth={30}
+          backgroundFill="transparent"
+          blur={6}
+          speed="slow"
+          waveOpacity={0.4}
+          containerClassName="h-40"
+          className="w-full h-full"
+        />
       </div>
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
