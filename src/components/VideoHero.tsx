@@ -32,7 +32,7 @@ const VideoHero = () => {
           speed="slow"
           waveOpacity={0.8}
           pushWavesUp={true}
-          containerClassName="min-h-[35vh]"
+          containerClassName="min-h-[50vh]"
           className="flex items-center justify-center w-full h-full"
         >
           {/* Company Name in Top Left */}
@@ -43,7 +43,7 @@ const VideoHero = () => {
           </div>
 
           {/* Content Overlay - Increased top padding to move content lower */}
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-28">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-28 pb-16">
             {/* Large, bold main title */}
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
               <span className="block">Precision.</span>
@@ -58,7 +58,7 @@ const VideoHero = () => {
             </p>
             
             {/* Two CTA buttons side by side */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-2 animate-scale-in animate-delay-500">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 animate-scale-in animate-delay-500">
               <Button asChild variant="heroSolid" size="lg" className="min-w-[200px] h-12 text-base">
                 <Link to="/products">
                   Explore Solutions <ArrowRight className="ml-2 w-5 h-5" />
