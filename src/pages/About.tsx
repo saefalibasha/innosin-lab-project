@@ -5,8 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Award, Users, Globe, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Timeline } from '@/components/ui/timeline';
-import CertificationBadges from '@/components/CertificationBadges';
-import GoogleMapsLocation from '@/components/GoogleMapsLocation';
 import LabTransformCTA from '@/components/LabTransformCTA';
 
 const About = () => {
@@ -31,13 +29,6 @@ const About = () => {
       title: "Precision",
       description: "Every detail matters in laboratory environments. We ensure accuracy and precision in all our deliverables."
     }
-  ];
-
-  const stats = [
-    { number: "500+", label: "Projects Completed" },
-    { number: "15+", label: "Years of Experience" },
-    { number: "50+", label: "Research Institutions" },
-    { number: "95%", label: "Client Satisfaction" }
   ];
 
   const timelineData = [
@@ -195,30 +186,6 @@ const About = () => {
         </div>
       </section>
 
-      {/* Our Journey - Stats Section */}
-      <section className="section bg-background">
-        <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
-              Our <span className="text-sea">Journey</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
-              Over 15 years of dedication to excellence in laboratory solutions.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
-                <div className="text-4xl md:text-5xl font-serif font-bold text-sea mb-2">
-                  {stat.number}
-                </div>
-                <p className="text-muted-foreground font-medium">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Mission & Vision */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
         <div className="container-custom">
@@ -301,40 +268,6 @@ const About = () => {
           </div>
           <div className="animate-scale-in animate-delay-300">
             <Timeline data={timelineData} />
-          </div>
-        </div>
-      </section>
-
-      {/* Certifications */}
-      <section className="section bg-background">
-        <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
-              Quality <span className="text-sea">Assurance</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
-              Our certifications and partnerships demonstrate our commitment to the highest industry standards.
-            </p>
-          </div>
-          <div className="animate-fade-in animate-delay-300">
-            <CertificationBadges />
-          </div>
-        </div>
-      </section>
-
-      {/* Location */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background">
-        <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
-              Visit Our <span className="text-sea">Location</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
-              Located in the heart of Singapore, we're easily accessible and ready to serve your laboratory needs.
-            </p>
-          </div>
-          <div className="animate-scale-in animate-delay-300">
-            <GoogleMapsLocation />
           </div>
         </div>
       </section>
