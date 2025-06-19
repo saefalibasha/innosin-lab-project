@@ -34,25 +34,21 @@ const VideoHero = () => {
           containerClassName="h-screen"
           className="flex items-center justify-center w-full h-full"
         >
+          {/* Company Name in Top Left */}
+          <div className="absolute top-8 left-8 z-20 animate-fade-in">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-white/95 tracking-wider">
+              INNOSIN LAB
+            </h1>
+          </div>
+
           {/* Content Overlay */}
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-            {/* Company Name and Main Title Side by Side */}
-            <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start lg:space-x-8 mb-8">
-              <div className="mb-4 lg:mb-0 animate-fade-in">
-                <h1 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-white/95 tracking-wider">
-                  INNOSIN LAB
-                </h1>
-              </div>
-              
-              {/* Large, bold main title */}
-              <div className="animate-fade-in animate-delay-200">
-                <h2 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold leading-[0.9] tracking-tight">
-                  <span className="block">Precision.</span>
-                  <span className="block text-sand-light animate-float">Innovation.</span>
-                  <span className="block text-white/90">Excellence.</span>
-                </h2>
-              </div>
-            </div>
+            {/* Large, bold main title */}
+            <h2 className="text-5xl md:text-7xl lg:text-8xl font-serif font-bold mb-8 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
+              <span className="block">Precision.</span>
+              <span className="block text-sand-light animate-float">Innovation.</span>
+              <span className="block text-white/90">Excellence.</span>
+            </h2>
             
             {/* Subtext/description */}
             <p className="text-xl md:text-2xl lg:text-3xl mb-16 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
