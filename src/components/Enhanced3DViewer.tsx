@@ -34,14 +34,18 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          // Center the model
+          // Center the model at origin
           modelClone.position.set(-center.x, -center.y, -center.z);
           
           // Scale the model to fit nicely in the viewport
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 3; // Increased target size for better visibility
+          const targetSize = 2.5; // Optimal target size for better visibility
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
+          
+          // Position the scaled model so its bottom sits on the ground
+          const scaledSize = size.clone().multiplyScalar(scale);
+          modelClone.position.y = scaledSize.y / 2 - center.y * scale;
           
           // Clear previous children and add the centered/scaled model
           groupRef.current.clear();
@@ -49,9 +53,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Improved camera positioning based on model size
-          const distance = Math.max(5, targetSize * 2);
-          camera.position.set(distance * 0.8, distance * 0.6, distance * 0.8);
+          // Improved camera positioning for better viewing angle
+          const distance = Math.max(4, targetSize * 1.8);
+          camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
           camera.lookAt(0, 0, 0);
           camera.updateProjectionMatrix();
           
@@ -119,39 +123,32 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [5, 4, 5], fov: 50 }}
+          camera={{ position: [4, 3, 4], fov: 50 }}
           gl={{ 
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2
+            toneMappingExposure: 1.0 // Reduced from 1.2 to prevent oversaturation
           }}
         >
           <Suspense fallback={null}>
-            <Environment preset="city" environmentIntensity={0.3} />
+            <Environment preset="studio" environmentIntensity={0.25} />
             
-            {/* Reduced lighting to prevent oversaturation */}
-            <ambientLight intensity={0.2} />
+            {/* Optimized lighting to prevent oversaturation */}
+            <ambientLight intensity={0.15} />
             <directionalLight 
-              position={[10, 10, 5]} 
-              intensity={0.6} 
+              position={[5, 8, 5]} 
+              intensity={0.4} 
               castShadow 
               shadow-mapSize={[1024, 1024]}
             />
             <directionalLight 
-              position={[-10, -10, -5]} 
-              intensity={0.3} 
-            />
-            <pointLight 
-              position={[0, 10, 0]} 
+              position={[-5, 3, -5]} 
               intensity={0.2} 
             />
-            <spotLight 
-              position={[0, 15, 0]} 
-              angle={0.3} 
-              penumbra={1} 
-              intensity={0.3}
-              castShadow
+            <pointLight 
+              position={[0, 8, 0]} 
+              intensity={0.15} 
             />
             
             <GLBModel modelPath={modelPath} />
@@ -163,10 +160,10 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotate={false}
               maxPolarAngle={Math.PI / 1.5}
               minPolarAngle={Math.PI / 8}
-              minDistance={3}
-              maxDistance={15}
+              minDistance={2.5}
+              maxDistance={12}
               enableDamping={true}
-              dampingFactor={0.08}
+              dampingFactor={0.05}
               target={[0, 0, 0]}
             />
           </Suspense>

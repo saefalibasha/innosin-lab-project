@@ -1,19 +1,22 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, ShoppingCart, Package, Ruler } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ArrowLeft, ShoppingCart, Package, Ruler, Camera, Box } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
+import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import { products } from '@/data/products';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { addItem } = useRFQ();
+  const [activeTab, setActiveTab] = useState('photos');
   
   const product = products.find(p => p.id === productId);
 
@@ -55,13 +58,37 @@ const ProductDetail = () => {
         </AnimatedSection>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column - 3D Model */}
+          {/* Left Column - Photos/3D Model Toggle */}
           <div className="space-y-6">
             <AnimatedSection animation="slide-in-left" delay={200}>
-              <Enhanced3DViewer
-                modelPath={product.modelPath}
-                className="w-full h-96 lg:h-[500px]"
-              />
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="photos" className="flex items-center gap-2">
+                    <Camera className="w-4 h-4" />
+                    Photos
+                  </TabsTrigger>
+                  <TabsTrigger value="3d" className="flex items-center gap-2">
+                    <Box className="w-4 h-4" />
+                    3D Model
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="photos">
+                  <ProductImageGallery
+                    images={product.images}
+                    thumbnail={product.thumbnail}
+                    productName={product.name}
+                    className="w-full h-96 lg:h-[500px]"
+                  />
+                </TabsContent>
+
+                <TabsContent value="3d">
+                  <Enhanced3DViewer
+                    modelPath={product.modelPath}
+                    className="w-full h-96 lg:h-[500px]"
+                  />
+                </TabsContent>
+              </Tabs>
             </AnimatedSection>
           </div>
 
