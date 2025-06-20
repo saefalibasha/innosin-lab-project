@@ -1,3 +1,4 @@
+
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import ShopTheLook from "@/components/ShopTheLook";
 import LabTransformCTA from "@/components/LabTransformCTA";
 import { brandCollections } from "@/data/brandCollections";
+import { homePageContent } from "@/data/homePageContent";
 
 const Index = () => {
   return (
@@ -27,10 +29,10 @@ const Index = () => {
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
-              Product <span className="text-sea">Collections</span>
+              {homePageContent.productCollections.title} <span className="text-sea">{homePageContent.productCollections.titleHighlight}</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light animate-fade-in animate-delay-200">
-              Explore our comprehensive range of laboratory solutions from leading manufacturers
+              {homePageContent.productCollections.description}
             </p>
           </div>
           
@@ -66,7 +68,7 @@ const Index = () => {
           <div className="text-center mt-12">
             <Button asChild variant="outline" size="lg" className="animate-pulse-subtle">
               <Link to="/products">
-                View All Products
+                {homePageContent.productCollections.viewAllButton}
               </Link>
             </Button>
           </div>
@@ -78,10 +80,10 @@ const Index = () => {
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
-              Transforming <span className="text-sea">Laboratories</span>
+              {homePageContent.transformingLabs.title} <span className="text-sea">{homePageContent.transformingLabs.titleHighlight}</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light animate-fade-in animate-delay-200">
-              See how we've revolutionized research environments across Singapore and beyond
+              {homePageContent.transformingLabs.description}
             </p>
           </div>
           <div className="animate-scale-in animate-delay-300">

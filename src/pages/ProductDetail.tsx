@@ -12,6 +12,7 @@ import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import { products } from '@/data/products';
+import { productPageContent } from '@/data/productPageContent';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -24,9 +25,9 @@ const ProductDetail = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+          <h1 className="text-2xl font-bold mb-4">{productPageContent.productDetail.productNotFoundTitle}</h1>
           <Link to="/products">
-            <Button>Back to Catalog</Button>
+            <Button>{productPageContent.productDetail.backToCatalogButton}</Button>
           </Link>
         </div>
       </div>
@@ -41,7 +42,7 @@ const ProductDetail = () => {
       dimensions: product.dimensions,
       image: product.thumbnail
     });
-    toast.success(`${product.name} added to quote request`);
+    toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
 
   return (
@@ -52,7 +53,7 @@ const ProductDetail = () => {
           <div className="flex items-center gap-2 mb-8">
             <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              Back to Catalog
+              {productPageContent.productDetail.backToCatalog}
             </Link>
           </div>
         </AnimatedSection>
@@ -65,11 +66,11 @@ const ProductDetail = () => {
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="photos" className="flex items-center gap-2">
                     <Camera className="w-4 h-4" />
-                    Photos
+                    {productPageContent.productDetail.photosTab}
                   </TabsTrigger>
                   <TabsTrigger value="3d" className="flex items-center gap-2">
                     <Box className="w-4 h-4" />
-                    3D Model
+                    {productPageContent.productDetail.modelTab}
                   </TabsTrigger>
                 </TabsList>
 
@@ -104,7 +105,7 @@ const ProductDetail = () => {
                 </h1>
                 <div className="flex items-center gap-2 text-muted-foreground mb-6">
                   <Ruler className="w-4 h-4" />
-                  <span>Dimensions: {product.dimensions}</span>
+                  <span>{productPageContent.productDetail.dimensionsLabel} {product.dimensions}</span>
                 </div>
               </div>
             </AnimatedSection>
@@ -114,7 +115,7 @@ const ProductDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Package className="w-5 h-5" />
-                    Product Overview
+                    {productPageContent.productDetail.overviewTitle}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -128,7 +129,7 @@ const ProductDetail = () => {
             <AnimatedSection animation="slide-in-right" delay={500}>
               <Card>
                 <CardHeader>
-                  <CardTitle>Key Features & Specifications</CardTitle>
+                  <CardTitle>{productPageContent.productDetail.specificationsTitle}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
@@ -149,7 +150,7 @@ const ProductDetail = () => {
                 className="w-full bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-105"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Quote Request
+                {productPageContent.productDetail.addToQuoteButton}
               </Button>
             </AnimatedSection>
           </div>

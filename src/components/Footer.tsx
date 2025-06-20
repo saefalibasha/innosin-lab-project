@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 import { WavyBackground } from '@/components/ui/wavy-background';
+import { siteContent } from '@/data/siteContent';
 
 const Footer = () => {
   return (
@@ -23,43 +25,43 @@ const Footer = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Company Info */}
             <div className="space-y-3 animate-fade-in">
-              <h3 className="text-xl font-serif font-bold text-white mb-2">Innosin Lab</h3>
+              <h3 className="text-xl font-serif font-bold text-white mb-2">{siteContent.company.name}</h3>
               <p className="text-white/90 leading-relaxed font-light text-sm">
-                Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.
+                {siteContent.footer.companyDescription}
               </p>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2 group cursor-pointer">
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
                     <MapPin className="w-3 h-3 text-white" />
                   </div>
-                  <span className="text-white/90 group-hover:text-white transition-colors text-sm">Singapore</span>
+                  <span className="text-white/90 group-hover:text-white transition-colors text-sm">{siteContent.company.location}</span>
                 </div>
                 <div className="flex items-center space-x-2 group cursor-pointer">
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
                     <Phone className="w-3 h-3 text-white" />
                   </div>
-                  <span className="text-white/90 group-hover:text-white transition-colors text-sm">+65 1234 5678</span>
+                  <span className="text-white/90 group-hover:text-white transition-colors text-sm">{siteContent.company.phone}</span>
                 </div>
                 <div className="flex items-center space-x-2 group cursor-pointer">
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
                     <Mail className="w-3 h-3 text-white" />
                   </div>
-                  <span className="text-white/90 group-hover:text-white transition-colors text-sm">info@innosinlab.com</span>
+                  <span className="text-white/90 group-hover:text-white transition-colors text-sm">{siteContent.company.email}</span>
                 </div>
               </div>
             </div>
 
             {/* Quick Links */}
             <div className="space-y-3 animate-fade-in animate-delay-200">
-              <h4 className="text-lg font-serif font-semibold text-white">Quick Links</h4>
+              <h4 className="text-lg font-serif font-semibold text-white">{siteContent.footer.quickLinksTitle}</h4>
               <nav className="space-y-1">
                 {[
-                  { name: 'Home', path: '/' },
-                  { name: 'Products', path: '/products' },
-                  { name: 'Floor Planner', path: '/floor-planner' },
-                  { name: 'About Us', path: '/about' },
-                  { name: 'Blog', path: '/blog' },
-                  { name: 'Contact', path: '/contact' }
+                  { name: siteContent.navigation.home, path: '/' },
+                  { name: siteContent.navigation.products, path: '/products' },
+                  { name: siteContent.navigation.floorPlanner, path: '/floor-planner' },
+                  { name: siteContent.navigation.about, path: '/about' },
+                  { name: siteContent.navigation.blog, path: '/blog' },
+                  { name: siteContent.navigation.contact, path: '/contact' }
                 ].map((link, index) => (
                   <Link 
                     key={link.name}
@@ -77,15 +79,9 @@ const Footer = () => {
 
             {/* Services */}
             <div className="space-y-3 animate-fade-in animate-delay-300">
-              <h4 className="text-lg font-serif font-semibold text-white">Services</h4>
+              <h4 className="text-lg font-serif font-semibold text-white">{siteContent.footer.servicesTitle}</h4>
               <nav className="space-y-1">
-                {[
-                  'Laboratory Design',
-                  'Equipment Installation',
-                  'Safety Compliance',
-                  'Maintenance Support',
-                  'Custom Solutions'
-                ].map((service, index) => (
+                {siteContent.footer.services.map((service, index) => (
                   <div 
                     key={service}
                     className="text-white/90 hover:text-white transition-colors cursor-pointer group animate-fade-in text-sm"
@@ -101,19 +97,19 @@ const Footer = () => {
 
             {/* Newsletter & Social */}
             <div className="space-y-3 animate-fade-in animate-delay-500">
-              <h4 className="text-lg font-serif font-semibold text-white">Stay Connected</h4>
+              <h4 className="text-lg font-serif font-semibold text-white">{siteContent.footer.stayConnectedTitle}</h4>
               <p className="text-white/90 font-light leading-relaxed text-sm">
-                Stay updated with our latest products and industry insights.
+                {siteContent.footer.newsletterDescription}
               </p>
               <div className="space-y-3">
                 <div className="flex flex-col space-y-2">
                   <Input
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={siteContent.footer.emailPlaceholder}
                     className="bg-white/20 border-white/40 text-white placeholder:text-white/70 focus:border-white/70 backdrop-blur-sm focus:bg-white/25 transition-all duration-300 text-sm h-10"
                   />
                   <Button className="bg-white text-sea hover:bg-white/90 transition-all duration-300 hover:scale-105 font-semibold text-sm h-10">
-                    Subscribe
+                    {siteContent.footer.subscribeButton}
                   </Button>
                 </div>
                 
@@ -143,14 +139,14 @@ const Footer = () => {
           <div className="border-t border-white/20 mt-6 pt-4 animate-fade-in animate-delay-700">
             <div className="flex flex-col md:flex-row justify-between items-center space-y-2 md:space-y-0">
               <p className="text-white/90 font-light text-sm">
-                © 2024 Innosin Lab. All rights reserved.
+                {siteContent.footer.copyrightText}
               </p>
               <div className="flex space-x-6">
                 <Link to="/privacy" className="text-white/90 hover:text-white transition-colors hover:underline text-sm">
-                  Privacy Policy
+                  {siteContent.footer.privacyPolicy}
                 </Link>
                 <Link to="/terms" className="text-white/90 hover:text-white transition-colors hover:underline text-sm">
-                  Terms of Service
+                  {siteContent.footer.termsOfService}
                 </Link>
               </div>
             </div>

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { contactPageContent } from '@/data/contactPageContent';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -27,7 +28,7 @@ const Contact = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Form submitted:', formData);
-    toast.success('Message sent successfully! We\'ll get back to you soon.');
+    toast.success(contactPageContent.form.successMessage);
     setFormData({ name: '', email: '', subject: '', message: '' });
   };
 
@@ -36,12 +37,11 @@ const Contact = () => {
       {/* Header */}
       <div className="text-center mb-16">
         <AnimatedSection animation="fade-in" delay={100}>
-          <h1 className="text-4xl font-serif font-bold text-primary mb-4">Contact Us</h1>
+          <h1 className="text-4xl font-serif font-bold text-primary mb-4">{contactPageContent.header.title}</h1>
         </AnimatedSection>
         <AnimatedSection animation="fade-in" delay={300}>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Have questions about our products or need support? We'd love to hear from you. 
-            Send us a message and we'll respond as soon as possible.
+            {contactPageContent.header.description}
           </p>
         </AnimatedSection>
       </div>
@@ -58,14 +58,14 @@ const Contact = () => {
         <AnimatedSection animation="fade-in-left" delay={300}>
           <Card className="glass-card hover:shadow-xl transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl font-serif text-primary">Send us a message</CardTitle>
+              <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.form.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                      Full Name
+                      {contactPageContent.form.nameLabel}
                     </label>
                     <Input
                       id="name"
@@ -74,13 +74,13 @@ const Contact = () => {
                       required
                       value={formData.name}
                       onChange={handleInputChange}
-                      placeholder="John Doe"
+                      placeholder={contactPageContent.form.namePlaceholder}
                       className="transition-all duration-300 focus:border-sea"
                     />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                      Email Address
+                      {contactPageContent.form.emailLabel}
                     </label>
                     <Input
                       id="email"
@@ -89,7 +89,7 @@ const Contact = () => {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      placeholder="john@example.com"
+                      placeholder={contactPageContent.form.emailPlaceholder}
                       className="transition-all duration-300 focus:border-sea"
                     />
                   </div>
@@ -97,7 +97,7 @@ const Contact = () => {
                 
                 <div>
                   <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
-                    Subject
+                    {contactPageContent.form.subjectLabel}
                   </label>
                   <Input
                     id="subject"
@@ -106,14 +106,14 @@ const Contact = () => {
                     required
                     value={formData.subject}
                     onChange={handleInputChange}
-                    placeholder="How can we help you?"
+                    placeholder={contactPageContent.form.subjectPlaceholder}
                     className="transition-all duration-300 focus:border-sea"
                   />
                 </div>
                 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
-                    Message
+                    {contactPageContent.form.messageLabel}
                   </label>
                   <Textarea
                     id="message"
@@ -122,13 +122,13 @@ const Contact = () => {
                     required
                     value={formData.message}
                     onChange={handleInputChange}
-                    placeholder="Tell us more about your inquiry..."
+                    placeholder={contactPageContent.form.messagePlaceholder}
                     className="transition-all duration-300 focus:border-sea"
                   />
                 </div>
                 
                 <Button type="submit" size="lg" className="w-full bg-sea hover:bg-sea-dark animate-float">
-                  Send Message
+                  {contactPageContent.form.submitButton}
                 </Button>
               </form>
             </CardContent>
@@ -139,35 +139,19 @@ const Contact = () => {
         <AnimatedSection animation="fade-in-right" delay={400}>
           <Card className="glass-card hover:shadow-xl transition-all duration-300">
             <CardHeader>
-              <CardTitle className="text-2xl font-serif text-primary">Get in Touch</CardTitle>
+              <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.quickContact.title}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <AnimatedSection animation="slide-up" delay={500}>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 text-sea">Laboratory Consultation</h3>
-                  <p className="text-muted-foreground">
-                    Schedule a consultation with our experts to discuss your laboratory design and equipment needs.
-                  </p>
-                </div>
-              </AnimatedSection>
-              
-              <AnimatedSection animation="slide-up" delay={600}>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 text-sea">Emergency Support</h3>
-                  <p className="text-muted-foreground">
-                    For urgent equipment issues or safety concerns, contact our 24/7 emergency support line.
-                  </p>
-                </div>
-              </AnimatedSection>
-              
-              <AnimatedSection animation="slide-up" delay={700}>
-                <div>
-                  <h3 className="font-semibold text-lg mb-2 text-sea">Project Inquiries</h3>
-                  <p className="text-muted-foreground">
-                    Ready to start your laboratory project? Let's discuss your requirements and timeline.
-                  </p>
-                </div>
-              </AnimatedSection>
+              {contactPageContent.quickContact.sections.map((section, index) => (
+                <AnimatedSection key={index} animation="slide-up" delay={500 + index * 100}>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2 text-sea">{section.title}</h3>
+                    <p className="text-muted-foreground">
+                      {section.description}
+                    </p>
+                  </div>
+                </AnimatedSection>
+              ))}
             </CardContent>
           </Card>
         </AnimatedSection>

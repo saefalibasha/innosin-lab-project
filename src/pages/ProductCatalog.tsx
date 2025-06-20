@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import ProductGrid from '@/components/ProductGrid';
 import QuoteCartSummary from '@/components/QuoteCartSummary';
 import { products, getCategories } from '@/data/products';
 import { Product } from '@/types/product';
+import { productPageContent } from '@/data/productPageContent';
 
 const ProductCatalog = () => {
   const { addItem, itemCount } = useRFQ();
@@ -44,7 +46,7 @@ const ProductCatalog = () => {
       dimensions: product.dimensions,
       image: product.thumbnail
     });
-    toast.success(`${product.name} added to quote request`);
+    toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
 
   return (
@@ -53,17 +55,17 @@ const ProductCatalog = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <AnimatedSection animation="fade-in" delay={100}>
-            <h1 className="text-4xl font-serif font-bold text-primary mb-4">Product Catalog</h1>
+            <h1 className="text-4xl font-serif font-bold text-primary mb-4">{productPageContent.catalog.title}</h1>
           </AnimatedSection>
           <AnimatedSection animation="fade-in" delay={300}>
             <p className="text-xl text-muted-foreground">
-              Browse our comprehensive range of laboratory equipment and furniture from leading manufacturers
+              {productPageContent.catalog.description}
             </p>
           </AnimatedSection>
           {selectedCategory !== 'all' && (
             <AnimatedSection animation="fade-in" delay={400}>
               <Badge variant="outline" className="mt-4 text-lg px-4 py-2 border-sea text-sea">
-                Showing products from: {selectedCategory}
+                {productPageContent.catalog.showingProductsText} {selectedCategory}
               </Badge>
             </AnimatedSection>
           )}
