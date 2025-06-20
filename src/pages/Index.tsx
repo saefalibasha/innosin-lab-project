@@ -1,4 +1,3 @@
-
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,25 +19,25 @@ const Index = () => {
   const collections = [
     {
       title: "Broen-Lab",
-      description: "Advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
+      description: "Broen-Lab specializes in advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
       logoPath: "/brand-logos/broen-lab-logo.png",
       category: "Broen-Lab"
     },
     {
       title: "Hamilton Laboratory Solutions", 
-      description: "Premium laboratory furniture and benches with chemical-resistant surfaces",
+      description: "Hamilton Laboratory Solutions provides premium laboratory furniture and benches with chemical-resistant surfaces",
       logoPath: "/brand-logos/hamilton-laboratory-logo.png",
       category: "Hamilton Laboratory Solutions"
     },
     {
       title: "Oriental Giken Inc.",
-      description: "Emergency safety equipment including eye wash stations and safety showers",
+      description: "Oriental Giken Inc. offers emergency safety equipment including eye wash stations and safety showers",
       logoPath: "/brand-logos/oriental-giken-logo.png",
       category: "Oriental Giken Inc."
     },
     {
       title: "Innosin Lab",
-      description: "Comprehensive storage solutions and laboratory equipment for modern research facilities",
+      description: "Innosin Lab delivers comprehensive storage solutions and laboratory equipment for modern research facilities",
       logoPath: "/brand-logos/innosin-lab-logo.png",
       category: "Innosin Lab"
     }
@@ -86,9 +85,6 @@ const Index = () => {
                         }}
                       />
                     </div>
-                    <h3 className="text-xl font-serif font-semibold text-primary mb-4 group-hover:text-sea transition-colors">
-                      {collection.title}
-                    </h3>
                     <p className="text-muted-foreground text-sm leading-relaxed mb-6 font-light">
                       {collection.description}
                     </p>
