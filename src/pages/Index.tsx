@@ -14,35 +14,9 @@ import VideoHero from "@/components/VideoHero";
 import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import ShopTheLook from "@/components/ShopTheLook";
 import LabTransformCTA from "@/components/LabTransformCTA";
+import { brandCollections } from "@/data/brandCollections";
 
 const Index = () => {
-  const collections = [
-    {
-      title: "Broen-Lab",
-      description: "Broen-Lab specializes in advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
-      logoPath: "/brand-logos/broen-lab-logo.png",
-      category: "Broen-Lab"
-    },
-    {
-      title: "Hamilton Laboratory Solutions", 
-      description: "Hamilton Laboratory Solutions provides premium laboratory furniture and benches with chemical-resistant surfaces",
-      logoPath: "/brand-logos/hamilton-laboratory-logo.png",
-      category: "Hamilton Laboratory Solutions"
-    },
-    {
-      title: "Oriental Giken Inc.",
-      description: "Oriental Giken Inc. offers emergency safety equipment including eye wash stations and safety showers",
-      logoPath: "/brand-logos/oriental-giken-logo.png",
-      category: "Oriental Giken Inc."
-    },
-    {
-      title: "Innosin Lab",
-      description: "Innosin Lab delivers comprehensive storage solutions and laboratory equipment for modern research facilities",
-      logoPath: "/brand-logos/innosin-lab-logo.png",
-      category: "Innosin Lab"
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background">
       {/* Video Hero Section */}
@@ -61,7 +35,7 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {collections.map((collection, index) => (
+            {brandCollections.map((collection, index) => (
               <Link key={index} to={`/products?category=${encodeURIComponent(collection.category)}`}>
                 <Card className={`group hover:shadow-xl transition-all duration-500 border-2 border-transparent hover:border-sea/20 h-full glass-card hover:scale-105 animate-bounce-in`} style={{animationDelay: `${100 + index * 100}ms`}}>
                   <CardContent className="p-6 text-center flex flex-col items-center justify-center h-full">
@@ -75,15 +49,6 @@ const Index = () => {
                         alt={`${collection.title} Logo`}
                         className="w-36 h-36 object-contain object-center transition-transform duration-300 group-hover:scale-110"
                         style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                        onError={(e) => {
-                          // Fallback to emoji if logo not found
-                          const fallbackEmojis = ["💨", "🧪", "🛡️", "📦"];
-                          const target = e.target as HTMLImageElement;
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.innerHTML = `<div class="text-5xl">${fallbackEmojis[index] || "🔬"}</div>`;
-                          }
-                        }}
                       />
                     </div>
                     <p className="text-muted-foreground text-base leading-relaxed mb-4 font-light text-center">
