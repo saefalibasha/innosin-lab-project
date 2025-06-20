@@ -30,7 +30,6 @@ const Navigation = () => {
         { name: 'Broen-Lab', path: '/products?category=Broen-Lab' },
         { name: 'Hamilton Laboratory Solutions', path: '/products?category=Hamilton%20Laboratory%20Solutions' },
         { name: 'Oriental Giken Inc.', path: '/products?category=Oriental%20Giken%20Inc.' },
-        { name: 'Innosin Lab', path: '/products?category=Innosin%20Lab' },
         { name: 'All Products', path: '/products' },
       ]
     },
@@ -40,7 +39,7 @@ const Navigation = () => {
   ];
 
   const searchData = [
-    'Broen-Lab', 'Hamilton Laboratory Solutions', 'Oriental Giken Inc.', 'Innosin Lab',
+    'Broen-Lab', 'Hamilton Laboratory Solutions', 'Oriental Giken Inc.',
     'Floor Planner', 'About Us', 'Contact', 'Chemical Fume Hood',
     'Biological Safety Cabinet', 'Laboratory Workbench', 'Eye Wash Station',
     'Epoxy Resin Lab Bench', 'Emergency Eye Wash Station', 'Safety Shower', 'Storage Cabinet'
@@ -64,15 +63,16 @@ const Navigation = () => {
     <nav className="glass-card border-b border-sea/10 fixed top-0 w-full z-50 shadow-lg backdrop-blur-16 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-28">
-          {/* REPLACEABLE ASSET: Main Company Logo */}
-          {/* Location: /public/branding/innosin-logo.png */}
-          {/* Purpose: Primary navigation logo */}
-          {/* Dimensions: 40x40px recommended */}
+          {/* 🔄 REPLACE THIS LOGO IMAGE 🔄 */}
+          {/* TO UPLOAD YOUR LOGO: Replace the src="/placeholder.svg" below with your logo path */}
+          {/* RECOMMENDED: Upload to /public/branding/your-logo.png */}
+          {/* DIMENSIONS: 40x40px recommended for best display */}
+          {/* FORMATS: PNG, SVG, or JPG supported */}
           <Link to="/" className="flex items-center group animate-fade-in">
             <div className="w-12 h-12 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
               <img 
-                src="/branding/innosin-logo.png" 
-                alt="Innosin Lab" 
+                src="/placeholder.svg" 
+                alt="Company Logo" 
                 className="w-10 h-10 object-contain"
               />
             </div>
