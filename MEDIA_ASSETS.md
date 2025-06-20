@@ -27,28 +27,28 @@ To replace any image:
 - **File**: `broen-lab-logo.png`
 - **Location**: Homepage Product Collections section
 - **Purpose**: Broen-Lab brand representation
-- **Dimensions**: 80x80px
+- **Dimensions**: 128x128px
 - **Format**: PNG with transparency
 - **Description**: Displayed in Broen-Lab product collection card
 
 - **File**: `hamilton-laboratory-logo.png`
 - **Location**: Homepage Product Collections section
 - **Purpose**: Hamilton Laboratory Solutions brand representation
-- **Dimensions**: 80x80px
+- **Dimensions**: 128x128px
 - **Format**: PNG with transparency
 - **Description**: Displayed in Hamilton Laboratory Solutions product collection card
 
 - **File**: `oriental-giken-logo.png`
 - **Location**: Homepage Product Collections section
 - **Purpose**: Oriental Giken Inc. brand representation
-- **Dimensions**: 80x80px
+- **Dimensions**: 128x128px
 - **Format**: PNG with transparency
 - **Description**: Displayed in Oriental Giken Inc. product collection card
 
 - **File**: `innosin-lab-logo.png`
 - **Location**: Homepage Product Collections section
 - **Purpose**: Innosin Lab brand representation in products
-- **Dimensions**: 80x80px
+- **Dimensions**: 128x128px
 - **Format**: PNG with transparency
 - **Description**: Displayed in Innosin Lab product collection card
 

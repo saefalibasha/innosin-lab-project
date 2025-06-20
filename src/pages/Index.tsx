@@ -68,12 +68,12 @@ const Index = () => {
                     {/* REPLACEABLE ASSET: Brand Logo */}
                     {/* Location: {collection.logoPath} */}
                     {/* Purpose: {collection.title} brand representation */}
-                    {/* Dimensions: 80x80px recommended */}
-                    <div className="flex justify-center mb-6 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
+                    {/* Dimensions: 128x128px recommended */}
+                    <div className="flex justify-center mb-8 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
                       <img 
                         src={collection.logoPath}
                         alt={`${collection.title} Logo`}
-                        className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110"
+                        className="w-32 h-32 object-contain transition-transform duration-300 group-hover:scale-110"
                         onError={(e) => {
                           // Fallback to emoji if logo not found
                           const fallbackEmojis = ["💨", "🧪", "🛡️", "📦"];
