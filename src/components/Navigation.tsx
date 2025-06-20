@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -69,7 +68,7 @@ const Navigation = () => {
           {/* Location: /public/branding/innosin-logo.png */}
           {/* Purpose: Primary navigation logo */}
           {/* Dimensions: 40x40px recommended */}
-          <Link to="/" className="flex items-center space-x-3 group animate-fade-in">
+          <Link to="/" className="flex items-center group animate-fade-in">
             <div className="w-12 h-12 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
               <img 
                 src="/branding/innosin-logo.png" 
@@ -77,7 +76,6 @@ const Navigation = () => {
                 className="w-10 h-10 object-contain"
               />
             </div>
-            <span className="font-serif font-bold text-xl lg:text-2xl text-primary group-hover:text-sea transition-colors duration-300">Innosin Lab</span>
           </Link>
 
           {/* Desktop Navigation with Dropdowns - Increased spacing and font size */}
