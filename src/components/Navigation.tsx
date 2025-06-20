@@ -64,7 +64,7 @@ const Navigation = () => {
   return (
     <nav className="glass-card border-b border-sea/10 fixed top-0 w-full z-50 shadow-lg backdrop-blur-16 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+        <div className="flex justify-between items-center h-28">
           {/* REPLACEABLE ASSET: Main Company Logo */}
           {/* Location: /public/branding/innosin-logo.png */}
           {/* Purpose: Primary navigation logo */}
@@ -81,14 +81,14 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Navigation with Dropdowns - Increased spacing and font size */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center space-x-6">
             <NavigationMenu>
-              <NavigationMenuList className="space-x-2">
+              <NavigationMenuList className="space-x-1">
                 {navItems.map((item, index) => (
                   <NavigationMenuItem key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
                     {item.dropdown ? (
                       <>
-                        <NavigationMenuTrigger className={`font-medium text-base transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent text-muted-foreground hover:text-sea px-4 py-3`}>
+                        <NavigationMenuTrigger className={`font-medium text-sm lg:text-base transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent text-muted-foreground hover:text-sea px-3 py-3 whitespace-nowrap`}>
                           {item.name}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
@@ -111,7 +111,7 @@ const Navigation = () => {
                     ) : (
                       <Link
                         to={item.path}
-                        className={`font-medium text-base transition-all duration-300 px-4 py-3 rounded-md hover:bg-sea/10 whitespace-nowrap ${
+                        className={`font-medium text-sm lg:text-base transition-all duration-300 px-3 py-3 rounded-md hover:bg-sea/10 whitespace-nowrap ${
                           isActive(item.path)
                             ? 'text-sea bg-sea/10'
                             : 'text-muted-foreground hover:text-sea'
@@ -129,7 +129,7 @@ const Navigation = () => {
           {/* Search Bar & Mobile Menu */}
           <div className="flex items-center space-x-4">
             {/* Search Bar */}
-            <div className="relative hidden lg:block animate-fade-in-right animate-delay-300">
+            <div className="relative hidden xl:block animate-fade-in-right animate-delay-300">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
@@ -137,7 +137,7 @@ const Navigation = () => {
                   placeholder="Search products..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-10 w-64 glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                  className="pl-10 w-56 glass-card border-sea/20 focus:border-sea transition-all duration-300"
                 />
               </div>
               {searchSuggestions.length > 0 && (
@@ -161,7 +161,7 @@ const Navigation = () => {
 
             {/* Mobile menu trigger */}
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
-              <SheetTrigger asChild className="md:hidden">
+              <SheetTrigger asChild className="lg:hidden">
                 <Button variant="outline" size="sm" className="glass-card border-sea/20 hover:bg-sea/10 transition-all duration-300">
                   <Menu className="w-4 h-4" />
                 </Button>
@@ -229,7 +229,7 @@ const Navigation = () => {
       </div>
 
       {/* Fixed RFQ Cart in Top Right - Desktop Only */}
-      <div className="hidden md:block fixed top-24 right-6 z-40 animate-fade-in animate-delay-500">
+      <div className="hidden lg:block fixed top-32 right-6 z-40 animate-fade-in animate-delay-500">
         <Link to="/rfq-cart">
           <Button variant="outline" size="sm" className="relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105 shadow-lg">
             <ShoppingCart className="w-4 h-4" />

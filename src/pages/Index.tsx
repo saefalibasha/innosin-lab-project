@@ -1,3 +1,4 @@
+
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,25 +21,25 @@ const Index = () => {
     {
       title: "Broen-Lab",
       description: "Advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
-      icon: "💨",
+      logoPath: "/brand-logos/broen-lab-logo.png",
       category: "Broen-Lab"
     },
     {
       title: "Hamilton Laboratory Solutions", 
       description: "Premium laboratory furniture and benches with chemical-resistant surfaces",
-      icon: "🧪",
+      logoPath: "/brand-logos/hamilton-laboratory-logo.png",
       category: "Hamilton Laboratory Solutions"
     },
     {
       title: "Oriental Giken Inc.",
       description: "Emergency safety equipment including eye wash stations and safety showers",
-      icon: "🛡️",
+      logoPath: "/brand-logos/oriental-giken-logo.png",
       category: "Oriental Giken Inc."
     },
     {
       title: "Innosin Lab",
       description: "Comprehensive storage solutions and laboratory equipment for modern research facilities",
-      icon: "📦",
+      logoPath: "/brand-logos/innosin-lab-logo.png",
       category: "Innosin Lab"
     }
   ];
@@ -65,7 +66,26 @@ const Index = () => {
               <Link key={index} to={`/products?category=${encodeURIComponent(collection.category)}`}>
                 <Card className={`group hover:shadow-xl transition-all duration-500 border-2 border-transparent hover:border-sea/20 h-full glass-card hover:scale-105 animate-bounce-in`} style={{animationDelay: `${100 + index * 100}ms`}}>
                   <CardContent className="p-8 text-center">
-                    <div className="text-4xl mb-6 animate-float" style={{animationDelay: `${index * 0.5}s`}}>{collection.icon}</div>
+                    {/* REPLACEABLE ASSET: Brand Logo */}
+                    {/* Location: {collection.logoPath} */}
+                    {/* Purpose: {collection.title} brand representation */}
+                    {/* Dimensions: 80x80px recommended */}
+                    <div className="flex justify-center mb-6 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
+                      <img 
+                        src={collection.logoPath}
+                        alt={`${collection.title} Logo`}
+                        className="w-20 h-20 object-contain transition-transform duration-300 group-hover:scale-110"
+                        onError={(e) => {
+                          // Fallback to emoji if logo not found
+                          const fallbackEmojis = ["💨", "🧪", "🛡️", "📦"];
+                          const target = e.target as HTMLImageElement;
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="text-4xl">${fallbackEmojis[index] || "🔬"}</div>`;
+                          }
+                        }}
+                      />
+                    </div>
                     <h3 className="text-xl font-serif font-semibold text-primary mb-4 group-hover:text-sea transition-colors">
                       {collection.title}
                     </h3>

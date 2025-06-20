@@ -23,26 +23,34 @@ To replace any image:
 - **Format**: PNG with transparency
 - **Description**: Primary Innosin Lab logo displayed in navigation
 
-#### Partner Brand Logos
+#### Partner Brand Logos (Product Collections)
 - **File**: `broen-lab-logo.png`
+- **Location**: Homepage Product Collections section
 - **Purpose**: Broen-Lab brand representation
 - **Dimensions**: 80x80px
 - **Format**: PNG with transparency
+- **Description**: Displayed in Broen-Lab product collection card
 
 - **File**: `hamilton-laboratory-logo.png`
+- **Location**: Homepage Product Collections section
 - **Purpose**: Hamilton Laboratory Solutions brand representation
 - **Dimensions**: 80x80px
 - **Format**: PNG with transparency
+- **Description**: Displayed in Hamilton Laboratory Solutions product collection card
 
 - **File**: `oriental-giken-logo.png`
+- **Location**: Homepage Product Collections section
 - **Purpose**: Oriental Giken Inc. brand representation
 - **Dimensions**: 80x80px
 - **Format**: PNG with transparency
+- **Description**: Displayed in Oriental Giken Inc. product collection card
 
 - **File**: `innosin-lab-logo.png`
+- **Location**: Homepage Product Collections section
 - **Purpose**: Innosin Lab brand representation in products
 - **Dimensions**: 80x80px
 - **Format**: PNG with transparency
+- **Description**: Displayed in Innosin Lab product collection card
 
 ### Hero Section (`/public/hero-section/`)
 
@@ -186,6 +194,33 @@ To replace any image:
 - **Purpose**: Compact lab bench product image
 - **Dimensions**: 300x200px
 - **Format**: JPG
+
+## Brand Logo Replacement Instructions
+
+### Product Collections Section
+The homepage Product Collections section displays four brand logos. To replace these:
+
+1. Navigate to `/public/brand-logos/` in your GitHub repository
+2. Upload your brand logo files with these exact names:
+   - `broen-lab-logo.png` - Broen-Lab brand logo
+   - `hamilton-laboratory-logo.png` - Hamilton Laboratory Solutions logo
+   - `oriental-giken-logo.png` - Oriental Giken Inc. logo
+   - `innosin-lab-logo.png` - Innosin Lab logo
+
+3. **Important specifications:**
+   - **Dimensions**: 80x80px (square format)
+   - **Format**: PNG with transparent background preferred
+   - **Quality**: High resolution for crisp display
+   - **Style**: Clean, professional appearance that matches the site design
+
+4. The logos will automatically display with hover effects and responsive scaling
+
+### Fallback System
+If a logo file is not found, the system will automatically fall back to the original emoji icons:
+- Broen-Lab: 💨 (wind/ventilation symbol)
+- Hamilton Laboratory: 🧪 (lab equipment symbol)
+- Oriental Giken: 🛡️ (safety/protection symbol)
+- Innosin Lab: 📦 (storage/equipment symbol)
 
 ## Image Replacement Instructions
 
