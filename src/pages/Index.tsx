@@ -1,5 +1,3 @@
-
-
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -71,7 +69,7 @@ const Index = () => {
                     {/* Location: {collection.logoPath} */}
                     {/* Purpose: {collection.title} brand representation */}
                     {/* Dimensions: 144x144px recommended */}
-                    <div className="flex justify-center mb-4 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
+                    <div className="flex justify-center mb-2 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
                       <img 
                         src={collection.logoPath}
                         alt={`${collection.title} Logo`}
