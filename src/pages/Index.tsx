@@ -1,4 +1,5 @@
 
+
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -65,16 +66,17 @@ const Index = () => {
             {collections.map((collection, index) => (
               <Link key={index} to={`/products?category=${encodeURIComponent(collection.category)}`}>
                 <Card className={`group hover:shadow-xl transition-all duration-500 border-2 border-transparent hover:border-sea/20 h-full glass-card hover:scale-105 animate-bounce-in`} style={{animationDelay: `${100 + index * 100}ms`}}>
-                  <CardContent className="p-8 text-center">
+                  <CardContent className="p-6 text-center flex flex-col items-center justify-center h-full">
                     {/* REPLACEABLE ASSET: Brand Logo */}
                     {/* Location: {collection.logoPath} */}
                     {/* Purpose: {collection.title} brand representation */}
                     {/* Dimensions: 144x144px recommended */}
-                    <div className="flex justify-center mb-8 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
+                    <div className="flex justify-center mb-4 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
                       <img 
                         src={collection.logoPath}
                         alt={`${collection.title} Logo`}
-                        className="w-36 h-36 object-contain transition-transform duration-300 group-hover:scale-110"
+                        className="w-36 h-36 object-contain object-center transition-transform duration-300 group-hover:scale-110"
+                        style={{ filter: 'contrast(1.1) brightness(1.05)' }}
                         onError={(e) => {
                           // Fallback to emoji if logo not found
                           const fallbackEmojis = ["💨", "🧪", "🛡️", "📦"];
@@ -86,10 +88,10 @@ const Index = () => {
                         }}
                       />
                     </div>
-                    <p className="text-muted-foreground text-base leading-relaxed mb-6 font-light">
+                    <p className="text-muted-foreground text-base leading-relaxed mb-4 font-light text-center">
                       {collection.description}
                     </p>
-                    <div className="flex justify-center">
+                    <div className="flex justify-center mt-auto">
                       <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-sea group-hover:translate-x-1 transition-all duration-300" />
                     </div>
                   </CardContent>
