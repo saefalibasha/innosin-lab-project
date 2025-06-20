@@ -1,3 +1,4 @@
+
 import { ArrowRight, ChevronLeft, ChevronRight, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -68,24 +69,24 @@ const Index = () => {
                     {/* REPLACEABLE ASSET: Brand Logo */}
                     {/* Location: {collection.logoPath} */}
                     {/* Purpose: {collection.title} brand representation */}
-                    {/* Dimensions: 128x128px recommended */}
+                    {/* Dimensions: 144x144px recommended */}
                     <div className="flex justify-center mb-8 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
                       <img 
                         src={collection.logoPath}
                         alt={`${collection.title} Logo`}
-                        className="w-32 h-32 object-contain transition-transform duration-300 group-hover:scale-110"
+                        className="w-36 h-36 object-contain transition-transform duration-300 group-hover:scale-110"
                         onError={(e) => {
                           // Fallback to emoji if logo not found
                           const fallbackEmojis = ["💨", "🧪", "🛡️", "📦"];
                           const target = e.target as HTMLImageElement;
                           const parent = target.parentElement;
                           if (parent) {
-                            parent.innerHTML = `<div class="text-4xl">${fallbackEmojis[index] || "🔬"}</div>`;
+                            parent.innerHTML = `<div class="text-5xl">${fallbackEmojis[index] || "🔬"}</div>`;
                           }
                         }}
                       />
                     </div>
-                    <p className="text-muted-foreground text-sm leading-relaxed mb-6 font-light">
+                    <p className="text-muted-foreground text-base leading-relaxed mb-6 font-light">
                       {collection.description}
                     </p>
                     <div className="flex justify-center">
