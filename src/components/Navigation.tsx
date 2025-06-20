@@ -64,28 +64,31 @@ const Navigation = () => {
   return (
     <nav className="glass-card border-b border-sea/10 fixed top-0 w-full z-50 shadow-lg backdrop-blur-16 animate-slide-down">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+        <div className="flex justify-between items-center h-20">
+          {/* REPLACEABLE ASSET: Main Company Logo */}
+          {/* Location: /public/branding/innosin-logo.png */}
+          {/* Purpose: Primary navigation logo */}
+          {/* Dimensions: 40x40px recommended */}
           <Link to="/" className="flex items-center space-x-3 group animate-fade-in">
-            <div className="w-10 h-10 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+            <div className="w-12 h-12 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
               <img 
-                src="/innosin-logo.png" 
+                src="/branding/innosin-logo.png" 
                 alt="Innosin Lab" 
-                className="w-8 h-8 object-contain"
+                className="w-10 h-10 object-contain"
               />
             </div>
-            <span className="font-serif font-bold text-xl text-primary group-hover:text-sea transition-colors duration-300">Innosin Lab</span>
+            <span className="font-serif font-bold text-xl lg:text-2xl text-primary group-hover:text-sea transition-colors duration-300">Innosin Lab</span>
           </Link>
 
-          {/* Desktop Navigation with Dropdowns */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Desktop Navigation with Dropdowns - Increased spacing and font size */}
+          <div className="hidden md:flex items-center space-x-8">
             <NavigationMenu>
-              <NavigationMenuList>
+              <NavigationMenuList className="space-x-2">
                 {navItems.map((item, index) => (
                   <NavigationMenuItem key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
                     {item.dropdown ? (
                       <>
-                        <NavigationMenuTrigger className={`font-medium transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent text-muted-foreground hover:text-sea`}>
+                        <NavigationMenuTrigger className={`font-medium text-base transition-all duration-300 hover:text-sea bg-transparent hover:bg-transparent data-[state=open]:bg-transparent data-[active]:bg-transparent text-muted-foreground hover:text-sea px-4 py-3`}>
                           {item.name}
                         </NavigationMenuTrigger>
                         <NavigationMenuContent>
@@ -108,7 +111,7 @@ const Navigation = () => {
                     ) : (
                       <Link
                         to={item.path}
-                        className={`font-medium transition-all duration-300 px-3 py-2 rounded-md hover:bg-sea/10 ${
+                        className={`font-medium text-base transition-all duration-300 px-4 py-3 rounded-md hover:bg-sea/10 whitespace-nowrap ${
                           isActive(item.path)
                             ? 'text-sea bg-sea/10'
                             : 'text-muted-foreground hover:text-sea'
@@ -226,7 +229,7 @@ const Navigation = () => {
       </div>
 
       {/* Fixed RFQ Cart in Top Right - Desktop Only */}
-      <div className="hidden md:block fixed top-20 right-6 z-40 animate-fade-in animate-delay-500">
+      <div className="hidden md:block fixed top-24 right-6 z-40 animate-fade-in animate-delay-500">
         <Link to="/rfq-cart">
           <Button variant="outline" size="sm" className="relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105 shadow-lg">
             <ShoppingCart className="w-4 h-4" />

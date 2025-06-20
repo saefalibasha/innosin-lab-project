@@ -35,7 +35,9 @@ const VideoHero = () => {
           containerClassName="min-h-[50vh]"
           className="flex items-center justify-center w-full h-full"
         >
-          {/* Company Name in Top Left */}
+          {/* REPLACEABLE ASSET: Company Name Logo */}
+          {/* Location: Can be replaced with image logo if needed */}
+          {/* Purpose: Company branding in hero section */}
           <div className="absolute top-4 left-4 z-20 animate-fade-in">
             <h1 className="text-lg md:text-xl lg:text-2xl font-serif font-bold text-white/95 tracking-wider">
               INNOSIN LAB
@@ -101,6 +103,11 @@ const VideoHero = () => {
                 <p className="text-muted-foreground text-sm">Research Institutions</p>
               </div>
             </div>
+            
+            {/* REPLACEABLE ASSET: Company Story Video */}
+            {/* Location: /public/hero-section/company-story-video.mp4 */}
+            {/* Purpose: Background or featured video for company story */}
+            {/* Dimensions: 1920x1080px recommended, MP4 format */}
             <div className="animate-scale-in animate-delay-500">
               <Button asChild variant="outline" size="default" className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
                 <Link to="/about">

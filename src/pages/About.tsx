@@ -41,24 +41,40 @@ const About = () => {
             Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone.
           </p>
           <div className="grid grid-cols-2 gap-4">
+            {/* REPLACEABLE ASSET: 2024 Modern Laboratory Equipment */}
+            {/* Location: /public/about-us/timeline-2024-modern-equipment.jpg */}
+            {/* Purpose: Showcase of modern laboratory equipment (2024) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=500&h=300&fit=crop"
-              alt="Modern laboratory equipment"
+              src="/about-us/timeline-2024-modern-equipment.jpg"
+              alt="Modern laboratory equipment 2024"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
+            {/* REPLACEABLE ASSET: 2024 Laboratory Technology */}
+            {/* Location: /public/about-us/timeline-2024-lab-technology.jpg */}
+            {/* Purpose: Laboratory technology advancement (2024) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=500&h=300&fit=crop"
-              alt="Laboratory technology"
+              src="/about-us/timeline-2024-lab-technology.jpg"
+              alt="Laboratory technology advancement 2024"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
+            {/* REPLACEABLE ASSET: 2024 Research Environment */}
+            {/* Location: /public/about-us/timeline-2024-research.jpg */}
+            {/* Purpose: Research environment showcase (2024) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=500&h=300&fit=crop"
-              alt="Laboratory research"
+              src="/about-us/timeline-2024-research.jpg"
+              alt="Research environment 2024"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
+            {/* REPLACEABLE ASSET: 2024 Laboratory Design */}
+            {/* Location: /public/about-us/timeline-2024-lab-design.jpg */}
+            {/* Purpose: Laboratory design showcase (2024) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1473091534298-04dcbce3278c?w=500&h=300&fit=crop"
-              alt="Laboratory design"
+              src="/about-us/timeline-2024-lab-design.jpg"
+              alt="Laboratory design showcase 2024"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
           </div>
@@ -78,14 +94,22 @@ const About = () => {
             that reduced operational costs by 30% for our clients.
           </p>
           <div className="grid grid-cols-2 gap-4">
+            {/* REPLACEABLE ASSET: 2018 Pharmaceutical Laboratory */}
+            {/* Location: /public/about-us/timeline-2018-pharmaceutical-lab.jpg */}
+            {/* Purpose: Pharmaceutical laboratory project (2018) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1585435557343-3b092031d4cc?w=500&h=300&fit=crop"
-              alt="Pharmaceutical laboratory"
+              src="/about-us/timeline-2018-pharmaceutical-lab.jpg"
+              alt="Pharmaceutical laboratory project 2018"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
+            {/* REPLACEABLE ASSET: 2018 Research Facility */}
+            {/* Location: /public/about-us/timeline-2018-research-facility.jpg */}
+            {/* Purpose: Research facility expansion (2018) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=500&h=300&fit=crop"
-              alt="Research facility"
+              src="/about-us/timeline-2018-research-facility.jpg"
+              alt="Research facility expansion 2018"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
           </div>
@@ -117,14 +141,22 @@ const About = () => {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
+            {/* REPLACEABLE ASSET: 2012 Laboratory Automation */}
+            {/* Location: /public/about-us/timeline-2012-automation.jpg */}
+            {/* Purpose: Laboratory automation systems (2012) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1581090464777-f3220bbe1b8b?w=500&h=300&fit=crop"
-              alt="Laboratory innovation"
+              src="/about-us/timeline-2012-automation.jpg"
+              alt="Laboratory automation systems 2012"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
+            {/* REPLACEABLE ASSET: 2012 Safety Protocols */}
+            {/* Location: /public/about-us/timeline-2012-safety.jpg */}
+            {/* Purpose: Safety protocol implementation (2012) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=500&h=300&fit=crop"
-              alt="Laboratory safety"
+              src="/about-us/timeline-2012-safety.jpg"
+              alt="Safety protocol implementation 2012"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
           </div>
@@ -141,14 +173,22 @@ const About = () => {
             with the National University of Singapore.
           </p>
           <div className="grid grid-cols-2 gap-4">
+            {/* REPLACEABLE ASSET: 2009 Company Founding */}
+            {/* Location: /public/about-us/timeline-2009-founding.jpg */}
+            {/* Purpose: Company founding moment (2009) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&h=300&fit=crop"
-              alt="Company founding"
+              src="/about-us/timeline-2009-founding.jpg"
+              alt="Company founding 2009"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
+            {/* REPLACEABLE ASSET: 2009 Early Laboratory Design */}
+            {/* Location: /public/about-us/timeline-2009-early-design.jpg */}
+            {/* Purpose: Early laboratory design work (2009) */}
+            {/* Dimensions: 500x300px */}
             <img
-              src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=500&h=300&fit=crop"
-              alt="Early laboratory design"
+              src="/about-us/timeline-2009-early-design.jpg"
+              alt="Early laboratory design work 2009"
               className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
             />
           </div>
@@ -158,7 +198,7 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-background pt-20">
       {/* Hero Section */}
       <section className="section bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden">
         <div className="container-custom">
@@ -208,9 +248,13 @@ const About = () => {
             </div>
             <div className="animate-fade-in-right animate-delay-300">
               <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
+                {/* REPLACEABLE ASSET: Mission Section Laboratory */}
+                {/* Location: /public/about-us/mission-modern-laboratory.jpg */}
+                {/* Purpose: Supporting image for mission section */}
+                {/* Dimensions: 600x400px */}
                 <img 
-                  src="https://images.unsplash.com/photo-1581093458791-9f3c3900df4b?w=600&h=400&fit=crop" 
-                  alt="Modern laboratory" 
+                  src="/about-us/mission-modern-laboratory.jpg" 
+                  alt="Modern laboratory mission" 
                   className="w-full h-64 object-cover rounded-lg mb-6"
                 />
                 <blockquote className="text-lg italic text-muted-foreground">
