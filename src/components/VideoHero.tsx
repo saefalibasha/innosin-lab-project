@@ -35,13 +35,17 @@ const VideoHero = () => {
           containerClassName="min-h-[50vh]"
           className="flex items-center justify-center w-full h-full"
         >
-          {/* REPLACEABLE ASSET: Company Name Logo */}
-          {/* Location: Can be replaced with image logo if needed */}
-          {/* Purpose: Company branding in hero section */}
+          {/* REPLACEABLE ASSET: Company Logo in Hero Section */}
+          {/* Location: /public/branding/hero-logo.png */}
+          {/* Purpose: Company branding in hero section that aligns with navigation */}
+          {/* Dimensions: 48x48px recommended (w-12 h-12) */}
+          {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update the src below */}
           <div className="absolute top-4 left-4 z-20 animate-fade-in">
-            <h1 className="text-lg md:text-xl lg:text-2xl font-serif font-bold text-white/95 tracking-wider">
-              INNOSIN LAB
-            </h1>
+            <img 
+              src="/placeholder.svg" 
+              alt="Company Logo" 
+              className="w-12 h-12 object-contain transition-all duration-300 hover:scale-110"
+            />
           </div>
 
           {/* Content Overlay - Increased top padding to move content lower */}
