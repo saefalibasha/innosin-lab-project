@@ -1,18 +1,9 @@
 
 // Homepage Content Data
-// This file contains all the text content for the homepage
+// This file contains all the text content for the homepage sections (excluding hero)
 // To modify the text content, simply edit the values below
 
 export const homePageContent = {
-  // Video Hero Section
-  hero: {
-    title: "Transforming Laboratories",
-    subtitle: "with Innovative Design",
-    description: "Creating cutting-edge laboratory environments that inspire discovery and enhance scientific research capabilities.",
-    ctaButton: "Explore Solutions",
-    watchVideoButton: "Watch Our Story"
-  },
-
   // Product Collections Section
   productCollections: {
     title: "Product",
@@ -39,13 +30,20 @@ export const homePageContent = {
 };
 
 /*
-HOW TO EDIT HOMEPAGE CONTENT:
-1. To change hero section text: Edit the "hero" section
-2. To change product collections text: Edit the "productCollections" section
-3. To change transforming labs text: Edit the "transformingLabs" section
-4. To change CTA section text: Edit the "labTransformCTA" section
+HOW TO EDIT HOMEPAGE CONTENT VIA GITHUB:
+1. Navigate to this file: src/data/homePageContent.ts
+2. Edit any text values in the homePageContent object above
+3. Commit your changes to GitHub
 
-Example:
-To change the hero title from "Transforming Laboratories" to "Custom Laboratory Solutions":
-- Change hero.title: "Custom Laboratory Solutions"
+SECTIONS INCLUDED:
+1. Product Collections - Text for the product showcase section
+2. Transforming Labs - Text for the before/after comparison section  
+3. Lab Transform CTA - Text for the final call-to-action section
+
+EXAMPLES:
+- To change product collections title: Edit productCollections.title or titleHighlight
+- To change transforming labs description: Edit transformingLabs.description
+- To change CTA section text: Edit labTransformCTA.title, description, or button text
+
+NOTE: Hero section content is managed in src/data/heroContent.ts
 */

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { WavyBackground } from '@/components/ui/wavy-background';
+import { heroContent } from '@/data/heroContent';
 
 const VideoHero = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -38,13 +39,13 @@ const VideoHero = () => {
           {/* REPLACEABLE ASSET: Company Logo in Hero Section */}
           {/* Location: /public/branding/hero-logo.png */}
           {/* Purpose: Company branding in hero section that aligns with navigation */}
-          {/* Dimensions: 40x40px recommended (w-10 h-10) to match navigation logo */}
-          {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update the src below */}
+          {/* Dimensions: 64x64px recommended (w-16 h-16) for better visibility */}
+          {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update heroContent.ts */}
           <div className="absolute top-7 left-12 z-20 animate-fade-in">
-            <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-lg">
+            <div className="w-16 h-16 bg-white/90 rounded-lg p-0.5 shadow-lg backdrop-blur-sm">
               <img 
                 src="/branding/hero-logo.png" 
-                alt="Company Logo" 
+                alt={heroContent.logo.alt}
                 className="w-full h-full object-contain"
                 onError={(e) => {
                   console.log('Logo failed to load, using fallback');
@@ -60,28 +61,28 @@ const VideoHero = () => {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white pt-28 pb-16">
             {/* Large, bold main title */}
             <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
-              <span className="block">Precision.</span>
-              <span className="block text-sand-light animate-float">Innovation.</span>
-              <span className="block text-white/90">Excellence.</span>
+              <span className="block">{heroContent.mainTitles.title1}</span>
+              <span className="block text-sand-light animate-float">{heroContent.mainTitles.title2}</span>
+              <span className="block text-white/90">{heroContent.mainTitles.title3}</span>
             </h2>
             
             {/* Subtext/description */}
             <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
-              Empowering scientific breakthroughs with high-quality lab solutions.
-              <span className="block mt-1">Transform your research environment with cutting-edge equipment and design.</span>
+              {heroContent.description.line1}
+              <span className="block mt-1">{heroContent.description.line2}</span>
             </p>
             
             {/* Two CTA buttons side by side */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 animate-scale-in animate-delay-500">
               <Button asChild variant="heroSolid" size="lg" className="min-w-[200px] h-12 text-base">
                 <Link to="/products">
-                  Explore Solutions <ArrowRight className="ml-2 w-5 h-5" />
+                  {heroContent.buttons.primary} <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </Button>
               
               <Button asChild variant="hero" size="lg" className="min-w-[200px] h-12 text-base">
                 <Link to="/contact">
-                  Schedule Consultation
+                  {heroContent.buttons.secondary}
                 </Link>
               </Button>
             </div>
@@ -94,25 +95,23 @@ const VideoHero = () => {
         <div className="container-custom text-center">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2 tracking-tight animate-fade-in">
-              Our <span className="text-sea">Story</span>
+              {heroContent.ourStory.title} <span className="text-sea">{heroContent.ourStory.titleHighlight}</span>
             </h2>
             <p className="text-sm text-muted-foreground mb-3 leading-relaxed animate-fade-in animate-delay-200">
-              For over a decade, Innosin Lab has been at the forefront of laboratory innovation, 
-              transforming research environments across Singapore and beyond. Our journey began with 
-              a simple mission: to provide world-class laboratory solutions that empower scientific discovery.
+              {heroContent.ourStory.description}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div className="animate-fade-in animate-delay-300">
-                <div className="text-xl font-bold text-sea mb-1">500+</div>
-                <p className="text-muted-foreground text-sm">Projects Completed</p>
+                <div className="text-xl font-bold text-sea mb-1">{heroContent.ourStory.stats.projectsCompleted.number}</div>
+                <p className="text-muted-foreground text-sm">{heroContent.ourStory.stats.projectsCompleted.label}</p>
               </div>
               <div className="animate-fade-in animate-delay-500">
-                <div className="text-xl font-bold text-sea mb-1">15+</div>
-                <p className="text-muted-foreground text-sm">Years of Excellence</p>
+                <div className="text-xl font-bold text-sea mb-1">{heroContent.ourStory.stats.yearsOfExcellence.number}</div>
+                <p className="text-muted-foreground text-sm">{heroContent.ourStory.stats.yearsOfExcellence.label}</p>
               </div>
               <div className="animate-fade-in animate-delay-700">
-                <div className="text-xl font-bold text-sea mb-1">50+</div>
-                <p className="text-muted-foreground text-sm">Research Institutions</p>
+                <div className="text-xl font-bold text-sea mb-1">{heroContent.ourStory.stats.researchInstitutions.number}</div>
+                <p className="text-muted-foreground text-sm">{heroContent.ourStory.stats.researchInstitutions.label}</p>
               </div>
             </div>
             
@@ -124,7 +123,7 @@ const VideoHero = () => {
               <Button asChild variant="outline" size="default" className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
                 <Link to="/about">
                   <Play className="w-4 h-4 mr-2" />
-                  Watch Our Story
+                  {heroContent.ourStory.videoButton}
                 </Link>
               </Button>
             </div>
