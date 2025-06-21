@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play } from 'lucide-react';
@@ -40,12 +39,11 @@ const VideoHero = () => {
           {/* Purpose: Company branding in hero section that aligns with navigation */}
           {/* Dimensions: 40x40px recommended (w-10 h-10) to match navigation logo */}
           {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update the src below */}
-          <div className="absolute top-6 left-8 z-20 animate-fade-in">
+          <div className="absolute top-7 left-12 z-20 animate-fade-in">
             <img 
-              src="/branding/hero-logo.png" 
+              src="/placeholder.svg" 
               alt="Company Logo" 
-              className="w-10 h-10 object-contain transition-all duration-300 hover:scale-110"
-              style={{ filter: 'brightness(1) contrast(1)' }}
+              className="w-10 h-10 object-contain transition-all duration-300 hover:scale-110 bg-white/20 backdrop-blur-sm rounded-lg p-2"
             />
           </div>
 
