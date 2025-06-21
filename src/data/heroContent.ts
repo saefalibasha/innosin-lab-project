@@ -12,6 +12,19 @@ export const heroContent = {
     // Recommended size: 64x64px or higher for crisp display
   },
 
+  // Hero Slider Images Configuration
+  // To customize slider images:
+  // 1. Upload your images to /public/hero-section/ folder
+  // 2. Update the image URLs in VideoHero.tsx heroSlides array
+  // 3. Recommended dimensions: 1920x1080px for best quality
+  // 4. Supported formats: JPG, PNG, WebP
+  sliderImages: {
+    instructions: "Edit the heroSlides array in VideoHero.tsx to change slider images",
+    recommendedSize: "1920x1080px",
+    location: "/public/hero-section/",
+    formats: "JPG, PNG, WebP"
+  },
+
   // Main Hero Titles (large text)
   mainTitles: {
     title1: "Precision.",
@@ -63,6 +76,13 @@ HOW TO EDIT HERO CONTENT VIA GITHUB:
 1. Navigate to this file: src/data/heroContent.ts
 2. Edit any text values in the heroContent object above
 3. Commit your changes to GitHub
+
+HOW TO EDIT HERO SLIDER IMAGES:
+1. Upload your images to /public/hero-section/ folder
+2. Navigate to: src/components/VideoHero.tsx
+3. Find the heroSlides array (around line 18)
+4. Update the image URLs and alt text
+5. Recommended size: 1920x1080px for best quality
 
 EXAMPLES:
 - To change main hero title: Edit mainTitles.title1, title2, or title3
