@@ -41,21 +41,19 @@ export const heroContent = {
       image: "/hero-images/slide-2-research.jpg",
       alt: "Advanced research facility with state-of-the-art equipment",
       titles: {
-        title1: "Advanced.",
-        title2: "Research.", 
-        title3: "Facilities."
+        title1: "Sincerity in Every Project.",
       },
       description: {
-        line1: "State-of-the-art laboratory environments designed for breakthrough discoveries.",
-        line2: "Comprehensive solutions from planning to implementation."
+        line1: "Our team’s honest approach ensures your needs are heard and your vision realized",
+        line2: " — from consultation to installation."
       },
       buttons: {
         primary: {
-          text: "View Projects",
+          text: "About Us",
           link: "/about"
         },
         secondary: {
-          text: "Floor Planner",
+          text: "Schedule Consultation",
           link: "/floor-planner"
         }
       }
@@ -65,13 +63,11 @@ export const heroContent = {
       image: "/hero-images/slide-3-future.jpg",
       alt: "Futuristic laboratory workspace showcasing innovation",
       titles: {
-        title1: "Future.",
-        title2: "Ready.", 
-        title3: "Labs."
+        title1: "Your Trusted Lab Partner",
       },
       description: {
-        line1: "Building tomorrow's laboratories with innovative design and technology.",
-        line2: "Your partner in creating spaces where science thrives."
+        line1: "Combining innovation and sincerity, we deliver safe, efficient, ",
+        line2: "and inspiring laboratories for every client."
       },
       buttons: {
         primary: {
@@ -79,8 +75,8 @@ export const heroContent = {
           link: "/rfq-cart"
         },
         secondary: {
-          text: "Learn More",
-          link: "/about"
+          text: "Floor Planner",
+          link: "/floor-planner"
         }
       }
     }
