@@ -38,13 +38,14 @@ const VideoHero = () => {
           {/* REPLACEABLE ASSET: Company Logo in Hero Section */}
           {/* Location: /public/branding/hero-logo.png */}
           {/* Purpose: Company branding in hero section that aligns with navigation */}
-          {/* Dimensions: 48x48px recommended (w-12 h-12) */}
+          {/* Dimensions: 40x40px recommended (w-10 h-10) to match navigation logo */}
           {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update the src below */}
-          <div className="absolute top-4 left-4 z-20 animate-fade-in">
+          <div className="absolute top-6 left-8 z-20 animate-fade-in">
             <img 
-              src="/placeholder.svg" 
+              src="/branding/hero-logo.png" 
               alt="Company Logo" 
-              className="w-12 h-12 object-contain transition-all duration-300 hover:scale-110"
+              className="w-10 h-10 object-contain transition-all duration-300 hover:scale-110"
+              style={{ filter: 'brightness(1) contrast(1)' }}
             />
           </div>
 
