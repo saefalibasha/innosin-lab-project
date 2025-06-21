@@ -41,7 +41,7 @@ const VideoHero = () => {
           {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update the src below */}
           <div className="absolute top-7 left-12 z-20 animate-fade-in">
             <img 
-              src="/branding/hero-logo.png" 
+              src="public/branding/hero-logo.png" 
               alt="Company Logo" 
               className="w-10 h-10 object-contain transition-all duration-300 hover:scale-110 bg-white/20 backdrop-blur-sm rounded-lg p-2"
             />
