@@ -22,8 +22,8 @@ export const heroContent = {
         title1: "Innovative Laboratory Solutions.",
       },
       description: {
-        line1: "Empowering scientific breakthroughs with high-quality lab solutions.",
-        line2: "Transform your research environment with cutting-edge equipment and design."
+        line1: "Empowering research and industry with cutting-edge design and advanced fabrication.",
+        line2: "Discover lab spaces built for tomorrow."
       },
       buttons: {
         primary: {
