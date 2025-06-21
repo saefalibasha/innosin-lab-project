@@ -16,8 +16,8 @@ export const heroContent = {
   slides: [
     {
       id: 1,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&h=1080&fit=crop",
-      alt: "Modern laboratory equipment",
+      image: "/hero-images/slide-1-precision.jpg",
+      alt: "Modern laboratory equipment showcasing precision instruments",
       titles: {
         title1: "Precision.",
         title2: "Innovation.", 
@@ -40,8 +40,8 @@ export const heroContent = {
     },
     {
       id: 2,
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1920&h=1080&fit=crop",
-      alt: "Advanced research facility",
+      image: "/hero-images/slide-2-research.jpg",
+      alt: "Advanced research facility with state-of-the-art equipment",
       titles: {
         title1: "Advanced.",
         title2: "Research.", 
@@ -64,8 +64,8 @@ export const heroContent = {
     },
     {
       id: 3,
-      image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?w=1920&h=1080&fit=crop",
-      alt: "Scientific innovation workspace",
+      image: "/hero-images/slide-3-future.jpg",
+      alt: "Futuristic laboratory workspace showcasing innovation",
       titles: {
         title1: "Future.",
         title2: "Ready.", 
@@ -116,39 +116,39 @@ export const heroContent = {
 };
 
 /*
-HOW TO EDIT INDIVIDUAL SLIDE CONTENT VIA GITHUB:
-1. Navigate to this file: src/data/heroContent.ts
-2. Find the "slides" array above
-3. Edit any slide's content by modifying its properties:
-   - titles: Change title1, title2, title3 for the main headline
-   - description: Change line1, line2 for the subtitle/description
-   - buttons: Change primary/secondary button text and links
-   - image: Update the image URL
-   - alt: Update the image alt text
+HOW TO REPLACE IMAGES AND TEXT:
 
-SLIDE CONTENT STRUCTURE:
-Each slide in the slides array has:
-- id: Unique identifier for the slide
-- image: Background image URL
-- alt: Image alt text for accessibility
-- titles: Three-part main headline (title1, title2, title3)
-- description: Two-line description (line1, line2)
-- buttons: Primary and secondary CTA buttons with text and link
+1. REPLACING IMAGES:
+   - Go to public/hero-images/ folder
+   - Replace these files with your own images:
+     * slide-1-precision.jpg (for slide 1)
+     * slide-2-research.jpg (for slide 2) 
+     * slide-3-future.jpg (for slide 3)
+   - Keep the same filenames, or update the 'image' property above
+   - Recommended size: 1920x1080px for best quality
 
-EXAMPLES:
-- To change slide 1's main title: Edit slides[0].titles.title1, title2, or title3
-- To change slide 2's description: Edit slides[1].description.line1 or line2
-- To change slide 3's buttons: Edit slides[2].buttons.primary.text or .link
-- To add a new slide: Add a new object to the slides array with the same structure
+2. CHANGING TEXT FOR EACH SLIDE:
+   - Edit the titles object (title1, title2, title3)
+   - Edit the description object (line1, line2)
+   - Edit the buttons object (primary/secondary text and links)
+   - Update the alt text to describe your new images
 
-HOW TO EDIT HERO SLIDER IMAGES:
-1. Upload your images to a hosting service or use Unsplash URLs
-2. Update the image property in the respective slide object
-3. Update the alt property for accessibility
-4. Recommended size: 1920x1080px for best quality
+3. EXAMPLE - To change slide 1:
+   slides[0].titles.title1 = "Your New"
+   slides[0].titles.title2 = "Title"
+   slides[0].titles.title3 = "Here"
+   slides[0].description.line1 = "Your new description"
+   slides[0].description.line2 = "Your second line"
 
-LOGO REPLACEMENT:
-- The logo file is located at: /public/branding/hero-logo.png
-- To replace: Upload a new image file with the same name and path
-- Recommended dimensions: 64x64px or higher for best quality
+4. IMAGE LABELING (ALT TEXT):
+   - Update the 'alt' property for each slide
+   - Describe what's in your image for accessibility
+   - Example: "Modern chemistry lab with advanced equipment"
+
+CURRENT IMAGES READY TO REPLACE:
+✅ /public/hero-images/slide-1-precision.jpg - Slide 1 background
+✅ /public/hero-images/slide-2-research.jpg - Slide 2 background  
+✅ /public/hero-images/slide-3-future.jpg - Slide 3 background
+
+Simply replace these image files with your own and edit the text content above!
 */
