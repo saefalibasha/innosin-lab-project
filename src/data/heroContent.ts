@@ -19,9 +19,7 @@ export const heroContent = {
       image: "/hero-images/slide-1-precision.jpg",
       alt: "Modern laboratory equipment showcasing precision instruments",
       titles: {
-        title1: "Precision.",
-        title2: "Innovation.", 
-        title3: "Excellence."
+        title1: "Innovative Laboratory Solutions.",
       },
       description: {
         line1: "Empowering scientific breakthroughs with high-quality lab solutions.",
