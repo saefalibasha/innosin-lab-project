@@ -41,7 +41,7 @@ const VideoHero = () => {
           {/* Dimensions: 40x40px recommended (w-10 h-10) to match navigation logo */}
           {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update the src below */}
           <div className="absolute top-7 left-12 z-20 animate-fade-in">
-            <div className="w-15 h-15 bg-white rounded-lg p-1 shadow-lg">
+            <div className="w-10 h-10 bg-white rounded-lg p-1 shadow-lg">
               <img 
                 src="/branding/hero-logo.png" 
                 alt="Company Logo" 
