@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
-import { Search, ShoppingCart } from 'lucide-react';
+import { Search, ShoppingCart, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   NavigationMenu,
   NavigationMenuContent,
@@ -17,6 +18,7 @@ import { useRFQ } from '@/contexts/RFQContext';
 const HeroNavigation = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { itemCount } = useRFQ();
 
@@ -124,10 +126,10 @@ const HeroNavigation = () => {
             </NavigationMenu>
           </div>
 
-          {/* Right side: Search Bar and RFQ Cart */}
+          {/* Right side: Search Bar, RFQ Cart, and Mobile Menu */}
           <div className="flex items-center space-x-4">
-            {/* Search Bar */}
-            <div className="relative">
+            {/* Search Bar - Desktop */}
+            <div className="relative hidden md:block">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input
                 type="text"
@@ -166,6 +168,61 @@ const HeroNavigation = () => {
                 )}
               </Button>
             </Link>
+
+            {/* Mobile menu trigger */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild className="lg:hidden">
+                <Button variant="outline" size="sm" className="border-gray-300 hover:border-sea transition-all duration-300">
+                  <Menu className="w-4 h-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[300px] sm:w-[400px] glass-card">
+                <div className="flex flex-col space-y-4 mt-8">
+                  {/* Mobile Search */}
+                  <div className="relative animate-fade-in">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      className="pl-10 glass-card border-sea/20 focus:border-sea"
+                    />
+                  </div>
+                  
+                  {navItems.map((item, index) => (
+                    <div key={item.name} className="animate-fade-in" style={{animationDelay: `${100 + index * 100}ms`}}>
+                      <Link
+                        to={item.path}
+                        onClick={() => setIsOpen(false)}
+                        className={`font-medium py-2 px-4 rounded-md transition-all duration-300 block hover:bg-sea/10 ${
+                          isActive(item.path)
+                            ? 'bg-sea text-white shadow-lg'
+                            : 'text-muted-foreground hover:text-sea'
+                        }`}
+                      >
+                        {item.name}
+                      </Link>
+                      {item.dropdown && (
+                        <div className="ml-4 mt-2 space-y-1">
+                          {item.dropdown.map((dropdownItem, dropIndex) => (
+                            <Link
+                              key={dropdownItem.name}
+                              to={dropdownItem.path}
+                              onClick={() => setIsOpen(false)}
+                              className="block py-1 px-2 text-sm text-muted-foreground hover:text-sea transition-colors duration-200 rounded animate-fade-in"
+                              style={{animationDelay: `${200 + dropIndex * 50}ms`}}
+                            >
+                              {dropdownItem.name}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
