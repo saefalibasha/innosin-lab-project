@@ -227,20 +227,6 @@ const Navigation = () => {
           </div>
         </div>
       </div>
-
-      {/* Fixed RFQ Cart in Top Right - Desktop Only */}
-      <div className="hidden lg:block fixed top-32 right-6 z-40 animate-fade-in animate-delay-500">
-        <Link to="/rfq-cart">
-          <Button variant="outline" size="sm" className="relative glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105 shadow-lg">
-            <ShoppingCart className="w-4 h-4" />
-            {itemCount > 0 && (
-              <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs animate-pulse-slow bg-sea hover:bg-sea-dark border-0">
-                {itemCount}
-              </Badge>
-            )}
-          </Button>
-        </Link>
-      </div>
     </nav>
   );
 };
