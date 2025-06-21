@@ -21,25 +21,6 @@ const VideoHero = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Hero slider images - easily customizable
-  const heroSlides = [
-    {
-      id: 1,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=1920&h=1080&fit=crop",
-      alt: "Modern laboratory equipment"
-    },
-    {
-      id: 2,
-      image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1920&h=1080&fit=crop",
-      alt: "Advanced research facility"
-    },
-    {
-      id: 3,
-      image: "https://images.unsplash.com/photo-1581092795360-fd1ca04f0952?w=1920&h=1080&fit=crop",
-      alt: "Scientific innovation workspace"
-    }
-  ];
-
   return (
     <>
       {/* Hero Navigation Bar */}
@@ -57,7 +38,7 @@ const VideoHero = () => {
               }}
             >
               <CarouselContent className="-ml-2 md:-ml-4">
-                {heroSlides.map((slide) => (
+                {heroContent.slides.map((slide) => (
                   <CarouselItem key={slide.id} className="pl-2 md:pl-4 basis-full md:basis-[85%] lg:basis-[90%]">
                     <div className="relative w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden">
                       {/* Background Image */}
@@ -69,33 +50,33 @@ const VideoHero = () => {
                       {/* Dark Overlay for better text readability */}
                       <div className="absolute inset-0 bg-black/40" />
 
-                      {/* Content Overlay - Keep existing animations */}
+                      {/* Content Overlay - Slide-specific content */}
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                          {/* Large, bold main title */}
+                          {/* Large, bold main title - Slide specific */}
                           <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
-                            <span className="block">{heroContent.mainTitles.title1}</span>
-                            <span className="block text-sand-light animate-float">{heroContent.mainTitles.title2}</span>
-                            <span className="block text-white/90">{heroContent.mainTitles.title3}</span>
+                            <span className="block">{slide.titles.title1}</span>
+                            <span className="block text-sand-light animate-float">{slide.titles.title2}</span>
+                            <span className="block text-white/90">{slide.titles.title3}</span>
                           </h2>
                           
-                          {/* Subtext/description */}
+                          {/* Subtext/description - Slide specific */}
                           <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
-                            {heroContent.description.line1}
-                            <span className="block mt-1">{heroContent.description.line2}</span>
+                            {slide.description.line1}
+                            <span className="block mt-1">{slide.description.line2}</span>
                           </p>
                           
-                          {/* Two CTA buttons side by side */}
+                          {/* Two CTA buttons side by side - Slide specific */}
                           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 animate-scale-in animate-delay-500">
                             <Button asChild variant="heroSolid" size="lg" className="min-w-[200px] h-12 text-base">
-                              <Link to="/products">
-                                {heroContent.buttons.primary} <ArrowRight className="ml-2 w-5 h-5" />
+                              <Link to={slide.buttons.primary.link}>
+                                {slide.buttons.primary.text} <ArrowRight className="ml-2 w-5 h-5" />
                               </Link>
                             </Button>
                             
                             <Button asChild variant="hero" size="lg" className="min-w-[200px] h-12 text-base">
-                              <Link to="/contact">
-                                {heroContent.buttons.secondary}
+                              <Link to={slide.buttons.secondary.link}>
+                                {slide.buttons.secondary.text}
                               </Link>
                             </Button>
                           </div>
@@ -139,10 +120,6 @@ const VideoHero = () => {
               </div>
             </div>
             
-            {/* REPLACEABLE ASSET: Company Story Video */}
-            {/* Location: /public/hero-section/company-story-video.mp4 */}
-            {/* Purpose: Background or featured video for company story */}
-            {/* Dimensions: 1920x1080px recommended, MP4 format */}
             <div className="animate-scale-in animate-delay-500">
               <Button asChild variant="outline" size="default" className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300 hover:scale-105">
                 <Link to="/about">
