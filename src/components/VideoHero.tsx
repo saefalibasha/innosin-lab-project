@@ -4,6 +4,7 @@ import { ArrowRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { heroContent } from '@/data/heroContent';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import HeroNavigation from './HeroNavigation';
 
 const VideoHero = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -41,84 +42,76 @@ const VideoHero = () => {
 
   return (
     <>
-      <section className="relative overflow-hidden">
-        {/* Hero Carousel */}
-        <Carousel className="w-full h-[70vh] min-h-[500px]">
-          <CarouselContent>
-            {heroSlides.map((slide) => (
-              <CarouselItem key={slide.id}>
-                <div className="relative w-full h-[70vh] min-h-[500px]">
-                  {/* Background Image */}
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: `url(${slide.image})` }}
-                  />
-                  
-                  {/* Dark Overlay for better text readability */}
-                  <div className="absolute inset-0 bg-black/40" />
-                  
-                  {/* REPLACEABLE ASSET: Company Logo in Hero Section */}
-                  {/* Location: /public/branding/hero-logo.png */}
-                  {/* Purpose: Company branding in hero section that aligns with navigation */}
-                  {/* Dimensions: 64x64px recommended (w-16 h-16) for better visibility */}
-                  {/* Instructions: Upload your logo to /public/branding/hero-logo.png and update heroContent.ts */}
-                  <div className="absolute top-7 left-12 z-20 animate-fade-in">
-                    <div className="w-16 h-16 bg-white/90 rounded-lg p-0.5 shadow-lg backdrop-blur-sm">
-                      <img 
-                        src="/branding/hero-logo.png" 
-                        alt={heroContent.logo.alt}
-                        className="w-full h-full object-contain"
-                        onError={(e) => {
-                          console.log('Logo failed to load, using fallback');
-                          const target = e.target as HTMLImageElement;
-                          target.src = '/placeholder.svg';
-                        }}
-                        onLoad={() => console.log('Logo loaded successfully')}
-                      />
-                    </div>
-                  </div>
+      {/* Hero Navigation Bar */}
+      <HeroNavigation />
 
-                  {/* Content Overlay - Keep existing animations */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
-                      {/* Large, bold main title */}
-                      <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
-                        <span className="block">{heroContent.mainTitles.title1}</span>
-                        <span className="block text-sand-light animate-float">{heroContent.mainTitles.title2}</span>
-                        <span className="block text-white/90">{heroContent.mainTitles.title3}</span>
-                      </h2>
+      <section className="relative overflow-hidden">
+        {/* Hero Carousel with Enhanced Design */}
+        <div className="px-4 sm:px-6 lg:px-8 pt-6">
+          <div className="max-w-7xl mx-auto">
+            <Carousel 
+              className="w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden shadow-2xl"
+              opts={{
+                align: "center",
+                loop: true,
+              }}
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {heroSlides.map((slide) => (
+                  <CarouselItem key={slide.id} className="pl-2 md:pl-4 basis-full md:basis-[85%] lg:basis-[90%]">
+                    <div className="relative w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden">
+                      {/* Background Image */}
+                      <div 
+                        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                        style={{ backgroundImage: `url(${slide.image})` }}
+                      />
                       
-                      {/* Subtext/description */}
-                      <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
-                        {heroContent.description.line1}
-                        <span className="block mt-1">{heroContent.description.line2}</span>
-                      </p>
-                      
-                      {/* Two CTA buttons side by side */}
-                      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 animate-scale-in animate-delay-500">
-                        <Button asChild variant="heroSolid" size="lg" className="min-w-[200px] h-12 text-base">
-                          <Link to="/products">
-                            {heroContent.buttons.primary} <ArrowRight className="ml-2 w-5 h-5" />
-                          </Link>
-                        </Button>
-                        
-                        <Button asChild variant="hero" size="lg" className="min-w-[200px] h-12 text-base">
-                          <Link to="/contact">
-                            {heroContent.buttons.secondary}
-                          </Link>
-                        </Button>
+                      {/* Dark Overlay for better text readability */}
+                      <div className="absolute inset-0 bg-black/40" />
+
+                      {/* Content Overlay - Keep existing animations */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
+                          {/* Large, bold main title */}
+                          <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
+                            <span className="block">{heroContent.mainTitles.title1}</span>
+                            <span className="block text-sand-light animate-float">{heroContent.mainTitles.title2}</span>
+                            <span className="block text-white/90">{heroContent.mainTitles.title3}</span>
+                          </h2>
+                          
+                          {/* Subtext/description */}
+                          <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
+                            {heroContent.description.line1}
+                            <span className="block mt-1">{heroContent.description.line2}</span>
+                          </p>
+                          
+                          {/* Two CTA buttons side by side */}
+                          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 animate-scale-in animate-delay-500">
+                            <Button asChild variant="heroSolid" size="lg" className="min-w-[200px] h-12 text-base">
+                              <Link to="/products">
+                                {heroContent.buttons.primary} <ArrowRight className="ml-2 w-5 h-5" />
+                              </Link>
+                            </Button>
+                            
+                            <Button asChild variant="hero" size="lg" className="min-w-[200px] h-12 text-base">
+                              <Link to="/contact">
+                                {heroContent.buttons.secondary}
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
-          
-          {/* Carousel Navigation */}
-          <CarouselPrevious className="left-4 bg-white/20 border-white/30 text-white hover:bg-white/30" />
-          <CarouselNext className="right-4 bg-white/20 border-white/30 text-white hover:bg-white/30" />
-        </Carousel>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              
+              {/* Carousel Navigation */}
+              <CarouselPrevious className="left-4 bg-white/20 border-white/30 text-white hover:bg-white/30 transition-all duration-300" />
+              <CarouselNext className="right-4 bg-white/20 border-white/30 text-white hover:bg-white/30 transition-all duration-300" />
+            </Carousel>
+          </div>
+        </div>
       </section>
 
       {/* Our Story Section - Keep unchanged */}
