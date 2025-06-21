@@ -43,7 +43,7 @@ const VideoHero = () => {
           <div className="absolute top-7 left-12 z-20 animate-fade-in">
             <div className="w-10 h-10 bg-white rounded-lg p-1 shadow-lg">
               <img 
-                src="/ branding/ hero-logo.png" 
+                src="/branding/hero-logo.png" 
                 alt="Company Logo" 
                 className="w-full h-full object-contain"
                 onError={(e) => {
