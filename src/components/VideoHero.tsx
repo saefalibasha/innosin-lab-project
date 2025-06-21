@@ -22,9 +22,6 @@ const VideoHero = () => {
 
   return (
     <>
-      {/* Hero Navigation Bar */}
-      <HeroNavigation />
-
       <section className="relative overflow-hidden">
         {/* Hero Carousel with Enhanced Design */}
         <div className="px-4 sm:px-6 lg:px-8 pt-6">
