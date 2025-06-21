@@ -4,6 +4,7 @@ import { ArrowRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { heroContent } from '@/data/heroContent';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import HeroNavigation from './HeroNavigation';
 
 const VideoHero = () => {
   const [scrolled, setScrolled] = useState(false);
