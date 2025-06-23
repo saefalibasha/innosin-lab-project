@@ -44,53 +44,29 @@ export const aboutPageContent = {
     events: [
       {
         year: "1986",
-        title: "Foundation & Vision",
-        description: "Founded Innosin Lab with a bold vision to revolutionize laboratory design and manufacturing. Started with a small dedicated team and an unwavering commitment to quality and innovation. Our founding principles of excellence, precision, and customer-focused solutions remain at the heart of everything we do today.",
-        achievements: [
-          "Company establishment and founding",
-          "Development of core business vision",
-          "First laboratory design projects",
-          "Building foundational team"
-        ],
+        title: "Humble Beginnings",
+        description: "Founded in Johor Bahru, Innosin began as a stainless steel kitchen equipment fabricator, grounded in craftsmanship, quality, and a spirit of innovation.",
         image: "/page-images/about/timeline-1986.jpg",
         imageAlt: "1986 - Foundation & Vision"
       },
       {
         year: "1990",
-        title: "Early Growth Phase", 
-        description: "Significant growth and expansion of operations. Established our first dedicated manufacturing facility and began developing specialized laboratory equipment. This period marked our transition from a small startup to a recognized player in the laboratory solutions industry.",
-        achievements: [
-          "Opened first manufacturing facility",
-          "Developed specialized laboratory equipment",
-          "Expanded team and capabilities",
-          "Established quality control processes"
-        ],
+        title: "Growing Stronger", 
+        description: "With growing demand, we expanded our services into a wide range of metal fabrication solutions, catering to commercial, industrial, and custom-built applications across various sectors.",
         image: "/page-images/about/timeline-1990.jpg",
         imageAlt: "1990 - Early Growth Phase achievements"
       },
       {
         year: "2012", 
-        title: "Technology Integration",
-        description: "Major technological advancement period where Innosin embraced modern manufacturing techniques and quality systems. Implemented advanced fabrication processes and began developing specialized laboratory automation solutions that would set us apart in the industry.",
-        achievements: [
-          "Implemented advanced manufacturing systems",
-          "Developed laboratory automation solutions",
-          "Enhanced quality control processes",
-          "Expanded product line capabilities"
-        ],
+        title: "Engineering Excellence & Lab Transformation",
+        description: "A pivotal year: Innosin relocated to Ulu Tiram, Johor, and began a strategic shift towards laboratory furniture manufacturing and turnkey lab setups. Our upgraded facilities empowered us to deliver integrated design, fabrication, and installation solutions tailored to scientific and research environments.",
         image: "/page-images/about/timeline-2012.jpg",
         imageAlt: "2012 - Technology Integration milestones"
       },
       {
         year: "2024",
         title: "Modern Innovation Era",
-        description: "Achieved ISO certification and expanded our digital laboratory design platform. Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone. Leading the industry with cutting-edge technology and sustainable practices.",
-        achievements: [
-          "Launched advanced equipment line",
-          "Implemented new lab technologies", 
-          "Enhanced research capabilities",
-          "Improved laboratory designs"
-        ],
+        description: "Today, Innosin Lab is a leading provider of custom laboratory furniture and infrastructure across Asia Pacific, Europe, and the Middle East. With nearly four decades of expertise, we continue to innovate with sincerity — building laboratories that shape the future of research and discovery.",
         // Timeline image for 2024
         image: "/page-images/about/timeline-2024.jpg",
         imageAlt: "2024 - Modern Innovation Era showcase"
