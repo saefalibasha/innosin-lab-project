@@ -1,0 +1,19 @@
+
+# Homepage Images
+
+This directory contains images for the homepage sections (excluding hero).
+
+## Image Guidelines:
+- Recommended size: 1200x800px for section headers, 800x600px for feature images
+- Format: JPG or PNG
+- Quality: High resolution for crisp display
+
+## How to Add Images:
+1. Upload your image files to this directory
+2. Update the image paths in src/data/homePageContent.ts
+3. Update the alt text for accessibility
+
+## Suggested Images:
+- product-collections-bg.jpg - Background for product collections section
+- lab-transformation.jpg - Before/after transformation showcase
+- cta-background.jpg - Call-to-action section background

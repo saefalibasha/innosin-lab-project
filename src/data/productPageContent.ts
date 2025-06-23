@@ -12,7 +12,17 @@ export const productPageContent = {
     searchPlaceholder: "Search products...",
     allCategoriesText: "All Categories",
     noProductsFound: "No products found",
-    noProductsDescription: "Try adjusting your search criteria or browse all categories."
+    noProductsDescription: "Try adjusting your search criteria or browse all categories.",
+    // Catalog page images
+    heroImage: "/page-images/products/products-hero.jpg", // Replace with your image
+    heroImageAlt: "Product catalog showcase",
+    categoryBanners: {
+      // Category-specific banner images
+      "Broen-Lab": "/page-images/products/broen-lab-banner.jpg",
+      "Hamilton Laboratory Solutions": "/page-images/products/hamilton-banner.jpg",
+      "Oriental Giken Inc.": "/page-images/products/oriental-giken-banner.jpg",
+      "Innosin Lab": "/page-images/products/innosin-banner.jpg"
+    }
   },
 
   // Product Detail Page
@@ -26,7 +36,10 @@ export const productPageContent = {
     specificationsTitle: "Key Features & Specifications",
     dimensionsLabel: "Dimensions:",
     addToQuoteButton: "Add to Quote Request",
-    addToQuoteSuccess: "added to quote request"
+    addToQuoteSuccess: "added to quote request",
+    // Product detail images
+    placeholderImage: "/page-images/products/product-placeholder.jpg", // Default product image
+    placeholderImageAlt: "Product image placeholder"
   },
 
   // Quote Cart
@@ -42,20 +55,91 @@ export const productPageContent = {
     submitQuoteButton: "Submit Quote Request",
     cartClearedMessage: "Cart cleared successfully",
     itemRemovedMessage: "Item removed from cart",
-    quoteSubmittedMessage: "Quote request submitted successfully! We'll get back to you soon."
+    quoteSubmittedMessage: "Quote request submitted successfully! We'll get back to you soon.",
+    // Quote cart images
+    emptyCartImage: "/page-images/products/empty-cart.jpg", // Replace with your image
+    emptyCartImageAlt: "Empty shopping cart illustration",
+    quoteSuccessImage: "/page-images/products/quote-success.jpg", // Replace with your image
+    quoteSuccessImageAlt: "Successful quote submission"
+  },
+
+  // Product Categories
+  categories: {
+    title: "Product Categories",
+    description: "Explore our organized product categories",
+    // Category showcase images
+    categoryShowcase: [
+      {
+        name: "Fume Hoods",
+        description: "Advanced ventilation and safety equipment",
+        image: "/page-images/products/fume-hoods-category.jpg", // Replace with your image
+        imageAlt: "Fume hoods category showcase"
+      },
+      {
+        name: "Laboratory Furniture",
+        description: "Professional lab benches and storage",
+        image: "/page-images/products/furniture-category.jpg", // Replace with your image
+        imageAlt: "Laboratory furniture category showcase"
+      },
+      {
+        name: "Safety Equipment",
+        description: "Emergency and safety solutions",
+        image: "/page-images/products/safety-category.jpg", // Replace with your image
+        imageAlt: "Safety equipment category showcase"
+      },
+      {
+        name: "Storage Solutions",
+        description: "Organized storage for laboratories",
+        image: "/page-images/products/storage-category.jpg", // Replace with your image
+        imageAlt: "Storage solutions category showcase"
+      }
+    ]
   }
 };
 
 /*
-HOW TO EDIT PRODUCT PAGE CONTENT:
-1. To change catalog page text: Edit the "catalog" section
-2. To change product detail text: Edit the "productDetail" section
-3. To change quote cart text: Edit the "quoteCart" section
+HOW TO EDIT PRODUCT PAGE CONTENT VIA GITHUB:
+1. Navigate to this file: src/data/productPageContent.ts
+2. Edit any text values in the productPageContent object above
+3. Add your images to public/page-images/products/ folder
+4. Update the image paths above to reference your new images
+5. Commit your changes to GitHub
 
-Example:
-To change the catalog title from "Product Catalog" to "Equipment Catalog":
+IMAGE CUSTOMIZATION:
+1. Upload images to public/page-images/products/ folder
+2. Update heroImage, categoryBanners, and showcase images paths above
+3. Update the alt text for accessibility
+4. Recommended sizes:
+   - Hero image: 1200x800px
+   - Category banners: 1000x300px
+   - Category showcase: 600x400px
+   - Product placeholders: 400x300px
+
+SECTIONS INCLUDED:
+1. Catalog - Main product page with hero image and category banners
+2. Product Detail - Individual product pages with placeholder images
+3. Quote Cart - Shopping cart with empty state and success images
+4. Categories - Product category showcase with images
+
+EXAMPLES:
+To change the catalog title:
 - Change catalog.title: "Equipment Catalog"
 
-To change the quote button text:
+To add a hero image:
+- Upload image to /public/page-images/products/your-hero.jpg
+- Change catalog.heroImage: "/page-images/products/your-hero.jpg"
+- Update catalog.heroImageAlt: "Description of your image"
+
+To add category banner images:
+- Upload images to /public/page-images/products/
+- Update the categoryBanners object with your image paths
+- Use the exact category names as keys
+
+To add category showcase images:
+- Upload images to /public/page-images/products/
+- Update the categoryShowcase array with your image paths and descriptions
+- Update alt text for accessibility
+
+To change quote button text:
 - Change productDetail.addToQuoteButton: "Request Quote"
 */

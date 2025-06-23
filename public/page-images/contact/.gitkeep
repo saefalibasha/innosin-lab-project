@@ -1,0 +1,19 @@
+
+# Contact Page Images
+
+This directory contains images for the Contact page.
+
+## Image Guidelines:
+- Recommended size: 1200x800px for hero images, 600x400px for office/location images
+- Format: JPG or PNG
+- Quality: High resolution for crisp display
+
+## How to Add Images:
+1. Upload your image files to this directory
+2. Update the image paths in src/data/contactPageContent.ts
+3. Update the alt text for accessibility
+
+## Suggested Images:
+- contact-hero.jpg - Contact page hero image
+- office-location.jpg - Office or facility image
+- team-support.jpg - Customer support team image

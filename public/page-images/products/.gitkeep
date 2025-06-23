@@ -1,0 +1,19 @@
+
+# Product Page Images
+
+This directory contains images for product-related pages.
+
+## Image Guidelines:
+- Recommended size: 1200x800px for hero images, 300x300px for product thumbnails
+- Format: JPG or PNG
+- Quality: High resolution for crisp display
+
+## How to Add Images:
+1. Upload your image files to this directory
+2. Update the image paths in src/data/productPageContent.ts
+3. Update the alt text for accessibility
+
+## Suggested Images:
+- products-hero.jpg - Product catalog hero image
+- category-banners/ - Folder for category-specific banners
+- product-showcase.jpg - Featured products showcase

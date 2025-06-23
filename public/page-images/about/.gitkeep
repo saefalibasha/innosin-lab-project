@@ -1,0 +1,20 @@
+
+# About Page Images
+
+This directory contains images for the About Us page.
+
+## Image Guidelines:
+- Recommended size: 1200x800px for hero images, 400x300px for team/timeline images
+- Format: JPG or PNG
+- Quality: High resolution for crisp display
+
+## How to Add Images:
+1. Upload your image files to this directory
+2. Update the image paths in src/data/aboutPageContent.ts
+3. Update the alt text for accessibility
+
+## Suggested Images:
+- about-hero.jpg - Main about page hero image
+- company-timeline.jpg - Timeline/history image
+- team-photo.jpg - Team or office photo
+- mission-vision.jpg - Mission/vision section image
