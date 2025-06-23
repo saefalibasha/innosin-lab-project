@@ -32,93 +32,31 @@ const About = () => {
     }
   ];
 
-  const timelineData = [
-    {
-      title: "2024",
-      content: (
-        <div>
-          <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-            Achieved ISO certification and expanded our digital laboratory design platform. 
-            Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone.
-          </p>
-          <img
-            src="/page-images/about/timeline-2024.jpg"
-            alt="2024 - Expansion & Innovation"
-            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
-          />
-        </div>
-      ),
-    },
-    {
-      title: "2018",
-      content: (
-        <div>
-          <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-            Major expansion year with entry into pharmaceutical laboratory design. 
-            Established partnerships with leading research institutions across Southeast Asia.
-          </p>
-          <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-            Pioneered sustainable laboratory practices and introduced energy-efficient ventilation systems 
-            that reduced operational costs by 30% for our clients.
-          </p>
-          <img
-            src="/page-images/about/timeline-2018.jpg"
-            alt="2018 - Regional Growth"
-            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
-          />
-        </div>
-      ),
-    },
-    {
-      title: "2012",
-      content: (
-        <div>
-          <p className="text-muted-foreground text-sm md:text-base font-normal mb-4 leading-relaxed">
-            Achieved significant milestones in laboratory automation and safety protocols
-          </p>
+  // Create timeline data from content structure
+  const timelineData = aboutPageContent.timeline.events.map(event => ({
+    title: event.year,
+    content: (
+      <div>
+        <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
+          {event.description}
+        </p>
+        {event.achievements && event.achievements.length > 0 && (
           <div className="mb-8">
-            <div className="flex gap-2 items-center text-muted-foreground text-sm md:text-base mb-2">
-              ✅ Launched automated sample handling systems
-            </div>
-            <div className="flex gap-2 items-center text-muted-foreground text-sm md:text-base mb-2">
-              ✅ Implemented advanced safety protocols
-            </div>
-            <div className="flex gap-2 items-center text-muted-foreground text-sm md:text-base mb-2">
-              ✅ Received Singapore Safety Excellence Award
-            </div>
-            <div className="flex gap-2 items-center text-muted-foreground text-sm md:text-base mb-2">
-              ✅ Expanded team to 50+ specialists
-            </div>
-            <div className="flex gap-2 items-center text-muted-foreground text-sm md:text-base">
-              ✅ Established quality management system
-            </div>
+            {event.achievements.map((achievement, index) => (
+              <div key={index} className="flex gap-2 items-center text-muted-foreground text-sm md:text-base mb-2">
+                ✅ {achievement}
+              </div>
+            ))}
           </div>
-          <img
-            src="/page-images/about/timeline-2012.jpg"
-            alt="2012 - Technology Integration"
-            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
-          />
-        </div>
-      ),
-    },
-    {
-      title: "2009",
-      content: (
-        <div>
-          <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-            Founded Innosin Lab with a vision to revolutionize laboratory design in Singapore. 
-            Started with a small team of 5 dedicated professionals and our first major project 
-            with the National University of Singapore.
-          </p>
-          <img
-            src="/page-images/about/timeline-2009.jpg"
-            alt="2009 - Foundation"
-            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
-          />
-        </div>
-      ),
-    },
-  ];
+        )}
+        <img
+          src={event.image}
+          alt={event.imageAlt}
+          className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
+        />
+      </div>
+    ),
+  }));
 
   return (
     <div className="min-h-screen bg-background pt-0">
@@ -173,8 +111,8 @@ const About = () => {
             <div className="animate-fade-in-right animate-delay-300">
               <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
                 <img 
-                  src="/page-images/about/mission-vision.jpg" 
-                  alt="Modern laboratory mission and vision" 
+                  src={aboutPageContent.mission.image} 
+                  alt={aboutPageContent.mission.imageAlt} 
                   className="w-full h-64 object-cover rounded-lg mb-6"
                 />
                 <blockquote className="text-lg italic text-muted-foreground">
@@ -224,10 +162,10 @@ const About = () => {
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
-              Company <span className="text-sea">History</span>
+              {aboutPageContent.timeline.title} <span className="text-sea">{aboutPageContent.timeline.titleHighlight}</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
-              From humble beginnings to industry leadership - explore the key milestones that have shaped our story.
+              {aboutPageContent.timeline.description}
             </p>
           </div>
           <div className="animate-scale-in animate-delay-300">

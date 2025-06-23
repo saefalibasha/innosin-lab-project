@@ -40,29 +40,31 @@ export const aboutPageContent = {
     backgroundImage: "/page-images/about/company-timeline.jpg", // Replace with your image
     backgroundImageAlt: "Company journey and timeline background",
     
-    // Timeline Events - Updated with single image per year
+    // Timeline Events - Updated with correct years matching uploaded images
     events: [
       {
-        year: "1986",
-        title: "Humble Beginnings",
-        description: "Founded in Johor Bahru, Innosin began as a stainless steel kitchen equipment fabricator, grounded in craftsmanship, quality, and a spirit of innovation.",
+        year: "2024",
+        title: "Expansion & Innovation",
+        description: "Achieved ISO certification and expanded our digital laboratory design platform. Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone.",
         achievements: [
           "Launched advanced equipment line",
           "Implemented new lab technologies", 
           "Enhanced research capabilities",
           "Improved laboratory designs"
         ],
-        // Single timeline image for 2024
+        // Timeline image for 2024
         image: "/page-images/about/timeline-2024.jpg",
         imageAlt: "2024 - Expansion & Innovation showcase"
       },
       {
-        year: "1990", 
+        year: "2018", 
         title: "Regional Growth",
-        description: "With growing demand, we expanded our services into a wide range of metal fabrication solutions, catering to commercial, industrial, and custom-built applications across various sectors.",
+        description: "Major expansion year with entry into pharmaceutical laboratory design. Established partnerships with leading research institutions across Southeast Asia. Pioneered sustainable laboratory practices and introduced energy-efficient ventilation systems.",
         achievements: [
           "Completed major pharmaceutical lab project",
-          "Expanded research facility operations"
+          "Expanded research facility operations",
+          "Established Southeast Asia partnerships",
+          "Introduced energy-efficient systems"
         ],
         image: "/page-images/about/timeline-2018.jpg",
         imageAlt: "2018 - Regional Growth achievements"
@@ -73,18 +75,22 @@ export const aboutPageContent = {
         description: "A pivotal year: Innosin relocated to Ulu Tiram, Johor, and began a strategic shift towards laboratory furniture manufacturing and turnkey lab setups. Our upgraded facilities empowered us to deliver integrated design, fabrication, and installation solutions tailored to scientific and research environments.",
         achievements: [
           "Implemented laboratory automation systems",
-          "Enhanced safety protocol standards"
+          "Enhanced safety protocol standards",
+          "Launched automated sample handling",
+          "Received Singapore Safety Excellence Award"
         ],
         image: "/page-images/about/timeline-2012.jpg",
         imageAlt: "2012 - Technology Integration milestones"
       },
       {
-        year: "2024",
+        year: "2009",
         title: "Foundation",
-        description: "Today, Innosin Lab is a leading provider of custom laboratory furniture and infrastructure across Asia Pacific. With nearly four decades of expertise, we continue to innovate with sincerity — building laboratories that shape the future of research and discovery.",
+        description: "Founded Innosin Lab with a vision to revolutionize laboratory design in Singapore. Started with a small team of 5 dedicated professionals and our first major project with the National University of Singapore.",
         achievements: [
           "Company establishment and founding",
-          "Started early laboratory design work"
+          "Started early laboratory design work",
+          "First major university project",
+          "Team of 5 dedicated professionals"
         ],
         image: "/page-images/about/timeline-2009.jpg",
         imageAlt: "2009 - Company Foundation"
