@@ -1,3 +1,4 @@
+
 // About Page Content Data
 // This file contains all the text content for the About Us page
 // To modify the text content, simply edit the values below
@@ -7,7 +8,7 @@ export const aboutPageContent = {
   hero: {
     title: "About",
     titleHighlight: "Innosin Lab",
-    description: "At Innosin Lab, we specialize in the design, manufacturing, and installation of high-quality laboratory furniture and custom metal solutions. Crafted from stainless steel and electro-galvanized steel, our products are engineered for precision, durability, and corrosion resistance, making them ideal for demanding laboratory, industrial, and research environments. With a focus on tailored solutions and exceptional craftsmanship, we aim to be your trusted partner for custom lab furniture and precision metal fabrication."
+    description: "At Innosin Lab, we specialize in the design, manufacturing, and installation of high-quality laboratory furniture and custom metal solutions. Crafted from stainless steel and electro-galvanized steel, our products are engineered for precision, durability, and corrosion resistance, making them ideal for demanding laboratory, industrial, and research environments. With a focus on tailored solutions and exceptional craftsmanship, we aim to be your trusted partner for custom lab furniture and precision metal fabrication.",
     // Hero section image
     heroImage: "/page-images/about/about-hero.jpg", // Replace with your image
     heroImageAlt: "About Innosin Lab - innovative laboratory solutions"
