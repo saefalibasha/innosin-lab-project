@@ -40,7 +40,7 @@ export const aboutPageContent = {
     backgroundImage: "/page-images/about/company-timeline.jpg", // Replace with your image
     backgroundImageAlt: "Company journey and timeline background",
     
-    // Timeline Events - Updated with years 1986, 1990, 2012, 2024
+    // Timeline Events - Updated with years 1986, 1995, 2005, 2024
     events: [
       {
         year: "2024",
@@ -57,30 +57,30 @@ export const aboutPageContent = {
         imageAlt: "2024 - Modern Innovation Era showcase"
       },
       {
-        year: "2012", 
-        title: "Strategic Expansion",
-        description: "A pivotal year: Innosin relocated to Ulu Tiram, Johor, and began a strategic shift towards laboratory furniture manufacturing and turnkey lab setups. Our upgraded facilities empowered us to deliver integrated design, fabrication, and installation solutions tailored to scientific and research environments.",
+        year: "2005", 
+        title: "Technology Integration",
+        description: "Major technological advancement period where Innosin embraced modern manufacturing techniques and quality systems. Implemented advanced fabrication processes and began developing specialized laboratory automation solutions that would set us apart in the industry.",
         achievements: [
-          "Implemented laboratory automation systems",
-          "Enhanced safety protocol standards",
-          "Launched automated sample handling",
-          "Received Singapore Safety Excellence Award"
+          "Implemented advanced manufacturing systems",
+          "Developed laboratory automation solutions",
+          "Enhanced quality control processes",
+          "Expanded product line capabilities"
         ],
         image: "/page-images/about/timeline-2012.jpg",
-        imageAlt: "2012 - Strategic Expansion milestones"
+        imageAlt: "2005 - Technology Integration milestones"
       },
       {
-        year: "1990",
-        title: "Early Growth Phase", 
-        description: "Significant expansion of operations and capabilities. Established our first dedicated manufacturing facility and began developing specialized laboratory equipment. This period marked our transition from a small startup to a recognized player in the laboratory solutions industry.",
+        year: "1995",
+        title: "Strategic Expansion", 
+        description: "Significant growth and expansion of operations. Established our first dedicated manufacturing facility and began developing specialized laboratory equipment. This period marked our transition from a small startup to a recognized player in the laboratory solutions industry.",
         achievements: [
           "Opened first manufacturing facility",
           "Developed specialized laboratory equipment",
           "Expanded team and capabilities",
           "Established quality control processes"
         ],
-        image: "/page-images/about/timeline-1990.jpg",
-        imageAlt: "1990 - Early Growth Phase achievements"
+        image: "/page-images/about/timeline-2018.jpg",
+        imageAlt: "1995 - Strategic Expansion achievements"
       },
       {
         year: "1986",
@@ -92,7 +92,7 @@ export const aboutPageContent = {
           "First laboratory design projects",
           "Building foundational team"
         ],
-        image: "/page-images/about/timeline-1986.jpg",
+        image: "/page-images/about/timeline-2009.jpg",
         imageAlt: "1986 - Foundation & Vision"
       }
     ]

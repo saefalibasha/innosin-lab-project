@@ -13,8 +13,8 @@ This directory contains all images used on the About Us page.
 
 ### Timeline Section (ONE IMAGE PER YEAR)
 - **timeline-2024.jpg** (800x500px) - 2024 Modern Innovation Era
-- **timeline-2012.jpg** (800x500px) - 2012 Strategic Expansion
-- **timeline-1990.jpg** (800x500px) - 1990 Early Growth Phase
+- **timeline-2005.jpg** (800x500px) - 2005 Technology Integration
+- **timeline-1995.jpg** (800x500px) - 1995 Strategic Expansion
 - **timeline-1986.jpg** (800x500px) - 1986 Foundation & Vision
 
 ### Optional Images
@@ -54,8 +54,8 @@ This directory contains all images used on the About Us page.
 
 ### Company History Timeline (1986-2024)
 - **timeline-2024.jpg**: Modern lab equipment, digital interfaces, contemporary research facilities, latest innovations
-- **timeline-2012.jpg**: Facility expansion, manufacturing equipment, automation systems, strategic growth
-- **timeline-1990.jpg**: Early growth phase, expanding operations, developing capabilities, team building
+- **timeline-2005.jpg**: Technology integration, advanced manufacturing systems, automation equipment, digital transformation
+- **timeline-1995.jpg**: Strategic expansion, manufacturing growth, team development, capability building
 - **timeline-1986.jpg**: Founding moments, entrepreneurial beginnings, vision setting, early projects
 
 ### For General Sections
@@ -64,7 +64,7 @@ This directory contains all images used on the About Us page.
 
 ## ⚠️ Important Notes
 
-- **Timeline Years**: The timeline now covers 1986, 1990, 2012, and 2024
+- **Timeline Years**: The timeline now covers 1986, 1995, 2005, and 2024
 - **Historical Progression**: Images should reflect the company's evolution over nearly 40 years
 - All images should be professional and high-quality
 - Ensure images are relevant to laboratory/scientific context
@@ -72,13 +72,13 @@ This directory contains all images used on the About Us page.
 - Optimize file sizes for web performance (typically under 500KB per image)
 - Maintain consistent visual style across all timeline images
 
-## 🔄 File Renaming Required
+## 🔄 File Mapping for Existing Images
 
-If you have existing timeline images, please rename them:
-- **timeline-2009.jpg** → **timeline-1986.jpg**
-- **timeline-2018.jpg** → **timeline-1990.jpg**
-- **timeline-2012.jpg** → Keep as is
-- **timeline-2024.jpg** → Keep as is
+If you have existing timeline images, use them as follows:
+- **timeline-2009.jpg** → Use for **timeline-1986.jpg** (Foundation & Vision)
+- **timeline-2018.jpg** → Use for **timeline-1995.jpg** (Strategic Expansion)
+- **timeline-2012.jpg** → Use for **timeline-2005.jpg** (Technology Integration)
+- **timeline-2024.jpg** → Keep as is (Modern Innovation Era)
 
 ## 🆘 Troubleshooting
 
@@ -101,17 +101,17 @@ If you have existing timeline images, please rename them:
 - First laboratory design projects
 - Building foundational team
 
-### 1990 - Early Growth Phase
+### 1995 - Strategic Expansion
 - Opened first manufacturing facility
 - Developed specialized laboratory equipment
 - Expanded team and capabilities
 - Established quality control processes
 
-### 2012 - Strategic Expansion
-- Relocation to Ulu Tiram, Johor
-- Strategic shift to laboratory furniture manufacturing
-- Implementation of automation systems
-- Enhanced safety protocols
+### 2005 - Technology Integration
+- Implemented advanced manufacturing systems
+- Developed laboratory automation solutions
+- Enhanced quality control processes
+- Expanded product line capabilities
 
 ### 2024 - Modern Innovation Era
 - Digital laboratory design platforms
