@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -40,30 +41,11 @@ const About = () => {
             Achieved ISO certification and expanded our digital laboratory design platform. 
             Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-            <img
-              src="/page-images/about/timeline-2024-equipment.jpg"
-              alt="Modern laboratory equipment 2024"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-            <img
-              src="/page-images/about/timeline-2024-technology.jpg"
-              alt="Laboratory technology advancement 2024"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <img
-              src="/page-images/about/timeline-2024-research.jpg"
-              alt="Research environment 2024"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-            <img
-              src="/page-images/about/timeline-2024-design.jpg"
-              alt="Laboratory design showcase 2024"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-          </div>
+          <img
+            src="/page-images/about/timeline-2024.jpg"
+            alt="2024 - Expansion & Innovation"
+            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
+          />
         </div>
       ),
     },
@@ -79,18 +61,11 @@ const About = () => {
             Pioneered sustainable laboratory practices and introduced energy-efficient ventilation systems 
             that reduced operational costs by 30% for our clients.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <img
-              src="/page-images/about/timeline-2018-pharmaceutical.jpg"
-              alt="Pharmaceutical laboratory project 2018"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-            <img
-              src="/page-images/about/timeline-2018-facility.jpg"
-              alt="Research facility expansion 2018"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-          </div>
+          <img
+            src="/page-images/about/timeline-2018.jpg"
+            alt="2018 - Regional Growth"
+            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
+          />
         </div>
       ),
     },
@@ -118,18 +93,11 @@ const About = () => {
               ✅ Established quality management system
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <img
-              src="/page-images/about/timeline-2012-automation.jpg"
-              alt="Laboratory automation systems 2012"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-            <img
-              src="/page-images/about/timeline-2012-safety.jpg"
-              alt="Safety protocol implementation 2012"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-          </div>
+          <img
+            src="/page-images/about/timeline-2012.jpg"
+            alt="2012 - Technology Integration"
+            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
+          />
         </div>
       ),
     },
@@ -142,18 +110,11 @@ const About = () => {
             Started with a small team of 5 dedicated professionals and our first major project 
             with the National University of Singapore.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <img
-              src="/page-images/about/timeline-2009-founding.jpg"
-              alt="Company founding 2009"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-            <img
-              src="/page-images/about/timeline-2009-design.jpg"
-              alt="Early laboratory design work 2009"
-              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
-            />
-          </div>
+          <img
+            src="/page-images/about/timeline-2009.jpg"
+            alt="2009 - Foundation"
+            className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
+          />
         </div>
       ),
     },
@@ -161,7 +122,7 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-background pt-0">
-      {/* Hero Section - Updated with About Innosin content */}
+      {/* Hero Section */}
       <section className="section bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden">
         <div className="container-custom">
           <div className="max-w-4xl mx-auto text-center">
@@ -187,7 +148,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Mission & Vision - Updated with better spacing */}
+      {/* Mission & Vision */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background py-20">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
@@ -227,7 +188,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Values Section - Keep existing */}
+      {/* Values Section */}
       <section className="section bg-background py-20">
         <div className="container-custom">
           <div className="text-center mb-16">
@@ -258,7 +219,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Company Timeline - Updated spacing */}
+      {/* Company Timeline */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background py-20">
         <div className="container-custom">
           <div className="text-center mb-16">
@@ -275,7 +236,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Ready to Transform Your Laboratory CTA - Keep existing */}
+      {/* Ready to Transform Your Laboratory CTA */}
       <LabTransformCTA />
     </div>
   );

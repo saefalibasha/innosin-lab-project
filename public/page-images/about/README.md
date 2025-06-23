@@ -11,25 +11,11 @@ This directory contains all images used on the About Us page.
 ### Mission & Vision Section
 - **mission-vision.jpg** (800x600px) - Supporting image for mission/vision section
 
-### Timeline Section
-
-#### 2024 - Expansion & Innovation
-- **timeline-2024-equipment.jpg** (600x400px) - Modern laboratory equipment showcase
-- **timeline-2024-technology.jpg** (600x400px) - Laboratory technology advancement
-- **timeline-2024-research.jpg** (600x400px) - Research environment showcase
-- **timeline-2024-design.jpg** (600x400px) - Laboratory design showcase
-
-#### 2018 - Regional Growth
-- **timeline-2018-pharmaceutical.jpg** (600x400px) - Pharmaceutical laboratory project
-- **timeline-2018-facility.jpg** (600x400px) - Research facility expansion
-
-#### 2012 - Technology Integration
-- **timeline-2012-automation.jpg** (600x400px) - Laboratory automation systems
-- **timeline-2012-safety.jpg** (600x400px) - Safety protocol implementation
-
-#### 2009 - Foundation
-- **timeline-2009-founding.jpg** (600x400px) - Company founding moment
-- **timeline-2009-design.jpg** (600x400px) - Early laboratory design work
+### Timeline Section (ONE IMAGE PER YEAR)
+- **timeline-2024.jpg** (800x500px) - 2024 Expansion & Innovation showcase
+- **timeline-2018.jpg** (800x500px) - 2018 Regional Growth achievements
+- **timeline-2012.jpg** (800x500px) - 2012 Technology Integration milestones
+- **timeline-2009.jpg** (800x500px) - 2009 Company Foundation
 
 ### Optional Images
 - **company-timeline.jpg** (1920x1080px) - Timeline background image
@@ -43,7 +29,7 @@ This directory contains all images used on the About Us page.
 
 ### Recommended Dimensions
 - Hero images: 1200x800px
-- Timeline images: 600x400px
+- Timeline images: 800x500px (simplified to one per year)
 - Background images: 1920x1080px
 - Icon images: 200x200px
 
@@ -64,26 +50,26 @@ This directory contains all images used on the About Us page.
 3. **Automatic Updates**: Images will automatically appear on the About page once uploaded
 4. **No Code Changes Needed**: The page is configured to use these specific filenames
 
-## 💡 Image Content Suggestions
+## 💡 Timeline Image Content Suggestions
 
-### For Timeline Images
-- **2024**: Modern lab equipment, digital interfaces, contemporary research facilities
-- **2018**: Pharmaceutical labs, research partnerships, expansion imagery
-- **2012**: Automation systems, safety equipment, growing team photos
-- **2009**: Founding moments, early projects, startup atmosphere
+### Simplified Structure (One Image Per Year)
+- **timeline-2024.jpg**: Modern lab equipment, digital interfaces, contemporary research facilities
+- **timeline-2018.jpg**: Pharmaceutical labs, research partnerships, expansion imagery
+- **timeline-2012.jpg**: Automation systems, safety equipment, technology integration
+- **timeline-2009.jpg**: Founding moments, early projects, startup atmosphere
 
 ### For General Sections
 - **Hero**: Professional laboratory overview or company exterior
 - **Mission/Vision**: Inspirational workspace or advanced equipment
-- **Values**: Team collaboration, precision work, innovation in action
 
 ## ⚠️ Important Notes
 
+- **Simplified Timeline**: Each year now uses only ONE representative image
 - All images should be professional and high-quality
 - Ensure images are relevant to laboratory/scientific context
 - Consider accessibility by choosing images with good contrast
 - Optimize file sizes for web performance (typically under 500KB per image)
-- Maintain consistent visual style across all images
+- Maintain consistent visual style across all timeline images
 
 ## 🆘 Troubleshooting
 
@@ -97,3 +83,10 @@ This directory contains all images used on the About Us page.
 - The page is responsive and will adapt to your image dimensions
 - Recommended dimensions ensure optimal display quality
 - Images will be automatically cropped/resized to fit containers
+
+## 🎯 Benefits of Simplified Structure
+
+- **Easier Management**: Only 4 timeline images to maintain instead of 8
+- **Cleaner Design**: Single focus image per timeline year
+- **Better Performance**: Fewer images to load
+- **Simpler Replacement**: One representative image per milestone year

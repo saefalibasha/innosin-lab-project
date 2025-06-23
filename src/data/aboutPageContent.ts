@@ -40,7 +40,7 @@ export const aboutPageContent = {
     backgroundImage: "/page-images/about/company-timeline.jpg", // Replace with your image
     backgroundImageAlt: "Company journey and timeline background",
     
-    // Timeline Events
+    // Timeline Events - Updated with single image per year
     events: [
       {
         year: "2024",
@@ -52,25 +52,9 @@ export const aboutPageContent = {
           "Enhanced research capabilities",
           "Improved laboratory designs"
         ],
-        // Timeline event images for 2024
-        images: [
-          {
-            src: "/page-images/about/timeline-2024-equipment.jpg",
-            alt: "2024 modern laboratory equipment"
-          },
-          {
-            src: "/page-images/about/timeline-2024-technology.jpg", 
-            alt: "2024 laboratory technology advancement"
-          },
-          {
-            src: "/page-images/about/timeline-2024-research.jpg",
-            alt: "2024 research environment"
-          },
-          {
-            src: "/page-images/about/timeline-2024-design.jpg",
-            alt: "2024 laboratory design showcase"
-          }
-        ]
+        // Single timeline image for 2024
+        image: "/page-images/about/timeline-2024.jpg",
+        imageAlt: "2024 - Expansion & Innovation showcase"
       },
       {
         year: "2018", 
@@ -80,16 +64,8 @@ export const aboutPageContent = {
           "Completed major pharmaceutical lab project",
           "Expanded research facility operations"
         ],
-        images: [
-          {
-            src: "/page-images/about/timeline-2018-pharmaceutical.jpg",
-            alt: "2018 pharmaceutical laboratory project"
-          },
-          {
-            src: "/page-images/about/timeline-2018-facility.jpg",
-            alt: "2018 research facility expansion"
-          }
-        ]
+        image: "/page-images/about/timeline-2018.jpg",
+        imageAlt: "2018 - Regional Growth achievements"
       },
       {
         year: "2012",
@@ -99,16 +75,8 @@ export const aboutPageContent = {
           "Implemented laboratory automation systems",
           "Enhanced safety protocol standards"
         ],
-        images: [
-          {
-            src: "/page-images/about/timeline-2012-automation.jpg",
-            alt: "2012 laboratory automation systems"
-          },
-          {
-            src: "/page-images/about/timeline-2012-safety.jpg",
-            alt: "2012 safety protocol implementation"
-          }
-        ]
+        image: "/page-images/about/timeline-2012.jpg",
+        imageAlt: "2012 - Technology Integration milestones"
       },
       {
         year: "2009",
@@ -118,16 +86,8 @@ export const aboutPageContent = {
           "Company establishment and founding",
           "Started early laboratory design work"
         ],
-        images: [
-          {
-            src: "/page-images/about/timeline-2009-founding.jpg",
-            alt: "2009 company foundation"
-          },
-          {
-            src: "/page-images/about/timeline-2009-design.jpg",
-            alt: "2009 early laboratory design work"
-          }
-        ]
+        image: "/page-images/about/timeline-2009.jpg",
+        imageAlt: "2009 - Company Foundation"
       }
     ]
   },
@@ -180,23 +140,11 @@ HERO SECTION:
 MISSION & VISION SECTION:
 • mission-vision.jpg (800x600px) - Supporting image for mission/vision
 
-TIMELINE SECTION - 2024:
-• timeline-2024-equipment.jpg (600x400px) - Modern laboratory equipment
-• timeline-2024-technology.jpg (600x400px) - Laboratory technology advancement
-• timeline-2024-research.jpg (600x400px) - Research environment showcase
-• timeline-2024-design.jpg (600x400px) - Laboratory design showcase
-
-TIMELINE SECTION - 2018:
-• timeline-2018-pharmaceutical.jpg (600x400px) - Pharmaceutical laboratory project
-• timeline-2018-facility.jpg (600x400px) - Research facility expansion
-
-TIMELINE SECTION - 2012:
-• timeline-2012-automation.jpg (600x400px) - Laboratory automation systems
-• timeline-2012-safety.jpg (600x400px) - Safety protocol implementation
-
-TIMELINE SECTION - 2009:
-• timeline-2009-founding.jpg (600x400px) - Company founding moment
-• timeline-2009-design.jpg (600x400px) - Early laboratory design work
+TIMELINE SECTION (ONE IMAGE PER YEAR):
+• timeline-2024.jpg (800x500px) - 2024 Expansion & Innovation
+• timeline-2018.jpg (800x500px) - 2018 Regional Growth  
+• timeline-2012.jpg (800x500px) - 2012 Technology Integration
+• timeline-2009.jpg (800x500px) - 2009 Company Foundation
 
 OPTIONAL IMAGES:
 • company-timeline.jpg (1920x1080px) - Timeline background
@@ -213,8 +161,11 @@ OPTIONAL IMAGES:
 4. The images will automatically appear on the About page
 
 💡 Pro Tip: Use descriptive, professional images that represent:
-- Modern laboratory environments
-- Scientific equipment and technology
-- Team collaboration and professionalism
-- Innovation and precision in laboratory work
+- 2024: Modern laboratory environments, latest technology
+- 2018: Partnership growth, pharmaceutical projects
+- 2012: Automation systems, safety protocols
+- 2009: Founding moments, early laboratory work
+
+🎯 Simplified Structure: Each timeline year now has ONE representative image
+making it easier to manage and replace specific images for each milestone.
 */
