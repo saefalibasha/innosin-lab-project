@@ -7,7 +7,7 @@ export const aboutPageContent = {
   hero: {
     title: "About",
     titleHighlight: "Innosin Lab",
-    description: "We are a leading laboratory solutions provider in Singapore, specializing in innovative laboratory furniture, equipment, and design services. For over 15 years, we have been transforming research environments across Southeast Asia, empowering scientists and researchers to achieve breakthrough discoveries through world-class laboratory solutions.",
+    description: "At Innosin Lab, we specialize in the design, manufacturing, and installation of high-quality laboratory furniture and custom metal solutions. Crafted from stainless steel and electro-galvanized steel, our products are engineered for precision, durability, and corrosion resistance, making them ideal for demanding laboratory, industrial, and research environments. With a focus on tailored solutions and exceptional craftsmanship, we aim to be your trusted partner for custom lab furniture and precision metal fabrication."
     // Hero section image
     heroImage: "/page-images/about/about-hero.jpg", // Replace with your image
     heroImageAlt: "About Innosin Lab - innovative laboratory solutions"
@@ -16,7 +16,7 @@ export const aboutPageContent = {
   // Mission & Vision
   mission: {
     title: "Our Mission",
-    description: "To provide world-class laboratory solutions that empower researchers and scientists to achieve their goals through innovative design, quality equipment, and exceptional service.",
+    description: "To deliver high-quality, customizable laboratory solutions and stainless steel products through innovation, precision, and sincere service — consistently exceeding the expectations of our partners in science, research, and industry.",
     // Optional mission image
     image: "/page-images/about/mission-vision.jpg", // Replace with your image
     imageAlt: "Our mission to provide world-class laboratory solutions"
@@ -24,7 +24,7 @@ export const aboutPageContent = {
 
   vision: {
     title: "Our Vision", 
-    description: "To be the leading provider of laboratory solutions in Southeast Asia, known for our commitment to excellence, innovation, and customer satisfaction.",
+    description: "To be the trusted leader in laboratory infrastructure and stainless steel manufacturing across Asia, known for our innovation, integrity, and unwavering commitment to supporting scientific advancement.",
     // Optional vision image
     image: "/page-images/about/mission-vision.jpg", // Replace with your image
     imageAlt: "Our vision for laboratory excellence"
