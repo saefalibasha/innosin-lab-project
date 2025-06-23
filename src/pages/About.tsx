@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { ArrowRight, Award, Users, Globe, Target } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Timeline } from '@/components/ui/timeline';
 import LabTransformCTA from '@/components/LabTransformCTA';
+import { aboutPageContent } from '@/data/aboutPageContent';
 
 const About = () => {
   const values = [
@@ -199,16 +199,15 @@ const About = () => {
 
   return (
     <div className="min-h-screen bg-background pt-20">
-      {/* Hero Section */}
+      {/* Hero Section - Updated with About Innosin content */}
       <section className="section bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden">
         <div className="container-custom">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
-              Pioneering Laboratory <span className="text-sea">Excellence</span>
+              {aboutPageContent.hero.title} <span className="text-sea">{aboutPageContent.hero.titleHighlight}</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-12 leading-relaxed font-light animate-fade-in animate-delay-200">
-              For over 15 years, Innosin Lab has been transforming research environments across Singapore and beyond, 
-              delivering world-class laboratory solutions that empower scientific discovery and innovation.
+              {aboutPageContent.hero.description}
             </p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center animate-scale-in animate-delay-300">
               <Button asChild variant="default" size="lg">
@@ -226,24 +225,22 @@ const About = () => {
         </div>
       </section>
 
-      {/* Mission & Vision */}
+      {/* Mission & Vision - Keep existing section */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="animate-fade-in">
               <h2 className="text-4xl font-serif font-bold text-primary mb-6">
-                Our <span className="text-sea">Mission</span>
+                {aboutPageContent.mission.title}
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                To empower scientific advancement by providing innovative, high-quality laboratory solutions 
-                that enable researchers to focus on what matters most - their groundbreaking discoveries.
+                {aboutPageContent.mission.description}
               </p>
               <h3 className="text-2xl font-serif font-semibold text-primary mb-4">
-                Our <span className="text-sea">Vision</span>
+                {aboutPageContent.vision.title}
               </h3>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To be the leading laboratory solutions provider in Southeast Asia, recognized for our 
-                commitment to excellence, innovation, and customer satisfaction.
+                {aboutPageContent.vision.description}
               </p>
             </div>
             <div className="animate-fade-in-right animate-delay-300">
@@ -268,7 +265,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Values Section */}
+      {/* Values Section - Keep existing */}
       <section className="section bg-background">
         <div className="container-custom">
           <div className="text-center mb-16">
@@ -299,7 +296,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Company Timeline */}
+      {/* Company Timeline - Keep existing */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
         <div className="container-custom">
           <div className="text-center mb-16">
@@ -316,7 +313,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Ready to Transform Your Laboratory CTA */}
+      {/* Ready to Transform Your Laboratory CTA - Keep existing */}
       <LabTransformCTA />
     </div>
   );

@@ -1,4 +1,3 @@
-
 // About Page Content Data
 // This file contains all the text content for the About Us page
 // To modify the text content, simply edit the values below
@@ -8,7 +7,7 @@ export const aboutPageContent = {
   hero: {
     title: "About",
     titleHighlight: "Innosin Lab",
-    description: "We are passionate about creating innovative laboratory environments that enable groundbreaking research and scientific discovery.",
+    description: "We are a leading laboratory solutions provider in Singapore, specializing in innovative laboratory furniture, equipment, and design services. For over 15 years, we have been transforming research environments across Southeast Asia, empowering scientists and researchers to achieve breakthrough discoveries through world-class laboratory solutions.",
     // Hero section image
     heroImage: "/page-images/about/about-hero.jpg", // Replace with your image
     heroImageAlt: "About Innosin Lab - innovative laboratory solutions"
