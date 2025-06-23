@@ -12,10 +12,10 @@ This directory contains all images used on the About Us page.
 - **mission-vision.jpg** (800x600px) - Supporting image for mission/vision section
 
 ### Timeline Section (ONE IMAGE PER YEAR)
-- **timeline-2024.jpg** (800x500px) - 2024 Expansion & Innovation showcase
-- **timeline-2018.jpg** (800x500px) - 2018 Regional Growth achievements
-- **timeline-2012.jpg** (800x500px) - 2012 Technology Integration milestones
-- **timeline-2009.jpg** (800x500px) - 2009 Company Foundation
+- **timeline-2024.jpg** (800x500px) - 2024 Modern Innovation Era
+- **timeline-2012.jpg** (800x500px) - 2012 Strategic Expansion
+- **timeline-1990.jpg** (800x500px) - 1990 Early Growth Phase
+- **timeline-1986.jpg** (800x500px) - 1986 Foundation & Vision
 
 ### Optional Images
 - **company-timeline.jpg** (1920x1080px) - Timeline background image
@@ -52,11 +52,11 @@ This directory contains all images used on the About Us page.
 
 ## 💡 Timeline Image Content Suggestions
 
-### Simplified Structure (One Image Per Year)
-- **timeline-2024.jpg**: Modern lab equipment, digital interfaces, contemporary research facilities
-- **timeline-2018.jpg**: Pharmaceutical labs, research partnerships, expansion imagery
-- **timeline-2012.jpg**: Automation systems, safety equipment, technology integration
-- **timeline-2009.jpg**: Founding moments, early projects, startup atmosphere
+### Company History Timeline (1986-2024)
+- **timeline-2024.jpg**: Modern lab equipment, digital interfaces, contemporary research facilities, latest innovations
+- **timeline-2012.jpg**: Facility expansion, manufacturing equipment, automation systems, strategic growth
+- **timeline-1990.jpg**: Early growth phase, expanding operations, developing capabilities, team building
+- **timeline-1986.jpg**: Founding moments, entrepreneurial beginnings, vision setting, early projects
 
 ### For General Sections
 - **Hero**: Professional laboratory overview or company exterior
@@ -64,12 +64,21 @@ This directory contains all images used on the About Us page.
 
 ## ⚠️ Important Notes
 
-- **Simplified Timeline**: Each year now uses only ONE representative image
+- **Timeline Years**: The timeline now covers 1986, 1990, 2012, and 2024
+- **Historical Progression**: Images should reflect the company's evolution over nearly 40 years
 - All images should be professional and high-quality
 - Ensure images are relevant to laboratory/scientific context
 - Consider accessibility by choosing images with good contrast
 - Optimize file sizes for web performance (typically under 500KB per image)
 - Maintain consistent visual style across all timeline images
+
+## 🔄 File Renaming Required
+
+If you have existing timeline images, please rename them:
+- **timeline-2009.jpg** → **timeline-1986.jpg**
+- **timeline-2018.jpg** → **timeline-1990.jpg**
+- **timeline-2012.jpg** → Keep as is
+- **timeline-2024.jpg** → Keep as is
 
 ## 🆘 Troubleshooting
 
@@ -84,9 +93,28 @@ This directory contains all images used on the About Us page.
 - Recommended dimensions ensure optimal display quality
 - Images will be automatically cropped/resized to fit containers
 
-## 🎯 Benefits of Simplified Structure
+## 🎯 Company Timeline Content Guide
 
-- **Easier Management**: Only 4 timeline images to maintain instead of 8
-- **Cleaner Design**: Single focus image per timeline year
-- **Better Performance**: Fewer images to load
-- **Simpler Replacement**: One representative image per milestone year
+### 1986 - Foundation & Vision
+- Company establishment and founding
+- Development of core business vision
+- First laboratory design projects
+- Building foundational team
+
+### 1990 - Early Growth Phase
+- Opened first manufacturing facility
+- Developed specialized laboratory equipment
+- Expanded team and capabilities
+- Established quality control processes
+
+### 2012 - Strategic Expansion
+- Relocation to Ulu Tiram, Johor
+- Strategic shift to laboratory furniture manufacturing
+- Implementation of automation systems
+- Enhanced safety protocols
+
+### 2024 - Modern Innovation Era
+- Digital laboratory design platforms
+- ISO certification achievements
+- 500+ completed projects milestone
+- Industry leadership in sustainable practices

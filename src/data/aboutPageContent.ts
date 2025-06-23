@@ -40,12 +40,12 @@ export const aboutPageContent = {
     backgroundImage: "/page-images/about/company-timeline.jpg", // Replace with your image
     backgroundImageAlt: "Company journey and timeline background",
     
-    // Timeline Events - Updated with correct years matching uploaded images
+    // Timeline Events - Updated with years 1986, 1990, 2012, 2024
     events: [
       {
         year: "2024",
-        title: "Expansion & Innovation",
-        description: "Achieved ISO certification and expanded our digital laboratory design platform. Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone.",
+        title: "Modern Innovation Era",
+        description: "Achieved ISO certification and expanded our digital laboratory design platform. Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone. Leading the industry with cutting-edge technology and sustainable practices.",
         achievements: [
           "Launched advanced equipment line",
           "Implemented new lab technologies", 
@@ -54,24 +54,11 @@ export const aboutPageContent = {
         ],
         // Timeline image for 2024
         image: "/page-images/about/timeline-2024.jpg",
-        imageAlt: "2024 - Expansion & Innovation showcase"
+        imageAlt: "2024 - Modern Innovation Era showcase"
       },
       {
-        year: "2018", 
-        title: "Regional Growth",
-        description: "Major expansion year with entry into pharmaceutical laboratory design. Established partnerships with leading research institutions across Southeast Asia. Pioneered sustainable laboratory practices and introduced energy-efficient ventilation systems.",
-        achievements: [
-          "Completed major pharmaceutical lab project",
-          "Expanded research facility operations",
-          "Established Southeast Asia partnerships",
-          "Introduced energy-efficient systems"
-        ],
-        image: "/page-images/about/timeline-2018.jpg",
-        imageAlt: "2018 - Regional Growth achievements"
-      },
-      {
-        year: "2012",
-        title: "Technology Integration", 
+        year: "2012", 
+        title: "Strategic Expansion",
         description: "A pivotal year: Innosin relocated to Ulu Tiram, Johor, and began a strategic shift towards laboratory furniture manufacturing and turnkey lab setups. Our upgraded facilities empowered us to deliver integrated design, fabrication, and installation solutions tailored to scientific and research environments.",
         achievements: [
           "Implemented laboratory automation systems",
@@ -80,20 +67,33 @@ export const aboutPageContent = {
           "Received Singapore Safety Excellence Award"
         ],
         image: "/page-images/about/timeline-2012.jpg",
-        imageAlt: "2012 - Technology Integration milestones"
+        imageAlt: "2012 - Strategic Expansion milestones"
       },
       {
-        year: "2009",
-        title: "Foundation",
-        description: "Founded Innosin Lab with a vision to revolutionize laboratory design in Singapore. Started with a small team of 5 dedicated professionals and our first major project with the National University of Singapore.",
+        year: "1990",
+        title: "Early Growth Phase", 
+        description: "Significant expansion of operations and capabilities. Established our first dedicated manufacturing facility and began developing specialized laboratory equipment. This period marked our transition from a small startup to a recognized player in the laboratory solutions industry.",
+        achievements: [
+          "Opened first manufacturing facility",
+          "Developed specialized laboratory equipment",
+          "Expanded team and capabilities",
+          "Established quality control processes"
+        ],
+        image: "/page-images/about/timeline-1990.jpg",
+        imageAlt: "1990 - Early Growth Phase achievements"
+      },
+      {
+        year: "1986",
+        title: "Foundation & Vision",
+        description: "Founded Innosin Lab with a bold vision to revolutionize laboratory design and manufacturing. Started with a small dedicated team and an unwavering commitment to quality and innovation. Our founding principles of excellence, precision, and customer-focused solutions remain at the heart of everything we do today.",
         achievements: [
           "Company establishment and founding",
-          "Started early laboratory design work",
-          "First major university project",
-          "Team of 5 dedicated professionals"
+          "Development of core business vision",
+          "First laboratory design projects",
+          "Building foundational team"
         ],
-        image: "/page-images/about/timeline-2009.jpg",
-        imageAlt: "2009 - Company Foundation"
+        image: "/page-images/about/timeline-1986.jpg",
+        imageAlt: "1986 - Foundation & Vision"
       }
     ]
   },
@@ -107,7 +107,7 @@ export const aboutPageContent = {
     items: [
       {
         title: "Experience",
-        description: "Over 15 years of expertise in laboratory solutions",
+        description: "Nearly 40 years of expertise in laboratory solutions since 1986",
         icon: "trophy", // Icon identifier
         image: "/page-images/about/experience-icon.jpg" // Optional image
       },
@@ -147,10 +147,10 @@ MISSION & VISION SECTION:
 • mission-vision.jpg (800x600px) - Supporting image for mission/vision
 
 TIMELINE SECTION (ONE IMAGE PER YEAR):
-• timeline-2024.jpg (800x500px) - 2024 Expansion & Innovation
-• timeline-2018.jpg (800x500px) - 2018 Regional Growth  
-• timeline-2012.jpg (800x500px) - 2012 Technology Integration
-• timeline-2009.jpg (800x500px) - 2009 Company Foundation
+• timeline-2024.jpg (800x500px) - 2024 Modern Innovation Era
+• timeline-2012.jpg (800x500px) - 2012 Strategic Expansion  
+• timeline-1990.jpg (800x500px) - 1990 Early Growth Phase
+• timeline-1986.jpg (800x500px) - 1986 Foundation & Vision
 
 OPTIONAL IMAGES:
 • company-timeline.jpg (1920x1080px) - Timeline background
@@ -167,11 +167,23 @@ OPTIONAL IMAGES:
 4. The images will automatically appear on the About page
 
 💡 Pro Tip: Use descriptive, professional images that represent:
-- 2024: Modern laboratory environments, latest technology
-- 2018: Partnership growth, pharmaceutical projects
-- 2012: Automation systems, safety protocols
-- 2009: Founding moments, early laboratory work
+- 2024: Modern laboratory environments, latest technology, digital innovation
+- 2012: Facility expansion, advanced manufacturing, automation systems
+- 1990: Early growth, expanding operations, developing capabilities
+- 1986: Founding moments, vision setting, entrepreneurial beginnings
 
-🎯 Simplified Structure: Each timeline year now has ONE representative image
-making it easier to manage and replace specific images for each milestone.
+🎯 Timeline Content Guide:
+- **1986 (Foundation)**: Company establishment, vision development, first projects
+- **1990 (Growth)**: Facility expansion, team building, capability development  
+- **2012 (Expansion)**: Relocation to Johor, strategic shift, technology integration
+- **2024 (Innovation)**: Digital platforms, modern solutions, industry leadership
+
+⚠️ IMPORTANT: Update your uploaded image filenames to match:
+- Rename timeline-2009.jpg to timeline-1986.jpg
+- Rename timeline-2018.jpg to timeline-1990.jpg
+- Keep timeline-2012.jpg as is
+- Keep timeline-2024.jpg as is
+
+🆘 Troubleshooting:
+If images don't show after the update, ensure your uploaded files match the exact filenames above.
 */
