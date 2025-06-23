@@ -147,10 +147,10 @@ MISSION & VISION SECTION:
 • mission-vision.jpg (800x600px) - Supporting image for mission/vision
 
 TIMELINE SECTION (ONE IMAGE PER YEAR):
-• timeline-2024.jpg (800x500px) - 2024 Modern Innovation Era
-• timeline-2012.jpg (800x500px) - 2012 Strategic Expansion  
-• timeline-1990.jpg (800x500px) - 1990 Early Growth Phase
 • timeline-1986.jpg (800x500px) - 1986 Foundation & Vision
+• timeline-1990.jpg (800x500px) - 1990 Early Growth Phase  
+• timeline-2012.jpg (800x500px) - 2012 Technology Integration
+• timeline-2024.jpg (800x500px) - 2024 Modern Innovation Era
 
 OPTIONAL IMAGES:
 • company-timeline.jpg (1920x1080px) - Timeline background
@@ -167,22 +167,22 @@ OPTIONAL IMAGES:
 4. The images will automatically appear on the About page
 
 💡 Pro Tip: Use descriptive, professional images that represent:
-- 2024: Modern laboratory environments, latest technology, digital innovation
-- 2012: Facility expansion, advanced manufacturing, automation systems
+- 1986: Company founding moments, vision setting, entrepreneurial beginnings
 - 1990: Early growth, expanding operations, developing capabilities
-- 1986: Founding moments, vision setting, entrepreneurial beginnings
+- 2012: Technology integration, advanced manufacturing, automation systems
+- 2024: Modern laboratory environments, latest technology, digital innovation
 
 🎯 Timeline Content Guide:
 - **1986 (Foundation)**: Company establishment, vision development, first projects
 - **1990 (Growth)**: Facility expansion, team building, capability development  
-- **2012 (Expansion)**: Relocation to Johor, strategic shift, technology integration
+- **2012 (Integration)**: Technology advancement, automation, quality systems
 - **2024 (Innovation)**: Digital platforms, modern solutions, industry leadership
 
-⚠️ IMPORTANT: Update your uploaded image filenames to match:
-- Rename timeline-2009.jpg to timeline-1986.jpg
-- Rename timeline-2018.jpg to timeline-1990.jpg
-- Keep timeline-2012.jpg as is
-- Keep timeline-2024.jpg as is
+⚠️ IMPORTANT: Your uploaded image filenames must match exactly:
+- timeline-1986.jpg (rename from timeline-2009.jpg if needed)
+- timeline-1990.jpg (rename from timeline-2018.jpg if needed)  
+- timeline-2012.jpg (should already exist)
+- timeline-2024.jpg (should already exist)
 
 🆘 Troubleshooting:
 If images don't show after the update, ensure your uploaded files match the exact filenames above.
