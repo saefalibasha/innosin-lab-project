@@ -9,51 +9,24 @@ import LabTransformCTA from '@/components/LabTransformCTA';
 import { aboutPageContent } from '@/data/aboutPageContent';
 
 const About = () => {
-  const values = [
-    {
-      icon: Award,
-      title: "Excellence",
-      description: "We maintain the highest standards in every aspect of our work, from design to implementation and beyond."
-    },
-    {
-      icon: Users,
-      title: "Collaboration",
-      description: "We work closely with our clients to understand their unique needs and deliver tailored solutions."
-    },
-    {
-      icon: Globe,
-      title: "Innovation",
-      description: "We continuously evolve our offerings to incorporate the latest technologies and industry best practices."
-    },
-    {
-      icon: Target,
-      title: "Precision",
-      description: "Every detail matters in laboratory environments. We ensure accuracy and precision in all our deliverables."
-    }
-  ];
-
   // Create timeline data from content structure
   const timelineData = aboutPageContent.timeline.events.map(event => ({
     title: event.year,
     content: (
       <div>
+        <h4 className="text-2xl font-serif font-bold text-primary mb-4">
+          {event.title}
+        </h4>
         <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
           {event.description}
         </p>
-        {event.achievements && event.achievements.length > 0 && (
-          <div className="mb-8">
-            {event.achievements.map((achievement, index) => (
-              <div key={index} className="flex gap-2 items-center text-muted-foreground text-sm md:text-base mb-2">
-                ✅ {achievement}
-              </div>
-            ))}
-          </div>
-        )}
-        <img
-          src={event.image}
-          alt={event.imageAlt}
-          className="rounded-lg object-cover h-48 md:h-64 w-full shadow-lg"
-        />
+        <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg shadow-lg">
+          <img
+            src={event.image}
+            alt={event.imageAlt}
+            className="w-full h-full object-cover object-center"
+          />
+        </div>
       </div>
     ),
   }));
@@ -131,28 +104,35 @@ const About = () => {
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
-              Our Core <span className="text-sea">Values</span>
+              {aboutPageContent.values.title}
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
               These fundamental principles guide everything we do and shape our commitment to excellence.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {values.map((value, index) => (
-              <Card key={index} className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: `${100 + index * 100}ms`}}>
-                <CardContent className="p-6">
-                  <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <value.icon className="w-8 h-8 text-sea" />
-                  </div>
-                  <h3 className="text-xl font-serif font-semibold text-primary mb-3">
-                    {value.title}
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {value.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+            {aboutPageContent.values.items.map((value, index) => {
+              const IconComponent = value.icon === 'trophy' ? Award : 
+                                  value.icon === 'star' ? Award :
+                                  value.icon === 'lightbulb' ? Globe :
+                                  Target;
+              
+              return (
+                <Card key={index} className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: `${100 + index * 100}ms`}}>
+                  <CardContent className="p-6">
+                    <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <IconComponent className="w-8 h-8 text-sea" />
+                    </div>
+                    <h3 className="text-xl font-serif font-semibold text-primary mb-3">
+                      {value.title}
+                    </h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                      {value.description}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
