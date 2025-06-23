@@ -40,42 +40,28 @@ const About = () => {
             Achieved ISO certification and expanded our digital laboratory design platform. 
             Launched innovative modular lab furniture solutions and reached 500+ completed projects milestone.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            {/* REPLACEABLE ASSET: 2024 Modern Laboratory Equipment */}
-            {/* Location: /public/about-us/timeline-2024-modern-equipment.jpg */}
-            {/* Purpose: Showcase of modern laboratory equipment (2024) */}
-            {/* Dimensions: 500x300px */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
             <img
-              src="/about-us/timeline-2024-modern-equipment.jpg"
+              src="/page-images/about/timeline-2024-equipment.jpg"
               alt="Modern laboratory equipment 2024"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
-            {/* REPLACEABLE ASSET: 2024 Laboratory Technology */}
-            {/* Location: /public/about-us/timeline-2024-lab-technology.jpg */}
-            {/* Purpose: Laboratory technology advancement (2024) */}
-            {/* Dimensions: 500x300px */}
             <img
-              src="/about-us/timeline-2024-lab-technology.jpg"
+              src="/page-images/about/timeline-2024-technology.jpg"
               alt="Laboratory technology advancement 2024"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
-            {/* REPLACEABLE ASSET: 2024 Research Environment */}
-            {/* Location: /public/about-us/timeline-2024-research.jpg */}
-            {/* Purpose: Research environment showcase (2024) */}
-            {/* Dimensions: 500x300px */}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <img
-              src="/about-us/timeline-2024-research.jpg"
+              src="/page-images/about/timeline-2024-research.jpg"
               alt="Research environment 2024"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
-            {/* REPLACEABLE ASSET: 2024 Laboratory Design */}
-            {/* Location: /public/about-us/timeline-2024-lab-design.jpg */}
-            {/* Purpose: Laboratory design showcase (2024) */}
-            {/* Dimensions: 500x300px */}
             <img
-              src="/about-us/timeline-2024-lab-design.jpg"
+              src="/page-images/about/timeline-2024-design.jpg"
               alt="Laboratory design showcase 2024"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
           </div>
         </div>
@@ -93,24 +79,16 @@ const About = () => {
             Pioneered sustainable laboratory practices and introduced energy-efficient ventilation systems 
             that reduced operational costs by 30% for our clients.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            {/* REPLACEABLE ASSET: 2018 Pharmaceutical Laboratory */}
-            {/* Location: /public/about-us/timeline-2018-pharmaceutical-lab.jpg */}
-            {/* Purpose: Pharmaceutical laboratory project (2018) */}
-            {/* Dimensions: 500x300px */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <img
-              src="/about-us/timeline-2018-pharmaceutical-lab.jpg"
+              src="/page-images/about/timeline-2018-pharmaceutical.jpg"
               alt="Pharmaceutical laboratory project 2018"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
-            {/* REPLACEABLE ASSET: 2018 Research Facility */}
-            {/* Location: /public/about-us/timeline-2018-research-facility.jpg */}
-            {/* Purpose: Research facility expansion (2018) */}
-            {/* Dimensions: 500x300px */}
             <img
-              src="/about-us/timeline-2018-research-facility.jpg"
+              src="/page-images/about/timeline-2018-facility.jpg"
               alt="Research facility expansion 2018"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
           </div>
         </div>
@@ -140,24 +118,16 @@ const About = () => {
               ✅ Established quality management system
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            {/* REPLACEABLE ASSET: 2012 Laboratory Automation */}
-            {/* Location: /public/about-us/timeline-2012-automation.jpg */}
-            {/* Purpose: Laboratory automation systems (2012) */}
-            {/* Dimensions: 500x300px */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <img
-              src="/about-us/timeline-2012-automation.jpg"
+              src="/page-images/about/timeline-2012-automation.jpg"
               alt="Laboratory automation systems 2012"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
-            {/* REPLACEABLE ASSET: 2012 Safety Protocols */}
-            {/* Location: /public/about-us/timeline-2012-safety.jpg */}
-            {/* Purpose: Safety protocol implementation (2012) */}
-            {/* Dimensions: 500x300px */}
             <img
-              src="/about-us/timeline-2012-safety.jpg"
+              src="/page-images/about/timeline-2012-safety.jpg"
               alt="Safety protocol implementation 2012"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
           </div>
         </div>
@@ -172,24 +142,16 @@ const About = () => {
             Started with a small team of 5 dedicated professionals and our first major project 
             with the National University of Singapore.
           </p>
-          <div className="grid grid-cols-2 gap-4">
-            {/* REPLACEABLE ASSET: 2009 Company Founding */}
-            {/* Location: /public/about-us/timeline-2009-founding.jpg */}
-            {/* Purpose: Company founding moment (2009) */}
-            {/* Dimensions: 500x300px */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <img
-              src="/about-us/timeline-2009-founding.jpg"
+              src="/page-images/about/timeline-2009-founding.jpg"
               alt="Company founding 2009"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
-            {/* REPLACEABLE ASSET: 2009 Early Laboratory Design */}
-            {/* Location: /public/about-us/timeline-2009-early-design.jpg */}
-            {/* Purpose: Early laboratory design work (2009) */}
-            {/* Dimensions: 500x300px */}
             <img
-              src="/about-us/timeline-2009-early-design.jpg"
+              src="/page-images/about/timeline-2009-design.jpg"
               alt="Early laboratory design work 2009"
-              className="rounded-lg object-cover h-20 md:h-44 lg:h-60 w-full shadow-lg"
+              className="rounded-lg object-cover h-32 md:h-48 w-full shadow-lg"
             />
           </div>
         </div>
@@ -225,33 +187,33 @@ const About = () => {
         </div>
       </section>
 
-      {/* Mission & Vision - Updated with consistent font sizes */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+      {/* Mission & Vision - Updated with better spacing */}
+      <section className="section bg-gradient-to-b from-secondary/30 to-background py-20">
         <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="animate-fade-in">
-              <h2 className="text-4xl font-serif font-bold text-primary mb-6">
-                {aboutPageContent.mission.title}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-                {aboutPageContent.mission.description}
-              </p>
-              <h2 className="text-4xl font-serif font-bold text-primary mb-4">
-                {aboutPageContent.vision.title}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {aboutPageContent.vision.description}
-              </p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+            <div className="animate-fade-in space-y-12">
+              <div>
+                <h2 className="text-4xl font-serif font-bold text-primary mb-6">
+                  {aboutPageContent.mission.title}
+                </h2>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {aboutPageContent.mission.description}
+                </p>
+              </div>
+              <div>
+                <h2 className="text-4xl font-serif font-bold text-primary mb-4">
+                  {aboutPageContent.vision.title}
+                </h2>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  {aboutPageContent.vision.description}
+                </p>
+              </div>
             </div>
             <div className="animate-fade-in-right animate-delay-300">
               <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
-                {/* REPLACEABLE ASSET: Mission Section Laboratory */}
-                {/* Location: /public/about-us/mission-modern-laboratory.jpg */}
-                {/* Purpose: Supporting image for mission section */}
-                {/* Dimensions: 600x400px */}
                 <img 
-                  src="/about-us/mission-modern-laboratory.jpg" 
-                  alt="Modern laboratory mission" 
+                  src="/page-images/about/mission-vision.jpg" 
+                  alt="Modern laboratory mission and vision" 
                   className="w-full h-64 object-cover rounded-lg mb-6"
                 />
                 <blockquote className="text-lg italic text-muted-foreground">
@@ -266,7 +228,7 @@ const About = () => {
       </section>
 
       {/* Values Section - Keep existing */}
-      <section className="section bg-background">
+      <section className="section bg-background py-20">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
@@ -296,8 +258,8 @@ const About = () => {
         </div>
       </section>
 
-      {/* Company Timeline - Keep existing */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background">
+      {/* Company Timeline - Updated spacing */}
+      <section className="section bg-gradient-to-b from-secondary/30 to-background py-20">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">

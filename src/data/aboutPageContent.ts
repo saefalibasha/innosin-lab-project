@@ -10,7 +10,7 @@ export const aboutPageContent = {
     titleHighlight: "Innosin Lab",
     description: "At Innosin Lab, we specialize in the design, manufacturing, and installation of high-quality laboratory furniture and custom metal solutions. Crafted from stainless steel and electro-galvanized steel, our products are engineered for precision, durability, and corrosion resistance, making them ideal for demanding laboratory, industrial, and research environments. With a focus on tailored solutions and exceptional craftsmanship, we aim to be your trusted partner for custom lab furniture and precision metal fabrication.",
     // Hero section image
-    heroImage: "/page-images/about/about-hero.jpg", // Replace with your image
+    heroImage: "/page-images/about/hero-section.jpg", // Replace with your image
     heroImageAlt: "About Innosin Lab - innovative laboratory solutions"
   },
 
@@ -52,9 +52,25 @@ export const aboutPageContent = {
           "Enhanced research capabilities",
           "Improved laboratory designs"
         ],
-        // Optional image for this timeline event
-        image: "/page-images/about/2024-expansion.jpg", // Replace with your image
-        imageAlt: "2024 expansion and innovation achievements"
+        // Timeline event images for 2024
+        images: [
+          {
+            src: "/page-images/about/timeline-2024-equipment.jpg",
+            alt: "2024 modern laboratory equipment"
+          },
+          {
+            src: "/page-images/about/timeline-2024-technology.jpg", 
+            alt: "2024 laboratory technology advancement"
+          },
+          {
+            src: "/page-images/about/timeline-2024-research.jpg",
+            alt: "2024 research environment"
+          },
+          {
+            src: "/page-images/about/timeline-2024-design.jpg",
+            alt: "2024 laboratory design showcase"
+          }
+        ]
       },
       {
         year: "2018", 
@@ -64,8 +80,16 @@ export const aboutPageContent = {
           "Completed major pharmaceutical lab project",
           "Expanded research facility operations"
         ],
-        image: "/page-images/about/2018-growth.jpg", // Replace with your image
-        imageAlt: "2018 regional growth and partnerships"
+        images: [
+          {
+            src: "/page-images/about/timeline-2018-pharmaceutical.jpg",
+            alt: "2018 pharmaceutical laboratory project"
+          },
+          {
+            src: "/page-images/about/timeline-2018-facility.jpg",
+            alt: "2018 research facility expansion"
+          }
+        ]
       },
       {
         year: "2012",
@@ -75,8 +99,16 @@ export const aboutPageContent = {
           "Implemented laboratory automation systems",
           "Enhanced safety protocol standards"
         ],
-        image: "/page-images/about/2012-technology.jpg", // Replace with your image
-        imageAlt: "2012 technology integration and automation"
+        images: [
+          {
+            src: "/page-images/about/timeline-2012-automation.jpg",
+            alt: "2012 laboratory automation systems"
+          },
+          {
+            src: "/page-images/about/timeline-2012-safety.jpg",
+            alt: "2012 safety protocol implementation"
+          }
+        ]
       },
       {
         year: "2009",
@@ -86,8 +118,16 @@ export const aboutPageContent = {
           "Company establishment and founding",
           "Started early laboratory design work"
         ],
-        image: "/page-images/about/2009-foundation.jpg", // Replace with your image
-        imageAlt: "2009 company foundation and early beginnings"
+        images: [
+          {
+            src: "/page-images/about/timeline-2009-founding.jpg",
+            alt: "2009 company foundation"
+          },
+          {
+            src: "/page-images/about/timeline-2009-design.jpg",
+            alt: "2009 early laboratory design work"
+          }
+        ]
       }
     ]
   },
@@ -128,39 +168,53 @@ export const aboutPageContent = {
 };
 
 /*
-HOW TO EDIT ABOUT PAGE CONTENT VIA GITHUB:
-1. Navigate to this file: src/data/aboutPageContent.ts
-2. Edit any text values in the aboutPageContent object above
-3. Add your images to public/page-images/about/ folder
-4. Update the image paths above to reference your new images
-5. Commit your changes to GitHub
+🖼️ ABOUT PAGE IMAGE REPLACEMENT GUIDE
 
-IMAGE CUSTOMIZATION:
-1. Upload images to public/page-images/about/ folder
-2. Update heroImage, backgroundImage, and event images paths above
-3. Update the alt text for accessibility
-4. Recommended sizes:
-   - Hero image: 1200x800px
-   - Timeline event images: 400x300px
-   - Background images: 1920x1080px
+📁 Image Location: /public/page-images/about/
 
-SECTIONS INCLUDED:
-1. Hero section - Title, description, and hero image
-2. Mission/Vision - Text and optional images
-3. Timeline - Company journey with individual event images
-4. Values - Company values with optional icons/images
+📋 Required Images for About Page:
 
-EXAMPLES:
-To change the hero title:
-- Change hero.title: "Your New Title"
+HERO SECTION:
+• hero-section.jpg (1200x800px) - Main about page hero image
 
-To add a hero image:
-- Upload image to /public/page-images/about/your-hero.jpg
-- Change hero.heroImage: "/page-images/about/your-hero.jpg"
-- Update hero.heroImageAlt: "Description of your image"
+MISSION & VISION SECTION:
+• mission-vision.jpg (800x600px) - Supporting image for mission/vision
 
-To add timeline event images:
-- Upload images to /public/page-images/about/
-- Update the image field for each timeline event
-- Update the imageAlt field with descriptive text
+TIMELINE SECTION - 2024:
+• timeline-2024-equipment.jpg (600x400px) - Modern laboratory equipment
+• timeline-2024-technology.jpg (600x400px) - Laboratory technology advancement
+• timeline-2024-research.jpg (600x400px) - Research environment showcase
+• timeline-2024-design.jpg (600x400px) - Laboratory design showcase
+
+TIMELINE SECTION - 2018:
+• timeline-2018-pharmaceutical.jpg (600x400px) - Pharmaceutical laboratory project
+• timeline-2018-facility.jpg (600x400px) - Research facility expansion
+
+TIMELINE SECTION - 2012:
+• timeline-2012-automation.jpg (600x400px) - Laboratory automation systems
+• timeline-2012-safety.jpg (600x400px) - Safety protocol implementation
+
+TIMELINE SECTION - 2009:
+• timeline-2009-founding.jpg (600x400px) - Company founding moment
+• timeline-2009-design.jpg (600x400px) - Early laboratory design work
+
+OPTIONAL IMAGES:
+• company-timeline.jpg (1920x1080px) - Timeline background
+• team-photo.jpg (800x600px) - Team or office photo
+• experience-icon.jpg (200x200px) - Experience representation
+• quality-icon.jpg (200x200px) - Quality representation
+• innovation-icon.jpg (200x200px) - Innovation representation
+• support-icon.jpg (200x200px) - Support representation
+
+🔄 How to Replace Images:
+1. Upload your images to /public/page-images/about/ in GitHub
+2. Use the exact filenames listed above
+3. Recommended formats: JPG for photos, PNG for graphics with transparency
+4. The images will automatically appear on the About page
+
+💡 Pro Tip: Use descriptive, professional images that represent:
+- Modern laboratory environments
+- Scientific equipment and technology
+- Team collaboration and professionalism
+- Innovation and precision in laboratory work
 */
