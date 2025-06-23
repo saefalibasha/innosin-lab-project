@@ -225,7 +225,7 @@ const About = () => {
         </div>
       </section>
 
-      {/* Mission & Vision - Keep existing section */}
+      {/* Mission & Vision - Updated with consistent font sizes */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -236,9 +236,9 @@ const About = () => {
               <p className="text-lg text-muted-foreground leading-relaxed mb-8">
                 {aboutPageContent.mission.description}
               </p>
-              <h3 className="text-2xl font-serif font-semibold text-primary mb-4">
+              <h2 className="text-4xl font-serif font-bold text-primary mb-4">
                 {aboutPageContent.vision.title}
-              </h3>
+              </h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
                 {aboutPageContent.vision.description}
               </p>
