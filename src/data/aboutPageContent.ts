@@ -40,8 +40,47 @@ export const aboutPageContent = {
     backgroundImage: "/page-images/about/company-timeline.jpg", // Replace with your image
     backgroundImageAlt: "Company journey and timeline background",
     
-    // Timeline Events - Updated with years 1986, 1995, 2005, 2024
+    // Timeline Events - Ordered chronologically from 1986 to 2024
     events: [
+      {
+        year: "1986",
+        title: "Foundation & Vision",
+        description: "Founded Innosin Lab with a bold vision to revolutionize laboratory design and manufacturing. Started with a small dedicated team and an unwavering commitment to quality and innovation. Our founding principles of excellence, precision, and customer-focused solutions remain at the heart of everything we do today.",
+        achievements: [
+          "Company establishment and founding",
+          "Development of core business vision",
+          "First laboratory design projects",
+          "Building foundational team"
+        ],
+        image: "/page-images/about/timeline-1986.jpg",
+        imageAlt: "1986 - Foundation & Vision"
+      },
+      {
+        year: "1990",
+        title: "Early Growth Phase", 
+        description: "Significant growth and expansion of operations. Established our first dedicated manufacturing facility and began developing specialized laboratory equipment. This period marked our transition from a small startup to a recognized player in the laboratory solutions industry.",
+        achievements: [
+          "Opened first manufacturing facility",
+          "Developed specialized laboratory equipment",
+          "Expanded team and capabilities",
+          "Established quality control processes"
+        ],
+        image: "/page-images/about/timeline-1990.jpg",
+        imageAlt: "1990 - Early Growth Phase achievements"
+      },
+      {
+        year: "2012", 
+        title: "Technology Integration",
+        description: "Major technological advancement period where Innosin embraced modern manufacturing techniques and quality systems. Implemented advanced fabrication processes and began developing specialized laboratory automation solutions that would set us apart in the industry.",
+        achievements: [
+          "Implemented advanced manufacturing systems",
+          "Developed laboratory automation solutions",
+          "Enhanced quality control processes",
+          "Expanded product line capabilities"
+        ],
+        image: "/page-images/about/timeline-2012.jpg",
+        imageAlt: "2012 - Technology Integration milestones"
+      },
       {
         year: "2024",
         title: "Modern Innovation Era",
@@ -55,45 +94,6 @@ export const aboutPageContent = {
         // Timeline image for 2024
         image: "/page-images/about/timeline-2024.jpg",
         imageAlt: "2024 - Modern Innovation Era showcase"
-      },
-      {
-        year: "2005", 
-        title: "Technology Integration",
-        description: "Major technological advancement period where Innosin embraced modern manufacturing techniques and quality systems. Implemented advanced fabrication processes and began developing specialized laboratory automation solutions that would set us apart in the industry.",
-        achievements: [
-          "Implemented advanced manufacturing systems",
-          "Developed laboratory automation solutions",
-          "Enhanced quality control processes",
-          "Expanded product line capabilities"
-        ],
-        image: "/page-images/about/timeline-2012.jpg",
-        imageAlt: "2005 - Technology Integration milestones"
-      },
-      {
-        year: "1995",
-        title: "Strategic Expansion", 
-        description: "Significant growth and expansion of operations. Established our first dedicated manufacturing facility and began developing specialized laboratory equipment. This period marked our transition from a small startup to a recognized player in the laboratory solutions industry.",
-        achievements: [
-          "Opened first manufacturing facility",
-          "Developed specialized laboratory equipment",
-          "Expanded team and capabilities",
-          "Established quality control processes"
-        ],
-        image: "/page-images/about/timeline-2018.jpg",
-        imageAlt: "1995 - Strategic Expansion achievements"
-      },
-      {
-        year: "1986",
-        title: "Foundation & Vision",
-        description: "Founded Innosin Lab with a bold vision to revolutionize laboratory design and manufacturing. Started with a small dedicated team and an unwavering commitment to quality and innovation. Our founding principles of excellence, precision, and customer-focused solutions remain at the heart of everything we do today.",
-        achievements: [
-          "Company establishment and founding",
-          "Development of core business vision",
-          "First laboratory design projects",
-          "Building foundational team"
-        ],
-        image: "/page-images/about/timeline-2009.jpg",
-        imageAlt: "1986 - Foundation & Vision"
       }
     ]
   },
