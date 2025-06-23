@@ -1,53 +1,89 @@
 
-# Hero Images Setup Guide
+# Hero Slider Images
 
-## Quick Start
-1. Upload your hero images to this folder
-2. Use descriptive filenames (e.g., `lab-equipment.jpg`, `research-facility.jpg`)
-3. Update `src/data/heroContent.ts` with your image paths and labels
+This directory contains the main hero slider images displayed on the homepage.
 
-## Image Requirements
-- **Size**: 1920x1080px (recommended)
-- **Format**: JPG or PNG
-- **Quality**: High resolution for crisp display
-- **Aspect Ratio**: 16:9 for best fit
+## 🖼️ Required Hero Slider Images
 
-## File Naming Best Practices
-```
-✅ Good names:
-- lab-equipment-modern.jpg
-- research-facility-advanced.jpg
-- innovation-workspace.jpg
+### Current Slides
+- **slide-1-precision.jpg** (1920x1080px) - Precision and accuracy focus
+- **slide-2-research.jpg** (1920x1080px) - Research and innovation theme
+- **slide-3-future.jpg** (1920x1080px) - Future of laboratory solutions
 
-❌ Avoid:
-- image1.jpg
-- photo.jpg
-- IMG_001.jpg
-```
+## 📐 Image Guidelines
 
-## Image Labeling (Accessibility)
-When updating `heroContent.ts`, always include descriptive `alt` text:
+### Recommended Dimensions
+- **Standard**: 1920x1080px (16:9 aspect ratio)
+- **High Resolution**: 2560x1440px for retina displays
+- **Mobile Optimized**: Images should work well when cropped for mobile
 
-```javascript
-{
-  image: "/hero-images/lab-equipment-modern.jpg",
-  alt: "Modern laboratory with advanced scientific equipment and clean workspace"
-}
-```
+### Content Suggestions
+- **Slide 1**: Precision equipment, detailed laboratory work, accuracy themes
+- **Slide 2**: Research environments, scientific discovery, innovation
+- **Slide 3**: Modern labs, future technology, cutting-edge solutions
 
-## Example File Structure
-```
-public/hero-images/
-├── slide-1-precision.jpg
-├── slide-2-research.jpg
-├── slide-3-future.jpg
-└── README.md
-```
+### Technical Requirements
+- **Format**: JPG for photographs, PNG for graphics with transparency
+- **File Size**: Optimize for web (500KB - 1MB per image)
+- **Quality**: High resolution for crisp display across all devices
 
-## How to Update Content
-1. Add your images to this folder
-2. Edit `src/data/heroContent.ts`
-3. Update image paths and alt text
-4. Customize titles, descriptions, and buttons
-5. Changes appear immediately on the website
+## 🔄 How to Replace Hero Images
 
+1. **Upload to GitHub**: Navigate to this folder in your repository
+2. **Use Exact Filenames**: Replace existing files with same names
+3. **Automatic Updates**: Changes will appear immediately on homepage
+4. **Content Updates**: Modify slide content in `src/data/heroContent.ts`
+
+## ✨ Hero Image Best Practices
+
+### Visual Impact
+- Use high-contrast, dramatic lighting
+- Include people when possible to create connection
+- Show products in realistic laboratory environments
+- Maintain consistent color palette across slides
+
+### Technical Considerations
+- Ensure text overlay areas have good contrast
+- Test readability on both desktop and mobile
+- Consider safe areas for text placement
+- Optimize load times without sacrificing quality
+
+### Content Themes
+- **Professional**: Laboratory experts, precision work
+- **Innovation**: Modern equipment, cutting-edge technology
+- **Results**: Successful installations, satisfied clients
+- **Future**: Advanced labs, emerging technologies
+
+## 🎯 Slide-Specific Guidelines
+
+### Slide 1: Precision
+- Focus on detailed laboratory work
+- Show precision instruments in use
+- Highlight accuracy and attention to detail
+- Professional scientists or technicians at work
+
+### Slide 2: Research
+- Research environments and discovery
+- Collaborative team work
+- Scientific breakthroughs and innovation
+- Modern research facilities
+
+### Slide 3: Future
+- Cutting-edge laboratory technology
+- Modern, sleek laboratory designs
+- Advanced equipment and automation
+- Forward-thinking solutions
+
+## 🆘 Troubleshooting
+
+**Image not loading?**
+- Check filename matches exactly (case-sensitive)
+- Verify file format (JPG/PNG)
+- Ensure image is uploaded to correct folder
+- Clear browser cache
+
+**Text not readable?**
+- Increase contrast in text overlay areas
+- Consider adding subtle gradients or overlays
+- Test on multiple device sizes
+- Adjust text positioning in hero content file
