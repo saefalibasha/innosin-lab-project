@@ -51,9 +51,7 @@ const VideoHero = () => {
                         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
                           {/* Large, bold main title - Slide specific */}
                           <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
-                            <span className="block">{slide.titles.title1}</span>
-                            <span className="block text-sand-light animate-float">{slide.titles.title2}</span>
-                            <span className="block text-white/90">{slide.titles.title3}</span>
+                            <span className="block text-sand-light animate-float">{slide.titles.title1}</span>
                           </h2>
                           
                           {/* Subtext/description - Slide specific */}
