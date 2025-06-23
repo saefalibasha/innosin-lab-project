@@ -43,9 +43,9 @@ export const aboutPageContent = {
     // Timeline Events - Updated with single image per year
     events: [
       {
-        year: "2024",
-        title: "Expansion & Innovation",
-        description: "Expanded our product range and introduced cutting-edge laboratory technologies",
+        year: "1986",
+        title: "Humble Beginnings",
+        description: "Founded in Johor Bahru, Innosin began as a stainless steel kitchen equipment fabricator, grounded in craftsmanship, quality, and a spirit of innovation.",
         achievements: [
           "Launched advanced equipment line",
           "Implemented new lab technologies", 
@@ -57,9 +57,9 @@ export const aboutPageContent = {
         imageAlt: "2024 - Expansion & Innovation showcase"
       },
       {
-        year: "2018", 
+        year: "1990", 
         title: "Regional Growth",
-        description: "Expanded operations across Southeast Asia and established key partnerships",
+        description: "With growing demand, we expanded our services into a wide range of metal fabrication solutions, catering to commercial, industrial, and custom-built applications across various sectors.",
         achievements: [
           "Completed major pharmaceutical lab project",
           "Expanded research facility operations"
@@ -70,7 +70,7 @@ export const aboutPageContent = {
       {
         year: "2012",
         title: "Technology Integration", 
-        description: "Integrated advanced automation and safety systems into our solutions",
+        description: "A pivotal year: Innosin relocated to Ulu Tiram, Johor, and began a strategic shift towards laboratory furniture manufacturing and turnkey lab setups. Our upgraded facilities empowered us to deliver integrated design, fabrication, and installation solutions tailored to scientific and research environments.",
         achievements: [
           "Implemented laboratory automation systems",
           "Enhanced safety protocol standards"
@@ -79,9 +79,9 @@ export const aboutPageContent = {
         imageAlt: "2012 - Technology Integration milestones"
       },
       {
-        year: "2009",
+        year: "2024",
         title: "Foundation",
-        description: "Innosin Lab was founded with a vision to transform laboratory environments",
+        description: "Today, Innosin Lab is a leading provider of custom laboratory furniture and infrastructure across Asia Pacific. With nearly four decades of expertise, we continue to innovate with sincerity — building laboratories that shape the future of research and discovery.",
         achievements: [
           "Company establishment and founding",
           "Started early laboratory design work"
