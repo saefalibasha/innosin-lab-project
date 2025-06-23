@@ -198,7 +198,7 @@ const About = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background pt-20">
+    <div className="min-h-screen bg-background pt-8">
       {/* Hero Section - Updated with About Innosin content */}
       <section className="section bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden">
         <div className="container-custom">
