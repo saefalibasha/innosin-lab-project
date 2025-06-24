@@ -24,6 +24,8 @@ export const useHubSpotIntegration = () => {
   const createContact = async (data: HubSpotIntegrationData) => {
     setLoading(true);
     try {
+      console.log('Creating contact with data:', data);
+      
       const { data: result, error } = await supabase.functions.invoke('hubspot-integration', {
         body: {
           action: 'create_contact',
@@ -38,13 +40,21 @@ export const useHubSpotIntegration = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!result?.success) {
+        console.error('HubSpot integration failed:', result);
+        throw new Error('Failed to create contact in HubSpot');
+      }
       
       toast.success('Contact created in HubSpot successfully');
       return result;
     } catch (error) {
       console.error('Error creating HubSpot contact:', error);
-      toast.error('Failed to create contact in HubSpot');
+      toast.error('Failed to create contact in HubSpot. Contact may already exist.');
       throw error;
     } finally {
       setLoading(false);
@@ -67,6 +77,10 @@ export const useHubSpotIntegration = () => {
       });
 
       if (error) throw error;
+      
+      if (!result?.success) {
+        throw new Error('Failed to create deal in HubSpot');
+      }
       
       toast.success('Deal created in HubSpot successfully');
       return result;
@@ -97,6 +111,10 @@ export const useHubSpotIntegration = () => {
 
       if (error) throw error;
       
+      if (!result?.success) {
+        throw new Error('Failed to create ticket in HubSpot');
+      }
+      
       toast.success('Support ticket created in HubSpot successfully');
       return result;
     } catch (error) {
@@ -111,6 +129,8 @@ export const useHubSpotIntegration = () => {
   const syncConversation = async (data: HubSpotIntegrationData) => {
     setLoading(true);
     try {
+      console.log('Syncing conversation for session:', data.sessionId, 'contact:', data.contactId);
+      
       const { data: result, error } = await supabase.functions.invoke('hubspot-integration', {
         body: {
           action: 'sync_conversation',
@@ -121,7 +141,15 @@ export const useHubSpotIntegration = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw error;
+      }
+      
+      if (!result?.success) {
+        console.error('Conversation sync failed:', result);
+        throw new Error('Failed to sync conversation to HubSpot');
+      }
       
       toast.success('Conversation synced to HubSpot timeline');
       return result;

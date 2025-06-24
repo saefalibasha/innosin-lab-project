@@ -39,7 +39,42 @@ interface HubSpotTicket {
   hs_ticket_priority: string;
 }
 
+async function findHubSpotContactByEmail(email: string): Promise<any> {
+  const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/search`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${hubspotApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      filterGroups: [{
+        filters: [{
+          propertyName: 'email',
+          operator: 'EQ',
+          value: email
+        }]
+      }],
+      properties: ['id', 'email', 'firstname', 'lastname']
+    }),
+  });
+
+  if (!response.ok) {
+    console.error('HubSpot Search API error:', response.status, await response.text());
+    return null;
+  }
+
+  const result = await response.json();
+  return result.results.length > 0 ? result.results[0] : null;
+}
+
 async function createHubSpotContact(contactData: HubSpotContact): Promise<any> {
+  // First check if contact already exists
+  const existingContact = await findHubSpotContactByEmail(contactData.email);
+  if (existingContact) {
+    console.log('Contact already exists:', existingContact.id);
+    return existingContact;
+  }
+
   const response = await fetch('https://api.hubapi.com/crm/v3/objects/contacts', {
     method: 'POST',
     headers: {
@@ -52,6 +87,8 @@ async function createHubSpotContact(contactData: HubSpotContact): Promise<any> {
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('HubSpot Contact API error:', response.status, errorText);
     throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
   }
 
@@ -75,6 +112,8 @@ async function createHubSpotDeal(dealData: HubSpotDeal, contactId?: string): Pro
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('HubSpot Deal API error:', response.status, errorText);
     throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
   }
 
@@ -98,6 +137,8 @@ async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string
   });
 
   if (!response.ok) {
+    const errorText = await response.text();
+    console.error('HubSpot Ticket API error:', response.status, errorText);
     throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
   }
 
@@ -113,7 +154,7 @@ async function createHubSpotEngagement(contactId: string, engagementData: any): 
     },
     body: JSON.stringify({
       properties: {
-        hs_communication_channel_type: 'CHAT',
+        hs_communication_channel_type: 'CUSTOM_CHANNEL_CONVERSATION',
         hs_communication_logged_from: 'CRM',
         hs_communication_body: engagementData.body,
         hs_timestamp: engagementData.timestamp
@@ -126,7 +167,8 @@ async function createHubSpotEngagement(contactId: string, engagementData: any): 
   });
 
   if (!response.ok) {
-    console.error('HubSpot Engagement API error:', response.status, await response.text());
+    const errorText = await response.text();
+    console.error('HubSpot Engagement API error:', response.status, errorText);
     throw new Error(`HubSpot Engagement API error: ${response.status} ${response.statusText}`);
   }
 
@@ -144,7 +186,7 @@ async function logIntegrationAction(sessionId: string, action: string, objectTyp
 
     const sessionUuid = sessionData?.id;
     
-    await supabase.from('hubspot_integration_logs').insert({
+    const { error: logError } = await supabase.from('hubspot_integration_logs').insert({
       session_id: sessionUuid,
       action,
       hubspot_object_type: objectType,
@@ -154,8 +196,12 @@ async function logIntegrationAction(sessionId: string, action: string, objectTyp
       request_data: requestData,
       response_data: responseData
     });
-    
-    console.log('Integration log saved:', { sessionId, action, success });
+
+    if (logError) {
+      console.error('Error inserting integration log:', logError);
+    } else {
+      console.log('Integration log saved:', { sessionId, action, success });
+    }
   } catch (logError) {
     console.error('Error saving integration log:', logError);
   }
@@ -185,13 +231,17 @@ serve(async (req) => {
 
         try {
           const hubspotContact = await createHubSpotContact(contactData);
-          console.log('HubSpot contact created:', hubspotContact.id);
+          console.log('HubSpot contact processed:', hubspotContact.id);
           
           // Update chat session with HubSpot contact ID
-          await supabase
+          const { error: updateError } = await supabase
             .from('chat_sessions')
             .update({ hubspot_contact_id: hubspotContact.id })
             .eq('session_id', sessionId);
+
+          if (updateError) {
+            console.error('Error updating session with contact ID:', updateError);
+          }
 
           await logIntegrationAction(sessionId, 'create_contact', 'contact', hubspotContact.id, true, undefined, contactData, hubspotContact);
 
@@ -199,7 +249,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } catch (error) {
-          console.error('Error creating HubSpot contact:', error);
+          console.error('Error creating/finding HubSpot contact:', error);
           await logIntegrationAction(sessionId, 'create_contact', 'contact', '', false, error.message, contactData);
           throw error;
         }
@@ -219,10 +269,14 @@ serve(async (req) => {
           const hubspotDeal = await createHubSpotDeal(dealData, contactId);
           
           // Update chat session with HubSpot deal ID
-          await supabase
+          const { error: updateError } = await supabase
             .from('chat_sessions')
             .update({ hubspot_deal_id: hubspotDeal.id })
             .eq('session_id', sessionId);
+
+          if (updateError) {
+            console.error('Error updating session with deal ID:', updateError);
+          }
 
           await logIntegrationAction(sessionId, 'create_deal', 'deal', hubspotDeal.id, true, undefined, dealData, hubspotDeal);
 
@@ -230,6 +284,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } catch (error) {
+          console.error('Error creating HubSpot deal:', error);
           await logIntegrationAction(sessionId, 'create_deal', 'deal', '', false, error.message, dealData);
           throw error;
         }
@@ -250,10 +305,14 @@ serve(async (req) => {
           const hubspotTicket = await createHubSpotTicket(ticketData, contactId);
           
           // Update chat session with HubSpot ticket ID
-          await supabase
+          const { error: updateError } = await supabase
             .from('chat_sessions')
             .update({ hubspot_ticket_id: hubspotTicket.id })
             .eq('session_id', sessionId);
+
+          if (updateError) {
+            console.error('Error updating session with ticket ID:', updateError);
+          }
 
           await logIntegrationAction(sessionId, 'create_ticket', 'ticket', hubspotTicket.id, true, undefined, ticketData, hubspotTicket);
 
@@ -261,6 +320,7 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } catch (error) {
+          console.error('Error creating HubSpot ticket:', error);
           await logIntegrationAction(sessionId, 'create_ticket', 'ticket', '', false, error.message, ticketData);
           throw error;
         }
@@ -272,21 +332,27 @@ serve(async (req) => {
         
         try {
           // Get all messages for this session using the session_id string
-          const { data: sessionData } = await supabase
+          const { data: sessionData, error: sessionError } = await supabase
             .from('chat_sessions')
             .select('id')
             .eq('session_id', sessionId)
             .single();
 
-          if (!sessionData)  {
+          if (sessionError || !sessionData) {
+            console.error('Session lookup error:', sessionError);
             throw new Error('Session not found');
           }
 
-          const { data: messages } = await supabase
+          const { data: messages, error: messagesError } = await supabase
             .from('chat_messages')
             .select('*')
             .eq('session_id', sessionData.id)
             .order('created_at', { ascending: true });
+
+          if (messagesError) {
+            console.error('Messages lookup error:', messagesError);
+            throw new Error('Failed to retrieve messages');
+          }
 
           console.log('Messages found for sync:', messages?.length || 0);
 
@@ -305,12 +371,16 @@ serve(async (req) => {
             console.log('HubSpot engagement created:', engagementResult.id);
 
             // Mark messages as synced
-            await supabase
+            const { error: syncError } = await supabase
               .from('chat_messages')
               .update({ hubspot_synced: true })
               .eq('session_id', sessionData.id);
 
-            await logIntegrationAction(sessionId, 'sync_conversation', 'engagement', contactId, true, undefined, engagementData, engagementResult);
+            if (syncError) {
+              console.error('Error marking messages as synced:', syncError);
+            }
+
+            await logIntegrationAction(sessionId, 'sync_conversation', 'engagement', engagementResult.id, true, undefined, engagementData, engagementResult);
             
             console.log('Conversation sync completed successfully');
           } else {
