@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -83,16 +82,16 @@ const About = () => {
             </div>
             <div className="animate-fade-in-right animate-delay-300">
               <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
-                <img 
-                  src={aboutPageContent.mission.image} 
-                  alt={aboutPageContent.mission.imageAlt} 
+                <video 
+                  src={aboutPageContent.mission.video} 
                   className="w-full h-64 object-cover rounded-lg mb-6"
-                />
-                <blockquote className="text-lg italic text-muted-foreground">
-                  "Innovation distinguishes between a leader and a follower. At Innosin Lab, 
-                  we choose to lead through excellence and innovation."
-                </blockquote>
-                <cite className="block mt-4 text-sea font-semibold">- Innosin Lab Leadership Team</cite>
+                  controls
+                  muted
+                  loop
+                  playsInline
+                >
+                  Your browser does not support the video tag.
+                </video>
               </div>
             </div>
           </div>

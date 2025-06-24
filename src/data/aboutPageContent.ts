@@ -18,9 +18,9 @@ export const aboutPageContent = {
   mission: {
     title: "Our Mission",
     description: "To deliver high-quality, customizable laboratory solutions and stainless steel products through innovation, precision, and sincere service — consistently exceeding the expectations of our partners in science, research, and industry.",
-    // Optional mission image
-    image: "/page-images/about/mission-vision.jpg", // Replace with your image
-    imageAlt: "Our mission to provide world-class laboratory solutions"
+    // Mission video instead of image
+    video: "/page-images/about/mission-vision.mp4", // Replace with your video
+    videoAlt: "Our mission to provide world-class laboratory solutions"
   },
 
   vision: {
@@ -120,7 +120,7 @@ HERO SECTION:
 • hero-section.jpg (1200x800px) - Main about page hero image
 
 MISSION & VISION SECTION:
-• mission-vision.jpg (800x600px) - Supporting image for mission/vision
+• mission-vision.mp4 (video file) - Supporting video for mission/vision
 
 TIMELINE SECTION (ONE IMAGE PER YEAR):
 • timeline-1986.jpg (800x500px) - 1986 Foundation & Vision
@@ -139,7 +139,7 @@ OPTIONAL IMAGES:
 🔄 How to Replace Images:
 1. Upload your images to /public/page-images/about/ in GitHub
 2. Use the exact filenames listed above
-3. Recommended formats: JPG for photos, PNG for graphics with transparency
+3. Recommended formats: JPG for photos, PNG for graphics with transparency, MP4 for videos
 4. The images will automatically appear on the About page
 
 💡 Pro Tip: Use descriptive, professional images that represent:
