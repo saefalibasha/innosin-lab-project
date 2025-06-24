@@ -15,7 +15,7 @@ import RFQCart from "./pages/RFQCart";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import HeroNavigation from "./components/HeroNavigation";
-import LiveChat from "./components/LiveChat";
+import EnhancedLiveChat from "./components/EnhancedLiveChat";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -45,7 +45,7 @@ const App = () => (
               </Routes>
             </main>
             <Footer />
-            <LiveChat />
+            <EnhancedLiveChat />
           </div>
         </BrowserRouter>
       </RFQProvider>

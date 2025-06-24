@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import GoogleMapsLocation from '@/components/GoogleMapsLocation';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import AnimatedSection from '@/components/AnimatedSection';
-import EnhancedLiveChat from '@/components/EnhancedLiveChat';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -233,9 +232,6 @@ const Contact = () => {
           <NewsletterSubscription />
         </AnimatedSection>
       </div>
-
-      {/* Enhanced AI Live Chat */}
-      <EnhancedLiveChat />
     </div>
   );
 };
