@@ -19,6 +19,7 @@ interface ChatMessage {
 
 interface UserSession {
   sessionId: string;
+  databaseId?: string; // The UUID from the database
   email?: string;
   name?: string;
   company?: string;
@@ -67,49 +68,72 @@ const EnhancedLiveChat = () => {
 
   const initializeSession = async () => {
     const sessionId = `session_${Date.now()}`;
-    const newSession: UserSession = {
-      sessionId,
-      startTime: new Date(),
-      lastActivity: new Date(),
-      messages: []
-    };
     
-    setSession(newSession);
-    
-    // Save session to database
     try {
-      await supabase.from('chat_sessions').insert({
-        session_id: sessionId,
-        start_time: new Date().toISOString(),
-        status: 'active'
-      });
+      // Create session in database first
+      const { data: sessionData, error: sessionError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          start_time: new Date().toISOString(),
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (sessionError) {
+        console.error('Error creating session:', sessionError);
+        toast.error('Failed to initialize chat session');
+        return;
+      }
+
+      const newSession: UserSession = {
+        sessionId,
+        databaseId: sessionData.id,
+        startTime: new Date(),
+        lastActivity: new Date(),
+        messages: []
+      };
+      
+      setSession(newSession);
+      
+      // Add welcome message
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome',
+        message: 'Hello! I\'m your AI assistant for Innosin Lab. I can help you with product information, technical support, quotes, and more. How can I assist you today?',
+        sender: 'bot',
+        timestamp: new Date(),
+        confidence: 1.0
+      };
+      
+      setMessages([welcomeMessage]);
+      await saveMessage(welcomeMessage, sessionData.id);
     } catch (error) {
-      console.error('Error saving session:', error);
+      console.error('Error initializing session:', error);
+      toast.error('Failed to initialize chat session');
     }
-    
-    // Add welcome message
-    const welcomeMessage: ChatMessage = {
-      id: 'welcome',
-      message: 'Hello! I\'m your AI assistant for Innosin Lab. I can help you with product information, technical support, quotes, and more. How can I assist you today?',
-      sender: 'bot',
-      timestamp: new Date(),
-      confidence: 1.0
-    };
-    
-    setMessages([welcomeMessage]);
-    await saveMessage(welcomeMessage, sessionId);
   };
 
-  const saveMessage = async (msg: ChatMessage, sessionId: string) => {
+  const saveMessage = async (msg: ChatMessage, sessionDatabaseId: string) => {
     try {
-      await supabase.from('chat_messages').insert({
-        session_id: sessionId,
+      console.log('Saving message:', { msg, sessionDatabaseId });
+      
+      const { error } = await supabase.from('chat_messages').insert({
+        session_id: sessionDatabaseId,
         message: msg.message,
         sender: msg.sender,
-        confidence: msg.confidence
+        confidence: msg.confidence || null
       });
+
+      if (error) {
+        console.error('Error saving message:', error);
+        throw error;
+      }
+      
+      console.log('Message saved successfully');
     } catch (error) {
       console.error('Error saving message:', error);
+      toast.error('Failed to save message');
     }
   };
 
@@ -162,7 +186,7 @@ const EnhancedLiveChat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim() || !session) return;
+    if (!message.trim() || !session || !session.databaseId) return;
     
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -176,7 +200,7 @@ const EnhancedLiveChat = () => {
     setIsTyping(true);
     
     // Save user message
-    await saveMessage(userMessage, session.sessionId);
+    await saveMessage(userMessage, session.databaseId);
     
     // Update session
     setSession({
@@ -190,7 +214,7 @@ const EnhancedLiveChat = () => {
       setMessages(prev => [...prev, aiResponse]);
       
       // Save AI response
-      await saveMessage(aiResponse, session.sessionId);
+      await saveMessage(aiResponse, session.databaseId);
       
       // Update session with bot response
       setSession({
@@ -209,18 +233,24 @@ const EnhancedLiveChat = () => {
         confidence: 0.5
       };
       setMessages(prev => [...prev, errorMessage]);
+      
+      if (session.databaseId) {
+        await saveMessage(errorMessage, session.databaseId);
+      }
     } finally {
       setIsTyping(false);
     }
   };
 
   const handleContactSubmit = async () => {
-    if (!contactInfo.email || !contactInfo.name || !session) {
+    if (!contactInfo.email || !contactInfo.name || !session || !session.databaseId) {
       toast.error('Please fill in at least name and email');
       return;
     }
 
     try {
+      console.log('Creating contact with session ID:', session.sessionId);
+      
       // Create HubSpot contact
       const result = await createContact({
         sessionId: session.sessionId,
@@ -249,9 +279,10 @@ const EnhancedLiveChat = () => {
             phone: contactInfo.phone,
             hubspot_contact_id: result.contactId
           })
-          .eq('session_id', session.sessionId);
+          .eq('id', session.databaseId);
 
         // Sync conversation to HubSpot
+        console.log('Syncing conversation for session:', session.sessionId, 'contact:', result.contactId);
         await syncConversation({
           sessionId: session.sessionId,
           contactId: result.contactId
@@ -267,7 +298,9 @@ const EnhancedLiveChat = () => {
         };
         
         setMessages(prev => [...prev, confirmMessage]);
-        await saveMessage(confirmMessage, session.sessionId);
+        await saveMessage(confirmMessage, session.databaseId);
+        
+        toast.success('Contact information saved and synced to HubSpot successfully!');
       }
     } catch (error) {
       console.error('Error creating contact:', error);
