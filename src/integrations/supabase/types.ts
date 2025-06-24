@@ -9,7 +9,199 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          hubspot_synced: boolean | null
+          id: string
+          is_typing: boolean | null
+          message: string
+          sender: string
+          session_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          hubspot_synced?: boolean | null
+          id?: string
+          is_typing?: boolean | null
+          message: string
+          sender: string
+          session_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          hubspot_synced?: boolean | null
+          id?: string
+          is_typing?: boolean | null
+          message?: string
+          sender?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_sessions: {
+        Row: {
+          assigned_agent: string | null
+          company: string | null
+          context: Json | null
+          created_at: string
+          email: string | null
+          end_time: string | null
+          hubspot_contact_id: string | null
+          hubspot_deal_id: string | null
+          hubspot_ticket_id: string | null
+          id: string
+          job_title: string | null
+          last_activity: string
+          name: string | null
+          phone: string | null
+          satisfaction_score: number | null
+          session_id: string
+          start_time: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assigned_agent?: string | null
+          company?: string | null
+          context?: Json | null
+          created_at?: string
+          email?: string | null
+          end_time?: string | null
+          hubspot_contact_id?: string | null
+          hubspot_deal_id?: string | null
+          hubspot_ticket_id?: string | null
+          id?: string
+          job_title?: string | null
+          last_activity?: string
+          name?: string | null
+          phone?: string | null
+          satisfaction_score?: number | null
+          session_id: string
+          start_time?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assigned_agent?: string | null
+          company?: string | null
+          context?: Json | null
+          created_at?: string
+          email?: string | null
+          end_time?: string | null
+          hubspot_contact_id?: string | null
+          hubspot_deal_id?: string | null
+          hubspot_ticket_id?: string | null
+          id?: string
+          job_title?: string | null
+          last_activity?: string
+          name?: string | null
+          phone?: string | null
+          satisfaction_score?: number | null
+          session_id?: string
+          start_time?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      chatbot_training_data: {
+        Row: {
+          category: string | null
+          confidence_threshold: number | null
+          created_at: string
+          example_input: string
+          expected_response: string
+          id: string
+          intent: string
+          is_active: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          confidence_threshold?: number | null
+          created_at?: string
+          example_input: string
+          expected_response: string
+          id?: string
+          intent: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          confidence_threshold?: number | null
+          created_at?: string
+          example_input?: string
+          expected_response?: string
+          id?: string
+          intent?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hubspot_integration_logs: {
+        Row: {
+          action: string
+          created_at: string
+          error_message: string | null
+          hubspot_object_id: string | null
+          hubspot_object_type: string | null
+          id: string
+          request_data: Json | null
+          response_data: Json | null
+          session_id: string | null
+          success: boolean
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          error_message?: string | null
+          hubspot_object_id?: string | null
+          hubspot_object_type?: string | null
+          id?: string
+          request_data?: Json | null
+          response_data?: Json | null
+          session_id?: string | null
+          success: boolean
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          error_message?: string | null
+          hubspot_object_id?: string | null
+          hubspot_object_type?: string | null
+          id?: string
+          request_data?: Json | null
+          response_data?: Json | null
+          session_id?: string | null
+          success?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hubspot_integration_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
