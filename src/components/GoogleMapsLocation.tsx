@@ -9,21 +9,21 @@ const GoogleMapsLocation = () => {
   const offices = [
     {
       id: 'singapore',
-      name: 'Singapore Office',
+      name: 'SINGAPORE',
       address: '1 Raffles Place, #20-61 One Raffles Place, Singapore 048616',
       coordinates: { lat: '1.284', lng: '103.851' },
       type: 'Branch Office'
     },
     {
       id: 'johor',
-      name: 'Johor Bahru HQ',
+      name: 'JOHOR BAHRU',
       address: 'No. 48, Jalan Harmonium 23/13, Taman Desa Tebrau, 81100 Johor Bahru, Johor, Malaysia',
       coordinates: { lat: '1.558', lng: '103.806' },
       type: 'Headquarters'
     },
     {
       id: 'kl',
-      name: 'Kuala Lumpur Office',
+      name: 'KUALA LUMPUR',
       address: 'Level 10, Menara Landmark, No. 12, Jalan Ngee Heng, 80000 Johor Bahru, Johor, Malaysia',
       coordinates: { lat: '3.139', lng: '101.687' },
       type: 'Branch Office'
@@ -81,9 +81,8 @@ const GoogleMapsLocation = () => {
 
   return (
     <div className="space-y-6">
-      {/* Office Selection Buttons */}
+      {/* Office Selection Buttons - Removed title */}
       <div className="flex flex-col items-center space-y-4">
-        <h2 className="text-2xl font-serif font-bold text-center animate-fade-in">Our Office Locations</h2>
         <div className="flex flex-wrap justify-center gap-3 animate-fade-in animate-delay-200">
           {offices.map((office, index) => (
             <Button
@@ -108,11 +107,11 @@ const GoogleMapsLocation = () => {
 
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-        {/* Map - Takes 7 columns on large screens */}
+        {/* Map - Takes 7 columns on large screens with increased height */}
         <div className="lg:col-span-7 animate-fade-in-left animate-delay-500">
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
-              <div className="relative h-[500px]">
+              <div className="relative h-[700px]">
                 <iframe
                   src={getMapEmbedUrl(selectedOffice)}
                   width="100%"

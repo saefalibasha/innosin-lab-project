@@ -20,6 +20,10 @@ export const contactPageContent = {
     namePlaceholder: "John Doe",
     emailLabel: "Email Address", 
     emailPlaceholder: "john@example.com",
+    companyLabel: "Company",
+    companyPlaceholder: "Your Company Name",
+    jobTitleLabel: "Job Title",
+    jobTitlePlaceholder: "Your Position",
     subjectLabel: "Subject",
     subjectPlaceholder: "How can we help you?",
     messageLabel: "Message",
@@ -38,19 +42,19 @@ export const contactPageContent = {
       {
         title: "Laboratory Consultation",
         description: "Schedule a consultation with our experts to discuss your laboratory design and equipment needs.",
-        icon: "consultation", // Icon identifier
+        icon: "calendar", // Icon identifier
         image: "/page-images/contact/consultation.jpg" // Optional image
       },
       {
         title: "Emergency Support", 
-        description: "For urgent equipment issues or safety concerns, contact our 24/7 emergency support line.",
-        icon: "emergency",
+        description: "Send an enquiry on our chat bot and we will get back to them within 24 hours for urgent equipment issues or safety concerns.",
+        icon: "message-circle",
         image: "/page-images/contact/emergency-support.jpg" // Optional image
       },
       {
         title: "Project Inquiries",
         description: "Ready to start your laboratory project? Let's discuss your requirements and timeline.",
-        icon: "project",
+        icon: "briefcase",
         image: "/page-images/contact/project-inquiry.jpg" // Optional image
       }
     ]
@@ -106,7 +110,7 @@ IMAGE CUSTOMIZATION:
 
 SECTIONS INCLUDED:
 1. Header - Page title, description, and hero image
-2. Contact Form - Form labels, placeholders, and messages
+2. Contact Form - Form labels, placeholders, and messages (now includes Company and Job Title)
 3. Quick Contact - Contact options with optional images
 4. Location - Office information and gallery images
 

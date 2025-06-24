@@ -9,11 +9,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { contactPageContent } from '@/data/contactPageContent';
+import { Calendar, MessageCircle, Briefcase } from 'lucide-react';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    company: '',
+    jobTitle: '',
     subject: '',
     message: ''
   });
@@ -29,7 +32,20 @@ const Contact = () => {
     e.preventDefault();
     console.log('Form submitted:', formData);
     toast.success(contactPageContent.form.successMessage);
-    setFormData({ name: '', email: '', subject: '', message: '' });
+    setFormData({ name: '', email: '', company: '', jobTitle: '', subject: '', message: '' });
+  };
+
+  const getIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'calendar':
+        return <Calendar className="w-6 h-6" />;
+      case 'message-circle':
+        return <MessageCircle className="w-6 h-6" />;
+      case 'briefcase':
+        return <Briefcase className="w-6 h-6" />;
+      default:
+        return <MessageCircle className="w-6 h-6" />;
+    }
   };
 
   return (
@@ -56,7 +72,7 @@ const Contact = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
         {/* Contact Form */}
         <AnimatedSection animation="fade-in-left" delay={300}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300 h-fit">
             <CardHeader>
               <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.form.title}</CardTitle>
             </CardHeader>
@@ -90,6 +106,39 @@ const Contact = () => {
                       value={formData.email}
                       onChange={handleInputChange}
                       placeholder={contactPageContent.form.emailPlaceholder}
+                      className="transition-all duration-300 focus:border-sea"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
+                      {contactPageContent.form.companyLabel}
+                    </label>
+                    <Input
+                      id="company"
+                      name="company"
+                      type="text"
+                      required
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      placeholder={contactPageContent.form.companyPlaceholder}
+                      className="transition-all duration-300 focus:border-sea"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="jobTitle" className="block text-sm font-medium text-foreground mb-2">
+                      {contactPageContent.form.jobTitleLabel}
+                    </label>
+                    <Input
+                      id="jobTitle"
+                      name="jobTitle"
+                      type="text"
+                      required
+                      value={formData.jobTitle}
+                      onChange={handleInputChange}
+                      placeholder={contactPageContent.form.jobTitlePlaceholder}
                       className="transition-all duration-300 focus:border-sea"
                     />
                   </div>
@@ -135,23 +184,47 @@ const Contact = () => {
           </Card>
         </AnimatedSection>
 
-        {/* Quick Contact Info */}
+        {/* Enhanced Get in Touch Info */}
         <AnimatedSection animation="fade-in-right" delay={400}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.quickContact.title}</CardTitle>
+          <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20 h-fit">
+            <CardHeader className="bg-gradient-to-r from-sea/10 to-sea/20 rounded-t-lg">
+              <CardTitle className="text-2xl font-serif text-primary flex items-center space-x-2">
+                <MessageCircle className="w-6 h-6 text-sea" />
+                <span>{contactPageContent.quickContact.title}</span>
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8 pt-6 pb-8">
               {contactPageContent.quickContact.sections.map((section, index) => (
                 <AnimatedSection key={index} animation="slide-up" delay={500 + index * 100}>
-                  <div>
-                    <h3 className="font-semibold text-lg mb-2 text-sea">{section.title}</h3>
-                    <p className="text-muted-foreground">
-                      {section.description}
-                    </p>
+                  <div className="group relative">
+                    <div className="flex items-start space-x-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-sea/10 hover:border-sea/30 hover:bg-white/70 transition-all duration-300 hover:shadow-md">
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sea to-sea-dark rounded-lg flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        {getIcon(section.icon)}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-lg mb-2 text-sea group-hover:text-sea-dark transition-colors duration-300">
+                          {section.title}
+                        </h3>
+                        <p className="text-muted-foreground leading-relaxed text-sm">
+                          {section.description}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Decorative accent */}
+                    <div className="absolute -left-1 top-4 w-1 h-16 bg-gradient-to-b from-sea/50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </div>
                 </AnimatedSection>
               ))}
+              
+              {/* Call to action section */}
+              <AnimatedSection animation="bounce-in" delay={800}>
+                <div className="mt-8 p-4 bg-gradient-to-r from-sea/10 to-sea/5 rounded-xl border border-sea/20">
+                  <p className="text-center text-sm text-sea-dark font-medium">
+                    💬 <strong>Need immediate assistance?</strong> Our live chat is available 24/7 to help you with any questions or urgent requests.
+                  </p>
+                </div>
+              </AnimatedSection>
             </CardContent>
           </Card>
         </AnimatedSection>
