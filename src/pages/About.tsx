@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,9 +60,9 @@ const About = () => {
       </section>
 
       {/* Mission & Vision */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background py-20">
+      <section className="section bg-gradient-to-b from-secondary/30 to-background py-12">
         <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div className="animate-fade-in space-y-12">
               <div>
                 <h2 className="text-4xl font-serif font-bold text-primary mb-6">
@@ -84,7 +85,7 @@ const About = () => {
               <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
                 <video 
                   src={aboutPageContent.mission.video} 
-                  className="w-full h-64 object-cover rounded-lg mb-6"
+                  className="w-full h-80 object-cover rounded-lg"
                   controls
                   muted
                   loop
@@ -99,7 +100,7 @@ const About = () => {
       </section>
 
       {/* Values Section */}
-      <section className="section bg-background py-20">
+      <section className="section bg-background py-12">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
@@ -137,7 +138,7 @@ const About = () => {
       </section>
 
       {/* Company Timeline */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background py-20">
+      <section className="section bg-gradient-to-b from-secondary/30 to-background py-12">
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-serif font-bold text-primary mb-6 animate-fade-in">
