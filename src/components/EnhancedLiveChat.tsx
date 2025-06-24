@@ -6,26 +6,27 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, Send, X, Minimize2, Bot, User, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 
 interface ChatMessage {
   id: string;
   message: string;
-  sender: 'user' | 'bot' | 'agent';
+  sender: 'user' | 'bot';
   timestamp: Date;
   confidence?: number;
-  isTyping?: boolean;
 }
 
 interface UserSession {
   sessionId: string;
-  userId?: string;
   email?: string;
   name?: string;
   company?: string;
+  phone?: string;
   startTime: Date;
   lastActivity: Date;
   messages: ChatMessage[];
-  context: Record<string, any>;
+  hubspotContactId?: string;
 }
 
 const EnhancedLiveChat = () => {
@@ -35,16 +36,23 @@ const EnhancedLiveChat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [session, setSession] = useState<UserSession | null>(null);
-  const [waitingForAgent, setWaitingForAgent] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const [contactInfo, setContactInfo] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: ''
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const { createContact, syncConversation, loading } = useHubSpotIntegration();
 
   const quickResponses = [
     'Product information',
     'Request quote',
     'Technical support',
     'Installation services',
-    'Pricing inquiry',
-    'Speak to human agent'
+    'Pricing inquiry'
   ];
 
   useEffect(() => {
@@ -57,16 +65,27 @@ const EnhancedLiveChat = () => {
     scrollToBottom();
   }, [messages]);
 
-  const initializeSession = () => {
+  const initializeSession = async () => {
+    const sessionId = `session_${Date.now()}`;
     const newSession: UserSession = {
-      sessionId: `session_${Date.now()}`,
+      sessionId,
       startTime: new Date(),
       lastActivity: new Date(),
-      messages: [],
-      context: {}
+      messages: []
     };
     
     setSession(newSession);
+    
+    // Save session to database
+    try {
+      await supabase.from('chat_sessions').insert({
+        session_id: sessionId,
+        start_time: new Date().toISOString(),
+        status: 'active'
+      });
+    } catch (error) {
+      console.error('Error saving session:', error);
+    }
     
     // Add welcome message
     const welcomeMessage: ChatMessage = {
@@ -78,6 +97,20 @@ const EnhancedLiveChat = () => {
     };
     
     setMessages([welcomeMessage]);
+    await saveMessage(welcomeMessage, sessionId);
+  };
+
+  const saveMessage = async (msg: ChatMessage, sessionId: string) => {
+    try {
+      await supabase.from('chat_messages').insert({
+        session_id: sessionId,
+        message: msg.message,
+        sender: msg.sender,
+        confidence: msg.confidence
+      });
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
   };
 
   const scrollToBottom = () => {
@@ -85,16 +118,14 @@ const EnhancedLiveChat = () => {
   };
 
   const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
-    // This would be replaced with actual AI API call
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     const responses = {
       'product information': 'I can help you with information about our laboratory equipment and furniture. We offer emergency eyewash stations, fume cupboards, and more. What specific products are you interested in?',
-      'request quote': 'I\'d be happy to help you with a quote. Could you please provide details about the products you\'re interested in and your project requirements?',
+      'request quote': 'I\'d be happy to help you with a quote. Could you please provide your contact details so I can connect you with our sales team?',
       'technical support': 'For technical support, I can help with installation guides, troubleshooting, and maintenance. What specific issue are you experiencing?',
       'installation services': 'We provide professional installation services for all our laboratory equipment. What products do you need installed?',
-      'pricing inquiry': 'For pricing information, I\'ll need to know which products you\'re interested in. You can also request a detailed quote through our system.',
-      'speak to human agent': 'I\'ll connect you with one of our human agents. Please hold on while I transfer you.'
+      'pricing inquiry': 'For pricing information, I\'ll need to know which products you\'re interested in. You can also request a detailed quote through our system.'
     };
     
     let responseText = 'Thank you for your message. ';
@@ -112,6 +143,14 @@ const EnhancedLiveChat = () => {
     if (confidence < 0.9) {
       responseText += 'Our team specializes in laboratory equipment and can provide detailed information about our products and services. Is there something specific you\'d like to know about?';
     }
+
+    // Check if user is asking for quote or sales related info
+    if (lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost')) {
+      if (!session?.hubspotContactId) {
+        responseText += ' To provide you with accurate pricing, I\'ll need your contact information. Would you like to share your details?';
+        setTimeout(() => setShowContactForm(true), 1000);
+      }
+    }
     
     return {
       id: `bot_${Date.now()}`,
@@ -123,7 +162,7 @@ const EnhancedLiveChat = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
+    if (!message.trim() || !session) return;
     
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -136,51 +175,35 @@ const EnhancedLiveChat = () => {
     setMessage('');
     setIsTyping(true);
     
+    // Save user message
+    await saveMessage(userMessage, session.sessionId);
+    
     // Update session
-    if (session) {
-      setSession({
-        ...session,
-        lastActivity: new Date(),
-        messages: [...session.messages, userMessage]
-      });
-    }
+    setSession({
+      ...session,
+      lastActivity: new Date(),
+      messages: [...session.messages, userMessage]
+    });
     
     try {
-      // Check if user wants human agent
-      if (message.toLowerCase().includes('human') || message.toLowerCase().includes('agent')) {
-        setWaitingForAgent(true);
-        const agentMessage: ChatMessage = {
-          id: `bot_${Date.now()}`,
-          message: 'I\'m connecting you with one of our human agents. They\'ll be with you shortly. In the meantime, feel free to describe your inquiry in detail.',
-          sender: 'bot',
-          timestamp: new Date(),
-          confidence: 1.0
-        };
-        setMessages(prev => [...prev, agentMessage]);
-        setIsTyping(false);
-        
-        // Here you would integrate with HubSpot to create a ticket
-        toast.success('Agent requested - creating support ticket');
-        return;
-      }
-      
       const aiResponse = await simulateAIResponse(message);
       setMessages(prev => [...prev, aiResponse]);
       
+      // Save AI response
+      await saveMessage(aiResponse, session.sessionId);
+      
       // Update session with bot response
-      if (session) {
-        setSession({
-          ...session,
-          lastActivity: new Date(),
-          messages: [...session.messages, userMessage, aiResponse]
-        });
-      }
+      setSession({
+        ...session,
+        lastActivity: new Date(),
+        messages: [...session.messages, userMessage, aiResponse]
+      });
       
     } catch (error) {
       console.error('Error getting AI response:', error);
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
-        message: 'I apologize, but I\'m having trouble processing your request right now. Let me connect you with a human agent.',
+        message: 'I apologize, but I\'m having trouble processing your request right now. Please try again.',
         sender: 'bot',
         timestamp: new Date(),
         confidence: 0.5
@@ -188,6 +211,67 @@ const EnhancedLiveChat = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleContactSubmit = async () => {
+    if (!contactInfo.email || !contactInfo.name || !session) {
+      toast.error('Please fill in at least name and email');
+      return;
+    }
+
+    try {
+      // Create HubSpot contact
+      const result = await createContact({
+        sessionId: session.sessionId,
+        email: contactInfo.email,
+        name: contactInfo.name,
+        company: contactInfo.company,
+        phone: contactInfo.phone
+      });
+
+      if (result?.contactId) {
+        // Update session with contact info and HubSpot ID
+        const updatedSession = {
+          ...session,
+          ...contactInfo,
+          hubspotContactId: result.contactId
+        };
+        setSession(updatedSession);
+
+        // Update database
+        await supabase
+          .from('chat_sessions')
+          .update({
+            email: contactInfo.email,
+            name: contactInfo.name,
+            company: contactInfo.company,
+            phone: contactInfo.phone,
+            hubspot_contact_id: result.contactId
+          })
+          .eq('session_id', session.sessionId);
+
+        // Sync conversation to HubSpot
+        await syncConversation({
+          sessionId: session.sessionId,
+          contactId: result.contactId
+        });
+
+        setShowContactForm(false);
+        
+        const confirmMessage: ChatMessage = {
+          id: `bot_${Date.now()}`,
+          message: `Thank you ${contactInfo.name}! I've saved your contact information and our team will be able to provide you with personalized assistance. How can I help you further?`,
+          sender: 'bot',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, confirmMessage]);
+        await saveMessage(confirmMessage, session.sessionId);
+      }
+    } catch (error) {
+      console.error('Error creating contact:', error);
+      toast.error('Failed to save contact information');
     }
   };
 
@@ -212,7 +296,7 @@ const EnhancedLiveChat = () => {
           <MessageCircle className="w-7 h-7 text-white" />
         </Button>
         <Badge className="absolute -top-2 -left-2 bg-green-500 text-white animate-pulse px-2 py-1">
-          AI Live
+          AI Assistant
         </Badge>
       </div>
     );
@@ -225,15 +309,13 @@ const EnhancedLiveChat = () => {
           <div className="flex items-center space-x-2">
             <Bot className="w-5 h-5" />
             <div>
-              <CardTitle className="text-sm font-medium">AI Chat Support</CardTitle>
-              <p className="text-xs opacity-90">
-                {waitingForAgent ? 'Connecting to agent...' : 'Powered by AI'}
-              </p>
+              <CardTitle className="text-sm font-medium">AI Assistant</CardTitle>
+              <p className="text-xs opacity-90">Innosin Lab Support</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-green-500 text-white text-xs animate-pulse">
-              {waitingForAgent ? 'Agent' : 'AI'}
+            <Badge variant="secondary" className="bg-green-500 text-white text-xs">
+              Online
             </Badge>
             <Button
               variant="ghost"
@@ -256,6 +338,54 @@ const EnhancedLiveChat = () => {
         
         {!isMinimized && (
           <CardContent className="p-0 flex flex-col h-[536px]">
+            {/* Contact Form Modal */}
+            {showContactForm && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                <div className="bg-white p-6 rounded-lg m-4 w-full max-w-sm">
+                  <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="Your name *"
+                      value={contactInfo.name}
+                      onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
+                    />
+                    <Input
+                      placeholder="Email address *"
+                      type="email"
+                      value={contactInfo.email}
+                      onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+                    />
+                    <Input
+                      placeholder="Company"
+                      value={contactInfo.company}
+                      onChange={(e) => setContactInfo({...contactInfo, company: e.target.value})}
+                    />
+                    <Input
+                      placeholder="Phone number"
+                      value={contactInfo.phone}
+                      onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="flex space-x-2 mt-4">
+                    <Button 
+                      onClick={handleContactSubmit} 
+                      disabled={loading}
+                      className="flex-1"
+                    >
+                      Submit
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowContactForm(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white to-sea-light/10">
               {messages.map(msg => (
@@ -266,7 +396,7 @@ const EnhancedLiveChat = () => {
                   <div className={`flex items-start space-x-2 max-w-[80%]`}>
                     {msg.sender !== 'user' && (
                       <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center text-xs mt-1">
-                        {msg.sender === 'bot' ? <Bot className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                        <Bot className="w-3 h-3" />
                       </div>
                     )}
                     <div
@@ -282,9 +412,6 @@ const EnhancedLiveChat = () => {
                       }`}>
                         <Clock className="w-3 h-3 mr-1" />
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {msg.confidence && msg.confidence < 0.8 && (
-                          <span className="ml-2 text-orange-500">• Low confidence</span>
-                        )}
                       </div>
                     </div>
                     {msg.sender === 'user' && (
