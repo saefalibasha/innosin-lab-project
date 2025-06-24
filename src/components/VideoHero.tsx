@@ -89,8 +89,8 @@ const VideoHero = () => {
         </div>
       </section>
 
-      {/* Our Story Section - Keep unchanged */}
-      <section className="py-3 bg-gradient-to-b from-background to-secondary/30 relative">
+      {/* Our Story Section - Increased padding */}
+      <section className="py-6 bg-gradient-to-b from-background to-secondary/30 relative">
         <div className="container-custom text-center">
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2 tracking-tight animate-fade-in">
