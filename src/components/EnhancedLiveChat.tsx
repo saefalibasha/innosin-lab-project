@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,12 +48,57 @@ const EnhancedLiveChat = () => {
   const { createContact, syncConversation, loading } = useHubSpotIntegration();
 
   const quickResponses = [
-    'Product information',
-    'Request quote',
-    'Technical support',
-    'Installation services',
-    'Pricing inquiry'
+    'Product catalog & specifications',
+    'Request detailed quote',
+    'Technical support & troubleshooting',
+    'Professional installation services',
+    'Pricing & financing options',
+    'Warranty & maintenance',
+    'Custom laboratory design',
+    'Compliance & certifications'
   ];
+
+  // Enhanced knowledge base for more comprehensive responses
+  const knowledgeBase = {
+    products: {
+      'eyewash': {
+        keywords: ['eyewash', 'eye wash', 'emergency', 'safety shower', 'bl-hes', 'bl-ebs'],
+        response: 'Our emergency eyewash stations include bench-mounted (BL-HES-BENCH-001), wall-mounted (BL-HES-WALL-002), and recessed models (BL-EBS-RECESSED-003). They meet ANSI Z358.1 standards and provide 15 minutes of continuous flow. Would you like specific technical specifications, installation requirements, or pricing information?'
+      },
+      'fume': {
+        keywords: ['fume', 'hood', 'cupboard', 'ventilation', 'extraction'],
+        response: 'Our fume cupboards offer superior containment and energy efficiency. We have various models including walk-in fume hoods, bench-top units, and specialized chemistry fume cupboards. Key features include variable air volume controls, safety monitoring systems, and ASHRAE 110 compliance. What type of laboratory work will you be conducting?'
+      },
+      'safety': {
+        keywords: ['safety', 'shower', 'emergency', 'decontamination', 'bl-bs'],
+        response: 'Our safety shower systems (BL-BS-WALL-006) provide full-body emergency decontamination with ANSI Z358.1 compliance. Features include thermostatic mixing valves, high-visibility signage, and corrosion-resistant construction. Would you like information about installation requirements, maintenance procedures, or compliance documentation?'
+      },
+      'furniture': {
+        keywords: ['furniture', 'bench', 'cabinet', 'storage', 'lab furniture'],
+        response: 'Our laboratory furniture includes modular benching systems, chemical storage cabinets, mobile carts, and specialized workstations. All furniture meets laboratory safety standards with chemical-resistant surfaces and ergonomic design. What type of laboratory setup are you planning?'
+      }
+    },
+    services: {
+      'installation': {
+        keywords: ['install', 'installation', 'setup', 'commissioning'],
+        response: 'We provide comprehensive installation services including site surveys, project management, certified installation by trained technicians, testing and commissioning, and staff training. Our installation team ensures compliance with all safety standards and local regulations. Would you like to schedule a site survey or discuss project timeline?'
+      },
+      'maintenance': {
+        keywords: ['maintenance', 'service', 'repair', 'calibration'],
+        response: 'Our maintenance services include preventive maintenance programs, emergency repairs, calibration services, and compliance testing. We offer annual service contracts with priority response times and genuine parts guarantee. What equipment do you need serviced?'
+      },
+      'design': {
+        keywords: ['design', 'planning', 'layout', 'consultation'],
+        response: 'Our laboratory design team provides comprehensive planning services including workflow analysis, space optimization, utility planning, and regulatory compliance consulting. We use 3D modeling and can provide virtual walkthroughs. Are you planning a new laboratory or renovating an existing facility?'
+      }
+    },
+    compliance: {
+      'standards': {
+        keywords: ['standard', 'compliance', 'regulation', 'ansi', 'osha', 'certification'],
+        response: 'Our products comply with major safety standards including ANSI Z358.1 for emergency equipment, ASHRAE 110 for fume hoods, OSHA regulations, and local building codes. We provide all necessary documentation and certificates. Which specific compliance requirements do you need to meet?'
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen && !session) {
@@ -97,10 +141,19 @@ const EnhancedLiveChat = () => {
       
       setSession(newSession);
       
-      // Add welcome message
+      // Enhanced welcome message with more comprehensive introduction
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
-        message: 'Hello! I\'m your AI assistant for Innosin Lab. I can help you with product information, technical support, quotes, and more. How can I assist you today?',
+        message: `Hello! I'm your AI assistant for Innosin Lab, your trusted partner in laboratory safety and equipment solutions. I can help you with:
+
+• Product information & technical specifications
+• Custom quotes & pricing
+• Installation & maintenance services  
+• Safety compliance & certifications
+• Laboratory design & planning consultation
+• Technical support & troubleshooting
+
+I have extensive knowledge about our emergency eyewash stations, fume cupboards, safety showers, and laboratory furniture. How can I assist you today?`,
         sender: 'bot',
         timestamp: new Date(),
         confidence: 1.0
@@ -141,44 +194,71 @@ const EnhancedLiveChat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const responses = {
-      'product information': 'I can help you with information about our laboratory equipment and furniture. We offer emergency eyewash stations, fume cupboards, and more. What specific products are you interested in?',
-      'request quote': 'I\'d be happy to help you with a quote. Could you please provide your contact details so I can connect you with our sales team?',
-      'technical support': 'For technical support, I can help with installation guides, troubleshooting, and maintenance. What specific issue are you experiencing?',
-      'installation services': 'We provide professional installation services for all our laboratory equipment. What products do you need installed?',
-      'pricing inquiry': 'For pricing information, I\'ll need to know which products you\'re interested in. You can also request a detailed quote through our system.'
-    };
-    
-    let responseText = 'Thank you for your message. ';
-    let confidence = 0.8;
-    
+  const findBestResponse = (userMessage: string): { response: string; confidence: number } => {
     const lowerMessage = userMessage.toLowerCase();
-    for (const [key, response] of Object.entries(responses)) {
-      if (lowerMessage.includes(key.toLowerCase())) {
-        responseText = response;
-        confidence = 0.95;
-        break;
+    let bestMatch = { response: '', confidence: 0.3 };
+
+    // Check all knowledge base categories
+    Object.values(knowledgeBase).forEach(category => {
+      Object.values(category).forEach(item => {
+        const matchCount = item.keywords.filter(keyword => 
+          lowerMessage.includes(keyword.toLowerCase())
+        ).length;
+        
+        if (matchCount > 0) {
+          const confidence = Math.min(0.95, 0.6 + (matchCount * 0.15));
+          if (confidence > bestMatch.confidence) {
+            bestMatch = { response: item.response, confidence };
+          }
+        }
+      });
+    });
+
+    // Enhanced fallback responses based on intent
+    if (bestMatch.confidence < 0.5) {
+      if (lowerMessage.includes('help') || lowerMessage.includes('assistance')) {
+        bestMatch = {
+          response: 'I\'m here to help! I can provide detailed information about our laboratory equipment, safety systems, installation services, maintenance programs, and compliance requirements. What specific area would you like to explore?',
+          confidence: 0.7
+        };
+      } else if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('quote')) {
+        bestMatch = {
+          response: 'I\'d be happy to help you with pricing information. To provide accurate quotes, I\'ll need to understand your specific requirements including product types, quantities, installation needs, and timeline. Could you please share more details about your project?',
+          confidence: 0.8
+        };
+      } else if (lowerMessage.includes('contact') || lowerMessage.includes('speak') || lowerMessage.includes('call')) {
+        bestMatch = {
+          response: 'I can connect you with our expert team! Please share your contact information so our specialists can reach out to discuss your specific laboratory needs and provide personalized assistance.',
+          confidence: 0.75
+        };
+      } else {
+        bestMatch = {
+          response: 'Thank you for your question. As a laboratory equipment specialist, I can provide detailed information about emergency eyewash stations, fume cupboards, safety showers, laboratory furniture, installation services, and compliance requirements. Could you please tell me more about what you\'re looking for?',
+          confidence: 0.4
+        };
       }
-    }
-    
-    if (confidence < 0.9) {
-      responseText += 'Our team specializes in laboratory equipment and can provide detailed information about our products and services. Is there something specific you\'d like to know about?';
     }
 
-    // Check if user is asking for quote or sales related info
-    if (lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost')) {
-      if (!session?.hubspotContactId) {
-        responseText += ' To provide you with accurate pricing, I\'ll need your contact information. Would you like to share your details?';
-        setTimeout(() => setShowContactForm(true), 1000);
-      }
+    return bestMatch;
+  };
+
+  const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly longer delay for more natural feel
+    
+    const { response: responseText, confidence } = findBestResponse(userMessage);
+    
+    // Check if user is asking for quote or sales related info and no contact info exists
+    const lowerMessage = userMessage.toLowerCase();
+    let finalResponse = responseText;
+    
+    if ((lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('purchase')) && !session?.hubspotContactId) {
+      finalResponse += '\n\nTo provide you with accurate pricing and personalized service, I\'d like to collect your contact information. Would you like to share your details so our team can assist you better?';
+      setTimeout(() => setShowContactForm(true), 2000);
     }
     
     return {
       id: `bot_${Date.now()}`,
-      message: responseText,
+      message: finalResponse,
       sender: 'bot',
       timestamp: new Date(),
       confidence
@@ -227,7 +307,7 @@ const EnhancedLiveChat = () => {
       console.error('Error getting AI response:', error);
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
-        message: 'I apologize, but I\'m having trouble processing your request right now. Please try again.',
+        message: 'I apologize, but I\'m having trouble processing your request right now. Please try again, or feel free to ask about our laboratory equipment, safety systems, or services.',
         sender: 'bot',
         timestamp: new Date(),
         confidence: 0.5
@@ -292,7 +372,7 @@ const EnhancedLiveChat = () => {
         
         const confirmMessage: ChatMessage = {
           id: `bot_${Date.now()}`,
-          message: `Thank you ${contactInfo.name}! I've saved your contact information and our team will be able to provide you with personalized assistance. How can I help you further?`,
+          message: `Thank you ${contactInfo.name}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
           sender: 'bot',
           timestamp: new Date()
         };
@@ -300,11 +380,11 @@ const EnhancedLiveChat = () => {
         setMessages(prev => [...prev, confirmMessage]);
         await saveMessage(confirmMessage, session.databaseId);
         
-        toast.success('Contact information saved and synced to HubSpot successfully!');
+        toast.success('Contact information saved and synced successfully!');
       }
     } catch (error) {
       console.error('Error creating contact:', error);
-      toast.error('Failed to save contact information');
+      toast.error('Failed to save contact information. Please try again.');
     }
   };
 
@@ -342,8 +422,8 @@ const EnhancedLiveChat = () => {
           <div className="flex items-center space-x-2">
             <Bot className="w-5 h-5" />
             <div>
-              <CardTitle className="text-sm font-medium">AI Assistant</CardTitle>
-              <p className="text-xs opacity-90">Innosin Lab Support</p>
+              <CardTitle className="text-sm font-medium">AI Laboratory Assistant</CardTitle>
+              <p className="text-xs opacity-90">Innosin Lab Expert Support</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -376,6 +456,7 @@ const EnhancedLiveChat = () => {
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
                 <div className="bg-white p-6 rounded-lg m-4 w-full max-w-sm">
                   <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
+                  <p className="text-sm text-gray-600 mb-4">Help us provide you with personalized assistance and accurate pricing.</p>
                   <div className="space-y-3">
                     <Input
                       placeholder="Your name *"
@@ -405,7 +486,7 @@ const EnhancedLiveChat = () => {
                       disabled={loading}
                       className="flex-1"
                     >
-                      Submit
+                      {loading ? 'Saving...' : 'Submit'}
                     </Button>
                     <Button 
                       variant="outline" 
@@ -426,7 +507,7 @@ const EnhancedLiveChat = () => {
                   key={msg.id}
                   className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div className={`flex items-start space-x-2 max-w-[80%]`}>
+                  <div className={`flex items-start space-x-2 max-w-[85%]`}>
                     {msg.sender !== 'user' && (
                       <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center text-xs mt-1">
                         <Bot className="w-3 h-3" />
@@ -439,7 +520,7 @@ const EnhancedLiveChat = () => {
                           : 'bg-white/80 text-sea-dark border border-sea/20 backdrop-blur-sm'
                       }`}
                     >
-                      <div>{msg.message}</div>
+                      <div className="whitespace-pre-line">{msg.message}</div>
                       <div className={`text-xs mt-1 opacity-70 flex items-center ${
                         msg.sender === 'user' ? 'text-white/70' : 'text-sea/70'
                       }`}>

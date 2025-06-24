@@ -40,31 +40,36 @@ interface HubSpotTicket {
 }
 
 async function findHubSpotContactByEmail(email: string): Promise<any> {
-  const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/search`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${hubspotApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      filterGroups: [{
-        filters: [{
-          propertyName: 'email',
-          operator: 'EQ',
-          value: email
-        }]
-      }],
-      properties: ['id', 'email', 'firstname', 'lastname']
-    }),
-  });
+  try {
+    const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/search`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${hubspotApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filterGroups: [{
+          filters: [{
+            propertyName: 'email',
+            operator: 'EQ',
+            value: email
+          }]
+        }],
+        properties: ['id', 'email', 'firstname', 'lastname']
+      }),
+    });
 
-  if (!response.ok) {
-    console.error('HubSpot Search API error:', response.status, await response.text());
+    if (!response.ok) {
+      console.error('HubSpot Search API error:', response.status, await response.text());
+      return null;
+    }
+
+    const result = await response.json();
+    return result.results.length > 0 ? result.results[0] : null;
+  } catch (error) {
+    console.error('Error searching for contact:', error);
     return null;
   }
-
-  const result = await response.json();
-  return result.results.length > 0 ? result.results[0] : null;
 }
 
 async function createHubSpotContact(contactData: HubSpotContact): Promise<any> {
@@ -145,8 +150,8 @@ async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string
   return await response.json();
 }
 
-async function createHubSpotEngagement(contactId: string, engagementData: any): Promise<any> {
-  const response = await fetch('https://api.hubapi.com/crm/v3/objects/communications', {
+async function createHubSpotNote(contactId: string, noteContent: string): Promise<any> {
+  const response = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${hubspotApiKey}`,
@@ -154,22 +159,20 @@ async function createHubSpotEngagement(contactId: string, engagementData: any): 
     },
     body: JSON.stringify({
       properties: {
-        hs_communication_channel_type: 'CUSTOM_CHANNEL_CONVERSATION',
-        hs_communication_logged_from: 'CRM',
-        hs_communication_body: engagementData.body,
-        hs_timestamp: engagementData.timestamp
+        hs_note_body: noteContent,
+        hs_timestamp: new Date().toISOString()
       },
       associations: [{
         to: { id: contactId },
-        types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 199 }]
+        types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 214 }]
       }]
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('HubSpot Engagement API error:', response.status, errorText);
-    throw new Error(`HubSpot Engagement API error: ${response.status} ${response.statusText}`);
+    console.error('HubSpot Note API error:', response.status, errorText);
+    throw new Error(`HubSpot Note API error: ${response.status} ${response.statusText}`);
   }
 
   return await response.json();
@@ -361,14 +364,11 @@ serve(async (req) => {
               `${msg.sender.toUpperCase()}: ${msg.message}`
             ).join('\n\n');
 
-            const engagementData = {
-              body: `Chat Conversation Summary:\n\n${conversationSummary}`,
-              timestamp: new Date().toISOString()
-            };
+            const noteContent = `Chat Conversation Summary (Session: ${sessionId}):\n\n${conversationSummary}`;
 
-            console.log('Creating HubSpot engagement with data:', engagementData);
-            const engagementResult = await createHubSpotEngagement(contactId, engagementData);
-            console.log('HubSpot engagement created:', engagementResult.id);
+            console.log('Creating HubSpot note with data:', { contactId, noteContent: noteContent.substring(0, 200) + '...' });
+            const noteResult = await createHubSpotNote(contactId, noteContent);
+            console.log('HubSpot note created:', noteResult.id);
 
             // Mark messages as synced
             const { error: syncError } = await supabase
@@ -380,7 +380,7 @@ serve(async (req) => {
               console.error('Error marking messages as synced:', syncError);
             }
 
-            await logIntegrationAction(sessionId, 'sync_conversation', 'engagement', engagementResult.id, true, undefined, engagementData, engagementResult);
+            await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, true, undefined, { noteContent }, noteResult);
             
             console.log('Conversation sync completed successfully');
           } else {
@@ -392,7 +392,7 @@ serve(async (req) => {
           });
         } catch (error) {
           console.error('Error syncing conversation:', error);
-          await logIntegrationAction(sessionId, 'sync_conversation', 'engagement', contactId, false, error.message);
+          await logIntegrationAction(sessionId, 'sync_conversation', 'note', contactId, false, error.message);
           throw error;
         }
       }
