@@ -409,7 +409,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
           <MessageCircle className="w-7 h-7 text-white" />
         </Button>
         <Badge className="absolute -top-2 -left-2 bg-green-500 text-white animate-pulse px-2 py-1">
-          AI Assistant
+          AI Chat
         </Badge>
       </div>
     );
@@ -422,7 +422,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
           <div className="flex items-center space-x-2">
             <Bot className="w-5 h-5" />
             <div>
-              <CardTitle className="text-sm font-medium">AI Laboratory Assistant</CardTitle>
+              <CardTitle className="text-sm font-medium">AI Chat</CardTitle>
               <p className="text-xs opacity-90">Innosin Lab Expert Support</p>
             </div>
           </div>
