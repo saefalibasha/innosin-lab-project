@@ -69,10 +69,10 @@ const Contact = () => {
         </AnimatedSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 lg:items-end">
         {/* Contact Form */}
         <AnimatedSection animation="fade-in-left" delay={300}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300 h-fit">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300">
             <CardHeader>
               <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.form.title}</CardTitle>
             </CardHeader>
@@ -186,7 +186,7 @@ const Contact = () => {
 
         {/* Enhanced Get in Touch Info */}
         <AnimatedSection animation="fade-in-right" delay={400}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20 h-fit">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20">
             <CardHeader className="bg-gradient-to-r from-sea/10 to-sea/20 rounded-t-lg">
               <CardTitle className="text-2xl font-serif text-primary flex items-center space-x-2">
                 <MessageCircle className="w-6 h-6 text-sea" />
@@ -198,8 +198,9 @@ const Contact = () => {
                 <AnimatedSection key={index} animation="slide-up" delay={500 + index * 100}>
                   <div className="group relative">
                     <div className="flex items-start space-x-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-sea/10 hover:border-sea/50 hover:bg-white/80 transition-all duration-300 hover:shadow-lg relative overflow-hidden">
-                      {/* Headlight effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sea/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+                      {/* Enhanced headlight effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out opacity-0 group-hover:opacity-100"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sea/30 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out opacity-0 group-hover:opacity-100 delay-100"></div>
                       
                       <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sea to-sea-dark rounded-lg flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300 relative z-10">
                         {getIcon(section.icon)}
