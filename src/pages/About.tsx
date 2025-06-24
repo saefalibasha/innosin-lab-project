@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,7 +34,7 @@ const About = () => {
   return (
     <div className="min-h-screen bg-background pt-0">
       {/* Hero Section */}
-      <section className="section bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-8">
+      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-6">
         <div className="container-custom">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
@@ -61,10 +60,10 @@ const About = () => {
       </section>
 
       {/* Mission & Vision */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background py-8">
+      <section className="bg-gradient-to-b from-secondary/30 to-background py-6">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            <div className="animate-fade-in space-y-8">
+            <div className="animate-fade-in space-y-6">
               <div>
                 <h2 className="text-4xl font-serif font-bold text-primary mb-4">
                   {aboutPageContent.mission.title}
@@ -101,9 +100,9 @@ const About = () => {
       </section>
 
       {/* Values Section */}
-      <section className="section bg-background py-8">
+      <section className="bg-background py-6">
         <div className="container-custom">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">
               Our Precision Advantage
             </h2>
@@ -172,14 +171,14 @@ const About = () => {
       </section>
 
       {/* Company Timeline */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background py-8">
+      <section className="bg-gradient-to-b from-secondary/30 to-background py-6">
         <div className="container-custom">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">
-              {aboutPageContent.timeline.title} <span className="text-sea">{aboutPageContent.timeline.titleHighlight}</span>
+              Our <span className="text-sea">Story</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto animate-fade-in animate-delay-200">
-              {aboutPageContent.timeline.description}
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto animate-fade-in animate-delay-200 leading-relaxed">
+              From humble beginnings as a stainless steel kitchen equipment fabricator in 1986 to becoming Asia's trusted partner in precision laboratory solutions today. Our journey spans nearly four decades of continuous innovation, unwavering quality commitment, and transformative growth. What began as a small workshop in Johor Bahru has evolved into a comprehensive laboratory infrastructure provider, serving research institutions, universities, and industries across Asia Pacific, Europe, and the Middle East. This is the story of passion meeting precision, of craftsmanship evolving into cutting-edge technology, and of a vision that continues to shape the future of scientific discovery.
             </p>
           </div>
           <div className="animate-scale-in animate-delay-300">
@@ -195,4 +194,3 @@ const About = () => {
 };
 
 export default About;
-
