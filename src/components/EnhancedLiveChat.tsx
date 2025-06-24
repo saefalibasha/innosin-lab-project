@@ -408,7 +408,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
         >
           <MessageCircle className="w-7 h-7 text-white" />
         </Button>
-        <Badge className="absolute -top-2 -left-2 bg-green-500 text-white animate-pulse px-2 py-1">
+        <Badge className="absolute -top-1 left-1/2 transform -translate-x-1/2 bg-green-500 text-white animate-pulse px-2 py-1 whitespace-nowrap">
           AI Chat
         </Badge>
       </div>
