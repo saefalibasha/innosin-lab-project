@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,7 +33,7 @@ const About = () => {
   return (
     <div className="min-h-screen bg-background pt-0">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-6">
+      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-8">
         <div className="container-custom">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-5xl md:text-6xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
@@ -60,7 +59,7 @@ const About = () => {
       </section>
 
       {/* Mission & Vision */}
-      <section className="bg-gradient-to-b from-secondary/30 to-background py-6">
+      <section className="bg-gradient-to-b from-secondary/30 to-background py-8">
         <div className="container-custom">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             <div className="animate-fade-in space-y-6">
@@ -100,9 +99,9 @@ const About = () => {
       </section>
 
       {/* Values Section */}
-      <section className="bg-background py-6">
+      <section className="bg-background py-8">
         <div className="container-custom">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <h2 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">
               Our Precision Advantage
             </h2>
@@ -171,9 +170,9 @@ const About = () => {
       </section>
 
       {/* Company Timeline */}
-      <section className="bg-gradient-to-b from-secondary/30 to-background py-6">
+      <section className="bg-gradient-to-b from-secondary/30 to-background py-8">
         <div className="container-custom">
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
             <h2 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">
               Our <span className="text-sea">Story</span>
             </h2>
