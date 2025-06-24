@@ -42,7 +42,7 @@ const GoogleMapsLocation = () => {
 
   const businessHours = [
     { day: 'Monday - Friday', hours: '08:15 AM - 05:15 PM', status: 'Open' },
-    { day: 'Saturday', hours: '08:15 AM - 12:00 PM', status: 'Limited' },
+    { day: 'Saturday', hours: '08:15 AM - 12:00 PM', status: 'Open' },
     { day: 'Sunday', hours: 'Closed', status: 'Closed' }
   ];
 
@@ -81,7 +81,7 @@ const GoogleMapsLocation = () => {
 
   return (
     <div className="space-y-6">
-      {/* Office Selection Buttons - Removed title */}
+      {/* Office Selection Buttons */}
       <div className="flex flex-col items-center space-y-4">
         <div className="flex flex-wrap justify-center gap-3 animate-fade-in animate-delay-200">
           {offices.map((office, index) => (
@@ -97,9 +97,6 @@ const GoogleMapsLocation = () => {
               style={{animationDelay: `${300 + index * 100}ms`}}
             >
               <span className="font-semibold text-sm">{office.name}</span>
-              {office.type === 'Headquarters' && (
-                <Badge variant="secondary" className="text-xs">HQ</Badge>
-              )}
             </Button>
           ))}
         </div>
@@ -185,13 +182,12 @@ const GoogleMapsLocation = () => {
               <div className="space-y-2">
                 {businessHours.map((schedule, index) => (
                   <div key={index} className="flex justify-between items-center py-1 animate-fade-in" style={{animationDelay: `${1200 + index * 100}ms`}}>
-                    <span className="font-medium text-foreground text-sm">{schedule.day}</span>
-                    <div className="flex items-center space-x-1">
-                      <span className="text-muted-foreground text-xs">{schedule.hours}</span>
+                    <span className="font-medium text-foreground text-sm w-32">{schedule.day}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-muted-foreground text-xs w-28 text-right">{schedule.hours}</span>
                       <Badge 
-                        variant={schedule.status === 'Open' ? 'default' : 
-                                schedule.status === 'Limited' ? 'secondary' : 'outline'}
-                        className="text-xs"
+                        variant={schedule.status === 'Open' ? 'default' : 'outline'}
+                        className="text-xs w-12 text-center"
                       >
                         {schedule.status}
                       </Badge>

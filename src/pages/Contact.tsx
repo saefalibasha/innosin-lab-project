@@ -176,7 +176,7 @@ const Contact = () => {
                   />
                 </div>
                 
-                <Button type="submit" size="lg" className="w-full bg-sea hover:bg-sea-dark animate-float">
+                <Button type="submit" size="lg" className="w-full bg-sea hover:bg-sea-dark">
                   {contactPageContent.form.submitButton}
                 </Button>
               </form>
@@ -193,15 +193,18 @@ const Contact = () => {
                 <span>{contactPageContent.quickContact.title}</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-8 pt-6 pb-8">
+            <CardContent className="space-y-8 pt-6 pb-12">
               {contactPageContent.quickContact.sections.map((section, index) => (
                 <AnimatedSection key={index} animation="slide-up" delay={500 + index * 100}>
                   <div className="group relative">
-                    <div className="flex items-start space-x-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-sea/10 hover:border-sea/30 hover:bg-white/70 transition-all duration-300 hover:shadow-md">
-                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sea to-sea-dark rounded-lg flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="flex items-start space-x-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-sea/10 hover:border-sea/50 hover:bg-white/80 transition-all duration-300 hover:shadow-lg relative overflow-hidden">
+                      {/* Headlight effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sea/20 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out"></div>
+                      
+                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sea to-sea-dark rounded-lg flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300 relative z-10">
                         {getIcon(section.icon)}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 relative z-10">
                         <h3 className="font-semibold text-lg mb-2 text-sea group-hover:text-sea-dark transition-colors duration-300">
                           {section.title}
                         </h3>
@@ -211,20 +214,12 @@ const Contact = () => {
                       </div>
                     </div>
                     
-                    {/* Decorative accent */}
-                    <div className="absolute -left-1 top-4 w-1 h-16 bg-gradient-to-b from-sea/50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    {/* Enhanced decorative accent */}
+                    <div className="absolute -left-1 top-4 w-1 h-16 bg-gradient-to-b from-sea/50 to-sea/20 rounded-full opacity-0 group-hover:opacity-100 group-hover:shadow-lg transition-all duration-300" />
+                    <div className="absolute -left-2 top-6 w-2 h-12 bg-gradient-to-b from-sea/30 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 blur-sm" />
                   </div>
                 </AnimatedSection>
               ))}
-              
-              {/* Call to action section */}
-              <AnimatedSection animation="bounce-in" delay={800}>
-                <div className="mt-8 p-4 bg-gradient-to-r from-sea/10 to-sea/5 rounded-xl border border-sea/20">
-                  <p className="text-center text-sm text-sea-dark font-medium">
-                    💬 <strong>Need immediate assistance?</strong> Our live chat is available 24/7 to help you with any questions or urgent requests.
-                  </p>
-                </div>
-              </AnimatedSection>
             </CardContent>
           </Card>
         </AnimatedSection>
