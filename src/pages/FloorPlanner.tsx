@@ -55,17 +55,6 @@ const FloorPlanner = () => {
     });
   };
 
-  // Enhanced object selection handler
-  const handleObjectSelect = (objectId: string) => {
-    setSelectedObjects(prev => {
-      if (prev.includes(objectId)) {
-        return prev.filter(id => id !== objectId);
-      } else {
-        return [...prev, objectId];
-      }
-    });
-  };
-
   // Initialize history management
   const initialState: FloorPlanState = {
     roomPoints: [],
@@ -112,21 +101,11 @@ const FloorPlanner = () => {
     };
   }, [roomPoints, placedProducts, doors, textAnnotations]);
 
-  // Enhanced zoom controls that actually work with canvas
+  // Enhanced zoom controls that actually work
   const handleZoomIn = () => {
     setCurrentZoom(prev => {
       const newZoom = Math.min(prev * 1.2, 3);
       toast.success(`Zoomed to ${Math.round(newZoom * 100)}%`);
-      
-      // Apply zoom to canvas if available
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.scale(1.2, 1.2);
-        }
-      }
-      
       return newZoom;
     });
   };
@@ -135,32 +114,12 @@ const FloorPlanner = () => {
     setCurrentZoom(prev => {
       const newZoom = Math.max(prev / 1.2, 0.1);
       toast.success(`Zoomed to ${Math.round(newZoom * 100)}%`);
-      
-      // Apply zoom to canvas if available
-      if (canvasRef.current) {
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.scale(1/1.2, 1/1.2);
-        }
-      }
-      
       return newZoom;
     });
   };
 
   const handleFitToView = () => {
     setCurrentZoom(1);
-    
-    // Reset canvas zoom
-    if (canvasRef.current) {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
-      }
-    }
-    
     toast.success('View reset to fit content');
   };
 
@@ -424,9 +383,6 @@ const FloorPlanner = () => {
                 units={units}
                 onUnitsChange={setUnits}
                 onProductDrag={handleProductDrag}
-                placedProducts={placedProducts}
-                onObjectSelect={handleObjectSelect}
-                selectedObjects={selectedObjects}
               />
               
               {/* Status Indicator in Sidebar */}
