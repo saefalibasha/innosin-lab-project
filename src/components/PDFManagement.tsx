@@ -51,7 +51,14 @@ const PDFManagement = () => {
         .order('upload_date', { ascending: false });
 
       if (error) throw error;
-      setDocuments(data || []);
+      
+      // Type assertion to ensure processing_status is properly typed
+      const typedData = (data || []).map(doc => ({
+        ...doc,
+        processing_status: doc.processing_status as 'pending' | 'processing' | 'completed' | 'failed'
+      }));
+      
+      setDocuments(typedData);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast.error('Failed to load documents');
@@ -90,6 +97,12 @@ const PDFManagement = () => {
 
       if (docError) throw docError;
 
+      // Type assertion for the returned document
+      const typedDocData = {
+        ...docData,
+        processing_status: docData.processing_status as 'pending' | 'processing' | 'completed' | 'failed'
+      };
+
       // Simulate PDF processing (in real implementation, this would extract text content)
       setTimeout(async () => {
         try {
@@ -100,10 +113,10 @@ const PDFManagement = () => {
               processing_status: 'completed',
               last_processed: new Date().toISOString()
             })
-            .eq('id', docData.id);
+            .eq('id', typedDocData.id);
 
           // Simulate extracting content and updating knowledge base
-          await simulateContentExtraction(docData);
+          await simulateContentExtraction(typedDocData);
           
           toast.success('PDF uploaded and processed successfully');
           fetchDocuments();
@@ -112,7 +125,7 @@ const PDFManagement = () => {
           await supabase
             .from('pdf_documents')
             .update({ processing_status: 'failed' })
-            .eq('id', docData.id);
+            .eq('id', typedDocData.id);
         }
       }, 3000);
 
