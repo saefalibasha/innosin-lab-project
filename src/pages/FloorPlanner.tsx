@@ -1,19 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
-import QuickActionsToolbar from '@/components/QuickActionsToolbar';
-import KeyboardShortcuts from '@/components/KeyboardShortcuts';
-import EnhancedToolPanel from '@/components/EnhancedToolPanel';
+import CompactToolbar from '@/components/CompactToolbar';
+import CompactToolPanel from '@/components/CompactToolPanel';
 import CursorManager from '@/components/CursorManager';
 import FloorPlanContextMenu from '@/components/ContextMenu';
-import MeasurementOverlay from '@/components/MeasurementOverlay';
+import IntelligentMeasurementOverlay from '@/components/IntelligentMeasurementOverlay';
 import StatusIndicator from '@/components/StatusIndicator';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Maximize, Download, Send, Undo, Redo, Ruler } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import ExportModal from '@/components/ExportModal';
-import SendPlanModal from '@/components/SendPlanModal';
 import { useFloorPlanHistory, FloorPlanState } from '@/hooks/useFloorPlanHistory';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 
@@ -28,7 +23,6 @@ const FloorPlanner = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [activeTool, setActiveTool] = useState('wall');
   const [showGrid, setShowGrid] = useState(true);
-  const [showRuler, setShowRuler] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
   const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
   const [copiedObjects, setCopiedObjects] = useState<any[]>([]);
@@ -246,12 +240,6 @@ const FloorPlanner = () => {
       toast.success(showGrid ? 'Grid hidden' : 'Grid shown');
     }
 
-    if (key === 'u' && !e.ctrlKey && !e.metaKey) {
-      e.preventDefault();
-      setShowRuler(!showRuler);
-      toast.success(showRuler ? 'Ruler hidden' : 'Ruler shown');
-    }
-
     if (key === 'm' && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       setShowMeasurements(!showMeasurements);
@@ -315,7 +303,7 @@ const FloorPlanner = () => {
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedObjects, showGrid, showRuler, showMeasurements]);
+  }, [selectedObjects, showGrid, showMeasurements]);
 
   const handleClearAll = () => {
     setOperationInProgress('Clearing floor plan...');
@@ -342,40 +330,9 @@ const FloorPlanner = () => {
     }
   };
 
-  // ... keep existing code (product library data)
-  const productLibrary = [
-    {
-      id: 'fh-std',
-      name: 'Standard Fume Hood',
-      dimensions: { length: 1.5, width: 0.75, height: 2.4 },
-      category: 'Fume Hoods',
-      color: '#ef4444'
-    },
-    {
-      id: 'lab-bench',
-      name: 'Lab Bench',
-      dimensions: { length: 3.0, width: 0.75, height: 0.85 },
-      category: 'Lab Benches',
-      color: '#3b82f6'
-    },
-    {
-      id: 'eye-wash',
-      name: 'Eye Wash Station',
-      dimensions: { length: 0.6, width: 0.4, height: 1.2 },
-      category: 'Safety Equipment',
-      color: '#10b981'
-    },
-    {
-      id: 'storage',
-      name: 'Storage Cabinet',
-      dimensions: { length: 1.2, width: 0.6, height: 1.8 },
-      category: 'Storage',
-      color: '#f59e0b'
-    }
-  ];
-
-  const handleDragStart = (e: React.DragEvent, product: any) => {
-    e.dataTransfer.setData('product', JSON.stringify(product));
+  const handleExport = () => {
+    // Trigger export modal or function
+    toast.success('Export functionality triggered');
   };
 
   return (
@@ -386,158 +343,56 @@ const FloorPlanner = () => {
           canvasElement={canvasRef.current}
         />
         
-        {/* Enhanced Top Toolbar */}
-        <div className="bg-white border-b border-gray-200 px-4 py-3 z-40 flex-shrink-0" style={{ marginTop: isFullScreen ? '0' : '5rem' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                className="p-2"
-              >
-                {isSidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-              </Button>
-              <h1 className="text-xl font-bold text-gray-900">Floor Planner</h1>
-              
-              {/* Status Indicator */}
-              <StatusIndicator
-                isAutoSaving={isAutoSaving}
-                lastSaved={lastSaved}
-                isOnline={isOnline}
-                operationInProgress={operationInProgress}
-              />
-              
-              {/* Undo/Redo Controls */}
-              <div className="flex items-center space-x-1 border-l border-gray-200 pl-4">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleUndo}
-                      disabled={!canUndo}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Undo className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Undo last action (Ctrl+Z)</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRedo}
-                      disabled={!canRedo}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Redo className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Redo last action (Ctrl+Y)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-
-              {/* Quick Actions Toolbar */}
-              <QuickActionsToolbar
-                hasSelection={selectedObjects.length > 0}
-                onCopy={handleCopy}
-                onPaste={handlePaste}
-                onDelete={handleDeleteSelected}
-                onDuplicate={handleDuplicate}
-                onSelectAll={handleSelectAll}
-                canPaste={copiedObjects.length > 0}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant={showMeasurements ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setShowMeasurements(!showMeasurements)}
-                className="h-8 px-3"
-              >
-                <Ruler className="w-4 h-4 mr-1" />
-                Measurements
-                <Badge variant="outline" className="ml-2 text-xs">M</Badge>
-              </Button>
-              
-              <div className="border-l border-gray-200 pl-2 ml-2 flex items-center space-x-2">
-                <KeyboardShortcuts />
-                
-                <ExportModal
-                  canvasRef={canvasRef}
-                  roomPoints={roomPoints}
-                  placedProducts={placedProducts}
-                >
-                  <Button variant="outline" size="sm" className="h-8 px-3">
-                    <Download className="w-4 h-4 mr-1" />
-                    Export
-                  </Button>
-                </ExportModal>
-
-                <SendPlanModal
-                  canvasRef={canvasRef}
-                  roomPoints={roomPoints}
-                  placedProducts={placedProducts}
-                >
-                  <Button variant="outline" size="sm" className="h-8 px-3">
-                    <Send className="w-4 h-4 mr-1" />
-                    Send
-                  </Button>
-                </SendPlanModal>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleFullScreen}
-                  className="h-8 px-3"
-                >
-                  <Maximize className="w-4 h-4 mr-1" />
-                  {isFullScreen ? 'Exit' : 'Full'}
-                </Button>
-              </div>
-            </div>
-          </div>
+        {/* Compact Top Toolbar */}
+        <div className="flex-shrink-0" style={{ marginTop: isFullScreen ? '0' : '4rem' }}>
+          <CompactToolbar
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            showMeasurements={showMeasurements}
+            onToggleMeasurements={() => setShowMeasurements(!showMeasurements)}
+            onExport={handleExport}
+            onToggleFullScreen={toggleFullScreen}
+            isFullScreen={isFullScreen}
+            isSidebarCollapsed={isSidebarCollapsed}
+            onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          />
         </div>
 
         {/* Main Content Area */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Enhanced Sidebar with EnhancedToolPanel */}
+          {/* Compact Sidebar */}
           <div className={`transition-all duration-300 bg-white border-r border-gray-200 ${
-            isSidebarCollapsed ? 'w-0' : 'w-80'
+            isSidebarCollapsed ? 'w-0' : 'w-64'
           } overflow-hidden shadow-sm flex-shrink-0`}>
-            <div className="w-80 h-full overflow-y-auto p-4">
-              <EnhancedToolPanel
+            <div className="w-64 h-full overflow-y-auto p-3">
+              <CompactToolPanel
                 currentTool={activeTool}
                 onToolChange={handleToolChange}
                 showGrid={showGrid}
                 onToggleGrid={() => setShowGrid(!showGrid)}
-                showRuler={showRuler}
-                onToggleRuler={() => setShowRuler(!showRuler)}
                 onClear={handleClearAll}
                 onZoomIn={handleZoomIn}
                 onZoomOut={handleZoomOut}
                 onFitToView={handleFitToView}
                 currentZoom={currentZoom}
               />
+              
+              {/* Status Indicator in Sidebar */}
+              <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+                <StatusIndicator
+                  isAutoSaving={isAutoSaving}
+                  lastSaved={lastSaved}
+                  isOnline={isOnline}
+                  operationInProgress={operationInProgress}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Main Canvas Area with Context Menu */}
+          {/* Main Canvas Area */}
           <div className="flex-1 relative bg-gray-50">
-            {/* Enhanced debug info */}
-            <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs z-50">
-              Tool: {activeTool} | Selected: {selectedObjects.length} | Zoom: {Math.round(currentZoom * 100)}% | Objects: {placedProducts.length + doors.length + textAnnotations.length}
-            </div>
-            
             <FloorPlanContextMenu
               selectedObjects={selectedObjects}
               onCopy={handleCopy}
@@ -560,12 +415,12 @@ const FloorPlanner = () => {
                   scale={scale}
                   currentTool={activeTool}
                   showGrid={showGrid}
-                  showRuler={showRuler}
+                  showRuler={false}
                   onClearAll={handleClearAll}
                   canvasRef={canvasRef}
                 />
                 
-                <MeasurementOverlay
+                <IntelligentMeasurementOverlay
                   roomPoints={roomPoints}
                   wallSegments={wallSegments}
                   scale={scale}
