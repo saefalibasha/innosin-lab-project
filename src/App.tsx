@@ -12,6 +12,8 @@ import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import FloorPlanner from "./pages/FloorPlanner";
 import RFQCart from "./pages/RFQCart";
+import AdminPDF from "./pages/AdminPDF";
+import ChatbotAdmin from "./pages/ChatbotAdmin";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import HeroNavigation from "./components/HeroNavigation";
@@ -41,6 +43,8 @@ const App = () => (
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/floor-planner" element={<FloorPlanner />} />
                 <Route path="/rfq-cart" element={<RFQCart />} />
+                <Route path="/admin/pdf" element={<AdminPDF />} />
+                <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>
