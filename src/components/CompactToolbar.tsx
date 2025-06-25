@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import ExportModal from '@/components/ExportModal';
+import SendPlanModal from '@/components/SendPlanModal';
+import HowToUseModal from '@/components/HowToUseModal';
 import { 
   Undo, 
   Redo, 
@@ -11,7 +14,9 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
-  Maximize
+  Maximize,
+  Send,
+  HelpCircle
 } from 'lucide-react';
 
 interface CompactToolbarProps {
@@ -21,11 +26,13 @@ interface CompactToolbarProps {
   onRedo: () => void;
   showMeasurements: boolean;
   onToggleMeasurements: () => void;
-  onExport: () => void;
-  onToggleFullScreen: () => void;
   isFullScreen: boolean;
   isSidebarCollapsed: boolean;
   onToggleSidebar: () => void;
+  onToggleFullScreen: () => void;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  roomPoints: any[];
+  placedProducts: any[];
 }
 
 const CompactToolbar: React.FC<CompactToolbarProps> = ({
@@ -35,11 +42,13 @@ const CompactToolbar: React.FC<CompactToolbarProps> = ({
   onRedo,
   showMeasurements,
   onToggleMeasurements,
-  onExport,
-  onToggleFullScreen,
   isFullScreen,
   isSidebarCollapsed,
-  onToggleSidebar
+  onToggleSidebar,
+  onToggleFullScreen,
+  canvasRef,
+  roomPoints,
+  placedProducts
 }) => {
   return (
     <div className="h-12 bg-white border-b border-gray-200 px-3 flex items-center justify-between">
@@ -120,22 +129,66 @@ const CompactToolbar: React.FC<CompactToolbarProps> = ({
           </TooltipContent>
         </Tooltip>
         
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onExport}
-              className="h-8"
-            >
-              <Download className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Export</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Export Floor Plan</p>
-          </TooltipContent>
-        </Tooltip>
+        <ExportModal 
+          canvasRef={canvasRef}
+          roomPoints={roomPoints}
+          placedProducts={placedProducts}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Export</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Export Floor Plan</p>
+            </TooltipContent>
+          </Tooltip>
+        </ExportModal>
+        
+        <SendPlanModal 
+          canvasRef={canvasRef}
+          roomPoints={roomPoints}
+          placedProducts={placedProducts}
+        >
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8"
+              >
+                <Send className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Enquiry</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send Enquiry</p>
+            </TooltipContent>
+          </Tooltip>
+        </SendPlanModal>
+        
+        <HowToUseModal>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>How to Use</p>
+            </TooltipContent>
+          </Tooltip>
+        </HowToUseModal>
         
         <Tooltip>
           <TooltipTrigger asChild>

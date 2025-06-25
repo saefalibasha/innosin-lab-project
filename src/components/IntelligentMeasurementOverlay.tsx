@@ -2,12 +2,15 @@
 import React from 'react';
 import { Point, WallSegment } from '@/types/floorPlanTypes';
 
+type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
+
 interface IntelligentMeasurementOverlayProps {
   roomPoints: Point[];
   wallSegments: WallSegment[];
   scale: number;
   showMeasurements: boolean;
   canvas?: HTMLCanvasElement | null;
+  units: Units;
 }
 
 interface MeasurementLabel {
@@ -24,9 +27,33 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
   wallSegments,
   scale,
   showMeasurements,
-  canvas
+  canvas,
+  units
 }) => {
   if (!showMeasurements || !canvas) return null;
+
+  const convertUnits = (meters: number): { value: number; unit: string } => {
+    switch (units) {
+      case 'mm':
+        return { value: meters * 1000, unit: 'mm' };
+      case 'cm':
+        return { value: meters * 100, unit: 'cm' };
+      case 'm':
+        return { value: meters, unit: 'm' };
+      case 'ft':
+        return { value: meters * 3.28084, unit: 'ft' };
+      case 'in':
+        return { value: meters * 39.3701, unit: 'in' };
+      default:
+        return { value: meters, unit: 'm' };
+    }
+  };
+
+  const formatMeasurement = (meters: number): string => {
+    const converted = convertUnits(meters);
+    const precision = units === 'mm' ? 0 : units === 'cm' ? 1 : 2;
+    return `${converted.value.toFixed(precision)}${converted.unit}`;
+  };
 
   const calculateDistance = (p1: Point, p2: Point) => {
     const dx = p2.x - p1.x;
@@ -44,12 +71,10 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
   });
 
   const getOptimalLabelPosition = (midpoint: Point, angle: number, distance: number, isRoom: boolean) => {
-    // Calculate offset distance based on measurement length
-    const baseOffset = 25;
-    const dynamicOffset = Math.min(distance * 2, 15);
+    const baseOffset = 30;
+    const dynamicOffset = Math.min(distance * 3, 20);
     const totalOffset = baseOffset + dynamicOffset;
     
-    // Calculate perpendicular offset
     const perpAngle = (angle + 90) * Math.PI / 180;
     const offsetX = Math.cos(perpAngle) * totalOffset;
     const offsetY = Math.sin(perpAngle) * totalOffset;
@@ -61,7 +86,7 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
   };
 
   const detectCollisions = (labels: MeasurementLabel[]) => {
-    const COLLISION_THRESHOLD = 60; // pixels
+    const COLLISION_THRESHOLD = 70;
     const adjustedLabels = [...labels];
     
     for (let i = 0; i < adjustedLabels.length; i++) {
@@ -74,7 +99,6 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
         const distance = Math.sqrt(dx * dx + dy * dy);
         
         if (distance < COLLISION_THRESHOLD) {
-          // Move labels apart
           const moveDistance = (COLLISION_THRESHOLD - distance) / 2;
           const moveAngle = Math.atan2(dy, dx);
           
@@ -144,18 +168,17 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
               : 'bg-orange-600 border border-orange-700'
           }`}
           style={{
-            left: measurement.x - 25,
+            left: measurement.x - 30,
             top: measurement.y - 12,
-            transform: 'translate(0, 0)', // Always keep text upright
-            minWidth: '50px',
+            transform: 'translate(0, 0)',
+            minWidth: '60px',
             textAlign: 'center',
             fontSize: '11px',
             whiteSpace: 'nowrap',
             zIndex: 50
           }}
         >
-          {measurement.distance.toFixed(2)}m
-          {/* Add connector line */}
+          {formatMeasurement(measurement.distance)}
           <div
             className={`absolute w-px h-3 ${
               measurement.type === 'room' ? 'bg-blue-400' : 'bg-orange-400'

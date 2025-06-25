@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
@@ -20,26 +19,20 @@ const UnitSelector: React.FC<UnitSelectorProps> = ({ units, onUnitsChange }) => 
   ];
 
   return (
-    <Card className="w-fit">
-      <CardHeader>
-        <CardTitle className="text-sm">Units</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex space-x-1">
-          {unitOptions.map(option => (
-            <Button
-              key={option.value}
-              variant={units === option.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onUnitsChange(option.value)}
-              title={option.description}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-wrap gap-1">
+      {unitOptions.map(option => (
+        <Button
+          key={option.value}
+          variant={units === option.value ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => onUnitsChange(option.value)}
+          title={option.description}
+          className="h-7 px-2 text-xs"
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
   );
 };
 

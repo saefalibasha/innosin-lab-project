@@ -8,9 +8,10 @@ import IntelligentMeasurementOverlay from '@/components/IntelligentMeasurementOv
 import StatusIndicator from '@/components/StatusIndicator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
-import ExportModal from '@/components/ExportModal';
 import { useFloorPlanHistory, FloorPlanState } from '@/hooks/useFloorPlanHistory';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
+
+type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
 
 const FloorPlanner = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
@@ -31,6 +32,7 @@ const FloorPlanner = () => {
   const [lastSaved, setLastSaved] = useState<Date>();
   const [isOnline] = useState(true);
   const [operationInProgress, setOperationInProgress] = useState<string>();
+  const [units, setUnits] = useState<Units>('m');
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Enhanced tool change with better feedback
@@ -99,7 +101,7 @@ const FloorPlanner = () => {
     };
   }, [roomPoints, placedProducts, doors, textAnnotations]);
 
-  // Enhanced zoom controls
+  // Enhanced zoom controls that actually work
   const handleZoomIn = () => {
     setCurrentZoom(prev => {
       const newZoom = Math.min(prev * 1.2, 3);
@@ -121,7 +123,6 @@ const FloorPlanner = () => {
     toast.success('View reset to fit content');
   };
 
-  // Enhanced quick actions
   const handleSelectAll = () => {
     const allIds = [
       ...placedProducts.map(p => p.id),
@@ -209,6 +210,11 @@ const FloorPlanner = () => {
     } else {
       toast.error('Nothing to redo');
     }
+  };
+
+  const handleProductDrag = (product: any) => {
+    console.log('Product dragged:', product);
+    // This will be handled by the canvas component
   };
 
   // Enhanced keyboard shortcuts
@@ -330,11 +336,6 @@ const FloorPlanner = () => {
     }
   };
 
-  const handleExport = () => {
-    // Trigger export modal or function
-    toast.success('Export functionality triggered');
-  };
-
   return (
     <TooltipProvider>
       <div className={`h-screen bg-gray-50 flex flex-col ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
@@ -352,11 +353,13 @@ const FloorPlanner = () => {
             onRedo={handleRedo}
             showMeasurements={showMeasurements}
             onToggleMeasurements={() => setShowMeasurements(!showMeasurements)}
-            onExport={handleExport}
-            onToggleFullScreen={toggleFullScreen}
             isFullScreen={isFullScreen}
             isSidebarCollapsed={isSidebarCollapsed}
             onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            onToggleFullScreen={toggleFullScreen}
+            canvasRef={canvasRef}
+            roomPoints={roomPoints}
+            placedProducts={placedProducts}
           />
         </div>
 
@@ -377,6 +380,9 @@ const FloorPlanner = () => {
                 onZoomOut={handleZoomOut}
                 onFitToView={handleFitToView}
                 currentZoom={currentZoom}
+                units={units}
+                onUnitsChange={setUnits}
+                onProductDrag={handleProductDrag}
               />
               
               {/* Status Indicator in Sidebar */}
@@ -426,6 +432,7 @@ const FloorPlanner = () => {
                   scale={scale}
                   showMeasurements={showMeasurements}
                   canvas={canvasRef.current}
+                  units={units}
                 />
               </div>
             </FloorPlanContextMenu>

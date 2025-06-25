@@ -1,10 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ObjectLibrary from '@/components/ObjectLibrary';
+import UnitSelector from '@/components/UnitSelector';
 import { 
   Home, 
   Minus, 
@@ -16,8 +19,11 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Trash2
+  Trash2,
+  Package
 } from 'lucide-react';
+
+type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
 
 interface CompactToolPanelProps {
   currentTool: string;
@@ -29,6 +35,9 @@ interface CompactToolPanelProps {
   onZoomOut: () => void;
   onFitToView: () => void;
   currentZoom: number;
+  units: Units;
+  onUnitsChange: (units: Units) => void;
+  onProductDrag?: (product: any) => void;
 }
 
 const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
@@ -40,7 +49,10 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
   onZoomIn,
   onZoomOut,
   onFitToView,
-  currentZoom
+  currentZoom,
+  units,
+  onUnitsChange,
+  onProductDrag
 }) => {
   const tools = [
     { 
@@ -89,137 +101,163 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Drawing Tools */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Tools</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-1">
-          {tools.map(tool => (
-            <Tooltip key={tool.id}>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={currentTool === tool.id ? 'default' : 'ghost'}
-                  className="w-full justify-start h-8 px-2 text-sm"
-                  onClick={() => onToolChange(tool.id)}
-                >
-                  <tool.icon className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{tool.name}</span>
-                  <Badge variant="outline" className="ml-auto text-xs h-4 px-1">
-                    {tool.shortcut}
-                  </Badge>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{tool.description} ({tool.shortcut})</p>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="tools" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tools">Tools</TabsTrigger>
+          <TabsTrigger value="objects">Objects</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="tools" className="space-y-3">
+          {/* Drawing Tools */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Drawing Tools</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1">
+              {tools.map(tool => (
+                <Tooltip key={tool.id}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={currentTool === tool.id ? 'default' : 'ghost'}
+                      className="w-full justify-start h-8 px-2 text-sm"
+                      onClick={() => onToolChange(tool.id)}
+                    >
+                      <tool.icon className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span className="truncate">{tool.name}</span>
+                      <Badge variant="outline" className="ml-auto text-xs h-4 px-1">
+                        {tool.shortcut}
+                      </Badge>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{tool.description} ({tool.shortcut})</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </CardContent>
+          </Card>
 
-      {/* View Controls */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">View</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={showGrid ? 'default' : 'ghost'}
-                className="w-full justify-start h-8 text-sm"
-                onClick={onToggleGrid}
-              >
-                <Grid className="w-4 h-4 mr-2" />
-                Grid
-                <Badge variant="outline" className="ml-auto text-xs h-4 px-1">G</Badge>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Toggle Grid (G)</p>
-            </TooltipContent>
-          </Tooltip>
+          {/* Units */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Units</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UnitSelector units={units} onUnitsChange={onUnitsChange} />
+            </CardContent>
+          </Card>
 
-          <Separator />
+          {/* View Controls */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">View</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={showGrid ? 'default' : 'ghost'}
+                    className="w-full justify-start h-8 text-sm"
+                    onClick={onToggleGrid}
+                  >
+                    <Grid className="w-4 h-4 mr-2" />
+                    Grid
+                    <Badge variant="outline" className="ml-auto text-xs h-4 px-1">G</Badge>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Toggle Grid (G)</p>
+                </TooltipContent>
+              </Tooltip>
 
-          <div className="flex items-center justify-between space-x-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onZoomOut}
-                  className="h-7 w-7 p-0"
-                >
-                  <ZoomOut className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Zoom Out</p>
-              </TooltipContent>
-            </Tooltip>
+              <Separator />
 
-            <div className="text-xs text-center text-gray-600 px-1 bg-gray-50 rounded text-nowrap">
-              {Math.round(currentZoom * 100)}%
-            </div>
+              <div className="flex items-center justify-between space-x-1">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onZoomOut}
+                      className="h-7 w-7 p-0"
+                    >
+                      <ZoomOut className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom Out</p>
+                  </TooltipContent>
+                </Tooltip>
 
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={onZoomIn}
-                  className="h-7 w-7 p-0"
-                >
-                  <ZoomIn className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Zoom In</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
+                <div className="text-xs text-center text-gray-600 px-1 bg-gray-50 rounded text-nowrap">
+                  {Math.round(currentZoom * 100)}%
+                </div>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onFitToView}
-                className="w-full h-7 text-xs"
-              >
-                <Maximize2 className="w-3 h-3 mr-1" />
-                Fit View
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Fit to View (F)</p>
-            </TooltipContent>
-          </Tooltip>
-        </CardContent>
-      </Card>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onZoomIn}
+                      className="h-7 w-7 p-0"
+                    >
+                      <ZoomIn className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Zoom In</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
 
-      {/* Actions */}
-      <Card className="shadow-sm">
-        <CardContent className="pt-3">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="destructive"
-                className="w-full h-8 text-sm"
-                onClick={onClear}
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Clear All
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Clear entire floor plan</p>
-            </TooltipContent>
-          </Tooltip>
-        </CardContent>
-      </Card>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onFitToView}
+                    className="w-full h-7 text-xs"
+                  >
+                    <Maximize2 className="w-3 h-3 mr-1" />
+                    Fit View
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Fit to View (F)</p>
+                </TooltipContent>
+              </Tooltip>
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <Card className="shadow-sm">
+            <CardContent className="pt-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="w-full h-8 text-sm"
+                    onClick={onClear}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Clear All
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Clear entire floor plan</p>
+                </TooltipContent>
+              </Tooltip>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="objects" className="space-y-3">
+          <ObjectLibrary
+            onProductDrag={onProductDrag || (() => {})}
+            currentTool={currentTool as any}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
