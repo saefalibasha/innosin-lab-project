@@ -51,9 +51,20 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Much more zoomed out camera positioning for clear visibility
+          // Check if this is the Eye and Body Shower, Wall-Recessed model
+          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
+          
+          // Adjust camera positioning based on the specific product
           const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
-          const distance = boundingSphere.radius * 6; // Much larger distance for better overview
+          let distance;
+          
+          if (isRecessedEyeBodyShower) {
+            // Much closer camera positioning for the recessed eye and body shower
+            distance = boundingSphere.radius * 3; // Closer view for this specific model
+          } else {
+            // Standard zoomed out positioning for other models
+            distance = boundingSphere.radius * 6; // Much larger distance for better overview
+          }
           
           // Position camera further away at a good viewing angle
           const cameraX = distance * 0.7;
@@ -64,7 +75,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           camera.lookAt(0, 0, 0);
           camera.updateProjectionMatrix();
           
-          console.log('Camera positioned at:', { x: cameraX, y: cameraY, z: cameraZ, distance });
+          console.log('Camera positioned at:', { x: cameraX, y: cameraY, z: cameraZ, distance, isRecessedEyeBodyShower });
           
           setIsLoaded(true);
         }
