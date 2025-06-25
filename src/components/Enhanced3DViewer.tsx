@@ -17,59 +17,56 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   
   console.log('Attempting to load GLB model from:', modelPath);
   
-  // useGLTF must be called at the top level, not in try-catch
-  const { scene, error } = useGLTF(modelPath, true);
+  // useGLTF returns only the GLTF data, no error property
+  const { scene } = useGLTF(modelPath, true);
   
   // Handle loading success
   useEffect(() => {
     if (scene && groupRef.current && !isLoaded) {
       console.log('Successfully loaded GLB model:', modelPath);
       
-      // Create a copy of the scene to avoid modifying the original
-      const modelClone = scene.clone();
-      
-      // Calculate bounding box with more precision
-      const box = new THREE.Box3().setFromObject(modelClone);
-      const center = box.getCenter(new THREE.Vector3());
-      const size = box.getSize(new THREE.Vector3());
-      
-      // Only proceed if we have valid dimensions
-      if (size.length() > 0) {
-        // Center the model at origin
-        modelClone.position.set(-center.x, -center.y, -center.z);
+      try {
+        // Create a copy of the scene to avoid modifying the original
+        const modelClone = scene.clone();
         
-        // Improved scaling to ensure model fits well in viewport
-        const maxDimension = Math.max(size.x, size.y, size.z);
-        const targetSize = 2.5; // Optimal size for visibility
-        const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-        modelClone.scale.setScalar(scale);
+        // Calculate bounding box with more precision
+        const box = new THREE.Box3().setFromObject(modelClone);
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
         
-        // Clear previous children and add the centered/scaled model
-        groupRef.current.clear();
-        groupRef.current.add(modelClone);
-        
-        console.log('Model centered and scaled:', { center, size, scale, maxDimension });
-        
-        // Improved camera positioning for better model visibility
-        const distance = targetSize * 2.5;
-        camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
-        camera.lookAt(0, 0, 0);
-        camera.updateProjectionMatrix();
-        
-        setIsLoaded(true);
+        // Only proceed if we have valid dimensions
+        if (size.length() > 0) {
+          // Center the model at origin
+          modelClone.position.set(-center.x, -center.y, -center.z);
+          
+          // Improved scaling to ensure model fits well in viewport
+          const maxDimension = Math.max(size.x, size.y, size.z);
+          const targetSize = 2.5; // Optimal size for visibility
+          const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          modelClone.scale.setScalar(scale);
+          
+          // Clear previous children and add the centered/scaled model
+          groupRef.current.clear();
+          groupRef.current.add(modelClone);
+          
+          console.log('Model centered and scaled:', { center, size, scale, maxDimension });
+          
+          // Improved camera positioning for better model visibility
+          const distance = targetSize * 2.5;
+          camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
+          camera.lookAt(0, 0, 0);
+          camera.updateProjectionMatrix();
+          
+          setIsLoaded(true);
+        }
+      } catch (error) {
+        console.error(`Failed to process GLB model: ${modelPath}. Error:`, error);
       }
     }
   }, [scene, camera, isLoaded, modelPath]);
   
-  // Handle loading errors
-  useEffect(() => {
-    if (error) {
-      console.error(`Failed to load GLB model: ${modelPath}. Error:`, error);
-    }
-  }, [error, modelPath]);
-  
-  // Return null if there's an error or no scene
-  if (error || !scene) {
+  // Return null if no scene is available
+  if (!scene) {
     return null;
   }
   
