@@ -24,6 +24,7 @@ import {
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
 type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
+type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
 
 interface CompactToolPanelProps {
   currentTool: string;
@@ -165,7 +166,7 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
       {/* Object Library */}
       <ObjectLibrary
         onProductDrag={onProductDrag}
-        currentTool={currentTool}
+        currentTool={currentTool as DrawingTool}
       />
 
       {/* Object Legend */}
