@@ -14,11 +14,11 @@ const HeroNavigation = () => {
 
   const navItems = [
     { href: "/", label: "Home" },
-    { href: "/products", label: "Products" },
     { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-    { href: "/blog", label: "Blog" },
+    { href: "/products", label: "Products" },
     { href: "/floor-planner", label: "Floor Planner" },
+    { href: "/blog", label: "Blog" },
+    { href: "/contact", label: "Contact" },
   ];
 
   const isActive = (path: string) => {
@@ -28,7 +28,7 @@ const HeroNavigation = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
