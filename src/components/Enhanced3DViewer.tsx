@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
@@ -41,7 +40,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           // More conservative scaling to ensure model is clearly visible
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 2; // Smaller target size for better overview
+          const targetSize = 3; // Smaller target size for better overview
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
@@ -56,27 +55,37 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           // Adjust camera positioning based on the specific product
           const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
-          let distance;
           
           if (isRecessedEyeBodyShower) {
-            // Much closer camera positioning for the recessed eye and body shower
-            distance = boundingSphere.radius * 3; // Closer view for this specific model
+            // Position camera directly in front of the door/handle area
+            // For this model, we want to face the front opening where the door and handle would be
+            const distance = boundingSphere.radius * 2.5; // Close view for detailed inspection
+            
+            // Position camera directly in front (Z axis), slightly elevated
+            const cameraX = 0; // Centered horizontally
+            const cameraY = distance * 0.3; // Slightly elevated to see the door area better
+            const cameraZ = distance; // In front of the model
+            
+            camera.position.set(cameraX, cameraY, cameraZ);
+            camera.lookAt(0, 0, 0); // Look at the center of the model
+            
+            console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance });
           } else {
-            // Standard zoomed out positioning for other models
-            distance = boundingSphere.radius * 6; // Much larger distance for better overview
+            // Standard positioning for other models
+            const distance = boundingSphere.radius * 8; // Much larger distance for better overview
+            
+            // Position camera further away at a good viewing angle
+            const cameraX = distance * 0.7;
+            const cameraY = distance * 0.5;
+            const cameraZ = distance * 0.7;
+            
+            camera.position.set(cameraX, cameraY, cameraZ);
+            camera.lookAt(0, 0, 0);
+            
+            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance });
           }
           
-          // Position camera further away at a good viewing angle
-          const cameraX = distance * 0.7;
-          const cameraY = distance * 0.5;
-          const cameraZ = distance * 0.7;
-          
-          camera.position.set(cameraX, cameraY, cameraZ);
-          camera.lookAt(0, 0, 0);
           camera.updateProjectionMatrix();
-          
-          console.log('Camera positioned at:', { x: cameraX, y: cameraY, z: cameraZ, distance, isRecessedEyeBodyShower });
-          
           setIsLoaded(true);
         }
       } catch (error) {
@@ -168,7 +177,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotate={false}
               maxPolarAngle={Math.PI}
               minPolarAngle={0}
-              minDistance={2}
+              minDistance={1}
               maxDistance={50}
               enableDamping={true}
               dampingFactor={0.05}
