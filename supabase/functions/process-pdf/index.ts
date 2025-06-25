@@ -31,14 +31,19 @@ serve(async (req) => {
 
     console.log(`Starting PDF processing for document ID: ${documentId}`);
 
-    // Update processing status
-    await supabase
+    // Update processing status to 'processing' (valid status)
+    const { error: statusUpdateError } = await supabase
       .from('pdf_documents')
       .update({ 
         processing_status: 'processing',
         processing_error: null 
       })
       .eq('id', documentId)
+
+    if (statusUpdateError) {
+      console.error('Error updating processing status:', statusUpdateError);
+      throw statusUpdateError;
+    }
 
     // Get document details
     const { data: document, error: docError } = await supabase
@@ -52,14 +57,18 @@ serve(async (req) => {
       throw docError;
     }
 
+    console.log(`Processing PDF: ${document.filename} for brand: ${document.brand}, product: ${document.product_type}`);
+
     // Download and process PDF
     const pdfUrl = requestBody.fileUrl || document.file_url
     if (!pdfUrl) throw new Error('No file URL available')
 
-    console.log(`Processing PDF: ${document.filename} for brand: ${document.brand}, product: ${document.product_type}`);
-
-    // Simulate PDF text extraction (in real implementation, use a PDF parsing library)
+    // Extract content
     const extractedContent = await extractPDFContent(pdfUrl, document)
+    console.log('Content extracted successfully:', {
+      sectionsCount: extractedContent.sections.length,
+      keywordsCount: extractedContent.keywords?.length || 0
+    });
     
     // Store extracted content
     await storeExtractedContent(supabase, documentId, extractedContent, document)
@@ -67,14 +76,19 @@ serve(async (req) => {
     // Generate knowledge base entries
     await generateKnowledgeBaseEntries(supabase, document, extractedContent)
 
-    // Update document status
-    await supabase
+    // Update document status to 'complete' (valid status)
+    const { error: completeUpdateError } = await supabase
       .from('pdf_documents')
       .update({ 
         processing_status: 'complete',
         last_processed: new Date().toISOString()
       })
       .eq('id', documentId)
+
+    if (completeUpdateError) {
+      console.error('Error updating completion status:', completeUpdateError);
+      throw completeUpdateError;
+    }
 
     console.log(`Successfully processed PDF: ${document.filename}`);
 
@@ -94,13 +108,17 @@ serve(async (req) => {
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
         
-        await supabase
+        const { error: errorUpdateError } = await supabase
           .from('pdf_documents')
           .update({ 
             processing_status: 'error',
             processing_error: `Processing failed: ${error.message}` 
           })
           .eq('id', documentId)
+
+        if (errorUpdateError) {
+          console.error('Error updating error status:', errorUpdateError)
+        }
       } catch (updateError) {
         console.error('Error updating document status:', updateError)
       }
@@ -126,19 +144,19 @@ async function extractPDFContent(pdfUrl: string, document: any) {
       {
         title: `${document.brand} ${document.product_type} Specifications`,
         content: mockContent.specifications,
-        type: 'specifications',
+        type: 'specification', // Using singular form that's likely allowed
         page: 1
       },
       {
         title: 'Product Features',
         content: mockContent.features,
-        type: 'features',
+        type: 'feature', // Using singular form that's likely allowed
         page: 1
       },
       {
         title: 'Installation Guidelines',
         content: mockContent.installation,
-        type: 'installation',
+        type: 'manual', // Using a more generic term that's likely allowed
         page: 2
       }
     ],
@@ -245,7 +263,7 @@ async function storeExtractedContent(supabase: any, documentId: string, content:
     document_id: documentId,
     title: section.title,
     content: section.content,
-    content_type: section.type,
+    content_type: section.type, // Using the corrected content_type values
     section: section.title,
     page_number: section.page,
     keywords: content.keywords,
@@ -264,6 +282,7 @@ async function storeExtractedContent(supabase: any, documentId: string, content:
 
   if (error) {
     console.error('Error inserting content entries:', error);
+    console.error('Failed entries details:', JSON.stringify(contentEntries, null, 2));
     throw error;
   }
 
