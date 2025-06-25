@@ -18,6 +18,11 @@ const UnitSelector: React.FC<UnitSelectorProps> = ({ units, onUnitsChange }) => 
     { value: 'in', label: 'in', description: 'Inches' }
   ];
 
+  const handleUnitChange = (newUnit: Units) => {
+    console.log('🔄 Unit selector changed to:', newUnit);
+    onUnitsChange(newUnit);
+  };
+
   return (
     <div className="flex flex-wrap gap-1">
       {unitOptions.map(option => (
@@ -25,7 +30,7 @@ const UnitSelector: React.FC<UnitSelectorProps> = ({ units, onUnitsChange }) => 
           key={option.value}
           variant={units === option.value ? 'default' : 'outline'}
           size="sm"
-          onClick={() => onUnitsChange(option.value)}
+          onClick={() => handleUnitChange(option.value)}
           title={option.description}
           className="h-7 px-2 text-xs"
         >
