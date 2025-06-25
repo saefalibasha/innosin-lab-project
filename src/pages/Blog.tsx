@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -5,111 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, User, ArrowRight, Search, Filter, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-interface BlogPost {
-  id: string;
-  title: string;
-  excerpt: string;
-  content: string;
-  author: string;
-  publishDate: string;
-  readTime: string;
-  category: string;
-  tags: string[];
-  featuredImage: string;
-  featured: boolean;
-}
+import { blogContent, getAllTags, getFeaturedPost, getRegularPosts, BlogPost } from '@/data/blogContent';
 
 const Blog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedTag, setSelectedTag] = useState('all');
 
-  const blogPosts: BlogPost[] = [
-    {
-      id: '1',
-      title: 'The Future of Laboratory Safety: Advanced Fume Hood Technologies',
-      excerpt: 'Exploring the latest innovations in fume hood design, from smart sensors to energy-efficient VAV systems that are revolutionizing laboratory safety standards.',
-      content: '',
-      author: 'Dr. Sarah Chen',
-      publishDate: '2024-01-15',
-      readTime: '8 min read',
-      category: 'Safety',
-      tags: ['Fume Hoods', 'Safety', 'Innovation', 'VAV Systems'],
-      featuredImage: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&h=400&fit=crop',
-      featured: true
-    },
-    {
-      id: '2',
-      title: 'Sustainable Laboratory Design: Green Building Practices',
-      excerpt: 'How modern laboratories are adopting sustainable practices while maintaining the highest safety and functionality standards.',
-      content: '',
-      author: 'Michael Rodriguez',
-      publishDate: '2024-01-10',
-      readTime: '6 min read',
-      category: 'Sustainability',
-      tags: ['Green Building', 'Sustainability', 'Design', 'Energy Efficiency'],
-      featuredImage: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&h=400&fit=crop',
-      featured: false
-    },
-    {
-      id: '3',
-      title: 'Case Study: NUS Chemistry Lab Transformation',
-      excerpt: 'A detailed look at our recent project at National University of Singapore, showcasing modern lab design principles.',
-      content: '',
-      author: 'Jennifer Lim',
-      publishDate: '2024-01-05',
-      readTime: '12 min read',
-      category: 'Case Studies',
-      tags: ['Case Study', 'University', 'Chemistry Lab', 'Renovation'],
-      featuredImage: 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=600&h=400&fit=crop',
-      featured: false
-    },
-    {
-      id: '4',
-      title: 'Understanding Laboratory Ventilation Requirements',
-      excerpt: 'A comprehensive guide to laboratory ventilation standards, regulations, and best practices for different types of lab environments.',
-      content: '',
-      author: 'Dr. James Wong',
-      publishDate: '2023-12-28',
-      readTime: '10 min read',
-      category: 'Technical',
-      tags: ['Ventilation', 'Standards', 'Regulations', 'HVAC'],
-      featuredImage: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=600&h=400&fit=crop',
-      featured: false
-    },
-    {
-      id: '5',
-      title: 'Emergency Safety Equipment: Installation and Maintenance',
-      excerpt: 'Best practices for installing and maintaining emergency eye wash stations, safety showers, and other critical safety equipment.',
-      content: '',
-      author: 'Lisa Park',
-      publishDate: '2023-12-20',
-      readTime: '7 min read',
-      category: 'Safety',
-      tags: ['Emergency Equipment', 'Maintenance', 'Safety Showers', 'Eye Wash'],
-      featuredImage: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=600&h=400&fit=crop',
-      featured: false
-    },
-    {
-      id: '6',
-      title: 'Cleanroom Standards and Design Considerations',
-      excerpt: 'Understanding ISO cleanroom classifications and the design considerations for different cleanroom applications in research and industry.',
-      content: '',
-      author: 'David Kim',
-      publishDate: '2023-12-15',
-      readTime: '9 min read',
-      category: 'Technical',
-      tags: ['Cleanroom', 'ISO Standards', 'Design', 'Contamination Control'],
-      featuredImage: 'https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=600&h=400&fit=crop',
-      featured: false
-    }
-  ];
+  const allTags = getAllTags();
+  const featuredPost = getFeaturedPost();
 
-  const categories = ['all', 'Safety', 'Technical', 'Case Studies', 'Sustainability', 'Design'];
-  const allTags = ['all', ...Array.from(new Set(blogPosts.flatMap(post => post.tags)))];
-
-  const filteredPosts = blogPosts.filter(post => {
+  const filteredPosts = blogContent.posts.filter(post => {
     const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          post.excerpt.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          post.author.toLowerCase().includes(searchTerm.toLowerCase());
@@ -119,19 +26,16 @@ const Blog = () => {
     return matchesSearch && matchesCategory && matchesTag;
   });
 
-  const featuredPost = blogPosts.find(post => post.featured);
   const regularPosts = filteredPosts.filter(post => !post.featured);
 
   return (
     <div className="min-h-screen bg-white">
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-black mb-4">Laboratory Insights Blog</h1>
+          <h1 className="text-4xl font-bold text-black mb-4">{blogContent.pageHeader.title}</h1>
           <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-            Expert insights, technical guides, case studies, and industry trends in laboratory design, 
-            safety, and equipment from the Innosin Lab team.
+            {blogContent.pageHeader.subtitle}
           </p>
         </div>
 
@@ -155,7 +59,7 @@ const Blog = () => {
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map(category => (
+                  {blogContent.categories.map(category => (
                     <SelectItem key={category} value={category}>
                       {category === 'all' ? 'All Categories' : category}
                     </SelectItem>
@@ -196,6 +100,9 @@ const Blog = () => {
                     src={featuredPost.featuredImage}
                     alt={featuredPost.title}
                     className="w-full h-64 md:h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=600&h=400&fit=crop';
+                    }}
                   />
                 </div>
                 <div className="md:w-1/2 p-8">
@@ -253,6 +160,9 @@ const Blog = () => {
                   src={post.featuredImage}
                   alt={post.title}
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&h=400&fit=crop';
+                  }}
                 />
               </div>
               
@@ -305,30 +215,27 @@ const Blog = () => {
         <div className="mt-20">
           <Card className="bg-black text-white border-black">
             <CardContent className="p-8 text-center">
-              <h3 className="text-2xl font-bold mb-4">Never Miss an Update</h3>
+              <h3 className="text-2xl font-bold mb-4">{blogContent.newsletter.title}</h3>
               <p className="mb-6 text-gray-300 max-w-2xl mx-auto">
-                Subscribe to our newsletter and get the latest laboratory insights, technical guides, 
-                and industry news delivered directly to your inbox every month.
+                {blogContent.newsletter.description}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
                 <Input
                   type="email"
-                  placeholder="Enter your email address"
+                  placeholder={blogContent.newsletter.placeholder}
                   className="flex-1 bg-white text-black border-white"
                 />
                 <Button variant="secondary" className="whitespace-nowrap bg-white text-black hover:bg-gray-200">
-                  Subscribe Now
+                  {blogContent.newsletter.buttonText}
                 </Button>
               </div>
               <p className="text-xs text-gray-400 mt-4">
-                Join 2,500+ laboratory professionals who trust our insights
+                Join {blogContent.newsletter.subscriberCount} laboratory professionals who trust our insights
               </p>
             </CardContent>
           </Card>
         </div>
       </div>
-      
-      
     </div>
   );
 };
