@@ -74,8 +74,65 @@ const PDFUploadManager = () => {
 
     try {
       // Create filename following the naming convention
-      const filename = `${fileData.brand}-${fileData.productType}.pdf`;
+      const baseFilename = `${fileData.brand}-${fileData.productType}`;
+      let filename = `${baseFilename}.pdf`;
       
+      // Check if document with this filename already exists
+      const { data: existingDoc, error: checkError } = await supabase
+        .from('pdf_documents')
+        .select('id, filename')
+        .eq('filename', filename)
+        .maybeSingle();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      let documentId;
+      let shouldProcess = true;
+
+      if (existingDoc) {
+        // Document exists, update it instead of creating new one
+        documentId = existingDoc.id;
+        
+        // Update the existing document record
+        const { error: updateError } = await supabase
+          .from('pdf_documents')
+          .update({
+            processing_status: 'pending',
+            processing_error: null,
+            file_size: fileData.file.size,
+            upload_date: new Date().toISOString()
+          })
+          .eq('id', documentId);
+
+        if (updateError) throw updateError;
+
+        toast({
+          title: "Document Updated",
+          description: `Updating existing document: ${filename}`,
+        });
+      } else {
+        // Create new document record
+        const { data: docData, error: dbError } = await supabase
+          .from('pdf_documents')
+          .insert({
+            filename,
+            brand: fileData.brand,
+            product_type: fileData.productType,
+            file_path: `pdfs/${fileData.brand}/${filename}`,
+            file_size: fileData.file.size,
+            processing_status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (dbError) throw dbError;
+        documentId = docData.id;
+      }
+
+      updateFileField(index, 'progress', 25);
+
       // Upload to Supabase Storage
       const filePath = `pdfs/${fileData.brand}/${filename}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -94,29 +151,20 @@ const PDFUploadManager = () => {
         .from('documents')
         .getPublicUrl(filePath);
 
-      // Insert document record
-      const { data: docData, error: dbError } = await supabase
+      // Update document with file URL
+      const { error: urlUpdateError } = await supabase
         .from('pdf_documents')
-        .insert({
-          filename,
-          brand: fileData.brand,
-          product_type: fileData.productType,
-          file_path: filePath,
-          file_url: publicUrl,
-          file_size: fileData.file.size,
-          processing_status: 'pending'
-        })
-        .select()
-        .single();
+        .update({ file_url: publicUrl })
+        .eq('id', documentId);
 
-      if (dbError) throw dbError;
+      if (urlUpdateError) throw urlUpdateError;
 
       updateFileField(index, 'progress', 75);
       updateFileField(index, 'status', 'processing');
 
       // Call processing function
       const { error: processError } = await supabase.functions.invoke('process-pdf', {
-        body: { documentId: docData.id, fileUrl: publicUrl }
+        body: { documentId, fileUrl: publicUrl }
       });
 
       if (processError) {
