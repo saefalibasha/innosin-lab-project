@@ -122,19 +122,19 @@ async function extractPDFContent(pdfUrl: string, document: any) {
       {
         title: `${document.brand} ${document.product_type} Specifications`,
         content: mockContent.specifications,
-        type: 'technical_specification',
+        type: 'specification',
         page: 1
       },
       {
         title: 'Product Features',
         content: mockContent.features,
-        type: 'product_feature',
+        type: 'feature',
         page: 1
       },
       {
         title: 'Installation Guidelines',
         content: mockContent.installation,
-        type: 'installation_guide',
+        type: 'manual',
         page: 2
       }
     ],
@@ -144,6 +144,9 @@ async function extractPDFContent(pdfUrl: string, document: any) {
 }
 
 function generateMockContent(brand: string, productType: string) {
+  // Normalize the product type to handle various formats
+  const normalizedProductType = productType.toLowerCase().replace(/[^a-z0-9]/g, '-');
+  
   const brandSpecs = {
     'broen-lab': {
       'emergency-shower': {
@@ -187,6 +190,13 @@ function generateMockContent(brand: string, productType: string) {
       }
     },
     'hamilton-lab': {
+      'fumehood-1': {
+        specifications: 'Precision laboratory fume hood, automated liquid handling compatibility, high accuracy airflow control.',
+        features: 'Automated operation, precision control, software integration, multiple safety features.',
+        installation: 'Benchtop installation, software setup, calibration procedures, maintenance protocols.',
+        specs: { type: 'Laboratory Hood', channels: 'Variable', accuracy: 'High' },
+        keywords: ['fume hood', 'automation', 'precision instruments', 'laboratory safety']
+      },
       '1': {
         specifications: 'Precision laboratory instruments, automated liquid handling, high accuracy dispensing.',
         features: 'Automated operation, precision control, software integration, multiple channel options.',
@@ -197,13 +207,21 @@ function generateMockContent(brand: string, productType: string) {
     }
   };
 
-  return brandSpecs[brand]?.[productType] || {
-    specifications: `General ${brand} ${productType} specifications`,
-    features: `Standard ${productType} features`,
-    installation: `Standard installation procedures for ${productType}`,
-    specs: { type: productType, brand: brand },
-    keywords: [brand, productType, 'laboratory equipment']
-  };
+  // Try to find exact match first, then fallback to normalized match, then generic
+  let content = brandSpecs[brand]?.[productType] || 
+                brandSpecs[brand]?.[normalizedProductType];
+  
+  if (!content) {
+    content = {
+      specifications: `General ${brand} ${productType} specifications including standard laboratory features and compliance requirements.`,
+      features: `Standard ${productType} features including safety systems, user-friendly operation, and reliable performance.`,
+      installation: `Standard installation procedures for ${productType} including site preparation, utilities connection, and commissioning.`,
+      specs: { type: productType, brand: brand, category: 'Laboratory Equipment' },
+      keywords: [brand, productType, 'laboratory equipment', 'scientific instruments']
+    };
+  }
+
+  return content;
 }
 
 async function storeExtractedContent(supabase: any, documentId: string, content: any, document: any) {
