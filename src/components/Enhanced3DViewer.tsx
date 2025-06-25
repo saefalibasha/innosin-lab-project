@@ -41,7 +41,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           // Improved scaling to ensure model fits well in viewport
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 2.5; // Optimal size for visibility
+          const targetSize = 3; // Slightly larger for better visibility
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
@@ -51,11 +51,20 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Improved camera positioning for better model visibility
-          const distance = targetSize * 2.5;
-          camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
+          // Enhanced camera positioning for better model visibility
+          const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
+          const distance = boundingSphere.radius * 3; // More conservative distance
+          
+          // Position camera at an angle that works well for most models
+          const cameraX = distance * Math.cos(Math.PI / 6) * Math.cos(Math.PI / 4);
+          const cameraY = distance * Math.sin(Math.PI / 6);
+          const cameraZ = distance * Math.cos(Math.PI / 6) * Math.sin(Math.PI / 4);
+          
+          camera.position.set(cameraX, cameraY, cameraZ);
           camera.lookAt(0, 0, 0);
           camera.updateProjectionMatrix();
+          
+          console.log('Camera positioned at:', { x: cameraX, y: cameraY, z: cameraZ, distance });
           
           setIsLoaded(true);
         }
@@ -113,7 +122,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     <div className={`${className} bg-white rounded-lg overflow-hidden border border-gray-100`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [4, 3, 4], fov: 50 }}
+          camera={{ position: [5, 4, 5], fov: 50 }}
           gl={{ 
             antialias: true, 
             alpha: true,
@@ -122,21 +131,22 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           }}
         >
           <Suspense fallback={null}>
-            <Environment preset="studio" environmentIntensity={0.3} />
+            <Environment preset="studio" environmentIntensity={0.4} />
             
-            {/* Optimized lighting setup */}
-            <ambientLight intensity={0.4} />
+            {/* Enhanced lighting setup for better model visibility */}
+            <ambientLight intensity={0.5} />
             <directionalLight 
               position={[5, 8, 5]} 
-              intensity={0.6} 
+              intensity={0.8} 
               castShadow 
               shadow-mapSize={[1024, 1024]}
             />
             <directionalLight 
               position={[-5, 3, -5]} 
-              intensity={0.3} 
+              intensity={0.4} 
             />
-            <pointLight position={[0, 5, 0]} intensity={0.2} />
+            <pointLight position={[0, 5, 0]} intensity={0.3} />
+            <pointLight position={[0, -5, 0]} intensity={0.2} />
             
             <GLBModel modelPath={modelPath} />
             
@@ -147,8 +157,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotate={false}
               maxPolarAngle={Math.PI}
               minPolarAngle={0}
-              minDistance={2}
-              maxDistance={20}
+              minDistance={1}
+              maxDistance={25}
               enableDamping={true}
               dampingFactor={0.05}
               target={[0, 0, 0]}
