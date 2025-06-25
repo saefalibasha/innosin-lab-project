@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
 import CompactToolbar from '@/components/CompactToolbar';
@@ -64,6 +65,77 @@ const FloorPlanner = () => {
   };
 
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
+
+  // Handler functions
+  const handleUndo = () => {
+    undo();
+    toast.success('Undo completed');
+  };
+
+  const handleRedo = () => {
+    redo();
+    toast.success('Redo completed');
+  };
+
+  const handleSelectAll = () => {
+    const allIds = placedProducts.map(p => p.id);
+    setSelectedObjects(allIds);
+    toast.success(`Selected ${allIds.length} objects`);
+  };
+
+  const handleCopy = () => {
+    const selectedProducts = placedProducts.filter(p => selectedObjects.includes(p.id));
+    setCopiedObjects(selectedProducts);
+    toast.success(`Copied ${selectedProducts.length} objects`);
+  };
+
+  const handlePaste = () => {
+    if (copiedObjects.length === 0) {
+      toast.error('Nothing to paste');
+      return;
+    }
+    
+    const newObjects = copiedObjects.map(obj => ({
+      ...obj,
+      id: `${obj.id}-copy-${Date.now()}`,
+      position: { x: obj.position.x + 50, y: obj.position.y + 50 }
+    }));
+    
+    setPlacedProducts([...placedProducts, ...newObjects]);
+    toast.success(`Pasted ${newObjects.length} objects`);
+  };
+
+  const handleDuplicate = () => {
+    const selectedProducts = placedProducts.filter(p => selectedObjects.includes(p.id));
+    if (selectedProducts.length === 0) {
+      toast.error('No objects selected to duplicate');
+      return;
+    }
+    
+    const duplicatedObjects = selectedProducts.map(obj => ({
+      ...obj,
+      id: `${obj.id}-duplicate-${Date.now()}`,
+      position: { x: obj.position.x + 50, y: obj.position.y + 50 }
+    }));
+    
+    setPlacedProducts([...placedProducts, ...duplicatedObjects]);
+    toast.success(`Duplicated ${duplicatedObjects.length} objects`);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedObjects.length === 0) {
+      toast.error('No objects selected to delete');
+      return;
+    }
+    
+    setPlacedProducts(placedProducts.filter(p => !selectedObjects.includes(p.id)));
+    setSelectedObjects([]);
+    toast.success('Selected objects deleted');
+  };
+
+  const handleProductDrag = (product: any) => {
+    console.log('Product drag started:', product.name);
+  };
 
   // Enhanced state persistence with auto-save simulation
   const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null);

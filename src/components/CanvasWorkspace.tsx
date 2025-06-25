@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 import VisualSnapGuides from '@/components/VisualSnapGuides';
@@ -310,12 +309,13 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       
       const newProduct: PlacedProduct = {
         id: `${product.id}-${Date.now()}`,
+        productId: product.id,
         name: product.name,
-        type: product.modelType,
         position: mousePos,
+        rotation: 0,
         dimensions: product.dimensions,
         color: product.color,
-        category: product.category || 'Equipment'
+        scale: 1
       };
       
       setPlacedProducts([...placedProducts, newProduct]);
