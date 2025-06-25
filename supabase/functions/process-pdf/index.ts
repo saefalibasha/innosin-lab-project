@@ -29,6 +29,8 @@ serve(async (req) => {
     const requestBody: ProcessPDFRequest = await req.json()
     documentId = requestBody.documentId;
 
+    console.log(`Starting PDF processing for document ID: ${documentId}`);
+
     // Update processing status
     await supabase
       .from('pdf_documents')
@@ -45,13 +47,16 @@ serve(async (req) => {
       .eq('id', documentId)
       .single()
 
-    if (docError) throw docError
+    if (docError) {
+      console.error('Error fetching document:', docError);
+      throw docError;
+    }
 
     // Download and process PDF
     const pdfUrl = requestBody.fileUrl || document.file_url
     if (!pdfUrl) throw new Error('No file URL available')
 
-    console.log(`Processing PDF: ${document.filename}`)
+    console.log(`Processing PDF: ${document.filename} for brand: ${document.brand}, product: ${document.product_type}`);
 
     // Simulate PDF text extraction (in real implementation, use a PDF parsing library)
     const extractedContent = await extractPDFContent(pdfUrl, document)
@@ -71,7 +76,7 @@ serve(async (req) => {
       })
       .eq('id', documentId)
 
-    console.log(`Successfully processed PDF: ${document.filename}`)
+    console.log(`Successfully processed PDF: ${document.filename}`);
 
     return new Response(
       JSON.stringify({ success: true, message: 'PDF processed successfully' }),
@@ -93,7 +98,7 @@ serve(async (req) => {
           .from('pdf_documents')
           .update({ 
             processing_status: 'error',
-            processing_error: error.message 
+            processing_error: `Processing failed: ${error.message}` 
           })
           .eq('id', documentId)
       } catch (updateError) {
@@ -112,8 +117,7 @@ serve(async (req) => {
 })
 
 async function extractPDFContent(pdfUrl: string, document: any) {
-  // In a real implementation, you would use a PDF parsing library
-  // For now, we'll simulate content extraction based on the document type
+  console.log(`Extracting content for ${document.brand} ${document.product_type}`);
   
   const mockContent = generateMockContent(document.brand, document.product_type);
   
@@ -122,19 +126,19 @@ async function extractPDFContent(pdfUrl: string, document: any) {
       {
         title: `${document.brand} ${document.product_type} Specifications`,
         content: mockContent.specifications,
-        type: 'specification',
+        type: 'specifications',
         page: 1
       },
       {
         title: 'Product Features',
         content: mockContent.features,
-        type: 'feature',
+        type: 'features',
         page: 1
       },
       {
         title: 'Installation Guidelines',
         content: mockContent.installation,
-        type: 'manual',
+        type: 'installation',
         page: 2
       }
     ],
@@ -144,6 +148,8 @@ async function extractPDFContent(pdfUrl: string, document: any) {
 }
 
 function generateMockContent(brand: string, productType: string) {
+  console.log(`Generating mock content for brand: ${brand}, productType: ${productType}`);
+  
   // Normalize the product type to handle various formats
   const normalizedProductType = productType.toLowerCase().replace(/[^a-z0-9]/g, '-');
   
@@ -212,6 +218,7 @@ function generateMockContent(brand: string, productType: string) {
                 brandSpecs[brand]?.[normalizedProductType];
   
   if (!content) {
+    console.log(`No specific content found for ${brand} ${productType}, using generic content`);
     content = {
       specifications: `General ${brand} ${productType} specifications including standard laboratory features and compliance requirements.`,
       features: `Standard ${productType} features including safety systems, user-friendly operation, and reliable performance.`,
@@ -221,10 +228,19 @@ function generateMockContent(brand: string, productType: string) {
     };
   }
 
+  console.log(`Generated content for: ${brand} ${productType}`, { 
+    hasSpecs: !!content.specifications,
+    hasFeatures: !!content.features,
+    hasInstallation: !!content.installation,
+    keywordCount: content.keywords?.length || 0
+  });
+
   return content;
 }
 
 async function storeExtractedContent(supabase: any, documentId: string, content: any, document: any) {
+  console.log(`Storing extracted content for document: ${documentId}`);
+  
   const contentEntries = content.sections.map((section: any) => ({
     document_id: documentId,
     title: section.title,
@@ -236,14 +252,27 @@ async function storeExtractedContent(supabase: any, documentId: string, content:
     confidence_score: 0.85
   }));
 
+  console.log(`Inserting ${contentEntries.length} content entries:`, contentEntries.map(e => ({ 
+    title: e.title, 
+    content_type: e.content_type,
+    content_length: e.content?.length || 0
+  })));
+
   const { error } = await supabase
     .from('pdf_content')
     .insert(contentEntries);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error inserting content entries:', error);
+    throw error;
+  }
+
+  console.log('Successfully stored extracted content');
 }
 
 async function generateKnowledgeBaseEntries(supabase: any, document: any, content: any) {
+  console.log(`Generating knowledge base entry for: ${document.brand} ${document.product_type}`);
+  
   const knowledgeEntry = {
     brand: document.brand,
     product_category: document.product_type,
@@ -256,9 +285,21 @@ async function generateKnowledgeBaseEntries(supabase: any, document: any, conten
     is_active: true
   };
 
+  console.log('Inserting knowledge base entry:', {
+    brand: knowledgeEntry.brand,
+    product_category: knowledgeEntry.product_category,
+    keywords_count: knowledgeEntry.keywords?.length || 0,
+    response_template_length: knowledgeEntry.response_template?.length || 0
+  });
+
   const { error } = await supabase
     .from('knowledge_base_entries')
     .insert(knowledgeEntry);
 
-  if (error) throw error;
+  if (error) {
+    console.error('Error inserting knowledge base entry:', error);
+    throw error;
+  }
+
+  console.log('Successfully generated knowledge base entry');
 }
