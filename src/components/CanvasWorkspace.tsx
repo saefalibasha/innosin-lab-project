@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 import VisualSnapGuides from '@/components/VisualSnapGuides';
@@ -51,46 +52,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
-  const [isDrawingWall, setIsDrawingWall] = useState(false);
-  const [currentWallStart, setCurrentWallStart] = useState<Point | null>(null);
-  const [previewPoint, setPreviewPoint] = useState<Point | null>(null);
-
-  const GRID_SIZE = 20;
-  const SNAP_THRESHOLD = 10;
-
-  // Grid snapping utility
-  const snapToGrid = useCallback((point: Point): Point => {
-    if (!showGrid) return point;
-    
-    return {
-      x: Math.round(point.x / GRID_SIZE) * GRID_SIZE,
-      y: Math.round(point.y / GRID_SIZE) * GRID_SIZE
-    };
-  }, [showGrid, GRID_SIZE]);
-
-  // Line constraint utility for straight lines
-  const constrainToStraightLine = useCallback((start: Point, current: Point): Point => {
-    const dx = Math.abs(current.x - start.x);
-    const dy = Math.abs(current.y - start.y);
-    
-    // If closer to horizontal, make it perfectly horizontal
-    if (dx > dy) {
-      return { x: current.x, y: start.y };
-    } else {
-      // If closer to vertical, make it perfectly vertical
-      return { x: start.x, y: current.y };
-    }
-  }, []);
 
   const drawGrid = useCallback((ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) => {
     if (!showGrid) return;
 
-    const gridSize = GRID_SIZE * currentZoom;
+    const gridSize = 20 * currentZoom;
     ctx.strokeStyle = '#e5e7eb';
     ctx.lineWidth = 1;
-    ctx.globalAlpha = 0.3;
+    ctx.globalAlpha = 0.5;
 
-    // Draw grid lines
     for (let x = 0; x <= canvas.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -105,24 +75,12 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       ctx.stroke();
     }
 
-    // Draw grid dots at intersections for better visibility
-    ctx.fillStyle = '#9ca3af';
-    ctx.globalAlpha = 0.4;
-    for (let x = 0; x <= canvas.width; x += gridSize) {
-      for (let y = 0; y <= canvas.height; y += gridSize) {
-        ctx.beginPath();
-        ctx.arc(x, y, 1, 0, 2 * Math.PI);
-        ctx.fill();
-      }
-    }
-
     ctx.globalAlpha = 1;
-  }, [showGrid, currentZoom, GRID_SIZE]);
+  }, [showGrid, currentZoom]);
 
   const drawWalls = useCallback((ctx: CanvasRenderingContext2D) => {
     if (roomPoints.length < 2) return;
 
-    // Draw completed wall segments
     ctx.strokeStyle = '#374151';
     ctx.lineWidth = 4 * currentZoom;
     ctx.lineCap = 'round';
@@ -141,34 +99,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     
     ctx.stroke();
 
-    // Draw wall points
+    // Draw room points
     roomPoints.forEach((point, index) => {
       ctx.fillStyle = '#3b82f6';
       ctx.beginPath();
       ctx.arc(point.x * currentZoom, point.y * currentZoom, 6 * currentZoom, 0, 2 * Math.PI);
       ctx.fill();
-      
-      // Add point number for clarity
-      ctx.fillStyle = '#ffffff';
-      ctx.font = `${12 * currentZoom}px Arial`;
-      ctx.textAlign = 'center';
-      ctx.fillText((index + 1).toString(), point.x * currentZoom, point.y * currentZoom + 4 * currentZoom);
     });
-
-    // Draw preview line when drawing walls
-    if (isDrawingWall && currentWallStart && previewPoint) {
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2 * currentZoom;
-      ctx.setLineDash([5 * currentZoom, 5 * currentZoom]);
-      
-      ctx.beginPath();
-      ctx.moveTo(currentWallStart.x * currentZoom, currentWallStart.y * currentZoom);
-      ctx.lineTo(previewPoint.x * currentZoom, previewPoint.y * currentZoom);
-      ctx.stroke();
-      
-      ctx.setLineDash([]);
-    }
-  }, [roomPoints, currentZoom, isDrawingWall, currentWallStart, previewPoint]);
+  }, [roomPoints, currentZoom]);
 
   const drawPlacedProducts = useCallback((ctx: CanvasRenderingContext2D) => {
     placedProducts.forEach((product) => {
@@ -296,24 +234,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const mousePos = getMousePosition(e);
-    const snappedPos = snapToGrid(mousePos);
 
-    if (currentTool === 'wall') {
-      if (!isDrawingWall) {
-        // Start drawing a new wall
-        setIsDrawingWall(true);
-        setCurrentWallStart(snappedPos);
-        setRoomPoints([...roomPoints, snappedPos]);
-        toast.success('Wall started - click to add points, double-click to finish');
-      } else {
-        // Continue the wall
-        if (currentWallStart) {
-          const constrainedPos = constrainToStraightLine(currentWallStart, snappedPos);
-          setRoomPoints([...roomPoints, constrainedPos]);
-          setCurrentWallStart(constrainedPos);
-        }
-      }
-    } else if (currentTool === 'select') {
+    if (currentTool === 'select') {
       const clickedProduct = findProductAtPosition(mousePos);
       
       if (clickedProduct) {
@@ -327,22 +249,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       } else {
         setSelectedProductIds([]);
       }
+    } else if (currentTool === 'wall') {
+      setRoomPoints([...roomPoints, mousePos]);
     }
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    const mousePos = getMousePosition(e);
-    const snappedPos = snapToGrid(mousePos);
-
-    // Handle wall drawing preview
-    if (isDrawingWall && currentWallStart) {
-      const constrainedPos = constrainToStraightLine(currentWallStart, snappedPos);
-      setPreviewPoint(constrainedPos);
-    }
-
-    // Handle product dragging
     if (!isDragging || !draggedProduct) return;
 
+    const mousePos = getMousePosition(e);
     const newPosition = {
       x: mousePos.x - dragOffset.x,
       y: mousePos.y - dragOffset.y
@@ -385,15 +300,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     }
   };
 
-  const handleDoubleClick = () => {
-    if (currentTool === 'wall' && isDrawingWall) {
-      setIsDrawingWall(false);
-      setCurrentWallStart(null);
-      setPreviewPoint(null);
-      toast.success('Wall drawing completed');
-    }
-  };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const productData = e.dataTransfer.getData('product');
@@ -401,17 +307,15 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     if (productData && currentTool === 'select') {
       const product = JSON.parse(productData);
       const mousePos = getMousePosition(e as any);
-      const snappedPos = snapToGrid(mousePos);
       
       const newProduct: PlacedProduct = {
         id: `${product.id}-${Date.now()}`,
-        productId: product.id,
         name: product.name,
-        position: snappedPos,
-        rotation: 0,
+        type: product.modelType,
+        position: mousePos,
         dimensions: product.dimensions,
         color: product.color,
-        scale: 1
+        category: product.category || 'Equipment'
       };
       
       setPlacedProducts([...placedProducts, newProduct]);
@@ -431,7 +335,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onDoubleClick={handleDoubleClick}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       />
