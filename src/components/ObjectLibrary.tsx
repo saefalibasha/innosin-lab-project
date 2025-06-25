@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Product3DViewer from '@/components/Product3DViewer';
 
-type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select';
+type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
 
 interface ObjectLibraryProps {
   onProductDrag: (product: any) => void;
@@ -146,70 +146,80 @@ const ObjectLibrary: React.FC<ObjectLibraryProps> = ({ onProductDrag, currentToo
   ];
 
   const handleDragStart = (e: React.DragEvent, product: any) => {
-    e.dataTransfer.setData('product', JSON.stringify(product));
+    e.dataTransfer.setData('product', JSON.stringify({
+      ...product,
+      category: categories.find(cat => cat.items.some(item => item.id === product.id))?.name || 'Uncategorized'
+    }));
     onProductDrag(product);
   };
 
   const isInteractionDisabled = currentTool !== 'select' && currentTool !== 'wall';
 
   return (
-    <div className="space-y-4 max-h-96 overflow-y-auto">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Object Library</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isInteractionDisabled && (
-            <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-              Switch to Select tool to place objects
-            </div>
-          )}
-          
-          <div className="space-y-4">
-            {categories.map(category => (
-              <div key={category.name}>
-                <h4 className="font-medium text-sm text-gray-700 mb-2">{category.name}</h4>
-                <div className="space-y-2">
-                  {category.items.map(item => (
-                    <div
-                      key={item.id}
-                      draggable={!isInteractionDisabled}
-                      onDragStart={(e) => handleDragStart(e, item)}
-                      className={`border rounded-lg transition-colors ${
-                        isInteractionDisabled 
-                          ? 'opacity-50 cursor-not-allowed' 
-                          : 'cursor-move hover:bg-gray-50 hover:border-gray-300'
-                      }`}
-                    >
-                      <div className="p-2">
-                        <Product3DViewer
-                          productType={item.modelType as any}
-                          color={item.color}
-                          className="w-full h-24 mb-2"
-                        />
-                        <div className="flex items-center space-x-2 mb-1">
+    <Card className="w-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm">Object Library</CardTitle>
+        <div className="text-xs text-gray-500">
+          Drag objects to the canvas
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isInteractionDisabled && (
+          <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
+            Switch to Select tool to place objects
+          </div>
+        )}
+        
+        <div className="space-y-3 max-h-64 overflow-y-auto">
+          {categories.map(category => (
+            <div key={category.name}>
+              <h4 className="font-medium text-xs text-gray-700 mb-2 uppercase tracking-wide">
+                {category.name}
+              </h4>
+              <div className="grid grid-cols-1 gap-2">
+                {category.items.map(item => (
+                  <div
+                    key={item.id}
+                    draggable={!isInteractionDisabled}
+                    onDragStart={(e) => handleDragStart(e, item)}
+                    className={`border rounded-lg transition-all duration-200 ${
+                      isInteractionDisabled 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'cursor-move hover:bg-gray-50 hover:border-gray-300 hover:shadow-sm'
+                    }`}
+                  >
+                    <div className="p-2">
+                      <Product3DViewer
+                        productType={item.modelType as any}
+                        color={item.color}
+                        className="w-full h-16 mb-2 rounded"
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
                           <div 
-                            className="w-3 h-3 rounded"
+                            className="w-2 h-2 rounded-full border"
                             style={{ backgroundColor: item.color }}
                           />
-                          <span className="font-medium text-sm">{item.name}</span>
+                          <span className="font-medium text-xs truncate">{item.name}</span>
                         </div>
-                        <p className="text-xs text-gray-600">
-                          {item.dimensions.length}×{item.dimensions.width}×{item.dimensions.height}m
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs text-gray-500">
+                          {item.dimensions.length} × {item.dimensions.width}m
                         </p>
-                        <Badge variant="outline" className="text-xs mt-1">
+                        <Badge variant="secondary" className="text-xs h-4 px-1">
                           {category.name}
                         </Badge>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
