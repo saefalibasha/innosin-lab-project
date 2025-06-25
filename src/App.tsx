@@ -18,7 +18,8 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import HeroNavigation from "./components/HeroNavigation";
+import { TubelightNavBarDemo } from "./components/ui/demo";
+import HeaderBrand from "./components/HeaderBrand";
 import EnhancedLiveChat from "./components/EnhancedLiveChat";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
@@ -35,8 +36,9 @@ const App = () => (
           <BrowserRouter>
             <ScrollToTop />
             <div className="min-h-screen flex flex-col">
-              <HeroNavigation />
-              <main className="flex-1">
+              <HeaderBrand />
+              <TubelightNavBarDemo />
+              <main className="flex-1 pt-16">
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/products" element={<ProductCatalog />} />
