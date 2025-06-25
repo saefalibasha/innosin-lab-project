@@ -14,8 +14,10 @@ import FloorPlanner from "./pages/FloorPlanner";
 import RFQCart from "./pages/RFQCart";
 import AdminPDF from "./pages/AdminPDF";
 import ChatbotAdmin from "./pages/ChatbotAdmin";
+import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
+import { AuthProvider } from "./contexts/AuthContext";
 import HeroNavigation from "./components/HeroNavigation";
 import EnhancedLiveChat from "./components/EnhancedLiveChat";
 import Footer from "./components/Footer";
@@ -26,33 +28,36 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <RFQProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <div className="min-h-screen flex flex-col">
-            <HeroNavigation />
-            <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/products" element={<ProductCatalog />} />
-                <Route path="/products/:productId" element={<ProductDetail />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/floor-planner" element={<FloorPlanner />} />
-                <Route path="/rfq-cart" element={<RFQCart />} />
-                <Route path="/admin/pdf" element={<AdminPDF />} />
-                <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-            <EnhancedLiveChat />
-          </div>
-        </BrowserRouter>
-      </RFQProvider>
+      <AuthProvider>
+        <RFQProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollToTop />
+            <div className="min-h-screen flex flex-col">
+              <HeroNavigation />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/products" element={<ProductCatalog />} />
+                  <Route path="/products/:productId" element={<ProductDetail />} />
+                  <Route path="/about" element={<About />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/blog" element={<Blog />} />
+                  <Route path="/floor-planner" element={<FloorPlanner />} />
+                  <Route path="/rfq-cart" element={<RFQCart />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/admin/pdf" element={<AdminPDF />} />
+                  <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
+              <EnhancedLiveChat />
+            </div>
+          </BrowserRouter>
+        </RFQProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
