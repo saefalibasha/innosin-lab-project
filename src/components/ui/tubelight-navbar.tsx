@@ -43,7 +43,7 @@ export function NavBar({ items, className }: NavBarProps) {
 
   return (
     <div className={cn("flex items-center", className)}>
-      <div className="flex items-center gap-2 bg-white/10 border border-sea/20 backdrop-blur-lg py-1 px-2 rounded-full shadow-sm min-w-fit">
+      <div className="flex items-center gap-2 bg-white/10 border border-sea/20 backdrop-blur-lg py-1.5 px-3 rounded-full shadow-sm min-w-fit">
         {items.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.name
@@ -54,13 +54,13 @@ export function NavBar({ items, className }: NavBarProps) {
               to={item.url}
               onClick={() => setActiveTab(item.name)}
               className={cn(
-                "relative cursor-pointer text-sm font-semibold px-3 py-1.5 rounded-full transition-colors whitespace-nowrap",
+                "relative cursor-pointer text-sm font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap",
                 "text-foreground/80 hover:text-sea",
                 isActive && "text-white",
               )}
             >
               <div className="flex items-center space-x-1">
-                <span className="text-xs">{item.name}</span>
+                <span className="text-sm">{item.name}</span>
               </div>
               {isActive && (
                 <motion.div
