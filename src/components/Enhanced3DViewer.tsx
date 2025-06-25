@@ -17,61 +17,70 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   
   console.log('Attempting to load GLB model from:', modelPath);
   
-  try {
-    const { scene } = useGLTF(modelPath);
-    console.log('Successfully loaded GLB model:', modelPath);
-    
-    // Improved auto-center and scale the model
-    useEffect(() => {
-      if (scene && groupRef.current && !isLoaded) {
-        // Create a copy of the scene to avoid modifying the original
-        const modelClone = scene.clone();
+  // useGLTF must be called at the top level, not in try-catch
+  const { scene, error } = useGLTF(modelPath, true);
+  
+  // Handle loading success
+  useEffect(() => {
+    if (scene && groupRef.current && !isLoaded) {
+      console.log('Successfully loaded GLB model:', modelPath);
+      
+      // Create a copy of the scene to avoid modifying the original
+      const modelClone = scene.clone();
+      
+      // Calculate bounding box with more precision
+      const box = new THREE.Box3().setFromObject(modelClone);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      
+      // Only proceed if we have valid dimensions
+      if (size.length() > 0) {
+        // Center the model at origin
+        modelClone.position.set(-center.x, -center.y, -center.z);
         
-        // Calculate bounding box with more precision
-        const box = new THREE.Box3().setFromObject(modelClone);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
+        // Improved scaling to ensure model fits well in viewport
+        const maxDimension = Math.max(size.x, size.y, size.z);
+        const targetSize = 2.5; // Optimal size for visibility
+        const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+        modelClone.scale.setScalar(scale);
         
-        // Only proceed if we have valid dimensions
-        if (size.length() > 0) {
-          // Center the model at origin
-          modelClone.position.set(-center.x, -center.y, -center.z);
-          
-          // Improved scaling to ensure model fits well in viewport
-          const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 2.5; // Optimal size for visibility
-          const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-          modelClone.scale.setScalar(scale);
-          
-          // Clear previous children and add the centered/scaled model
-          groupRef.current.clear();
-          groupRef.current.add(modelClone);
-          
-          console.log('Model centered and scaled:', { center, size, scale, maxDimension });
-          
-          // Improved camera positioning for better model visibility
-          const distance = targetSize * 2.5;
-          camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
-          camera.lookAt(0, 0, 0);
-          camera.updateProjectionMatrix();
-          
-          setIsLoaded(true);
-        }
+        // Clear previous children and add the centered/scaled model
+        groupRef.current.clear();
+        groupRef.current.add(modelClone);
+        
+        console.log('Model centered and scaled:', { center, size, scale, maxDimension });
+        
+        // Improved camera positioning for better model visibility
+        const distance = targetSize * 2.5;
+        camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
+        camera.lookAt(0, 0, 0);
+        camera.updateProjectionMatrix();
+        
+        setIsLoaded(true);
       }
-    }, [scene, camera, isLoaded]);
-    
-    return (
-      <group 
-        ref={groupRef}
-        scale={hovered ? 1.02 : 1}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-      />
-    );
-  } catch (error) {
-    console.log(`Failed to load GLB model: ${modelPath}. Error:`, error);
-    return null; // Return nothing instead of purple cube
+    }
+  }, [scene, camera, isLoaded, modelPath]);
+  
+  // Handle loading errors
+  useEffect(() => {
+    if (error) {
+      console.error(`Failed to load GLB model: ${modelPath}. Error:`, error);
+    }
+  }, [error, modelPath]);
+  
+  // Return null if there's an error or no scene
+  if (error || !scene) {
+    return null;
   }
+  
+  return (
+    <group 
+      ref={groupRef}
+      scale={hovered ? 1.02 : 1}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    />
+  );
 };
 
 const LoadingFallback: React.FC = () => (
@@ -139,7 +148,6 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={true}
               enableRotate={true}
               autoRotate={false}
-              // Remove polar angle restrictions for full 360-degree rotation
               maxPolarAngle={Math.PI}
               minPolarAngle={0}
               minDistance={2}
@@ -147,7 +155,6 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enableDamping={true}
               dampingFactor={0.05}
               target={[0, 0, 0]}
-              // Allow full azimuthal rotation
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
             />
