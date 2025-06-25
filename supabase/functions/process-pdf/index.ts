@@ -31,7 +31,7 @@ serve(async (req) => {
 
     console.log(`Starting PDF processing for document ID: ${documentId}`);
 
-    // Update processing status to 'processing' (valid status)
+    // Update processing status to 'processing'
     const { error: statusUpdateError } = await supabase
       .from('pdf_documents')
       .update({ 
@@ -76,11 +76,11 @@ serve(async (req) => {
     // Generate knowledge base entries
     await generateKnowledgeBaseEntries(supabase, document, extractedContent)
 
-    // Update document status to 'complete' (valid status)
+    // Update document status to 'completed'
     const { error: completeUpdateError } = await supabase
       .from('pdf_documents')
       .update({ 
-        processing_status: 'complete',
+        processing_status: 'completed',
         last_processed: new Date().toISOString()
       })
       .eq('id', documentId)
@@ -111,7 +111,7 @@ serve(async (req) => {
         const { error: errorUpdateError } = await supabase
           .from('pdf_documents')
           .update({ 
-            processing_status: 'error',
+            processing_status: 'failed',
             processing_error: `Processing failed: ${error.message}` 
           })
           .eq('id', documentId)
@@ -144,19 +144,19 @@ async function extractPDFContent(pdfUrl: string, document: any) {
       {
         title: `${document.brand} ${document.product_type} Specifications`,
         content: mockContent.specifications,
-        type: 'specification', // Using singular form that's likely allowed
+        type: 'technical_specifications',
         page: 1
       },
       {
         title: 'Product Features',
         content: mockContent.features,
-        type: 'feature', // Using singular form that's likely allowed
+        type: 'product_features',
         page: 1
       },
       {
         title: 'Installation Guidelines',
         content: mockContent.installation,
-        type: 'manual', // Using a more generic term that's likely allowed
+        type: 'installation_guide',
         page: 2
       }
     ],
@@ -263,7 +263,7 @@ async function storeExtractedContent(supabase: any, documentId: string, content:
     document_id: documentId,
     title: section.title,
     content: section.content,
-    content_type: section.type, // Using the corrected content_type values
+    content_type: section.type,
     section: section.title,
     page_number: section.page,
     keywords: content.keywords,
