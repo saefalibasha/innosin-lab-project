@@ -202,6 +202,198 @@ export type Database = {
           },
         ]
       }
+      knowledge_base_entries: {
+        Row: {
+          brand: string
+          confidence_threshold: number | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          keywords: string[]
+          priority: number | null
+          product_category: string
+          response_template: string
+          source_content_ids: string[] | null
+          source_document_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand: string
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keywords: string[]
+          priority?: number | null
+          product_category: string
+          response_template: string
+          source_content_ids?: string[] | null
+          source_document_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand?: string
+          confidence_threshold?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[]
+          priority?: number | null
+          product_category?: string
+          response_template?: string
+          source_content_ids?: string[] | null
+          source_document_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_entries_source_document_id_fkey"
+            columns: ["source_document_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_content: {
+        Row: {
+          confidence_score: number | null
+          content: string
+          content_type: string
+          created_at: string
+          document_id: string
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          page_number: number | null
+          section: string | null
+          title: string | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          content: string
+          content_type: string
+          created_at?: string
+          document_id: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          page_number?: number | null
+          section?: string | null
+          title?: string | null
+        }
+        Update: {
+          confidence_score?: number | null
+          content?: string
+          content_type?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          page_number?: number | null
+          section?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_content_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_documents: {
+        Row: {
+          brand: string
+          created_at: string
+          file_path: string | null
+          file_size: number | null
+          filename: string
+          id: string
+          last_processed: string | null
+          processing_status: string
+          product_type: string
+          updated_at: string
+          upload_date: string
+        }
+        Insert: {
+          brand: string
+          created_at?: string
+          file_path?: string | null
+          file_size?: number | null
+          filename: string
+          id?: string
+          last_processed?: string | null
+          processing_status?: string
+          product_type: string
+          updated_at?: string
+          upload_date?: string
+        }
+        Update: {
+          brand?: string
+          created_at?: string
+          file_path?: string | null
+          file_size?: number | null
+          filename?: string
+          id?: string
+          last_processed?: string | null
+          processing_status?: string
+          product_type?: string
+          updated_at?: string
+          upload_date?: string
+        }
+        Relationships: []
+      }
+      product_specifications: {
+        Row: {
+          category: string | null
+          created_at: string
+          document_id: string
+          id: string
+          is_key_feature: boolean | null
+          product_id: string | null
+          specification_name: string
+          specification_type: string
+          specification_value: string
+          unit: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          document_id: string
+          id?: string
+          is_key_feature?: boolean | null
+          product_id?: string | null
+          specification_name: string
+          specification_type: string
+          specification_value: string
+          unit?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          is_key_feature?: boolean | null
+          product_id?: string | null
+          specification_name?: string
+          specification_type?: string
+          specification_value?: string
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_specifications_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

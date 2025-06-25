@@ -1,56 +1,52 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { RFQProvider } from "@/contexts/RFQContext";
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
-import ProductCatalog from "./pages/ProductCatalog";
-import ProductDetail from "./pages/ProductDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Blog from "./pages/Blog";
-import FloorPlanner from "./pages/FloorPlanner";
+import ProductCatalog from "./pages/ProductCatalog";
+import ProductDetail from "./pages/ProductDetail";
 import RFQCart from "./pages/RFQCart";
+import FloorPlanner from "./pages/FloorPlanner";
+import Blog from "./pages/Blog";
+import Catalog from "./pages/Catalog";
 import NotFound from "./pages/NotFound";
-import { RFQProvider } from "./contexts/RFQContext";
-import HeroNavigation from "./components/HeroNavigation";
-import EnhancedLiveChat from "./components/EnhancedLiveChat";
-import Footer from "./components/Footer";
-import ScrollToTop from "./components/ScrollToTop";
+import ChatbotAdmin from "./pages/ChatbotAdmin";
+import PDFAdmin from "./pages/PDFAdmin";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
       <RFQProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <div className="min-h-screen flex flex-col">
-            <HeroNavigation />
-            <main className="flex-1">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/products" element={<ProductCatalog />} />
-                <Route path="/products/:productId" element={<ProductDetail />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/floor-planner" element={<FloorPlanner />} />
-                <Route path="/rfq-cart" element={<RFQCart />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </main>
-            <Footer />
-            <EnhancedLiveChat />
-          </div>
-        </BrowserRouter>
+        <TooltipProvider>
+          <Toaster />
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/products" element={<ProductCatalog />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/rfq-cart" element={<RFQCart />} />
+              <Route path="/floor-planner" element={<FloorPlanner />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/catalog" element={<Catalog />} />
+              <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
+              <Route path="/admin/pdf" element={<PDFAdmin />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </RFQProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+}
 
 export default App;
