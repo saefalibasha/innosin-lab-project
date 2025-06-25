@@ -1,12 +1,14 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Bot, FileText, RefreshCw } from 'lucide-react';
+import { Search, Bot, FileText, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface KnowledgeEntry {
   id: string;
@@ -24,6 +26,8 @@ interface KnowledgeEntry {
 
 const KnowledgeBaseManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const { data: knowledgeEntries, isLoading, refetch } = useQuery({
     queryKey: ['knowledge-entries', searchTerm],
@@ -41,6 +45,80 @@ const KnowledgeBaseManager = () => {
       const { data, error } = await query;
       if (error) throw error;
       return data as KnowledgeEntry[];
+    },
+  });
+
+  const deleteEntryMutation = useMutation({
+    mutationFn: async (entryId: string) => {
+      const { error } = await supabase
+        .from('knowledge_base_entries')
+        .delete()
+        .eq('id', entryId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Knowledge base entry deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['knowledge-entries'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to delete knowledge base entry",
+        variant: "destructive",
+      });
+      console.error('Delete error:', error);
+    },
+  });
+
+  const clearAllDataMutation = useMutation({
+    mutationFn: async () => {
+      // Delete all knowledge base entries
+      const { error: kbError } = await supabase
+        .from('knowledge_base_entries')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all entries
+
+      if (kbError) throw kbError;
+
+      // Delete all PDF content
+      const { error: contentError } = await supabase
+        .from('pdf_content')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all entries
+
+      if (contentError) throw contentError;
+
+      // Reset all documents to pending status
+      const { error: docError } = await supabase
+        .from('pdf_documents')
+        .update({ 
+          processing_status: 'pending',
+          processing_error: null,
+          last_processed: null
+        })
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all entries
+
+      if (docError) throw docError;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "All knowledge base entries and processing history cleared",
+      });
+      queryClient.invalidateQueries({ queryKey: ['knowledge-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['pdf-documents'] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to clear data",
+        variant: "destructive",
+      });
+      console.error('Clear all error:', error);
     },
   });
 
@@ -81,14 +159,53 @@ const KnowledgeBaseManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Knowledge Base Management</h2>
-        <Button onClick={regenerateKnowledgeBase} variant="outline">
-          <Bot className="h-4 w-4 mr-2" />
-          Regenerate from PDFs
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={regenerateKnowledgeBase} variant="outline">
+            <Bot className="h-4 w-4 mr-2" />
+            Regenerate from PDFs
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All Data
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  Clear All Data
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete:
+                  <ul className="list-disc list-inside mt-2 space-y-1">
+                    <li>All knowledge base entries</li>
+                    <li>All PDF content extractions</li>
+                    <li>All processing history</li>
+                  </ul>
+                  <p className="mt-2 font-semibold text-red-700">
+                    This action cannot be undone. PDF files will remain but will need to be reprocessed.
+                  </p>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => clearAllDataMutation.mutate()}
+                  className="bg-red-600 hover:bg-red-700"
+                  disabled={clearAllDataMutation.isPending}
+                >
+                  {clearAllDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Search knowledge entries..."
           value={searchTerm}
@@ -132,13 +249,40 @@ const KnowledgeBaseManager = () => {
                       </Badge>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    variant={entry.is_active ? "destructive" : "default"}
-                    onClick={() => toggleEntryStatus(entry.id, entry.is_active)}
-                  >
-                    {entry.is_active ? "Deactivate" : "Activate"}
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant={entry.is_active ? "destructive" : "default"}
+                      onClick={() => toggleEntryStatus(entry.id, entry.is_active)}
+                    >
+                      {entry.is_active ? "Deactivate" : "Activate"}
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Knowledge Entry</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this knowledge base entry for {entry.brand} - {entry.product_category}? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => deleteEntryMutation.mutate(entry.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={deleteEntryMutation.isPending}
+                          >
+                            {deleteEntryMutation.isPending ? 'Deleting...' : 'Delete'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
