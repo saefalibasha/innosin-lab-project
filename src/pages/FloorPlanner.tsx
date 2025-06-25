@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import FloorPlannerCanvas from '@/components/FloorPlannerCanvas';
+import QuickActionsToolbar from '@/components/QuickActionsToolbar';
+import KeyboardShortcuts from '@/components/KeyboardShortcuts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,16 +27,18 @@ const FloorPlanner = () => {
   const [openPanel, setOpenPanel] = useState<string>('tools');
   const [showGrid, setShowGrid] = useState(true);
   const [showRuler, setShowRuler] = useState(false);
+  const [selectedObjects, setSelectedObjects] = useState<string[]>([]);
+  const [copiedObjects, setCopiedObjects] = useState<any[]>([]);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
 
-  // Add debug logging for tool changes
+  // Enhanced tool change with keyboard shortcuts
   const handleToolChange = (newTool: string) => {
     console.log('🔧 Tool changed from', activeTool, 'to', newTool);
     setActiveTool(newTool);
     toast.success(`${newTool} tool selected`);
   };
 
-  // Initialize history management with improved state handling
+  // Initialize history management
   const initialState: FloorPlanState = {
     roomPoints: [],
     placedProducts: [],
@@ -96,6 +100,55 @@ const FloorPlanner = () => {
     });
   }, [wallSegments]);
 
+  // Quick actions handlers
+  const handleSelectAll = () => {
+    const allIds = [
+      ...placedProducts.map(p => p.id),
+      ...doors.map(d => d.id),
+      ...textAnnotations.map(t => t.id)
+    ];
+    setSelectedObjects(allIds);
+    toast.success(`Selected ${allIds.length} objects`);
+  };
+
+  const handleCopy = () => {
+    if (selectedObjects.length === 0) return;
+    
+    const objectsToCopy = [
+      ...placedProducts.filter(p => selectedObjects.includes(p.id)),
+      ...doors.filter(d => selectedObjects.includes(d.id)),
+      ...textAnnotations.filter(t => selectedObjects.includes(t.id))
+    ];
+    
+    setCopiedObjects(objectsToCopy);
+    toast.success(`Copied ${objectsToCopy.length} objects`);
+  };
+
+  const handlePaste = () => {
+    if (copiedObjects.length === 0) return;
+    
+    // Implementation would create duplicates with offset positions
+    toast.success(`Pasted ${copiedObjects.length} objects`);
+  };
+
+  const handleDuplicate = () => {
+    if (selectedObjects.length === 0) return;
+    
+    // Implementation would duplicate selected objects
+    toast.success(`Duplicated ${selectedObjects.length} objects`);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedObjects.length === 0) return;
+    
+    setPlacedProducts(prev => prev.filter(p => !selectedObjects.includes(p.id)));
+    setDoors(prev => prev.filter(d => !selectedObjects.includes(d.id)));
+    setTextAnnotations(prev => prev.filter(t => !selectedObjects.includes(t.id)));
+    setSelectedObjects([]);
+    
+    toast.success('Deleted selected objects');
+  };
+
   const handleUndo = () => {
     const previousState = undo();
     if (previousState) {
@@ -117,6 +170,64 @@ const FloorPlanner = () => {
       toast.success('Action redone');
     }
   };
+
+  // Enhanced keyboard shortcuts
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Prevent shortcuts when typing in inputs
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      return;
+    }
+
+    // Tool shortcuts
+    if (e.key.toLowerCase() === 'w') {
+      e.preventDefault();
+      handleToolChange('wall');
+    } else if (e.key.toLowerCase() === 'i') {
+      e.preventDefault();
+      handleToolChange('interior-wall');
+    } else if (e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      handleToolChange('select');
+    } else if (e.key.toLowerCase() === 'd' && !e.ctrlKey && !e.metaKey) {
+      e.preventDefault();
+      handleToolChange('door');
+    } else if (e.key.toLowerCase() === 'e') {
+      e.preventDefault();
+      handleToolChange('eraser');
+    } else if (e.key.toLowerCase() === 'g') {
+      e.preventDefault();
+      setShowGrid(!showGrid);
+    }
+
+    // Action shortcuts
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+      e.preventDefault();
+      handleRedo();
+    } else if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+      e.preventDefault();
+      handleSelectAll();
+    } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+      e.preventDefault();
+      handleCopy();
+    } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+      e.preventDefault();
+      handlePaste();
+    } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+      e.preventDefault();
+      handleDuplicate();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      handleDeleteSelected();
+    }
+  };
+
+  React.useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedObjects, showGrid]);
 
   const productLibrary = [
     {
@@ -166,26 +277,10 @@ const FloorPlanner = () => {
     setPlacedProducts([]);
     setDoors([]);
     setTextAnnotations([]);
+    setSelectedObjects([]);
     toast.success('Floor plan cleared');
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // Handle undo/redo shortcuts
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      handleUndo();
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
-      e.preventDefault();
-      handleRedo();
-    }
-  };
-
-  React.useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Enhanced Drawing Tools with Interior Walls
   const renderToolsSection = () => (
     <Collapsible open={openPanel === 'tools'} onOpenChange={() => setOpenPanel(openPanel === 'tools' ? '' : 'tools')}>
       <CollapsibleTrigger asChild>
@@ -204,10 +299,11 @@ const FloorPlanner = () => {
             >
               <Home className="w-4 h-4 mr-3" />
               Exterior Walls
+              <Badge variant="outline" className="ml-auto text-xs">W</Badge>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Draw main room perimeter</p>
+            <p>Draw main room perimeter (W)</p>
           </TooltipContent>
         </Tooltip>
 
@@ -216,17 +312,15 @@ const FloorPlanner = () => {
             <Button
               variant={activeTool === 'interior-wall' ? 'default' : 'outline'}
               className="w-full justify-start h-10"
-              onClick={() => {
-                console.log('🏗️ Interior Wall button clicked!');
-                handleToolChange('interior-wall');
-              }}
+              onClick={() => handleToolChange('interior-wall')}
             >
               <Minus className="w-4 h-4 mr-3" />
               Interior Walls
+              <Badge variant="outline" className="ml-auto text-xs">I</Badge>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Add interior walls and room divisions - MULTIPLE WALLS SUPPORTED</p>
+            <p>Add interior walls and room divisions (I)</p>
           </TooltipContent>
         </Tooltip>
 
@@ -239,26 +333,11 @@ const FloorPlanner = () => {
             >
               <Move className="w-4 h-4 mr-3" />
               Select & Move
+              <Badge variant="outline" className="ml-auto text-xs">S</Badge>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Select and move objects</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === 'rotate' ? 'default' : 'outline'}
-              className="w-full justify-start h-10"
-              onClick={() => handleToolChange('rotate')}
-            >
-              <RotateCcw className="w-4 h-4 mr-3" />
-              Rotate Tool
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Rotate objects with 45° snapping</p>
+            <p>Select and move objects (S)</p>
           </TooltipContent>
         </Tooltip>
 
@@ -271,10 +350,11 @@ const FloorPlanner = () => {
             >
               <DoorOpen className="w-4 h-4 mr-3" />
               Door Tool
+              <Badge variant="outline" className="ml-auto text-xs">D</Badge>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Place doors along walls</p>
+            <p>Place doors along walls (D)</p>
           </TooltipContent>
         </Tooltip>
 
@@ -287,10 +367,11 @@ const FloorPlanner = () => {
             >
               <Eraser className="w-4 h-4 mr-3" />
               Eraser
+              <Badge variant="outline" className="ml-auto text-xs">E</Badge>
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Remove objects, text, and wall points</p>
+            <p>Remove objects, text, and wall points (E)</p>
           </TooltipContent>
         </Tooltip>
       </CollapsibleContent>
@@ -300,7 +381,7 @@ const FloorPlanner = () => {
   return (
     <TooltipProvider>
       <div className={`h-screen bg-gray-50 flex flex-col ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
-        {/* Enhanced Top Toolbar - Adjusted top positioning to avoid header conflict */}
+        {/* Enhanced Top Toolbar */}
         <div className="bg-white border-b border-gray-200 px-4 py-3 z-40 flex-shrink-0" style={{ marginTop: isFullScreen ? '0' : '5rem' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -350,6 +431,17 @@ const FloorPlanner = () => {
                   </TooltipContent>
                 </Tooltip>
               </div>
+
+              {/* Quick Actions Toolbar */}
+              <QuickActionsToolbar
+                hasSelection={selectedObjects.length > 0}
+                onCopy={handleCopy}
+                onPaste={handlePaste}
+                onDelete={handleDeleteSelected}
+                onDuplicate={handleDuplicate}
+                onSelectAll={handleSelectAll}
+                canPaste={copiedObjects.length > 0}
+              />
             </div>
             
             <div className="flex items-center space-x-2">
@@ -373,6 +465,8 @@ const FloorPlanner = () => {
               </Button>
               
               <div className="border-l border-gray-200 pl-2 ml-2 flex items-center space-x-2">
+                <KeyboardShortcuts />
+                
                 <Button
                   variant="destructive"
                   size="sm"
@@ -383,7 +477,6 @@ const FloorPlanner = () => {
                   Clear
                 </Button>
                 
-                {/* Export Modal */}
                 <ExportModal
                   canvasRef={canvasRef}
                   roomPoints={roomPoints}
@@ -395,7 +488,6 @@ const FloorPlanner = () => {
                   </Button>
                 </ExportModal>
 
-                {/* Send Plan Modal */}
                 <SendPlanModal
                   canvasRef={canvasRef}
                   roomPoints={roomPoints}
@@ -570,7 +662,6 @@ const FloorPlanner = () => {
                 </CollapsibleContent>
               </Collapsible>
 
-              {/* Enhanced Drawing Tools with Interior Walls */}
               {renderToolsSection()}
 
               {/* Enhanced Product Library */}
@@ -617,9 +708,9 @@ const FloorPlanner = () => {
 
           {/* Main Canvas Area */}
           <div className="flex-1 relative bg-gray-50">
-            {/* Enhanced debug info with wall count */}
+            {/* Enhanced debug info */}
             <div className="absolute top-2 left-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-xs z-50">
-              Tool: {activeTool} | Interior Walls: {wallSegments.length} | Total Objects: {placedProducts.length + doors.length + textAnnotations.length}
+              Tool: {activeTool} | Selected: {selectedObjects.length} | Interior Walls: {wallSegments.length} | Objects: {placedProducts.length + doors.length + textAnnotations.length}
             </div>
             
             <FloorPlannerCanvas

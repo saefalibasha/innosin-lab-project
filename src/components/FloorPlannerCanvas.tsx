@@ -1,6 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
+import FloorPlannerViewControls from './FloorPlannerViewControls';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
@@ -40,8 +41,27 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   onClearAll,
   canvasRef
 }) => {
+  const [currentZoom, setCurrentZoom] = useState(1);
+
+  const handleZoomIn = () => {
+    setCurrentZoom(prev => Math.min(prev * 1.2, 3));
+  };
+
+  const handleZoomOut = () => {
+    setCurrentZoom(prev => Math.max(prev / 1.2, 0.1));
+  };
+
+  const handleFitToView = () => {
+    // This would calculate optimal zoom based on content
+    setCurrentZoom(1);
+  };
+
+  const handleResetView = () => {
+    setCurrentZoom(1);
+  };
+
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full relative">
       <CanvasWorkspace
         roomPoints={roomPoints}
         setRoomPoints={setRoomPoints}
@@ -59,6 +79,14 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         showRuler={showRuler}
         onClearAll={onClearAll}
         canvasRef={canvasRef}
+      />
+      
+      <FloorPlannerViewControls
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+        onFitToView={handleFitToView}
+        onResetView={handleResetView}
+        currentZoom={currentZoom}
       />
     </div>
   );

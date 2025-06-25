@@ -34,6 +34,7 @@ const HeaderBrand = () => {
         </div>
         
         <div className="flex items-center space-x-4">
+          <AuthButton />
           <Link to="/rfq-cart">
             <Button variant="outline" size="sm" className="relative">
               <ShoppingCart className="h-4 w-4" />
@@ -46,7 +47,6 @@ const HeaderBrand = () => {
               )}
             </Button>
           </Link>
-          <AuthButton />
         </div>
       </div>
     </div>
