@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { MessageCircle, Send, X, Minimize2, Bot, User, Clock } from 'lucide-reac
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
-import { useDynamicKnowledgeBase } from '@/hooks/useDynamicKnowledgeBase';
 
 interface ChatMessage {
   id: string;
@@ -16,12 +14,11 @@ interface ChatMessage {
   sender: 'user' | 'bot';
   timestamp: Date;
   confidence?: number;
-  source?: string;
 }
 
 interface UserSession {
   sessionId: string;
-  databaseId?: string;
+  databaseId?: string; // The UUID from the database
   email?: string;
   name?: string;
   company?: string;
@@ -49,18 +46,59 @@ const EnhancedLiveChat = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const { createContact, syncConversation, loading } = useHubSpotIntegration();
-  const { findBestResponse, getProductSpecifications, loading: knowledgeLoading } = useDynamicKnowledgeBase();
 
   const quickResponses = [
-    'Broen-Lab emergency showers',
-    'Oriental Giken fume hoods',
-    'Hamilton laboratory furniture', 
-    'Product specifications',
-    'Installation services',
+    'Product catalog & specifications',
     'Request detailed quote',
-    'Technical support',
-    'Compliance certifications'
+    'Technical support & troubleshooting',
+    'Professional installation services',
+    'Pricing & financing options',
+    'Warranty & maintenance',
+    'Custom laboratory design',
+    'Compliance & certifications'
   ];
+
+  // Enhanced knowledge base for more comprehensive responses
+  const knowledgeBase = {
+    products: {
+      'eyewash': {
+        keywords: ['eyewash', 'eye wash', 'emergency', 'safety shower', 'bl-hes', 'bl-ebs'],
+        response: 'Our emergency eyewash stations include bench-mounted (BL-HES-BENCH-001), wall-mounted (BL-HES-WALL-002), and recessed models (BL-EBS-RECESSED-003). They meet ANSI Z358.1 standards and provide 15 minutes of continuous flow. Would you like specific technical specifications, installation requirements, or pricing information?'
+      },
+      'fume': {
+        keywords: ['fume', 'hood', 'cupboard', 'ventilation', 'extraction'],
+        response: 'Our fume cupboards offer superior containment and energy efficiency. We have various models including walk-in fume hoods, bench-top units, and specialized chemistry fume cupboards. Key features include variable air volume controls, safety monitoring systems, and ASHRAE 110 compliance. What type of laboratory work will you be conducting?'
+      },
+      'safety': {
+        keywords: ['safety', 'shower', 'emergency', 'decontamination', 'bl-bs'],
+        response: 'Our safety shower systems (BL-BS-WALL-006) provide full-body emergency decontamination with ANSI Z358.1 compliance. Features include thermostatic mixing valves, high-visibility signage, and corrosion-resistant construction. Would you like information about installation requirements, maintenance procedures, or compliance documentation?'
+      },
+      'furniture': {
+        keywords: ['furniture', 'bench', 'cabinet', 'storage', 'lab furniture'],
+        response: 'Our laboratory furniture includes modular benching systems, chemical storage cabinets, mobile carts, and specialized workstations. All furniture meets laboratory safety standards with chemical-resistant surfaces and ergonomic design. What type of laboratory setup are you planning?'
+      }
+    },
+    services: {
+      'installation': {
+        keywords: ['install', 'installation', 'setup', 'commissioning'],
+        response: 'We provide comprehensive installation services including site surveys, project management, certified installation by trained technicians, testing and commissioning, and staff training. Our installation team ensures compliance with all safety standards and local regulations. Would you like to schedule a site survey or discuss project timeline?'
+      },
+      'maintenance': {
+        keywords: ['maintenance', 'service', 'repair', 'calibration'],
+        response: 'Our maintenance services include preventive maintenance programs, emergency repairs, calibration services, and compliance testing. We offer annual service contracts with priority response times and genuine parts guarantee. What equipment do you need serviced?'
+      },
+      'design': {
+        keywords: ['design', 'planning', 'layout', 'consultation'],
+        response: 'Our laboratory design team provides comprehensive planning services including workflow analysis, space optimization, utility planning, and regulatory compliance consulting. We use 3D modeling and can provide virtual walkthroughs. Are you planning a new laboratory or renovating an existing facility?'
+      }
+    },
+    compliance: {
+      'standards': {
+        keywords: ['standard', 'compliance', 'regulation', 'ansi', 'osha', 'certification'],
+        response: 'Our products comply with major safety standards including ANSI Z358.1 for emergency equipment, ASHRAE 110 for fume hoods, OSHA regulations, and local building codes. We provide all necessary documentation and certificates. Which specific compliance requirements do you need to meet?'
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen && !session) {
@@ -76,6 +114,7 @@ const EnhancedLiveChat = () => {
     const sessionId = `session_${Date.now()}`;
     
     try {
+      // Create session in database first
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
@@ -102,22 +141,22 @@ const EnhancedLiveChat = () => {
       
       setSession(newSession);
       
+      // Enhanced welcome message with more comprehensive introduction
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
-        message: `Hello! I'm your AI assistant for Innosin Lab, powered by our comprehensive product catalogs. I have detailed knowledge from our brand-specific documentation including:
+        message: `Hello! I'm your AI assistant for Innosin Lab, your trusted partner in laboratory safety and equipment solutions. I can help you with:
 
-• **Broen-Lab**: Emergency showers, water faucets, and safety equipment
-• **Oriental Giken**: Advanced fume hood systems (Type 1 & Type 2)
-• **Hamilton Laboratory**: Professional laboratory furniture and storage
-• **Innosin Lab**: Complete laboratory solutions catalog
+• Product information & technical specifications
+• Custom quotes & pricing
+• Installation & maintenance services  
+• Safety compliance & certifications
+• Laboratory design & planning consultation
+• Technical support & troubleshooting
 
-I can provide specific product information, technical specifications, installation guidance, compliance details, and help with product selection. My knowledge is continuously updated from our latest PDF catalogs.
-
-How can I assist you with your laboratory equipment needs today?`,
+I have extensive knowledge about our emergency eyewash stations, fume cupboards, safety showers, and laboratory furniture. How can I assist you today?`,
         sender: 'bot',
         timestamp: new Date(),
-        confidence: 1.0,
-        source: 'Dynamic Knowledge Base'
+        confidence: 1.0
       };
       
       setMessages([welcomeMessage]);
@@ -155,27 +194,63 @@ How can I assist you with your laboratory equipment needs today?`,
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const findBestResponse = (userMessage: string): { response: string; confidence: number } => {
+    const lowerMessage = userMessage.toLowerCase();
+    let bestMatch = { response: '', confidence: 0.3 };
+
+    // Check all knowledge base categories
+    Object.values(knowledgeBase).forEach(category => {
+      Object.values(category).forEach(item => {
+        const matchCount = item.keywords.filter(keyword => 
+          lowerMessage.includes(keyword.toLowerCase())
+        ).length;
+        
+        if (matchCount > 0) {
+          const confidence = Math.min(0.95, 0.6 + (matchCount * 0.15));
+          if (confidence > bestMatch.confidence) {
+            bestMatch = { response: item.response, confidence };
+          }
+        }
+      });
+    });
+
+    // Enhanced fallback responses based on intent
+    if (bestMatch.confidence < 0.5) {
+      if (lowerMessage.includes('help') || lowerMessage.includes('assistance')) {
+        bestMatch = {
+          response: 'I\'m here to help! I can provide detailed information about our laboratory equipment, safety systems, installation services, maintenance programs, and compliance requirements. What specific area would you like to explore?',
+          confidence: 0.7
+        };
+      } else if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('quote')) {
+        bestMatch = {
+          response: 'I\'d be happy to help you with pricing information. To provide accurate quotes, I\'ll need to understand your specific requirements including product types, quantities, installation needs, and timeline. Could you please share more details about your project?',
+          confidence: 0.8
+        };
+      } else if (lowerMessage.includes('contact') || lowerMessage.includes('speak') || lowerMessage.includes('call')) {
+        bestMatch = {
+          response: 'I can connect you with our expert team! Please share your contact information so our specialists can reach out to discuss your specific laboratory needs and provide personalized assistance.',
+          confidence: 0.75
+        };
+      } else {
+        bestMatch = {
+          response: 'Thank you for your question. As a laboratory equipment specialist, I can provide detailed information about emergency eyewash stations, fume cupboards, safety showers, laboratory furniture, installation services, and compliance requirements. Could you please tell me more about what you\'re looking for?',
+          confidence: 0.4
+        };
+      }
+    }
+
+    return bestMatch;
+  };
+
   const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly longer delay for more natural feel
     
-    // Use dynamic knowledge base for response
-    const { response: responseText, confidence, source = 'AI Assistant' } = await findBestResponse(userMessage);
+    const { response: responseText, confidence } = findBestResponse(userMessage);
     
+    // Check if user is asking for quote or sales related info and no contact info exists
     const lowerMessage = userMessage.toLowerCase();
     let finalResponse = responseText;
     
-    // Check if user is asking for specifications and try to get them
-    if (lowerMessage.includes('spec') || lowerMessage.includes('technical')) {
-      const specs = await getProductSpecifications(userMessage);
-      if (specs.length > 0) {
-        finalResponse += '\n\n**Key Specifications:**\n';
-        specs.slice(0, 3).forEach(spec => {
-          finalResponse += `• ${spec.specification_name}: ${spec.specification_value}${spec.unit ? ' ' + spec.unit : ''}\n`;
-        });
-      }
-    }
-    
-    // Trigger contact form for quotes/pricing
     if ((lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('purchase')) && !session?.hubspotContactId) {
       finalResponse += '\n\nTo provide you with accurate pricing and personalized service, I\'d like to collect your contact information. Would you like to share your details so our team can assist you better?';
       setTimeout(() => setShowContactForm(true), 2000);
@@ -186,8 +261,7 @@ How can I assist you with your laboratory equipment needs today?`,
       message: finalResponse,
       sender: 'bot',
       timestamp: new Date(),
-      confidence,
-      source
+      confidence
     };
   };
 
@@ -205,8 +279,10 @@ How can I assist you with your laboratory equipment needs today?`,
     setMessage('');
     setIsTyping(true);
     
+    // Save user message
     await saveMessage(userMessage, session.databaseId);
     
+    // Update session
     setSession({
       ...session,
       lastActivity: new Date(),
@@ -217,8 +293,10 @@ How can I assist you with your laboratory equipment needs today?`,
       const aiResponse = await simulateAIResponse(message);
       setMessages(prev => [...prev, aiResponse]);
       
+      // Save AI response
       await saveMessage(aiResponse, session.databaseId);
       
+      // Update session with bot response
       setSession({
         ...session,
         lastActivity: new Date(),
@@ -229,11 +307,10 @@ How can I assist you with your laboratory equipment needs today?`,
       console.error('Error getting AI response:', error);
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
-        message: 'I apologize, but I\'m having trouble accessing our product knowledge base right now. Please try again, or ask about our Broen-Lab, Oriental Giken, Hamilton Laboratory, or Innosin Lab products.',
+        message: 'I apologize, but I\'m having trouble processing your request right now. Please try again, or feel free to ask about our laboratory equipment, safety systems, or services.',
         sender: 'bot',
         timestamp: new Date(),
-        confidence: 0.5,
-        source: 'Error Handler'
+        confidence: 0.5
       };
       setMessages(prev => [...prev, errorMessage]);
       
@@ -254,6 +331,7 @@ How can I assist you with your laboratory equipment needs today?`,
     try {
       console.log('Creating contact with session ID:', session.sessionId);
       
+      // Create HubSpot contact
       const result = await createContact({
         sessionId: session.sessionId,
         email: contactInfo.email,
@@ -263,6 +341,7 @@ How can I assist you with your laboratory equipment needs today?`,
       });
 
       if (result?.contactId) {
+        // Update session with contact info and HubSpot ID
         const updatedSession = {
           ...session,
           ...contactInfo,
@@ -270,6 +349,7 @@ How can I assist you with your laboratory equipment needs today?`,
         };
         setSession(updatedSession);
 
+        // Update database
         await supabase
           .from('chat_sessions')
           .update({
@@ -281,6 +361,7 @@ How can I assist you with your laboratory equipment needs today?`,
           })
           .eq('id', session.databaseId);
 
+        // Sync conversation to HubSpot
         console.log('Syncing conversation for session:', session.sessionId, 'contact:', result.contactId);
         await syncConversation({
           sessionId: session.sessionId,
@@ -293,8 +374,7 @@ How can I assist you with your laboratory equipment needs today?`,
           id: `bot_${Date.now()}`,
           message: `Thank you ${contactInfo.name}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
           sender: 'bot',
-          timestamp: new Date(),
-          source: 'Contact Management'
+          timestamp: new Date()
         };
         
         setMessages(prev => [...prev, confirmMessage]);
@@ -343,12 +423,12 @@ How can I assist you with your laboratory equipment needs today?`,
             <Bot className="w-5 h-5" />
             <div>
               <CardTitle className="text-sm font-medium">AI Chat</CardTitle>
-              <p className="text-xs opacity-90">Dynamic Catalog Expert</p>
+              <p className="text-xs opacity-90">Innosin Lab Expert Support</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Badge variant="secondary" className="bg-green-500 text-white text-xs">
-              {knowledgeLoading ? 'Loading' : 'Online'}
+              Online
             </Badge>
             <Button
               variant="ghost"
@@ -441,18 +521,11 @@ How can I assist you with your laboratory equipment needs today?`,
                       }`}
                     >
                       <div className="whitespace-pre-line">{msg.message}</div>
-                      <div className={`text-xs mt-1 opacity-70 flex items-center justify-between ${
+                      <div className={`text-xs mt-1 opacity-70 flex items-center ${
                         msg.sender === 'user' ? 'text-white/70' : 'text-sea/70'
                       }`}>
-                        <div className="flex items-center">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                        {msg.source && msg.sender === 'bot' && (
-                          <div className="text-xs opacity-60">
-                            {msg.source}
-                          </div>
-                        )}
+                        <Clock className="w-3 h-3 mr-1" />
+                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                     {msg.sender === 'user' && (
@@ -506,7 +579,7 @@ How can I assist you with your laboratory equipment needs today?`,
                 <Input
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Ask about our catalog products..."
+                  placeholder="Type your message..."
                   className="flex-1 text-sm border-sea/30 focus:border-sea"
                   onKeyPress={handleKeyPress}
                   disabled={isTyping}
