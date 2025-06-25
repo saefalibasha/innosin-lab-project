@@ -18,13 +18,16 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  let documentId: string | undefined;
+
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { documentId, fileUrl, reprocess }: ProcessPDFRequest = await req.json()
+    const requestBody: ProcessPDFRequest = await req.json()
+    documentId = requestBody.documentId;
 
     // Update processing status
     await supabase
@@ -45,7 +48,7 @@ serve(async (req) => {
     if (docError) throw docError
 
     // Download and process PDF
-    const pdfUrl = fileUrl || document.file_url
+    const pdfUrl = requestBody.fileUrl || document.file_url
     if (!pdfUrl) throw new Error('No file URL available')
 
     console.log(`Processing PDF: ${document.filename}`)
@@ -79,9 +82,8 @@ serve(async (req) => {
     console.error('PDF processing error:', error)
 
     // Update error status if documentId is available
-    if (req.body) {
+    if (documentId) {
       try {
-        const { documentId } = await req.json()
         const supabase = createClient(
           Deno.env.get('SUPABASE_URL') ?? '',
           Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -120,19 +122,19 @@ async function extractPDFContent(pdfUrl: string, document: any) {
       {
         title: `${document.brand} ${document.product_type} Specifications`,
         content: mockContent.specifications,
-        type: 'specifications',
+        type: 'technical_specification',
         page: 1
       },
       {
         title: 'Product Features',
         content: mockContent.features,
-        type: 'features',
+        type: 'product_feature',
         page: 1
       },
       {
         title: 'Installation Guidelines',
         content: mockContent.installation,
-        type: 'installation',
+        type: 'installation_guide',
         page: 2
       }
     ],
