@@ -144,19 +144,19 @@ async function extractPDFContent(pdfUrl: string, document: any) {
       {
         title: `${document.brand} ${document.product_type} Specifications`,
         content: mockContent.specifications,
-        type: 'technical_specifications',
+        type: 'specification',
         page: 1
       },
       {
         title: 'Product Features',
         content: mockContent.features,
-        type: 'product_features',
+        type: 'feature',
         page: 1
       },
       {
         title: 'Installation Guidelines',
         content: mockContent.installation,
-        type: 'installation_guide',
+        type: 'technical_detail',
         page: 2
       }
     ],
