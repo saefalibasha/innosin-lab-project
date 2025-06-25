@@ -45,13 +45,8 @@ export function NavBar({ items, className }: NavBarProps) {
   }, [])
 
   return (
-    <div
-      className={cn(
-        "fixed top-6 left-1/2 -translate-x-1/2 z-50",
-        className,
-      )}
-    >
-      <div className="flex items-center gap-4 bg-white/10 border border-sea/20 backdrop-blur-lg py-1 px-2 rounded-full shadow-lg min-w-fit">
+    <div className={cn("flex items-center", className)}>
+      <div className="flex items-center gap-2 bg-white/10 border border-sea/20 backdrop-blur-lg py-1 px-2 rounded-full shadow-sm min-w-fit">
         {items.map((item) => {
           const Icon = item.icon
           const isActive = activeTab === item.name
@@ -63,25 +58,14 @@ export function NavBar({ items, className }: NavBarProps) {
               to={item.url}
               onClick={() => setActiveTab(item.name)}
               className={cn(
-                "relative cursor-pointer text-sm font-semibold px-4 py-2 rounded-full transition-colors whitespace-nowrap",
+                "relative cursor-pointer text-sm font-semibold px-3 py-1.5 rounded-full transition-colors whitespace-nowrap",
                 "text-foreground/80 hover:text-sea",
                 isActive && "text-white",
               )}
             >
-              <div className="flex items-center space-x-2">
-                <span className="hidden md:inline">{item.name}</span>
-                <span className="md:hidden relative">
-                  <Icon size={18} strokeWidth={2.5} />
-                  {isRFQCart && itemCount > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-4 w-4 flex items-center justify-center p-0 text-xs bg-sea hover:bg-sea-dark border-0"
-                    >
-                      {itemCount}
-                    </Badge>
-                  )}
-                </span>
-                {isRFQCart && itemCount > 0 && !isMobile && (
+              <div className="flex items-center space-x-1">
+                <span className="text-xs">{item.name}</span>
+                {isRFQCart && itemCount > 0 && (
                   <Badge 
                     variant="destructive" 
                     className="h-4 w-4 flex items-center justify-center p-0 text-xs bg-sea hover:bg-sea-dark border-0"
@@ -101,10 +85,10 @@ export function NavBar({ items, className }: NavBarProps) {
                     damping: 30,
                   }}
                 >
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-sea-light rounded-t-full">
-                    <div className="absolute w-12 h-6 bg-sea/30 rounded-full blur-md -top-2 -left-2" />
-                    <div className="absolute w-8 h-6 bg-sea/20 rounded-full blur-md -top-1" />
-                    <div className="absolute w-4 h-4 bg-sea/20 rounded-full blur-sm top-0 left-2" />
+                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-6 h-0.5 bg-sea-light rounded-t-full">
+                    <div className="absolute w-8 h-4 bg-sea/30 rounded-full blur-md -top-1 -left-1" />
+                    <div className="absolute w-6 h-4 bg-sea/20 rounded-full blur-md -top-0.5" />
+                    <div className="absolute w-3 h-3 bg-sea/20 rounded-full blur-sm top-0 left-1.5" />
                   </div>
                 </motion.div>
               )}

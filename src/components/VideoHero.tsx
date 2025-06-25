@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play } from 'lucide-react';
@@ -22,6 +23,9 @@ const VideoHero = () => {
 
   return (
     <>
+      {/* White region at top for header */}
+      <div className="h-8 bg-white"></div>
+      
       <section className="relative overflow-hidden">
         {/* Hero Carousel with Enhanced Design */}
         <div className="px-4 sm:px-6 lg:px-8 pt-6">
