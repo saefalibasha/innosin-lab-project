@@ -26,6 +26,7 @@ export interface PlacedProduct {
   dimensions: { length: number; width: number; height: number };
   color: string;
   scale?: number;
+  category?: string;
 }
 
 export interface Door {

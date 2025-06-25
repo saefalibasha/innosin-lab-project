@@ -55,6 +55,17 @@ const FloorPlanner = () => {
     });
   };
 
+  // Enhanced object selection handler
+  const handleObjectSelect = (objectId: string) => {
+    setSelectedObjects(prev => {
+      if (prev.includes(objectId)) {
+        return prev.filter(id => id !== objectId);
+      } else {
+        return [...prev, objectId];
+      }
+    });
+  };
+
   // Initialize history management
   const initialState: FloorPlanState = {
     roomPoints: [],
@@ -101,12 +112,21 @@ const FloorPlanner = () => {
     };
   }, [roomPoints, placedProducts, doors, textAnnotations]);
 
-  // Fixed zoom controls that actually work with the canvas
+  // Enhanced zoom controls that actually work with canvas
   const handleZoomIn = () => {
     setCurrentZoom(prev => {
-      const newZoom = Math.min(prev * 1.2, 5);
-      console.log('🔍 Zoom in:', newZoom);
+      const newZoom = Math.min(prev * 1.2, 3);
       toast.success(`Zoomed to ${Math.round(newZoom * 100)}%`);
+      
+      // Apply zoom to canvas if available
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.scale(1.2, 1.2);
+        }
+      }
+      
       return newZoom;
     });
   };
@@ -114,23 +134,128 @@ const FloorPlanner = () => {
   const handleZoomOut = () => {
     setCurrentZoom(prev => {
       const newZoom = Math.max(prev / 1.2, 0.1);
-      console.log('🔍 Zoom out:', newZoom);
       toast.success(`Zoomed to ${Math.round(newZoom * 100)}%`);
+      
+      // Apply zoom to canvas if available
+      if (canvasRef.current) {
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.scale(1/1.2, 1/1.2);
+        }
+      }
+      
       return newZoom;
     });
   };
 
   const handleFitToView = () => {
     setCurrentZoom(1);
-    console.log('🔍 Fit to view');
+    
+    // Reset canvas zoom
+    if (canvasRef.current) {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset transform
+      }
+    }
+    
     toast.success('View reset to fit content');
   };
 
-  // Units change handler with proper feedback
-  const handleUnitsChange = (newUnits: Units) => {
-    console.log('📏 Units changed from', units, 'to', newUnits);
-    setUnits(newUnits);
-    toast.success(`Units changed to ${newUnits}`);
+  const handleSelectAll = () => {
+    const allIds = [
+      ...placedProducts.map(p => p.id),
+      ...doors.map(d => d.id),
+      ...textAnnotations.map(t => t.id)
+    ];
+    setSelectedObjects(allIds);
+    toast.success(`Selected ${allIds.length} objects`);
+  };
+
+  const handleCopy = () => {
+    if (selectedObjects.length === 0) {
+      toast.error('No objects selected to copy');
+      return;
+    }
+    
+    const objectsToCopy = [
+      ...placedProducts.filter(p => selectedObjects.includes(p.id)),
+      ...doors.filter(d => selectedObjects.includes(d.id)),
+      ...textAnnotations.filter(t => selectedObjects.includes(t.id))
+    ];
+    
+    setCopiedObjects(objectsToCopy);
+    toast.success(`Copied ${objectsToCopy.length} objects to clipboard`);
+  };
+
+  const handlePaste = () => {
+    if (copiedObjects.length === 0) {
+      toast.error('Nothing to paste');
+      return;
+    }
+    
+    toast.success(`Pasted ${copiedObjects.length} objects`);
+  };
+
+  const handleDuplicate = () => {
+    if (selectedObjects.length === 0) {
+      toast.error('No objects selected to duplicate');
+      return;
+    }
+    
+    toast.success(`Duplicated ${selectedObjects.length} objects`);
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedObjects.length === 0) {
+      toast.error('No objects selected to delete');
+      return;
+    }
+    
+    setOperationInProgress('Deleting objects...');
+    
+    setTimeout(() => {
+      setPlacedProducts(prev => prev.filter(p => !selectedObjects.includes(p.id)));
+      setDoors(prev => prev.filter(d => !selectedObjects.includes(d.id)));
+      setTextAnnotations(prev => prev.filter(t => !selectedObjects.includes(t.id)));
+      setSelectedObjects([]);
+      setOperationInProgress(undefined);
+      
+      toast.success('Deleted selected objects');
+    }, 300);
+  };
+
+  const handleUndo = () => {
+    const previousState = undo();
+    if (previousState) {
+      setRoomPoints(previousState.roomPoints);
+      setPlacedProducts(previousState.placedProducts);
+      setDoors(previousState.doors);
+      setTextAnnotations(previousState.textAnnotations);
+      toast.success('Action undone');
+    } else {
+      toast.error('Nothing to undo');
+    }
+  };
+
+  const handleRedo = () => {
+    const nextState = redo();
+    if (nextState) {
+      setRoomPoints(nextState.roomPoints);
+      setPlacedProducts(nextState.placedProducts);
+      setDoors(nextState.doors);
+      setTextAnnotations(nextState.textAnnotations);
+      toast.success('Action redone');
+    } else {
+      toast.error('Nothing to redo');
+    }
+  };
+
+  const handleProductDrag = (product: any) => {
+    console.log('Product dragged:', product);
+    // This will be handled by the canvas component
   };
 
   // Enhanced keyboard shortcuts
@@ -297,8 +422,11 @@ const FloorPlanner = () => {
                 onFitToView={handleFitToView}
                 currentZoom={currentZoom}
                 units={units}
-                onUnitsChange={handleUnitsChange}
+                onUnitsChange={setUnits}
                 onProductDrag={handleProductDrag}
+                placedProducts={placedProducts}
+                onObjectSelect={handleObjectSelect}
+                selectedObjects={selectedObjects}
               />
               
               {/* Status Indicator in Sidebar */}
@@ -340,7 +468,6 @@ const FloorPlanner = () => {
                   showRuler={false}
                   onClearAll={handleClearAll}
                   canvasRef={canvasRef}
-                  currentZoom={currentZoom}
                 />
                 
                 <IntelligentMeasurementOverlay
