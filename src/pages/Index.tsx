@@ -15,6 +15,7 @@ import VideoHero from "@/components/VideoHero";
 import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import ShopTheLook from "@/components/ShopTheLook";
 import LabTransformCTA from "@/components/LabTransformCTA";
+import EnhancedLiveChat from "@/components/EnhancedLiveChat";
 import { brandCollections } from "@/data/brandCollections";
 import { homePageContent } from "@/data/homePageContent";
 
@@ -103,6 +104,9 @@ const Index = () => {
 
       {/* Ready to Transform Your Laboratory CTA Section */}
       <LabTransformCTA />
+
+      {/* Enhanced AI Chat */}
+      <EnhancedLiveChat />
     </div>
   );
 };
