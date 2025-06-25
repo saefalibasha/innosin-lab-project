@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/carousel";
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import Navigation from "@/components/Navigation";
 import VideoHero from "@/components/VideoHero";
 import BeforeAfterComparison from "@/components/BeforeAfterComparison";
 import ShopTheLook from "@/components/ShopTheLook";
@@ -23,9 +22,6 @@ import { homePageContent } from "@/data/homePageContent";
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation Header */}
-      <Navigation />
-      
       {/* Video Hero Section */}
       <VideoHero />
 
