@@ -8,6 +8,7 @@ import { ShoppingCart, ExternalLink, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
+import { shopTheLookContent } from '@/data/shopTheLookContent';
 
 interface Product {
   id: string;
@@ -30,71 +31,23 @@ const ShopTheLook = () => {
   const { addItem } = useRFQ();
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
 
-  const products: Product[] = [
-    {
-      id: 'fh-001',
-      name: 'Chemical Fume Hood - Standard',
-      category: 'Broen-Lab',
-      dimensions: '1500 × 750 × 2400mm',
-      description: 'Standard chemical fume hood with variable air volume control and energy-efficient design.',
-      specifications: ['VAV Control', 'Energy Efficient', 'ASHRAE 110 Compliant'],
-      image: '/placeholder.svg'
-    },
-    {
-      id: 'lb-001',
-      name: 'Epoxy Resin Lab Bench',
-      category: 'Hamilton Laboratory Solutions',
-      dimensions: '3000 × 750 × 850mm',
-      description: 'Chemical-resistant epoxy resin lab bench with integrated utilities.',
-      specifications: ['Chemical Resistant', 'Integrated Utilities', 'Modular Design'],
-      image: '/placeholder.svg'
-    },
-    {
-      id: 'ew-001',
-      name: 'Emergency Eye Wash Station',
-      category: 'Oriental Giken Inc.',
-      dimensions: '600 × 400 × 1200mm',
-      description: 'ANSI Z358.1 compliant emergency eye wash station with stainless steel construction.',
-      specifications: ['ANSI Z358.1', 'Stainless Steel', 'Hands-Free Operation'],
-      image: '/placeholder.svg'
-    },
-    {
-      id: 'sc-001',
-      name: 'Chemical Storage Cabinet',
-      category: 'Innosin Lab',
-      dimensions: '1200 × 600 × 1800mm',
-      description: 'Fire-resistant chemical storage cabinet with ventilation system.',
-      specifications: ['Fire Resistant', 'Ventilated', 'Multiple Shelves'],
-      image: '/placeholder.svg'
-    }
-  ];
+  // Convert content data to component format
+  const products: Product[] = shopTheLookContent.hotspots.map(hotspot => ({
+    id: hotspot.id.toString(),
+    name: hotspot.title,
+    category: hotspot.category,
+    dimensions: 'Contact for specifications',
+    description: hotspot.description,
+    specifications: ['Premium Quality', 'Professional Grade', 'Industry Standard'],
+    image: hotspot.image
+  }));
 
-  const hotspots: Hotspot[] = [
-    {
-      id: 'fume-hood',
-      x: 15,
-      y: 25,
-      product: products[0]
-    },
-    {
-      id: 'lab-bench',
-      x: 65,
-      y: 70,
-      product: products[1]
-    },
-    {
-      id: 'eye-wash',
-      x: 85,
-      y: 35,
-      product: products[2]
-    },
-    {
-      id: 'storage',
-      x: 25,
-      y: 80,
-      product: products[3]
-    }
-  ];
+  const hotspots: Hotspot[] = shopTheLookContent.hotspots.map(hotspot => ({
+    id: hotspot.id.toString(),
+    x: hotspot.x,
+    y: hotspot.y,
+    product: products.find(p => p.id === hotspot.id.toString())!
+  }));
 
   const handleAddToQuote = (product: Product) => {
     addItem({
@@ -111,11 +64,10 @@ const ShopTheLook = () => {
     <div className="max-w-6xl mx-auto">
       <div className="text-center mb-8">
         <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
-          Build This <span className="text-sea">Lab</span>
+          {shopTheLookContent.section.title} <span className="text-sea">{shopTheLookContent.section.titleHighlight}</span>
         </h2>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
-          Explore our past projects fitted with premium laboratory furniture and equipment. 
-          Click on the interactive points to discover the products used in this real laboratory setup.
+          {shopTheLookContent.section.description}
         </p>
       </div>
       
@@ -124,8 +76,8 @@ const ShopTheLook = () => {
           <div className="relative">
             {/* Laboratory Background Image */}
             <img
-              src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=1200&h=700&fit=crop"
-              alt="Modern Laboratory Setup"
+              src={shopTheLookContent.section.backgroundImage}
+              alt={shopTheLookContent.section.backgroundAlt}
               className="w-full h-[700px] object-cover"
             />
             
@@ -157,7 +109,7 @@ const ShopTheLook = () => {
                             {hotspot.product.name}
                           </h3>
                           <p className="text-sm text-gray-600 mb-2">
-                            <span className="font-medium">Dimensions:</span> {hotspot.product.dimensions}
+                            <span className="font-medium">Price:</span> {shopTheLookContent.hotspots.find(h => h.id.toString() === hotspot.id)?.price || 'Contact for pricing'}
                           </p>
                         </div>
                         
@@ -191,7 +143,7 @@ const ShopTheLook = () => {
                             size="sm"
                             className="flex-1"
                           >
-                            <Link to={`/products?category=${encodeURIComponent(hotspot.product.category)}`}>
+                            <Link to={shopTheLookContent.hotspots.find(h => h.id.toString() === hotspot.id)?.productLink || '/products'}>
                               <ExternalLink className="w-4 h-4 mr-2" />
                               View Details
                             </Link>

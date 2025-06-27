@@ -35,8 +35,8 @@ const BeforeAfterComparison = () => {
       id: 2,
       title: 'NTU Exxon Mobil',
       location: 'Nanyang Technological University',
-      beforeImage: '/before-after-projects/hospital-pathology-before.jpg',
-      afterImage: '/before-after-projects/hospital-pathology-after.jpg',
+      beforeImage: '/before-after-projects/hospital-pathology-after.jpg',
+      afterImage: '/before-after-projects/hospital-pathology-before.jpg',
       description: 'We completed addition and alteration works at the ExxonMobil laboratory, Academic Building North, Nanyang Technological University. The scope included the design, fabrication, and installation of modular laboratory furniture systems with 20mm thick graphite epoxy Hychem worktops, powder-coated steel frames, integrated service fixtures, custom storage solutions, and specialized enclosures. The upgrade ensures enhanced durability, chemical resistance, and full compliance with laboratory safety standards.',
       completionDate: '2025-06-26',
       projectType: 'Medical Facility'
@@ -183,33 +183,16 @@ const BeforeAfterComparison = () => {
                   </div>
                 </div>
 
-                {/* Labels show what you'll see if you drag towards that side */}
-                {currentProject === 1 ? (
-                  <>
-                    {sliderPosition >= 50 && (
-                      <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                        BEFORE
-                      </div>
-                    )}
-                    {sliderPosition < 50 && (
-                      <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                        AFTER
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {sliderPosition >= 50 && (
-                      <div className="absolute top-6 left-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                        AFTER
-                      </div>
-                    )}
-                    {sliderPosition < 50 && (
-                      <div className="absolute top-6 right-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                        BEFORE
-                      </div>
-                    )}
-                  </>
+                {/* Labels - Fixed for all slides to show consistent behavior */}
+                {sliderPosition >= 30 && (
+                  <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                    BEFORE
+                  </div>
+                )}
+                {sliderPosition <= 70 && (
+                  <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                    AFTER
+                  </div>
                 )}
               </div>
             </div>
