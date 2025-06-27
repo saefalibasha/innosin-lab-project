@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,8 +25,8 @@ const BeforeAfterComparison = () => {
       id: 1,
       title: 'NUS Chemistry Laboratory Renovation',
       location: 'National University of Singapore',
-      beforeImage: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&h=500&fit=crop',
-      afterImage: 'https://images.unsplash.com/photo-1567427018141-0584cfcbf1b8?w=800&h=500&fit=crop',
+      beforeImage: '/before-after-projects/university-lab-before.jpg',
+      afterImage: '/before-after-projects/university-lab-after.jpg',
       description: 'Complete transformation of outdated chemistry lab with new fume hoods, safety equipment, and modern lab benches creating a state-of-the-art research environment.',
       completionDate: '2024-01-15',
       projectType: 'University Laboratory'
@@ -36,8 +35,8 @@ const BeforeAfterComparison = () => {
       id: 2,
       title: 'SGH Pathology Laboratory',
       location: 'Singapore General Hospital',
-      beforeImage: 'https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=800&h=500&fit=crop',
-      afterImage: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=500&fit=crop',
+      beforeImage: '/before-after-projects/hospital-pathology-before.jpg',
+      afterImage: '/before-after-projects/hospital-pathology-after.jpg',
       description: 'Modern pathology lab setup with biosafety cabinets, specialized storage solutions, and advanced diagnostic equipment infrastructure.',
       completionDate: '2023-12-10',
       projectType: 'Medical Facility'
@@ -46,8 +45,8 @@ const BeforeAfterComparison = () => {
       id: 3,
       title: 'Biotech Research Facility',
       location: 'Biopolis, Singapore',
-      beforeImage: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=500&fit=crop',
-      afterImage: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=800&h=500&fit=crop',
+      beforeImage: '/before-after-projects/biotech-research-before.jpg',
+      afterImage: '/before-after-projects/biotech-research-after.jpg',
       description: 'State-of-the-art biotech research facility with cleanroom standards, advanced equipment, and precision environmental controls.',
       completionDate: '2023-11-20',
       projectType: 'Research Institute'
