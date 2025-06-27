@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -150,11 +151,11 @@ const BeforeAfterComparison = () => {
                   draggable={false}
                 />
                 
-                {/* After Image (clipped from right) */}
+                {/* After Image (clipped from left) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ 
-                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
+                    clipPath: `inset(0 0 0 ${sliderPosition}%)`,
                     transition: isDragging ? 'none' : 'clip-path 0.1s ease-out'
                   }}
                 >
