@@ -1,3 +1,4 @@
+
 // Shop The Look / Build This Lab Content Data
 // This file contains all the text content and configuration for the interactive lab section
 // To modify the content, simply edit the values below
@@ -12,7 +13,7 @@ export const shopTheLookContent = {
     backgroundAlt: "Modern laboratory setup with interactive hotspots"
   },
 
-  // Interactive Hotspots Configuration - Repositioned for enclosure, chair, and tabletops
+  // Interactive Hotspots Configuration - 3 key elements: chair, table, and enclosure
   hotspots: [
     {
       id: 1,
@@ -38,28 +39,6 @@ export const shopTheLookContent = {
     },
     {
       id: 3,
-      x: 75, // Position on right side tabletop
-      y: 45,
-      title: "Safety Equipment Station",
-      description: "Complete safety equipment including eyewash station and emergency shower.",
-      price: "From $1,800",
-      category: "Safety Equipment", 
-      image: "/interactive-lab/safety-equipment.jpg",
-      productLink: "/products?category=Safety%20Equipment"
-    },
-    {
-      id: 4,
-      x: 20, // Position on left side enclosure/storage
-      y: 65,
-      title: "Storage Solutions",
-      description: "Comprehensive laboratory storage with specialized compartments for chemicals and equipment.",
-      price: "From $2,500",
-      category: "Storage Systems",
-      image: "/interactive-lab/storage-solutions.jpg",
-      productLink: "/products?category=Storage%20Systems"
-    },
-    {
-      id: 5,
       x: 45, // Position on chair/seating area
       y: 75,
       title: "Laboratory Seating",
