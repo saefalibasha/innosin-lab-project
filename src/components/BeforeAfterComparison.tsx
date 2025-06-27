@@ -23,12 +23,12 @@ const BeforeAfterComparison = () => {
   const projects: Project[] = [
     {
       id: 1,
-      title: 'NUS Chemistry Laboratory Renovation',
-      location: 'National University of Singapore',
+      title: 'NTU Exxon Mobil',
+      location: 'Nanyang Technological University',
       beforeImage: '/before-after-projects/university-lab-before.jpg',
       afterImage: '/before-after-projects/university-lab-after.jpg',
-      description: 'Complete transformation of outdated chemistry lab with new fume hoods, safety equipment, and modern lab benches creating a state-of-the-art research environment.',
-      completionDate: '2024-01-15',
+      description: 'We completed addition and alteration works at the ExxonMobil laboratory, Academic Building North, Nanyang Technological University. The scope included the design, fabrication, and installation of modular laboratory furniture systems with 20mm thick graphite epoxy Hychem worktops, powder-coated steel frames, integrated service fixtures, custom storage solutions, and specialized enclosures. The upgrade ensures enhanced durability, chemical resistance, and full compliance with laboratory safety standards.',
+      completionDate: '2025-06-26',
       projectType: 'University Laboratory'
     },
     {
