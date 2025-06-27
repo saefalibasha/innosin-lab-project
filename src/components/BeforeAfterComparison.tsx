@@ -184,15 +184,32 @@ const BeforeAfterComparison = () => {
                 </div>
 
                 {/* Labels show what you'll see if you drag towards that side */}
-                {sliderPosition >= 50 && (
-                  <div className="absolute top-6 left-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                    AFTER
-                  </div>
-                )}
-                {sliderPosition < 50 && (
-                  <div className="absolute top-6 right-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                    BEFORE
-                  </div>
+                {currentProject === 1 ? (
+                  <>
+                    {sliderPosition >= 50 && (
+                      <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                        BEFORE
+                      </div>
+                    )}
+                    {sliderPosition < 50 && (
+                      <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                        AFTER
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {sliderPosition >= 50 && (
+                      <div className="absolute top-6 left-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                        AFTER
+                      </div>
+                    )}
+                    {sliderPosition < 50 && (
+                      <div className="absolute top-6 right-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                        BEFORE
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
