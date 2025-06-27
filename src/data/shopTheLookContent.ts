@@ -1,4 +1,3 @@
-
 // Shop The Look / Build This Lab Content Data
 // This file contains all the text content and configuration for the interactive lab section
 // To modify the content, simply edit the values below
@@ -13,12 +12,12 @@ export const shopTheLookContent = {
     backgroundAlt: "Modern laboratory setup with interactive hotspots"
   },
 
-  // Interactive Hotspots Configuration
+  // Interactive Hotspots Configuration - Repositioned for enclosure, chair, and tabletops
   hotspots: [
     {
       id: 1,
-      x: 25, // Position as percentage from left
-      y: 30, // Position as percentage from top
+      x: 35, // Position on fume hood enclosure
+      y: 25, 
       title: "Premium Fume Hood",
       description: "State-of-the-art fume hood with advanced airflow technology and safety features.",
       price: "From $12,500",
@@ -28,8 +27,8 @@ export const shopTheLookContent = {
     },
     {
       id: 2,
-      x: 60,
-      y: 45,
+      x: 60, // Position on lab bench tabletop
+      y: 55,
       title: "Modular Lab Bench",
       description: "Customizable laboratory workbench with integrated utilities and storage solutions.",
       price: "From $3,200",
@@ -39,8 +38,8 @@ export const shopTheLookContent = {
     },
     {
       id: 3,
-      x: 80,
-      y: 25,
+      x: 75, // Position on right side tabletop
+      y: 45,
       title: "Safety Equipment Station",
       description: "Complete safety equipment including eyewash station and emergency shower.",
       price: "From $1,800",
@@ -50,8 +49,8 @@ export const shopTheLookContent = {
     },
     {
       id: 4,
-      x: 15,
-      y: 60,
+      x: 20, // Position on left side enclosure/storage
+      y: 65,
       title: "Storage Solutions",
       description: "Comprehensive laboratory storage with specialized compartments for chemicals and equipment.",
       price: "From $2,500",
@@ -61,14 +60,14 @@ export const shopTheLookContent = {
     },
     {
       id: 5,
-      x: 70,
-      y: 70,
-      title: "Analytical Instruments",
-      description: "Precision instruments for accurate measurements and analysis in laboratory environments.",
-      price: "From $8,900",
-      category: "Instruments",
-      image: "/interactive-lab/analytical-instruments.jpg",
-      productLink: "/products?category=Instruments"
+      x: 45, // Position on chair/seating area
+      y: 75,
+      title: "Laboratory Seating",
+      description: "Ergonomic laboratory chairs designed for long working hours with adjustable height and support.",
+      price: "From $450",
+      category: "Laboratory Furniture",
+      image: "/interactive-lab/lab-seating.jpg",
+      productLink: "/products?category=Laboratory%20Furniture"
     }
   ],
 
@@ -153,4 +152,3 @@ EXAMPLES:
 
 NOTE: Coordinate with the actual ShopTheLook component implementation
 */
-

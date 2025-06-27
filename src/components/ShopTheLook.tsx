@@ -74,11 +74,12 @@ const ShopTheLook = () => {
       <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
         <CardContent className="p-0">
           <div className="relative">
-            {/* Laboratory Background Image */}
+            {/* Laboratory Background Image - Zoomed Out */}
             <img
               src={shopTheLookContent.section.backgroundImage}
               alt={shopTheLookContent.section.backgroundAlt}
-              className="w-full h-[700px] object-cover"
+              className="w-full h-[700px] object-cover object-center scale-90"
+              style={{ transformOrigin: 'center center' }}
             />
             
             {/* Hotspots */}

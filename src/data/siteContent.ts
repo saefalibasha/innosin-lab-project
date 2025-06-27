@@ -1,4 +1,3 @@
-
 // Site Content Data
 // This file contains all the main text content for the website
 // To modify any text content, simply edit the values below
@@ -8,9 +7,9 @@ export const siteContent = {
   company: {
     name: "Innosin Lab",
     tagline: "Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.",
-    phone: "+65 1234 5678",
+    phone: "(+607) 863 3535",
     email: "info@innosinlab.com",
-    location: "Singapore"
+    location: "Johor Bahru"
   },
 
   // Navigation
