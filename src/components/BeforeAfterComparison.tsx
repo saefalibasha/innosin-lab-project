@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -143,26 +142,26 @@ const BeforeAfterComparison = () => {
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
               >
-                {/* Before Image (background) */}
+                {/* After Image (background - shows when dragging right) */}
                 <img
-                  src={project.beforeImage}
-                  alt="Before transformation"
-                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  src={project.afterImage}
+                  alt="After transformation"
+                  className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
                   draggable={false}
                 />
                 
-                {/* After Image (clipped from left) */}
+                {/* Before Image (clipped from right - shows when dragging left) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ 
-                    clipPath: `inset(0 0 0 ${sliderPosition}%)`,
+                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
                     transition: isDragging ? 'none' : 'clip-path 0.1s ease-out'
                   }}
                 >
                   <img
-                    src={project.afterImage}
-                    alt="After transformation"
-                    className="w-full h-full object-cover pointer-events-none"
+                    src={project.beforeImage}
+                    alt="Before transformation"
+                    className="w-full h-full object-cover object-center pointer-events-none"
                     draggable={false}
                   />
                 </div>
@@ -182,13 +181,13 @@ const BeforeAfterComparison = () => {
                   </div>
                 </div>
 
-                {/* Fixed Label Logic: Show opposite of what's currently visible */}
-                {sliderPosition <= 50 && (
+                {/* Labels show what you'll see if you drag towards that side */}
+                {sliderPosition >= 50 && (
                   <div className="absolute top-6 left-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
                     AFTER
                   </div>
                 )}
-                {sliderPosition > 50 && (
+                {sliderPosition < 50 && (
                   <div className="absolute top-6 right-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
                     BEFORE
                   </div>
