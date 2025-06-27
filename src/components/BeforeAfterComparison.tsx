@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,10 +16,10 @@ interface Project {
 
 const BeforeAfterComparison = () => {
   const [currentProject, setCurrentProject] = useState(0);
-  const [sliderPosition, setSliderPosition] = useState(0); // Start at 0% to show "before" image
+  const [sliderPosition, setSliderPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const animationFrameRef = useRef<number>();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
   const projects: Project[] = [
     {
@@ -55,23 +54,28 @@ const BeforeAfterComparison = () => {
     }
   ];
 
-  // Optimized slider position update with requestAnimationFrame
+  // Debounced slider position update for better performance
   const updateSliderPosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    
+    // Clear previous debounce
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
     
-    animationFrameRef.current = requestAnimationFrame(() => {
-      if (!containerRef.current) return;
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = clientX - rect.left;
-      const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    // Update immediately for dragging, debounce for other interactions
+    if (isDragging) {
       setSliderPosition(percentage);
-    });
-  }, []);
+    } else {
+      debounceTimeoutRef.current = setTimeout(() => {
+        setSliderPosition(percentage);
+      }, 16); // ~60fps
+    }
+  }, [isDragging]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -120,25 +124,25 @@ const BeforeAfterComparison = () => {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
       }
     };
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   const nextProject = () => {
     setCurrentProject((prev) => (prev + 1) % projects.length);
-    setSliderPosition(0); // Reset to show "before" image
+    setSliderPosition(0);
   };
 
   const prevProject = () => {
     setCurrentProject((prev) => (prev - 1 + projects.length) % projects.length);
-    setSliderPosition(0); // Reset to show "before" image
+    setSliderPosition(0);
   };
 
   const switchToProject = (index: number) => {
     setCurrentProject(index);
-    setSliderPosition(0); // Reset to show "before" image
+    setSliderPosition(0);
   };
 
   const project = projects[currentProject];
@@ -152,31 +156,29 @@ const BeforeAfterComparison = () => {
             <div className="lg:col-span-2 relative">
               <div
                 ref={containerRef}
-                className={`relative w-full h-96 lg:h-[600px] overflow-hidden select-none ${
-                  isDragging ? 'cursor-col-resize' : 'cursor-col-resize'
-                }`}
+                className={`relative w-full h-96 lg:h-[600px] overflow-hidden select-none cursor-col-resize`}
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
               >
-                {/* After Image (background) */}
+                {/* Before Image (background) */}
                 <img
-                  src={project.afterImage}
-                  alt="After transformation"
+                  src={project.beforeImage}
+                  alt="Before transformation"
                   className="absolute inset-0 w-full h-full object-cover pointer-events-none"
                   draggable={false}
                 />
                 
-                {/* Before Image (clipped) */}
+                {/* After Image (clipped from left) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ 
-                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
+                    clipPath: `inset(0 0 0 ${sliderPosition}%)`,
                     transition: isDragging ? 'none' : 'clip-path 0.1s ease-out'
                   }}
                 >
                   <img
-                    src={project.beforeImage}
-                    alt="Before transformation"
+                    src={project.afterImage}
+                    alt="After transformation"
                     className="w-full h-full object-cover pointer-events-none"
                     draggable={false}
                   />
@@ -191,19 +193,19 @@ const BeforeAfterComparison = () => {
                   }}
                 >
                   <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-gray-100 pointer-events-none ${
-                    isDragging ? 'scale-110' : 'hover:scale-110'
-                  } transition-transform duration-200`}>
+                    isDragging ? 'scale-110' : ''
+                  } transition-transform duration-150`}>
                     <div className="w-6 h-6 border-l-2 border-r-2 border-gray-600"></div>
                   </div>
                 </div>
 
-                {/* Conditional Labels - Only show relevant label based on slider position */}
-                {sliderPosition < 50 && (
+                {/* Fixed Label Logic: BEFORE shows when seeing before image (left side), AFTER shows when seeing after image (right side) */}
+                {sliderPosition <= 50 && (
                   <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
                     BEFORE
                   </div>
                 )}
-                {sliderPosition >= 50 && (
+                {sliderPosition > 50 && (
                   <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
                     AFTER
                   </div>
@@ -239,10 +241,29 @@ const BeforeAfterComparison = () => {
                 {project.description}
               </p>
 
-              {/* Project Navigation - Moved outside slider area */}
+              {/* Project Navigation - Repositioned outside interaction area */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-medium text-gray-600">Project Navigation</h4>
+                  <h4 className="text-sm font-medium text-gray-600">Browse Projects</h4>
+                  <span className="text-xs text-gray-500">{currentProject + 1} of {projects.length}</span>
+                </div>
+                
+                {/* Project Indicators with Navigation */}
+                <div className="flex items-center justify-between">
+                  <div className="flex space-x-3">
+                    {projects.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          index === currentProject 
+                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 scale-125' 
+                            : 'bg-gray-300 hover:bg-gray-400'
+                        }`}
+                        onClick={() => switchToProject(index)}
+                      />
+                    ))}
+                  </div>
+                  
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
@@ -262,21 +283,6 @@ const BeforeAfterComparison = () => {
                     </Button>
                   </div>
                 </div>
-                
-                {/* Project Indicators */}
-                <div className="flex space-x-3">
-                  {projects.map((_, index) => (
-                    <button
-                      key={index}
-                      className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                        index === currentProject 
-                          ? 'bg-gradient-to-r from-blue-600 to-blue-700 scale-125' 
-                          : 'bg-gray-300 hover:bg-gray-400'
-                      }`}
-                      onClick={() => switchToProject(index)}
-                    />
-                  ))}
-                </div>
               </div>
 
               <div className="text-xs text-gray-500 space-y-1 bg-gray-100 p-4 rounded-xl">
@@ -286,7 +292,7 @@ const BeforeAfterComparison = () => {
                 </p>
                 <p className="flex items-center">
                   <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                  Use navigation buttons or dots to switch projects
+                  Click dots or arrows to switch projects
                 </p>
               </div>
             </div>
