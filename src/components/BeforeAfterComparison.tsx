@@ -35,12 +35,12 @@ const BeforeAfterComparison = () => {
     },
     {
       id: 2,
-      title: 'SGH Pathology Laboratory',
-      location: 'Singapore General Hospital',
+      title: 'NTU Exxon Mobil',
+      location: 'Nanyang Technological University',
       beforeImage: '/before-after-projects/hospital-pathology-before.jpg',
       afterImage: '/before-after-projects/hospital-pathology-after.jpg',
-      description: 'Modern pathology lab setup with biosafety cabinets, specialized storage solutions, and advanced diagnostic equipment infrastructure.',
-      completionDate: '2023-12-10',
+      description: 'We completed addition and alteration works at the ExxonMobil laboratory, Academic Building North, Nanyang Technological University. The scope included the design, fabrication, and installation of modular laboratory furniture systems with 20mm thick graphite epoxy Hychem worktops, powder-coated steel frames, integrated service fixtures, custom storage solutions, and specialized enclosures. The upgrade ensures enhanced durability, chemical resistance, and full compliance with laboratory safety standards.',
+      completionDate: '2025-06-26',
       projectType: 'Medical Facility'
     },
     {
