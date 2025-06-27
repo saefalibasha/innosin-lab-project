@@ -16,10 +16,9 @@ interface Project {
 
 const BeforeAfterComparison = () => {
   const [currentProject, setCurrentProject] = useState(0);
-  const [sliderPosition, setSliderPosition] = useState(0);
+  const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
   const projects: Project[] = [
     {
@@ -54,28 +53,14 @@ const BeforeAfterComparison = () => {
     }
   ];
 
-  // Debounced slider position update for better performance
   const updateSliderPosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    
-    // Clear previous debounce
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    
-    // Update immediately for dragging, debounce for other interactions
-    if (isDragging) {
-      setSliderPosition(percentage);
-    } else {
-      debounceTimeoutRef.current = setTimeout(() => {
-        setSliderPosition(percentage);
-      }, 16); // ~60fps
-    }
-  }, [isDragging]);
+    setSliderPosition(percentage);
+  }, []);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -124,25 +109,22 @@ const BeforeAfterComparison = () => {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleTouchEnd);
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
     };
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   const nextProject = () => {
     setCurrentProject((prev) => (prev + 1) % projects.length);
-    setSliderPosition(0);
+    setSliderPosition(50);
   };
 
   const prevProject = () => {
     setCurrentProject((prev) => (prev - 1 + projects.length) % projects.length);
-    setSliderPosition(0);
+    setSliderPosition(50);
   };
 
   const switchToProject = (index: number) => {
     setCurrentProject(index);
-    setSliderPosition(0);
+    setSliderPosition(50);
   };
 
   const project = projects[currentProject];
@@ -168,11 +150,11 @@ const BeforeAfterComparison = () => {
                   draggable={false}
                 />
                 
-                {/* After Image (clipped from left) */}
+                {/* After Image (clipped from right) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ 
-                    clipPath: `inset(0 0 0 ${sliderPosition}%)`,
+                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
                     transition: isDragging ? 'none' : 'clip-path 0.1s ease-out'
                   }}
                 >
@@ -199,15 +181,15 @@ const BeforeAfterComparison = () => {
                   </div>
                 </div>
 
-                {/* Fixed Label Logic: BEFORE shows when seeing before image (left side), AFTER shows when seeing after image (right side) */}
+                {/* Fixed Label Logic: Show opposite of what's currently visible */}
                 {sliderPosition <= 50 && (
-                  <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                    BEFORE
+                  <div className="absolute top-6 left-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                    AFTER
                   </div>
                 )}
                 {sliderPosition > 50 && (
-                  <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
-                    AFTER
+                  <div className="absolute top-6 right-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                    BEFORE
                   </div>
                 )}
               </div>
