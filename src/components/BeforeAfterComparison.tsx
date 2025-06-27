@@ -161,7 +161,9 @@ const BeforeAfterComparison = () => {
                   <img
                     src={project.beforeImage}
                     alt="Before transformation"
-                    className="w-full h-full object-cover object-center pointer-events-none"
+                    className={`w-full h-full object-cover pointer-events-none ${
+                      currentProject === 1 ? 'object-top' : 'object-center'
+                    }`}
                     draggable={false}
                   />
                 </div>
