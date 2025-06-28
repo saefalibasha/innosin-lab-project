@@ -116,12 +116,12 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
             console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isHamiltonProduct) {
             // Much closer positioning for Hamilton products - similar to the reference image angle
-            const distance = radius * 1.8; // Much closer than before
+            const distance = radius * 1.6; // Slightly closer for better detail viewing
             
             // Position camera at an angle similar to the reference image
-            const cameraX = actualCenter.x + distance * 0.8; // Right side
-            const cameraY = actualCenter.y + distance * 0.6; // Slightly above
-            const cameraZ = actualCenter.z + distance * 0.6; // Close to front
+            const cameraX = actualCenter.x + distance * 0.7; // Right side, slightly adjusted
+            const cameraY = actualCenter.y + distance * 0.4; // Lower angle for better product view
+            const cameraZ = actualCenter.z + distance * 0.8; // Closer to front
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
@@ -303,22 +303,31 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             <OrbitControls 
               ref={orbitControlsRef}
               enableZoom={true}
-              enablePan={true}
+              enablePan={isHamiltonProduct ? false : true} // Disable panning for Hamilton products for cleaner interaction
               enableRotate={true}
               autoRotate={false}
               autoRotateSpeed={0.5}
-              maxPolarAngle={Math.PI * 0.9}
-              minPolarAngle={Math.PI * 0.1}
-              minDistance={isHamiltonProduct ? 0.3 : 2}
-              maxDistance={isHamiltonProduct ? 15 : 20}
+              maxPolarAngle={Math.PI * 0.85} // Slightly more restrictive for Hamilton products
+              minPolarAngle={Math.PI * 0.15} // Better viewing angles
+              minDistance={isHamiltonProduct ? 0.5 : 2} // Allow closer zoom for Hamilton products
+              maxDistance={isHamiltonProduct ? 12 : 20} // More reasonable max distance
               enableDamping={true}
-              dampingFactor={isHamiltonProduct ? 0.15 : 0.08}
+              dampingFactor={isHamiltonProduct ? 0.05 : 0.08} // Much smoother damping for Hamilton products
               target={isHamiltonProduct ? rotationCenter : new THREE.Vector3(0, 0, 0)}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
-              zoomSpeed={isHamiltonProduct ? 0.5 : 0.8}
-              panSpeed={isHamiltonProduct ? 0.5 : 0.8}
-              rotateSpeed={isHamiltonProduct ? 0.4 : 0.8}
+              zoomSpeed={isHamiltonProduct ? 0.3 : 0.8} // Slower, more controlled zoom for Hamilton products
+              panSpeed={isHamiltonProduct ? 0.3 : 0.8} // Slower panning when enabled
+              rotateSpeed={isHamiltonProduct ? 0.3 : 0.8} // Much slower rotation for precise control
+              mouseButtons={{
+                LEFT: isHamiltonProduct ? THREE.MOUSE.ROTATE : THREE.MOUSE.ROTATE,
+                MIDDLE: isHamiltonProduct ? THREE.MOUSE.DOLLY : THREE.MOUSE.DOLLY,
+                RIGHT: isHamiltonProduct ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN // Use right-click for rotation too on Hamilton products
+              }}
+              touches={{
+                ONE: THREE.TOUCH.ROTATE,
+                TWO: THREE.TOUCH.DOLLY_PAN
+              }}
             />
           </Suspense>
         </Canvas>
