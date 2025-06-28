@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -19,6 +18,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
   console.log('Attempting to load GLB model from:', modelPath);
   
   const { scene } = useGLTF(modelPath, true);
+  
+  // Check if this is a Hamilton product
+  const isHamiltonProduct = modelPath.includes('hls-product');
   
   // Handle loading success and model enhancement
   useEffect(() => {
@@ -61,7 +63,6 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
           const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
-          const isHamiltonProduct = modelPath.includes('hls-product');
           
           // Standard centering for all products
           modelClone.position.set(-center.x, -center.y, -center.z);
@@ -150,13 +151,16 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
     }
   }, [scene, camera, isLoaded, modelPath, onCenterCalculated]);
   
-  // Subtle animation on hover
+  // Animation - disabled for Hamilton products for stability
   useFrame((state) => {
     if (groupRef.current && isLoaded) {
-      // Gentle floating animation
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      // Only apply floating animation to non-Hamilton products
+      if (!isHamiltonProduct) {
+        // Gentle floating animation
+        groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      }
       
-      // Subtle rotation when hovered
+      // Subtle rotation when hovered (for all products)
       if (hovered) {
         groupRef.current.rotation.y += 0.005;
       }
