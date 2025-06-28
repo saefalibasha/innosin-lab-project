@@ -1,7 +1,7 @@
 
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, ContactShadows, useTexture, BakeShadows } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
 import { ErrorBoundary } from 'react-error-boundary';
 import * as THREE from 'three';
 
@@ -182,11 +182,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2,
-            shadowMap: {
-              enabled: true,
-              type: THREE.PCFSoftShadowMap
-            }
+            toneMappingExposure: 1.2
+          }}
+          onCreated={({ gl }) => {
+            gl.shadowMap.enabled = true;
+            gl.shadowMap.type = THREE.PCFSoftShadowMap;
           }}
         >
           <Suspense fallback={null}>

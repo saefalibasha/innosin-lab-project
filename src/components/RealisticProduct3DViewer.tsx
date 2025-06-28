@@ -96,14 +96,11 @@ const RealisticProduct3DViewer: React.FC<RealisticProduct3DViewerProps> = ({
       <Canvas 
         camera={{ position: [0, 0, 5], fov: 45 }}
         shadows
-        gl={{
-          antialias: true,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.0,
-          shadowMap: {
-            enabled: true,
-            type: THREE.PCFSoftShadowMap
-          }
+        onCreated={({ gl }) => {
+          gl.shadowMap.enabled = true;
+          gl.shadowMap.type = THREE.PCFSoftShadowMap;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.0;
         }}
       >
         <Suspense fallback={null}>
