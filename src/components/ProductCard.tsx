@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Product3DViewer from './Product3DViewer';
+import RealisticProduct3DViewer from './RealisticProduct3DViewer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -22,9 +22,9 @@ const ProductCard: React.FC<ProductCardProps> = ({
   color = '#4F46E5'
 }) => {
   return (
-    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-200">
       <CardHeader className="p-0">
-        <Product3DViewer 
+        <RealisticProduct3DViewer 
           productType={productType} 
           color={color}
           className="w-full h-48"
@@ -44,7 +44,7 @@ const ProductCard: React.FC<ProductCardProps> = ({
       </CardContent>
       
       <CardFooter className="p-4 pt-0">
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-md hover:shadow-lg">
           View Details
         </Button>
       </CardFooter>

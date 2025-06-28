@@ -1,6 +1,7 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment, ContactShadows, useTexture, BakeShadows } from '@react-three/drei';
 import { ErrorBoundary } from 'react-error-boundary';
 import * as THREE from 'three';
 
@@ -11,15 +12,14 @@ interface GLBModelProps {
 const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   const [hovered, setHovered] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const groupRef = useRef<THREE.Group>(null);
   
   console.log('Attempting to load GLB model from:', modelPath);
   
-  // useGLTF returns only the GLTF data, no error property
   const { scene } = useGLTF(modelPath, true);
   
-  // Handle loading success
+  // Handle loading success and model enhancement
   useEffect(() => {
     if (scene && groupRef.current && !isLoaded) {
       console.log('Successfully loaded GLB model:', modelPath);
@@ -27,6 +27,30 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
       try {
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
+        
+        // Enhanced material processing for better realism
+        modelClone.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.material) {
+            // Enhance materials with PBR properties
+            if (child.material instanceof THREE.MeshStandardMaterial) {
+              // Improve material properties for better lighting response
+              child.material.roughness = child.material.roughness || 0.4;
+              child.material.metalness = child.material.metalness || 0.1;
+              child.material.envMapIntensity = 1.5;
+              
+              // Enable shadows
+              child.castShadow = true;
+              child.receiveShadow = true;
+              
+              // Improve material quality
+              if (child.material.map) {
+                child.material.map.generateMipmaps = true;
+                child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
+                child.material.map.magFilter = THREE.LinearFilter;
+              }
+            }
+          }
+        });
         
         // Calculate bounding box with more precision
         const box = new THREE.Box3().setFromObject(modelClone);
@@ -58,23 +82,20 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
-            // For this model, we want to face the front opening where the door and handle would be
-            const distance = boundingSphere.radius * 2.5; // Close view for detailed inspection
+            const distance = boundingSphere.radius * 2.5;
             
-            // Position camera directly in front (Z axis), slightly elevated
-            const cameraX = 0; // Centered horizontally
-            const cameraY = distance * 0.3; // Slightly elevated to see the door area better
-            const cameraZ = distance; // In front of the model
+            const cameraX = 0;
+            const cameraY = distance * 0.3;
+            const cameraZ = distance;
             
             camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0); // Look at the center of the model
+            camera.lookAt(0, 0, 0);
             
             console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance });
           } else {
             // Standard positioning for other models
-            const distance = boundingSphere.radius * 8; // Much larger distance for better overview
+            const distance = boundingSphere.radius * 8;
             
-            // Position camera further away at a good viewing angle
             const cameraX = distance * 0.7;
             const cameraY = distance * 0.5;
             const cameraZ = distance * 0.7;
@@ -93,6 +114,19 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
       }
     }
   }, [scene, camera, isLoaded, modelPath]);
+  
+  // Subtle animation on hover
+  useFrame((state) => {
+    if (groupRef.current && isLoaded) {
+      // Gentle floating animation
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      
+      // Subtle rotation when hovered
+      if (hovered) {
+        groupRef.current.rotation.y += 0.005;
+      }
+    }
+  });
   
   // Return null if no scene is available
   if (!scene) {
@@ -139,34 +173,76 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
   return (
-    <div className={`${className} bg-white rounded-lg overflow-hidden border border-gray-100`}>
+    <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden border border-gray-100`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [8, 6, 8], fov: 60 }}
+          camera={{ position: [8, 6, 8], fov: 50 }}
+          shadows
           gl={{ 
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.0
+            toneMappingExposure: 1.2,
+            shadowMap: {
+              enabled: true,
+              type: THREE.PCFSoftShadowMap
+            }
           }}
         >
           <Suspense fallback={null}>
-            <Environment preset="studio" environmentIntensity={0.4} />
+            {/* HDR Environment for realistic reflections and lighting */}
+            <Environment 
+              preset="studio" 
+              background={false}
+              environmentIntensity={0.6}
+            />
             
-            {/* Enhanced lighting setup for better model visibility */}
-            <ambientLight intensity={0.5} />
+            {/* Enhanced lighting setup for better model visibility and realism */}
+            <ambientLight intensity={0.3} color="#ffffff" />
+            
+            {/* Key light - main illumination */}
             <directionalLight 
-              position={[5, 8, 5]} 
-              intensity={0.8} 
+              position={[10, 10, 5]} 
+              intensity={1.2} 
               castShadow 
-              shadow-mapSize={[1024, 1024]}
+              shadow-mapSize={[2048, 2048]}
+              shadow-camera-near={0.1}
+              shadow-camera-far={50}
+              shadow-camera-left={-10}
+              shadow-camera-right={10}
+              shadow-camera-top={10}
+              shadow-camera-bottom={-10}
+              color="#ffffff"
             />
+            
+            {/* Fill light - soften shadows */}
             <directionalLight 
-              position={[-5, 3, -5]} 
+              position={[-5, 5, -5]} 
               intensity={0.4} 
+              color="#b6d7ff"
             />
-            <pointLight position={[0, 5, 0]} intensity={0.3} />
-            <pointLight position={[0, -5, 0]} intensity={0.2} />
+            
+            {/* Rim light - edge definition */}
+            <directionalLight 
+              position={[0, 2, -10]} 
+              intensity={0.3}
+              color="#fff4e6"
+            />
+            
+            {/* Additional ambient lights for better material definition */}
+            <pointLight position={[5, 5, 5]} intensity={0.3} color="#ffffff" />
+            <pointLight position={[-5, -2, 5]} intensity={0.2} color="#e6f3ff" />
+            
+            {/* Contact shadows for ground contact realism */}
+            <ContactShadows
+              position={[0, -1.5, 0]}
+              opacity={0.4}
+              scale={10}
+              blur={2.5}
+              far={4}
+              resolution={256}
+              color="#000000"
+            />
             
             <GLBModel modelPath={modelPath} />
             
@@ -175,15 +251,19 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={true}
               enableRotate={true}
               autoRotate={false}
-              maxPolarAngle={Math.PI}
-              minPolarAngle={0}
-              minDistance={1}
-              maxDistance={50}
+              autoRotateSpeed={0.5}
+              maxPolarAngle={Math.PI * 0.9}
+              minPolarAngle={Math.PI * 0.1}
+              minDistance={2}
+              maxDistance={20}
               enableDamping={true}
               dampingFactor={0.05}
               target={[0, 0, 0]}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
+              zoomSpeed={0.8}
+              panSpeed={0.8}
+              rotateSpeed={0.8}
             />
           </Suspense>
         </Canvas>

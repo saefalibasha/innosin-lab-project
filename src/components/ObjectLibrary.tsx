@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Product3DViewer from '@/components/Product3DViewer';
+import RealisticProduct3DViewer from '@/components/RealisticProduct3DViewer';
 
 type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
 
@@ -189,7 +189,7 @@ const ObjectLibrary: React.FC<ObjectLibraryProps> = ({ onProductDrag, currentToo
                     }`}
                   >
                     <div className="p-2">
-                      <Product3DViewer
+                      <RealisticProduct3DViewer
                         productType={item.modelType as any}
                         color={item.color}
                         className="w-full h-16 mb-2 rounded"
