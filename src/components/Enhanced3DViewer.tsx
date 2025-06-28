@@ -151,16 +151,14 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
     }
   }, [scene, camera, isLoaded, modelPath, onCenterCalculated]);
   
-  // Animation - disabled for Hamilton products for stability
+  // Animation - completely disabled for Hamilton products for maximum stability
   useFrame((state) => {
-    if (groupRef.current && isLoaded) {
-      // Only apply floating animation to non-Hamilton products
-      if (!isHamiltonProduct) {
-        // Gentle floating animation
-        groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
-      }
+    if (groupRef.current && isLoaded && !isHamiltonProduct) {
+      // Only apply animations to non-Hamilton products
+      // Gentle floating animation
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
       
-      // Subtle rotation when hovered (for all products)
+      // Subtle rotation when hovered
       if (hovered) {
         groupRef.current.rotation.y += 0.005;
       }
@@ -175,9 +173,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
   return (
     <group 
       ref={groupRef}
-      scale={hovered ? 1.02 : 1}
-      onPointerOver={() => setHovered(true)}
-      onPointerOut={() => setHovered(false)}
+      scale={isHamiltonProduct ? 1 : (hovered ? 1.02 : 1)} // Disable hover scaling for Hamilton products
+      onPointerOver={() => !isHamiltonProduct && setHovered(true)} // Disable hover for Hamilton products
+      onPointerOut={() => !isHamiltonProduct && setHovered(false)} // Disable hover for Hamilton products
     />
   );
 };
@@ -307,30 +305,30 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             <OrbitControls 
               ref={orbitControlsRef}
               enableZoom={true}
-              enablePan={isHamiltonProduct ? false : true} // Disable panning for Hamilton products for cleaner interaction
+              enablePan={isHamiltonProduct ? false : true} // Disable panning for Hamilton products
               enableRotate={true}
-              autoRotate={false}
-              autoRotateSpeed={0.5}
-              maxPolarAngle={Math.PI * 0.85} // Slightly more restrictive for Hamilton products
-              minPolarAngle={Math.PI * 0.15} // Better viewing angles
-              minDistance={isHamiltonProduct ? 0.5 : 2} // Allow closer zoom for Hamilton products
-              maxDistance={isHamiltonProduct ? 12 : 20} // More reasonable max distance
+              autoRotate={false} // Ensure auto-rotate is disabled for stability
+              autoRotateSpeed={0}
+              maxPolarAngle={Math.PI * 0.75} // More restrictive for Hamilton products
+              minPolarAngle={Math.PI * 0.25} // Better viewing angles
+              minDistance={isHamiltonProduct ? 1 : 2} // Allow closer zoom for Hamilton products
+              maxDistance={isHamiltonProduct ? 8 : 20} // More controlled max distance for Hamilton
               enableDamping={true}
-              dampingFactor={isHamiltonProduct ? 0.05 : 0.08} // Much smoother damping for Hamilton products
+              dampingFactor={isHamiltonProduct ? 0.03 : 0.08} // Very smooth damping for Hamilton products
               target={isHamiltonProduct ? rotationCenter : new THREE.Vector3(0, 0, 0)}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
-              zoomSpeed={isHamiltonProduct ? 0.3 : 0.8} // Slower, more controlled zoom for Hamilton products
-              panSpeed={isHamiltonProduct ? 0.3 : 0.8} // Slower panning when enabled
-              rotateSpeed={isHamiltonProduct ? 0.3 : 0.8} // Much slower rotation for precise control
+              zoomSpeed={isHamiltonProduct ? 0.2 : 0.8} // Very slow, controlled zoom for Hamilton
+              panSpeed={isHamiltonProduct ? 0.2 : 0.8} // Slower panning when enabled
+              rotateSpeed={isHamiltonProduct ? 0.2 : 0.8} // Very slow rotation for precise control
               mouseButtons={{
-                LEFT: isHamiltonProduct ? THREE.MOUSE.ROTATE : THREE.MOUSE.ROTATE,
-                MIDDLE: isHamiltonProduct ? THREE.MOUSE.DOLLY : THREE.MOUSE.DOLLY,
-                RIGHT: isHamiltonProduct ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN // Use right-click for rotation too on Hamilton products
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: isHamiltonProduct ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN // Consistent behavior for Hamilton
               }}
               touches={{
                 ONE: THREE.TOUCH.ROTATE,
-                TWO: THREE.TOUCH.DOLLY_PAN
+                TWO: THREE.TOUCH.DOLLY_ROTATE // More controlled touch interaction
               }}
             />
           </Suspense>
