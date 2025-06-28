@@ -1,5 +1,5 @@
 
-import React, { Suspense, useState, useRef, useEffect } from 'react';
+import React, { Suspense, useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -12,37 +12,47 @@ interface GLBModelProps {
 const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   const [hovered, setHovered] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
-  const { camera, gl } = useThree();
+  const [error, setError] = useState<string | null>(null);
   const groupRef = useRef<THREE.Group>(null);
+  const originalModelRef = useRef<THREE.Object3D | null>(null);
   
-  console.log('Attempting to load GLB model from:', modelPath);
+  console.log('Loading GLB model from:', modelPath);
   
-  const { scene } = useGLTF(modelPath, true);
+  // Load the model with error handling
+  const { scene, error: gltfError } = useGLTF(modelPath, true);
   
-  // Handle loading success and model enhancement
+  // Handle GLTF loading errors
   useEffect(() => {
-    if (scene && groupRef.current && !isLoaded) {
-      console.log('Successfully loaded GLB model:', modelPath);
-      
+    if (gltfError) {
+      console.error(`Failed to load GLB model: ${modelPath}`, gltfError);
+      setError(`Failed to load 3D model: ${gltfError.message}`);
+    }
+  }, [gltfError, modelPath]);
+  
+  // Process and center the model
+  useEffect(() => {
+    if (scene && groupRef.current && !isLoaded && !error) {
       try {
-        // Create a copy of the scene to avoid modifying the original
-        const modelClone = scene.clone();
+        console.log('Processing GLB model for:', modelPath);
         
-        // Enhanced material processing for better realism
+        // Clone the scene to avoid modifying the original
+        const modelClone = scene.clone();
+        originalModelRef.current = modelClone;
+        
+        // Enhance materials for better quality
         modelClone.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material) {
+            // Enable shadows
+            child.castShadow = true;
+            child.receiveShadow = true;
+            
             // Enhance materials with PBR properties
             if (child.material instanceof THREE.MeshStandardMaterial) {
-              // Improve material properties for better lighting response
               child.material.roughness = child.material.roughness || 0.4;
               child.material.metalness = child.material.metalness || 0.1;
               child.material.envMapIntensity = 1.5;
               
-              // Enable shadows
-              child.castShadow = true;
-              child.receiveShadow = true;
-              
-              // Improve material quality
+              // Improve texture quality
               if (child.material.map) {
                 child.material.map.generateMipmaps = true;
                 child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
@@ -52,97 +62,62 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           }
         });
         
-        // Calculate bounding box with more precision
+        // Calculate bounding box for centering
         const box = new THREE.Box3().setFromObject(modelClone);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
-        // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          // Center the model at origin
+          // Center the model at origin for proper rotation
           modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // Improved scaling logic based on product type
+          // Scale the model appropriately
           const maxDimension = Math.max(size.x, size.y, size.z);
           const isHamiltonProduct = modelPath.includes('hls-product');
-          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
-          
-          let targetSize = 3; // Default target size
-          let scale = 1;
-          
-          if (isHamiltonProduct) {
-            // Hamilton products are typically larger fume hoods - use appropriate scale
-            targetSize = 3.2;
-            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-          } else if (isRecessedEyeBodyShower) {
-            // Wall-recessed products need different scaling
-            targetSize = 2.8;
-            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-          } else {
-            // Standard Broen Lab products
-            targetSize = 3;
-            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-          }
+          const targetSize = isHamiltonProduct ? 2.5 : 3;
+          const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           
           modelClone.scale.setScalar(scale);
           
-          // Clear previous children and add the centered/scaled model
+          // Clear and add the processed model
           groupRef.current.clear();
           groupRef.current.add(modelClone);
           
-          console.log('Model centered and scaled:', { center, size, scale, maxDimension, isHamiltonProduct });
+          console.log('Model processed successfully:', { 
+            center: center.toArray(), 
+            size: size.toArray(), 
+            scale,
+            isHamiltonProduct 
+          });
           
-          // Improved camera positioning based on product type
-          const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
-          const radius = boundingSphere.radius * scale;
-          
-          if (isHamiltonProduct) {
-            // Hamilton fume hoods - optimized positioning for better viewing angle
-            const distance = radius * 2.8;
-            
-            // Position camera at an optimal angle to show the fume hood's front and side
-            const cameraX = distance * 0.8;
-            const cameraY = distance * 0.3;
-            const cameraZ = distance * 0.6;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
-            
-            console.log('Camera positioned for Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          } else if (isRecessedEyeBodyShower) {
-            // Position camera directly in front of the door/handle area
-            const distance = radius * 3;
-            
-            const cameraX = 0;
-            const cameraY = distance * 0.3;
-            const cameraZ = distance;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
-            
-            console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          } else {
-            // Standard positioning for other Broen Lab products
-            const distance = radius * 4;
-            
-            const cameraX = distance * 0.7;
-            const cameraY = distance * 0.5;
-            const cameraZ = distance * 0.7;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
-            
-            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          }
-          
-          camera.updateProjectionMatrix();
           setIsLoaded(true);
+        } else {
+          throw new Error('Model has invalid dimensions');
         }
-      } catch (error) {
-        console.error(`Failed to process GLB model: ${modelPath}. Error:`, error);
+      } catch (err) {
+        console.error(`Failed to process GLB model: ${modelPath}`, err);
+        setError(`Failed to process 3D model: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     }
-  }, [scene, camera, isLoaded, modelPath]);
+  }, [scene, isLoaded, error, modelPath]);
+  
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (originalModelRef.current) {
+        originalModelRef.current.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry?.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach(material => material?.dispose?.());
+            } else {
+              child.material?.dispose?.();
+            }
+          }
+        });
+      }
+    };
+  }, []);
   
   // Subtle animation on hover
   useFrame((state) => {
@@ -157,8 +132,14 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
     }
   });
   
-  // Return null if no scene is available
-  if (!scene) {
+  // Error state
+  if (error) {
+    console.log('Model error state:', error);
+    return null;
+  }
+  
+  // Loading state
+  if (!scene || !isLoaded) {
     return null;
   }
   
@@ -178,13 +159,18 @@ const LoadingFallback: React.FC = () => (
   </div>
 );
 
-const ErrorFallback: React.FC = () => {
-  console.log('Error boundary triggered for 3D model');
+const ErrorFallback: React.FC<{ error?: Error }> = ({ error }) => {
+  console.log('3D Viewer Error Boundary triggered:', error?.message);
   return (
     <div className="flex items-center justify-center h-full bg-white rounded-lg">
       <div className="text-muted-foreground text-center">
         <div className="text-lg mb-2">3D Model Unavailable</div>
         <div className="text-sm">Unable to load 3D preview</div>
+        {error && (
+          <div className="text-xs mt-2 text-red-500">
+            {error.message}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -199,25 +185,71 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   modelPath,
   className = "w-full h-64" 
 }) => {
+  const [canvasError, setCanvasError] = useState<string | null>(null);
+  
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
   const isHamiltonProduct = modelPath.includes('hls-product');
+  
+  // Handle WebGL context loss
+  const handleWebGLContextLost = useCallback((event: Event) => {
+    event.preventDefault();
+    console.warn('WebGL context lost, attempting recovery...');
+    setCanvasError('WebGL context lost - refreshing...');
+    
+    // Attempt to recover after a short delay
+    setTimeout(() => {
+      setCanvasError(null);
+    }, 1000);
+  }, []);
+  
+  // Handle WebGL context restored
+  const handleWebGLContextRestored = useCallback(() => {
+    console.log('WebGL context restored');
+    setCanvasError(null);
+  }, []);
+  
+  if (canvasError) {
+    return (
+      <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden border border-gray-100 flex items-center justify-center`}>
+        <div className="text-muted-foreground text-center">
+          <div className="text-sm">{canvasError}</div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden border border-gray-100`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [8, 6, 8], fov: 45 }}
+          camera={{ 
+            position: isHamiltonProduct ? [4, 2, 4] : [5, 3, 5], 
+            fov: 45,
+            near: 0.1,
+            far: 1000
+          }}
           shadows
           gl={{ 
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: isHamiltonProduct ? 1.0 : 1.2
+            toneMappingExposure: isHamiltonProduct ? 1.0 : 1.2,
+            powerPreference: "high-performance"
           }}
-          onCreated={({ gl }) => {
+          onCreated={({ gl, camera }) => {
+            // Enable shadows
             gl.shadowMap.enabled = true;
             gl.shadowMap.type = THREE.PCFSoftShadowMap;
+            
+            // Set up WebGL context loss handlers
+            gl.domElement.addEventListener('webglcontextlost', handleWebGLContextLost);
+            gl.domElement.addEventListener('webglcontextrestored', handleWebGLContextRestored);
+            
+            // Set camera target to origin for natural rotation
+            camera.lookAt(0, 0, 0);
+            
+            console.log('Canvas created with camera at:', camera.position.toArray());
           }}
         >
           <Suspense fallback={null}>
@@ -228,7 +260,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               environmentIntensity={isHamiltonProduct ? 0.5 : 0.6}
             />
             
-            {/* Enhanced lighting setup for better model visibility and realism */}
+            {/* Optimized lighting setup */}
             <ambientLight intensity={isHamiltonProduct ? 0.4 : 0.3} color="#ffffff" />
             
             {/* Key light - main illumination */}
@@ -260,10 +292,6 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               color="#fff4e6"
             />
             
-            {/* Additional ambient lights for better material definition */}
-            <pointLight position={[5, 5, 5]} intensity={0.3} color="#ffffff" />
-            <pointLight position={[-5, -2, 5]} intensity={0.2} color="#e6f3ff" />
-            
             {/* Contact shadows for ground contact realism */}
             <ContactShadows
               position={[0, -1.5, 0]}
@@ -282,19 +310,18 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={true}
               enableRotate={true}
               autoRotate={false}
-              autoRotateSpeed={0.5}
+              target={[0, 0, 0]}
               maxPolarAngle={Math.PI * 0.9}
               minPolarAngle={Math.PI * 0.1}
-              minDistance={isHamiltonProduct ? 3 : 2}
-              maxDistance={isHamiltonProduct ? 15 : 20}
+              minDistance={isHamiltonProduct ? 2 : 1.5}
+              maxDistance={isHamiltonProduct ? 12 : 15}
               enableDamping={true}
-              dampingFactor={0.08}
-              target={[0, 0, 0]}
+              dampingFactor={0.05}
+              zoomSpeed={0.8}
+              panSpeed={0.8}
+              rotateSpeed={0.8}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
-              zoomSpeed={0.6}
-              panSpeed={0.6}
-              rotateSpeed={0.6}
             />
           </Suspense>
         </Canvas>
