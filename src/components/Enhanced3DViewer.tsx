@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -127,18 +128,18 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           const radius = boundingSphere.radius * scale;
           
           if (isHamiltonProduct) {
-            // Hamilton fume hoods - positioned to show the perfectly centered model
-            const distance = radius * 2.0; // Optimal distance to see the centered model
+            // Hamilton fume hoods - much closer camera positioning for detailed view
+            const distance = radius * 1.4; // Much closer distance for clear view
             
-            // Position camera at an angle that shows the centered fume hood clearly
-            const cameraX = distance * 0.8;
-            const cameraY = distance * 0.6;
-            const cameraZ = distance * 0.8;
+            // Position camera at an optimal angle for close inspection
+            const cameraX = distance * 0.7;
+            const cameraY = distance * 0.4;
+            const cameraZ = distance * 0.9;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(0, 0, 0); // Look directly at the world origin where the model is centered
             
-            console.log('Camera positioned for perfectly centered Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned close to Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
             const distance = radius * 3;
@@ -315,16 +316,16 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotateSpeed={0.5}
               maxPolarAngle={Math.PI * 0.9}
               minPolarAngle={Math.PI * 0.1}
-              minDistance={isHamiltonProduct ? 3 : 2}
-              maxDistance={isHamiltonProduct ? 15 : 20}
+              minDistance={isHamiltonProduct ? 1.5 : 2}
+              maxDistance={isHamiltonProduct ? 8 : 20}
               enableDamping={true}
               dampingFactor={0.08}
               target={[0, 0, 0]}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
-              zoomSpeed={0.6}
-              panSpeed={0.6}
-              rotateSpeed={0.6}
+              zoomSpeed={0.8}
+              panSpeed={0.8}
+              rotateSpeed={0.8}
             />
           </Suspense>
         </Canvas>
