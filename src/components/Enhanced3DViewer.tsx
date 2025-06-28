@@ -59,7 +59,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          // Center the model at origin
+          // Center the model at origin - THIS IS KEY FOR PROPER ROTATION
           modelClone.position.set(-center.x, -center.y, -center.z);
           
           // Improved scaling logic based on product type
@@ -71,8 +71,8 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           let scale = 1;
           
           if (isHamiltonProduct) {
-            // Hamilton products are typically larger fume hoods - use appropriate scale
-            targetSize = 3.2;
+            // Hamilton fume hoods - larger scale for better visibility
+            targetSize = 3.5;
             scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           } else if (isRecessedEyeBodyShower) {
             // Wall-recessed products need different scaling
@@ -98,12 +98,12 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           if (isHamiltonProduct) {
             // Hamilton fume hoods - optimized positioning for better viewing angle
-            const distance = radius * 2.8;
+            const distance = radius * 2.5;
             
             // Position camera at an optimal angle to show the fume hood's front and side
-            const cameraX = distance * 0.8;
-            const cameraY = distance * 0.3;
-            const cameraZ = distance * 0.6;
+            const cameraX = distance * 0.7;
+            const cameraY = distance * 0.4;
+            const cameraZ = distance * 0.7;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(0, 0, 0);
