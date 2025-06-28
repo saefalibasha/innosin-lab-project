@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -6,9 +7,10 @@ import * as THREE from 'three';
 
 interface GLBModelProps {
   modelPath: string;
+  onCenterCalculated?: (center: THREE.Vector3) => void;
 }
 
-const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
+const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) => {
   const [hovered, setHovered] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
   const { camera, gl } = useThree();
@@ -85,22 +87,31 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           groupRef.current.clear();
           groupRef.current.add(modelClone);
           
-          console.log('Model centered and scaled:', { center, size, scale, maxDimension });
+          // Calculate the actual center after positioning and scaling
+          const finalBox = new THREE.Box3().setFromObject(groupRef.current);
+          const actualCenter = finalBox.getCenter(new THREE.Vector3());
+          
+          // For Hamilton products, notify parent about the calculated center
+          if (isHamiltonProduct && onCenterCalculated) {
+            onCenterCalculated(actualCenter);
+          }
+          
+          console.log('Model centered and scaled:', { center, size, scale, maxDimension, actualCenter });
           
           // Camera positioning based on product type
-          const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
-          const radius = boundingSphere.radius * scale;
+          const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
+          const radius = boundingSphere.radius;
           
           if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
             const distance = radius * 3;
             
-            const cameraX = 0;
-            const cameraY = distance * 0.3;
-            const cameraZ = distance;
+            const cameraX = actualCenter.x;
+            const cameraY = actualCenter.y + distance * 0.3;
+            const cameraZ = actualCenter.z + distance;
             
             camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(actualCenter);
             
             console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isHamiltonProduct) {
@@ -108,24 +119,24 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
             const distance = radius * 1.8; // Much closer than before
             
             // Position camera at an angle similar to the reference image
-            const cameraX = distance * 0.8; // Right side
-            const cameraY = distance * 0.6; // Slightly above
-            const cameraZ = distance * 0.6; // Close to front
+            const cameraX = actualCenter.x + distance * 0.8; // Right side
+            const cameraY = actualCenter.y + distance * 0.6; // Slightly above
+            const cameraZ = actualCenter.z + distance * 0.6; // Close to front
             
             camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(actualCenter);
             
-            console.log('Camera positioned close for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned close for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius, center: actualCenter });
           } else {
             // Standard positioning for Broen Lab products
             const distance = radius * 4;
             
-            const cameraX = distance * 0.7;
-            const cameraY = distance * 0.5;
-            const cameraZ = distance * 0.7;
+            const cameraX = actualCenter.x + distance * 0.7;
+            const cameraY = actualCenter.y + distance * 0.5;
+            const cameraZ = actualCenter.z + distance * 0.7;
             
             camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(actualCenter);
             
             console.log('Camera positioned at standard angle for Broen product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           }
@@ -137,7 +148,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         console.error(`Failed to process GLB model: ${modelPath}. Error:`, error);
       }
     }
-  }, [scene, camera, isLoaded, modelPath]);
+  }, [scene, camera, isLoaded, modelPath, onCenterCalculated]);
   
   // Subtle animation on hover
   useFrame((state) => {
@@ -194,9 +205,23 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   modelPath,
   className = "w-full h-64" 
 }) => {
+  const [rotationCenter, setRotationCenter] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
+  const orbitControlsRef = useRef<any>(null);
+  
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
   const isHamiltonProduct = modelPath.includes('hls-product');
+  
+  const handleCenterCalculated = (center: THREE.Vector3) => {
+    setRotationCenter(center);
+    
+    // Update OrbitControls target if it exists
+    if (orbitControlsRef.current) {
+      orbitControlsRef.current.target.copy(center);
+      orbitControlsRef.current.update();
+      console.log('Updated OrbitControls target to:', center);
+    }
+  };
   
   return (
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden border border-gray-100`}>
@@ -270,9 +295,13 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               color="#000000"
             />
             
-            <GLBModel modelPath={modelPath} />
+            <GLBModel 
+              modelPath={modelPath} 
+              onCenterCalculated={isHamiltonProduct ? handleCenterCalculated : undefined}
+            />
             
             <OrbitControls 
+              ref={orbitControlsRef}
               enableZoom={true}
               enablePan={true}
               enableRotate={true}
@@ -284,7 +313,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               maxDistance={isHamiltonProduct ? 15 : 20}
               enableDamping={true}
               dampingFactor={isHamiltonProduct ? 0.15 : 0.08}
-              target={[0, 0, 0]}
+              target={isHamiltonProduct ? rotationCenter : new THREE.Vector3(0, 0, 0)}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
               zoomSpeed={isHamiltonProduct ? 0.5 : 0.8}
