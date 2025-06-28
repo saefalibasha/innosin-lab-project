@@ -1,4 +1,3 @@
-
 // Utility functions for managing product assets and data
 // This file handles the generation of product data from the public/products directory structure
 
@@ -28,7 +27,7 @@ export const getProductsSync = (): Product[] => {
         "Integrated dust caps"
       ],
       modelPath: "/products/bl-hes-bench-001/model.glb",
-      thumbnail: "/products/bl-hes-bench-001/images/front.jpg", // Use front.jpg as thumbnail since .webp doesn't exist
+      thumbnail: "/products/bl-hes-bench-001/images/front.jpg",
       images: ["/products/bl-hes-bench-001/images/front.jpg"]
     },
     {
@@ -51,7 +50,7 @@ export const getProductsSync = (): Product[] => {
         "Trigger-operated spray head"
       ],
       modelPath: "/products/bl-hes-wall-002/model.glb",
-      thumbnail: "/products/bl-hes-wall-002/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-hes-wall-002/images/front.jpg",
       images: ["/products/bl-hes-wall-002/images/front.jpg"]
     },
     {
@@ -74,7 +73,7 @@ export const getProductsSync = (): Product[] => {
         "Wall-recessed design"
       ],
       modelPath: "/products/bl-ebs-recessed-003/model.glb",
-      thumbnail: "/products/bl-ebs-recessed-003/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-ebs-recessed-003/images/front.jpg",
       images: ["/products/bl-ebs-recessed-003/images/front.jpg"]
     },
     {
@@ -97,7 +96,7 @@ export const getProductsSync = (): Product[] => {
         "ISO 3864-1 compliant signage"
       ],
       modelPath: "/products/bl-fcs-bowl-004/model.glb",
-      thumbnail: "/products/bl-fcs-bowl-004/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-fcs-bowl-004/images/front.jpg",
       images: ["/products/bl-fcs-bowl-004/images/front.jpg"]
     },
     {
@@ -120,7 +119,7 @@ export const getProductsSync = (): Product[] => {
         "ISO 3864-1 compliant signage"
       ],
       modelPath: "/products/bl-fcs-handheld-005/model.glb",
-      thumbnail: "/products/bl-fcs-handheld-005/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-fcs-handheld-005/images/front.jpg",
       images: ["/products/bl-fcs-handheld-005/images/front.jpg"]
     },
     {
@@ -143,7 +142,7 @@ export const getProductsSync = (): Product[] => {
         "Supine position capability"
       ],
       modelPath: "/products/bl-bs-wall-006/model.glb",
-      thumbnail: "/products/bl-bs-wall-006/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-bs-wall-006/images/front.jpg",
       images: ["/products/bl-bs-wall-006/images/front.jpg"]
     },
     {
@@ -164,7 +163,7 @@ export const getProductsSync = (): Product[] => {
         "Maintenance-friendly design"
       ],
       modelPath: "/products/bl-bmf-metal-007/model.glb",
-      thumbnail: "/products/bl-bmf-metal-007/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-bmf-metal-007/images/front.jpg",
       images: ["/products/bl-bmf-metal-007/images/front.jpg"]
     },
     {
@@ -185,7 +184,7 @@ export const getProductsSync = (): Product[] => {
         "User-friendly design"
       ],
       modelPath: "/products/bl-bmf-lever-008/model.glb",
-      thumbnail: "/products/bl-bmf-lever-008/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-bmf-lever-008/images/front.jpg",
       images: ["/products/bl-bmf-lever-008/images/front.jpg"]
     },
     {
@@ -206,7 +205,7 @@ export const getProductsSync = (): Product[] => {
         "Laboratory-grade quality"
       ],
       modelPath: "/products/bl-bmf-column-009/model.glb",
-      thumbnail: "/products/bl-bmf-column-009/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-bmf-column-009/images/front.jpg",
       images: ["/products/bl-bmf-column-009/images/front.jpg"]
     },
     {
@@ -227,7 +226,7 @@ export const getProductsSync = (): Product[] => {
         "Reliable operation"
       ],
       modelPath: "/products/bl-bmm-two-010/model.glb",
-      thumbnail: "/products/bl-bmm-two-010/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-bmm-two-010/images/front.jpg",
       images: ["/products/bl-bmm-two-010/images/front.jpg"]
     },
     {
@@ -248,7 +247,7 @@ export const getProductsSync = (): Product[] => {
         "Reliable performance"
       ],
       modelPath: "/products/bl-bmm-single-011/model.glb",
-      thumbnail: "/products/bl-bmm-single-011/images/front.jpg", // Use front.jpg as thumbnail
+      thumbnail: "/products/bl-bmm-single-011/images/front.jpg",
       images: ["/products/bl-bmm-single-011/images/front.jpg"]
     },
 
@@ -259,7 +258,7 @@ export const getProductsSync = (): Product[] => {
       category: "Hamilton Laboratory Solutions",
       dimensions: "A x B x C mm",
       description: "Features spill containment, high visibility, and energy-efficient airflow—ideal for any modern lab.",
-      fullDescription: "Hamilton SafeAire II Fume Hoods deliver advanced protection and comfort with a secondary spill trough, ergonomic flush sill, and a tall 35" viewing area. Choose from bench or floor-mounted models and four widths. Features include louvered bypass airflow, a chemical-resistant finish, impact-resistant sash, and smart containment details for safe, efficient laboratory operation.",
+      fullDescription: "Hamilton SafeAire II Fume Hoods deliver advanced protection and comfort with a secondary spill trough, ergonomic flush sill, and a tall 35\" viewing area. Choose from bench or floor-mounted models and four widths. Features include louvered bypass airflow, a chemical-resistant finish, impact-resistant sash, and smart containment details for safe, efficient laboratory operation.",
       specifications: [
         "Widths: 4 ft, 5 ft, 6 ft, 8 ft",
         "35-inch extended viewing height",
@@ -275,7 +274,7 @@ export const getProductsSync = (): Product[] => {
         "SEFA 8 and LEED compliant"
       ],
       modelPath: "/products/hls-product-001/model.glb",
-      thumbnail: "/products/hls-product-001/thumbnail.webp", // This file exists
+      thumbnail: "/products/hls-product-001/thumbnail.webp",
       images: ["/products/hls-product-001/images/front.jpg"]
     },
     {
@@ -298,8 +297,8 @@ export const getProductsSync = (): Product[] => {
         "Shipped knocked-down for easy assembly"
       ],
       modelPath: "/products/hls-product-002/model.glb",
-      thumbnail: "/products/hls-product-002/thumbnail.webp", // This file exists
-      images: ["/products/hls-product-002/thumbnail.webp"] // Use thumbnail as image since front.jpg is missing
+      thumbnail: "/products/hls-product-002/thumbnail.webp",
+      images: ["/products/hls-product-002/thumbnail.webp"]
     }
   ];
 
