@@ -226,7 +226,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   };
   
   return (
-    <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden border border-gray-100`}>
+    <div className={`${className} ${
+      isHamiltonProduct 
+        ? 'bg-black' 
+        : 'bg-gradient-to-br from-gray-50 to-gray-100'
+    } rounded-lg overflow-hidden border border-gray-100`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
           camera={{ position: [8, 6, 8], fov: 45 }}
