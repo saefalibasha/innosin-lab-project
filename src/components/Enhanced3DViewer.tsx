@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -59,8 +60,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
           const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
+          const isHamiltonProduct = modelPath.includes('hls-product');
           
-          // Standard centering for all products (including Hamilton)
+          // Standard centering for all products
           modelClone.position.set(-center.x, -center.y, -center.z);
           
           // Standard scaling logic for all products
@@ -86,7 +88,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Standard camera positioning for all products
+          // Camera positioning based on product type
           const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
           const radius = boundingSphere.radius * scale;
           
@@ -102,8 +104,21 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
             camera.lookAt(0, 0, 0);
             
             console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+          } else if (isHamiltonProduct) {
+            // Much closer positioning for Hamilton products - similar to the reference image angle
+            const distance = radius * 1.8; // Much closer than before
+            
+            // Position camera at an angle similar to the reference image
+            const cameraX = distance * 0.8; // Right side
+            const cameraY = distance * 0.6; // Slightly above
+            const cameraZ = distance * 0.6; // Close to front
+            
+            camera.position.set(cameraX, cameraY, cameraZ);
+            camera.lookAt(0, 0, 0);
+            
+            console.log('Camera positioned close for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else {
-            // Standard positioning for all products (including Hamilton)
+            // Standard positioning for Broen Lab products
             const distance = radius * 4;
             
             const cameraX = distance * 0.7;
@@ -113,7 +128,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(0, 0, 0);
             
-            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned at standard angle for Broen product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           }
           
           camera.updateProjectionMatrix();
@@ -266,8 +281,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotateSpeed={0.5}
               maxPolarAngle={Math.PI * 0.9}
               minPolarAngle={Math.PI * 0.1}
-              minDistance={2}
-              maxDistance={20}
+              minDistance={isHamiltonProduct ? 1 : 2}
+              maxDistance={isHamiltonProduct ? 8 : 20}
               enableDamping={true}
               dampingFactor={0.08}
               target={[0, 0, 0]}
