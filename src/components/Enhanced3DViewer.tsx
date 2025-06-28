@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -59,58 +58,22 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          const isHamiltonProduct = modelPath.includes('hls-product');
           const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
           
-          // CENTER THE MODEL AT ORIGIN - CRITICAL FOR PROPER ROTATION AND FRAMING
-          if (isHamiltonProduct) {
-            // For Hamilton products, ensure perfect centering by calculating the true geometric center
-            const geometricCenter = new THREE.Vector3();
-            
-            // Get the exact center of the bounding box
-            box.getCenter(geometricCenter);
-            
-            // Move the model so its center is at world origin (0,0,0)
-            // This ensures the model rotates around its own center
-            modelClone.position.set(-geometricCenter.x, -geometricCenter.y, -geometricCenter.z);
-            
-            // Additional check: ensure the model is truly centered by recalculating
-            const verificationBox = new THREE.Box3().setFromObject(modelClone);
-            const verificationCenter = verificationBox.getCenter(new THREE.Vector3());
-            
-            console.log('Hamilton model centering verification:', { 
-              originalCenter: geometricCenter,
-              finalPosition: modelClone.position,
-              verificationCenter: verificationCenter,
-              isNearlyCentered: Math.abs(verificationCenter.x) < 0.01 && Math.abs(verificationCenter.y) < 0.01 && Math.abs(verificationCenter.z) < 0.01
-            });
-            
-            // If not perfectly centered, apply additional correction
-            if (Math.abs(verificationCenter.x) > 0.01 || Math.abs(verificationCenter.y) > 0.01 || Math.abs(verificationCenter.z) > 0.01) {
-              modelClone.position.add(new THREE.Vector3(-verificationCenter.x, -verificationCenter.y, -verificationCenter.z));
-              console.log('Applied additional centering correction for Hamilton model');
-            }
-          } else {
-            // Standard centering for other products
-            modelClone.position.set(-center.x, -center.y, -center.z);
-          }
+          // Standard centering for all products (including Hamilton)
+          modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // Improved scaling logic based on product type
+          // Standard scaling logic for all products
           const maxDimension = Math.max(size.x, size.y, size.z);
-          
           let targetSize = 3; // Default target size
           let scale = 1;
           
-          if (isHamiltonProduct) {
-            // Hamilton fume hoods - larger scale for better visibility
-            targetSize = 3.5;
-            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-          } else if (isRecessedEyeBodyShower) {
+          if (isRecessedEyeBodyShower) {
             // Wall-recessed products need different scaling
             targetSize = 2.8;
             scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           } else {
-            // Standard Broen Lab products
+            // Standard scaling for all products (including Hamilton)
             targetSize = 3;
             scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           }
@@ -121,26 +84,13 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           groupRef.current.clear();
           groupRef.current.add(modelClone);
           
-          console.log('Model centered and scaled:', { center, size, scale, maxDimension, isHamiltonProduct });
+          console.log('Model centered and scaled:', { center, size, scale, maxDimension });
           
-          // Improved camera positioning based on product type
+          // Standard camera positioning for all products
           const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
           const radius = boundingSphere.radius * scale;
           
-          if (isHamiltonProduct) {
-            // Hamilton fume hoods - much closer camera positioning for detailed view
-            const distance = radius * 1.4; // Much closer distance for clear view
-            
-            // Position camera at an optimal angle for close inspection
-            const cameraX = distance * 0.7;
-            const cameraY = distance * 0.4;
-            const cameraZ = distance * 0.9;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0); // Look directly at the world origin where the model is centered
-            
-            console.log('Camera positioned close to Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          } else if (isRecessedEyeBodyShower) {
+          if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
             const distance = radius * 3;
             
@@ -153,7 +103,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
             
             console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else {
-            // Standard positioning for other Broen Lab products
+            // Standard positioning for all products (including Hamilton)
             const distance = radius * 4;
             
             const cameraX = distance * 0.7;
@@ -244,7 +194,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: isHamiltonProduct ? 1.0 : 1.2
+            toneMappingExposure: 1.2
           }}
           onCreated={({ gl }) => {
             gl.shadowMap.enabled = true;
@@ -254,18 +204,18 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           <Suspense fallback={null}>
             {/* HDR Environment for realistic reflections and lighting */}
             <Environment 
-              preset={isHamiltonProduct ? "warehouse" : "studio"} 
+              preset="studio" 
               background={false}
-              environmentIntensity={isHamiltonProduct ? 0.5 : 0.6}
+              environmentIntensity={0.6}
             />
             
-            {/* Enhanced lighting setup for better model visibility and realism */}
-            <ambientLight intensity={isHamiltonProduct ? 0.4 : 0.3} color="#ffffff" />
+            {/* Standard lighting setup for all products */}
+            <ambientLight intensity={0.3} color="#ffffff" />
             
             {/* Key light - main illumination */}
             <directionalLight 
               position={[10, 10, 5]} 
-              intensity={isHamiltonProduct ? 1.0 : 1.2} 
+              intensity={1.2} 
               castShadow 
               shadow-mapSize={[2048, 2048]}
               shadow-camera-near={0.1}
@@ -280,7 +230,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             {/* Fill light - soften shadows */}
             <directionalLight 
               position={[-5, 5, -5]} 
-              intensity={isHamiltonProduct ? 0.3 : 0.4} 
+              intensity={0.4} 
               color="#b6d7ff"
             />
             
@@ -298,7 +248,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             {/* Contact shadows for ground contact realism */}
             <ContactShadows
               position={[0, -1.5, 0]}
-              opacity={isHamiltonProduct ? 0.3 : 0.4}
+              opacity={0.4}
               scale={10}
               blur={2.5}
               far={4}
@@ -316,8 +266,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotateSpeed={0.5}
               maxPolarAngle={Math.PI * 0.9}
               minPolarAngle={Math.PI * 0.1}
-              minDistance={isHamiltonProduct ? 1.5 : 2}
-              maxDistance={isHamiltonProduct ? 8 : 20}
+              minDistance={2}
+              maxDistance={20}
               enableDamping={true}
               dampingFactor={0.08}
               target={[0, 0, 0]}
