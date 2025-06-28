@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -17,15 +18,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   
   console.log('Loading GLB model from:', modelPath);
   
-  // Load the model with proper error handling
-  let scene: THREE.Group | null = null;
-  try {
-    const gltf = useGLTF(modelPath, true);
-    scene = gltf.scene;
-  } catch (loadError) {
-    console.error(`Failed to load GLB model: ${modelPath}`, loadError);
-    setError(`Failed to load 3D model: ${loadError instanceof Error ? loadError.message : 'Unknown error'}`);
-  }
+  // Load the model using useGLTF hook properly
+  const gltf = useGLTF(modelPath, true);
+  const scene = gltf.scene;
   
   // Process and center the model
   useEffect(() => {
@@ -97,7 +92,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         setError(`Failed to process 3D model: ${err instanceof Error ? err.message : 'Unknown error'}`);
       }
     }
-  }, [scene, isLoaded, error, modelPath]);
+  }, [scene, modelPath, isLoaded, error]);
   
   // Cleanup on unmount
   useEffect(() => {
