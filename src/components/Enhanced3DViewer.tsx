@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -70,8 +71,8 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           let scale = 1;
           
           if (isHamiltonProduct) {
-            // Hamilton products are typically larger fume hoods - use smaller scale
-            targetSize = 2.5;
+            // Hamilton products are typically larger fume hoods - use appropriate scale
+            targetSize = 3.2;
             scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           } else if (isRecessedEyeBodyShower) {
             // Wall-recessed products need different scaling
@@ -96,13 +97,13 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           const radius = boundingSphere.radius * scale;
           
           if (isHamiltonProduct) {
-            // Hamilton fume hoods - position for best frontal view
-            const distance = radius * 3.5;
+            // Hamilton fume hoods - optimized positioning for better viewing angle
+            const distance = radius * 2.8;
             
-            // Position camera slightly to the right and elevated for better view
-            const cameraX = distance * 0.6;
-            const cameraY = distance * 0.4;
-            const cameraZ = distance * 0.8;
+            // Position camera at an optimal angle to show the fume hood's front and side
+            const cameraX = distance * 0.8;
+            const cameraY = distance * 0.3;
+            const cameraZ = distance * 0.6;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(0, 0, 0);
@@ -200,17 +201,19 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
 }) => {
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
+  const isHamiltonProduct = modelPath.includes('hls-product');
+  
   return (
     <div className={`${className} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg overflow-hidden border border-gray-100`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [8, 6, 8], fov: 50 }}
+          camera={{ position: [8, 6, 8], fov: 45 }}
           shadows
           gl={{ 
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2
+            toneMappingExposure: isHamiltonProduct ? 1.0 : 1.2
           }}
           onCreated={({ gl }) => {
             gl.shadowMap.enabled = true;
@@ -220,18 +223,18 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           <Suspense fallback={null}>
             {/* HDR Environment for realistic reflections and lighting */}
             <Environment 
-              preset="studio" 
+              preset={isHamiltonProduct ? "warehouse" : "studio"} 
               background={false}
-              environmentIntensity={0.6}
+              environmentIntensity={isHamiltonProduct ? 0.5 : 0.6}
             />
             
             {/* Enhanced lighting setup for better model visibility and realism */}
-            <ambientLight intensity={0.3} color="#ffffff" />
+            <ambientLight intensity={isHamiltonProduct ? 0.4 : 0.3} color="#ffffff" />
             
             {/* Key light - main illumination */}
             <directionalLight 
               position={[10, 10, 5]} 
-              intensity={1.2} 
+              intensity={isHamiltonProduct ? 1.0 : 1.2} 
               castShadow 
               shadow-mapSize={[2048, 2048]}
               shadow-camera-near={0.1}
@@ -246,7 +249,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             {/* Fill light - soften shadows */}
             <directionalLight 
               position={[-5, 5, -5]} 
-              intensity={0.4} 
+              intensity={isHamiltonProduct ? 0.3 : 0.4} 
               color="#b6d7ff"
             />
             
@@ -264,7 +267,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             {/* Contact shadows for ground contact realism */}
             <ContactShadows
               position={[0, -1.5, 0]}
-              opacity={0.4}
+              opacity={isHamiltonProduct ? 0.3 : 0.4}
               scale={10}
               blur={2.5}
               far={4}
@@ -282,16 +285,16 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotateSpeed={0.5}
               maxPolarAngle={Math.PI * 0.9}
               minPolarAngle={Math.PI * 0.1}
-              minDistance={2}
-              maxDistance={20}
+              minDistance={isHamiltonProduct ? 3 : 2}
+              maxDistance={isHamiltonProduct ? 15 : 20}
               enableDamping={true}
-              dampingFactor={0.05}
+              dampingFactor={0.08}
               target={[0, 0, 0]}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
-              zoomSpeed={0.8}
-              panSpeed={0.8}
-              rotateSpeed={0.8}
+              zoomSpeed={0.6}
+              panSpeed={0.6}
+              rotateSpeed={0.6}
             />
           </Suspense>
         </Canvas>
