@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -281,16 +280,16 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotateSpeed={0.5}
               maxPolarAngle={Math.PI * 0.9}
               minPolarAngle={Math.PI * 0.1}
-              minDistance={isHamiltonProduct ? 1 : 2}
-              maxDistance={isHamiltonProduct ? 8 : 20}
+              minDistance={isHamiltonProduct ? 0.3 : 2}
+              maxDistance={isHamiltonProduct ? 15 : 20}
               enableDamping={true}
-              dampingFactor={0.08}
+              dampingFactor={isHamiltonProduct ? 0.15 : 0.08}
               target={[0, 0, 0]}
               minAzimuthAngle={-Infinity}
               maxAzimuthAngle={Infinity}
-              zoomSpeed={0.8}
-              panSpeed={0.8}
-              rotateSpeed={0.8}
+              zoomSpeed={isHamiltonProduct ? 0.5 : 0.8}
+              panSpeed={isHamiltonProduct ? 0.5 : 0.8}
+              rotateSpeed={isHamiltonProduct ? 0.4 : 0.8}
             />
           </Suspense>
         </Canvas>
