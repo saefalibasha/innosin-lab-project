@@ -59,13 +59,29 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          // Center the model at origin - THIS IS KEY FOR PROPER ROTATION
-          modelClone.position.set(-center.x, -center.y, -center.z);
+          const isHamiltonProduct = modelPath.includes('hls-product');
+          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
+          
+          // CENTER THE MODEL AT ORIGIN - CRITICAL FOR PROPER ROTATION AND FRAMING
+          if (isHamiltonProduct) {
+            // For Hamilton products, ensure perfect centering by using geometric center
+            const geometricCenter = new THREE.Vector3();
+            box.getCenter(geometricCenter);
+            
+            // Move the model so its geometric center is at world origin (0,0,0)
+            modelClone.position.set(-geometricCenter.x, -geometricCenter.y, -geometricCenter.z);
+            
+            console.log('Hamilton model centered at origin:', { 
+              originalCenter: geometricCenter, 
+              newPosition: modelClone.position 
+            });
+          } else {
+            // Standard centering for other products
+            modelClone.position.set(-center.x, -center.y, -center.z);
+          }
           
           // Improved scaling logic based on product type
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const isHamiltonProduct = modelPath.includes('hls-product');
-          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
           
           let targetSize = 3; // Default target size
           let scale = 1;
@@ -97,18 +113,18 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           const radius = boundingSphere.radius * scale;
           
           if (isHamiltonProduct) {
-            // Hamilton fume hoods - optimized positioning for better viewing angle
-            const distance = radius * 2.5;
+            // Hamilton fume hoods - positioned to show the centered model optimally
+            const distance = radius * 2.2; // Closer to see the centered model better
             
-            // Position camera at an optimal angle to show the fume hood's front and side
-            const cameraX = distance * 0.7;
-            const cameraY = distance * 0.4;
-            const cameraZ = distance * 0.7;
+            // Position camera at an optimal angle to show the centered fume hood
+            const cameraX = distance * 0.6;
+            const cameraY = distance * 0.5;
+            const cameraZ = distance * 0.8;
             
             camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0);
+            camera.lookAt(0, 0, 0); // Look directly at the centered model
             
-            console.log('Camera positioned for Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned for centered Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
             const distance = radius * 3;
