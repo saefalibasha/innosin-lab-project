@@ -1,3 +1,4 @@
+
 // Utility functions for managing product assets and data
 // This file handles the generation of product data from the public/products directory structure
 
@@ -27,8 +28,8 @@ export const getProductsSync = (): Product[] => {
         "Integrated dust caps"
       ],
       modelPath: "/products/bl-hes-bench-001/model.glb",
-      thumbnail: "/products/bl-hes-bench-001/thumbnail.webp",
-      images: ["/products/bl-hes-bench-001/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-hes-bench-001/images/front.jpg", // Use front.jpg as thumbnail since .webp doesn't exist
+      images: ["/products/bl-hes-bench-001/images/front.jpg"]
     },
     {
       id: "bl-hes-wall-002",
@@ -50,8 +51,8 @@ export const getProductsSync = (): Product[] => {
         "Trigger-operated spray head"
       ],
       modelPath: "/products/bl-hes-wall-002/model.glb",
-      thumbnail: "/products/bl-hes-wall-002/thumbnail.webp",
-      images: ["/products/bl-hes-wall-002/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-hes-wall-002/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-hes-wall-002/images/front.jpg"]
     },
     {
       id: "bl-ebs-recessed-003",
@@ -73,8 +74,8 @@ export const getProductsSync = (): Product[] => {
         "Wall-recessed design"
       ],
       modelPath: "/products/bl-ebs-recessed-003/model.glb",
-      thumbnail: "/products/bl-ebs-recessed-003/thumbnail.webp",
-      images: ["/products/bl-ebs-recessed-003/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-ebs-recessed-003/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-ebs-recessed-003/images/front.jpg"]
     },
     {
       id: "bl-fcs-bowl-004",
@@ -96,8 +97,8 @@ export const getProductsSync = (): Product[] => {
         "ISO 3864-1 compliant signage"
       ],
       modelPath: "/products/bl-fcs-bowl-004/model.glb",
-      thumbnail: "/products/bl-fcs-bowl-004/thumbnail.webp",
-      images: ["/products/bl-fcs-bowl-004/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-fcs-bowl-004/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-fcs-bowl-004/images/front.jpg"]
     },
     {
       id: "bl-fcs-handheld-005",
@@ -119,8 +120,8 @@ export const getProductsSync = (): Product[] => {
         "ISO 3864-1 compliant signage"
       ],
       modelPath: "/products/bl-fcs-handheld-005/model.glb",
-      thumbnail: "/products/bl-fcs-handheld-005/thumbnail.webp",
-      images: ["/products/bl-fcs-handheld-005/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-fcs-handheld-005/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-fcs-handheld-005/images/front.jpg"]
     },
     {
       id: "bl-bs-wall-006",
@@ -142,8 +143,8 @@ export const getProductsSync = (): Product[] => {
         "Supine position capability"
       ],
       modelPath: "/products/bl-bs-wall-006/model.glb",
-      thumbnail: "/products/bl-bs-wall-006/thumbnail.webp",
-      images: ["/products/bl-bs-wall-006/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-bs-wall-006/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-bs-wall-006/images/front.jpg"]
     },
     {
       id: "bl-bmf-metal-007",
@@ -163,8 +164,8 @@ export const getProductsSync = (): Product[] => {
         "Maintenance-friendly design"
       ],
       modelPath: "/products/bl-bmf-metal-007/model.glb",
-      thumbnail: "/products/bl-bmf-metal-007/thumbnail.webp",
-      images: ["/products/bl-bmf-metal-007/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-bmf-metal-007/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-bmf-metal-007/images/front.jpg"]
     },
     {
       id: "bl-bmf-lever-008",
@@ -184,8 +185,8 @@ export const getProductsSync = (): Product[] => {
         "User-friendly design"
       ],
       modelPath: "/products/bl-bmf-lever-008/model.glb",
-      thumbnail: "/products/bl-bmf-lever-008/thumbnail.webp",
-      images: ["/products/bl-bmf-lever-008/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-bmf-lever-008/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-bmf-lever-008/images/front.jpg"]
     },
     {
       id: "bl-bmf-column-009",
@@ -205,8 +206,8 @@ export const getProductsSync = (): Product[] => {
         "Laboratory-grade quality"
       ],
       modelPath: "/products/bl-bmf-column-009/model.glb",
-      thumbnail: "/products/bl-bmf-column-009/thumbnail.webp",
-      images: ["/products/bl-bmf-column-009/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-bmf-column-009/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-bmf-column-009/images/front.jpg"]
     },
     {
       id: "bl-bmm-two-010",
@@ -226,8 +227,8 @@ export const getProductsSync = (): Product[] => {
         "Reliable operation"
       ],
       modelPath: "/products/bl-bmm-two-010/model.glb",
-      thumbnail: "/products/bl-bmm-two-010/thumbnail.webp",
-      images: ["/products/bl-bmm-two-010/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-bmm-two-010/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-bmm-two-010/images/front.jpg"]
     },
     {
       id: "bl-bmm-single-011",
@@ -247,11 +248,11 @@ export const getProductsSync = (): Product[] => {
         "Reliable performance"
       ],
       modelPath: "/products/bl-bmm-single-011/model.glb",
-      thumbnail: "/products/bl-bmm-single-011/thumbnail.webp",
-      images: ["/products/bl-bmm-single-011/images/front.jpg"] // Only front image
+      thumbnail: "/products/bl-bmm-single-011/images/front.jpg", // Use front.jpg as thumbnail
+      images: ["/products/bl-bmm-single-011/images/front.jpg"]
     },
 
-    // NEW HAMILTON LABORATORY SOLUTIONS PRODUCTS
+    // HAMILTON LABORATORY SOLUTIONS PRODUCTS
     {
       id: "hls-product-001",
       name: "Safe Aire II Fume Hoods Bench Mounted",
@@ -260,21 +261,21 @@ export const getProductsSync = (): Product[] => {
       description: "Features spill containment, high visibility, and energy-efficient airflow—ideal for any modern lab.",
       fullDescription: "Hamilton SafeAire II Fume Hoods deliver advanced protection and comfort with a secondary spill trough, ergonomic flush sill, and a tall 35" viewing area. Choose from bench or floor-mounted models and four widths. Features include louvered bypass airflow, a chemical-resistant finish, impact-resistant sash, and smart containment details for safe, efficient laboratory operation.",
       specifications: [
-    "Widths: 4 ft, 5 ft, 6 ft, 8 ft",
-    "35-inch extended viewing height",
-    "Secondary spill containment trough",
-    "Louvered bypass for steady airflow",
-    "Unframed, impact-resistant sash with lock/release",
-    "Soft PVC gasketed access panel",
-    "Ergonomic, obstruction-free airfoil",
-    "Contoured exhaust collar reduces noise and saves energy",
-    "Chemical-resistant powdercoat in 18 standard colors",
-    "Liner options: polyresin, stainless steel, or PVC (NFPA compliant)",
-    "Optional electronic safety monitor and remote baffle control",
-    "SEFA 8 and LEED compliant"
+        "Widths: 4 ft, 5 ft, 6 ft, 8 ft",
+        "35-inch extended viewing height",
+        "Secondary spill containment trough",
+        "Louvered bypass for steady airflow",
+        "Unframed, impact-resistant sash with lock/release",
+        "Soft PVC gasketed access panel",
+        "Ergonomic, obstruction-free airfoil",
+        "Contoured exhaust collar reduces noise and saves energy",
+        "Chemical-resistant powdercoat in 18 standard colors",
+        "Liner options: polyresin, stainless steel, or PVC (NFPA compliant)",
+        "Optional electronic safety monitor and remote baffle control",
+        "SEFA 8 and LEED compliant"
       ],
       modelPath: "/products/hls-product-001/model.glb",
-      thumbnail: "/products/hls-product-001/thumbnail.webp",
+      thumbnail: "/products/hls-product-001/thumbnail.webp", // This file exists
       images: ["/products/hls-product-001/images/front.jpg"]
     },
     {
@@ -285,7 +286,7 @@ export const getProductsSync = (): Product[] => {
       description: "Features full-view sashes, side access, integrated lighting, and is compatible with both constant and variable air volume exhaust systems.",
       fullDescription: "The Safe Aire II Floor-Mounted Fume Hood is designed for large or roll-in laboratory equipment and supports both constant and variable air volume exhaust systems. It features a full-view vertical sash, side access panels, fluorescent lighting, electrical outlets, and multiple width options. Safety glass sashes, service access, and pre-plugged utility holes come standard. Units are UL 1805 classified and shipped for easy job-site assembly",
       specifications: [
-       "Floor-mounted, restricted bypass fume hood",
+        "Floor-mounted, restricted bypass fume hood",
         "Available widths: 4 ft, 5 ft, 6 ft, 8 ft",
         "Full-view laminated safety glass vertical sash",
         "Side access panels with PVC gaskets",
@@ -297,8 +298,8 @@ export const getProductsSync = (): Product[] => {
         "Shipped knocked-down for easy assembly"
       ],
       modelPath: "/products/hls-product-002/model.glb",
-      thumbnail: "/products/hls-product-002/thumbnail.webp",
-      images: ["/products/hls-product-002/images/front.jpg"]
+      thumbnail: "/products/hls-product-002/thumbnail.webp", // This file exists
+      images: ["/products/hls-product-002/thumbnail.webp"] // Use thumbnail as image since front.jpg is missing
     }
   ];
 
