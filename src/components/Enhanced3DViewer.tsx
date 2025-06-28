@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -62,27 +61,56 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           // Center the model at origin
           modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // More conservative scaling to ensure model is clearly visible
+          // Improved scaling logic based on product type
           const maxDimension = Math.max(size.x, size.y, size.z);
-          const targetSize = 3; // Smaller target size for better overview
-          const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          const isHamiltonProduct = modelPath.includes('hls-product');
+          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
+          
+          let targetSize = 3; // Default target size
+          let scale = 1;
+          
+          if (isHamiltonProduct) {
+            // Hamilton products are typically larger fume hoods - use smaller scale
+            targetSize = 2.5;
+            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          } else if (isRecessedEyeBodyShower) {
+            // Wall-recessed products need different scaling
+            targetSize = 2.8;
+            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          } else {
+            // Standard Broen Lab products
+            targetSize = 3;
+            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          }
+          
           modelClone.scale.setScalar(scale);
           
           // Clear previous children and add the centered/scaled model
           groupRef.current.clear();
           groupRef.current.add(modelClone);
           
-          console.log('Model centered and scaled:', { center, size, scale, maxDimension });
+          console.log('Model centered and scaled:', { center, size, scale, maxDimension, isHamiltonProduct });
           
-          // Check if this is the Eye and Body Shower, Wall-Recessed model
-          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
-          
-          // Adjust camera positioning based on the specific product
+          // Improved camera positioning based on product type
           const boundingSphere = box.getBoundingSphere(new THREE.Sphere());
+          const radius = boundingSphere.radius * scale;
           
-          if (isRecessedEyeBodyShower) {
+          if (isHamiltonProduct) {
+            // Hamilton fume hoods - position for best frontal view
+            const distance = radius * 3.5;
+            
+            // Position camera slightly to the right and elevated for better view
+            const cameraX = distance * 0.6;
+            const cameraY = distance * 0.4;
+            const cameraZ = distance * 0.8;
+            
+            camera.position.set(cameraX, cameraY, cameraZ);
+            camera.lookAt(0, 0, 0);
+            
+            console.log('Camera positioned for Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+          } else if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
-            const distance = boundingSphere.radius * 2.5;
+            const distance = radius * 3;
             
             const cameraX = 0;
             const cameraY = distance * 0.3;
@@ -91,10 +119,10 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(0, 0, 0);
             
-            console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance });
+            console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else {
-            // Standard positioning for other models
-            const distance = boundingSphere.radius * 8;
+            // Standard positioning for other Broen Lab products
+            const distance = radius * 4;
             
             const cameraX = distance * 0.7;
             const cameraY = distance * 0.5;
@@ -103,7 +131,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(0, 0, 0);
             
-            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance });
+            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           }
           
           camera.updateProjectionMatrix();
