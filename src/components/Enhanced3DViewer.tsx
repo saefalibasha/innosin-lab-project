@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -64,17 +63,32 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           
           // CENTER THE MODEL AT ORIGIN - CRITICAL FOR PROPER ROTATION AND FRAMING
           if (isHamiltonProduct) {
-            // For Hamilton products, ensure perfect centering by using geometric center
+            // For Hamilton products, ensure perfect centering by calculating the true geometric center
             const geometricCenter = new THREE.Vector3();
+            
+            // Get the exact center of the bounding box
             box.getCenter(geometricCenter);
             
-            // Move the model so its geometric center is at world origin (0,0,0)
+            // Move the model so its center is at world origin (0,0,0)
+            // This ensures the model rotates around its own center
             modelClone.position.set(-geometricCenter.x, -geometricCenter.y, -geometricCenter.z);
             
-            console.log('Hamilton model centered at origin:', { 
-              originalCenter: geometricCenter, 
-              newPosition: modelClone.position 
+            // Additional check: ensure the model is truly centered by recalculating
+            const verificationBox = new THREE.Box3().setFromObject(modelClone);
+            const verificationCenter = verificationBox.getCenter(new THREE.Vector3());
+            
+            console.log('Hamilton model centering verification:', { 
+              originalCenter: geometricCenter,
+              finalPosition: modelClone.position,
+              verificationCenter: verificationCenter,
+              isNearlyCentered: Math.abs(verificationCenter.x) < 0.01 && Math.abs(verificationCenter.y) < 0.01 && Math.abs(verificationCenter.z) < 0.01
             });
+            
+            // If not perfectly centered, apply additional correction
+            if (Math.abs(verificationCenter.x) > 0.01 || Math.abs(verificationCenter.y) > 0.01 || Math.abs(verificationCenter.z) > 0.01) {
+              modelClone.position.add(new THREE.Vector3(-verificationCenter.x, -verificationCenter.y, -verificationCenter.z));
+              console.log('Applied additional centering correction for Hamilton model');
+            }
           } else {
             // Standard centering for other products
             modelClone.position.set(-center.x, -center.y, -center.z);
@@ -113,18 +127,18 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           const radius = boundingSphere.radius * scale;
           
           if (isHamiltonProduct) {
-            // Hamilton fume hoods - positioned to show the centered model optimally
-            const distance = radius * 2.2; // Closer to see the centered model better
+            // Hamilton fume hoods - positioned to show the perfectly centered model
+            const distance = radius * 2.0; // Optimal distance to see the centered model
             
-            // Position camera at an optimal angle to show the centered fume hood
-            const cameraX = distance * 0.6;
-            const cameraY = distance * 0.5;
+            // Position camera at an angle that shows the centered fume hood clearly
+            const cameraX = distance * 0.8;
+            const cameraY = distance * 0.6;
             const cameraZ = distance * 0.8;
             
             camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(0, 0, 0); // Look directly at the centered model
+            camera.lookAt(0, 0, 0); // Look directly at the world origin where the model is centered
             
-            console.log('Camera positioned for centered Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned for perfectly centered Hamilton product at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isRecessedEyeBodyShower) {
             // Position camera directly in front of the door/handle area
             const distance = radius * 3;
