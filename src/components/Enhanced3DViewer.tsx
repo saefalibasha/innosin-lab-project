@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -18,16 +17,15 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
   
   console.log('Loading GLB model from:', modelPath);
   
-  // Load the model with error handling
-  const { scene, error: gltfError } = useGLTF(modelPath, true);
-  
-  // Handle GLTF loading errors
-  useEffect(() => {
-    if (gltfError) {
-      console.error(`Failed to load GLB model: ${modelPath}`, gltfError);
-      setError(`Failed to load 3D model: ${gltfError.message}`);
-    }
-  }, [gltfError, modelPath]);
+  // Load the model with proper error handling
+  let scene: THREE.Group | null = null;
+  try {
+    const gltf = useGLTF(modelPath, true);
+    scene = gltf.scene;
+  } catch (loadError) {
+    console.error(`Failed to load GLB model: ${modelPath}`, loadError);
+    setError(`Failed to load 3D model: ${loadError instanceof Error ? loadError.message : 'Unknown error'}`);
+  }
   
   // Process and center the model
   useEffect(() => {
@@ -62,16 +60,16 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
           }
         });
         
-        // Calculate bounding box for centering
+        // Calculate bounding box for proper centering
         const box = new THREE.Box3().setFromObject(modelClone);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
         if (size.length() > 0) {
-          // Center the model at origin for proper rotation
+          // Center the model at origin for natural rotation
           modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // Scale the model appropriately
+          // Scale the model to fit the viewer
           const maxDimension = Math.max(size.x, size.y, size.z);
           const isHamiltonProduct = modelPath.includes('hls-product');
           const targetSize = isHamiltonProduct ? 2.5 : 3;
@@ -119,7 +117,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath }) => {
     };
   }, []);
   
-  // Subtle animation on hover
+  // Subtle floating animation
   useFrame((state) => {
     if (groupRef.current && isLoaded) {
       // Gentle floating animation
@@ -307,7 +305,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             
             <OrbitControls 
               enableZoom={true}
-              enablePan={true}
+              enablePan={false}
               enableRotate={true}
               autoRotate={false}
               target={[0, 0, 0]}
