@@ -253,50 +253,52 @@ export const getProductsSync = (): Product[] => {
 
     // NEW HAMILTON LABORATORY SOLUTIONS PRODUCTS
     {
-      id: "hls-microlab-star-001",
-      name: "Hamilton Microlab STAR Liquid Handling Workstation",
+      id: "hls-product-001",
+      name: "Safe Aire II Fume Hoods Bench Mounted",
       category: "Hamilton Laboratory Solutions",
-      dimensions: "1200 x 750 x 650 mm",
-      description: "Advanced automated liquid handling workstation with precision pipetting for high-throughput laboratory applications.",
-      fullDescription: "The Hamilton Microlab STAR is a versatile liquid handling workstation designed for automated pipetting, dilutions, and sample preparation in research and clinical laboratories. Featuring Hamilton's proprietary Anti-Droplet Control (ADC) technology and Monitored Air Displacement (MAD) pipetting, the system ensures exceptional accuracy and precision across a wide range of volumes. The modular design allows for customization with various deck accessories, including tip handling, plate stackers, and integrated readers. With its intuitive VENUS software interface, the STAR enables efficient protocol development and execution for applications ranging from PCR setup to ELISA processing.",
+      dimensions: "A x B x C mm",
+      description: "Features spill containment, high visibility, and energy-efficient airflow—ideal for any modern lab.",
+      fullDescription: "Hamilton SafeAire II Fume Hoods deliver advanced protection and comfort with a secondary spill trough, ergonomic flush sill, and a tall 35" viewing area. Choose from bench or floor-mounted models and four widths. Features include louvered bypass airflow, a chemical-resistant finish, impact-resistant sash, and smart containment details for safe, efficient laboratory operation.",
       specifications: [
-        "8-channel pipetting head with ADC",
-        "Volume range: 1-1000 μL",
-        "Accuracy: ±1.5% (at 10 μL)",
-        "Precision: <1% CV (at 10 μL)",
-        "VENUS software included",
-        "Modular deck configuration",
-        "Integrated barcode reader option",
-        "Temperature control modules",
-        "LIMS connectivity",
-        "21 CFR Part 11 compliance"
+    "Widths: 4 ft, 5 ft, 6 ft, 8 ft",
+    "35-inch extended viewing height",
+    "Secondary spill containment trough",
+    "Louvered bypass for steady airflow",
+    "Unframed, impact-resistant sash with lock/release",
+    "Soft PVC gasketed access panel",
+    "Ergonomic, obstruction-free airfoil",
+    "Contoured exhaust collar reduces noise and saves energy",
+    "Chemical-resistant powdercoat in 18 standard colors",
+    "Liner options: polyresin, stainless steel, or PVC (NFPA compliant)",
+    "Optional electronic safety monitor and remote baffle control",
+    "SEFA 8 and LEED compliant"
       ],
-      modelPath: "/products/hls-microlab-star-001/model.glb",
-      thumbnail: "/products/hls-microlab-star-001/thumbnail.webp",
-      images: ["/products/hls-microlab-star-001/images/front.jpg"]
+      modelPath: "/products/hls-product-001/model.glb",
+      thumbnail: "/products/hls-product-001/thumbnail.webp",
+      images: ["/products/hls-product-001/images/front.jpg"]
     },
     {
-      id: "hls-vantage-001",
-      name: "Hamilton Vantage Liquid Handling System",
+      id: "hls-product-002",
+      name: "Safe Aire II Fume Hoods Floor Mounted",
       category: "Hamilton Laboratory Solutions",
-      dimensions: "1500 x 900 x 700 mm",
-      description: "High-capacity automated liquid handling platform with advanced robotics for complex laboratory workflows.",
-      fullDescription: "The Hamilton Vantage represents the pinnacle of automated liquid handling technology, combining precision robotics with intelligent software control for complex laboratory applications. This high-throughput system features Hamilton's CO-RE (Compressed O-Ring Expansion) technology for contamination-free pipetting and integrated plate handling capabilities. The Vantage platform supports multiple simultaneous protocols, advanced error recovery, and real-time monitoring through its sophisticated control system. Designed for pharmaceutical research, genomics, and clinical diagnostics, the system can handle complex workflows including sample tracking, quality control, and data management integration.",
+      dimensions: "A x B x C mm",
+      description: "Features full-view sashes, side access, integrated lighting, and is compatible with both constant and variable air volume exhaust systems.",
+      fullDescription: "The Safe Aire II Floor-Mounted Fume Hood is designed for large or roll-in laboratory equipment and supports both constant and variable air volume exhaust systems. It features a full-view vertical sash, side access panels, fluorescent lighting, electrical outlets, and multiple width options. Safety glass sashes, service access, and pre-plugged utility holes come standard. Units are UL 1805 classified and shipped for easy job-site assembly",
       specifications: [
-        "16-channel CO-RE pipetting head",
-        "Volume range: 0.5-5000 μL",
-        "Throughput: >10,000 samples/day",
-        "Integrated plate hotel (50+ plates)",
-        "Robotic arm with 6-axis movement",
-        "Environmental controls (±0.1°C)",
-        "Real-time liquid level detection",
-        "Advanced error recovery system",
-        "Hamilton VENUS software suite",
-        "GLP/GMP validation packages"
+       "Floor-mounted, restricted bypass fume hood",
+        "Available widths: 4 ft, 5 ft, 6 ft, 8 ft",
+        "Full-view laminated safety glass vertical sash",
+        "Side access panels with PVC gaskets",
+        "Integrated fluorescent lighting",
+        "Includes cup sink and dual 120 VAC outlets",
+        "Pre-plugged holes for utility fixture installation",
+        "UL 1805 safety classification",
+        "Exhaust volumes: up to 2000 CFM (vertical), 1125 CFM (horizontal)",
+        "Shipped knocked-down for easy assembly"
       ],
-      modelPath: "/products/hls-vantage-001/model.glb",
-      thumbnail: "/products/hls-vantage-001/thumbnail.webp",
-      images: ["/products/hls-vantage-001/images/front.jpg"]
+      modelPath: "/products/hls-product-002/model.glb",
+      thumbnail: "/products/hls-product-002/thumbnail.webp",
+      images: ["/products/hls-product-002/images/front.jpg"]
     }
   ];
 
