@@ -1,4 +1,3 @@
-
 // Utility functions for managing product assets and data
 // This file handles the generation of product data from the public/products directory structure
 
@@ -309,12 +308,12 @@ export const getProductsSync = (): Product[] => {
       category: "Oriental Giken",
       dimensions: "X × X × X mm",
       description: "Class II biosafety cabinet featuring Japanese design elegance, intuitive operation, and rigorous safety performance.",
-      fullDescription: "“Tangerine” is a Japan‑designed Class II biosafety cabinet compliant with JIS K 3800 (NSF/ANSI‑49 equivalent). It delivers operator and product protection via precise airflow management, HEPA filtration, and smart sash/monitoring systems. Its curved aesthetics, intuitive interface, ample workspace, digital displays, voice alerts, and castered open-base stand enhance usability and lab adaptability.",
+      fullDescription: ""Tangerine" is a Japan‑designed Class II biosafety cabinet compliant with JIS K 3800 (NSF/ANSI‑49 equivalent). It delivers operator and product protection via precise airflow management, HEPA filtration, and smart sash/monitoring systems. Its curved aesthetics, intuitive interface, ample workspace, digital displays, voice alerts, and castered open-base stand enhance usability and lab adaptability.",
       specifications: [
-        "Class II (Type A2/B2) biosafety cabinet, JIS K 3800 compliant",
+        "Class II (Type A2/B2) biosafety cabinet, JIS K 3800 compliant",
         "Digital monitoring with inflow/downflow velocity, filter & UV-lamp life",
         "Voice alert system for low airflow or system issues",
-        "HEPA filtration ≥99.99% at 0.3 µm",
+        "HEPA filtration ≥99.99% at 0.3 µm",
         "Spacious workspace; larger than standard models",
         "Curved design, intuitive flat-switch panel, LED lighting",
         "Open-base frame with casters for convenient relocation",
@@ -329,7 +328,7 @@ export const getProductsSync = (): Product[] => {
       category: "Oriental Giken",
       dimensions: "X × X × X mm",
       description: "Sleek, ergonomic fume hood offering both high containment performance and refined aesthetics.",
-      fullDescription: "The Oriental Giken NOCE Series fume hood seamlessly merges cutting‑edge safety with elegant design. Meeting ASHRAE 110 and EN 14175‑3 standards, it incorporates advanced airflow-control technology and ergonomic sash operation to reduce user strain while ensuring containment and efficiency",
+      fullDescription: "The Oriental Giken NOCE Series fume hood seamlessly merges cutting‑edge safety with elegant design. Meeting ASHRAE 110 and EN 14175‑3 standards, it incorporates advanced airflow-control technology and ergonomic sash operation to reduce user strain while ensuring containment and efficiency",
       specifications: [
         "ASHRAE 110 & EN 14175‑3 compliance",
         "Advanced Airflow Control Technology",
