@@ -308,7 +308,7 @@ export const getProductsSync = (): Product[] => {
       category: "Oriental Giken",
       dimensions: "X × X × X mm",
       description: "Class II biosafety cabinet featuring Japanese design elegance, intuitive operation, and rigorous safety performance.",
-      fullDescription: ""Tangerine" is a Japan‑designed Class II biosafety cabinet compliant with JIS K 3800 (NSF/ANSI‑49 equivalent). It delivers operator and product protection via precise airflow management, HEPA filtration, and smart sash/monitoring systems. Its curved aesthetics, intuitive interface, ample workspace, digital displays, voice alerts, and castered open-base stand enhance usability and lab adaptability.",
+      fullDescription: "Tangerine is a Japan‑designed Class II biosafety cabinet compliant with JIS K 3800 (NSF/ANSI‑49 equivalent). It delivers operator and product protection via precise airflow management, HEPA filtration, and smart sash/monitoring systems. Its curved aesthetics, intuitive interface, ample workspace, digital displays, voice alerts, and castered open-base stand enhance usability and lab adaptability.",
       specifications: [
         "Class II (Type A2/B2) biosafety cabinet, JIS K 3800 compliant",
         "Digital monitoring with inflow/downflow velocity, filter & UV-lamp life",
@@ -316,7 +316,7 @@ export const getProductsSync = (): Product[] => {
         "HEPA filtration ≥99.99% at 0.3 µm",
         "Spacious workspace; larger than standard models",
         "Curved design, intuitive flat-switch panel, LED lighting",
-        "Open-base frame with casters for convenient relocation",
+        "Open-base frame with casters for convenient relocation"
       ],
       modelPath: "/products/og-bsc-001/model.glb",
       thumbnail: "/products/og-bsc-001/images/front.jpg",
