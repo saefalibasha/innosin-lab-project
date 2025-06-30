@@ -1,3 +1,4 @@
+
 // Utility functions for managing product assets and data
 // This file handles the generation of product data from the public/products directory structure
 
@@ -299,6 +300,59 @@ export const getProductsSync = (): Product[] => {
       modelPath: "/products/hls-product-002/model.glb",
       thumbnail: "/products/hls-product-002/thumbnail.webp",
       images: ["/products/hls-product-002/thumbnail.webp"]
+    },
+
+    // ORIENTAL GIKEN PRODUCTS
+    {
+      id: "og-bsc-001",
+      name: "Class II Biological Safety Cabinet",
+      category: "Oriental Giken",
+      dimensions: "1200 × 600 × 2200 mm",
+      description: "Advanced Class II biological safety cabinet with HEPA filtration and precise airflow control for maximum protection.",
+      fullDescription: "The Oriental Giken Class II Biological Safety Cabinet provides superior protection for both personnel and samples through advanced HEPA filtration technology and precisely controlled airflow systems. Designed for microbiological work, cell culture, and other applications requiring sterile conditions, this cabinet features a motorized sash, LED lighting, and an intuitive control panel. The cabinet meets international safety standards including NSF/ANSI 49, EN 12469, and JIS K 3800, ensuring reliable containment and protection in laboratory environments.",
+      specifications: [
+        "Class II, Type A2 biosafety cabinet",
+        "HEPA filtration efficiency: 99.99% at 0.3μm",
+        "Downflow velocity: 0.25-0.5 m/s",
+        "Inflow velocity: 0.38-0.63 m/s",
+        "Motorized sash with memory function",
+        "LED lighting system",
+        "Digital display control panel",
+        "NSF/ANSI 49 certified",
+        "EN 12469 compliant",
+        "JIS K 3800 standard",
+        "UV lamp for decontamination",
+        "Audible and visual alarms"
+      ],
+      modelPath: "/products/og-bsc-001/model.glb",
+      thumbnail: "/products/og-bsc-001/images/front.jpg",
+      images: ["/products/og-bsc-001/images/front.jpg"]
+    },
+    {
+      id: "og-fh-002", 
+      name: "Laboratory Fume Hood with Variable Air Volume",
+      category: "Oriental Giken",
+      dimensions: "1500 × 750 × 2400 mm",
+      description: "High-performance laboratory fume hood with variable air volume control and energy-efficient operation.",
+      fullDescription: "The Oriental Giken Laboratory Fume Hood combines superior containment performance with energy-efficient operation through advanced variable air volume (VAV) technology. Featuring a streamlined airfoil design, chemical-resistant construction, and intelligent sash positioning controls, this fume hood provides optimal protection while minimizing energy consumption. The hood includes integrated safety features such as face velocity monitoring, emergency purge capability, and comprehensive alarm systems to ensure safe laboratory operation.",
+      specifications: [
+        "Variable Air Volume (VAV) control system",
+        "Face velocity: 0.4-0.6 m/s",
+        "Streamlined airfoil design",
+        "Chemical-resistant epoxy resin interior",
+        "Vertical rising sash with counterweights",
+        "Digital face velocity monitor",
+        "Emergency purge function",
+        "Service fixtures: electrical, gas, water",
+        "LED lighting with vapor-tight housing",
+        "Audible and visual alarm system",
+        "Energy-efficient operation",
+        "ASHRAE 110 tested",
+        "Available widths: 1200, 1500, 1800 mm"
+      ],
+      modelPath: "/products/og-fh-002/model.glb", 
+      thumbnail: "/products/og-fh-002/images/front.jpg",
+      images: ["/products/og-fh-002/images/front.jpg"]
     }
   ];
 
