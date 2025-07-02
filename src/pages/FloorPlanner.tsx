@@ -427,6 +427,11 @@ const FloorPlanner = () => {
                 placedProducts={placedProducts}
                 onObjectSelect={handleObjectSelect}
                 selectedObjects={selectedObjects}
+                onUpdateProduct={(product) => {
+                  setPlacedProducts(prev => prev.map(p => p.id === product.id ? product : p));
+                }}
+                onDeleteProduct={handleDeleteSelected}
+                onDuplicateProduct={handleDuplicate}
               />
               
               {/* Status Indicator in Sidebar */}

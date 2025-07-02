@@ -27,6 +27,26 @@ export interface PlacedProduct {
   color: string;
   scale?: number;
   category?: string;
+  modelPath?: string;
+  thumbnail?: string;
+  description?: string;
+  specifications?: string[];
+  finishes?: Array<{
+    type: 'powder-coat' | 'stainless-steel';
+    name: string;
+    price?: string;
+    modelPath?: string;
+    thumbnail?: string;
+    images?: string[];
+  }>;
+  variants?: Array<{
+    id: string;
+    size: string;
+    dimensions: string;
+    modelPath: string;
+    thumbnail: string;
+    images: string[];
+  }>;
 }
 
 export interface Door {

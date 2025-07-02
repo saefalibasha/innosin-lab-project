@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import ObjectLibrary from '@/components/ObjectLibrary';
 import ObjectLegend from '@/components/ObjectLegend';
 import UnitSelector from '@/components/UnitSelector';
+import ProductDimensionEditor from '@/components/ProductDimensionEditor';
 import { 
   Mouse, 
   Square, 
@@ -42,6 +43,9 @@ interface CompactToolPanelProps {
   placedProducts?: PlacedProduct[];
   onObjectSelect?: (objectId: string) => void;
   selectedObjects?: string[];
+  onUpdateProduct?: (product: PlacedProduct) => void;
+  onDeleteProduct?: () => void;
+  onDuplicateProduct?: () => void;
 }
 
 const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
@@ -59,8 +63,15 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
   onProductDrag,
   placedProducts = [],
   onObjectSelect = () => {},
-  selectedObjects = []
+  selectedObjects = [],
+  onUpdateProduct = () => {},
+  onDeleteProduct = () => {},
+  onDuplicateProduct = () => {}
 }) => {
+  // Get the selected product
+  const selectedProduct = selectedObjects.length === 1 
+    ? placedProducts.find(p => p.id === selectedObjects[0]) || null 
+    : null;
   const tools = [
     { id: 'select', label: 'Select', icon: Mouse, shortcut: 'S' },
     { id: 'wall', label: 'Wall', icon: Minus, shortcut: 'W' },
@@ -167,6 +178,15 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
       <ObjectLibrary
         onProductDrag={onProductDrag}
         currentTool={currentTool as DrawingTool}
+      />
+
+      {/* Product Dimension Editor */}
+      <ProductDimensionEditor
+        selectedProduct={selectedProduct}
+        onUpdateProduct={onUpdateProduct}
+        onDeleteProduct={onDeleteProduct}
+        onDuplicateProduct={onDuplicateProduct}
+        units={units}
       />
 
       {/* Object Legend */}
