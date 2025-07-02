@@ -10,7 +10,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-hes-bench-001",
       name: "Hand-Held Eye Shower with Two 45-degree Heads, Bench Mounted",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "1.5m hose length",
       description: "Bench-mounted, hand-held dual eye and body wash unit with precision-formed spray heads for emergency decontamination.",
       fullDescription: "The bench-mounted, hand-held dual eye and body wash unit is meticulously engineered to facilitate simultaneous rinsing of the eyes, face, and upper body in emergency situations. Outfitted with precision-formed, easy-clean spray heads, the system effectively mitigates limescale accumulation, thereby ensuring sustained performance and extended operational lifespan. Integrated dust caps provide a secure seal against particulate ingress, maintaining hygiene and functionality; once activated, the caps remain open to enable continuous, unobstructed rinsing. The assembly is fully compliant with EN15154 and ANSI Z358.1 standards, ensuring optimal spray distribution, user safety, and regulatory reliability.",
@@ -33,7 +33,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-hes-wall-002",
       name: "Hand-Held Eye Shower with Two 45-degree Heads, Wall Mounted",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "1.5m hose length",
       description: "Wall-mounted, hand-held dual eye and body wash unit for emergency decontamination with advanced easy-clean spray heads.",
       fullDescription: "The wall-mounted, hand-held dual eye and body wash unit is specifically engineered to deliver simultaneous decontamination of the eyes, face, and upper body in emergency scenarios. Featuring advanced easy-clean spray heads, the unit minimizes limescale accumulation, thereby ensuring optimal hydraulic performance and extended system longevity. Dust ingress is prevented through integrated, tightly sealing dust caps, which automatically remain open during operation to enable uninterrupted rinsing. The unit is fully compliant with EN15154 and ANSI Z358.1 standards, guaranteeing an optimal spray pattern, operational safety, and regulatory conformity.",
@@ -56,7 +56,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-ebs-recessed-003",
       name: "Eye and Body Shower, Wall-Recessed and Stainless Steel",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Wall-recessed installation",
       description: "Space-efficient recessed emergency shower system with integrated containment basin and stainless steel construction.",
       fullDescription: "The recessed emergency shower system is purpose-built for simultaneous decontamination of the eyes, face, and body, offering a space-efficient solution by integrating seamlessly into wall structures. Activation is initiated by opening the cabinet door, which also functions as a containment basin for water during operation, enhancing safety and hygiene in the surrounding area. The unit incorporates an integrated 1\" hand-operated activation valve for the body shower, with multiple configurable outlet options available to meet diverse application requirements.",
@@ -79,7 +79,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-fcs-bowl-004",
       name: "Freestanding Combination Shower with Bowl",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Freestanding with floor flange",
       description: "Comprehensive freestanding emergency shower with integrated collection bowl and self-draining mechanism.",
       fullDescription: "The freestanding combination emergency shower is engineered for simultaneous decontamination of the eyes, face, and entire body, delivering comprehensive protection in critical situations. Constructed from high-grade brass and coated with chemical-resistant BROEN-LAB Polycoat, the unit is optimized for demanding environments such as laboratories, cleanrooms, and industrial facilities. A heavy-duty floor flange ensures secure and stable installation, while the corrosion-resistant, easy-clean shower head is designed to minimize limescale accumulation.",
@@ -102,7 +102,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-fcs-handheld-005",
       name: "Freestanding Combination Shower with Hand-Held Eye Shower",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Freestanding with 1.5m hose",
       description: "Freestanding safety shower with hand-held dual eye wash and high-capacity body shower for comprehensive protection.",
       fullDescription: "The freestanding combination safety shower is engineered to provide simultaneous rinsing of the eyes, face, and body, delivering comprehensive protection in emergency situations. Constructed from high-durability brass and coated with chemical-resistant BROEN-LAB Polycoat, the unit is specifically designed for demanding environments such as laboratories, industrial facilities, and cleanroom applications. The integrated hand-held dual eye wash is equipped with precision-engineered spray heads that resist limescale accumulation.",
@@ -125,7 +125,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-bs-wall-006",
       name: "Body Shower for Exposed Pipework, Wall-Mounted",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Wall-mounted installation",
       description: "Wall-mounted body safety shower designed for full-body rinsing with self-draining mechanism and Legionella protection.",
       fullDescription: "The wall-mounted body safety shower is specifically designed to provide full-body rinsing, including emergency scenarios where the injured individual may be in a supine (lying down) position. Constructed from high-strength brass and coated with chemical-resistant BROEN-LAB Polycoat, the unit is engineered for reliable performance across a wide range of environments. The system includes a built-in self-draining mechanism paired with a non-return valve to prevent water stagnation—significantly reducing the risk of Legionella growth.",
@@ -148,7 +148,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-bmf-metal-007",
       name: "Bench Mounted Fittings With Swivel Spout (Metal Knob)",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Bench mounting",
       description: "Professional bench-mounted water fitting with swivel spout and durable metal knob control.",
       fullDescription: "The bench-mounted fitting with swivel spout features robust metal knob control for precise water flow regulation. Designed for laboratory and industrial applications, this fitting provides reliable water access with professional-grade construction and smooth operation.",
@@ -169,7 +169,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-bmf-lever-008",
       name: "Bench Mounted Fittings With Swivel Spout (Lever Handle)",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Bench mounting",
       description: "Professional bench-mounted water fitting with swivel spout and ergonomic lever handle control.",
       fullDescription: "The bench-mounted fitting with swivel spout features an ergonomic lever handle for easy operation and precise water flow control. Ideal for laboratory and commercial applications where frequent use requires comfortable and reliable operation.",
@@ -190,7 +190,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-bmf-column-009",
       name: "Bench Mounted Fittings With Swivel Spout (Column Design)",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Bench mounting",
       description: "Professional bench-mounted water fitting with swivel spout in elegant column design.",
       fullDescription: "The bench-mounted fitting features an elegant column design with swivel spout for professional laboratory environments. The sophisticated design combines functionality with aesthetic appeal, making it suitable for high-end laboratory installations.",
@@ -211,7 +211,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-bmm-two-010",
       name: "Bench Mounted Mixer Two Handle",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Bench mounting",
       description: "Professional dual-handle bench-mounted mixer for precise temperature and flow control.",
       fullDescription: "The bench-mounted dual-handle mixer provides independent control of hot and cold water supplies, allowing for precise temperature regulation. Designed for laboratory and commercial applications requiring accurate water temperature control.",
@@ -232,7 +232,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "bl-bmm-single-011",
       name: "Bench Mounted Mixer Single Handle",
-      category: "Broen Lab",
+      category: "Broen-Lab",
       dimensions: "Bench mounting",
       description: "Professional single-handle bench-mounted mixer for easy temperature and flow control.",
       fullDescription: "The bench-mounted single-handle mixer offers convenient one-handed operation for both temperature and flow control. Ideal for laboratory environments where ease of use and reliable performance are essential.",
@@ -305,7 +305,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "og-bsc-001",
       name: "Tangerine Biosafety Cabinet",
-      category: "Oriental Giken",
+      category: "Oriental Giken Inc.",
       dimensions: "X × X × X mm",
       description: "Class II biosafety cabinet featuring Japanese design elegance, intuitive operation, and rigorous safety performance.",
       fullDescription: "Tangerine is a Japan‑designed Class II biosafety cabinet compliant with JIS K 3800 (NSF/ANSI‑49 equivalent). It delivers operator and product protection via precise airflow management, HEPA filtration, and smart sash/monitoring systems. Its curved aesthetics, intuitive interface, ample workspace, digital displays, voice alerts, and castered open-base stand enhance usability and lab adaptability.",
@@ -325,7 +325,7 @@ export const getProductsSync = (): Product[] => {
     {
       id: "og-fh-002", 
       name: "NOCE Series Fume Hood",
-      category: "Oriental Giken",
+      category: "Oriental Giken Inc.",
       dimensions: "X × X × X mm",
       description: "Sleek, ergonomic fume hood offering both high containment performance and refined aesthetics.",
       fullDescription: "The Oriental Giken NOCE Series fume hood seamlessly merges cutting‑edge safety with elegant design. Meeting ASHRAE 110 and EN 14175‑3 standards, it incorporates advanced airflow-control technology and ergonomic sash operation to reduce user strain while ensuring containment and efficiency",

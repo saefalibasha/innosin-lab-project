@@ -8,6 +8,7 @@ import AnimatedSection from '@/components/AnimatedSection';
 import ProductFilters from '@/components/ProductFilters';
 import ProductGrid from '@/components/ProductGrid';
 import QuoteCartSummary from '@/components/QuoteCartSummary';
+import CompanyLandingHeader from '@/components/CompanyLandingHeader';
 import { products, getCategories } from '@/data/products';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
@@ -51,41 +52,50 @@ const ProductCatalog = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container-custom py-12 pt-20">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <AnimatedSection animation="fade-in" delay={100}>
-            <h1 className="text-4xl font-serif font-bold text-primary mb-4">{productPageContent.catalog.title}</h1>
-          </AnimatedSection>
-          <AnimatedSection animation="fade-in" delay={300}>
-            <p className="text-xl text-muted-foreground">
-              {productPageContent.catalog.description}
-            </p>
-          </AnimatedSection>
-          {selectedCategory !== 'all' && (
-            <AnimatedSection animation="fade-in" delay={400}>
-              <Badge variant="outline" className="mt-4 text-lg px-4 py-2 border-sea text-sea">
-                {productPageContent.catalog.showingProductsText} {selectedCategory}
-              </Badge>
-            </AnimatedSection>
+      <div className="pt-20">
+        {/* Company-specific header for branded categories */}
+        {selectedCategory !== 'all' && categories.includes(selectedCategory) && (
+          <CompanyLandingHeader productsCount={filteredProducts.length} />
+        )}
+        
+        <div className="container-custom py-12">
+          {/* Header for general catalog or All Products */}
+          {(selectedCategory === 'all' || !categories.includes(selectedCategory)) && (
+            <div className="text-center mb-12">
+              <AnimatedSection animation="fade-in" delay={100}>
+                <h1 className="text-4xl font-serif font-bold text-primary mb-4">{productPageContent.catalog.title}</h1>
+              </AnimatedSection>
+              <AnimatedSection animation="fade-in" delay={300}>
+                <p className="text-xl text-muted-foreground">
+                  {productPageContent.catalog.description}
+                </p>
+              </AnimatedSection>
+              {selectedCategory !== 'all' && (
+                <AnimatedSection animation="fade-in" delay={400}>
+                  <Badge variant="outline" className="mt-4 text-lg px-4 py-2 border-sea text-sea">
+                    {productPageContent.catalog.showingProductsText} {selectedCategory}
+                  </Badge>
+                </AnimatedSection>
+              )}
+            </div>
           )}
+
+          {/* Filters */}
+          <ProductFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            selectedCategory={selectedCategory}
+            setSelectedCategory={setSelectedCategory}
+            categories={categories}
+            filteredProductsCount={filteredProducts.length}
+          />
+
+          {/* Products Grid */}
+          <ProductGrid products={filteredProducts} onAddToQuote={handleAddToQuote} />
+
+          {/* Quote Cart Summary */}
+          <QuoteCartSummary itemCount={itemCount} />
         </div>
-
-        {/* Filters */}
-        <ProductFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          categories={categories}
-          filteredProductsCount={filteredProducts.length}
-        />
-
-        {/* Products Grid */}
-        <ProductGrid products={filteredProducts} onAddToQuote={handleAddToQuote} />
-
-        {/* Quote Cart Summary */}
-        <QuoteCartSummary itemCount={itemCount} />
       </div>
     </div>
   );

@@ -38,6 +38,10 @@
     --sea-dark: 200 95% 35%;
     --sand: 45 40% 85%;
     --sand-light: 45 50% 92%;
+
+    /* Company Theme Variables (Dynamic) */
+    --company-primary: var(--primary);
+    --company-accent: var(--sea);
   }
 
   .dark {
@@ -137,6 +141,31 @@
   
   .bg-sand-light {
     background-color: hsl(var(--sand-light));
+  }
+
+  /* Company Theme Utilities */
+  .company-themed .text-company-primary {
+    color: hsl(var(--company-primary));
+  }
+  
+  .company-themed .text-company-accent {
+    color: hsl(var(--company-accent));
+  }
+  
+  .company-themed .bg-company-primary {
+    background-color: hsl(var(--company-primary));
+  }
+  
+  .company-themed .bg-company-accent {
+    background-color: hsl(var(--company-accent));
+  }
+  
+  .company-themed .border-company-primary {
+    border-color: hsl(var(--company-primary));
+  }
+  
+  .company-themed .border-company-accent {
+    border-color: hsl(var(--company-accent));
   }
 }
 

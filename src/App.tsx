@@ -19,6 +19,7 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import CompanyThemeProvider from "./components/CompanyThemeProvider";
 import HeaderBrand from "./components/HeaderBrand";
 import EnhancedLiveChat from "./components/EnhancedLiveChat";
 import Footer from "./components/Footer";
@@ -34,9 +35,10 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <ScrollToTop />
-            <div className="min-h-screen flex flex-col">
-              <HeaderBrand />
+            <CompanyThemeProvider>
+              <ScrollToTop />
+              <div className="min-h-screen flex flex-col">
+                <HeaderBrand />
               <main className="flex-1 pt-16">
                 <Routes>
                   <Route path="/" element={<Index />} />
@@ -54,8 +56,9 @@ const App = () => (
                 </Routes>
               </main>
               <Footer />
-              <EnhancedLiveChat />
-            </div>
+                <EnhancedLiveChat />
+              </div>
+            </CompanyThemeProvider>
           </BrowserRouter>
         </RFQProvider>
       </AuthProvider>
