@@ -499,6 +499,622 @@ export const getProductsSync = (): Product[] => {
           modelPath: "/products/innosin-mcc-pc-755065/model.glb",
           thumbnail: "/products/innosin-mcc-pc-755065/images/front.jpg",
           images: ["/products/innosin-mcc-pc-755065/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-lh-505065",
+          size: "Single Door Left Hand",
+          dimensions: "500×500×650 mm",
+          modelPath: "/products/innosin-mc-pc-lh-505065/model.glb",
+          thumbnail: "/products/innosin-mc-pc-lh-505065/images/front.jpg",
+          images: ["/products/innosin-mc-pc-lh-505065/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-rh-505065",
+          size: "Single Door Right Hand",
+          dimensions: "500×500×650 mm",
+          modelPath: "/products/innosin-mc-pc-rh-505065/model.glb",
+          thumbnail: "/products/innosin-mc-pc-rh-505065/images/front.jpg",
+          images: ["/products/innosin-mc-pc-rh-505065/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-dwr2-905065",
+          size: "Drawer Cabinet DD-DWR2",
+          dimensions: "900×500×650 mm",
+          modelPath: "/products/innosin-mc-pc-dwr2-905065/model.glb",
+          thumbnail: "/products/innosin-mc-pc-dwr2-905065/images/front.jpg",
+          images: ["/products/innosin-mc-pc-dwr2-905065/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-dwr3-505065",
+          size: "Drawer Cabinet DWR3-1/2",
+          dimensions: "500×500×650 mm",
+          modelPath: "/products/innosin-mc-pc-dwr3-505065/model.glb",
+          thumbnail: "/products/innosin-mc-pc-dwr3-505065/images/front.jpg",
+          images: ["/products/innosin-mc-pc-dwr3-505065/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-dwr6-905065",
+          size: "Drawer Cabinet DWR6-1/2",
+          dimensions: "900×500×650 mm",
+          modelPath: "/products/innosin-mc-pc-dwr6-905065/model.glb",
+          thumbnail: "/products/innosin-mc-pc-dwr6-905065/images/front.jpg",
+          images: ["/products/innosin-mc-pc-dwr6-905065/images/front.jpg"]
+        }
+      ]
+    },
+
+    // MOBILE CABINET SERIES FOR 900MM H BENCH
+    {
+      id: "innosin-mc-900-series",
+      name: "Mobile Cabinet Series for 900mm Bench",
+      category: "Innosin Lab",
+      dimensions: "500-750 mm width range",
+      description: "Mobile laboratory cabinets designed for 900mm height benches, available in combination, double door, and drawer configurations.",
+      fullDescription: "The Mobile Cabinet Series for 900mm height benches provides enhanced storage capacity for laboratory environments. These taller units offer increased storage volume while maintaining mobility through heavy-duty casters. Available in various configurations to meet different laboratory storage requirements.",
+      specifications: [
+        "900mm bench height compatibility",
+        "Enhanced storage capacity",
+        "Heavy-duty mobile design",
+        "Chemical-resistant finish",
+        "Professional laboratory construction",
+        "Available in powder coat and stainless steel"
+      ],
+      modelPath: "/products/innosin-mcc-pc-755080/model.glb",
+      thumbnail: "/products/innosin-mcc-pc-755080/images/front.jpg",
+      images: ["/products/innosin-mcc-pc-755080/images/front.jpg"],
+      baseProductId: "innosin-mc-900-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-mcc-pc-755080",
+          size: "Combination Cabinet",
+          dimensions: "750×500×800 mm",
+          modelPath: "/products/innosin-mcc-pc-755080/model.glb",
+          thumbnail: "/products/innosin-mcc-pc-755080/images/front.jpg",
+          images: ["/products/innosin-mcc-pc-755080/images/front.jpg"]
+        },
+        {
+          id: "innosin-mcc-pc-lh-505080",
+          size: "Combination Left Hand",
+          dimensions: "500×500×800 mm",
+          modelPath: "/products/innosin-mcc-pc-lh-505080/model.glb",
+          thumbnail: "/products/innosin-mcc-pc-lh-505080/images/front.jpg",
+          images: ["/products/innosin-mcc-pc-lh-505080/images/front.jpg"]
+        },
+        {
+          id: "innosin-mcc-pc-rh-505080",
+          size: "Combination Right Hand",
+          dimensions: "500×500×800 mm",
+          modelPath: "/products/innosin-mcc-pc-rh-505080/model.glb",
+          thumbnail: "/products/innosin-mcc-pc-rh-505080/images/front.jpg",
+          images: ["/products/innosin-mcc-pc-rh-505080/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-755080",
+          size: "Double Door",
+          dimensions: "750×500×800 mm",
+          modelPath: "/products/innosin-mc-pc-755080/model.glb",
+          thumbnail: "/products/innosin-mc-pc-755080/images/front.jpg",
+          images: ["/products/innosin-mc-pc-755080/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-dwr2-905080",
+          size: "Drawer Cabinet DD-DWR2",
+          dimensions: "900×500×800 mm",
+          modelPath: "/products/innosin-mc-pc-dwr2-905080/model.glb",
+          thumbnail: "/products/innosin-mc-pc-dwr2-905080/images/front.jpg",
+          images: ["/products/innosin-mc-pc-dwr2-905080/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-dwr34-505080",
+          size: "Drawer Cabinet DWR3/4",
+          dimensions: "500×500×800 mm",
+          modelPath: "/products/innosin-mc-pc-dwr34-505080/model.glb",
+          thumbnail: "/products/innosin-mc-pc-dwr34-505080/images/front.jpg",
+          images: ["/products/innosin-mc-pc-dwr34-505080/images/front.jpg"]
+        },
+        {
+          id: "innosin-mc-pc-dwr68-905080",
+          size: "Drawer Cabinet DWR6/8",
+          dimensions: "900×500×800 mm",
+          modelPath: "/products/innosin-mc-pc-dwr68-905080/model.glb",
+          thumbnail: "/products/innosin-mc-pc-dwr68-905080/images/front.jpg",
+          images: ["/products/innosin-mc-pc-dwr68-905080/images/front.jpg"]
+        }
+      ]
+    },
+
+    // MODULAR CABINET SERIES
+    {
+      id: "innosin-modular-combination-series",
+      name: "Modular Combination Cabinet Series",
+      category: "Innosin Lab",
+      dimensions: "450-900 mm width range",
+      description: "Modular combination cabinets with mixed storage solutions including drawers, shelves, and door compartments.",
+      fullDescription: "The Modular Combination Cabinet Series offers versatile storage solutions with mixed configurations. These units combine different storage types within a single cabinet, providing optimized organization for various laboratory equipment and supplies.",
+      specifications: [
+        "Mixed storage configurations",
+        "Modular design for flexibility",
+        "Professional laboratory construction",
+        "Chemical-resistant finish",
+        "Available in powder coat and stainless steel",
+        "Multiple size options"
+      ],
+      modelPath: "/products/innosin-pc-cb-755590/model.glb",
+      thumbnail: "/products/innosin-pc-cb-755590/images/front.jpg",
+      images: ["/products/innosin-pc-cb-755590/images/front.jpg"],
+      baseProductId: "innosin-modular-combination-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-pc-cb-755590",
+          size: "Double Door CB",
+          dimensions: "750×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-755590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-755590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-755590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-905590",
+          size: "Double Door CB",
+          dimensions: "900×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-905590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-905590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-905590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-105590",
+          size: "Double Door CB",
+          dimensions: "1050×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-105590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-105590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-105590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-lh-455590",
+          size: "Single Door CB Left Hand",
+          dimensions: "450×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-lh-455590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-lh-455590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-lh-455590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-rh-455590",
+          size: "Single Door CB Right Hand",
+          dimensions: "450×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-rh-455590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-rh-455590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-rh-455590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-lh-505590",
+          size: "Single Door CB Left Hand",
+          dimensions: "500×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-lh-505590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-lh-505590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-lh-505590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-rh-505590",
+          size: "Single Door CB Right Hand",
+          dimensions: "500×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-rh-505590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-rh-505590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-rh-505590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-lh-555590",
+          size: "Single Door CB Left Hand",
+          dimensions: "550×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-lh-555590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-lh-555590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-lh-555590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-rh-555590",
+          size: "Single Door CB Right Hand",
+          dimensions: "550×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-rh-555590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-rh-555590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-rh-555590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-lh-605590",
+          size: "Single Door CB Left Hand",
+          dimensions: "600×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-lh-605590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-lh-605590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-lh-605590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-cb-rh-605590",
+          size: "Single Door CB Right Hand",
+          dimensions: "600×550×900 mm",
+          modelPath: "/products/innosin-pc-cb-rh-605590/model.glb",
+          thumbnail: "/products/innosin-pc-cb-rh-605590/images/front.jpg",
+          images: ["/products/innosin-pc-cb-rh-605590/images/front.jpg"]
+        }
+      ]
+    },
+
+    // MODULAR DOUBLE DOOR CABINET SERIES
+    {
+      id: "innosin-modular-double-door-series",
+      name: "Modular Double Door Cabinet Series",
+      category: "Innosin Lab",
+      dimensions: "750-1250 mm width range",
+      description: "Modular double door cabinets providing secure storage with full-width access for laboratory equipment.",
+      fullDescription: "The Modular Double Door Cabinet Series offers spacious storage solutions with dual door access. These cabinets provide secure storage for larger laboratory equipment and supplies, with multiple size options to accommodate different space requirements.",
+      specifications: [
+        "Double door design for wide access",
+        "Secure storage with locking mechanisms",
+        "Modular construction",
+        "Chemical-resistant finish",
+        "Available in powder coat and stainless steel",
+        "Multiple size configurations"
+      ],
+      modelPath: "/products/innosin-pc-dd-105590/model.glb",
+      thumbnail: "/products/innosin-pc-dd-105590/images/front.jpg",
+      images: ["/products/innosin-pc-dd-105590/images/front.jpg"],
+      baseProductId: "innosin-modular-double-door-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-pc-dd-105590",
+          size: "Double Door",
+          dimensions: "1050×550×900 mm",
+          modelPath: "/products/innosin-pc-dd-105590/model.glb",
+          thumbnail: "/products/innosin-pc-dd-105590/images/front.jpg",
+          images: ["/products/innosin-pc-dd-105590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-dd-1255590",
+          size: "Double Door",
+          dimensions: "1250×550×900 mm",
+          modelPath: "/products/innosin-pc-dd-1255590/model.glb",
+          thumbnail: "/products/innosin-pc-dd-1255590/images/front.jpg",
+          images: ["/products/innosin-pc-dd-1255590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-dd-125590",
+          size: "Double Door",
+          dimensions: "1200×550×900 mm",
+          modelPath: "/products/innosin-pc-dd-125590/model.glb",
+          thumbnail: "/products/innosin-pc-dd-125590/images/front.jpg",
+          images: ["/products/innosin-pc-dd-125590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-dd-755590",
+          size: "Double Door",
+          dimensions: "750×550×900 mm",
+          modelPath: "/products/innosin-pc-dd-755590/model.glb",
+          thumbnail: "/products/innosin-pc-dd-755590/images/front.jpg",
+          images: ["/products/innosin-pc-dd-755590/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-dd-905580",
+          size: "Double Door",
+          dimensions: "900×550×800 mm",
+          modelPath: "/products/innosin-pc-dd-905580/model.glb",
+          thumbnail: "/products/innosin-pc-dd-905580/images/front.jpg",
+          images: ["/products/innosin-pc-dd-905580/images/front.jpg"]
+        },
+        {
+          id: "innosin-pc-dd-905590",
+          size: "Double Door",
+          dimensions: "900×550×900 mm",
+          modelPath: "/products/innosin-pc-dd-905590/model.glb",
+          thumbnail: "/products/innosin-pc-dd-905590/images/front.jpg",
+          images: ["/products/innosin-pc-dd-905590/images/front.jpg"]
+        }
+      ]
+    },
+
+    // OPEN RACK SERIES
+    {
+      id: "innosin-open-rack-series",
+      name: "Open Rack Series",
+      category: "Innosin Lab",
+      dimensions: "380×380 mm footprint",
+      description: "Open rack storage solutions for easy access to frequently used laboratory equipment and supplies.",
+      fullDescription: "The Open Rack Series provides convenient open storage for laboratory equipment that requires frequent access. Available in both powder coat and stainless steel finishes, these racks offer durability and easy cleaning in laboratory environments.",
+      specifications: [
+        "Open design for easy access",
+        "Compact 380×380 mm footprint",
+        "Durable construction",
+        "Easy to clean surfaces",
+        "Available in powder coat and stainless steel",
+        "Laboratory-grade materials"
+      ],
+      modelPath: "/products/innosin-or-pc-3838/model.glb",
+      thumbnail: "/products/innosin-or-pc-3838/images/front.jpg",
+      images: ["/products/innosin-or-pc-3838/images/front.jpg"],
+      baseProductId: "innosin-open-rack-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-or-pc-3838",
+          size: "Standard Rack",
+          dimensions: "380×380 mm",
+          modelPath: "/products/innosin-or-pc-3838/model.glb",
+          thumbnail: "/products/innosin-or-pc-3838/images/front.jpg",
+          images: ["/products/innosin-or-pc-3838/images/front.jpg"]
+        },
+        {
+          id: "innosin-or-ss304-3838",
+          size: "Stainless Steel Rack",
+          dimensions: "380×380 mm",
+          modelPath: "/products/innosin-or-ss304-3838/model.glb",
+          thumbnail: "/products/innosin-or-ss304-3838/images/front.jpg",
+          images: ["/products/innosin-or-ss304-3838/images/front.jpg"]
+        }
+      ]
+    },
+
+    // SINK CABINET SERIES
+    {
+      id: "innosin-sink-cabinet-series",
+      name: "Sink Cabinet Series",
+      category: "Innosin Lab",
+      dimensions: "Various configurations",
+      description: "Specialized sink cabinets designed for laboratory washing and cleaning applications.",
+      fullDescription: "The Sink Cabinet Series provides specialized storage and plumbing integration for laboratory sinks. These cabinets are designed to accommodate various sink configurations while providing additional storage space for cleaning supplies and equipment.",
+      specifications: [
+        "Sink integration design",
+        "Water-resistant construction",
+        "Plumbing access panels",
+        "Chemical-resistant finish",
+        "Available in powder coat and stainless steel",
+        "Multiple door configurations"
+      ],
+      modelPath: "/products/innosin-sink-cabinet-dd/model.glb",
+      thumbnail: "/products/innosin-sink-cabinet-dd/images/front.jpg",
+      images: ["/products/innosin-sink-cabinet-dd/images/front.jpg"],
+      baseProductId: "innosin-sink-cabinet-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-sink-cabinet-dd",
+          size: "Double Door Sink Cabinet",
+          dimensions: "Custom sized for sink",
+          modelPath: "/products/innosin-sink-cabinet-dd/model.glb",
+          thumbnail: "/products/innosin-sink-cabinet-dd/images/front.jpg",
+          images: ["/products/innosin-sink-cabinet-dd/images/front.jpg"]
+        },
+        {
+          id: "innosin-sink-cabinet-sd",
+          size: "Single Door Sink Cabinet",
+          dimensions: "Custom sized for sink",
+          modelPath: "/products/innosin-sink-cabinet-sd/model.glb",
+          thumbnail: "/products/innosin-sink-cabinet-sd/images/front.jpg",
+          images: ["/products/innosin-sink-cabinet-sd/images/front.jpg"]
+        }
+      ]
+    },
+
+    // TALL CABINET GLASS DOOR SERIES
+    {
+      id: "innosin-tall-glass-series",
+      name: "Tall Cabinet Glass Door Series",
+      category: "Innosin Lab",
+      dimensions: "Various heights up to 1900mm",
+      description: "Tall storage cabinets with glass doors for visible storage and display of laboratory equipment.",
+      fullDescription: "The Tall Cabinet Glass Door Series provides maximum storage height with transparent glass doors for easy identification of contents. These cabinets are ideal for storing glassware, reagents, and equipment that need to be easily visible and accessible.",
+      specifications: [
+        "Glass door panels for visibility",
+        "Maximum height storage",
+        "Adjustable shelving",
+        "Chemical-resistant finish",
+        "Available in powder coat and stainless steel",
+        "Safety glass construction"
+      ],
+      modelPath: "/products/innosin-tcg-pc/model.glb",
+      thumbnail: "/products/innosin-tcg-pc/images/front.jpg",
+      images: ["/products/innosin-tcg-pc/images/front.jpg"],
+      baseProductId: "innosin-tall-glass-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-tcg-pc-standard",
+          size: "Standard Height",
+          dimensions: "600×550×1900 mm",
+          modelPath: "/products/innosin-tcg-pc-standard/model.glb",
+          thumbnail: "/products/innosin-tcg-pc-standard/images/front.jpg",
+          images: ["/products/innosin-tcg-pc-standard/images/front.jpg"]
+        },
+        {
+          id: "innosin-tcg-pc-wide",
+          size: "Wide Configuration",
+          dimensions: "900×550×1900 mm",
+          modelPath: "/products/innosin-tcg-pc-wide/model.glb",
+          thumbnail: "/products/innosin-tcg-pc-wide/images/front.jpg",
+          images: ["/products/innosin-tcg-pc-wide/images/front.jpg"]
+        }
+      ]
+    },
+
+    // TALL CABINET SOLID DOOR SERIES
+    {
+      id: "innosin-tall-solid-series",
+      name: "Tall Cabinet Solid Door Series", 
+      category: "Innosin Lab",
+      dimensions: "Various heights up to 1900mm",
+      description: "Tall storage cabinets with solid doors for secure storage of sensitive laboratory materials.",
+      fullDescription: "The Tall Cabinet Solid Door Series provides maximum storage height with opaque solid doors for secure storage of sensitive materials. These cabinets offer excellent protection from light and unauthorized access while maximizing vertical storage space.",
+      specifications: [
+        "Solid door panels for security",
+        "Maximum height storage",
+        "Light-proof construction",
+        "Chemical-resistant finish",
+        "Available in powder coat and stainless steel",
+        "Locking mechanisms available"
+      ],
+      modelPath: "/products/innosin-tcs-pc/model.glb",
+      thumbnail: "/products/innosin-tcs-pc/images/front.jpg",
+      images: ["/products/innosin-tcs-pc/images/front.jpg"],
+      baseProductId: "innosin-tall-solid-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-tcs-pc-standard",
+          size: "Standard Height",
+          dimensions: "600×550×1900 mm",
+          modelPath: "/products/innosin-tcs-pc-standard/model.glb",
+          thumbnail: "/products/innosin-tcs-pc-standard/images/front.jpg",
+          images: ["/products/innosin-tcs-pc-standard/images/front.jpg"]
+        },
+        {
+          id: "innosin-tcs-pc-wide",
+          size: "Wide Configuration",
+          dimensions: "900×550×1900 mm",
+          modelPath: "/products/innosin-tcs-pc-wide/model.glb",
+          thumbnail: "/products/innosin-tcs-pc-wide/images/front.jpg",
+          images: ["/products/innosin-tcs-pc-wide/images/front.jpg"]
+        }
+      ]
+    },
+
+    // WALL CABINET SERIES
+    {
+      id: "innosin-wall-cabinet-series",
+      name: "Wall Cabinet Series",
+      category: "Innosin Lab",
+      dimensions: "Wall-mounted configurations",
+      description: "Space-saving wall-mounted cabinets available with glass or solid doors for overhead storage.",
+      fullDescription: "The Wall Cabinet Series maximizes laboratory space utilization through wall-mounted storage solutions. Available with either glass doors for visible storage or solid doors for secure storage, these cabinets provide convenient overhead access to frequently used items.",
+      specifications: [
+        "Wall-mounted design saves floor space",
+        "Available with glass or solid doors",
+        "Single and double door options",
+        "Chemical-resistant finish",
+        "Available in powder coat and stainless steel",
+        "Secure mounting hardware included"
+      ],
+      modelPath: "/products/innosin-wall-cabinet-glass-sd/model.glb",
+      thumbnail: "/products/innosin-wall-cabinet-glass-sd/images/front.jpg",
+      images: ["/products/innosin-wall-cabinet-glass-sd/images/front.jpg"],
+      baseProductId: "innosin-wall-cabinet-series",
+      finishes: [
+        {
+          type: "powder-coat",
+          name: "Powder Coat",
+          price: "Standard"
+        },
+        {
+          type: "stainless-steel",
+          name: "Stainless Steel",
+          price: "Premium"
+        }
+      ],
+      variants: [
+        {
+          id: "innosin-wall-cabinet-glass-sd",
+          size: "Single Door Glass",
+          dimensions: "600×300×600 mm",
+          modelPath: "/products/innosin-wall-cabinet-glass-sd/model.glb",
+          thumbnail: "/products/innosin-wall-cabinet-glass-sd/images/front.jpg",
+          images: ["/products/innosin-wall-cabinet-glass-sd/images/front.jpg"]
+        },
+        {
+          id: "innosin-wall-cabinet-glass-dd",
+          size: "Double Door Glass",
+          dimensions: "900×300×600 mm",
+          modelPath: "/products/innosin-wall-cabinet-glass-dd/model.glb",
+          thumbnail: "/products/innosin-wall-cabinet-glass-dd/images/front.jpg",
+          images: ["/products/innosin-wall-cabinet-glass-dd/images/front.jpg"]
+        },
+        {
+          id: "innosin-wall-cabinet-solid-sd",
+          size: "Single Door Solid",
+          dimensions: "600×300×600 mm",
+          modelPath: "/products/innosin-wall-cabinet-solid-sd/model.glb",
+          thumbnail: "/products/innosin-wall-cabinet-solid-sd/images/front.jpg",
+          images: ["/products/innosin-wall-cabinet-solid-sd/images/front.jpg"]
+        },
+        {
+          id: "innosin-wall-cabinet-solid-dd",
+          size: "Double Door Solid",
+          dimensions: "900×300×600 mm",
+          modelPath: "/products/innosin-wall-cabinet-solid-dd/model.glb",
+          thumbnail: "/products/innosin-wall-cabinet-solid-dd/images/front.jpg",
+          images: ["/products/innosin-wall-cabinet-solid-dd/images/front.jpg"]
         }
       ]
     }
