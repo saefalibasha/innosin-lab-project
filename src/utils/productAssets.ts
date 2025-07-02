@@ -339,6 +339,216 @@ export const getProductsSync = (): Product[] => {
       modelPath: "/products/og-fh-002/model.glb", 
       thumbnail: "/products/og-fh-002/images/front.jpg",
       images: ["/products/og-fh-002/images/front.jpg"]
+    },
+
+    // INNOSIN LAB PRODUCTS
+
+    // KNEE SPACE
+    {
+      id: "innosin-ks-1000",
+      name: "Knee Space KS1000",
+      category: "Innosin Lab",
+      dimensions: "1000 mm width",
+      description: "Ergonomic knee space unit providing comfortable leg room for laboratory workstations.",
+      fullDescription: "The KS1000 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. Constructed with durable materials and featuring a sleek design that integrates seamlessly with laboratory bench systems.",
+      specifications: [
+        "1000mm standard width",
+        "Ergonomic design for comfort",
+        "Durable construction materials",
+        "Easy integration with bench systems",
+        "Professional laboratory finish"
+      ],
+      modelPath: "/products/innosin-ks-1000/model.glb",
+      thumbnail: "/products/innosin-ks-1000/images/front.jpg",
+      images: ["/products/innosin-ks-1000/images/front.jpg"]
+    },
+    {
+      id: "innosin-ks-1200",
+      name: "Knee Space KS1200",
+      category: "Innosin Lab",
+      dimensions: "1200 mm width",
+      description: "Extended knee space unit for larger laboratory workstations and multi-user applications.",
+      fullDescription: "The KS1200 knee space unit offers expanded leg room for larger laboratory workstations. Perfect for collaborative work environments and extended laboratory benches where multiple users require comfortable access.",
+      specifications: [
+        "1200mm extended width",
+        "Multi-user compatible design",
+        "Superior ergonomic support",
+        "Heavy-duty construction",
+        "Seamless bench integration"
+      ],
+      modelPath: "/products/innosin-ks-1200/model.glb",
+      thumbnail: "/products/innosin-ks-1200/images/front.jpg",
+      images: ["/products/innosin-ks-1200/images/front.jpg"]
+    },
+    {
+      id: "innosin-ks-700",
+      name: "Knee Space KS700",
+      category: "Innosin Lab",
+      dimensions: "700 mm width",
+      description: "Compact knee space unit ideal for smaller laboratory workstations and space-efficient designs.",
+      fullDescription: "The KS700 knee space unit is designed for compact laboratory environments where space optimization is crucial. Despite its smaller footprint, it maintains excellent ergonomic properties and professional appearance.",
+      specifications: [
+        "700mm compact width",
+        "Space-efficient design",
+        "Maintains ergonomic standards",
+        "Ideal for small laboratories",
+        "Professional appearance"
+      ],
+      modelPath: "/products/innosin-ks-700/model.glb",
+      thumbnail: "/products/innosin-ks-700/images/front.jpg",
+      images: ["/products/innosin-ks-700/images/front.jpg"]
+    },
+    {
+      id: "innosin-ks-750",
+      name: "Knee Space KS750",
+      category: "Innosin Lab",
+      dimensions: "750 mm width",
+      description: "Standard knee space unit providing balanced comfort and space efficiency for laboratory workstations.",
+      fullDescription: "The KS750 knee space unit offers the perfect balance between comfort and space efficiency. Suitable for most standard laboratory applications with excellent ergonomic support and professional construction.",
+      specifications: [
+        "750mm standard width",
+        "Balanced design approach",
+        "Excellent ergonomic support",
+        "Versatile application range",
+        "Professional laboratory grade"
+      ],
+      modelPath: "/products/innosin-ks-750/model.glb",
+      thumbnail: "/products/innosin-ks-750/images/front.jpg",
+      images: ["/products/innosin-ks-750/images/front.jpg"]
+    },
+    {
+      id: "innosin-ks-800",
+      name: "Knee Space KS800",
+      category: "Innosin Lab",
+      dimensions: "800 mm width",
+      description: "Mid-range knee space unit offering enhanced comfort for extended laboratory work sessions.",
+      fullDescription: "The KS800 knee space unit provides enhanced comfort for laboratory professionals who spend extended periods at their workstations. Features improved ergonomic design and durable construction for demanding laboratory environments.",
+      specifications: [
+        "800mm enhanced width",
+        "Extended comfort design",
+        "Improved ergonomic features",
+        "Demanding environment ready",
+        "Professional construction"
+      ],
+      modelPath: "/products/innosin-ks-800/model.glb",
+      thumbnail: "/products/innosin-ks-800/images/front.jpg",
+      images: ["/products/innosin-ks-800/images/front.jpg"]
+    },
+    {
+      id: "innosin-ks-850",
+      name: "Knee Space KS850",
+      category: "Innosin Lab",
+      dimensions: "850 mm width",
+      description: "Premium knee space unit with superior ergonomic design for high-performance laboratory environments.",
+      fullDescription: "The KS850 knee space unit represents premium ergonomic design for high-performance laboratory environments. Featuring advanced comfort features and superior construction materials for the most demanding applications.",
+      specifications: [
+        "850mm premium width",
+        "Superior ergonomic design",
+        "Advanced comfort features",
+        "Premium construction materials",
+        "High-performance applications"
+      ],
+      modelPath: "/products/innosin-ks-850/model.glb",
+      thumbnail: "/products/innosin-ks-850/images/front.jpg",
+      images: ["/products/innosin-ks-850/images/front.jpg"]
+    },
+    {
+      id: "innosin-ks-900",
+      name: "Knee Space KS900",
+      category: "Innosin Lab",
+      dimensions: "900 mm width",
+      description: "Maximum comfort knee space unit for premium laboratory installations and executive workstations.",
+      fullDescription: "The KS900 knee space unit offers maximum comfort and space for premium laboratory installations. Ideal for executive workstations and high-end laboratory environments where comfort and aesthetics are paramount.",
+      specifications: [
+        "900mm maximum width",
+        "Maximum comfort design",
+        "Premium laboratory grade",
+        "Executive workstation ready",
+        "Superior aesthetics"
+      ],
+      modelPath: "/products/innosin-ks-900/model.glb",
+      thumbnail: "/products/innosin-ks-900/images/front.jpg",
+      images: ["/products/innosin-ks-900/images/front.jpg"]
+    },
+
+    // MOBILE CABINET FOR 750mm H BENCH - COMBINATION
+    {
+      id: "innosin-mcc-pc-lh-505065",
+      name: "Mobile Combination Cabinet - Left Hand (500×500×650mm)",
+      category: "Innosin Lab",
+      dimensions: "500×500×650 mm",
+      description: "Mobile combination cabinet with left-hand configuration for 750mm height benches, offering versatile storage solutions.",
+      fullDescription: "The MCC-PC-LH mobile combination cabinet features a left-hand configuration designed specifically for 750mm height laboratory benches. Combines multiple storage options including shelving and drawer space for maximum versatility in laboratory environments.",
+      specifications: [
+        "500×500×650mm dimensions",
+        "Left-hand configuration",
+        "750mm bench compatibility",
+        "Mobile design with casters",
+        "Combination storage solution",
+        "Professional laboratory finish"
+      ],
+      modelPath: "/products/innosin-mcc-pc-lh-505065/model.glb",
+      thumbnail: "/products/innosin-mcc-pc-lh-505065/images/front.jpg",
+      images: ["/products/innosin-mcc-pc-lh-505065/images/front.jpg"]
+    },
+    {
+      id: "innosin-mcc-pc-rh-505065",
+      name: "Mobile Combination Cabinet - Right Hand (500×500×650mm)",
+      category: "Innosin Lab",
+      dimensions: "500×500×650 mm",
+      description: "Mobile combination cabinet with right-hand configuration for 750mm height benches, providing flexible storage options.",
+      fullDescription: "The MCC-PC-RH mobile combination cabinet features a right-hand configuration designed for 750mm height laboratory benches. Offers flexible storage combinations with both open and closed storage compartments for diverse laboratory needs.",
+      specifications: [
+        "500×500×650mm dimensions",
+        "Right-hand configuration",
+        "750mm bench compatibility",
+        "Mobile design with casters",
+        "Flexible storage combinations",
+        "Durable laboratory construction"
+      ],
+      modelPath: "/products/innosin-mcc-pc-rh-505065/model.glb",
+      thumbnail: "/products/innosin-mcc-pc-rh-505065/images/front.jpg",
+      images: ["/products/innosin-mcc-pc-rh-505065/images/front.jpg"]
+    },
+
+    // MOBILE CABINET FOR 750mm H BENCH - DOUBLE DOOR
+    {
+      id: "innosin-mc-pc-755065",
+      name: "Mobile Double Door Cabinet (750×500×650mm)",
+      category: "Innosin Lab",
+      dimensions: "750×500×650 mm",
+      description: "Mobile double door cabinet for 750mm height benches, providing secure enclosed storage for laboratory materials.",
+      fullDescription: "The MC-PC mobile double door cabinet offers secure enclosed storage with easy access through dual door configuration. Specifically designed for 750mm height laboratory benches with mobile functionality for flexible laboratory layouts.",
+      specifications: [
+        "750×500×650mm dimensions",
+        "Double door configuration",
+        "750mm bench compatibility",
+        "Secure enclosed storage",
+        "Mobile with locking casters",
+        "Chemical-resistant finish"
+      ],
+      modelPath: "/products/innosin-mc-pc-755065/model.glb",
+      thumbnail: "/products/innosin-mc-pc-755065/images/front.jpg",
+      images: ["/products/innosin-mc-pc-755065/images/front.jpg"]
+    },
+    {
+      id: "innosin-mcc-pc-755065",
+      name: "Mobile Combination Double Door Cabinet (750×500×650mm)",
+      category: "Innosin Lab",
+      dimensions: "750×500×650 mm",
+      description: "Mobile combination cabinet with double door design for 750mm height benches, offering mixed storage solutions.",
+      fullDescription: "The MCC-PC mobile combination cabinet with double door design provides mixed storage solutions including both enclosed and open storage areas. Perfect for laboratories requiring diverse storage options in a mobile platform.",
+      specifications: [
+        "750×500×650mm dimensions",
+        "Combination double door design",
+        "Mixed storage solutions",
+        "750mm bench compatible",
+        "Mobile platform design",
+        "Versatile laboratory application"
+      ],
+      modelPath: "/products/innosin-mcc-pc-755065/model.glb",
+      thumbnail: "/products/innosin-mcc-pc-755065/images/front.jpg",
+      images: ["/products/innosin-mcc-pc-755065/images/front.jpg"]
     }
   ];
 
