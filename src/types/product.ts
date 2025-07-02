@@ -1,4 +1,22 @@
 
+export interface ProductFinish {
+  type: 'powder-coat' | 'stainless-steel';
+  name: string;
+  price?: string;
+  modelPath?: string;
+  thumbnail?: string;
+  images?: string[];
+}
+
+export interface ProductVariant {
+  id: string;
+  size: string;
+  dimensions: string;
+  modelPath: string;
+  thumbnail: string;
+  images: string[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -10,4 +28,8 @@ export interface Product {
   description: string; // Short description for grid view
   fullDescription: string; // Detailed description for detail page
   specifications: string[];
+  // Enhanced fields for Innosin Lab products
+  finishes?: ProductFinish[];
+  variants?: ProductVariant[];
+  baseProductId?: string;
 }

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,8 @@ import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
+import ProductFinishToggle from '@/components/ProductFinishToggle';
+import ProductSizeSelector from '@/components/ProductSizeSelector';
 import { products } from '@/data/products';
 import { productPageContent } from '@/data/productPageContent';
 
@@ -18,8 +20,21 @@ const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { addItem } = useRFQ();
   const [activeTab, setActiveTab] = useState('photos');
+  const [selectedFinish, setSelectedFinish] = useState<string>('powder-coat');
+  const [selectedVariant, setSelectedVariant] = useState<string>('');
   
   const product = products.find(p => p.id === productId);
+  
+  // Initialize selected variant when product changes
+  useEffect(() => {
+    if (product && product.variants && product.variants.length > 0) {
+      setSelectedVariant(product.variants[0].id);
+    }
+  }, [product]);
+  
+  // Get current variant data for display
+  const currentVariant = product?.variants?.find(v => v.id === selectedVariant);
+  const isInnosinProduct = product?.category === 'Innosin Lab';
 
   if (!product) {
     return (
@@ -35,14 +50,18 @@ const ProductDetail = () => {
   }
 
   const handleAddToQuote = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
+    const itemToAdd = {
+      id: currentVariant ? currentVariant.id : product.id,
+      name: isInnosinProduct && currentVariant ? 
+        `${product.name} - ${currentVariant.size}` : 
+        product.name,
       category: product.category,
-      dimensions: product.dimensions,
-      image: product.thumbnail
-    });
-    toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
+      dimensions: currentVariant ? currentVariant.dimensions : product.dimensions,
+      image: currentVariant ? currentVariant.thumbnail : product.thumbnail
+    };
+    
+    addItem(itemToAdd);
+    toast.success(`${itemToAdd.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
 
   return (
@@ -76,8 +95,8 @@ const ProductDetail = () => {
 
                 <TabsContent value="photos">
                   <ProductImageGallery
-                    images={product.images}
-                    thumbnail={product.thumbnail}
+                    images={currentVariant ? currentVariant.images : product.images}
+                    thumbnail={currentVariant ? currentVariant.thumbnail : product.thumbnail}
                     productName={product.name}
                     className="w-full h-96 lg:h-[500px]"
                   />
@@ -85,7 +104,7 @@ const ProductDetail = () => {
 
                 <TabsContent value="3d">
                   <Enhanced3DViewer
-                    modelPath={product.modelPath}
+                    modelPath={currentVariant ? currentVariant.modelPath : product.modelPath}
                     className="w-full h-96 lg:h-[500px]"
                   />
                 </TabsContent>
@@ -105,10 +124,37 @@ const ProductDetail = () => {
                 </h1>
                 <div className="flex items-center gap-2 text-muted-foreground mb-6">
                   <Ruler className="w-4 h-4" />
-                  <span>{productPageContent.productDetail.dimensionsLabel} {product.dimensions}</span>
+                  <span>{productPageContent.productDetail.dimensionsLabel} {currentVariant ? currentVariant.dimensions : product.dimensions}</span>
                 </div>
               </div>
             </AnimatedSection>
+
+            {/* Innosin Lab Product Configuration */}
+            {isInnosinProduct && (product.finishes || product.variants) && (
+              <AnimatedSection animation="slide-in-right" delay={350}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Product Configuration</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {product.finishes && (
+                      <ProductFinishToggle
+                        finishes={product.finishes}
+                        selectedFinish={selectedFinish}
+                        onFinishChange={setSelectedFinish}
+                      />
+                    )}
+                    {product.variants && (
+                      <ProductSizeSelector
+                        variants={product.variants}
+                        selectedVariant={selectedVariant}
+                        onVariantChange={setSelectedVariant}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              </AnimatedSection>
+            )}
 
             <AnimatedSection animation="slide-in-right" delay={400}>
               <Card>
