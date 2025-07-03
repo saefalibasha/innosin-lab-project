@@ -9,6 +9,7 @@ import ObjectLibrary from '@/components/ObjectLibrary';
 import ObjectLegend from '@/components/ObjectLegend';
 import UnitSelector from '@/components/UnitSelector';
 import ProductDimensionEditor from '@/components/ProductDimensionEditor';
+import HowToUseModal from '@/components/HowToUseModal';
 import { 
   Mouse, 
   Square, 
@@ -20,7 +21,8 @@ import {
   Grid3X3, 
   ZoomIn, 
   ZoomOut, 
-  Maximize 
+  Maximize,
+  HelpCircle
 } from 'lucide-react';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
@@ -198,7 +200,18 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
 
       {/* Actions */}
       <Card>
-        <CardContent className="pt-4">
+        <CardContent className="pt-4 space-y-2">
+          <HowToUseModal>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+            >
+              <HelpCircle className="w-3 h-3 mr-1" />
+              How to Use
+            </Button>
+          </HowToUseModal>
+          
           <Button
             variant="destructive"
             size="sm"

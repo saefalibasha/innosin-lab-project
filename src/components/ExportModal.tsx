@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import ExportFormModal from './ExportFormModal';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ExportModalProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -34,25 +36,64 @@ const ExportModal: React.FC<ExportModalProps> = ({
   const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
   const [showForm, setShowForm] = useState(false);
   const [mainDialogOpen, setMainDialogOpen] = useState(false);
+  const { createContact, createDeal } = useHubSpotIntegration();
 
   const syncToHubSpot = async (formData: ExportFormData, exportFormat: string) => {
-    // Simulate HubSpot API call
-    console.log('Syncing to HubSpot:', {
-      ...formData,
-      exportFormat,
-      timestamp: new Date().toISOString(),
-      floorPlanData: {
-        roomPoints: roomPoints.length,
-        placedProducts: placedProducts.length,
-        roomArea: calculateRoomArea()
-      }
-    });
+    try {
+      // Generate session ID for tracking
+      const sessionId = `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-    // In a real implementation, you would make an API call to HubSpot here
-    // For now, we'll simulate the API call with a timeout
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    toast.success('Contact information synced to HubSpot successfully');
+      // Store in Supabase
+      const { error: supabaseError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          name: formData.fullName,
+          email: formData.email,
+          company: formData.companyName,
+          phone: formData.contactNumber,
+          status: 'floor_plan_exported',
+          context: {
+            source: 'floor_planner_export',
+            export_format: exportFormat,
+            project_description: formData.projectDescription,
+            floor_plan_data: {
+              room_points: roomPoints.length,
+              placed_products: placedProducts.length,
+              room_area: calculateRoomArea()
+            }
+          }
+        });
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
+
+      // Create HubSpot contact
+      const contactResult = await createContact({
+        sessionId,
+        name: formData.fullName,
+        email: formData.email,
+        company: formData.companyName,
+        phone: formData.contactNumber
+      });
+
+      // Create HubSpot deal for floor plan project
+      if (contactResult?.data?.hubspot_contact_id) {
+        await createDeal({
+          sessionId,
+          dealName: `Floor Plan Export - ${formData.fullName}`,
+          contactId: contactResult.data.hubspot_contact_id,
+          amount: 0 // Amount TBD
+        });
+      }
+
+      toast.success('Contact information synced to HubSpot successfully');
+    } catch (error) {
+      console.error('HubSpot sync error:', error);
+      throw error;
+    }
   };
 
   const calculateRoomArea = (): number => {

@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { contactPageContent } from '@/data/contactPageContent';
 import { Calendar, MessageCircle, Briefcase } from 'lucide-react';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -20,6 +22,8 @@ const Contact = () => {
     subject: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createContact } = useHubSpotIntegration();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -28,11 +32,55 @@ const Contact = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    toast.success(contactPageContent.form.successMessage);
-    setFormData({ name: '', email: '', company: '', jobTitle: '', subject: '', message: '' });
+    setIsSubmitting(true);
+
+    try {
+      // Generate session ID for tracking
+      const sessionId = `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Store in Supabase
+      const { error: supabaseError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          name: formData.name,
+          email: formData.email,
+          company: formData.company,
+          job_title: formData.jobTitle,
+          status: 'contact_form_submitted',
+          context: {
+            source: 'contact_page',
+            subject: formData.subject,
+            message: formData.message
+          }
+        });
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
+
+      // Create HubSpot contact
+      await createContact({
+        sessionId,
+        name: formData.name,
+        email: formData.email,
+        company: formData.company,
+        jobTitle: formData.jobTitle,
+        subject: formData.subject,
+        content: formData.message
+      });
+
+      toast.success(contactPageContent.form.successMessage);
+      setFormData({ name: '', email: '', company: '', jobTitle: '', subject: '', message: '' });
+    } catch (error) {
+      console.error('Contact form submission error:', error);
+      toast.error('Failed to submit contact form. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getIcon = (iconName: string) => {
@@ -176,8 +224,13 @@ const Contact = () => {
                   />
                 </div>
                 
-                <Button type="submit" size="lg" className="w-full bg-sea hover:bg-sea-dark">
-                  {contactPageContent.form.submitButton}
+                <Button 
+                  type="submit" 
+                  size="lg" 
+                  className="w-full bg-sea hover:bg-sea-dark"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Submitting...' : contactPageContent.form.submitButton}
                 </Button>
               </form>
             </CardContent>

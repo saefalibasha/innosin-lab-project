@@ -5,12 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 const NewsletterSubscription = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const { createContact } = useHubSpotIntegration();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,38 +26,44 @@ const NewsletterSubscription = () => {
     setIsLoading(true);
 
     try {
-      // HubSpot form submission
-      const formData = new FormData();
-      formData.append('email', email);
-      formData.append('firstname', name);
-      formData.append('newsletter_signup', 'true');
-      formData.append('lifecycle_stage', 'marketingqualifiedlead');
+      // Generate session ID for tracking
+      const sessionId = `newsletter_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Replace with your actual HubSpot Portal ID and Form ID
-      const portalId = 'YOUR_HUBSPOT_PORTAL_ID';
-      const formId = 'YOUR_NEWSLETTER_FORM_ID';
-      
-      const response = await fetch(`https://forms.hubspot.com/uploads/form/v2/${portalId}/${formId}`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
+      // Store in Supabase
+      const { error: supabaseError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          name,
+          email,
+          status: 'newsletter_subscribed',
+          context: {
+            source: 'newsletter_subscription',
+            subscription_type: 'newsletter'
+          }
+        });
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
+
+      // Create HubSpot contact with newsletter preference
+      await createContact({
+        sessionId,
+        name,
+        email
       });
 
-      if (response.ok) {
-        setIsSubscribed(true);
-        toast.success('Successfully subscribed to our newsletter!');
-        
-        // Reset form
-        setTimeout(() => {
-          setEmail('');
-          setName('');
-          setIsSubscribed(false);
-        }, 3000);
-      } else {
-        throw new Error('Subscription failed');
-      }
+      setIsSubscribed(true);
+      toast.success('Successfully subscribed to our newsletter!');
+      
+      // Reset form
+      setTimeout(() => {
+        setEmail('');
+        setName('');
+        setIsSubscribed(false);
+      }, 3000);
     } catch (error) {
       console.error('Newsletter subscription error:', error);
       toast.error('Failed to subscribe. Please try again.');

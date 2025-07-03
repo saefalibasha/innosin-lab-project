@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Send, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SendPlanModalProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -38,6 +40,7 @@ const SendPlanModal: React.FC<SendPlanModalProps> = ({
     company: '',
     notes: ''
   });
+  const { createContact, createTicket } = useHubSpotIntegration();
 
   const handleInputChange = (field: keyof FormData) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -79,20 +82,50 @@ const SendPlanModal: React.FC<SendPlanModalProps> = ({
 
     try {
       const { planData, imageData } = await generatePlanData();
+      
+      // Generate session ID for tracking
+      const sessionId = `send_plan_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Simulate HubSpot API call (replace with actual HubSpot integration)
-      const submissionData = {
-        ...formData,
-        floorPlanData: planData,
-        floorPlanImage: imageData ? 'Attached' : 'Not available',
-        submittedAt: new Date().toISOString(),
-        source: 'Floor Planner Tool'
-      };
+      // Store in Supabase
+      const { error: supabaseError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          name: formData.name,
+          email: formData.email,
+          company: formData.company,
+          status: 'floor_plan_sent',
+          context: {
+            source: 'floor_planner_send',
+            notes: formData.notes,
+            floor_plan_data: planData,
+            has_image: !!imageData
+          }
+        });
 
-      console.log('Submitting to HubSpot:', submissionData);
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create HubSpot contact
+      const contactResult = await createContact({
+        sessionId,
+        name: formData.name,
+        email: formData.email,
+        company: formData.company
+      });
+
+      // Create HubSpot ticket for floor plan request
+      if (contactResult?.data?.hubspot_contact_id) {
+        await createTicket({
+          sessionId,
+          subject: `Floor Plan Request - ${formData.name}`,
+          content: `Floor plan submission from ${formData.name} (${formData.company})\n\nNotes: ${formData.notes}\n\nFloor plan details:\n- Room points: ${planData.roomPoints}\n- Products: ${planData.placedProducts}\n- Submitted at: ${planData.timestamp}`,
+          contactId: contactResult.data.hubspot_contact_id,
+          priority: 'MEDIUM'
+        });
+      }
 
       setIsSuccess(true);
       toast.success('Floor plan sent successfully!');

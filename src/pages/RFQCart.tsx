@@ -9,6 +9,8 @@ import { Trash2, Plus, Minus, FileDown, Send, ShoppingCart } from 'lucide-react'
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import AnimatedSection from '@/components/AnimatedSection';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 const RFQCart = () => {
   const { items, removeItem, updateItem, clearCart, itemCount } = useRFQ();
@@ -19,6 +21,8 @@ const RFQCart = () => {
     phone: '',
     message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createContact, createDeal } = useHubSpotIntegration();
 
   const handleContactChange = (field: string, value: string) => {
     setContactInfo(prev => ({ ...prev, [field]: value }));
@@ -28,7 +32,7 @@ const RFQCart = () => {
     updateItem(id, { quantity });
   };
 
-  const handleSubmitRFQ = () => {
+  const handleSubmitRFQ = async () => {
     if (items.length === 0) {
       toast.error('Please add items to your cart before submitting');
       return;
@@ -39,11 +43,70 @@ const RFQCart = () => {
       return;
     }
 
-    // Here you would typically send the RFQ to your backend
-    console.log('RFQ Submitted:', { items, contactInfo });
-    toast.success('Request for Quote submitted successfully!');
-    clearCart();
-    setContactInfo({ name: '', email: '', company: '', phone: '', message: '' });
+    setIsSubmitting(true);
+
+    try {
+      // Generate session ID for tracking
+      const sessionId = `rfq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Store RFQ in Supabase
+      const { error: supabaseError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          name: contactInfo.name,
+          email: contactInfo.email,
+          company: contactInfo.company,
+          phone: contactInfo.phone,
+          status: 'rfq_submitted',
+          context: {
+            source: 'rfq_cart',
+            message: contactInfo.message,
+            items: items.map(item => ({
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              quantity: item.quantity,
+              dimensions: item.dimensions
+            })),
+            total_items: items.length,
+            total_quantity: items.reduce((sum, item) => sum + item.quantity, 0)
+          }
+        });
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
+
+      // Create HubSpot contact
+      const contactResult = await createContact({
+        sessionId,
+        name: contactInfo.name,
+        email: contactInfo.email,
+        company: contactInfo.company,
+        phone: contactInfo.phone
+      });
+
+      // Create HubSpot deal for the RFQ
+      if (contactResult?.data?.hubspot_contact_id) {
+        await createDeal({
+          sessionId,
+          dealName: `RFQ - ${contactInfo.name} - ${items.length} items`,
+          contactId: contactResult.data.hubspot_contact_id,
+          amount: 0 // Amount TBD for RFQ
+        });
+      }
+
+      toast.success('Request for Quote submitted successfully!');
+      clearCart();
+      setContactInfo({ name: '', email: '', company: '', phone: '', message: '' });
+    } catch (error) {
+      console.error('RFQ submission error:', error);
+      toast.error('Failed to submit RFQ. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleExportPDF = () => {
@@ -244,11 +307,11 @@ const RFQCart = () => {
                   
                   <Button
                     onClick={handleSubmitRFQ}
-                    disabled={items.length === 0}
+                    disabled={items.length === 0 || isSubmitting}
                     className="w-full bg-sea hover:bg-sea-dark disabled:opacity-50 transition-all duration-300 hover:scale-105 animate-float"
                   >
                     <Send className="w-4 h-4 mr-2" />
-                    Submit Quote Request
+                    {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
                   </Button>
                   
                   <p className="text-xs text-muted-foreground text-center">
