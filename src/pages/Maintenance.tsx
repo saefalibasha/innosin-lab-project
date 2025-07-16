@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useHubSpotIntegration } from "@/hooks/useHubSpotIntegration";
 import { toast } from "sonner";
 import { Mail, Phone, MapPin, Clock, Construction, CheckCircle } from "lucide-react";
+import { isLovableDevelopment } from "@/utils/environmentDetection";
 
 const Maintenance = () => {
   const [formData, setFormData] = useState({
@@ -34,6 +35,8 @@ const Maintenance = () => {
     try {
       // Generate session ID for tracking
       const sessionId = `maintenance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log('Submitting maintenance form with data:', formData);
 
       // Create contact in HubSpot
       const contactResult = await createContact({
@@ -44,6 +47,8 @@ const Maintenance = () => {
         jobTitle: formData.jobTitle,
         phone: formData.phone
       });
+
+      console.log('Contact creation result:', contactResult);
 
       // Create support ticket for the inquiry
       await createTicket({
@@ -84,30 +89,42 @@ const Maintenance = () => {
     "Other"
   ];
 
+  const isDevelopment = isLovableDevelopment();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 sm:mb-12">
           <img 
             src="/branding/hero-logo.png" 
             alt="Innosin Lab" 
-            className="h-16 w-auto mx-auto mb-6"
+            className="h-12 sm:h-16 w-auto mx-auto mb-4 sm:mb-6"
           />
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Construction className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold text-foreground">Website Under Construction</h1>
+            <Construction className="h-6 sm:h-8 w-6 sm:w-8 text-primary" />
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground">Website Under Construction</h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto px-4">
             We're building something amazing! Our new website will be launching soon with enhanced features and improved user experience.
           </p>
+          
+          {/* Development Environment Notice */}
+          {isDevelopment && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-md mx-auto">
+              <p className="text-sm text-blue-800">
+                <strong>Development Mode:</strong> All pages are accessible in this environment. 
+                Production visitors will only see this maintenance page.
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {/* Inquiry Form */}
           <Card className="order-2 lg:order-1">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                 <Mail className="h-5 w-5 text-primary" />
                 Send Us an Inquiry
               </CardTitle>
@@ -117,9 +134,9 @@ const Maintenance = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="name">Name *</Label>
+                    <Label htmlFor="name" className="text-sm sm:text-base">Name *</Label>
                     <Input
                       id="name"
                       type="text"
@@ -127,10 +144,11 @@ const Maintenance = () => {
                       onChange={(e) => handleInputChange("name", e.target.value)}
                       required
                       className="mt-1"
+                      placeholder="Your full name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="email">Email *</Label>
+                    <Label htmlFor="email" className="text-sm sm:text-base">Email *</Label>
                     <Input
                       id="email"
                       type="email"
@@ -138,46 +156,50 @@ const Maintenance = () => {
                       onChange={(e) => handleInputChange("email", e.target.value)}
                       required
                       className="mt-1"
+                      placeholder="your.email@company.com"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="company">Company</Label>
+                    <Label htmlFor="company" className="text-sm sm:text-base">Company</Label>
                     <Input
                       id="company"
                       type="text"
                       value={formData.company}
                       onChange={(e) => handleInputChange("company", e.target.value)}
                       className="mt-1"
+                      placeholder="Your company name"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="jobTitle">Job Title</Label>
+                    <Label htmlFor="jobTitle" className="text-sm sm:text-base">Job Title</Label>
                     <Input
                       id="jobTitle"
                       type="text"
                       value={formData.jobTitle}
                       onChange={(e) => handleInputChange("jobTitle", e.target.value)}
                       className="mt-1"
+                      placeholder="Your job title"
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone" className="text-sm sm:text-base">Phone</Label>
                     <Input
                       id="phone"
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       className="mt-1"
+                      placeholder="+1 (555) 123-4567"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="inquiryType">Inquiry Type *</Label>
+                    <Label htmlFor="inquiryType" className="text-sm sm:text-base">Inquiry Type *</Label>
                     <Select
                       value={formData.inquiryType}
                       onValueChange={(value) => handleInputChange("inquiryType", value)}
@@ -198,7 +220,7 @@ const Maintenance = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="message">Message *</Label>
+                  <Label htmlFor="message" className="text-sm sm:text-base">Message *</Label>
                   <Textarea
                     id="message"
                     value={formData.message}
@@ -226,10 +248,10 @@ const Maintenance = () => {
             {/* About Innosin Lab */}
             <Card>
               <CardHeader>
-                <CardTitle>About Innosin Lab</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">About Innosin Lab</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">
+                <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                   Leading provider of innovative laboratory furniture and equipment solutions. 
                   We specialize in custom laboratory design, high-quality furniture, and 
                   comprehensive laboratory setups for research institutions, hospitals, 
@@ -237,19 +259,19 @@ const Maintenance = () => {
                 </p>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span>Custom Laboratory Design</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span>Premium Laboratory Furniture</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span>Complete Laboratory Solutions</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
                     <span>Professional Installation</span>
                   </div>
                 </div>
@@ -259,38 +281,38 @@ const Maintenance = () => {
             {/* Contact Information */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
                   <Phone className="h-5 w-5 text-primary" />
                   Contact Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-primary mt-0.5" />
+                  <Mail className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Email</p>
-                    <p className="text-muted-foreground">info@innosinlab.com</p>
+                    <p className="font-medium text-sm sm:text-base">Email</p>
+                    <p className="text-muted-foreground text-sm">info@innosinlab.com</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-primary mt-0.5" />
+                  <Phone className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Phone</p>
-                    <p className="text-muted-foreground">Available upon request</p>
+                    <p className="font-medium text-sm sm:text-base">Phone</p>
+                    <p className="text-muted-foreground text-sm">Available upon request</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                  <MapPin className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Location</p>
-                    <p className="text-muted-foreground">Serving clients worldwide</p>
+                    <p className="font-medium text-sm sm:text-base">Location</p>
+                    <p className="text-muted-foreground text-sm">Serving clients worldwide</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Clock className="h-5 w-5 text-primary mt-0.5" />
+                  <Clock className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium">Response Time</p>
-                    <p className="text-muted-foreground">Within 24 hours</p>
+                    <p className="font-medium text-sm sm:text-base">Response Time</p>
+                    <p className="text-muted-foreground text-sm">Within 24 hours</p>
                   </div>
                 </div>
               </CardContent>
@@ -299,7 +321,7 @@ const Maintenance = () => {
             {/* Progress Update */}
             <Card>
               <CardHeader>
-                <CardTitle>Development Progress</CardTitle>
+                <CardTitle className="text-lg sm:text-xl">Development Progress</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -336,8 +358,8 @@ const Maintenance = () => {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-border">
-          <p className="text-muted-foreground">
+        <div className="text-center mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-border">
+          <p className="text-muted-foreground text-sm sm:text-base">
             © 2024 Innosin Lab. All rights reserved. | Building the future of laboratory solutions.
           </p>
         </div>
