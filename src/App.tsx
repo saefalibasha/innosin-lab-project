@@ -16,6 +16,7 @@ import RFQCart from "./pages/RFQCart";
 import AdminPDF from "./pages/AdminPDF";
 import ChatbotAdmin from "./pages/ChatbotAdmin";
 import Auth from "./pages/Auth";
+import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -50,6 +51,7 @@ const App = () => (
                   <Route path="/floor-planner" element={<FloorPlanner />} />
                   <Route path="/rfq-cart" element={<RFQCart />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/maintenance" element={<Maintenance />} />
                   <Route path="/admin/pdf" element={<AdminPDF />} />
                   <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
                   <Route path="*" element={<NotFound />} />
