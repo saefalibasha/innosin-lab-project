@@ -1,52 +1,58 @@
 
 export const isLovableDevelopment = (): boolean => {
-  // Production domains - these should ALWAYS show maintenance page
+  // PRODUCTION DOMAINS - These will ALWAYS show maintenance page to public
   const productionDomains = [
     'innosinlab.com',
     'www.innosinlab.com',
   ];
   
-  // Check if we're in a server-side environment (for SEO crawlers)
+  // Server-side detection (for crawlers like Google)
   if (typeof window === 'undefined') {
-    // For crawlers and server-side, always show maintenance for production domains
-    // Check if we're on a production domain via environment or referrer
-    const isProductionDomain = process.env.NODE_ENV === 'production' || 
-                              (typeof process !== 'undefined' && process.env.DOMAIN && 
-                               productionDomains.some(domain => process.env.DOMAIN?.includes(domain)));
-    if (isProductionDomain) {
-      console.log('🚨 Server-side production detected - showing maintenance page');
-      return false;
-    }
-    return process.env.NODE_ENV === 'development';
+    console.log('🤖 Server-side request detected - forcing maintenance for crawlers');
+    return false; // Always show maintenance to crawlers
   }
   
   const hostname = window.location.hostname;
   
-  // CRITICAL: If we're on a production domain, we are NEVER in development
-  // This ensures Google and other crawlers see the maintenance page
-  if (productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
-    console.log('🚨 Production domain detected - showing maintenance page:', hostname);
-    // Force maintenance mode for production domains
+  // ABSOLUTE RULE: Production domains = maintenance page only
+  const isProductionDomain = productionDomains.some(domain => 
+    hostname === domain || hostname.endsWith(`.${domain}`)
+  );
+  
+  if (isProductionDomain) {
+    console.log('🚨 PRODUCTION DOMAIN DETECTED - MAINTENANCE MODE ENFORCED:', hostname);
     document.documentElement.setAttribute('data-maintenance-mode', 'true');
+    document.documentElement.setAttribute('data-environment', 'production');
     return false;
   }
   
-  // Only allow development on Lovable development domains
-  const isDev = (
+  // Development access - only on Lovable domains and localhost
+  const isDevelopment = (
     hostname.includes('lovableproject.com') ||
+    hostname.includes('lovable.app') ||
     hostname.includes('localhost') ||
-    hostname === '127.0.0.1'
+    hostname === '127.0.0.1' ||
+    hostname.includes('192.168.') ||
+    hostname.includes('10.0.') ||
+    hostname.includes('172.')
   );
   
-  console.log('Environment detection:', {
+  if (isDevelopment) {
+    console.log('✅ DEVELOPMENT ACCESS GRANTED:', hostname);
+    document.documentElement.setAttribute('data-environment', 'development');
+  } else {
+    console.log('⚠️ UNKNOWN DOMAIN - DEFAULTING TO MAINTENANCE:', hostname);
+  }
+  
+  console.log('🔍 Environment Detection Summary:', {
     hostname,
-    isDevelopment: isDev,
-    nodeEnv: process.env.NODE_ENV,
-    isProductionDomain: productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`)),
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
+    isDevelopment,
+    isProductionDomain,
+    finalDecision: isDevelopment ? 'FULL_SITE' : 'MAINTENANCE_ONLY',
+    userAgent: navigator?.userAgent?.substring(0, 100)
   });
   
-  return isDev;
+  return isDevelopment;
 };
 
 export const isProductionDeployment = (): boolean => {
