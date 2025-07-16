@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_role_audit: {
+        Row: {
+          action: string
+          changed_by_email: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          new_role: string | null
+          old_role: string | null
+          target_user_email: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          changed_by_email: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_role?: string | null
+          old_role?: string | null
+          target_user_email: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by_email?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          new_role?: string | null
+          old_role?: string | null
+          target_user_email?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       admin_roles: {
         Row: {
           created_at: string
@@ -435,11 +471,53 @@ export type Database = {
           },
         ]
       }
+      rate_limit_log: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          ip_address: unknown | null
+          operation: string
+          success: boolean | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown | null
+          operation: string
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown | null
+          operation?: string
+          success?: boolean | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          operation_name: string
+          max_attempts?: number
+          time_window_minutes?: number
+        }
+        Returns: boolean
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       is_admin: {
         Args: { user_email: string }
         Returns: boolean

@@ -21,6 +21,7 @@ import FloorPlanner from "./pages/FloorPlanner";
 import RFQCart from "./pages/RFQCart";
 import AdminPDF from "./pages/AdminPDF";
 import ChatbotAdmin from "./pages/ChatbotAdmin";
+import AdminSecurity from "./pages/AdminSecurity";
 import Auth from "./pages/Auth";
 import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
@@ -31,6 +32,7 @@ import HeaderBrand from "./components/HeaderBrand";
 import EnhancedLiveChat from "./components/EnhancedLiveChat";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
+import SecurityHeader from "./components/SecurityHeader";
 
 const queryClient = new QueryClient();
 
@@ -87,6 +89,7 @@ const DevelopmentApp = () => (
           <Sonner />
           <BrowserRouter>
             <CompanyThemeProvider>
+              <SecurityHeader />
               <ScrollToTop />
               <div className="min-h-screen flex flex-col">
                 <HeaderBrand />
@@ -104,6 +107,7 @@ const DevelopmentApp = () => (
                     <Route path="/maintenance" element={<Maintenance />} />
                     <Route path="/admin/pdf" element={<AdminPDF />} />
                     <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
+                    <Route path="/admin/security" element={<AdminSecurity />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>

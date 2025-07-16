@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useSecurityValidation } from '@/hooks/useSecurityValidation';
 
 interface AuthContextType {
   user: User | null;
@@ -26,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { validateAndSanitize, schemas, checkRateLimit } = useSecurityValidation();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -48,23 +50,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string) => {
+    // Rate limiting check
+    if (!checkRateLimit('signup', 3, 900000)) { // 3 attempts per 15 minutes
+      return { error: { message: 'Too many signup attempts. Please try again later.' } };
+    }
+
+    // Validate inputs
+    const emailValidation = validateAndSanitize(email, schemas.email, 'validate_email');
+    if (!emailValidation.success) {
+      return { error: { message: emailValidation.error } };
+    }
+
+    const passwordValidation = validateAndSanitize(password, schemas.password, 'validate_password');
+    if (!passwordValidation.success) {
+      return { error: { message: passwordValidation.error } };
+    }
+
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: emailValidation.data,
+      password: passwordValidation.data,
       options: {
         emailRedirectTo: redirectUrl
       }
     });
+
+    // Log the attempt
+    if (error) {
+      try {
+        await supabase.from('rate_limit_log').insert({
+          email: emailValidation.data,
+          operation: 'signup_failed',
+          success: false
+        });
+      } catch (logError) {
+        // Silent fail for logging
+      }
+    }
+
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
+    // Rate limiting check
+    if (!checkRateLimit('signin', 5, 900000)) { // 5 attempts per 15 minutes
+      return { error: { message: 'Too many signin attempts. Please try again later.' } };
+    }
+
+    // Validate email format (but allow existing passwords through)
+    const emailValidation = validateAndSanitize(email, schemas.email, 'validate_signin_email');
+    if (!emailValidation.success) {
+      return { error: { message: 'Invalid email format' } };
+    }
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailValidation.data,
       password,
     });
+
+    // Log the attempt
+    if (error) {
+      try {
+        await supabase.from('rate_limit_log').insert({
+          email: emailValidation.data,
+          operation: 'signin_failed',
+          success: false
+        });
+      } catch (logError) {
+        // Silent fail for logging
+      }
+    }
+
     return { error };
   };
 
