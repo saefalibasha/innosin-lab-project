@@ -1,37 +1,38 @@
 
 export const isLovableDevelopment = (): boolean => {
-  // Check if we're in the Lovable development environment
-  if (typeof window === 'undefined') return false;
-  
-  const hostname = window.location.hostname;
-  
-  // Production domains - add your actual production domain here
+  // Production domains - these should ALWAYS show maintenance page
   const productionDomains = [
     'innosinlab.com',
     'www.innosinlab.com',
-    // Add any other production domains you plan to use
   ];
   
-  // If we're on a production domain, we're NOT in development
+  // Check if we're in a server-side environment (for SEO crawlers)
+  if (typeof window === 'undefined') {
+    // For server-side rendering, assume production unless explicitly development
+    return process.env.NODE_ENV === 'development';
+  }
+  
+  const hostname = window.location.hostname;
+  
+  // CRITICAL: If we're on a production domain, we are NEVER in development
+  // This ensures Google and other crawlers see the maintenance page
   if (productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
-    console.log('Production domain detected:', hostname);
+    console.log('🚨 Production domain detected - showing maintenance page:', hostname);
     return false;
   }
   
-  // Lovable development environment indicators
+  // Only allow development on Lovable development domains
   const isDev = (
     hostname.includes('lovableproject.com') ||
     hostname.includes('localhost') ||
-    hostname === '127.0.0.1' ||
-    hostname.includes('preview') ||
-    hostname.includes('staging') ||
-    process.env.NODE_ENV === 'development'
+    hostname === '127.0.0.1'
   );
   
   console.log('Environment detection:', {
     hostname,
     isDevelopment: isDev,
-    nodeEnv: process.env.NODE_ENV
+    nodeEnv: process.env.NODE_ENV,
+    isProductionDomain: productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))
   });
   
   return isDev;
@@ -43,7 +44,11 @@ export const isProductionDeployment = (): boolean => {
 
 export const getEnvironmentInfo = () => {
   if (typeof window === 'undefined') {
-    return { environment: 'server', hostname: 'server' };
+    return { 
+      environment: 'production', // Default to production for server-side (crawlers)
+      hostname: 'server',
+      nodeEnv: process.env.NODE_ENV 
+    };
   }
   
   return {
