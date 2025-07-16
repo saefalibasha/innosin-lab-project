@@ -1,23 +1,26 @@
 
 # Robots.txt for Innosin Lab
-# Generated for production launch
+# MAINTENANCE MODE - Site under construction
 
 User-agent: *
-Allow: /
+# During maintenance, only allow crawling of the maintenance page
+Disallow: /
+Allow: /maintenance
+Allow: /favicon.ico
+Allow: /assets/
+Allow: /src/assets/
 
-# Sitemap location (update with your actual domain)
-Sitemap: https://innosinlab.com/sitemap.xml
-
-# Disallow admin areas when they exist
+# Block all other pages during maintenance
+Disallow: /products/
+Disallow: /about
+Disallow: /contact
+Disallow: /blog
+Disallow: /floor-planner
 Disallow: /admin/
 Disallow: /api/
 
-# Allow all laboratory product pages
-Allow: /products/
-Allow: /about
-Allow: /contact
-Allow: /blog
-Allow: /floor-planner
+# No sitemap during maintenance
+# Sitemap: https://innosinlab.com/sitemap.xml
 
-# Crawl delay (optional, only if needed)
-# Crawl-delay: 1
+# Crawl delay for maintenance mode
+Crawl-delay: 86400

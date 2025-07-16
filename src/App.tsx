@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import CompanyThemeProvider from "./components/CompanyThemeProvider";
 import { isLovableDevelopment } from "./utils/environmentDetection";
+import { useEffect } from "react";
 
 // Import all pages
 import Index from "./pages/Index";
@@ -33,24 +34,48 @@ import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
-// Production App - Only shows maintenance page
-const ProductionApp = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <CompanyThemeProvider>
-            <Routes>
-              <Route path="*" element={<Maintenance />} />
-            </Routes>
-          </CompanyThemeProvider>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+// Production App - Only shows maintenance page with proper headers
+const ProductionApp = () => {
+  useEffect(() => {
+    // Set maintenance mode indicators for crawlers
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-maintenance-mode', 'true');
+      document.documentElement.setAttribute('data-status', '503');
+      
+      // Force immediate cache invalidation
+      const cacheHeaders = [
+        { name: 'Cache-Control', content: 'no-cache, no-store, must-revalidate, max-age=0' },
+        { name: 'Pragma', content: 'no-cache' },
+        { name: 'Expires', content: '0' }
+      ];
+      
+      cacheHeaders.forEach(header => {
+        const meta = document.createElement('meta');
+        meta.setAttribute('http-equiv', header.name);
+        meta.setAttribute('content', header.content);
+        document.head.appendChild(meta);
+      });
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <CompanyThemeProvider>
+              <Routes>
+                <Route path="*" element={<Maintenance />} />
+              </Routes>
+            </CompanyThemeProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 // Development App - Full website functionality
 const DevelopmentApp = () => (

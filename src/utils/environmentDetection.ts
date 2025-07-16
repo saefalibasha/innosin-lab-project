@@ -8,7 +8,15 @@ export const isLovableDevelopment = (): boolean => {
   
   // Check if we're in a server-side environment (for SEO crawlers)
   if (typeof window === 'undefined') {
-    // For server-side rendering, assume production unless explicitly development
+    // For crawlers and server-side, always show maintenance for production domains
+    // Check if we're on a production domain via environment or referrer
+    const isProductionDomain = process.env.NODE_ENV === 'production' || 
+                              (typeof process !== 'undefined' && process.env.DOMAIN && 
+                               productionDomains.some(domain => process.env.DOMAIN?.includes(domain)));
+    if (isProductionDomain) {
+      console.log('🚨 Server-side production detected - showing maintenance page');
+      return false;
+    }
     return process.env.NODE_ENV === 'development';
   }
   
@@ -18,6 +26,8 @@ export const isLovableDevelopment = (): boolean => {
   // This ensures Google and other crawlers see the maintenance page
   if (productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
     console.log('🚨 Production domain detected - showing maintenance page:', hostname);
+    // Force maintenance mode for production domains
+    document.documentElement.setAttribute('data-maintenance-mode', 'true');
     return false;
   }
   
@@ -32,7 +42,8 @@ export const isLovableDevelopment = (): boolean => {
     hostname,
     isDevelopment: isDev,
     nodeEnv: process.env.NODE_ENV,
-    isProductionDomain: productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))
+    isProductionDomain: productionDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`)),
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server'
   });
   
   return isDev;
