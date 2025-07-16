@@ -1,14 +1,23 @@
-User-agent: Googlebot
-Allow: /
 
-User-agent: Bingbot
-Allow: /
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
+# Robots.txt for Innosin Lab
+# Generated for production launch
 
 User-agent: *
 Allow: /
+
+# Sitemap location (update with your actual domain)
+Sitemap: https://innosinlab.com/sitemap.xml
+
+# Disallow admin areas when they exist
+Disallow: /admin/
+Disallow: /api/
+
+# Allow all laboratory product pages
+Allow: /products/
+Allow: /about
+Allow: /contact
+Allow: /blog
+Allow: /floor-planner
+
+# Crawl delay (optional, only if needed)
+# Crawl-delay: 1

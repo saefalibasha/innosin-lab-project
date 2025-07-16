@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,111 @@ const Maintenance = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { createContact, createTicket, loading } = useHubSpotIntegration();
+
+  // SEO Meta Tags Setup
+  useEffect(() => {
+    // Update page title
+    document.title = "Innosin Lab - Laboratory Solutions | Coming Soon";
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute('content', 'Innosin Lab - Leading provider of innovative laboratory furniture and equipment solutions. Custom laboratory design, premium furniture, and complete laboratory setups. Coming soon with enhanced features.');
+    } else {
+      const meta = document.createElement('meta');
+      meta.name = 'description';
+      meta.content = 'Innosin Lab - Leading provider of innovative laboratory furniture and equipment solutions. Custom laboratory design, premium furniture, and complete laboratory setups. Coming soon with enhanced features.';
+      document.head.appendChild(meta);
+    }
+
+    // Add keywords meta tag
+    const metaKeywords = document.querySelector('meta[name="keywords"]');
+    if (!metaKeywords) {
+      const meta = document.createElement('meta');
+      meta.name = 'keywords';
+      meta.content = 'laboratory furniture, lab equipment, laboratory design, lab cabinets, laboratory solutions, scientific furniture, lab safety, research equipment, laboratory installation';
+      document.head.appendChild(meta);
+    }
+
+    // Add Open Graph tags
+    const ogTags = [
+      { property: 'og:title', content: 'Innosin Lab - Laboratory Solutions | Coming Soon' },
+      { property: 'og:description', content: 'Leading provider of innovative laboratory furniture and equipment solutions. Custom laboratory design, premium furniture, and complete laboratory setups.' },
+      { property: 'og:type', content: 'website' },
+      { property: 'og:image', content: '/branding/hero-logo.png' },
+      { property: 'og:site_name', content: 'Innosin Lab' }
+    ];
+
+    ogTags.forEach(tag => {
+      const existing = document.querySelector(`meta[property="${tag.property}"]`);
+      if (!existing) {
+        const meta = document.createElement('meta');
+        meta.setAttribute('property', tag.property);
+        meta.setAttribute('content', tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add Twitter Card tags
+    const twitterTags = [
+      { name: 'twitter:card', content: 'summary_large_image' },
+      { name: 'twitter:title', content: 'Innosin Lab - Laboratory Solutions | Coming Soon' },
+      { name: 'twitter:description', content: 'Leading provider of innovative laboratory furniture and equipment solutions.' },
+      { name: 'twitter:image', content: '/branding/hero-logo.png' }
+    ];
+
+    twitterTags.forEach(tag => {
+      const existing = document.querySelector(`meta[name="${tag.name}"]`);
+      if (!existing) {
+        const meta = document.createElement('meta');
+        meta.setAttribute('name', tag.name);
+        meta.setAttribute('content', tag.content);
+        document.head.appendChild(meta);
+      }
+    });
+
+    // Add robots meta tag for maintenance
+    const robotsMeta = document.querySelector('meta[name="robots"]');
+    if (!robotsMeta) {
+      const meta = document.createElement('meta');
+      meta.name = 'robots';
+      meta.content = 'index, follow, max-snippet:-1, max-image-preview:large';
+      document.head.appendChild(meta);
+    }
+
+    // Add canonical URL
+    const canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      const link = document.createElement('link');
+      link.rel = 'canonical';
+      link.href = window.location.origin;
+      document.head.appendChild(link);
+    }
+
+    // Add structured data
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Innosin Lab",
+      "description": "Leading provider of innovative laboratory furniture and equipment solutions",
+      "url": window.location.origin,
+      "logo": `${window.location.origin}/branding/hero-logo.png`,
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer service",
+        "email": "info@innosinlab.com"
+      },
+      "sameAs": []
+    };
+
+    const existingScript = document.querySelector('script[type="application/ld+json"]');
+    if (!existingScript) {
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(structuredData);
+      document.head.appendChild(script);
+    }
+  }, []);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -98,7 +203,7 @@ const Maintenance = () => {
         <div className="text-center mb-8 sm:mb-12">
           <img 
             src="/branding/hero-logo.png" 
-            alt="Innosin Lab" 
+            alt="Innosin Lab - Laboratory Solutions" 
             className="h-12 sm:h-16 w-auto mx-auto mb-4 sm:mb-6"
           />
           <div className="flex items-center justify-center gap-2 mb-4">
