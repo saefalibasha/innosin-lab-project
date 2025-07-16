@@ -328,7 +328,7 @@ const Maintenance = () => {
                   </div>
                 </div>
                 <p className="text-sm text-muted-foreground mt-4">
-                  Expected launch: Q1 2025
+                  Expected launch: Q2 2025
                 </p>
               </CardContent>
             </Card>
