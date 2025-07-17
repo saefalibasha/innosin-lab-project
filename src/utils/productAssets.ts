@@ -33,6 +33,36 @@ const loadUploadedAssets = (): { [key: string]: { glb?: string; jpg?: string } }
 const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string } } => {
   // Map uploaded assets from public/products directory structure
   const uploadedAssets = {
+    // Innosin Lab KS Series - Laboratory Fume Hoods
+    'innosin-ks-700': {
+      glb: '/products/innosin-ks-700/KS700.glb',
+      jpg: '/products/innosin-ks-700/KS700.jpg'
+    },
+    'innosin-ks-750': {
+      glb: '/products/innosin-ks-750/KS750.glb',
+      jpg: '/products/innosin-ks-750/KS750.jpg'
+    },
+    'innosin-ks-800': {
+      glb: '/products/innosin-ks-800/KS800.glb',
+      jpg: '/products/innosin-ks-800/KS800.jpg'
+    },
+    'innosin-ks-850': {
+      glb: '/products/innosin-ks-850/KS850.glb',
+      jpg: '/products/innosin-ks-850/KS850.jpg'
+    },
+    'innosin-ks-900': {
+      glb: '/products/innosin-ks-900/KS900.glb',
+      jpg: '/products/innosin-ks-900/KS900.jpg'
+    },
+    'innosin-ks-1000': {
+      glb: '/products/innosin-ks-1000/KS1000.glb',
+      jpg: '/products/innosin-ks-1000/KS1000.jpg'
+    },
+    'innosin-ks-1200': {
+      glb: '/products/innosin-ks-1200/KS1200.glb',
+      jpg: '/products/innosin-ks-1200/KS1200.jpg'
+    },
+    
     // Innosin Lab Mobile Cabinet Series - 750mm Height
     'innosin-mc-pc-755065': {
       glb: '/products/innosin-mc-pc-755065/MC-PC (755065).glb',
@@ -495,9 +525,9 @@ export const getProductsSync = (): Product[] => {
         "Professional laboratory finish",
         "Available in powder coat and stainless steel"
       ],
-      modelPath: "/products/innosin-ks-700/model.glb",
-      thumbnail: "/products/innosin-ks-700/images/front.jpg",
-      images: ["/products/innosin-ks-700/images/front.jpg"],
+      modelPath: "/products/innosin-ks-700/KS700.glb",
+      thumbnail: "/products/innosin-ks-700/KS700.jpg",
+      images: ["/products/innosin-ks-700/KS700.jpg"],
       baseProductId: "innosin-ks-series",
       finishes: [
         {
@@ -516,57 +546,57 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-700",
           size: "KS700",
           dimensions: "700 mm width",
-          modelPath: "/products/innosin-ks-700/model.glb",
-          thumbnail: "/products/innosin-ks-700/images/front.jpg",
-          images: ["/products/innosin-ks-700/images/front.jpg"]
+          modelPath: "/products/innosin-ks-700/KS700.glb",
+          thumbnail: "/products/innosin-ks-700/KS700.jpg",
+          images: ["/products/innosin-ks-700/KS700.jpg"]
         },
         {
           id: "innosin-ks-750",
           size: "KS750", 
           dimensions: "750 mm width",
-          modelPath: "/products/innosin-ks-750/model.glb",
-          thumbnail: "/products/innosin-ks-750/images/front.jpg",
-          images: ["/products/innosin-ks-750/images/front.jpg"]
+          modelPath: "/products/innosin-ks-750/KS750.glb",
+          thumbnail: "/products/innosin-ks-750/KS750.jpg",
+          images: ["/products/innosin-ks-750/KS750.jpg"]
         },
         {
           id: "innosin-ks-800",
           size: "KS800",
           dimensions: "800 mm width", 
-          modelPath: "/products/innosin-ks-800/model.glb",
-          thumbnail: "/products/innosin-ks-800/images/front.jpg",
-          images: ["/products/innosin-ks-800/images/front.jpg"]
+          modelPath: "/products/innosin-ks-800/KS800.glb",
+          thumbnail: "/products/innosin-ks-800/KS800.jpg",
+          images: ["/products/innosin-ks-800/KS800.jpg"]
         },
         {
           id: "innosin-ks-850",
           size: "KS850",
           dimensions: "850 mm width",
-          modelPath: "/products/innosin-ks-850/model.glb", 
-          thumbnail: "/products/innosin-ks-850/images/front.jpg",
-          images: ["/products/innosin-ks-850/images/front.jpg"]
+          modelPath: "/products/innosin-ks-850/KS850.glb", 
+          thumbnail: "/products/innosin-ks-850/KS850.jpg",
+          images: ["/products/innosin-ks-850/KS850.jpg"]
         },
         {
           id: "innosin-ks-900",
           size: "KS900",
           dimensions: "900 mm width",
-          modelPath: "/products/innosin-ks-900/model.glb",
-          thumbnail: "/products/innosin-ks-900/images/front.jpg", 
-          images: ["/products/innosin-ks-900/images/front.jpg"]
+          modelPath: "/products/innosin-ks-900/KS900.glb",
+          thumbnail: "/products/innosin-ks-900/KS900.jpg", 
+          images: ["/products/innosin-ks-900/KS900.jpg"]
         },
         {
           id: "innosin-ks-1000", 
           size: "KS1000",
           dimensions: "1000 mm width",
-          modelPath: "/products/innosin-ks-1000/model.glb",
-          thumbnail: "/products/innosin-ks-1000/images/front.jpg",
-          images: ["/products/innosin-ks-1000/images/front.jpg"]
+          modelPath: "/products/innosin-ks-1000/KS1000.glb",
+          thumbnail: "/products/innosin-ks-1000/KS1000.jpg",
+          images: ["/products/innosin-ks-1000/KS1000.jpg"]
         },
         {
           id: "innosin-ks-1200",
           size: "KS1200", 
           dimensions: "1200 mm width",
-          modelPath: "/products/innosin-ks-1200/model.glb",
-          thumbnail: "/products/innosin-ks-1200/images/front.jpg",
-          images: ["/products/innosin-ks-1200/images/front.jpg"]
+          modelPath: "/products/innosin-ks-1200/KS1200.glb",
+          thumbnail: "/products/innosin-ks-1200/KS1200.jpg",
+          images: ["/products/innosin-ks-1200/KS1200.jpg"]
         }
       ]
     },
