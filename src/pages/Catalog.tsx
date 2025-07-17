@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import Navigation from '@/components/Navigation';
-import ProductCard from '@/components/ProductCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -139,15 +138,14 @@ const Catalog = () => {
         {/* Products Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              id={product.id}
-              name={product.name}
-              price={product.price}
-              description={product.description}
-              productType={product.productType}
-              color={product.color}
-            />
+            <div key={product.id} className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
+              <p className="text-gray-600 text-sm mb-3">{product.description}</p>
+              <div className="text-xl font-bold text-blue-600 mb-4">{product.price}</div>
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded transition-colors">
+                View Details
+              </button>
+            </div>
           ))}
         </div>
 

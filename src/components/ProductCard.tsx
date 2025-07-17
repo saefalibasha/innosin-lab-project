@@ -1,53 +1,78 @@
 
 import React from 'react';
-import RealisticProduct3DViewer from './RealisticProduct3DViewer';
+import { Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import LazyProductImage from './LazyProductImage';
+import { Product } from '@/types/product';
 
 interface ProductCardProps {
-  id: string;
-  name: string;
-  price: string;
-  description: string;
-  productType?: 'box' | 'sphere' | 'cone';
-  color?: string;
+  product: Product;
+  onAddToQuote?: (product: Product) => void;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({
-  id,
-  name,
-  price,
-  description,
-  productType = 'box',
-  color = '#4F46E5'
+  product,
+  onAddToQuote
 }) => {
+  const handleAddToQuote = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onAddToQuote) {
+      onAddToQuote(product);
+    }
+  };
+
   return (
-    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-white border border-gray-200">
-      <CardHeader className="p-0">
-        <RealisticProduct3DViewer 
-          productType={productType} 
-          color={color}
-          className="w-full h-48"
-        />
-      </CardHeader>
-      
-      <CardContent className="p-4">
-        <CardTitle className="text-lg font-semibold text-gray-900 mb-2">
-          {name}
-        </CardTitle>
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-          {description}
-        </p>
-        <div className="text-xl font-bold text-blue-600">
-          {price}
-        </div>
-      </CardContent>
-      
-      <CardFooter className="p-4 pt-0">
-        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-md hover:shadow-lg">
-          View Details
-        </Button>
-      </CardFooter>
+    <Card className="group hover:shadow-xl transition-all duration-300 hover:-translate-y-1 bg-background border">
+      <Link to={`/products/${product.id}`} className="block">
+        <CardHeader className="p-0">
+          <div className="relative w-full h-48 overflow-hidden rounded-t-lg">
+            <LazyProductImage
+              src={product.thumbnail}
+              alt={product.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <Badge 
+              variant="secondary" 
+              className="absolute top-2 left-2 bg-background/80 backdrop-blur-sm"
+            >
+              {product.category}
+            </Badge>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="p-4">
+          <h3 className="text-lg font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+            {product.name}
+          </h3>
+          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+            {product.description}
+          </p>
+          <div className="text-sm text-muted-foreground">
+            {product.dimensions}
+          </div>
+        </CardContent>
+        
+        <CardFooter className="p-4 pt-0 flex gap-2">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            asChild
+          >
+            <span>View Details</span>
+          </Button>
+          {onAddToQuote && (
+            <Button 
+              onClick={handleAddToQuote}
+              className="flex-1 bg-sea hover:bg-sea-dark"
+            >
+              Add to Quote
+            </Button>
+          )}
+        </CardFooter>
+      </Link>
     </Card>
   );
 };

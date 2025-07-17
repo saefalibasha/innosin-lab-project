@@ -534,20 +534,28 @@ const ProductAssetUploadManager = () => {
                                 </div>
                                 <Progress value={status.percentage} className="h-2" />
                                 
-                                <div className="flex justify-between items-center text-xs text-gray-500">
-                                  <span>
-                                    {new Date(product.uploadDate).toLocaleDateString()}
-                                  </span>
-                                  {status.percentage === 100 ? (
-                                    <Badge variant="default" className="bg-green-100 text-green-800">
-                                      Complete
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-amber-600">
-                                      Incomplete
-                                    </Badge>
-                                  )}
-                                </div>
+                                 <div className="flex justify-between items-center text-xs text-gray-500">
+                                   <span>
+                                     {new Date(product.uploadDate).toLocaleDateString()}
+                                   </span>
+                                   {status.percentage === 100 ? (
+                                     <Badge variant="default" className="bg-green-100 text-green-800">
+                                       Complete
+                                     </Badge>
+                                   ) : (
+                                     <Badge variant="outline" className="text-amber-600">
+                                       Incomplete
+                                     </Badge>
+                                   )}
+                                 </div>
+                                 
+                                 <div className="mt-3 flex gap-2">
+                                   <Button variant="outline" size="sm" className="text-xs flex-1" asChild>
+                                     <a href="/products" target="_blank" rel="noopener noreferrer">
+                                       View in Catalog
+                                     </a>
+                                   </Button>
+                                 </div>
                               </div>
                             </CardContent>
                           </Card>
