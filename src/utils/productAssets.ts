@@ -31,11 +31,81 @@ const loadUploadedAssets = (): { [key: string]: { glb?: string; jpg?: string } }
 
 // Detect products uploaded through the asset management system
 const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string } } => {
-  const detectedAssets: { [key: string]: { glb?: string; jpg?: string } } = {};
+  // Map uploaded assets from public/products directory structure
+  const uploadedAssets = {
+    // Innosin Lab Mobile Cabinet Series - 750mm Height
+    'innosin-mc-pc-755065': {
+      glb: '/products/innosin-mc-pc-755065/MC-PC (755065).glb',
+      jpg: '/products/innosin-mc-pc-755065/MC-PC (755065).jpg'
+    },
+    'innosin-mc-pc-755080': {
+      glb: '/products/innosin-mc-pc-755080/MC-PC (755080).glb',
+      jpg: '/products/innosin-mc-pc-755080/MC-PC (755080).jpg'
+    },
+    'innosin-mc-pc-lh-505065': {
+      glb: '/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).glb',
+      jpg: '/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg'
+    },
+    'innosin-mc-pc-lh-505080': {
+      glb: '/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).glb',
+      jpg: '/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).jpg'
+    },
+    'innosin-mc-pc-rh-505065': {
+      glb: '/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).glb',
+      jpg: '/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg'
+    },
+    'innosin-mc-pc-rh-505080': {
+      glb: '/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).glb',
+      jpg: '/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg'
+    },
+    'innosin-mcc-pc-lh-505065': {
+      glb: '/products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).glb',
+      jpg: '/products/innosin-mcc-pc-rh-505065/placeholder.jpg'
+    },
+    'innosin-mcc-pc-lh-505080': {
+      glb: '/products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).glb',
+      jpg: '/products/innosin-mcc-pc-lh-505080/placeholder.jpg'
+    },
+    'innosin-mcc-pc-rh-505065': {
+      glb: '/products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).glb',
+      jpg: '/products/innosin-mcc-pc-rh-505065/placeholder.jpg'
+    },
+    'innosin-mcc-pc-rh-505080': {
+      glb: '/products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).glb',
+      jpg: '/products/innosin-mcc-pc-rh-505080/placeholder.jpg'
+    },
+    'innosin-mc-pc-dwr3-505080': {
+      glb: '/products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).glb',
+      jpg: '/products/innosin-mc-pc-dwr3-505080/placeholder.jpg'
+    },
+    'innosin-mc-pc-dwr4-505080': {
+      glb: '/products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).glb',
+      jpg: '/products/innosin-mc-pc-dwr4-505080/placeholder.jpg'
+    },
+    'innosin-mc-pc-dwr6-905080': {
+      glb: '/products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).glb',
+      jpg: '/products/innosin-mc-pc-dwr6-905080/placeholder.jpg'
+    },
+    // Other Innosin Lab Products
+    'innosin-or-pc-3838': {
+      glb: '/products/innosin-or-pc-3838/OR-PC-3838.glb',
+      jpg: '/products/innosin-or-pc-3838/OR-PC-3838.jpg'
+    },
+    'innosin-or-pc-604518': {
+      glb: '/products/innosin-or-pc-604518/OR-PC-3838 (604518).glb',
+      jpg: '/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg'
+    },
+    'innosin-tcg-pc-754018': {
+      glb: '/products/innosin-tcg-pc-754018/TCG-PC (754018).glb',
+      jpg: '/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg'
+    },
+    'innosin-wcg-pc-753375': {
+      glb: '/products/innosin-wcg-pc-753375/WCG-PC (753375).glb',
+      jpg: '/products/innosin-wcg-pc-753375/WCG-PC (753375).jpg'
+    }
+  };
   
-  // This would scan the public/products directory in a real implementation
-  // For now, we'll return the known uploaded assets structure
-  return detectedAssets;
+  return uploadedAssets;
 };
 
 // Validate asset paths and check if they exist
