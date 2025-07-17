@@ -33,7 +33,9 @@ const loadUploadedAssets = (): { [key: string]: { glb?: string; jpg?: string } }
 const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string } } => {
   // Map uploaded assets from public/products directory structure
   const uploadedAssets = {
-    // Innosin Lab KS Series - Laboratory Fume Hoods
+    // ===========================================
+    // INNOSIN LAB KS SERIES - Knee Space Units
+    // ===========================================
     'innosin-ks-700': {
       glb: '/products/innosin-ks-700/KS700.glb',
       jpg: '/products/innosin-ks-700/KS700.jpg'
@@ -63,7 +65,9 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
       jpg: '/products/innosin-ks-1200/KS1200.jpg'
     },
     
-    // Innosin Lab Mobile Cabinet Series - 750mm Height
+    // ===========================================
+    // MOBILE CABINET (MC) SERIES - Powder Coated
+    // ===========================================
     'innosin-mc-pc-755065': {
       glb: '/products/innosin-mc-pc-755065/MC-PC (755065).glb',
       jpg: '/products/innosin-mc-pc-755065/MC-PC (755065).jpg'
@@ -88,9 +92,13 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
       glb: '/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).glb',
       jpg: '/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg'
     },
+    
+    // ===========================================
+    // MOBILE COMBINATION CABINET (MCC) SERIES
+    // ===========================================
     'innosin-mcc-pc-lh-505065': {
       glb: '/products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).glb',
-      jpg: '/products/innosin-mcc-pc-rh-505065/placeholder.jpg'
+      jpg: '/products/innosin-mcc-pc-lh-505065/placeholder.jpg'
     },
     'innosin-mcc-pc-lh-505080': {
       glb: '/products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).glb',
@@ -104,34 +112,201 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
       glb: '/products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).glb',
       jpg: '/products/innosin-mcc-pc-rh-505080/placeholder.jpg'
     },
-    'innosin-mc-pc-dwr3-505080': {
-      glb: '/products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).glb',
-      jpg: '/products/innosin-mc-pc-dwr3-505080/placeholder.jpg'
+    'innosin-mcc-pc-755065': {
+      glb: '/products/innosin-mcc-pc-755065/placeholder-model.glb',
+      jpg: '/products/innosin-mcc-pc-755065/placeholder.jpg'
     },
-    'innosin-mc-pc-dwr4-505080': {
-      glb: '/products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).glb',
-      jpg: '/products/innosin-mc-pc-dwr4-505080/placeholder.jpg'
+    'innosin-mcc-pc-755080': {
+      glb: '/products/innosin-mcc-pc-755080/placeholder-model.glb',
+      jpg: '/products/innosin-mcc-pc-755080/placeholder.jpg'
     },
-    'innosin-mc-pc-dwr6-905080': {
-      glb: '/products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).glb',
-      jpg: '/products/innosin-mc-pc-dwr6-905080/placeholder.jpg'
+    
+    // ===========================================
+    // MOBILE CABINET DRAWER (MC-DWR) SERIES
+    // ===========================================
+    'innosin-mc-pc-dwr3-505065': {
+      glb: '/products/innosin-mc-pc-dwr3-505065/placeholder-model.glb',
+      jpg: '/products/innosin-mc-pc-dwr3-505065/placeholder.jpg'
     },
-    // Other Innosin Lab Products
-    'innosin-or-pc-3838': {
-      glb: '/products/innosin-or-pc-3838/OR-PC-3838.glb',
-      jpg: '/products/innosin-or-pc-3838/OR-PC-3838.jpg'
+    'innosin-mc-pc-dwr34-505080': {
+      glb: '/products/innosin-mc-pc-dwr34-505080/placeholder-model.glb',
+      jpg: '/products/innosin-mc-pc-dwr34-505080/placeholder.jpg'
     },
-    'innosin-or-pc-604518': {
-      glb: '/products/innosin-or-pc-604518/OR-PC-3838 (604518).glb',
-      jpg: '/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg'
+    'innosin-mc-pc-dwr6-905065': {
+      glb: '/products/innosin-mc-pc-dwr6-905065/placeholder-model.glb',
+      jpg: '/products/innosin-mc-pc-dwr6-905065/placeholder.jpg'
     },
+    'innosin-mc-pc-dwr68-905080': {
+      glb: '/products/innosin-mc-pc-dwr68-905080/placeholder-model.glb',
+      jpg: '/products/innosin-mc-pc-dwr68-905080/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // POWDER COATED CABINET (PC-CB) SERIES
+    // ===========================================
+    'innosin-pc-cb-455590': {
+      glb: '/products/innosin-pc-cb-455590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-455590/placeholder.jpg'
+    },
+    'innosin-pc-cb-505590': {
+      glb: '/products/innosin-pc-cb-505590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-505590/placeholder.jpg'
+    },
+    'innosin-pc-cb-555590': {
+      glb: '/products/innosin-pc-cb-555590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-555590/placeholder.jpg'
+    },
+    'innosin-pc-cb-605590': {
+      glb: '/products/innosin-pc-cb-605590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-605590/placeholder.jpg'
+    },
+    'innosin-pc-cb-755590': {
+      glb: '/products/innosin-pc-cb-755590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-755590/placeholder.jpg'
+    },
+    'innosin-pc-cb-905590': {
+      glb: '/products/innosin-pc-cb-905590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-905590/placeholder.jpg'
+    },
+    'innosin-pc-cb-105590': {
+      glb: '/products/innosin-pc-cb-105590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-105590/placeholder.jpg'
+    },
+    'innosin-pc-cb-lh-455590': {
+      glb: '/products/innosin-pc-cb-lh-455590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-lh-455590/placeholder.jpg'
+    },
+    'innosin-pc-cb-lh-505590': {
+      glb: '/products/innosin-pc-cb-lh-505590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-lh-505590/placeholder.jpg'
+    },
+    'innosin-pc-cb-lh-555590': {
+      glb: '/products/innosin-pc-cb-lh-555590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-lh-555590/placeholder.jpg'
+    },
+    'innosin-pc-cb-lh-605590': {
+      glb: '/products/innosin-pc-cb-lh-605590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-lh-605590/placeholder.jpg'
+    },
+    'innosin-pc-cb-rh-455590': {
+      glb: '/products/innosin-pc-cb-rh-455590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-rh-455590/placeholder.jpg'
+    },
+    'innosin-pc-cb-rh-505590': {
+      glb: '/products/innosin-pc-cb-rh-505590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-rh-505590/placeholder.jpg'
+    },
+    'innosin-pc-cb-rh-555590': {
+      glb: '/products/innosin-pc-cb-rh-555590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-rh-555590/placeholder.jpg'
+    },
+    'innosin-pc-cb-rh-605590': {
+      glb: '/products/innosin-pc-cb-rh-605590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-cb-rh-605590/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // POWDER COATED DOUBLE DOOR (PC-DD) SERIES
+    // ===========================================
+    'innosin-pc-dd-755590': {
+      glb: '/products/innosin-pc-dd-755590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-dd-755590/placeholder.jpg'
+    },
+    'innosin-pc-dd-905590': {
+      glb: '/products/innosin-pc-dd-905590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-dd-905590/placeholder.jpg'
+    },
+    'innosin-pc-dd-905580': {
+      glb: '/products/innosin-pc-dd-905580/placeholder-model.glb',
+      jpg: '/products/innosin-pc-dd-905580/placeholder.jpg'
+    },
+    'innosin-pc-dd-105590': {
+      glb: '/products/innosin-pc-dd-105590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-dd-105590/placeholder.jpg'
+    },
+    'innosin-pc-dd-125590': {
+      glb: '/products/innosin-pc-dd-125590/placeholder-model.glb',
+      jpg: '/products/innosin-pc-dd-125590/placeholder.jpg'
+    },
+    'innosin-pc-dd-1255590': {
+      glb: '/products/innosin-pc-dd-1255590/placeholder.glb',
+      jpg: '/products/innosin-pc-dd-1255590/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // TALL CABINET GLASS (TCG) SERIES
+    // ===========================================
     'innosin-tcg-pc-754018': {
       glb: '/products/innosin-tcg-pc-754018/TCG-PC (754018).glb',
       jpg: '/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg'
     },
+    'innosin-tcg-pc-wide': {
+      glb: '/products/innosin-tcg-pc-wide/placeholder-model.glb',
+      jpg: '/products/innosin-tcg-pc-wide/placeholder.jpg'
+    },
+    'innosin-tcg-pc-standard': {
+      glb: '/products/innosin-tcg-pc-standard/placeholder-model.glb',
+      jpg: '/products/innosin-tcg-pc-standard/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // TALL CABINET SOLID (TCS) SERIES
+    // ===========================================
+    'innosin-tcs-pc-wide': {
+      glb: '/products/innosin-tcs-pc-wide/placeholder-model.glb',
+      jpg: '/products/innosin-tcs-pc-wide/placeholder.jpg'
+    },
+    'innosin-tcs-pc-standard': {
+      glb: '/products/innosin-tcs-pc-standard/placeholder-model.glb',
+      jpg: '/products/innosin-tcs-pc-standard/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // WALL CABINET GLASS (WCG) SERIES
+    // ===========================================
     'innosin-wcg-pc-753375': {
       glb: '/products/innosin-wcg-pc-753375/WCG-PC (753375).glb',
       jpg: '/products/innosin-wcg-pc-753375/WCG-PC (753375).jpg'
+    },
+    'innosin-wall-cabinet-glass-sd': {
+      glb: '/products/innosin-wall-cabinet-glass-sd/placeholder-model.glb',
+      jpg: '/products/innosin-wall-cabinet-glass-sd/placeholder.jpg'
+    },
+    'innosin-wall-cabinet-glass-dd': {
+      glb: '/products/innosin-wall-cabinet-glass-dd/placeholder-model.glb',
+      jpg: '/products/innosin-wall-cabinet-glass-dd/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // WALL CABINET SOLID (WCS) SERIES
+    // ===========================================
+    'innosin-wall-cabinet-solid-sd': {
+      glb: '/products/innosin-wall-cabinet-solid-sd/placeholder-model.glb',
+      jpg: '/products/innosin-wall-cabinet-solid-sd/placeholder.jpg'
+    },
+    'innosin-wall-cabinet-solid-dd': {
+      glb: '/products/innosin-wall-cabinet-solid-dd/placeholder-model.glb',
+      jpg: '/products/innosin-wall-cabinet-solid-dd/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // SINK CABINET (SC) SERIES
+    // ===========================================
+    'innosin-sink-cabinet-sd': {
+      glb: '/products/innosin-sink-cabinet-sd/placeholder-model.glb',
+      jpg: '/products/innosin-sink-cabinet-sd/placeholder.jpg'
+    },
+    'innosin-sink-cabinet-dd': {
+      glb: '/products/innosin-sink-cabinet-dd/placeholder-model.glb',
+      jpg: '/products/innosin-sink-cabinet-dd/placeholder.jpg'
+    },
+    
+    // ===========================================
+    // OPEN RACK (OR) SERIES
+    // ===========================================
+    'innosin-or-pc-604518': {
+      glb: '/products/innosin-or-pc-604518/OR-PC-3838 (604518).glb',
+      jpg: '/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg'
     }
   };
   
@@ -173,6 +348,333 @@ const enhanceProductWithAssets = (product: Product): Product => {
 export const getProductsSync = (): Product[] => {
   // Generate products based on available assets in public/products directory
   const products: Product[] = [
+    // ===========================================
+    // INNOSIN LAB PRODUCTS - KS (Knee Space) Series
+    // ===========================================
+    {
+      id: "innosin-ks-700",
+      name: "Knee Space Unit 700mm",
+      category: "KS Series",
+      dimensions: "W700 × D600 × H750mm",
+      description: "Laboratory knee space unit with 700mm width for workstation integration.",
+      fullDescription: "Professional laboratory knee space unit designed for seamless integration into laboratory workstations. Features durable powder-coated finish and ergonomic design for optimal user comfort and workflow efficiency.",
+      specifications: [
+        "Width: 700mm",
+        "Depth: 600mm", 
+        "Height: 750mm",
+        "Powder-coated finish",
+        "Ergonomic design",
+        "Easy installation",
+        "Laboratory-grade construction"
+      ],
+      modelPath: "/products/innosin-ks-700/KS700.glb",
+      thumbnail: "/products/innosin-ks-700/KS700.jpg",
+      images: ["/products/innosin-ks-700/KS700.jpg"]
+    },
+    {
+      id: "innosin-ks-750",
+      name: "Knee Space Unit 750mm",
+      category: "KS Series",
+      dimensions: "W750 × D600 × H750mm",
+      description: "Laboratory knee space unit with 750mm width for enhanced workspace.",
+      fullDescription: "Professional laboratory knee space unit with expanded 750mm width for enhanced workspace functionality. Features durable powder-coated finish and ergonomic design for optimal user comfort and workflow efficiency.",
+      specifications: [
+        "Width: 750mm",
+        "Depth: 600mm",
+        "Height: 750mm", 
+        "Powder-coated finish",
+        "Enhanced workspace",
+        "Easy installation",
+        "Laboratory-grade construction"
+      ],
+      modelPath: "/products/innosin-ks-750/KS750.glb",
+      thumbnail: "/products/innosin-ks-750/KS750.jpg",
+      images: ["/products/innosin-ks-750/KS750.jpg"]
+    },
+    
+    // ===========================================
+    // MOBILE CABINET (MC) SERIES - Powder Coated
+    // ===========================================
+    {
+      id: "innosin-mc-pc-755065",
+      name: "Mobile Cabinet PC 755065",
+      category: "Mobile Cabinet Series",
+      dimensions: "W750 × D500 × H650mm",
+      description: "Mobile powder-coated cabinet with wheels for laboratory flexibility.",
+      fullDescription: "Professional mobile laboratory cabinet with durable powder-coated finish. Features smooth-rolling wheels and secure locking mechanisms for safe transport of equipment and materials.",
+      specifications: [
+        "Width: 750mm",
+        "Depth: 500mm",
+        "Height: 650mm",
+        "Powder-coated finish",
+        "Mobile with wheels",
+        "Locking mechanisms",
+        "Laboratory-grade construction"
+      ],
+      modelPath: "/products/innosin-mc-pc-755065/MC-PC (755065).glb",
+      thumbnail: "/products/innosin-mc-pc-755065/MC-PC (755065).jpg",
+      images: ["/products/innosin-mc-pc-755065/MC-PC (755065).jpg"]
+    },
+    {
+      id: "innosin-mc-pc-755080",
+      name: "Mobile Cabinet PC 755080", 
+      category: "Mobile Cabinet Series",
+      dimensions: "W750 × D500 × H800mm",
+      description: "Tall mobile powder-coated cabinet with enhanced storage capacity.",
+      fullDescription: "Professional tall mobile laboratory cabinet with enhanced storage capacity. Features durable powder-coated finish, smooth-rolling wheels and secure locking mechanisms for safe transport.",
+      specifications: [
+        "Width: 750mm",
+        "Depth: 500mm", 
+        "Height: 800mm",
+        "Powder-coated finish",
+        "Enhanced storage",
+        "Mobile with wheels",
+        "Locking mechanisms"
+      ],
+      modelPath: "/products/innosin-mc-pc-755080/MC-PC (755080).glb",
+      thumbnail: "/products/innosin-mc-pc-755080/MC-PC (755080).jpg",
+      images: ["/products/innosin-mc-pc-755080/MC-PC (755080).jpg"]
+    },
+    {
+      id: "innosin-mc-pc-lh-505065",
+      name: "Mobile Cabinet PC Left Hand 505065",
+      category: "Mobile Cabinet Series",
+      dimensions: "W500 × D500 × H650mm",
+      description: "Left-hand mobile cabinet with powder-coated finish for compact spaces.",
+      fullDescription: "Compact left-hand mobile laboratory cabinet designed for space-efficient laboratory layouts. Features durable powder-coated finish and ergonomic left-hand opening design.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 650mm",
+        "Left-hand configuration",
+        "Powder-coated finish",
+        "Compact design",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).glb",
+      thumbnail: "/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg",
+      images: ["/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg"]
+    },
+    {
+      id: "innosin-mc-pc-lh-505080",
+      name: "Mobile Cabinet PC Left Hand 505080",
+      category: "Mobile Cabinet Series", 
+      dimensions: "W500 × D500 × H800mm",
+      description: "Tall left-hand mobile cabinet with enhanced vertical storage.",
+      fullDescription: "Tall left-hand mobile laboratory cabinet with enhanced vertical storage capacity. Features durable powder-coated finish and ergonomic left-hand opening design for space-efficient layouts.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 800mm",
+        "Left-hand configuration",
+        "Enhanced vertical storage",
+        "Powder-coated finish",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).glb",
+      thumbnail: "/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).jpg",
+      images: ["/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).jpg"]
+    },
+    {
+      id: "innosin-mc-pc-rh-505065",
+      name: "Mobile Cabinet PC Right Hand 505065",
+      category: "Mobile Cabinet Series",
+      dimensions: "W500 × D500 × H650mm", 
+      description: "Right-hand mobile cabinet with powder-coated finish for compact spaces.",
+      fullDescription: "Compact right-hand mobile laboratory cabinet designed for space-efficient laboratory layouts. Features durable powder-coated finish and ergonomic right-hand opening design.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 650mm",
+        "Right-hand configuration",
+        "Powder-coated finish",
+        "Compact design",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).glb",
+      thumbnail: "/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg",
+      images: ["/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg"]
+    },
+    {
+      id: "innosin-mc-pc-rh-505080",
+      name: "Mobile Cabinet PC Right Hand 505080",
+      category: "Mobile Cabinet Series",
+      dimensions: "W500 × D500 × H800mm",
+      description: "Tall right-hand mobile cabinet with enhanced vertical storage.",
+      fullDescription: "Tall right-hand mobile laboratory cabinet with enhanced vertical storage capacity. Features durable powder-coated finish and ergonomic right-hand opening design for space-efficient layouts.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm", 
+        "Height: 800mm",
+        "Right-hand configuration",
+        "Enhanced vertical storage",
+        "Powder-coated finish",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).glb",
+      thumbnail: "/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg",
+      images: ["/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg"]
+    },
+
+    // ===========================================
+    // MOBILE COMBINATION CABINET (MCC) SERIES
+    // ===========================================
+    {
+      id: "innosin-mcc-pc-lh-505065",
+      name: "Mobile Combination Cabinet PC Left Hand 505065",
+      category: "Mobile Combination Cabinet Series",
+      dimensions: "W500 × D500 × H650mm",
+      description: "Left-hand mobile combination cabinet with mixed storage solutions.",
+      fullDescription: "Versatile left-hand mobile combination cabinet featuring mixed storage solutions including shelving and drawer compartments. Ideal for laboratories requiring diverse storage options in a compact, mobile unit.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 650mm",
+        "Left-hand configuration",
+        "Combination storage",
+        "Powder-coated finish",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).glb",
+      thumbnail: "/products/innosin-mcc-pc-lh-505065/placeholder.jpg",
+      images: ["/products/innosin-mcc-pc-lh-505065/placeholder.jpg"]
+    },
+    {
+      id: "innosin-mcc-pc-lh-505080",
+      name: "Mobile Combination Cabinet PC Left Hand 505080", 
+      category: "Mobile Combination Cabinet Series",
+      dimensions: "W500 × D500 × H800mm",
+      description: "Tall left-hand mobile combination cabinet with enhanced storage variety.",
+      fullDescription: "Tall left-hand mobile combination cabinet with enhanced storage variety featuring multiple compartment types. Perfect for laboratories requiring flexible storage solutions in a mobile configuration.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 800mm", 
+        "Left-hand configuration",
+        "Enhanced combination storage",
+        "Powder-coated finish",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).glb",
+      thumbnail: "/products/innosin-mcc-pc-lh-505080/placeholder.jpg",
+      images: ["/products/innosin-mcc-pc-lh-505080/placeholder.jpg"]
+    },
+    {
+      id: "innosin-mcc-pc-rh-505065",
+      name: "Mobile Combination Cabinet PC Right Hand 505065",
+      category: "Mobile Combination Cabinet Series",
+      dimensions: "W500 × D500 × H650mm",
+      description: "Right-hand mobile combination cabinet with mixed storage solutions.",
+      fullDescription: "Versatile right-hand mobile combination cabinet featuring mixed storage solutions including shelving and drawer compartments. Ideal for laboratories requiring diverse storage options in a compact, mobile unit.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 650mm",
+        "Right-hand configuration",
+        "Combination storage",
+        "Powder-coated finish", 
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).glb",
+      thumbnail: "/products/innosin-mcc-pc-rh-505065/placeholder.jpg",
+      images: ["/products/innosin-mcc-pc-rh-505065/placeholder.jpg"]
+    },
+    {
+      id: "innosin-mcc-pc-rh-505080",
+      name: "Mobile Combination Cabinet PC Right Hand 505080",
+      category: "Mobile Combination Cabinet Series",
+      dimensions: "W500 × D500 × H800mm",
+      description: "Tall right-hand mobile combination cabinet with enhanced storage variety.",
+      fullDescription: "Tall right-hand mobile combination cabinet with enhanced storage variety featuring multiple compartment types. Perfect for laboratories requiring flexible storage solutions in a mobile configuration.",
+      specifications: [
+        "Width: 500mm",
+        "Depth: 500mm",
+        "Height: 800mm",
+        "Right-hand configuration",
+        "Enhanced combination storage",
+        "Powder-coated finish",
+        "Mobile with wheels"
+      ],
+      modelPath: "/products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).glb",
+      thumbnail: "/products/innosin-mcc-pc-rh-505080/placeholder.jpg",
+      images: ["/products/innosin-mcc-pc-rh-505080/placeholder.jpg"]
+    },
+
+    // ===========================================
+    // OPEN RACK (OR) SERIES - Powder Coated  
+    // ===========================================
+    {
+      id: "innosin-or-pc-604518",
+      name: "Open Rack PC 604518",
+      category: "Open Rack Series",
+      dimensions: "W600 × D450 × H1800mm",
+      description: "Tall open rack system with powder-coated finish for equipment storage.",
+      fullDescription: "Professional open rack system designed for laboratory equipment storage and organization. Features durable powder-coated finish with multiple shelf configurations for maximum flexibility.",
+      specifications: [
+        "Width: 600mm",
+        "Depth: 450mm",
+        "Height: 1800mm",
+        "Open rack design",
+        "Powder-coated finish",
+        "Multiple shelf options",
+        "Laboratory-grade construction"
+      ],
+      modelPath: "/products/innosin-or-pc-604518/OR-PC-3838 (604518).glb",
+      thumbnail: "/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg",
+      images: ["/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg"]
+    },
+
+    // ===========================================
+    // TALL CABINET GLASS (TCG) SERIES
+    // ===========================================
+    {
+      id: "innosin-tcg-pc-754018",
+      name: "Tall Cabinet Glass PC 754018",
+      category: "Tall Cabinet Glass Series",
+      dimensions: "W750 × D400 × H1800mm",
+      description: "Tall glass cabinet with powder-coated frame for secure storage.",
+      fullDescription: "Professional tall glass cabinet featuring powder-coated frame construction. Ideal for secure storage of laboratory equipment and materials with full visibility through tempered glass doors.",
+      specifications: [
+        "Width: 750mm",
+        "Depth: 400mm",
+        "Height: 1800mm",
+        "Tempered glass doors",
+        "Powder-coated frame",
+        "Secure locking system",
+        "Adjustable shelving"
+      ],
+      modelPath: "/products/innosin-tcg-pc-754018/TCG-PC (754018).glb",
+      thumbnail: "/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg",
+      images: ["/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg"]
+    },
+
+    // ===========================================
+    // WALL CABINET GLASS (WCG) SERIES
+    // ===========================================
+    {
+      id: "innosin-wcg-pc-753375",
+      name: "Wall Cabinet Glass PC 753375",
+      category: "Wall Cabinet Glass Series",
+      dimensions: "W750 × D330 × H750mm",
+      description: "Wall-mounted glass cabinet with powder-coated frame for overhead storage.",
+      fullDescription: "Professional wall-mounted glass cabinet with powder-coated frame construction. Perfect for overhead storage of laboratory supplies with full visibility and space-saving design.",
+      specifications: [
+        "Width: 750mm",
+        "Depth: 330mm",
+        "Height: 750mm",
+        "Wall-mounted design",
+        "Tempered glass doors",
+        "Powder-coated frame",
+        "Space-saving installation"
+      ],
+      modelPath: "/products/innosin-wcg-pc-753375/WCG-PC (753375).glb",
+      thumbnail: "/products/innosin-wcg-pc-753375/WCG-PC (753375).jpg",
+      images: ["/products/innosin-wcg-pc-753375/WCG-PC (753375).jpg"]
+    },
+
+    // ===========================================
+    // BROEN-LAB EMERGENCY SHOWER SYSTEMS
+    // ===========================================
     {
       id: "bl-hes-bench-001",
       name: "Hand-Held Eye Shower with Two 45-degree Heads, Bench Mounted",
