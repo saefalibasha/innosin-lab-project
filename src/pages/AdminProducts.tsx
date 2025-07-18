@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,7 +23,7 @@ interface DatabaseProduct {
   description: string | null;
   full_description: string | null;
   dimensions: string | null;
-  specifications: string[] | null;
+  specifications: string[];
   keywords: string[];
   thumbnail_path: string | null;
   model_path: string | null;
@@ -88,7 +87,9 @@ const AdminProducts = () => {
       // Transform the data to match our interface
       const transformedData: DatabaseProduct[] = (data || []).map(product => ({
         ...product,
-        specifications: Array.isArray(product.specifications) ? product.specifications : []
+        specifications: Array.isArray(product.specifications) 
+          ? product.specifications.map(spec => typeof spec === 'string' ? spec : String(spec))
+          : []
       }));
       
       setProducts(transformedData);

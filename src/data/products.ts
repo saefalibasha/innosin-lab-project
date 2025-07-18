@@ -26,7 +26,9 @@ export const getProductsAsync = async (): Promise<Product[]> => {
       thumbnail: product.thumbnail_path || '/products/placeholder.jpg',
       modelPath: product.model_path || '',
       images: product.additional_images || [],
-      specifications: Array.isArray(product.specifications) ? product.specifications : [],
+      specifications: Array.isArray(product.specifications) 
+        ? product.specifications.map(spec => typeof spec === 'string' ? spec : String(spec))
+        : [],
       keywords: product.keywords || [],
       additionalImages: product.additional_images || [],
       overviewImage: product.overview_image_path
