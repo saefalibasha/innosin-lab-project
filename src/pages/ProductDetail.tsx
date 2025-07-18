@@ -17,6 +17,7 @@ import ProductTypeSelector from '@/components/ProductTypeSelector';
 import ProductOrientationSelector from '@/components/ProductOrientationSelector';
 import { products } from '@/data/products';
 import { productPageContent } from '@/data/productPageContent';
+import { debugAssetUrls } from '@/utils/productAssets';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -28,6 +29,14 @@ const ProductDetail = () => {
   const [selectedVariant, setSelectedVariant] = useState<string>('');
   
   const product = products.find(p => p.id === productId);
+  
+  // Debug asset URLs when product changes
+  useEffect(() => {
+    if (product && product.id) {
+      debugAssetUrls(product.id);
+      console.log('🔍 Current product data:', product);
+    }
+  }, [product]);
   
   // Get unique types and orientations from variants
   const availableTypes = product?.variants ? 
@@ -58,23 +67,25 @@ const ProductDetail = () => {
     if (product && product.variants && product.variants.length > 0) {
       // Set first available type
       if (availableTypes.length > 0 && !selectedType) {
-        setSelectedType(availableTypes[0]);
+        const firstType = availableTypes[0];
+        setSelectedType(firstType);
+        console.log('🔍 Setting initial type:', firstType);
       } else if (availableTypes.length === 0 && product.variants.length > 0) {
         // Fallback for products without types
-        setSelectedVariant(product.variants[0].id);
+        const firstVariant = product.variants[0];
+        setSelectedVariant(firstVariant.id);
+        console.log('🔍 Setting initial variant (no types):', firstVariant.id);
       }
     }
-  }, [product, availableTypes, selectedType]);
+  }, [product, availableTypes.length]);
 
   // Update orientation when type changes
   useEffect(() => {
     if (selectedType) {
       const orientations = getAvailableOrientations(selectedType);
-      if (orientations.length > 0) {
-        setSelectedOrientation(orientations[0]);
-      } else {
-        setSelectedOrientation('None');
-      }
+      const newOrientation = orientations.length > 0 ? orientations[0] : 'None';
+      setSelectedOrientation(newOrientation);
+      console.log('🔍 Setting orientation for type', selectedType, ':', newOrientation);
     }
   }, [selectedType]);
 
@@ -82,13 +93,38 @@ const ProductDetail = () => {
   useEffect(() => {
     const filteredVariants = getFilteredVariants();
     if (filteredVariants.length > 0) {
-      setSelectedVariant(filteredVariants[0].id);
+      const newVariant = filteredVariants[0];
+      setSelectedVariant(newVariant.id);
+      console.log('🔍 Setting variant:', newVariant.id);
+      console.log('🔍 Variant assets:', {
+        modelPath: newVariant.modelPath,
+        thumbnail: newVariant.thumbnail,
+        images: newVariant.images
+      });
     }
   }, [selectedType, selectedOrientation]);
   
   // Get current variant data for display
   const currentVariant = product?.variants?.find(v => v.id === selectedVariant);
   const isInnosinProduct = product?.category === 'Innosin Lab';
+
+  // Enhanced logging for current assets
+  useEffect(() => {
+    if (currentVariant) {
+      console.log('🔍 Current variant changed:', {
+        id: currentVariant.id,
+        modelPath: currentVariant.modelPath,
+        thumbnail: currentVariant.thumbnail,
+        images: currentVariant.images
+      });
+    } else if (product) {
+      console.log('🔍 Using main product assets:', {
+        modelPath: product.modelPath,
+        thumbnail: product.thumbnail,
+        images: product.images
+      });
+    }
+  }, [currentVariant, product]);
 
   if (!product) {
     return (
@@ -117,6 +153,11 @@ const ProductDetail = () => {
     addItem(itemToAdd);
     toast.success(`${itemToAdd.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
+
+  // Get current display assets
+  const currentModelPath = currentVariant ? currentVariant.modelPath : product.modelPath;
+  const currentImages = currentVariant ? currentVariant.images : product.images;
+  const currentThumbnail = currentVariant ? currentVariant.thumbnail : product.thumbnail;
 
   return (
     <div className="min-h-screen bg-background">
@@ -149,8 +190,8 @@ const ProductDetail = () => {
 
                 <TabsContent value="photos">
                   <ProductImageGallery
-                    images={currentVariant ? currentVariant.images : product.images}
-                    thumbnail={currentVariant ? currentVariant.thumbnail : product.thumbnail}
+                    images={currentImages}
+                    thumbnail={currentThumbnail}
                     productName={product.name}
                     className="w-full h-96 lg:h-[500px]"
                   />
@@ -158,7 +199,7 @@ const ProductDetail = () => {
 
                 <TabsContent value="3d">
                   <Enhanced3DViewer
-                    modelPath={currentVariant ? currentVariant.modelPath : product.modelPath}
+                    modelPath={currentModelPath}
                     className="w-full h-96 lg:h-[500px]"
                   />
                 </TabsContent>
