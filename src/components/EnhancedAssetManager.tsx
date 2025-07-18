@@ -14,8 +14,7 @@ import {
   Box, 
   CheckCircle, 
   AlertCircle, 
-  Search,
-  X
+  Search
 } from 'lucide-react';
 import { Product } from '@/types/product';
 import { getProductsSync } from '@/utils/productAssets';
@@ -215,7 +214,7 @@ const EnhancedAssetManager = () => {
       case 'partial':
         return <AlertCircle className="h-5 w-5 text-yellow-600" />;
       default:
-        return <X className="h-5 w-5 text-red-600" />;
+        return <AlertCircle className="h-5 w-5 text-red-600" />;
     }
   };
 
