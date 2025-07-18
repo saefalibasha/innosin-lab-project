@@ -77,137 +77,111 @@ const EnhancedAssetManager = () => {
     try {
       // Load all products from the catalog
       const allProducts = getProductsSync();
-      setProducts(allProducts);
+      
+      // Filter to only show Innosin Lab products that need asset uploads
+      const innosinProducts = allProducts.filter(product => 
+        product.category.toLowerCase().includes('innosin')
+      );
+      
+      setProducts(innosinProducts);
 
-      // Group products by base name for Innosin Lab variants
+      // Group Innosin Lab products by base name for variant handling
       const productGroups = new Map<string, Product[]>();
       
-      allProducts.forEach(product => {
-        const brand = product.category.toLowerCase().includes('innosin') ? 'innosin-lab' :
-                      product.category.toLowerCase().includes('broen') ? 'broen-lab' :
-                      product.category.toLowerCase().includes('oriental') ? 'oriental-giken' :
-                      product.category.toLowerCase().includes('hamilton') ? 'hamilton-lab' : 'unknown';
+      for (const product of innosinProducts) {
+        // Check if assets are placeholders
+        const glbExists = await checkAssetExists(product.modelPath);
+        const jpgExists = await checkAssetExists(product.thumbnail);
         
-        if (brand === 'innosin-lab') {
-          // Extract base product name (remove variant suffixes)
-          const baseName = product.name.replace(/\s*\([^)]*\)$/, '').trim();
+        const isGLBPlaceholder = !glbExists || product.modelPath.includes('PLACEHOLDER');
+        const isJPGPlaceholder = !jpgExists || product.thumbnail.includes('PLACEHOLDER');
+        
+        // Only include products that actually need uploads (have placeholders or missing files)
+        if (isGLBPlaceholder || isJPGPlaceholder) {
+          // Extract base product name (remove variant suffixes like (505065), -LH, -RH, etc.)
+          const baseName = product.name.replace(/\s*\([^)]*\)$/, '').replace(/-[LR]H$/, '').replace(/-DWR?\d+$/, '').trim();
+          
           if (!productGroups.has(baseName)) {
             productGroups.set(baseName, []);
           }
           productGroups.get(baseName)!.push(product);
-        } else {
-          // For non-Innosin products, treat each as individual
-          productGroups.set(product.id, [product]);
         }
-      });
+      }
 
       // Process each product group
       const statusPromises = Array.from(productGroups.entries()).map(async ([groupKey, groupProducts]) => {
-        if (groupProducts.length === 1 && !groupProducts[0].category.toLowerCase().includes('innosin')) {
-          // Single product (non-Innosin)
-          const product = groupProducts[0];
-          const glbExists = await checkAssetExists(product.modelPath);
-          const jpgExists = await checkAssetExists(product.thumbnail);
-          
-          const hasGLB = glbExists && !product.modelPath.includes('PLACEHOLDER');
-          const hasJPG = jpgExists && !product.thumbnail.includes('PLACEHOLDER');
-          
-          let status: 'complete' | 'partial' | 'missing' = 'missing';
-          let completionPercentage = 0;
-          
-          if (hasGLB && hasJPG) {
-            status = 'complete';
-            completionPercentage = 100;
-          } else if (hasGLB || hasJPG) {
-            status = 'partial';
-            completionPercentage = 50;
-          }
+        // All are Innosin Lab product groups with variants that need uploads
+        const variants: VariantAssetStatus[] = await Promise.all(
+          groupProducts.map(async (variant) => {
+            const glbExists = await checkAssetExists(variant.modelPath);
+            const jpgExists = await checkAssetExists(variant.thumbnail);
+            
+            const hasGLB = glbExists && !variant.modelPath.includes('PLACEHOLDER');
+            const hasJPG = jpgExists && !variant.thumbnail.includes('PLACEHOLDER');
+            
+            let status: 'complete' | 'partial' | 'missing' = 'missing';
+            let completionPercentage = 0;
+            
+            if (hasGLB && hasJPG) {
+              status = 'complete';
+              completionPercentage = 100;
+            } else if (hasGLB || hasJPG) {
+              status = 'partial';
+              completionPercentage = 50;
+            }
 
-          const brand = product.category.toLowerCase().includes('broen') ? 'broen-lab' :
-                        product.category.toLowerCase().includes('oriental') ? 'oriental-giken' :
-                        product.category.toLowerCase().includes('hamilton') ? 'hamilton-lab' : 'unknown';
+            // Extract variant info from product name (size, orientation, drawer config)
+            const variantMatch = variant.name.match(/\(([^)]*)\)$/);
+            const orientationMatch = variant.name.match(/-([LR]H)\s/);
+            const drawerMatch = variant.name.match(/-DWR?(\d+)/);
+            
+            let variantInfo = variantMatch ? variantMatch[1] : 'Standard';
+            if (orientationMatch) variantInfo += ` ${orientationMatch[1]}`;
+            if (drawerMatch) variantInfo += ` ${drawerMatch[1]}D`;
 
-          return {
-            productId: product.id,
-            productName: product.name,
-            category: product.category,
-            brand,
-            hasGLB,
-            hasJPG,
-            glbPath: product.modelPath,
-            jpgPath: product.thumbnail,
-            status,
-            completionPercentage
-          };
-        } else {
-          // Innosin Lab product group with variants
-          const variants: VariantAssetStatus[] = await Promise.all(
-            groupProducts.map(async (variant) => {
-              const glbExists = await checkAssetExists(variant.modelPath);
-              const jpgExists = await checkAssetExists(variant.thumbnail);
-              
-              const hasGLB = glbExists && !variant.modelPath.includes('PLACEHOLDER');
-              const hasJPG = jpgExists && !variant.thumbnail.includes('PLACEHOLDER');
-              
-              let status: 'complete' | 'partial' | 'missing' = 'missing';
-              let completionPercentage = 0;
-              
-              if (hasGLB && hasJPG) {
-                status = 'complete';
-                completionPercentage = 100;
-              } else if (hasGLB || hasJPG) {
-                status = 'partial';
-                completionPercentage = 50;
-              }
+            return {
+              variantId: variant.id,
+              variantName: variant.name,
+              parentProductId: groupKey,
+              variantInfo,
+              hasGLB,
+              hasJPG,
+              glbPath: variant.modelPath,
+              jpgPath: variant.thumbnail,
+              status,
+              completionPercentage
+            };
+          })
+        );
 
-              // Extract variant info from product name
-              const variantMatch = variant.name.match(/\(([^)]*)\)$/);
-              const variantInfo = variantMatch ? variantMatch[1] : 'Standard';
-
-              return {
-                variantId: variant.id,
-                variantName: variant.name,
-                parentProductId: groupKey,
-                variantInfo,
-                hasGLB,
-                hasJPG,
-                glbPath: variant.modelPath,
-                jpgPath: variant.thumbnail,
-                status,
-                completionPercentage
-              };
-            })
-          );
-
-          // Calculate overall status for the product group
-          const totalVariants = variants.length;
-          const completeVariants = variants.filter(v => v.status === 'complete').length;
-          const partialVariants = variants.filter(v => v.status === 'partial').length;
-          
-          let overallStatus: 'complete' | 'partial' | 'missing' = 'missing';
-          let overallPercentage = 0;
-          
-          if (completeVariants === totalVariants) {
-            overallStatus = 'complete';
-            overallPercentage = 100;
-          } else if (completeVariants > 0 || partialVariants > 0) {
-            overallStatus = 'partial';
-            overallPercentage = Math.round(((completeVariants * 100) + (partialVariants * 50)) / totalVariants);
-          }
-
-          const firstProduct = groupProducts[0];
-          return {
-            productId: groupKey,
-            productName: groupKey,
-            category: firstProduct.category,
-            brand: 'innosin-lab',
-            hasGLB: false, // Group level doesn't have individual assets
-            hasJPG: false,
-            status: overallStatus,
-            completionPercentage: overallPercentage,
-            variants
-          };
+        // Calculate overall status for the product group
+        const totalVariants = variants.length;
+        const completeVariants = variants.filter(v => v.status === 'complete').length;
+        const partialVariants = variants.filter(v => v.status === 'partial').length;
+        
+        let overallStatus: 'complete' | 'partial' | 'missing' = 'missing';
+        let overallPercentage = 0;
+        
+        if (completeVariants === totalVariants) {
+          overallStatus = 'complete';
+          overallPercentage = 100;
+        } else if (completeVariants > 0 || partialVariants > 0) {
+          overallStatus = 'partial';
+          overallPercentage = Math.round(((completeVariants * 100) + (partialVariants * 50)) / totalVariants);
         }
+
+        const firstProduct = groupProducts[0];
+        return {
+          productId: groupKey,
+          productName: groupKey,
+          category: firstProduct.category,
+          brand: 'innosin-lab',
+          hasGLB: false, // Group level doesn't have individual assets
+          hasJPG: false,
+          status: overallStatus,
+          completionPercentage: overallPercentage,
+          variants
+        };
       });
 
       const statusResults = await Promise.all(statusPromises);
