@@ -24,7 +24,7 @@ interface DatabaseProduct {
   description: string | null;
   full_description: string | null;
   dimensions: string | null;
-  specifications: any[];
+  specifications: string[] | null;
   keywords: string[];
   thumbnail_path: string | null;
   model_path: string | null;
@@ -84,7 +84,14 @@ const AdminProducts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      // Transform the data to match our interface
+      const transformedData: DatabaseProduct[] = (data || []).map(product => ({
+        ...product,
+        specifications: Array.isArray(product.specifications) ? product.specifications : []
+      }));
+      
+      setProducts(transformedData);
     } catch (error) {
       console.error('Error loading products:', error);
       toast({

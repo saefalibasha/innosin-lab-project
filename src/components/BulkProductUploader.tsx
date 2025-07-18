@@ -38,7 +38,7 @@ const BulkProductUploader: React.FC<BulkProductUploaderProps> = ({ onComplete })
     const processedFiles: FileWithPreview[] = acceptedFiles.map(file => {
       const fileName = file.name;
       const productCode = fileName.split('.')[0]; // Extract product code from filename
-      const fileType = file.type.startsWith('image/') ? 'image' : 'model';
+      const fileType: 'image' | 'model' = file.type.startsWith('image/') ? 'image' : 'model';
       
       return Object.assign(file, {
         preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
