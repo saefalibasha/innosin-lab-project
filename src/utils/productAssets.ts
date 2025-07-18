@@ -36,34 +36,34 @@ const loadUploadedAssets = (): { [key: string]: { glb?: string; jpg?: string } }
 const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string } } => {
   // Map uploaded assets from Supabase storage bucket
   const uploadedAssets = {
-    // Innosin Lab KS Series - Laboratory Fume Hoods
+    // Innosin Lab KS Series - Laboratory Fume Hoods (Using actual Supabase storage paths)
     'innosin-ks-700': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS700/KS700.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS700/KS700.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-700/KS700.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-700/KS700.jpg`
     },
     'innosin-ks-750': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS750/KS750.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS750/KS750.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-750/KS750.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-750/KS750.jpg`
     },
     'innosin-ks-800': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS800/KS800.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS800/KS800.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-800/KS800.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-800/KS800.jpg`
     },
     'innosin-ks-850': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS850/KS850.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS850/KS850.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-850/KS850.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-850/KS850.jpg`
     },
     'innosin-ks-900': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS900/KS900.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS900/KS900.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-900/KS900.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-900/KS900.jpg`
     },
     'innosin-ks-1000': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS1000/KS1000.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS1000/KS1000.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-1000/KS1000.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-1000/KS1000.jpg`
     },
     'innosin-ks-1200': {
-      glb: `${SUPABASE_STORAGE_URL}/products/KS1200/KS1200.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/KS1200/KS1200.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-ks-1200/KS1200.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-ks-1200/KS1200.jpg`
     },
     
     // Innosin Lab Mobile Cabinet Series - 750mm Height
@@ -148,36 +148,74 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
       jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-2-505065/MC-PC-DRW3-2 (505065).jpg`
     },
     
-    // Other Innosin Lab Products - Open Racks  
+    // Open Racks Series
     'innosin-or-pc-3838': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-3838/OR-PC-3838.glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-3838/OR-PC-3838.jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-or-pc-3838/OR-PC-3838.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-or-pc-3838/OR-PC-3838.jpg`
     },
     'innosin-or-pc-604518': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-604518/OR-PC-3838 (604518).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-or-pc-604518/OR-PC-3838 (604518).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-or-pc-604518/OR-PC-3838 (604518).jpg`
     },
     
     // Tall Glass Cabinets
     'innosin-tcg-pc-754018': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-tcg-pc-754018/TCG-PC (754018).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-tcg-pc-754018/TCG-PC (754018).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-tcg-pc-754018/TCG-PC (754018).jpg`
+    },
+    'innosin-tcg-pc-wide': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-tcg-pc-wide/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-tcg-pc-wide/placeholder.jpg`
+    },
+    
+    // Tall Solid Cabinets
+    'innosin-tcs-pc-standard': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-tcs-pc-standard/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-tcs-pc-standard/placeholder.jpg`
+    },
+    'innosin-tcs-pc-wide': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-tcs-pc-wide/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-tcs-pc-wide/placeholder.jpg`
     },
     
     // Wall Cabinets Glass
     'innosin-wcg-pc-753375': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-wcg-pc-753375/WCG-PC (753375).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-wcg-pc-753375/WCG-PC (753375).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-wcg-pc-753375/WCG-PC (753375).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-wcg-pc-753375/WCG-PC (753375).jpg`
+    },
+    'innosin-wall-cabinet-glass-sd': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-glass-sd/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-glass-sd/placeholder.jpg`
+    },
+    'innosin-wall-cabinet-glass-dd': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-glass-dd/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-glass-dd/placeholder.jpg`
     },
     
-    // Mobile Combination Cabinets
+    // Wall Cabinets Solid
+    'innosin-wall-cabinet-solid-sd': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-solid-sd/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-solid-sd/placeholder.jpg`
+    },
+    'innosin-wall-cabinet-solid-dd': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-solid-dd/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-wall-cabinet-solid-dd/placeholder.jpg`
+    },
+    
+    // Modular Double Door Cabinets
+    'innosin-pc-dd-105590': {
+      glb: `${SUPABASE_STORAGE_URL}/innosin-pc-dd-105590/placeholder-model.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-pc-dd-105590/placeholder.jpg`
+    },
+    
+    // Mobile Combination Cabinets (Standard Height)
     'innosin-mcc-pc-755065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755065/MCC-PC (755065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755065/MCC-PC (755065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-mcc-pc-755065/MCC-PC (755065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-mcc-pc-755065/MCC-PC (755065).jpg`
     },
     'innosin-mcc-pc-755080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755080/MCC-PC (755080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755080/MCC-PC (755080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/innosin-mcc-pc-755080/MCC-PC (755080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/innosin-mcc-pc-755080/MCC-PC (755080).jpg`
     }
   };
   
