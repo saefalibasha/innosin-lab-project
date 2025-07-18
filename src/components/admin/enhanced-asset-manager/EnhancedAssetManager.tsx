@@ -24,6 +24,7 @@ interface Product {
   dimensions: string;
   editable_title: string;
   editable_description: string;
+  is_active: boolean;
 }
 
 export const EnhancedAssetManager: React.FC = () => {
@@ -78,6 +79,10 @@ export const EnhancedAssetManager: React.FC = () => {
 
   // Get unique categories for filtering
   const categories = [...new Set(products.map(p => p.product_series).filter(Boolean))];
+
+  const handleProductSelect = (product: Product) => {
+    setSelectedProduct(product);
+  };
 
   if (isLoading) {
     return (
@@ -203,7 +208,7 @@ export const EnhancedAssetManager: React.FC = () => {
               key={seriesName}
               seriesName={seriesName}
               products={seriesProducts}
-              onProductSelect={setSelectedProduct}
+              onProductSelect={handleProductSelect}
             />
           ))}
       </div>
