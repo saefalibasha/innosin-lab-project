@@ -21,7 +21,7 @@ const ProductSizeSelector: React.FC<ProductSizeSelectorProps> = ({
     <div className="space-y-3">
       <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
         <Ruler className="w-5 h-5" />
-        Available Sizes
+        Sizes
       </h3>
       <Select value={selectedVariant} onValueChange={onVariantChange}>
         <SelectTrigger className="w-full">
@@ -31,10 +31,7 @@ const ProductSizeSelector: React.FC<ProductSizeSelectorProps> = ({
           {variants.map((variant) => (
             <SelectItem key={variant.id} value={variant.id}>
               <div className="flex items-center gap-3">
-                <span className="font-medium">{variant.size}</span>
-                <Badge variant="outline" className="text-xs">
-                  {variant.dimensions}
-                </Badge>
+                <span className="font-medium">{variant.dimensions}</span>
               </div>
             </SelectItem>
           ))}
@@ -42,9 +39,7 @@ const ProductSizeSelector: React.FC<ProductSizeSelectorProps> = ({
       </Select>
       {selectedVariantData && (
         <div className="text-sm text-muted-foreground">
-          Current selection: <span className="font-medium">{selectedVariantData.size}</span> 
-          <span className="mx-2">•</span>
-          <span>{selectedVariantData.dimensions}</span>
+          Current size: <Badge variant="outline">{selectedVariantData.dimensions}</Badge>
         </div>
       )}
     </div>

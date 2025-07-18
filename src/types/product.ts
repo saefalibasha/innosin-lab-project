@@ -12,6 +12,8 @@ export interface ProductVariant {
   id: string;
   size: string;
   dimensions: string;
+  type?: string;
+  orientation?: 'LH' | 'RH' | 'None';
   modelPath: string;
   thumbnail: string;
   images: string[];

@@ -642,6 +642,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-700",
           size: "KS700",
           dimensions: "700mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-700/KS700.glb",
           thumbnail: "/products/innosin-ks-700/KS700.jpg",
           images: ["/products/innosin-ks-700/KS700.jpg"]
@@ -650,6 +652,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-750",
           size: "KS750", 
           dimensions: "750mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-750/KS750.glb",
           thumbnail: "/products/innosin-ks-750/KS750.jpg",
           images: ["/products/innosin-ks-750/KS750.jpg"]
@@ -657,7 +661,9 @@ export const getProductsSync = (): Product[] => {
         {
           id: "innosin-ks-800",
           size: "KS800",
-          dimensions: "800mm width", 
+          dimensions: "800mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-800/KS800.glb",
           thumbnail: "/products/innosin-ks-800/KS800.jpg",
           images: ["/products/innosin-ks-800/KS800.jpg"]
@@ -666,6 +672,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-850",
           size: "KS850",
           dimensions: "850mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-850/KS850.glb", 
           thumbnail: "/products/innosin-ks-850/KS850.jpg",
           images: ["/products/innosin-ks-850/KS850.jpg"]
@@ -674,6 +682,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-900",
           size: "KS900",
           dimensions: "900mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-900/KS900.glb",
           thumbnail: "/products/innosin-ks-900/KS900.jpg", 
           images: ["/products/innosin-ks-900/KS900.jpg"]
@@ -682,6 +692,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-1000", 
           size: "KS1000",
           dimensions: "1000mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-1000/KS1000.glb",
           thumbnail: "/products/innosin-ks-1000/KS1000.jpg",
           images: ["/products/innosin-ks-1000/KS1000.jpg"]
@@ -690,6 +702,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-ks-1200",
           size: "KS1200", 
           dimensions: "1200mm width",
+          type: "Fume Hood",
+          orientation: "None" as const,
           modelPath: "/products/innosin-ks-1200/KS1200.glb",
           thumbnail: "/products/innosin-ks-1200/KS1200.jpg",
           images: ["/products/innosin-ks-1200/KS1200.jpg"]
@@ -734,6 +748,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-mcc-pc-lh-505065",
           size: "Combination Left Hand (505065)",
           dimensions: "500×500×650mm",
+          type: "Combination",
+          orientation: "LH" as const,
           modelPath: "/products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).glb",
           thumbnail: "/products/innosin-mcc-pc-lh-505065/placeholder.jpg",
           images: ["/products/innosin-mcc-pc-lh-505065/placeholder.jpg"]
@@ -742,6 +758,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-mcc-pc-rh-505065",
           size: "Combination Right Hand (505065)",
           dimensions: "500×500×650mm",
+          type: "Combination",
+          orientation: "RH" as const,
           modelPath: "/products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).glb",
           thumbnail: "/products/innosin-mcc-pc-rh-505065/placeholder.jpg",
           images: ["/products/innosin-mcc-pc-rh-505065/placeholder.jpg"]
@@ -750,30 +768,38 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-mc-pc-755065",
           size: "Double Door (755065)",
           dimensions: "750×500×650mm",
+          type: "Double Door",
+          orientation: "None" as const,
           modelPath: "/products/innosin-mc-pc-755065/MC-PC (755065).glb",
           thumbnail: "/products/innosin-mc-pc-755065/MC-PC (755065).jpg",
           images: ["/products/innosin-mc-pc-755065/MC-PC (755065).jpg"]
         },
         {
           id: "innosin-mc-pc-dwr3-505065",
-          size: "Drawer 3DWR (505065)",
+          size: "3 Drawer (505065)",
           dimensions: "500×500×650mm",
+          type: "3 Drawer",
+          orientation: "None" as const,
           modelPath: "/products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).glb",
           thumbnail: "/products/innosin-mc-pc-dwr3-505080/placeholder.jpg",
           images: ["/products/innosin-mc-pc-dwr3-505080/placeholder.jpg"]
         },
         {
           id: "innosin-mc-pc-dwr4-905065",
-          size: "Drawer 4DWR (905065)",
+          size: "4 Drawer (905065)",
           dimensions: "900×500×650mm",
+          type: "4 Drawer",
+          orientation: "None" as const,
           modelPath: "/products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).glb",
           thumbnail: "/products/innosin-mc-pc-dwr4-505080/placeholder.jpg",
           images: ["/products/innosin-mc-pc-dwr4-505080/placeholder.jpg"]
         },
         {
           id: "innosin-mc-pc-dwr6-905065",
-          size: "Drawer 6DWR (905065)",
+          size: "6 Drawer (905065)",
           dimensions: "900×500×650mm",
+          type: "6 Drawer",
+          orientation: "None" as const,
           modelPath: "/products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).glb",
           thumbnail: "/products/innosin-mc-pc-dwr6-905080/placeholder.jpg",
           images: ["/products/innosin-mc-pc-dwr6-905080/placeholder.jpg"]
@@ -782,6 +808,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-mc-pc-lh-505065",
           size: "Single Door Left Hand (505065)",
           dimensions: "500×500×650mm",
+          type: "Single Door",
+          orientation: "LH" as const,
           modelPath: "/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).glb",
           thumbnail: "/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg",
           images: ["/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg"]
@@ -790,6 +818,8 @@ export const getProductsSync = (): Product[] => {
           id: "innosin-mc-pc-rh-505065",
           size: "Single Door Right Hand (505065)",
           dimensions: "500×500×650mm",
+          type: "Single Door",
+          orientation: "RH" as const,
           modelPath: "/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).glb",
           thumbnail: "/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg",
           images: ["/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg"]
