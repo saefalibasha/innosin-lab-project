@@ -108,34 +108,76 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
       jpg: `${SUPABASE_STORAGE_URL}/products/MCC-PC-RH (505080)/MCC-PC-RH (505080).jpg`
     },
     'innosin-mc-pc-dwr2-905065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905065/MC-PC-DWR2 (905065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905065/MC-PC-DWR2 (905065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905065/MC-PC-DD-DWR2 (905065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905065/MC-PC-DD-DWR2 (905065).jpg`
     },
     'innosin-mc-pc-dwr2-905080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905080/MC-PC-DWR2 (905080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905080/MC-PC-DWR2 (905080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905080/MC-PC-DD-DWR2 (905080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905080/MC-PC-DD-DWR2 (905080).jpg`
     },
-    'innosin-mc-pc-dwr6-905065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-905065/MC-PC-DWR6 (905065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-905065/MC-PC-DWR6 (905065).jpg`
+    'innosin-mc-pc-dwr3-505080': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).jpg`
     },
-    'innosin-mc-pc-dwr68-905080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr68-905080/MC-PC-DWR68 (905080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr68-905080/MC-PC-DWR68 (905080).jpg`
+    'innosin-mc-pc-dwr4-505080': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).jpg`
+    },
+    'innosin-mc-pc-dwr6-1-905065': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-1-905065/MC-PC-DWR6-1 (905065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-1-905065/MC-PC-DWR6-1 (905065).jpg`
+    },
+    'innosin-mc-pc-dwr6-2-905065': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-2-905065/MC-PC-DWR6-2 (905065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-2-905065/MC-PC-DWR6-2 (905065).jpg`
+    },
+    'innosin-mc-pc-dwr6-905080': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).jpg`
+    },
+    'innosin-mc-pc-dwr8-905080': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr8-905080/MC-PC-DWR8 (905080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr8-905080/MC-PC-DWR8 (905080).jpg`
+    },
+    'innosin-mc-pc-dwr3-1-505065': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-1-505065/MC-PC-DRW3-1 (505065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-1-505065/MC-PC-DRW3-1 (505065).jpg`
+    },
+    'innosin-mc-pc-dwr3-2-505065': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-2-505065/MC-PC-DRW3-2 (505065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr3-2-505065/MC-PC-DRW3-2 (505065).jpg`
     },
     
-    // Other Innosin Lab Products
+    // Other Innosin Lab Products - Open Racks  
+    'innosin-or-pc-3838': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-3838/OR-PC-3838.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-3838/OR-PC-3838.jpg`
+    },
     'innosin-or-pc-604518': {
-      glb: `${SUPABASE_STORAGE_URL}/products/OR-PC-3838 (604518)/OR-PC-3838 (604518).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/OR-PC-3838 (604518)/OR-PC-3838 (604518).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-604518/OR-PC-3838 (604518).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg`
     },
+    
+    // Tall Glass Cabinets
     'innosin-tcg-pc-754018': {
-      glb: `${SUPABASE_STORAGE_URL}/products/TCG-PC (754018)/TCG-PC (754018).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/TCG-PC (754018)/TCG-PC (754018).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-tcg-pc-754018/TCG-PC (754018).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg`
     },
+    
+    // Wall Cabinets Glass
     'innosin-wcg-pc-753375': {
-      glb: `${SUPABASE_STORAGE_URL}/products/WCG-PC (753375)/WCG-PC (753375).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/WCG-PC (753375)/WCG-PC (753375).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-wcg-pc-753375/WCG-PC (753375).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-wcg-pc-753375/WCG-PC (753375).jpg`
+    },
+    
+    // Mobile Combination Cabinets
+    'innosin-mcc-pc-755065': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755065/MCC-PC (755065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755065/MCC-PC (755065).jpg`
+    },
+    'innosin-mcc-pc-755080': {
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755080/MCC-PC (755080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-755080/MCC-PC (755080).jpg`
     }
   };
   
@@ -143,31 +185,81 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
 };
 
 // Validate asset paths and check if they exist
-const validateAssetPath = (path: string): boolean => {
+const validateAssetPath = async (path: string): Promise<boolean> => {
   // Skip validation for placeholder assets
   if (path.includes('PLACEHOLDER') || path.includes('placeholder')) {
     return false;
   }
   
-  // In a real environment, this would check if the file exists
-  // For development, we'll assume all non-placeholder paths are valid
-  return true;
+  try {
+    const response = await fetch(path, { method: 'HEAD' });
+    return response.ok;
+  } catch {
+    return false;
+  }
 };
 
-// Enhanced product loading with asset validation
+// Fallback asset URLs for when specific assets are missing
+const getFallbackAssets = (productType: string) => {
+  const fallbacks = {
+    'cabinet': {
+      glb: `${SUPABASE_STORAGE_URL}/products/KS750/KS750.glb`, // Use KS750 as fallback
+      jpg: `${SUPABASE_STORAGE_URL}/products/KS750/KS750.jpg`
+    },
+    'fume-hood': {
+      glb: `${SUPABASE_STORAGE_URL}/products/KS800/KS800.glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/KS800/KS800.jpg`
+    }
+  };
+  
+  // Default fallback for any missing assets
+  return fallbacks['cabinet'];
+};
+
+// Enhanced asset loading with validation and fallbacks
+const loadAssetWithFallback = async (primaryPath: string, fallbackPath: string): Promise<string> => {
+  try {
+    const isValid = await validateAssetPath(primaryPath);
+    if (isValid) {
+      console.log(`✅ Asset loaded: ${primaryPath}`);
+      return primaryPath;
+    } else {
+      console.warn(`⚠️  Primary asset missing, using fallback: ${primaryPath} -> ${fallbackPath}`);
+      return fallbackPath;
+    }
+  } catch (error) {
+    console.error(`❌ Error loading asset: ${primaryPath}`, error);
+    return fallbackPath;
+  }
+};
+
+// Enhanced product loading with asset validation and fallbacks
 const enhanceProductWithAssets = (product: Product): Product => {
   const uploadedAssets = loadUploadedAssets();
   
   // Check if there are uploaded assets for this product
   const productAssets = uploadedAssets[product.id];
   if (productAssets) {
-    // Update with uploaded assets if available
-    return {
+    // Get fallback assets for this product type
+    const fallbackAssets = getFallbackAssets(product.category.toLowerCase().includes('cabinet') ? 'cabinet' : 'fume-hood');
+    
+    // Use uploaded assets with fallbacks
+    const enhancedProduct = {
       ...product,
-      modelPath: productAssets.glb || product.modelPath,
-      thumbnail: productAssets.jpg || product.thumbnail,
-      images: productAssets.jpg ? [productAssets.jpg, ...product.images] : product.images
+      modelPath: productAssets.glb || fallbackAssets.glb,
+      thumbnail: productAssets.jpg || fallbackAssets.jpg,
+      images: productAssets.jpg ? [productAssets.jpg, ...product.images] : [fallbackAssets.jpg, ...product.images]
     };
+    
+    // Log asset loading for debugging
+    console.log(`🔄 Enhanced product ${product.id}:`, {
+      hasGLB: !!productAssets.glb,
+      hasJPG: !!productAssets.jpg,
+      glbPath: enhancedProduct.modelPath,
+      jpgPath: enhancedProduct.thumbnail
+    });
+    
+    return enhancedProduct;
   }
   
   return product;
