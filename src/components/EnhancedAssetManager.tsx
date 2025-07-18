@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,8 @@ import {
   AlertCircle, 
   Search,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  RefreshCw
 } from 'lucide-react';
 import { Product } from '@/types/product';
 import { getProductsSync } from '@/utils/productAssets';
@@ -69,6 +70,8 @@ const EnhancedAssetManager = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'complete' | 'partial' | 'missing'>('all');
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [assetCache, setAssetCache] = useState<Map<string, boolean>>(new Map());
+  const [checkingAssets, setCheckingAssets] = useState(false);
 
   useEffect(() => {
     loadProductData();
@@ -85,6 +88,8 @@ const EnhancedAssetManager = () => {
 
   const loadProductData = async () => {
     setIsLoading(true);
+    setCheckingAssets(false);
+    
     try {
       const allProducts = getProductsSync();
       
@@ -105,88 +110,180 @@ const EnhancedAssetManager = () => {
         return acc;
       }, {} as Record<string, Product[]>);
 
-      const assetStatuses: ProductAssetStatus[] = [];
-      
-      for (const [baseName, productGroup] of Object.entries(grouped)) {
-        // Use first product as representative
+      // Show UI immediately with basic product info
+      const initialStatuses: ProductAssetStatus[] = Object.entries(grouped).map(([baseName, productGroup]) => {
         const mainProduct = productGroup[0];
         
-        // Check for overview image (series-level)
-        const overviewImagePath = `products/${baseName}/overview.jpg`;
-        const hasOverviewImage = await checkAssetExists(overviewImagePath);
+        return {
+          id: mainProduct.id,
+          name: mainProduct.name,
+          category: mainProduct.category,
+          baseName,
+          hasOverviewImage: false,
+          hasGLB: false,
+          hasJPG: false,
+          status: 'missing' as const,
+          completionPercentage: 0,
+          variants: []
+        };
+      });
+
+      setAssetStatuses(initialStatuses);
+      setIsLoading(false);
+      
+      // Start asset checking in background
+      checkAssetsInBackground(grouped);
+      
+    } catch (error) {
+      console.error('Error loading product data:', error);
+      toast.error('Failed to load product data');
+      setIsLoading(false);
+    }
+  };
+
+  const checkAssetsInBackground = async (grouped: Record<string, Product[]>) => {
+    setCheckingAssets(true);
+    
+    try {
+      // Collect all asset paths to check
+      const assetPaths: string[] = [];
+      const assetMap = new Map<string, { baseName: string; type: 'overview' | 'main' | 'variant'; productId?: string; variantId?: string }>();
+      
+      for (const [baseName, productGroup] of Object.entries(grouped)) {
+        const mainProduct = productGroup[0];
         
-        // Check for main product assets
+        // Overview image
+        const overviewPath = `products/${baseName}/overview.jpg`;
+        assetPaths.push(overviewPath);
+        assetMap.set(overviewPath, { baseName, type: 'overview' });
+        
+        // Main product assets
         const glbPath = `products/${mainProduct.id}/${mainProduct.name}.glb`;
         const jpgPath = `products/${mainProduct.id}/${mainProduct.name}.jpg`;
+        assetPaths.push(glbPath, jpgPath);
+        assetMap.set(glbPath, { baseName, type: 'main', productId: mainProduct.id });
+        assetMap.set(jpgPath, { baseName, type: 'main', productId: mainProduct.id });
         
-        const hasGLB = await checkAssetExists(glbPath);
-        const hasJPG = await checkAssetExists(jpgPath);
-        
-        // Process variants if they exist
-        const variantStatuses: VariantAssetStatus[] = [];
+        // Variant assets
         if (mainProduct.variants) {
           for (const variant of mainProduct.variants) {
             const variantGlbPath = `products/${baseName}/variants/${variant.id}.glb`;
             const variantJpgPath = `products/${baseName}/variants/${variant.id}.jpg`;
-            
-            const variantHasGLB = await checkAssetExists(variantGlbPath);
-            const variantHasJPG = await checkAssetExists(variantJpgPath);
-            
-            // Only include variants that are missing assets or have placeholder files
-            const isPlaceholderGLB = variant.modelPath.includes('PLACEHOLDER');
-            const isPlaceholderJPG = variant.thumbnail.includes('PLACEHOLDER');
-            
-            if (!variantHasGLB || !variantHasJPG || isPlaceholderGLB || isPlaceholderJPG) {
-              variantStatuses.push({
-                id: variant.id,
-                size: variant.size,
-                dimensions: variant.dimensions,
-                type: variant.type,
-                orientation: variant.orientation,
-                hasGLB: variantHasGLB && !isPlaceholderGLB,
-                hasJPG: variantHasJPG && !isPlaceholderJPG,
-                status: (variantHasGLB && variantHasJPG && !isPlaceholderGLB && !isPlaceholderJPG) ? 'complete' : 
-                        (variantHasGLB || variantHasJPG) && (!isPlaceholderGLB || !isPlaceholderJPG) ? 'partial' : 'missing',
-                completionPercentage: (variantHasGLB && !isPlaceholderGLB) && (variantHasJPG && !isPlaceholderJPG) ? 100 : 
-                                    ((variantHasGLB && !isPlaceholderGLB) || (variantHasJPG && !isPlaceholderJPG)) ? 50 : 0
-              });
-            }
+            assetPaths.push(variantGlbPath, variantJpgPath);
+            assetMap.set(variantGlbPath, { baseName, type: 'variant', variantId: variant.id });
+            assetMap.set(variantJpgPath, { baseName, type: 'variant', variantId: variant.id });
           }
         }
+      }
+
+      // Check assets in batches of 10 for better performance
+      const batchSize = 10;
+      const results = new Map<string, boolean>();
+      
+      for (let i = 0; i < assetPaths.length; i += batchSize) {
+        const batch = assetPaths.slice(i, i + batchSize);
+        const batchResults = await Promise.all(
+          batch.map(async (path) => ({
+            path,
+            exists: await checkAssetExistsCached(path)
+          }))
+        );
         
-        // Include products that need overview images or have missing/placeholder assets
-        const needsOverviewImage = !hasOverviewImage;
-        const isMainComplete = hasGLB && hasJPG && !mainProduct.modelPath.includes('PLACEHOLDER') && !mainProduct.thumbnail.includes('PLACEHOLDER');
-        const hasIncompleteVariants = variantStatuses.length > 0;
+        batchResults.forEach(({ path, exists }) => {
+          results.set(path, exists);
+        });
         
-        if (needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
-          const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variantStatuses);
+        // Update progress - rebuild asset statuses progressively
+        updateAssetStatusesFromResults(grouped, results, assetMap);
+      }
+      
+    } catch (error) {
+      console.error('Error checking assets:', error);
+      toast.error('Failed to check asset status');
+    } finally {
+      setCheckingAssets(false);
+    }
+  };
+
+  const updateAssetStatusesFromResults = (
+    grouped: Record<string, Product[]>, 
+    results: Map<string, boolean>,
+    assetMap: Map<string, { baseName: string; type: 'overview' | 'main' | 'variant'; productId?: string; variantId?: string }>
+  ) => {
+    const assetStatuses: ProductAssetStatus[] = [];
+    
+    for (const [baseName, productGroup] of Object.entries(grouped)) {
+      const mainProduct = productGroup[0];
+      
+      // Check overview image
+      const overviewImagePath = `products/${baseName}/overview.jpg`;
+      const hasOverviewImage = results.get(overviewImagePath) || false;
+      
+      // Check main product assets
+      const glbPath = `products/${mainProduct.id}/${mainProduct.name}.glb`;
+      const jpgPath = `products/${mainProduct.id}/${mainProduct.name}.jpg`;
+      
+      const hasGLB = results.get(glbPath) || false;
+      const hasJPG = results.get(jpgPath) || false;
+      
+      // Process variants
+      const variantStatuses: VariantAssetStatus[] = [];
+      if (mainProduct.variants) {
+        for (const variant of mainProduct.variants) {
+          const variantGlbPath = `products/${baseName}/variants/${variant.id}.glb`;
+          const variantJpgPath = `products/${baseName}/variants/${variant.id}.jpg`;
           
-          assetStatuses.push({
-            id: mainProduct.id,
-            name: mainProduct.name,
-            category: mainProduct.category,
-            baseName,
-            hasOverviewImage,
-            hasGLB: hasGLB && !mainProduct.modelPath.includes('PLACEHOLDER'),
-            hasJPG: hasJPG && !mainProduct.thumbnail.includes('PLACEHOLDER'),
-            status: completionPercentage === 100 ? 'complete' : completionPercentage > 0 ? 'partial' : 'missing',
-            completionPercentage,
-            variants: variantStatuses,
-            overviewImagePath: hasOverviewImage ? overviewImagePath : undefined,
-            glbPath: hasGLB ? glbPath : undefined,
-            jpgPath: hasJPG ? jpgPath : undefined
-          });
+          const variantHasGLB = results.get(variantGlbPath) || false;
+          const variantHasJPG = results.get(variantJpgPath) || false;
+          
+          const isPlaceholderGLB = variant.modelPath.includes('PLACEHOLDER');
+          const isPlaceholderJPG = variant.thumbnail.includes('PLACEHOLDER');
+          
+          if (!variantHasGLB || !variantHasJPG || isPlaceholderGLB || isPlaceholderJPG) {
+            variantStatuses.push({
+              id: variant.id,
+              size: variant.size,
+              dimensions: variant.dimensions,
+              type: variant.type,
+              orientation: variant.orientation,
+              hasGLB: variantHasGLB && !isPlaceholderGLB,
+              hasJPG: variantHasJPG && !isPlaceholderJPG,
+              status: (variantHasGLB && variantHasJPG && !isPlaceholderGLB && !isPlaceholderJPG) ? 'complete' : 
+                      (variantHasGLB || variantHasJPG) && (!isPlaceholderGLB || !isPlaceholderJPG) ? 'partial' : 'missing',
+              completionPercentage: (variantHasGLB && !isPlaceholderGLB) && (variantHasJPG && !isPlaceholderJPG) ? 100 : 
+                                  ((variantHasGLB && !isPlaceholderGLB) || (variantHasJPG && !isPlaceholderJPG)) ? 50 : 0
+            });
+          }
         }
       }
       
-      setAssetStatuses(assetStatuses);
-    } catch (error) {
-      console.error('Error loading product data:', error);
-      toast.error('Failed to load product data');
-    } finally {
-      setIsLoading(false);
+      // Only include products that need work
+      const needsOverviewImage = !hasOverviewImage;
+      const isMainComplete = hasGLB && hasJPG && !mainProduct.modelPath.includes('PLACEHOLDER') && !mainProduct.thumbnail.includes('PLACEHOLDER');
+      const hasIncompleteVariants = variantStatuses.length > 0;
+      
+      if (needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
+        const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variantStatuses);
+        
+        assetStatuses.push({
+          id: mainProduct.id,
+          name: mainProduct.name,
+          category: mainProduct.category,
+          baseName,
+          hasOverviewImage,
+          hasGLB: hasGLB && !mainProduct.modelPath.includes('PLACEHOLDER'),
+          hasJPG: hasJPG && !mainProduct.thumbnail.includes('PLACEHOLDER'),
+          status: completionPercentage === 100 ? 'complete' : completionPercentage > 0 ? 'partial' : 'missing',
+          completionPercentage,
+          variants: variantStatuses,
+          overviewImagePath: hasOverviewImage ? overviewImagePath : undefined,
+          glbPath: hasGLB ? glbPath : undefined,
+          jpgPath: hasJPG ? jpgPath : undefined
+        });
+      }
     }
+    
+    setAssetStatuses(assetStatuses);
   };
 
   const calculateCompletionPercentage = (hasOverviewImage: boolean, hasGLB: boolean, hasJPG: boolean, variants: VariantAssetStatus[]): number => {
@@ -207,18 +304,33 @@ const EnhancedAssetManager = () => {
     return Math.round(overviewPercentage + mainAssetPercentage + variantPercentage);
   };
 
-  const checkAssetExists = async (path: string): Promise<boolean> => {
+  const checkAssetExistsCached = useCallback(async (path: string): Promise<boolean> => {
     // Skip validation for placeholder assets
     if (path.includes('PLACEHOLDER') || path.includes('placeholder')) {
       return false;
     }
     
+    // Check cache first
+    if (assetCache.has(path)) {
+      return assetCache.get(path)!;
+    }
+    
     try {
       const response = await fetch(path, { method: 'HEAD' });
-      return response.ok;
+      const exists = response.ok;
+      
+      // Cache the result
+      setAssetCache(prev => new Map(prev).set(path, exists));
+      
+      return exists;
     } catch {
+      setAssetCache(prev => new Map(prev).set(path, false));
       return false;
     }
+  }, [assetCache]);
+
+  const checkAssetExists = async (path: string): Promise<boolean> => {
+    return checkAssetExistsCached(path);
   };
 
   const startUploadSession = (productId: string, uploadType: 'overview' | 'variant' = 'variant') => {
@@ -410,6 +522,7 @@ const EnhancedAssetManager = () => {
         <CardContent>
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <span className="ml-3">Loading Innosin Lab products...</span>
           </div>
         </CardContent>
       </Card>
@@ -420,9 +533,29 @@ const EnhancedAssetManager = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5" />
-            Innosin Lab Asset Manager
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              Innosin Lab Asset Manager
+              {checkingAssets && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Checking assets...
+                </div>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setAssetCache(new Map());
+                loadProductData();
+              }}
+              disabled={isLoading || checkingAssets}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -481,12 +614,20 @@ const EnhancedAssetManager = () => {
 
           {/* Product Grid */}
           <div className="space-y-4">
-            {filteredProducts.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchTerm ? 'No products match your search criteria.' : 'All Innosin Lab products have complete assets!'}
-              </div>
-            ) : (
-              filteredProducts.map((product) => {
+            {filteredProducts.length === 0 && !checkingAssets && (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <div className="text-muted-foreground">
+                    {searchTerm || filterStatus !== 'all' 
+                      ? 'No products match your search criteria.'
+                      : 'All Innosin Lab products have complete assets!'
+                    }
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            {filteredProducts.map((product) => {
                 const session = uploadSessions[product.id];
                 const isExpanded = expandedProducts.has(product.id);
                 const hasVariants = product.variants.length > 0;
@@ -722,8 +863,7 @@ const EnhancedAssetManager = () => {
                     </CardContent>
                   </Card>
                 );
-              })
-            )}
+              })}
           </div>
         </CardContent>
       </Card>
