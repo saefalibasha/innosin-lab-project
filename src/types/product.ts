@@ -26,6 +26,7 @@ export interface Product {
   dimensions: string;
   modelPath: string; // Path to .glb file
   thumbnail: string; // Main product image
+  overviewImage?: string; // Overview image for catalog display (JPG only)
   images: string[]; // Array of additional product images
   description: string; // Short description for grid view
   fullDescription: string; // Detailed description for detail page

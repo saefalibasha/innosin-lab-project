@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Upload, 
@@ -22,322 +22,359 @@ import { Product } from '@/types/product';
 import { getProductsSync } from '@/utils/productAssets';
 
 interface ProductAssetStatus {
-  productId: string;
-  productName: string;
+  id: string;
+  name: string;
   category: string;
-  brand: string;
+  baseName: string;
+  hasOverviewImage: boolean;
   hasGLB: boolean;
   hasJPG: boolean;
-  glbPath?: string;
-  jpgPath?: string;
   status: 'complete' | 'partial' | 'missing';
   completionPercentage: number;
-  variants?: VariantAssetStatus[];
-  isVariant?: boolean;
-  parentProductId?: string;
-  variantInfo?: string;
+  variants: VariantAssetStatus[];
+  overviewImagePath?: string;
+  glbPath?: string;
+  jpgPath?: string;
 }
 
 interface VariantAssetStatus {
-  variantId: string;
-  variantName: string;
-  parentProductId: string;
-  variantInfo: string;
+  id: string;
+  size: string;
+  dimensions: string;
+  type?: string;
+  orientation?: 'LH' | 'RH' | 'None';
   hasGLB: boolean;
   hasJPG: boolean;
-  glbPath?: string;
-  jpgPath?: string;
   status: 'complete' | 'partial' | 'missing';
   completionPercentage: number;
 }
 
 interface UploadSession {
   productId: string;
-  glbFile?: File;
-  jpgFile?: File;
-  uploading: boolean;
-  progress: number;
+  selectedOverviewImage: File | null;
+  selectedGLB: File | null;
+  selectedJPG: File | null;
+  isUploading: boolean;
+  uploadProgress: number;
+  status: 'idle' | 'uploading' | 'success' | 'error';
+  errorMessage?: string;
+  uploadType: 'overview' | 'variant';
 }
 
 const EnhancedAssetManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [assetStatus, setAssetStatus] = useState<ProductAssetStatus[]>([]);
-  const [uploadSessions, setUploadSessions] = useState<UploadSession[]>([]);
+  const [assetStatuses, setAssetStatuses] = useState<ProductAssetStatus[]>([]);
+  const [uploadSessions, setUploadSessions] = useState<Record<string, UploadSession>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'complete' | 'partial' | 'missing'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     loadProductData();
   }, []);
 
+  // Extract product base name for grouping variants
+  const extractProductBaseName = (productName: string): string => {
+    return productName
+      .replace(/\s*\([^)]*\)$/, '') // Remove size codes like (505065)
+      .replace(/-[LR]H$/, '') // Remove orientation
+      .replace(/-DWR?\d+(-\d+)?$/, '') // Remove drawer configurations
+      .trim();
+  };
+
   const loadProductData = async () => {
+    setIsLoading(true);
     try {
-      // Load all products from the catalog
       const allProducts = getProductsSync();
       
-      // Filter to only show Innosin Lab products that need asset uploads
+      // Only show Innosin Lab products (filter out complete categories)
       const innosinProducts = allProducts.filter(product => 
-        product.category.toLowerCase().includes('innosin')
+        product.category === 'Innosin Lab'
       );
       
       setProducts(innosinProducts);
-
-      // Group Innosin Lab products by base name for variant handling
-      const productGroups = new Map<string, Product[]>();
       
-      for (const product of innosinProducts) {
-        // Check if assets are placeholders
-        const glbExists = await checkAssetExists(product.modelPath);
-        const jpgExists = await checkAssetExists(product.thumbnail);
+      // Group products by base name for variant handling
+      const grouped = innosinProducts.reduce((acc, product) => {
+        const baseName = extractProductBaseName(product.name);
+        if (!acc[baseName]) {
+          acc[baseName] = [];
+        }
+        acc[baseName].push(product);
+        return acc;
+      }, {} as Record<string, Product[]>);
+
+      const assetStatuses: ProductAssetStatus[] = [];
+      
+      for (const [baseName, productGroup] of Object.entries(grouped)) {
+        // Use first product as representative
+        const mainProduct = productGroup[0];
         
-        const isGLBPlaceholder = !glbExists || product.modelPath.includes('PLACEHOLDER');
-        const isJPGPlaceholder = !jpgExists || product.thumbnail.includes('PLACEHOLDER');
+        // Check for overview image (series-level)
+        const overviewImagePath = `products/${baseName}/overview.jpg`;
+        const hasOverviewImage = await checkAssetExists(overviewImagePath);
         
-        // Only include products that actually need uploads (have placeholders or missing files)
-        if (isGLBPlaceholder || isJPGPlaceholder) {
-          // Extract base product name (remove variant suffixes like (505065), -LH, -RH, etc.)
-          const baseName = product.name.replace(/\s*\([^)]*\)$/, '').replace(/-[LR]H$/, '').replace(/-DWR?\d+$/, '').trim();
-          
-          if (!productGroups.has(baseName)) {
-            productGroups.set(baseName, []);
+        // Check for main product assets
+        const glbPath = `products/${mainProduct.id}/${mainProduct.name}.glb`;
+        const jpgPath = `products/${mainProduct.id}/${mainProduct.name}.jpg`;
+        
+        const hasGLB = await checkAssetExists(glbPath);
+        const hasJPG = await checkAssetExists(jpgPath);
+        
+        // Process variants if they exist
+        const variantStatuses: VariantAssetStatus[] = [];
+        if (mainProduct.variants) {
+          for (const variant of mainProduct.variants) {
+            const variantGlbPath = `products/${baseName}/variants/${variant.id}.glb`;
+            const variantJpgPath = `products/${baseName}/variants/${variant.id}.jpg`;
+            
+            const variantHasGLB = await checkAssetExists(variantGlbPath);
+            const variantHasJPG = await checkAssetExists(variantJpgPath);
+            
+            // Only include variants that are missing assets or have placeholder files
+            const isPlaceholderGLB = variant.modelPath.includes('PLACEHOLDER');
+            const isPlaceholderJPG = variant.thumbnail.includes('PLACEHOLDER');
+            
+            if (!variantHasGLB || !variantHasJPG || isPlaceholderGLB || isPlaceholderJPG) {
+              variantStatuses.push({
+                id: variant.id,
+                size: variant.size,
+                dimensions: variant.dimensions,
+                type: variant.type,
+                orientation: variant.orientation,
+                hasGLB: variantHasGLB && !isPlaceholderGLB,
+                hasJPG: variantHasJPG && !isPlaceholderJPG,
+                status: (variantHasGLB && variantHasJPG && !isPlaceholderGLB && !isPlaceholderJPG) ? 'complete' : 
+                        (variantHasGLB || variantHasJPG) && (!isPlaceholderGLB || !isPlaceholderJPG) ? 'partial' : 'missing',
+                completionPercentage: (variantHasGLB && !isPlaceholderGLB) && (variantHasJPG && !isPlaceholderJPG) ? 100 : 
+                                    ((variantHasGLB && !isPlaceholderGLB) || (variantHasJPG && !isPlaceholderJPG)) ? 50 : 0
+              });
+            }
           }
-          productGroups.get(baseName)!.push(product);
+        }
+        
+        // Include products that need overview images or have missing/placeholder assets
+        const needsOverviewImage = !hasOverviewImage;
+        const isMainComplete = hasGLB && hasJPG && !mainProduct.modelPath.includes('PLACEHOLDER') && !mainProduct.thumbnail.includes('PLACEHOLDER');
+        const hasIncompleteVariants = variantStatuses.length > 0;
+        
+        if (needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
+          const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variantStatuses);
+          
+          assetStatuses.push({
+            id: mainProduct.id,
+            name: mainProduct.name,
+            category: mainProduct.category,
+            baseName,
+            hasOverviewImage,
+            hasGLB: hasGLB && !mainProduct.modelPath.includes('PLACEHOLDER'),
+            hasJPG: hasJPG && !mainProduct.thumbnail.includes('PLACEHOLDER'),
+            status: completionPercentage === 100 ? 'complete' : completionPercentage > 0 ? 'partial' : 'missing',
+            completionPercentage,
+            variants: variantStatuses,
+            overviewImagePath: hasOverviewImage ? overviewImagePath : undefined,
+            glbPath: hasGLB ? glbPath : undefined,
+            jpgPath: hasJPG ? jpgPath : undefined
+          });
         }
       }
-
-      // Process each product group
-      const statusPromises = Array.from(productGroups.entries()).map(async ([groupKey, groupProducts]) => {
-        // All are Innosin Lab product groups with variants that need uploads
-        const variants: VariantAssetStatus[] = await Promise.all(
-          groupProducts.map(async (variant) => {
-            const glbExists = await checkAssetExists(variant.modelPath);
-            const jpgExists = await checkAssetExists(variant.thumbnail);
-            
-            const hasGLB = glbExists && !variant.modelPath.includes('PLACEHOLDER');
-            const hasJPG = jpgExists && !variant.thumbnail.includes('PLACEHOLDER');
-            
-            let status: 'complete' | 'partial' | 'missing' = 'missing';
-            let completionPercentage = 0;
-            
-            if (hasGLB && hasJPG) {
-              status = 'complete';
-              completionPercentage = 100;
-            } else if (hasGLB || hasJPG) {
-              status = 'partial';
-              completionPercentage = 50;
-            }
-
-            // Extract variant info from product name (size, orientation, drawer config)
-            const variantMatch = variant.name.match(/\(([^)]*)\)$/);
-            const orientationMatch = variant.name.match(/-([LR]H)\s/);
-            const drawerMatch = variant.name.match(/-DWR?(\d+)/);
-            
-            let variantInfo = variantMatch ? variantMatch[1] : 'Standard';
-            if (orientationMatch) variantInfo += ` ${orientationMatch[1]}`;
-            if (drawerMatch) variantInfo += ` ${drawerMatch[1]}D`;
-
-            return {
-              variantId: variant.id,
-              variantName: variant.name,
-              parentProductId: groupKey,
-              variantInfo,
-              hasGLB,
-              hasJPG,
-              glbPath: variant.modelPath,
-              jpgPath: variant.thumbnail,
-              status,
-              completionPercentage
-            };
-          })
-        );
-
-        // Calculate overall status for the product group
-        const totalVariants = variants.length;
-        const completeVariants = variants.filter(v => v.status === 'complete').length;
-        const partialVariants = variants.filter(v => v.status === 'partial').length;
-        
-        let overallStatus: 'complete' | 'partial' | 'missing' = 'missing';
-        let overallPercentage = 0;
-        
-        if (completeVariants === totalVariants) {
-          overallStatus = 'complete';
-          overallPercentage = 100;
-        } else if (completeVariants > 0 || partialVariants > 0) {
-          overallStatus = 'partial';
-          overallPercentage = Math.round(((completeVariants * 100) + (partialVariants * 50)) / totalVariants);
-        }
-
-        const firstProduct = groupProducts[0];
-        return {
-          productId: groupKey,
-          productName: groupKey,
-          category: firstProduct.category,
-          brand: 'innosin-lab',
-          hasGLB: false, // Group level doesn't have individual assets
-          hasJPG: false,
-          status: overallStatus,
-          completionPercentage: overallPercentage,
-          variants
-        };
-      });
-
-      const statusResults = await Promise.all(statusPromises);
-      setAssetStatus(statusResults);
+      
+      setAssetStatuses(assetStatuses);
     } catch (error) {
       console.error('Error loading product data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load product data",
-        variant: "destructive",
-      });
+      toast.error('Failed to load product data');
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const calculateCompletionPercentage = (hasOverviewImage: boolean, hasGLB: boolean, hasJPG: boolean, variants: VariantAssetStatus[]): number => {
+    // Overview image counts for 33.3%, main assets for 33.3%, variants for 33.4%
+    const overviewPercentage = hasOverviewImage ? 33.3 : 0;
+    
+    if (variants.length === 0) {
+      // If no variants, main assets get 66.7% total
+      const mainAssetPercentage = (hasGLB ? 33.35 : 0) + (hasJPG ? 33.35 : 0);
+      return Math.round(overviewPercentage + mainAssetPercentage);
+    }
+    
+    // With variants: overview 33.3%, main 16.7%, variants 50%
+    const mainAssetPercentage = (hasGLB ? 8.35 : 0) + (hasJPG ? 8.35 : 0);
+    const variantPercentage = variants.length > 0 ? 
+      variants.reduce((sum, variant) => sum + variant.completionPercentage, 0) / variants.length * 0.5 : 0;
+    
+    return Math.round(overviewPercentage + mainAssetPercentage + variantPercentage);
+  };
+
   const checkAssetExists = async (path: string): Promise<boolean> => {
-    if (!path || path.includes('PLACEHOLDER')) return false;
+    // Skip validation for placeholder assets
+    if (path.includes('PLACEHOLDER') || path.includes('placeholder')) {
+      return false;
+    }
     
     try {
-      // Check if file exists in Supabase storage
-      const storagePath = path.replace('/products/', 'products/');
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .list(storagePath.split('/').slice(0, -1).join('/'), {
-          search: storagePath.split('/').pop()
-        });
-      
-      return !error && data && data.length > 0;
+      const response = await fetch(path, { method: 'HEAD' });
+      return response.ok;
     } catch {
       return false;
     }
   };
 
-  const startUploadSession = (productId: string) => {
-    setUploadSessions(prev => {
-      const exists = prev.find(session => session.productId === productId);
-      if (exists) return prev;
-      
-      return [...prev, {
+  const startUploadSession = (productId: string, uploadType: 'overview' | 'variant' = 'variant') => {
+    setUploadSessions(prev => ({
+      ...prev,
+      [productId]: {
         productId,
-        uploading: false,
-        progress: 0
-      }];
-    });
+        selectedOverviewImage: null,
+        selectedGLB: null,
+        selectedJPG: null,
+        isUploading: false,
+        uploadProgress: 0,
+        status: 'idle',
+        uploadType
+      }
+    }));
   };
 
   const updateUploadSession = (productId: string, updates: Partial<UploadSession>) => {
-    setUploadSessions(prev => prev.map(session => 
-      session.productId === productId ? { ...session, ...updates } : session
-    ));
+    setUploadSessions(prev => ({
+      ...prev,
+      [productId]: { ...prev[productId], ...updates }
+    }));
   };
 
-  const handleFileSelect = (productId: string, fileType: 'glb' | 'jpg', file: File) => {
-    updateUploadSession(productId, { [fileType + 'File']: file });
+  const handleFileSelect = (productId: string, fileType: 'overview' | 'glb' | 'jpg', file: File) => {
+    const fieldName = fileType === 'overview' ? 'selectedOverviewImage' : 
+                      fileType === 'glb' ? 'selectedGLB' : 'selectedJPG';
+    
+    updateUploadSession(productId, {
+      [fieldName]: file
+    });
   };
 
   const uploadAssets = async (productId: string) => {
-    const session = uploadSessions.find(s => s.productId === productId);
+    const session = uploadSessions[productId];
     if (!session) return;
 
-    updateUploadSession(productId, { uploading: true, progress: 0 });
+    updateUploadSession(productId, { 
+      isUploading: true, 
+      status: 'uploading',
+      uploadProgress: 0 
+    });
 
     try {
-      // Find product or variant
-      let product = assetStatus.find(p => p.productId === productId);
-      let variant: VariantAssetStatus | undefined;
-      
-      if (!product) {
-        // Look for variant in product variants
-        for (const prod of assetStatus) {
-          if (prod.variants) {
-            variant = prod.variants.find(v => v.variantId === productId);
-            if (variant) {
-              product = prod;
-              break;
-            }
-          }
-        }
+      const product = assetStatuses.find(p => p.id === productId);
+      if (!product) throw new Error('Product not found');
+
+      let uploadCount = 0;
+      const totalUploads = (session.selectedOverviewImage ? 1 : 0) + 
+                          (session.selectedGLB ? 1 : 0) + 
+                          (session.selectedJPG ? 1 : 0);
+
+      // Upload overview image
+      if (session.selectedOverviewImage) {
+        const overviewPath = `products/${product.baseName}/overview.jpg`;
+        const { error: overviewError } = await supabase.storage
+          .from('documents')
+          .upload(overviewPath, session.selectedOverviewImage, {
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (overviewError) throw overviewError;
+        
+        uploadCount++;
+        updateUploadSession(productId, { 
+          uploadProgress: (uploadCount / totalUploads) * 100 
+        });
       }
 
-      if (!product && !variant) throw new Error('Product or variant not found');
-
-      let completedUploads = 0;
-      const totalUploads = (session.glbFile ? 1 : 0) + (session.jpgFile ? 1 : 0);
-
-      // Determine file paths based on whether it's a variant or main product
-      const fileBaseName = variant ? variant.variantId : productId;
-      const folderName = variant ? variant.variantId : productId;
-
-      // Upload GLB file
-      if (session.glbFile) {
-        const glbPath = `products/${folderName}/${fileBaseName}.glb`;
+      // Upload GLB file (for variants, use baseName structure)
+      if (session.selectedGLB) {
+        const glbPath = session.uploadType === 'overview' 
+          ? `products/${productId}/${product.name}.glb`
+          : `products/${product.baseName}/variants/${productId}.glb`;
+          
         const { error: glbError } = await supabase.storage
           .from('documents')
-          .upload(glbPath, session.glbFile, { upsert: true });
+          .upload(glbPath, session.selectedGLB, {
+            cacheControl: '3600',
+            upsert: true
+          });
 
         if (glbError) throw glbError;
-        completedUploads++;
-        updateUploadSession(productId, { progress: (completedUploads / totalUploads) * 100 });
+        
+        uploadCount++;
+        updateUploadSession(productId, { 
+          uploadProgress: (uploadCount / totalUploads) * 100 
+        });
       }
 
-      // Upload JPG file
-      if (session.jpgFile) {
-        const jpgPath = `products/${folderName}/${fileBaseName}.jpg`;
+      // Upload JPG file (for variants, use baseName structure)
+      if (session.selectedJPG) {
+        const jpgPath = session.uploadType === 'overview'
+          ? `products/${productId}/${product.name}.jpg`
+          : `products/${product.baseName}/variants/${productId}.jpg`;
+          
         const { error: jpgError } = await supabase.storage
           .from('documents')
-          .upload(jpgPath, session.jpgFile, { upsert: true });
+          .upload(jpgPath, session.selectedJPG, {
+            cacheControl: '3600',
+            upsert: true
+          });
 
         if (jpgError) throw jpgError;
-        completedUploads++;
-        updateUploadSession(productId, { progress: 100 });
+        
+        uploadCount++;
+        updateUploadSession(productId, { 
+          uploadProgress: (uploadCount / totalUploads) * 100 
+        });
       }
 
-      const displayName = variant ? variant.variantName : product.productName;
-      toast({
-        title: "Upload Successful",
-        description: `Assets uploaded for ${displayName}`,
+      updateUploadSession(productId, { 
+        status: 'success',
+        isUploading: false 
       });
 
-      // Remove upload session and reload data
-      setUploadSessions(prev => prev.filter(s => s.productId !== productId));
-      await loadProductData();
-
+      toast.success(`Assets uploaded successfully for ${product.name}`);
+      
+      // Reload data to reflect changes
+      loadProductData();
     } catch (error) {
       console.error('Upload error:', error);
-      updateUploadSession(productId, { uploading: false });
-      toast({
-        title: "Upload Failed",
-        description: error.message,
-        variant: "destructive",
+      updateUploadSession(productId, { 
+        status: 'error',
+        isUploading: false,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
       });
+      
+      toast.error('Failed to upload assets');
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'complete':
-        return <CheckCircle className="h-5 w-5 text-green-600" />;
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'partial':
-        return <AlertCircle className="h-5 w-5 text-yellow-600" />;
+        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
       default:
-        return <AlertCircle className="h-5 w-5 text-red-600" />;
+        return <AlertCircle className="w-5 h-5 text-red-600" />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'complete':
-        return <Badge className="bg-green-100 text-green-800">Complete</Badge>;
+        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Complete</Badge>;
       case 'partial':
-        return <Badge className="bg-yellow-100 text-yellow-800">Partial</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Partial</Badge>;
       default:
-        return <Badge className="bg-red-100 text-red-800">Missing</Badge>;
+        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Missing</Badge>;
     }
   };
 
-  // Toggle variant expansion
   const toggleProductExpansion = (productId: string) => {
     setExpandedProducts(prev => {
       const newSet = new Set(prev);
@@ -350,345 +387,343 @@ const EnhancedAssetManager = () => {
     });
   };
 
-  // Filter and search logic
-  const filteredProducts = assetStatus.filter(product => {
-    const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.productId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || product.status === filterStatus;
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    
-    return matchesSearch && matchesFilter && matchesCategory;
+  // Filter products based on search and status
+  const filteredProducts = assetStatuses.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.baseName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || product.status === filterStatus;
+    return matchesSearch && matchesStatus;
   });
 
   // Statistics
-  const totalProducts = assetStatus.length;
-  const completeProducts = assetStatus.filter(p => p.status === 'complete').length;
-  const partialProducts = assetStatus.filter(p => p.status === 'partial').length;
-  const missingProducts = assetStatus.filter(p => p.status === 'missing').length;
+  const totalProducts = assetStatuses.length;
+  const completeProducts = assetStatuses.filter(p => p.status === 'complete').length;
+  const partialProducts = assetStatuses.filter(p => p.status === 'partial').length;
+  const missingProducts = assetStatuses.filter(p => p.status === 'missing').length;
 
-  const categories = Array.from(new Set(assetStatus.map(p => p.category)));
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Asset Manager...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Enhanced Product Asset Manager
+            <Package className="w-5 h-5" />
+            Innosin Lab Asset Manager
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Statistics Dashboard */}
+          {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-blue-700">{totalProducts}</div>
-              <div className="text-sm text-blue-600">Total Products</div>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-green-700">{completeProducts}</div>
-              <div className="text-sm text-green-600">Complete Assets</div>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-700">{partialProducts}</div>
-              <div className="text-sm text-yellow-600">Partial Assets</div>
-            </div>
-            <div className="bg-red-50 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-red-700">{missingProducts}</div>
-              <div className="text-sm text-red-600">Missing Assets</div>
-            </div>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-primary">{totalProducts}</div>
+                <div className="text-sm text-muted-foreground">Total Series</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-green-600">{completeProducts}</div>
+                <div className="text-sm text-muted-foreground">Complete</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-yellow-600">{partialProducts}</div>
+                <div className="text-sm text-muted-foreground">Partial</div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 text-center">
+                <div className="text-2xl font-bold text-red-600">{missingProducts}</div>
+                <div className="text-sm text-muted-foreground">Missing</div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Search and Filter Controls */}
+          {/* Search and Filter */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search Innosin Lab products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <div className="flex gap-2">
+            <div>
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-3 py-2 border rounded-md"
+                className="px-3 py-2 border rounded-md bg-background"
               >
                 <option value="all">All Status</option>
                 <option value="complete">Complete</option>
                 <option value="partial">Partial</option>
                 <option value="missing">Missing</option>
               </select>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border rounded-md"
-              >
-                <option value="all">All Categories</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
             </div>
           </div>
 
-          {/* Product Asset Grid */}
+          {/* Product Grid */}
           <div className="space-y-4">
-            {filteredProducts.map((product) => {
-              const uploadSession = uploadSessions.find(s => s.productId === product.productId);
-              const isExpanded = expandedProducts.has(product.productId);
-              const hasVariants = product.variants && product.variants.length > 0;
-              
-              return (
-                <div key={product.productId} className="border rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {hasVariants && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleProductExpansion(product.productId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            {isExpanded ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        )}
-                        {getStatusIcon(product.status)}
-                        <h3 className="font-medium">{product.productName}</h3>
-                        {getStatusBadge(product.status)}
-                        {hasVariants && (
-                          <Badge variant="secondary" className="text-xs">
-                            {product.variants.length} variants
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-sm text-gray-600 mb-2">
-                        ID: {product.productId} | Category: {product.category}
-                      </div>
-                      {!hasVariants && (
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Box className="h-4 w-4" />
-                            <span className={product.hasGLB ? 'text-green-600' : 'text-red-600'}>
-                              GLB Model {product.hasGLB ? '✓' : '✗'}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Image className="h-4 w-4" />
-                            <span className={product.hasJPG ? 'text-green-600' : 'text-red-600'}>
-                              JPG Image {product.hasJPG ? '✓' : '✗'}
-                            </span>
+            {filteredProducts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                {searchTerm ? 'No products match your search criteria.' : 'All Innosin Lab products have complete assets!'}
+              </div>
+            ) : (
+              filteredProducts.map((product) => {
+                const session = uploadSessions[product.id];
+                const isExpanded = expandedProducts.has(product.id);
+                const hasVariants = product.variants.length > 0;
+
+                return (
+                  <Card key={product.id}>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          {hasVariants && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => toggleProductExpansion(product.id)}
+                              className="h-8 w-8 p-0"
+                            >
+                              {isExpanded ? (
+                                <ChevronDown className="w-4 h-4" />
+                              ) : (
+                                <ChevronRight className="w-4 h-4" />
+                              )}
+                            </Button>
+                          )}
+                          {getStatusIcon(product.status)}
+                          <div>
+                            <h3 className="font-semibold">{product.baseName}</h3>
+                            <p className="text-sm text-muted-foreground">{product.category}</p>
                           </div>
                         </div>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-medium mb-1">{product.completionPercentage}%</div>
-                      <Progress value={product.completionPercentage} className="w-20 h-2" />
-                    </div>
-                  </div>
-
-                  {/* Variants List for Innosin Lab Products */}
-                  {hasVariants && isExpanded && (
-                    <div className="ml-6 space-y-3 border-l-2 border-gray-200 pl-4 mb-4">
-                      {product.variants!.map((variant) => {
-                        const variantUploadSession = uploadSessions.find(s => s.productId === variant.variantId);
-                        
-                        return (
-                          <div key={variant.variantId} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex items-start justify-between mb-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-2">
-                                  {getStatusIcon(variant.status)}
-                                  <h4 className="font-medium text-sm">{variant.variantName}</h4>
-                                  {getStatusBadge(variant.status)}
-                                </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  Variant ID: {variant.variantId} | Info: {variant.variantInfo}
-                                </div>
-                                <div className="flex items-center gap-4 text-xs">
-                                  <div className="flex items-center gap-1">
-                                    <Box className="h-3 w-3" />
-                                    <span className={variant.hasGLB ? 'text-green-600' : 'text-red-600'}>
-                                      GLB {variant.hasGLB ? '✓' : '✗'}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Image className="h-3 w-3" />
-                                    <span className={variant.hasJPG ? 'text-green-600' : 'text-red-600'}>
-                                      JPG {variant.hasJPG ? '✓' : '✗'}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xs font-medium mb-1">{variant.completionPercentage}%</div>
-                                <Progress value={variant.completionPercentage} className="w-16 h-1" />
-                              </div>
-                            </div>
-
-                            {/* Variant Upload Interface */}
-                            {!variantUploadSession ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => startUploadSession(variant.variantId)}
-                                disabled={variant.status === 'complete'}
-                                className="h-7 text-xs"
-                              >
-                                <Upload className="h-3 w-3 mr-1" />
-                                Upload Variant Assets
-                              </Button>
-                            ) : (
-                              <div className="space-y-2 bg-white p-2 rounded border">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                  {!variant.hasGLB && (
-                                    <div>
-                                      <Label className="text-xs">GLB Model</Label>
-                                      <Input
-                                        type="file"
-                                        accept=".glb"
-                                        onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) handleFileSelect(variant.variantId, 'glb', file);
-                                        }}
-                                        className="h-7 text-xs"
-                                      />
-                                    </div>
-                                  )}
-                                  {!variant.hasJPG && (
-                                    <div>
-                                      <Label className="text-xs">JPG Image</Label>
-                                      <Input
-                                        type="file"
-                                        accept=".jpg,.jpeg"
-                                        onChange={(e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) handleFileSelect(variant.variantId, 'jpg', file);
-                                        }}
-                                        className="h-7 text-xs"
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                {variantUploadSession.uploading && (
-                                  <div className="space-y-1">
-                                    <div className="text-xs">Uploading... {variantUploadSession.progress.toFixed(0)}%</div>
-                                    <Progress value={variantUploadSession.progress} className="h-1" />
-                                  </div>
-                                )}
-
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => uploadAssets(variant.variantId)}
-                                    disabled={variantUploadSession.uploading || (!variantUploadSession.glbFile && !variantUploadSession.jpgFile)}
-                                    className="h-7 text-xs"
-                                  >
-                                    Upload Files
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => setUploadSessions(prev => prev.filter(s => s.productId !== variant.variantId))}
-                                    disabled={variantUploadSession.uploading}
-                                    className="h-7 text-xs"
-                                  >
-                                    Cancel
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Main Product Upload Interface (for non-variant products) */}
-                  {!hasVariants && !uploadSession && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => startUploadSession(product.productId)}
-                      disabled={product.status === 'complete'}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Upload Assets
-                    </Button>
-                  )}
-
-                  {!hasVariants && uploadSession && (
-                    <div className="space-y-3 bg-gray-50 p-3 rounded">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {!product.hasGLB && (
-                          <div>
-                            <Label className="text-sm">GLB Model</Label>
-                            <Input
-                              type="file"
-                              accept=".glb"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileSelect(product.productId, 'glb', file);
-                              }}
-                              className="h-8"
-                            />
-                          </div>
-                        )}
-                        {!product.hasJPG && (
-                          <div>
-                            <Label className="text-sm">JPG Image</Label>
-                            <Input
-                              type="file"
-                              accept=".jpg,.jpeg"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileSelect(product.productId, 'jpg', file);
-                              }}
-                              className="h-8"
-                            />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {uploadSession.uploading && (
-                        <div className="space-y-2">
-                          <div className="text-sm">Uploading... {uploadSession.progress.toFixed(0)}%</div>
-                          <Progress value={uploadSession.progress} className="h-2" />
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(product.status)}
+                          <Badge variant="outline">{product.completionPercentage}%</Badge>
+                          {hasVariants && (
+                            <Badge variant="secondary">{product.variants.length} variants</Badge>
+                          )}
                         </div>
-                      )}
+                      </div>
 
-                      <div className="flex gap-2">
+                      {/* Asset Status Icons */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Image className={`w-4 h-4 ${product.hasOverviewImage ? 'text-green-600' : 'text-red-600'}`} />
+                          <span className="text-sm">Overview Image</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Box className={`w-4 h-4 ${product.hasGLB ? 'text-green-600' : 'text-red-600'}`} />
+                          <span className="text-sm">3D Model</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Image className={`w-4 h-4 ${product.hasJPG ? 'text-green-600' : 'text-red-600'}`} />
+                          <span className="text-sm">Product Image</span>
+                        </div>
+                      </div>
+
+                      {/* Upload Section */}
+                      {!session && (
                         <Button
-                          size="sm"
-                          onClick={() => uploadAssets(product.productId)}
-                          disabled={uploadSession.uploading || (!uploadSession.glbFile && !uploadSession.jpgFile)}
-                        >
-                          Upload Files
-                        </Button>
-                        <Button
+                          onClick={() => startUploadSession(product.id)}
                           size="sm"
                           variant="outline"
-                          onClick={() => setUploadSessions(prev => prev.filter(s => s.productId !== product.productId))}
-                          disabled={uploadSession.uploading}
                         >
-                          Cancel
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Assets
                         </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                      )}
+
+                      {session && (
+                        <div className="space-y-6">
+                          {/* Overview Image Upload Section */}
+                          {!product.hasOverviewImage && (
+                            <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
+                              <h5 className="text-sm font-medium text-orange-800 mb-3">Series Overview Image</h5>
+                              <p className="text-xs text-orange-600 mb-3">Upload a catalog overview image for the {product.baseName} series (JPG only)</p>
+                              
+                              <div>
+                                <Label htmlFor={`overview-${product.id}`} className="text-sm font-medium">
+                                  Overview Image (.jpg)
+                                </Label>
+                                <Input
+                                  id={`overview-${product.id}`}
+                                  type="file"
+                                  accept=".jpg,.jpeg"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      startUploadSession(product.id, 'overview');
+                                      handleFileSelect(product.id, 'overview', file);
+                                    }
+                                  }}
+                                  className="mt-1"
+                                />
+                                {session?.selectedOverviewImage && (
+                                  <p className="text-xs text-green-600 mt-1">
+                                    Selected: {session.selectedOverviewImage.name}
+                                  </p>
+                                )}
+                              </div>
+
+                              <Button
+                                onClick={() => uploadAssets(product.id)}
+                                disabled={!session?.selectedOverviewImage || session?.isUploading}
+                                className="w-full mt-3 bg-orange-600 hover:bg-orange-700"
+                                size="sm"
+                              >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Upload Overview Image
+                              </Button>
+                            </div>
+                          )}
+
+                          {/* Variant Assets Upload Section */}
+                          <div className="space-y-4">
+                            <h5 className="text-sm font-medium text-foreground">Upload Variant Assets</h5>
+                            
+                            {/* GLB File Upload */}
+                            <div>
+                              <Label htmlFor={`glb-${product.id}`} className="text-sm font-medium">
+                                3D Model (.glb)
+                              </Label>
+                              <Input
+                                id={`glb-${product.id}`}
+                                type="file"
+                                accept=".glb"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    if (!session) startUploadSession(product.id, 'variant');
+                                    handleFileSelect(product.id, 'glb', file);
+                                  }
+                                }}
+                                className="mt-1"
+                              />
+                              {session?.selectedGLB && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Selected: {session.selectedGLB.name}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* JPG File Upload */}
+                            <div>
+                              <Label htmlFor={`jpg-${product.id}`} className="text-sm font-medium">
+                                Product Image (.jpg)
+                              </Label>
+                              <Input
+                                id={`jpg-${product.id}`}
+                                type="file"
+                                accept=".jpg,.jpeg"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    if (!session) startUploadSession(product.id, 'variant');
+                                    handleFileSelect(product.id, 'jpg', file);
+                                  }
+                                }}
+                                className="mt-1"
+                              />
+                              {session?.selectedJPG && (
+                                <p className="text-xs text-green-600 mt-1">
+                                  Selected: {session.selectedJPG.name}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Upload Progress */}
+                            {session?.isUploading && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span>Uploading...</span>
+                                  <span>{Math.round(session.uploadProgress)}%</span>
+                                </div>
+                                <Progress value={session.uploadProgress} />
+                              </div>
+                            )}
+
+                            {/* Upload Button */}
+                            <Button
+                              onClick={() => uploadAssets(product.id)}
+                              disabled={
+                                (!session?.selectedGLB && !session?.selectedJPG) ||
+                                session?.isUploading
+                              }
+                              className="w-full"
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Upload Variant Assets
+                            </Button>
+
+                            {/* Error Message */}
+                            {session?.status === 'error' && session.errorMessage && (
+                              <p className="text-xs text-red-600 mt-2">
+                                Error: {session.errorMessage}
+                              </p>
+                            )}
+
+                            {/* Success Message */}
+                            {session?.status === 'success' && (
+                              <p className="text-xs text-green-600 mt-2">
+                                Assets uploaded successfully!
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Expanded Variants */}
+                      {isExpanded && hasVariants && (
+                        <div className="mt-6 pl-8 border-l-2 border-gray-200">
+                          <h4 className="text-sm font-medium mb-3">Variants needing assets:</h4>
+                          <div className="space-y-2">
+                            {product.variants.map((variant) => (
+                              <div key={variant.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                <div className="flex items-center gap-2">
+                                  {getStatusIcon(variant.status)}
+                                  <span className="text-sm font-medium">{variant.size}</span>
+                                  {variant.type && (
+                                    <Badge variant="outline" className="text-xs">{variant.type}</Badge>
+                                  )}
+                                  {variant.orientation && variant.orientation !== 'None' && (
+                                    <Badge variant="secondary" className="text-xs">{variant.orientation}</Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Box className={`w-3 h-3 ${variant.hasGLB ? 'text-green-600' : 'text-red-600'}`} />
+                                  <Image className={`w-3 h-3 ${variant.hasJPG ? 'text-green-600' : 'text-red-600'}`} />
+                                  <span className="text-xs text-muted-foreground">{variant.completionPercentage}%</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>
