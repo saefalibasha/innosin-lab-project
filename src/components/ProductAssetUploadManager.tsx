@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, FileText, X, Package, Image, Box, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, X, Package, Image, Box } from 'lucide-react';
 import EnhancedAssetManager from './EnhancedAssetManager';
 
 interface UploadFile {
@@ -35,21 +35,9 @@ interface ProductGroup {
   hasImage: boolean;
 }
 
-interface UploadedProduct {
-  productId: string;
-  brand: string;
-  hasModel: boolean;
-  hasImage: boolean;
-  hasDescription: boolean;
-  modelPath?: string;
-  imagePath?: string;
-  descriptionPath?: string;
-  uploadDate: string;
-}
 
 const ProductAssetUploadManager = () => {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
-  const [uploadedProducts, setUploadedProducts] = useState<UploadedProduct[]>([]);
   const [activeTab, setActiveTab] = useState<string>('enhanced');
   const { toast } = useToast();
 
@@ -158,8 +146,6 @@ const ProductAssetUploadManager = () => {
         description: `${fileData.file.name} uploaded to ${targetPath}`,
       });
 
-      // Refresh uploaded products list
-      await loadUploadedProducts();
 
     } catch (error) {
       console.error('Upload error:', error);
@@ -186,71 +172,6 @@ const ProductAssetUploadManager = () => {
     }
   };
 
-  const loadUploadedProducts = async () => {
-    try {
-      const { data: files, error } = await supabase.storage
-        .from('documents')
-        .list('products', {
-          limit: 1000,
-          offset: 0,
-        });
-
-      if (error) {
-        console.error('Error loading products:', error);
-        return;
-      }
-
-      // Group files by product folder
-      const productMap = new Map<string, UploadedProduct>();
-
-      if (files) {
-        for (const folder of files) {
-          if (folder.name && folder.name !== '.emptyFolderPlaceholder') {
-            const { data: productFiles } = await supabase.storage
-              .from('documents')
-              .list(`products/${folder.name}`, { limit: 100 });
-
-            if (productFiles) {
-              const productId = folder.name;
-              const [brand, ...rest] = productId.split('-');
-              
-              const hasModel = productFiles.some(file => file.name && file.name.endsWith('.glb'));
-              const hasImage = productFiles.some(file => file.name && 
-                ['.jpg', '.jpeg', '.png'].some(ext => file.name!.endsWith(ext)));
-              const hasDescription = productFiles.some(file => file.name && file.name.endsWith('.txt'));
-
-              productMap.set(productId, {
-                productId,
-                brand: brand || 'unknown',
-                hasModel,
-                hasImage,
-                hasDescription,
-                modelPath: hasModel ? `products/${productId}` : undefined,
-                imagePath: hasImage ? `products/${productId}` : undefined,
-                descriptionPath: hasDescription ? `products/${productId}` : undefined,
-                uploadDate: folder.updated_at || folder.created_at || new Date().toISOString()
-              });
-            }
-          }
-        }
-      }
-
-      setUploadedProducts(Array.from(productMap.values()).sort((a, b) => 
-        new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime()
-      ));
-    } catch (error) {
-      console.error('Error loading uploaded products:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load uploaded products",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    loadUploadedProducts();
-  }, []);
 
   // Group files by product ID for better organization
   const groupedFiles = uploadFiles.reduce((groups: { [key: string]: ProductGroup }, file, index) => {
@@ -279,19 +200,13 @@ const ProductAssetUploadManager = () => {
     }
   };
 
-  const getProductCompletionStatus = (product: UploadedProduct) => {
-    const total = 3; // model, image, description
-    const completed = [product.hasModel, product.hasImage, product.hasDescription].filter(Boolean).length;
-    return { completed, total, percentage: (completed / total) * 100 };
-  };
 
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="enhanced">Asset Manager</TabsTrigger>
           <TabsTrigger value="upload">Bulk Upload</TabsTrigger>
-          <TabsTrigger value="dashboard">Storage Dashboard</TabsTrigger>
         </TabsList>
 
         <TabsContent value="enhanced">
@@ -456,124 +371,6 @@ const ProductAssetUploadManager = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="dashboard">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Uploaded Products Dashboard
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {uploadedProducts.length === 0 ? (
-                  <div className="text-center p-8 text-gray-500">
-                    <Package className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                    <p>No products uploaded yet</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600">Total Products</p>
-                              <p className="text-2xl font-bold">{uploadedProducts.length}</p>
-                            </div>
-                            <Package className="w-8 h-8 text-blue-500" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600">Complete Products</p>
-                              <p className="text-2xl font-bold text-green-600">
-                                {uploadedProducts.filter(p => p.hasModel && p.hasImage && p.hasDescription).length}
-                              </p>
-                            </div>
-                            <CheckCircle className="w-8 h-8 text-green-500" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm text-gray-600">Incomplete Products</p>
-                              <p className="text-2xl font-bold text-amber-600">
-                                {uploadedProducts.filter(p => !(p.hasModel && p.hasImage && p.hasDescription)).length}
-                              </p>
-                            </div>
-                            <AlertCircle className="w-8 h-8 text-amber-500" />
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {uploadedProducts.map((product) => {
-                        const status = getProductCompletionStatus(product);
-                        return (
-                          <Card key={product.productId} className="relative">
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-3">
-                                <div>
-                                  <h3 className="font-medium text-sm mb-1">{product.productId}</h3>
-                                  <Badge variant="outline" className="text-xs">
-                                    {product.brand}
-                                  </Badge>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  {product.hasModel && <Box className="w-4 h-4 text-green-500" />}
-                                  {product.hasImage && <Image className="w-4 h-4 text-blue-500" />}
-                                  {product.hasDescription && <FileText className="w-4 h-4 text-purple-500" />}
-                                </div>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span>Completion</span>
-                                  <span>{status.completed}/{status.total}</span>
-                                </div>
-                                <Progress value={status.percentage} className="h-2" />
-                                
-                                 <div className="flex justify-between items-center text-xs text-gray-500">
-                                   <span>
-                                     {new Date(product.uploadDate).toLocaleDateString()}
-                                   </span>
-                                   {status.percentage === 100 ? (
-                                     <Badge variant="default" className="bg-green-100 text-green-800">
-                                       Complete
-                                     </Badge>
-                                   ) : (
-                                     <Badge variant="outline" className="text-amber-600">
-                                       Incomplete
-                                     </Badge>
-                                   )}
-                                 </div>
-                                 
-                                 <div className="mt-3 flex gap-2">
-                                   <Button variant="outline" size="sm" className="text-xs flex-1" asChild>
-                                     <a href="/products" target="_blank" rel="noopener noreferrer">
-                                       View in Catalog
-                                     </a>
-                                   </Button>
-                                 </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </div>
   );

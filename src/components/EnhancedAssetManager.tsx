@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,12 +14,8 @@ import {
   Box, 
   CheckCircle, 
   AlertCircle, 
-  X,
   Search,
-  Filter,
-  Download,
-  Eye,
-  Edit3
+  X
 } from 'lucide-react';
 import { Product } from '@/types/product';
 import { getProductsSync } from '@/utils/productAssets';
@@ -119,8 +114,15 @@ const EnhancedAssetManager = () => {
     if (!path || path.includes('PLACEHOLDER')) return false;
     
     try {
-      const response = await fetch(path, { method: 'HEAD' });
-      return response.ok;
+      // Check if file exists in Supabase storage
+      const storagePath = path.replace('/products/', 'products/');
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .list(storagePath.split('/').slice(0, -1).join('/'), {
+          search: storagePath.split('/').pop()
+        });
+      
+      return !error && data && data.length > 0;
     } catch {
       return false;
     }
