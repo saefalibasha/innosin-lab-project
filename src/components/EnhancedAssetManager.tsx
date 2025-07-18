@@ -1,532 +1,335 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
+  Search, 
+  RefreshCw, 
   Upload, 
-  Package, 
-  Image, 
-  Box, 
   CheckCircle, 
   AlertCircle, 
-  Search,
+  Clock,
   ChevronDown,
   ChevronRight,
-  RefreshCw
+  Edit3,
+  Package,
+  Image,
+  Box,
+  Filter
 } from 'lucide-react';
-import { Product } from '@/types/product';
-import { getProductsSync } from '@/utils/productAssets';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import ProductEditModal from './ProductEditModal';
 
-interface ProductAssetStatus {
+interface Product {
   id: string;
+  product_code: string;
   name: string;
+  editable_title: string;
+  editable_description: string;
   category: string;
-  baseName: string;
+  product_series: string;
+  finish_type: string;
+  orientation: string;
+  drawer_count: number;
+  door_type: string;
+  dimensions: string;
+  thumbnail_path: string;
+  model_path: string;
+  is_active: boolean;
+}
+
+interface AssetStatus {
+  productId: string;
+  productCode: string;
+  productName: string;
+  editableTitle: string;
+  productSeries: string;
+  finishType: string;
+  orientation: string;
+  dimensions: string;
   hasOverviewImage: boolean;
   hasGLB: boolean;
   hasJPG: boolean;
-  status: 'complete' | 'partial' | 'missing';
+  isMainComplete: boolean;
+  variants: VariantStatus[];
   completionPercentage: number;
-  variants: VariantAssetStatus[];
-  overviewImagePath?: string;
+  status: 'complete' | 'partial' | 'missing';
+}
+
+interface VariantStatus {
+  id: string;
+  size: string;
+  hasGLB: boolean;
+  hasJPG: boolean;
+  status: 'complete' | 'partial' | 'missing';
   glbPath?: string;
   jpgPath?: string;
 }
 
-interface VariantAssetStatus {
-  id: string;
-  size: string;
-  dimensions: string;
-  type?: string;
-  orientation?: 'LH' | 'RH' | 'None';
-  hasGLB: boolean;
-  hasJPG: boolean;
-  status: 'complete' | 'partial' | 'missing';
-  completionPercentage: number;
-}
-
-interface UploadSession {
-  productId: string;
-  selectedOverviewImage: File | null;
-  selectedGLB: File | null;
-  selectedJPG: File | null;
-  isUploading: boolean;
-  uploadProgress: number;
-  status: 'idle' | 'uploading' | 'success' | 'error';
-  errorMessage?: string;
-  uploadType: 'overview' | 'variant';
-}
-
 const EnhancedAssetManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [assetStatuses, setAssetStatuses] = useState<ProductAssetStatus[]>([]);
-  const [uploadSessions, setUploadSessions] = useState<Record<string, UploadSession>>({});
+  const [assetStatuses, setAssetStatuses] = useState<AssetStatus[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'complete' | 'partial' | 'missing'>('all');
+  const [filterSeries, setFilterSeries] = useState<string>('all');
   const [showAllProducts, setShowAllProducts] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
-  const [assetCache, setAssetCache] = useState<Map<string, boolean>>(new Map());
   const [checkingAssets, setCheckingAssets] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [productSeries, setProductSeries] = useState<string[]>([]);
+  const { toast } = useToast();
 
   useEffect(() => {
     loadProductData();
   }, [showAllProducts]);
 
-  const extractProductBaseName = (productName: string): string => {
-    return productName
-      .replace(/\s*\([^)]*\)$/, '') // Remove size codes like (505065)
-      .replace(/-[LR]H$/, '') // Remove orientation
-      .replace(/-DWR?\d+(-\d+)?$/, '') // Remove drawer configurations
-      .trim();
-  };
-
   const loadProductData = async () => {
     setIsLoading(true);
-    setCheckingAssets(false);
-    
     try {
-      const allProducts = getProductsSync();
-      
-      // Only show Innosin Lab products (filter out complete categories)
-      const innosinProducts = allProducts.filter(product => 
-        product.category === 'Innosin Lab'
-      );
-      
-      setProducts(innosinProducts);
-      
-      // Group products by base name for variant handling
-      const grouped = innosinProducts.reduce((acc, product) => {
-        const baseName = extractProductBaseName(product.name);
-        if (!acc[baseName]) {
-          acc[baseName] = [];
-        }
-        acc[baseName].push(product);
-        return acc;
-      }, {} as Record<string, Product[]>);
+      const { data: productsData, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('category', 'Innosin Lab')
+        .eq('is_active', true)
+        .order('product_series', { ascending: true })
+        .order('product_code', { ascending: true });
 
-      // Show UI immediately with basic product info
-      const initialStatuses: ProductAssetStatus[] = Object.entries(grouped).map(([baseName, productGroup]) => {
-        const mainProduct = productGroup[0];
-        
-        return {
-          id: mainProduct.id,
-          name: mainProduct.name,
-          category: mainProduct.category,
-          baseName,
-          hasOverviewImage: false,
-          hasGLB: false,
-          hasJPG: false,
-          status: 'missing' as const,
-          completionPercentage: 0,
-          variants: []
-        };
-      });
+      if (error) throw error;
 
-      setAssetStatuses(initialStatuses);
-      setIsLoading(false);
+      setProducts(productsData || []);
       
-      // Start asset checking in background
-      checkAssetsInBackground(grouped);
-      
+      // Extract unique product series for filtering
+      const uniqueSeries = [...new Set(productsData?.map(p => p.product_series).filter(Boolean) || [])];
+      setProductSeries(uniqueSeries);
+
+      await checkAssets(productsData || []);
     } catch (error) {
-      console.error('Error loading product data:', error);
-      toast.error('Failed to load product data');
+      console.error('Error loading products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load product data",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const checkAssetsInBackground = async (grouped: Record<string, Product[]>) => {
+  const checkAssets = async (productsToCheck: Product[]) => {
     setCheckingAssets(true);
-    
+    const assetStatuses: AssetStatus[] = [];
+
     try {
-      // Collect all asset paths to check
-      const assetPaths: string[] = [];
-      const assetMap = new Map<string, { baseName: string; type: 'overview' | 'main' | 'variant'; productId?: string; variantId?: string }>();
+      // Group products by base name for variant handling
+      const productGroups = new Map<string, Product[]>();
       
-      for (const [baseName, productGroup] of Object.entries(grouped)) {
-        const mainProduct = productGroup[0];
+      productsToCheck.forEach(product => {
+        const baseName = getProductBaseName(product.product_code);
+        if (!productGroups.has(baseName)) {
+          productGroups.set(baseName, []);
+        }
+        productGroups.get(baseName)!.push(product);
+      });
+
+      for (const [baseName, groupProducts] of productGroups) {
+        const mainProduct = groupProducts[0];
         
-        // Overview image
-        const overviewPath = `products/${baseName}/overview.jpg`;
-        assetPaths.push(overviewPath);
-        assetMap.set(overviewPath, { baseName, type: 'overview' });
+        // Check main product assets
+        const hasOverviewImage = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/overview.jpg`);
+        const hasGLB = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.glb`);
+        const hasJPG = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.jpg`);
         
-        // Main product assets
-        const glbPath = `products/${mainProduct.id}/${mainProduct.name}.glb`;
-        const jpgPath = `products/${mainProduct.id}/${mainProduct.name}.jpg`;
-        assetPaths.push(glbPath, jpgPath);
-        assetMap.set(glbPath, { baseName, type: 'main', productId: mainProduct.id });
-        assetMap.set(jpgPath, { baseName, type: 'main', productId: mainProduct.id });
-        
-        // Variant assets
-        if (mainProduct.variants) {
-          for (const variant of mainProduct.variants) {
-            const variantGlbPath = `products/${baseName}/variants/${variant.id}.glb`;
-            const variantJpgPath = `products/${baseName}/variants/${variant.id}.jpg`;
-            assetPaths.push(variantGlbPath, variantJpgPath);
-            assetMap.set(variantGlbPath, { baseName, type: 'variant', variantId: variant.id });
-            assetMap.set(variantJpgPath, { baseName, type: 'variant', variantId: variant.id });
+        const isMainComplete = hasGLB && hasJPG && !isPlaceholderAsset(mainProduct.model_path) && !isPlaceholderAsset(mainProduct.thumbnail_path);
+
+        // Check variants
+        const variants: VariantStatus[] = [];
+        for (const variant of groupProducts) {
+          if (variant.id !== mainProduct.id) {
+            const variantHasGLB = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`);
+            const variantHasJPG = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`);
+            
+            const variantStatus: 'complete' | 'partial' | 'missing' = 
+              (variantHasGLB && variantHasJPG) ? 'complete' :
+              (variantHasGLB || variantHasJPG) ? 'partial' : 'missing';
+
+            // Include all variants when showing all products, or only incomplete ones when filtering
+            if (showAllProducts || variantStatus !== 'complete') {
+              variants.push({
+                id: variant.id,
+                size: variant.product_code,
+                hasGLB: variantHasGLB,
+                hasJPG: variantHasJPG,
+                status: variantStatus,
+                glbPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`,
+                jpgPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`
+              });
+            }
           }
+        }
+
+        // Include products based on showAllProducts setting
+        const needsOverviewImage = !hasOverviewImage;
+        const hasIncompleteVariants = variants.some(v => v.status !== 'complete');
+        
+        if (showAllProducts || needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
+          const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variants);
+          const status: 'complete' | 'partial' | 'missing' = 
+            completionPercentage === 100 ? 'complete' :
+            completionPercentage > 0 ? 'partial' : 'missing';
+
+          assetStatuses.push({
+            productId: mainProduct.id,
+            productCode: mainProduct.product_code,
+            productName: mainProduct.name,
+            editableTitle: mainProduct.editable_title || mainProduct.name,
+            productSeries: mainProduct.product_series || 'Unknown',
+            finishType: mainProduct.finish_type || 'PC',
+            orientation: mainProduct.orientation || 'None',
+            dimensions: mainProduct.dimensions || 'N/A',
+            hasOverviewImage,
+            hasGLB,
+            hasJPG,
+            isMainComplete,
+            variants,
+            completionPercentage,
+            status
+          });
         }
       }
 
-      // Check assets in batches of 10 for better performance
-      const batchSize = 10;
-      const results = new Map<string, boolean>();
-      
-      for (let i = 0; i < assetPaths.length; i += batchSize) {
-        const batch = assetPaths.slice(i, i + batchSize);
-        const batchResults = await Promise.all(
-          batch.map(async (path) => ({
-            path,
-            exists: await checkAssetExistsCached(path)
-          }))
-        );
-        
-        batchResults.forEach(({ path, exists }) => {
-          results.set(path, exists);
-        });
-        
-        // Update progress - rebuild asset statuses progressively
-        updateAssetStatusesFromResults(grouped, results, assetMap);
-      }
-      
+      setAssetStatuses(assetStatuses);
     } catch (error) {
       console.error('Error checking assets:', error);
-      toast.error('Failed to check asset status');
+      toast({
+        title: "Error", 
+        description: "Failed to check asset status",
+        variant: "destructive",
+      });
     } finally {
       setCheckingAssets(false);
     }
   };
 
-  const updateAssetStatusesFromResults = (
-    grouped: Record<string, Product[]>, 
-    results: Map<string, boolean>,
-    assetMap: Map<string, { baseName: string; type: 'overview' | 'main' | 'variant'; productId?: string; variantId?: string }>
-  ) => {
-    const assetStatuses: ProductAssetStatus[] = [];
-    
-    for (const [baseName, productGroup] of Object.entries(grouped)) {
-      const mainProduct = productGroup[0];
-      
-      // Check overview image
-      const overviewImagePath = `products/${baseName}/overview.jpg`;
-      const hasOverviewImage = results.get(overviewImagePath) || false;
-      
-      // Check main product assets
-      const glbPath = `products/${mainProduct.id}/${mainProduct.name}.glb`;
-      const jpgPath = `products/${mainProduct.id}/${mainProduct.name}.jpg`;
-      
-      const hasGLB = results.get(glbPath) || false;
-      const hasJPG = results.get(jpgPath) || false;
-      
-      // Process variants
-      const variantStatuses: VariantAssetStatus[] = [];
-      if (mainProduct.variants) {
-        for (const variant of mainProduct.variants) {
-          const variantGlbPath = `products/${baseName}/variants/${variant.id}.glb`;
-          const variantJpgPath = `products/${baseName}/variants/${variant.id}.jpg`;
-          
-          const variantHasGLB = results.get(variantGlbPath) || false;
-          const variantHasJPG = results.get(variantJpgPath) || false;
-          
-          const isPlaceholderGLB = variant.modelPath.includes('PLACEHOLDER');
-          const isPlaceholderJPG = variant.thumbnail.includes('PLACEHOLDER');
-          
-          // Include all variants when showing all products, or only incomplete ones when filtering
-          if (showAllProducts || !variantHasGLB || !variantHasJPG || isPlaceholderGLB || isPlaceholderJPG) {
-            variantStatuses.push({
-              id: variant.id,
-              size: variant.size,
-              dimensions: variant.dimensions,
-              type: variant.type,
-              orientation: variant.orientation,
-              hasGLB: variantHasGLB && !isPlaceholderGLB,
-              hasJPG: variantHasJPG && !isPlaceholderJPG,
-              status: (variantHasGLB && variantHasJPG && !isPlaceholderGLB && !isPlaceholderJPG) ? 'complete' : 
-                      (variantHasGLB || variantHasJPG) && (!isPlaceholderGLB || !isPlaceholderJPG) ? 'partial' : 'missing',
-              completionPercentage: (variantHasGLB && !isPlaceholderGLB) && (variantHasJPG && !isPlaceholderJPG) ? 100 : 
-                                  ((variantHasGLB && !isPlaceholderGLB) || (variantHasJPG && !isPlaceholderJPG)) ? 50 : 0
-            });
-          }
-        }
-      }
-      
-      // Include products based on showAllProducts setting
-      const needsOverviewImage = !hasOverviewImage;
-      const isMainComplete = hasGLB && hasJPG && !mainProduct.modelPath.includes('PLACEHOLDER') && !mainProduct.thumbnail.includes('PLACEHOLDER');
-      const hasIncompleteVariants = variantStatuses.some(v => v.status !== 'complete');
-      
-      if (showAllProducts || needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
-        const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variantStatuses);
-        
-        assetStatuses.push({
-          id: mainProduct.id,
-          name: mainProduct.name,
-          category: mainProduct.category,
-          baseName,
-          hasOverviewImage,
-          hasGLB: hasGLB && !mainProduct.modelPath.includes('PLACEHOLDER'),
-          hasJPG: hasJPG && !mainProduct.thumbnail.includes('PLACEHOLDER'),
-          status: completionPercentage === 100 ? 'complete' : completionPercentage > 0 ? 'partial' : 'missing',
-          completionPercentage,
-          variants: variantStatuses,
-          overviewImagePath: hasOverviewImage ? overviewImagePath : undefined,
-          glbPath: hasGLB ? glbPath : undefined,
-          jpgPath: hasJPG ? jpgPath : undefined
-        });
-      }
-    }
-    
-    setAssetStatuses(assetStatuses);
+  const getProductBaseName = (productCode: string): string => {
+    return productCode.split('-')[0];
   };
-
-  const calculateCompletionPercentage = (hasOverviewImage: boolean, hasGLB: boolean, hasJPG: boolean, variants: VariantAssetStatus[]): number => {
-    // Overview image counts for 33.3%, main assets for 33.3%, variants for 33.4%
-    const overviewPercentage = hasOverviewImage ? 33.3 : 0;
-    
-    if (variants.length === 0) {
-      // If no variants, main assets get 66.7% total
-      const mainAssetPercentage = (hasGLB ? 33.35 : 0) + (hasJPG ? 33.35 : 0);
-      return Math.round(overviewPercentage + mainAssetPercentage);
-    }
-    
-    // With variants: overview 33.3%, main 16.7%, variants 50%
-    const mainAssetPercentage = (hasGLB ? 8.35 : 0) + (hasJPG ? 8.35 : 0);
-    const variantPercentage = variants.length > 0 ? 
-      variants.reduce((sum, variant) => sum + variant.completionPercentage, 0) / variants.length * 0.5 : 0;
-    
-    return Math.round(overviewPercentage + mainAssetPercentage + variantPercentage);
-  };
-
-  const checkAssetExistsCached = useCallback(async (path: string): Promise<boolean> => {
-    // Skip validation for placeholder assets
-    if (path.includes('PLACEHOLDER') || path.includes('placeholder')) {
-      return false;
-    }
-    
-    // Check cache first
-    if (assetCache.has(path)) {
-      return assetCache.get(path)!;
-    }
-    
-    try {
-      const response = await fetch(path, { method: 'HEAD' });
-      const exists = response.ok;
-      
-      // Cache the result
-      setAssetCache(prev => new Map(prev).set(path, exists));
-      
-      return exists;
-    } catch {
-      setAssetCache(prev => new Map(prev).set(path, false));
-      return false;
-    }
-  }, [assetCache]);
 
   const checkAssetExists = async (path: string): Promise<boolean> => {
-    return checkAssetExistsCached(path);
-  };
-
-  const startUploadSession = (productId: string, uploadType: 'overview' | 'variant' = 'variant') => {
-    setUploadSessions(prev => ({
-      ...prev,
-      [productId]: {
-        productId,
-        selectedOverviewImage: null,
-        selectedGLB: null,
-        selectedJPG: null,
-        isUploading: false,
-        uploadProgress: 0,
-        status: 'idle',
-        uploadType
-      }
-    }));
-  };
-
-  const updateUploadSession = (productId: string, updates: Partial<UploadSession>) => {
-    setUploadSessions(prev => ({
-      ...prev,
-      [productId]: { ...prev[productId], ...updates }
-    }));
-  };
-
-  const handleFileSelect = (productId: string, fileType: 'overview' | 'glb' | 'jpg', file: File) => {
-    const fieldName = fileType === 'overview' ? 'selectedOverviewImage' : 
-                      fileType === 'glb' ? 'selectedGLB' : 'selectedJPG';
-    
-    updateUploadSession(productId, {
-      [fieldName]: file
-    });
-  };
-
-  const uploadAssets = async (productId: string) => {
-    const session = uploadSessions[productId];
-    if (!session) return;
-
-    updateUploadSession(productId, { 
-      isUploading: true, 
-      status: 'uploading',
-      uploadProgress: 0 
-    });
-
     try {
-      const product = assetStatuses.find(p => p.id === productId);
-      if (!product) throw new Error('Product not found');
-
-      let uploadCount = 0;
-      const totalUploads = (session.selectedOverviewImage ? 1 : 0) + 
-                          (session.selectedGLB ? 1 : 0) + 
-                          (session.selectedJPG ? 1 : 0);
-
-      // Upload overview image
-      if (session.selectedOverviewImage) {
-        const overviewPath = `products/${product.baseName}/overview.jpg`;
-        const { error: overviewError } = await supabase.storage
-          .from('documents')
-          .upload(overviewPath, session.selectedOverviewImage, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (overviewError) throw overviewError;
-        
-        uploadCount++;
-        updateUploadSession(productId, { 
-          uploadProgress: (uploadCount / totalUploads) * 100 
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .list('', { 
+          limit: 1,
+          search: path.split('/').pop() 
         });
-      }
-
-      // Upload GLB file (for variants, use baseName structure)
-      if (session.selectedGLB) {
-        const glbPath = session.uploadType === 'overview' 
-          ? `products/${productId}/${product.name}.glb`
-          : `products/${product.baseName}/variants/${productId}.glb`;
-          
-        const { error: glbError } = await supabase.storage
-          .from('documents')
-          .upload(glbPath, session.selectedGLB, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (glbError) throw glbError;
-        
-        uploadCount++;
-        updateUploadSession(productId, { 
-          uploadProgress: (uploadCount / totalUploads) * 100 
-        });
-      }
-
-      // Upload JPG file (for variants, use baseName structure)
-      if (session.selectedJPG) {
-        const jpgPath = session.uploadType === 'overview'
-          ? `products/${productId}/${product.name}.jpg`
-          : `products/${product.baseName}/variants/${productId}.jpg`;
-          
-        const { error: jpgError } = await supabase.storage
-          .from('documents')
-          .upload(jpgPath, session.selectedJPG, {
-            cacheControl: '3600',
-            upsert: true
-          });
-
-        if (jpgError) throw jpgError;
-        
-        uploadCount++;
-        updateUploadSession(productId, { 
-          uploadProgress: (uploadCount / totalUploads) * 100 
-        });
-      }
-
-      updateUploadSession(productId, { 
-        status: 'success',
-        isUploading: false 
-      });
-
-      toast.success(`Assets uploaded successfully for ${product.name}`);
       
-      // Reload data to reflect changes
-      loadProductData();
-    } catch (error) {
-      console.error('Upload error:', error);
-      updateUploadSession(productId, { 
-        status: 'error',
-        isUploading: false,
-        errorMessage: error instanceof Error ? error.message : 'Unknown error'
-      });
-      
-      toast.error('Failed to upload assets');
+      return !error && data && data.length > 0;
+    } catch {
+      return false;
     }
+  };
+
+  const isPlaceholderAsset = (path: string | null): boolean => {
+    return !path || path.includes('PLACEHOLDER') || path.includes('placeholder');
+  };
+
+  const calculateCompletionPercentage = (
+    hasOverview: boolean, 
+    hasMainGLB: boolean, 
+    hasMainJPG: boolean, 
+    variants: VariantStatus[]
+  ): number => {
+    const mainAssets = 3; // overview, GLB, JPG
+    const variantAssets = variants.length * 2; // GLB + JPG per variant
+    const totalAssets = mainAssets + variantAssets;
+    
+    if (totalAssets === 0) return 100;
+
+    let completedAssets = 0;
+    if (hasOverview) completedAssets++;
+    if (hasMainGLB) completedAssets++;
+    if (hasMainJPG) completedAssets++;
+    
+    variants.forEach(variant => {
+      if (variant.hasGLB) completedAssets++;
+      if (variant.hasJPG) completedAssets++;
+    });
+
+    return Math.round((completedAssets / totalAssets) * 100);
+  };
+
+  const filteredAssetStatuses = assetStatuses.filter(asset => {
+    const matchesSearch = searchTerm === '' || 
+      asset.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.editableTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      asset.productSeries.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || asset.status === filterStatus;
+    const matchesSeries = filterSeries === 'all' || asset.productSeries === filterSeries;
+
+    return matchesSearch && matchesStatus && matchesSeries;
+  });
+
+  const toggleExpanded = (productId: string) => {
+    const newExpanded = new Set(expandedProducts);
+    if (newExpanded.has(productId)) {
+      newExpanded.delete(productId);
+    } else {
+      newExpanded.add(productId);
+    }
+    setExpandedProducts(newExpanded);
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'complete':
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'partial':
-        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
       default:
-        return <AlertCircle className="w-5 h-5 text-red-600" />;
+        return <Clock className="w-4 h-4 text-red-600" />;
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'complete':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Complete</Badge>;
+        return 'bg-green-100 text-green-800';
       case 'partial':
-        return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Partial</Badge>;
+        return 'bg-yellow-100 text-yellow-800';
       default:
-        return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Missing</Badge>;
+        return 'bg-red-100 text-red-800';
     }
   };
 
-  const toggleProductExpansion = (productId: string) => {
-    setExpandedProducts(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(productId)) {
-        newSet.delete(productId);
-      } else {
-        newSet.add(productId);
-      }
-      return newSet;
-    });
+  const handleEditProduct = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setEditingProduct(product);
+    }
   };
 
-  // Filter products based on search and status
-  const filteredProducts = assetStatuses.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.baseName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || product.status === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  const handleSaveEdit = () => {
+    loadProductData(); // Refresh data after edit
+  };
 
-  // Statistics
-  const totalProducts = assetStatuses.length;
-  const completeProducts = assetStatuses.filter(p => p.status === 'complete').length;
-  const partialProducts = assetStatuses.filter(p => p.status === 'partial').length;
-  const missingProducts = assetStatuses.filter(p => p.status === 'missing').length;
+  const totalProducts = filteredAssetStatuses.length;
+  const completeProducts = filteredAssetStatuses.filter(p => p.status === 'complete').length;
+  const partialProducts = filteredAssetStatuses.filter(p => p.status === 'partial').length;
+  const missingProducts = filteredAssetStatuses.filter(p => p.status === 'missing').length;
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Loading Asset Manager...</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <span className="ml-3">Loading Innosin Lab products...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <RefreshCw className="w-8 h-8 animate-spin mr-2" />
+        <span>Loading Innosin Lab products...</span>
+      </div>
     );
   }
 
@@ -535,12 +338,14 @@ const EnhancedAssetManager = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Innosin Lab Asset Manager
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <Package className="w-5 h-5" />
+                <span>Innosin Lab Asset Manager</span>
+              </div>
               {checkingAssets && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <RefreshCw className="w-4 h-4 animate-spin" />
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
                   Checking assets...
                 </div>
               )}
@@ -556,10 +361,7 @@ const EnhancedAssetManager = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  setAssetCache(new Map());
-                  loadProductData();
-                }}
+                onClick={loadProductData}
                 disabled={isLoading || checkingAssets}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -569,7 +371,7 @@ const EnhancedAssetManager = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Statistics */}
+          {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
@@ -599,38 +401,51 @@ const EnhancedAssetManager = () => {
             </Card>
           </div>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search Innosin Lab products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-6">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Search by product code, title, or series..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
             </div>
-            <div>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as any)}
-                className="px-3 py-2 border rounded-md bg-background"
-              >
-                <option value="all">All Status</option>
-                <option value="complete">Complete</option>
-                <option value="partial">Partial</option>
-                <option value="missing">Missing</option>
-              </select>
-            </div>
+            <Select value={filterSeries} onValueChange={setFilterSeries}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by series" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Series</SelectItem>
+                {productSeries.map(series => (
+                  <SelectItem key={series} value={series}>{series}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="partial">Partial</SelectItem>
+                <SelectItem value="missing">Missing</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Product Grid */}
+          {/* Products List */}
           <div className="space-y-4">
-            {filteredProducts.length === 0 && !checkingAssets && (
+            {filteredAssetStatuses.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center">
+                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <div className="text-muted-foreground">
-                    {searchTerm || filterStatus !== 'all' 
+                    {searchTerm || filterStatus !== 'all' || filterSeries !== 'all'
                       ? 'No products match your search criteria.'
                       : showAllProducts 
                         ? 'No products found.' 
@@ -639,248 +454,121 @@ const EnhancedAssetManager = () => {
                   </div>
                 </CardContent>
               </Card>
-            )}
-            
-            {filteredProducts.map((product) => {
-                const session = uploadSessions[product.id];
-                const isExpanded = expandedProducts.has(product.id);
-                const hasVariants = product.variants.length > 0;
-
-                return (
-                  <Card key={product.id}>
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          {hasVariants && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => toggleProductExpansion(product.id)}
-                              className="h-8 w-8 p-0"
-                            >
-                              {isExpanded ? (
-                                <ChevronDown className="w-4 h-4" />
-                              ) : (
-                                <ChevronRight className="w-4 h-4" />
-                              )}
-                            </Button>
-                          )}
-                          {getStatusIcon(product.status)}
+            ) : (
+              filteredAssetStatuses.map((asset) => (
+                <Card key={asset.productId} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => toggleExpanded(asset.productId)}
+                          >
+                            {expandedProducts.has(asset.productId) ? 
+                              <ChevronDown className="w-4 h-4" /> : 
+                              <ChevronRight className="w-4 h-4" />
+                            }
+                          </Button>
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(asset.status)}
+                            <Badge className={getStatusColor(asset.status)}>
+                              {asset.status}
+                            </Badge>
+                          </div>
                           <div>
-                            <h3 className="font-semibold">{product.baseName}</h3>
-                            <p className="text-sm text-muted-foreground">{product.category}</p>
+                            <h3 className="font-semibold text-lg">{asset.editableTitle}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {asset.productCode} • {asset.productSeries} • {asset.finishType}
+                              {asset.orientation !== 'None' && ` • ${asset.orientation}`}
+                            </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {getStatusBadge(product.status)}
-                          <Badge variant="outline">{product.completionPercentage}%</Badge>
-                          {hasVariants && (
-                            <Badge variant="secondary">{product.variants.length} variants</Badge>
-                          )}
+                        
+                        <div className="mb-3">
+                          <div className="flex justify-between text-sm mb-1">
+                            <span>Completion</span>
+                            <span>{asset.completionPercentage}%</span>
+                          </div>
+                          <Progress value={asset.completionPercentage} className="w-full" />
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="flex items-center space-x-2">
+                            <Image className="w-4 h-4" />
+                            <span className={asset.hasOverviewImage ? 'text-green-600' : 'text-red-600'}>
+                              Overview Image
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Box className="w-4 h-4" />
+                            <span className={asset.hasGLB ? 'text-green-600' : 'text-red-600'}>
+                              3D Model
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Image className="w-4 h-4" />
+                            <span className={asset.hasJPG ? 'text-green-600' : 'text-red-600'}>
+                              Thumbnail
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Asset Status Icons */}
-                      <div className="flex items-center gap-4 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Image className={`w-4 h-4 ${product.hasOverviewImage ? 'text-green-600' : 'text-red-600'}`} />
-                          <span className="text-sm">Overview Image</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Box className={`w-4 h-4 ${product.hasGLB ? 'text-green-600' : 'text-red-600'}`} />
-                          <span className="text-sm">3D Model</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Image className={`w-4 h-4 ${product.hasJPG ? 'text-green-600' : 'text-red-600'}`} />
-                          <span className="text-sm">Product Image</span>
-                        </div>
-                      </div>
-
-                      {/* Upload Section */}
-                      {!session && (
+                      <div className="flex items-center space-x-2">
                         <Button
-                          onClick={() => startUploadSession(product.id)}
-                          size="sm"
                           variant="outline"
+                          size="sm"
+                          onClick={() => handleEditProduct(asset.productId)}
                         >
-                          <Upload className="w-4 h-4 mr-2" />
-                          Upload Assets
+                          <Edit3 className="w-4 h-4 mr-1" />
+                          Edit
                         </Button>
-                      )}
+                      </div>
+                    </div>
 
-                      {session && (
-                        <div className="space-y-6">
-                          {/* Overview Image Upload Section */}
-                          {!product.hasOverviewImage && (
-                            <div className="p-4 border border-orange-200 rounded-lg bg-orange-50">
-                              <h5 className="text-sm font-medium text-orange-800 mb-3">Series Overview Image</h5>
-                              <p className="text-xs text-orange-600 mb-3">Upload a catalog overview image for the {product.baseName} series (JPG only)</p>
-                              
-                              <div>
-                                <Label htmlFor={`overview-${product.id}`} className="text-sm font-medium">
-                                  Overview Image (.jpg)
-                                </Label>
-                                <Input
-                                  id={`overview-${product.id}`}
-                                  type="file"
-                                  accept=".jpg,.jpeg"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                      startUploadSession(product.id, 'overview');
-                                      handleFileSelect(product.id, 'overview', file);
-                                    }
-                                  }}
-                                  className="mt-1"
-                                />
-                                {session?.selectedOverviewImage && (
-                                  <p className="text-xs text-green-600 mt-1">
-                                    Selected: {session.selectedOverviewImage.name}
-                                  </p>
-                                )}
+                    {/* Expanded Variants */}
+                    {expandedProducts.has(asset.productId) && asset.variants.length > 0 && (
+                      <div className="mt-4 pt-4 border-t">
+                        <h4 className="font-medium mb-3">Product Variants</h4>
+                        <div className="grid gap-2">
+                          {asset.variants.map((variant) => (
+                            <div key={variant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                {getStatusIcon(variant.status)}
+                                <span className="font-medium">{variant.size}</span>
+                                <Badge className={getStatusColor(variant.status)} variant="outline">
+                                  {variant.status}
+                                </Badge>
                               </div>
-
-                              <Button
-                                onClick={() => uploadAssets(product.id)}
-                                disabled={!session?.selectedOverviewImage || session?.isUploading}
-                                className="w-full mt-3 bg-orange-600 hover:bg-orange-700"
-                                size="sm"
-                              >
-                                <Upload className="w-4 h-4 mr-2" />
-                                Upload Overview Image
-                              </Button>
-                            </div>
-                          )}
-
-                          {/* Variant Assets Upload Section */}
-                          <div className="space-y-4">
-                            <h5 className="text-sm font-medium text-foreground">Upload Variant Assets</h5>
-                            
-                            {/* GLB File Upload */}
-                            <div>
-                              <Label htmlFor={`glb-${product.id}`} className="text-sm font-medium">
-                                3D Model (.glb)
-                              </Label>
-                              <Input
-                                id={`glb-${product.id}`}
-                                type="file"
-                                accept=".glb"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    if (!session) startUploadSession(product.id, 'variant');
-                                    handleFileSelect(product.id, 'glb', file);
-                                  }
-                                }}
-                                className="mt-1"
-                              />
-                              {session?.selectedGLB && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Selected: {session.selectedGLB.name}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* JPG File Upload */}
-                            <div>
-                              <Label htmlFor={`jpg-${product.id}`} className="text-sm font-medium">
-                                Product Image (.jpg)
-                              </Label>
-                              <Input
-                                id={`jpg-${product.id}`}
-                                type="file"
-                                accept=".jpg,.jpeg"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    if (!session) startUploadSession(product.id, 'variant');
-                                    handleFileSelect(product.id, 'jpg', file);
-                                  }
-                                }}
-                                className="mt-1"
-                              />
-                              {session?.selectedJPG && (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Selected: {session.selectedJPG.name}
-                                </p>
-                              )}
-                            </div>
-
-                            {/* Upload Progress */}
-                            {session?.isUploading && (
-                              <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                  <span>Uploading...</span>
-                                  <span>{Math.round(session.uploadProgress)}%</span>
-                                </div>
-                                <Progress value={session.uploadProgress} />
+                              <div className="flex items-center space-x-4 text-sm">
+                                <span className={variant.hasGLB ? 'text-green-600' : 'text-red-600'}>
+                                  GLB: {variant.hasGLB ? '✓' : '✗'}
+                                </span>
+                                <span className={variant.hasJPG ? 'text-green-600' : 'text-red-600'}>
+                                  JPG: {variant.hasJPG ? '✓' : '✗'}
+                                </span>
                               </div>
-                            )}
-
-                            {/* Upload Button */}
-                            <Button
-                              onClick={() => uploadAssets(product.id)}
-                              disabled={
-                                (!session?.selectedGLB && !session?.selectedJPG) ||
-                                session?.isUploading
-                              }
-                              className="w-full"
-                            >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Upload Variant Assets
-                            </Button>
-
-                            {/* Error Message */}
-                            {session?.status === 'error' && session.errorMessage && (
-                              <p className="text-xs text-red-600 mt-2">
-                                Error: {session.errorMessage}
-                              </p>
-                            )}
-
-                            {/* Success Message */}
-                            {session?.status === 'success' && (
-                              <p className="text-xs text-green-600 mt-2">
-                                Assets uploaded successfully!
-                              </p>
-                            )}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      )}
-
-                      {/* Expanded Variants */}
-                      {isExpanded && hasVariants && (
-                        <div className="mt-6 pl-8 border-l-2 border-gray-200">
-                          <h4 className="text-sm font-medium mb-3">Variants needing assets:</h4>
-                          <div className="space-y-2">
-                            {product.variants.map((variant) => (
-                              <div key={variant.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                <div className="flex items-center gap-2">
-                                  {getStatusIcon(variant.status)}
-                                  <span className="text-sm font-medium">{variant.size}</span>
-                                  {variant.type && (
-                                    <Badge variant="outline" className="text-xs">{variant.type}</Badge>
-                                  )}
-                                  {variant.orientation && variant.orientation !== 'None' && (
-                                    <Badge variant="secondary" className="text-xs">{variant.orientation}</Badge>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Box className={`w-3 h-3 ${variant.hasGLB ? 'text-green-600' : 'text-red-600'}`} />
-                                  <Image className={`w-3 h-3 ${variant.hasJPG ? 'text-green-600' : 'text-red-600'}`} />
-                                  <span className="text-xs text-muted-foreground">{variant.completionPercentage}%</span>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <ProductEditModal
+        product={editingProduct}
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 };

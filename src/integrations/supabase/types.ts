@@ -520,14 +520,21 @@ export type Database = {
           created_at: string
           description: string | null
           dimensions: string | null
+          door_type: string | null
+          drawer_count: number | null
+          editable_description: string | null
+          editable_title: string | null
+          finish_type: string | null
           full_description: string | null
           id: string
           is_active: boolean | null
           keywords: string[] | null
           model_path: string | null
           name: string
+          orientation: string | null
           overview_image_path: string | null
           product_code: string
+          product_series: string | null
           specifications: Json | null
           thumbnail_path: string | null
           updated_at: string
@@ -538,14 +545,21 @@ export type Database = {
           created_at?: string
           description?: string | null
           dimensions?: string | null
+          door_type?: string | null
+          drawer_count?: number | null
+          editable_description?: string | null
+          editable_title?: string | null
+          finish_type?: string | null
           full_description?: string | null
           id?: string
           is_active?: boolean | null
           keywords?: string[] | null
           model_path?: string | null
           name: string
+          orientation?: string | null
           overview_image_path?: string | null
           product_code: string
+          product_series?: string | null
           specifications?: Json | null
           thumbnail_path?: string | null
           updated_at?: string
@@ -556,14 +570,21 @@ export type Database = {
           created_at?: string
           description?: string | null
           dimensions?: string | null
+          door_type?: string | null
+          drawer_count?: number | null
+          editable_description?: string | null
+          editable_title?: string | null
+          finish_type?: string | null
           full_description?: string | null
           id?: string
           is_active?: boolean | null
           keywords?: string[] | null
           model_path?: string | null
           name?: string
+          orientation?: string | null
           overview_image_path?: string | null
           product_code?: string
+          product_series?: string | null
           specifications?: Json | null
           thumbnail_path?: string | null
           updated_at?: string
