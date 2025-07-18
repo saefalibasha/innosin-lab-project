@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, FileText, X, Package, Image, Box, CheckCircle, AlertCircle } from 'lucide-react';
+import EnhancedAssetManager from './EnhancedAssetManager';
 
 interface UploadFile {
   file: File;
@@ -49,7 +50,7 @@ interface UploadedProduct {
 const ProductAssetUploadManager = () => {
   const [uploadFiles, setUploadFiles] = useState<UploadFile[]>([]);
   const [uploadedProducts, setUploadedProducts] = useState<UploadedProduct[]>([]);
-  const [activeTab, setActiveTab] = useState<string>('upload');
+  const [activeTab, setActiveTab] = useState<string>('enhanced');
   const { toast } = useToast();
 
   const brands = [
@@ -287,10 +288,15 @@ const ProductAssetUploadManager = () => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="upload">Upload Assets</TabsTrigger>
-          <TabsTrigger value="dashboard">Uploaded Products</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="enhanced">Asset Manager</TabsTrigger>
+          <TabsTrigger value="upload">Bulk Upload</TabsTrigger>
+          <TabsTrigger value="dashboard">Storage Dashboard</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="enhanced">
+          <EnhancedAssetManager />
+        </TabsContent>
 
         <TabsContent value="upload">
           <Card>
