@@ -68,6 +68,7 @@ const EnhancedAssetManager = () => {
   const [uploadSessions, setUploadSessions] = useState<Record<string, UploadSession>>({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'complete' | 'partial' | 'missing'>('all');
+  const [showAllProducts, setShowAllProducts] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [assetCache, setAssetCache] = useState<Map<string, boolean>>(new Map());
@@ -75,9 +76,8 @@ const EnhancedAssetManager = () => {
 
   useEffect(() => {
     loadProductData();
-  }, []);
+  }, [showAllProducts]);
 
-  // Extract product base name for grouping variants
   const extractProductBaseName = (productName: string): string => {
     return productName
       .replace(/\s*\([^)]*\)$/, '') // Remove size codes like (505065)
@@ -239,7 +239,8 @@ const EnhancedAssetManager = () => {
           const isPlaceholderGLB = variant.modelPath.includes('PLACEHOLDER');
           const isPlaceholderJPG = variant.thumbnail.includes('PLACEHOLDER');
           
-          if (!variantHasGLB || !variantHasJPG || isPlaceholderGLB || isPlaceholderJPG) {
+          // Include all variants when showing all products, or only incomplete ones when filtering
+          if (showAllProducts || !variantHasGLB || !variantHasJPG || isPlaceholderGLB || isPlaceholderJPG) {
             variantStatuses.push({
               id: variant.id,
               size: variant.size,
@@ -257,12 +258,12 @@ const EnhancedAssetManager = () => {
         }
       }
       
-      // Only include products that need work
+      // Include products based on showAllProducts setting
       const needsOverviewImage = !hasOverviewImage;
       const isMainComplete = hasGLB && hasJPG && !mainProduct.modelPath.includes('PLACEHOLDER') && !mainProduct.thumbnail.includes('PLACEHOLDER');
-      const hasIncompleteVariants = variantStatuses.length > 0;
+      const hasIncompleteVariants = variantStatuses.some(v => v.status !== 'complete');
       
-      if (needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
+      if (showAllProducts || needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
         const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variantStatuses);
         
         assetStatuses.push({
@@ -544,18 +545,27 @@ const EnhancedAssetManager = () => {
                 </div>
               )}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setAssetCache(new Map());
-                loadProductData();
-              }}
-              disabled={isLoading || checkingAssets}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={showAllProducts ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowAllProducts(!showAllProducts)}
+              >
+                {showAllProducts ? "Show Incomplete Only" : "Show All Products"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setAssetCache(new Map());
+                  loadProductData();
+                }}
+                disabled={isLoading || checkingAssets}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -564,7 +574,9 @@ const EnhancedAssetManager = () => {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-primary">{totalProducts}</div>
-                <div className="text-sm text-muted-foreground">Total Series</div>
+                <div className="text-sm text-muted-foreground">
+                  {showAllProducts ? 'Total Series' : 'Series Needing Work'}
+                </div>
               </CardContent>
             </Card>
             <Card>
@@ -620,7 +632,9 @@ const EnhancedAssetManager = () => {
                   <div className="text-muted-foreground">
                     {searchTerm || filterStatus !== 'all' 
                       ? 'No products match your search criteria.'
-                      : 'All Innosin Lab products have complete assets!'
+                      : showAllProducts 
+                        ? 'No products found.' 
+                        : 'All Innosin Lab products have complete assets!'
                     }
                   </div>
                 </CardContent>
