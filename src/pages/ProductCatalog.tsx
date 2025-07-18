@@ -9,7 +9,7 @@ import ProductFilters from '@/components/ProductFilters';
 import ProductGrid from '@/components/ProductGrid';
 import QuoteCartSummary from '@/components/QuoteCartSummary';
 import CompanyLandingHeader from '@/components/CompanyLandingHeader';
-import { getProductsAsync, getCategories } from '@/data/products';
+import { products, getCategories } from '@/data/products';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
 
@@ -18,33 +18,6 @@ const ProductCatalog = () => {
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Load products and categories from database
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const [loadedProducts, loadedCategories] = await Promise.all([
-          getProductsAsync(),
-          getCategories()
-        ]);
-        setProducts(loadedProducts);
-        setCategories(loadedCategories);
-      } catch (error) {
-        console.error('Error loading products:', error);
-        setError('Failed to load products. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
 
   // Read category from URL on component mount and handle navigation changes
   useEffect(() => {
@@ -52,9 +25,12 @@ const ProductCatalog = () => {
     if (categoryFromUrl) {
       setSelectedCategory(categoryFromUrl);
     } else {
+      // Reset to 'all' when no category parameter is present (e.g., "All Products" link)
       setSelectedCategory('all');
     }
   }, [searchParams]);
+
+  const categories = getCategories();
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,48 +49,6 @@ const ProductCatalog = () => {
     });
     toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="text-center mb-12">
-              <div className="h-12 bg-gray-200 animate-pulse rounded mb-4" />
-              <div className="h-6 bg-gray-200 animate-pulse rounded w-1/2 mx-auto" />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="border rounded-lg p-4 space-y-4">
-                  <div className="w-full h-48 bg-gray-200 animate-pulse rounded" />
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 animate-pulse rounded" />
-                    <div className="h-6 bg-gray-200 animate-pulse rounded" />
-                    <div className="h-4 bg-gray-200 animate-pulse rounded w-3/4" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-destructive mb-4">Error Loading Products</h1>
-              <p className="text-muted-foreground">{error}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -157,13 +91,7 @@ const ProductCatalog = () => {
           />
 
           {/* Products Grid */}
-          {filteredProducts.length === 0 && !loading ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">No products found matching your criteria.</p>
-            </div>
-          ) : (
-            <ProductGrid products={filteredProducts} onAddToQuote={handleAddToQuote} />
-          )}
+          <ProductGrid products={filteredProducts} onAddToQuote={handleAddToQuote} />
 
           {/* Quote Cart Summary */}
           <QuoteCartSummary itemCount={itemCount} />
