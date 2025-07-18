@@ -68,44 +68,44 @@ const detectUploadedProducts = (): { [key: string]: { glb?: string; jpg?: string
     
     // Innosin Lab Mobile Cabinet Series - 750mm Height
     'innosin-mc-pc-755065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MC-PC (755065)/MC-PC (755065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MC-PC (755065)/MC-PC (755065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-755065/MC-PC (755065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-755065/MC-PC (755065).jpg`
     },
     'innosin-mc-pc-755080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MC-PC (755080)/MC-PC (755080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MC-PC (755080)/MC-PC (755080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-755080/MC-PC (755080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-755080/MC-PC (755080).jpg`
     },
     'innosin-mc-pc-lh-505065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MC-PC-LH (505065)/MC-PC-LH (505065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MC-PC-LH (505065)/MC-PC-LH (505065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg`
     },
     'innosin-mc-pc-lh-505080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MC-PC-LH (505080)/MC-PC-LH (505080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MC-PC-LH (505080)/MC-PC-LH (505080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).jpg`
     },
     'innosin-mc-pc-rh-505065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MC-PC-RH (505065)/MC-PC-RH (505065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MC-PC-RH (505065)/MC-PC-RH (505065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg`
     },
     'innosin-mc-pc-rh-505080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MC-PC-RH (505080)/MC-PC-RH (505080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MC-PC-RH (505080)/MC-PC-RH (505080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg`
     },
     'innosin-mcc-pc-lh-505065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MCC-PC-LH (505065)/MCC-PC-LH (505065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MCC-PC-LH (505065)/MCC-PC-LH (505065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).jpg`
     },
     'innosin-mcc-pc-lh-505080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MCC-PC-LH (505080)/MCC-PC-LH (505080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MCC-PC-LH (505080)/MCC-PC-LH (505080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).jpg`
     },
     'innosin-mcc-pc-rh-505065': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MCC-PC-RH (505065)/MCC-PC-RH (505065).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MCC-PC-RH (505065)/MCC-PC-RH (505065).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).jpg`
     },
     'innosin-mcc-pc-rh-505080': {
-      glb: `${SUPABASE_STORAGE_URL}/products/MCC-PC-RH (505080)/MCC-PC-RH (505080).glb`,
-      jpg: `${SUPABASE_STORAGE_URL}/products/MCC-PC-RH (505080)/MCC-PC-RH (505080).jpg`
+      glb: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).glb`,
+      jpg: `${SUPABASE_STORAGE_URL}/products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).jpg`
     },
     'innosin-mc-pc-dwr2-905065': {
       glb: `${SUPABASE_STORAGE_URL}/products/innosin-mc-pc-dwr2-905065/MC-PC-DD-DWR2 (905065).glb`,

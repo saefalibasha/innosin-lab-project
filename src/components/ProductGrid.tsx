@@ -42,16 +42,18 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 </p>
               </div>
               
-              <div className="mb-4">
-                <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
-                <div className="flex flex-wrap gap-1">
-                  {product.specifications.slice(0, 3).map((spec, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {spec}
-                    </Badge>
-                  ))}
+              {!product.category.includes('Innosin') && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {product.specifications.slice(0, 3).map((spec, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {spec}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
               
               <div className="flex gap-2">
                 <Link to={`/products/${product.id}`} className="flex-1">
