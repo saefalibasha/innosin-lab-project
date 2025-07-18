@@ -8,8 +8,8 @@ export const products: Product[] = getProductsSync();
 // Export async product loading for better performance
 export const loadProducts = getProductsAsync;
 
-// Export the async function directly as well
-export { getProductsAsync };
+// Export the async function directly as well - re-export from productAssets
+export const getProductsAsync = getProductsAsync;
 
 // Generate unique categories from products
 export const getCategories = getCategoriesFromAssets;
