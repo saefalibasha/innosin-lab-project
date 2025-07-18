@@ -252,22 +252,25 @@ const ProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            <AnimatedSection animation="slide-in-right" delay={500}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>{productPageContent.productDetail.specificationsTitle}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {product.specifications.map((spec, index) => (
-                      <Badge key={index} variant="secondary">
-                        {spec}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </AnimatedSection>
+            {/* Only show specifications for non-Innosin Lab products */}
+            {!isInnosinProduct && product.specifications && product.specifications.length > 0 && (
+              <AnimatedSection animation="slide-in-right" delay={500}>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>{productPageContent.productDetail.specificationsTitle}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {product.specifications.map((spec, index) => (
+                        <Badge key={index} variant="secondary">
+                          {spec}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </AnimatedSection>
+            )}
 
             <AnimatedSection animation="slide-in-right" delay={600}>
               <Button
