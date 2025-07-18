@@ -74,6 +74,48 @@ export type Database = {
         }
         Relationships: []
       }
+      bulk_upload_sessions: {
+        Row: {
+          created_at: string
+          error_log: Json | null
+          failed_uploads: number | null
+          id: string
+          processed_files: number | null
+          session_name: string
+          status: string | null
+          successful_uploads: number | null
+          total_files: number | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_log?: Json | null
+          failed_uploads?: number | null
+          id?: string
+          processed_files?: number | null
+          session_name: string
+          status?: string | null
+          successful_uploads?: number | null
+          total_files?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_log?: Json | null
+          failed_uploads?: number | null
+          id?: string
+          processed_files?: number | null
+          session_name?: string
+          status?: string | null
+          successful_uploads?: number | null
+          total_files?: number | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           confidence: number | null
@@ -470,6 +512,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      products: {
+        Row: {
+          additional_images: string[] | null
+          category: string
+          created_at: string
+          description: string | null
+          dimensions: string | null
+          full_description: string | null
+          id: string
+          is_active: boolean | null
+          keywords: string[] | null
+          model_path: string | null
+          name: string
+          overview_image_path: string | null
+          product_code: string
+          specifications: Json | null
+          thumbnail_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          additional_images?: string[] | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          full_description?: string | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          model_path?: string | null
+          name: string
+          overview_image_path?: string | null
+          product_code: string
+          specifications?: Json | null
+          thumbnail_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          additional_images?: string[] | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          full_description?: string | null
+          id?: string
+          is_active?: boolean | null
+          keywords?: string[] | null
+          model_path?: string | null
+          name?: string
+          overview_image_path?: string | null
+          product_code?: string
+          specifications?: Json | null
+          thumbnail_path?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       rate_limit_log: {
         Row: {

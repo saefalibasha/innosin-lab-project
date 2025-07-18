@@ -2,9 +2,8 @@
 import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Search, Filter } from 'lucide-react';
-import AnimatedSection from '@/components/AnimatedSection';
+import { Search } from 'lucide-react';
+import AnimatedSection from './AnimatedSection';
 
 interface ProductFiltersProps {
   searchTerm: string;
@@ -24,38 +23,37 @@ const ProductFilters: React.FC<ProductFiltersProps> = ({
   filteredProductsCount
 }) => {
   return (
-    <AnimatedSection animation="slide-up" delay={200}>
-      <div className="glass-card p-6 rounded-lg shadow-sm mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <Input
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 focus:border-sea transition-all duration-300"
-            />
-          </div>
-          
+    <AnimatedSection animation="fade-in" delay={500}>
+      <div className="mb-8 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <div className="lg:w-64">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="focus:border-sea transition-all duration-300">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="All Manufacturers" />
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {categories.map(category => (
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((category) => (
                 <SelectItem key={category} value={category}>
-                  {category === 'all' ? 'All Manufacturers' : category}
+                  {category}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
 
-          <div className="flex items-center justify-end">
-            <Badge variant="secondary" className="text-sm">
-              {filteredProductsCount} products found
-            </Badge>
-          </div>
+        <div className="text-sm text-muted-foreground whitespace-nowrap">
+          {filteredProductsCount} product{filteredProductsCount !== 1 ? 's' : ''} found
         </div>
       </div>
     </AnimatedSection>

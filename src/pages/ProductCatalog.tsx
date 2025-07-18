@@ -19,26 +19,31 @@ const ProductCatalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load products with dynamic assets
+  // Load products and categories from database
   useEffect(() => {
-    const loadProducts = async () => {
+    const loadData = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const loadedProducts = await getProductsAsync();
+        const [loadedProducts, loadedCategories] = await Promise.all([
+          getProductsAsync(),
+          getCategories()
+        ]);
         setProducts(loadedProducts);
+        setCategories(loadedCategories);
       } catch (error) {
         console.error('Error loading products:', error);
-        // Fallback to sync loading
-        const { products: fallbackProducts } = await import('@/data/products');
-        setProducts(products);
+        setError('Failed to load products. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
-    loadProducts();
+    loadData();
   }, []);
 
   // Read category from URL on component mount and handle navigation changes
@@ -50,8 +55,6 @@ const ProductCatalog = () => {
       setSelectedCategory('all');
     }
   }, [searchParams]);
-
-  const categories = getCategories();
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,6 +94,21 @@ const ProductCatalog = () => {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-20">
+          <div className="container-custom py-12">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-destructive mb-4">Error Loading Products</h1>
+              <p className="text-muted-foreground">{error}</p>
             </div>
           </div>
         </div>
@@ -139,7 +157,13 @@ const ProductCatalog = () => {
           />
 
           {/* Products Grid */}
-          <ProductGrid products={filteredProducts} onAddToQuote={handleAddToQuote} />
+          {filteredProducts.length === 0 && !loading ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">No products found matching your criteria.</p>
+            </div>
+          ) : (
+            <ProductGrid products={filteredProducts} onAddToQuote={handleAddToQuote} />
+          )}
 
           {/* Quote Cart Summary */}
           <QuoteCartSummary itemCount={itemCount} />
