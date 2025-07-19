@@ -262,6 +262,36 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_flows: {
+        Row: {
+          created_at: string
+          description: string | null
+          flow_data: Json
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          flow_data: Json
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          flow_data?: Json
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hubspot_integration_logs: {
         Row: {
           action: string
@@ -309,12 +339,49 @@ export type Database = {
           },
         ]
       }
+      knowledge_analytics: {
+        Row: {
+          entry_id: string | null
+          id: string
+          metadata: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at: string
+        }
+        Insert: {
+          entry_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type: string
+          metric_value: number
+          recorded_at?: string
+        }
+        Update: {
+          entry_id?: string | null
+          id?: string
+          metadata?: Json | null
+          metric_type?: string
+          metric_value?: number
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_analytics_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_base_entries: {
         Row: {
           auto_generated: boolean | null
           brand: string
           confidence_threshold: number | null
+          content_hash: string | null
           created_at: string
+          effectiveness_score: number | null
           id: string
           is_active: boolean | null
           keywords: string[]
@@ -324,13 +391,18 @@ export type Database = {
           response_template: string
           source_content_ids: string[] | null
           source_document_id: string | null
+          tags: string[] | null
           updated_at: string
+          usage_count: number | null
+          version: number | null
         }
         Insert: {
           auto_generated?: boolean | null
           brand: string
           confidence_threshold?: number | null
+          content_hash?: string | null
           created_at?: string
+          effectiveness_score?: number | null
           id?: string
           is_active?: boolean | null
           keywords: string[]
@@ -340,13 +412,18 @@ export type Database = {
           response_template: string
           source_content_ids?: string[] | null
           source_document_id?: string | null
+          tags?: string[] | null
           updated_at?: string
+          usage_count?: number | null
+          version?: number | null
         }
         Update: {
           auto_generated?: boolean | null
           brand?: string
           confidence_threshold?: number | null
+          content_hash?: string | null
           created_at?: string
+          effectiveness_score?: number | null
           id?: string
           is_active?: boolean | null
           keywords?: string[]
@@ -356,7 +433,10 @@ export type Database = {
           response_template?: string
           source_content_ids?: string[] | null
           source_document_id?: string | null
+          tags?: string[] | null
           updated_at?: string
+          usage_count?: number | null
+          version?: number | null
         }
         Relationships: [
           {
@@ -364,6 +444,47 @@ export type Database = {
             columns: ["source_document_id"]
             isOneToOne: false
             referencedRelation: "pdf_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_base_history: {
+        Row: {
+          change_description: string | null
+          change_type: string
+          changed_by: string | null
+          created_at: string
+          entry_id: string | null
+          id: string
+          previous_data: Json
+          version: number
+        }
+        Insert: {
+          change_description?: string | null
+          change_type: string
+          changed_by?: string | null
+          created_at?: string
+          entry_id?: string | null
+          id?: string
+          previous_data: Json
+          version: number
+        }
+        Update: {
+          change_description?: string | null
+          change_type?: string
+          changed_by?: string | null
+          created_at?: string
+          entry_id?: string | null
+          id?: string
+          previous_data?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_history_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -621,6 +742,155 @@ export type Database = {
           operation?: string
           success?: boolean | null
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      training_data_entries: {
+        Row: {
+          category: string | null
+          confidence_threshold: number | null
+          context_requirements: Json | null
+          created_at: string
+          example_inputs: string[]
+          id: string
+          intent: string
+          is_active: boolean | null
+          performance_score: number | null
+          priority: number | null
+          response_template: string
+          session_id: string | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category?: string | null
+          confidence_threshold?: number | null
+          context_requirements?: Json | null
+          created_at?: string
+          example_inputs: string[]
+          id?: string
+          intent: string
+          is_active?: boolean | null
+          performance_score?: number | null
+          priority?: number | null
+          response_template: string
+          session_id?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string | null
+          confidence_threshold?: number | null
+          context_requirements?: Json | null
+          created_at?: string
+          example_inputs?: string[]
+          id?: string
+          intent?: string
+          is_active?: boolean | null
+          performance_score?: number | null
+          priority?: number | null
+          response_template?: string
+          session_id?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_data_entries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_performance: {
+        Row: {
+          actual_output: string | null
+          confidence_score: number | null
+          entry_id: string | null
+          expected_output: string
+          id: string
+          metadata: Json | null
+          session_id: string | null
+          success_rate: number | null
+          test_input: string
+          tested_at: string
+        }
+        Insert: {
+          actual_output?: string | null
+          confidence_score?: number | null
+          entry_id?: string | null
+          expected_output: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+          success_rate?: number | null
+          test_input: string
+          tested_at?: string
+        }
+        Update: {
+          actual_output?: string | null
+          confidence_score?: number | null
+          entry_id?: string | null
+          expected_output?: string
+          id?: string
+          metadata?: Json | null
+          session_id?: string | null
+          success_rate?: number | null
+          test_input?: string
+          tested_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_performance_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "training_data_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_performance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_sessions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          performance_metrics: Json | null
+          status: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          performance_metrics?: Json | null
+          status?: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          performance_metrics?: Json | null
+          status?: string
+          updated_at?: string
+          version?: number
         }
         Relationships: []
       }
