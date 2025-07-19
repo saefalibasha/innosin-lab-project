@@ -587,48 +587,6 @@ export type Database = {
         }
         Relationships: []
       }
-      product_series: {
-        Row: {
-          brand: string | null
-          branding_assets: string[] | null
-          category: string | null
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean | null
-          overview_image_path: string | null
-          series_code: string
-          series_name: string
-          updated_at: string
-        }
-        Insert: {
-          brand?: string | null
-          branding_assets?: string[] | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          overview_image_path?: string | null
-          series_code: string
-          series_name: string
-          updated_at?: string
-        }
-        Update: {
-          brand?: string | null
-          branding_assets?: string[] | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          overview_image_path?: string | null
-          series_code?: string
-          series_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       product_specifications: {
         Row: {
           category: string | null
@@ -672,71 +630,6 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "pdf_documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_variants: {
-        Row: {
-          additional_images: string[] | null
-          additional_specs: Json | null
-          color: string | null
-          created_at: string
-          finish_type: string | null
-          id: string
-          is_active: boolean | null
-          model_path: string | null
-          product_id: string
-          size_dimensions: string | null
-          sort_order: number | null
-          thumbnail_path: string | null
-          updated_at: string
-          variant_code: string
-          variant_name: string
-          variant_type: string | null
-        }
-        Insert: {
-          additional_images?: string[] | null
-          additional_specs?: Json | null
-          color?: string | null
-          created_at?: string
-          finish_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          model_path?: string | null
-          product_id: string
-          size_dimensions?: string | null
-          sort_order?: number | null
-          thumbnail_path?: string | null
-          updated_at?: string
-          variant_code: string
-          variant_name: string
-          variant_type?: string | null
-        }
-        Update: {
-          additional_images?: string[] | null
-          additional_specs?: Json | null
-          color?: string | null
-          created_at?: string
-          finish_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          model_path?: string | null
-          product_id?: string
-          size_dimensions?: string | null
-          sort_order?: number | null
-          thumbnail_path?: string | null
-          updated_at?: string
-          variant_code?: string
-          variant_name?: string
-          variant_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_variants_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -967,40 +860,34 @@ export type Database = {
       }
       training_sessions: {
         Row: {
-          completed_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           name: string
           performance_metrics: Json | null
-          progress: number | null
           status: string
           updated_at: string
           version: number
         }
         Insert: {
-          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           name: string
           performance_metrics?: Json | null
-          progress?: number | null
           status?: string
           updated_at?: string
           version?: number
         }
         Update: {
-          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           name?: string
           performance_metrics?: Json | null
-          progress?: number | null
           status?: string
           updated_at?: string
           version?: number
