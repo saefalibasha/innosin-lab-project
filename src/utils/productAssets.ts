@@ -1,3 +1,4 @@
+
 import { Product, ProductVariant } from '@/types/product';
 
 // Supabase storage base URL
@@ -46,25 +47,31 @@ const enhanceProductWithAssets = (product: Product): Product => {
   return enhancedProduct;
 };
 
-// Updated KS Series data with proper type classifications and variant structure
-const ksSeriesProducts: Product[] = [
+// Updated Knee Space Series data with correct naming and specifications
+const kneeSpaceSeriesProducts: Product[] = [
   {
-    id: 'innosin-ks-700',
-    name: 'KS Series Laboratory Bench',
+    id: 'innosin-laboratory-bench-knee-space',
+    name: 'Laboratory Bench Knee Space Series',
     category: 'Innosin Lab',
-    description: 'Professional laboratory bench system with modular design',
-    fullDescription: 'The KS Series offers versatile laboratory bench solutions with multiple size configurations to meet various laboratory requirements.',
-    dimensions: '700×750×850 mm',
+    description: 'Ergonomic knee space units providing comfortable leg room for laboratory workstations',
+    fullDescription: 'The Laboratory Bench Knee Space Series offers ergonomic solutions designed to provide optimal comfort for laboratory personnel during extended work periods. Available in multiple width configurations to accommodate various laboratory setups.',
+    dimensions: 'Variable (700-1200mm width)',
     modelPath: '',
     thumbnail: '',
     images: [],
-    specifications: ['Modular Design', 'Chemical Resistant', 'Adjustable Height'],
+    specifications: [
+      'Ergonomic design for extended comfort',
+      'Durable construction materials', 
+      'Easy integration with bench systems',
+      'Professional laboratory finish',
+      'Available in powder coat and stainless steel'
+    ],
     variants: [
       {
         id: 'innosin-ks-700',
-        size: '700mm',
-        dimensions: '700×750×850 mm',
-        type: 'Standard',
+        size: 'KS700',
+        dimensions: '700×600×650 mm',
+        type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -72,9 +79,9 @@ const ksSeriesProducts: Product[] = [
       },
       {
         id: 'innosin-ks-750', 
-        size: '750mm',
-        dimensions: '750×750×850 mm',
-        type: 'Standard',
+        size: 'KS750',
+        dimensions: '750×600×650 mm',
+        type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -82,9 +89,9 @@ const ksSeriesProducts: Product[] = [
       },
       {
         id: 'innosin-ks-800',
-        size: '800mm', 
-        dimensions: '800×750×850 mm',
-        type: 'Extended',
+        size: 'KS800', 
+        dimensions: '800×600×650 mm',
+        type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -92,9 +99,9 @@ const ksSeriesProducts: Product[] = [
       },
       {
         id: 'innosin-ks-850',
-        size: '850mm',
-        dimensions: '850×750×850 mm', 
-        type: 'Extended',
+        size: 'KS850',
+        dimensions: '850×600×650 mm', 
+        type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -102,9 +109,9 @@ const ksSeriesProducts: Product[] = [
       },
       {
         id: 'innosin-ks-900',
-        size: '900mm',
-        dimensions: '900×750×850 mm',
-        type: 'Extended', 
+        size: 'KS900',
+        dimensions: '900×600×650 mm',
+        type: 'Knee Space', 
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -112,9 +119,9 @@ const ksSeriesProducts: Product[] = [
       },
       {
         id: 'innosin-ks-1000',
-        size: '1000mm',
-        dimensions: '1000×750×850 mm',
-        type: 'Wide',
+        size: 'KS1000',
+        dimensions: '1000×600×650 mm',
+        type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -122,9 +129,9 @@ const ksSeriesProducts: Product[] = [
       },
       {
         id: 'innosin-ks-1200',
-        size: '1200mm', 
-        dimensions: '1200×750×850 mm',
-        type: 'Wide',
+        size: 'KS1200', 
+        dimensions: '1200×600×650 mm',
+        type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
         thumbnail: '',
@@ -134,12 +141,12 @@ const ksSeriesProducts: Product[] = [
     finishes: [
       {
         type: 'powder-coat',
-        name: 'Powder Coat',
+        name: 'PC (Powder Coat)',
         price: 'Standard'
       },
       {
         type: 'stainless-steel', 
-        name: 'Stainless Steel',
+        name: 'SS (Stainless Steel)',
         price: 'Premium'
       }
     ]
@@ -362,7 +369,7 @@ const otherCabinetProducts: Product[] = [
 
 // Combine all products and enhance with assets
 const allInnosinProducts = [
-  ...ksSeriesProducts,
+  ...kneeSpaceSeriesProducts,
   ...mobileCabinetProducts, 
   ...otherCabinetProducts
 ];
