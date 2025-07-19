@@ -22,10 +22,15 @@ import {
 interface TrainingSession {
   id: string;
   name: string;
-  status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: number;
+  status: string;
   created_at: string;
-  completed_at?: string;
+  updated_at: string;
+  version: number;
+  created_by: string | null;
+  description: string | null;
+  performance_metrics: any;
+  progress: number | null;
+  completed_at: string | null;
 }
 
 const AITrainingCenter = () => {
@@ -108,8 +113,10 @@ const AITrainingCenter = () => {
       pending: 'outline'
     } as const;
 
+    const variant = variants[status as keyof typeof variants] || 'outline';
+
     return (
-      <Badge variant={variants[status as keyof typeof variants] || 'outline'}>
+      <Badge variant={variant}>
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Badge>
     );
@@ -235,7 +242,7 @@ const AITrainingCenter = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {session.status === 'running' && (
+                    {session.status === 'running' && session.progress !== null && (
                       <div className="flex items-center gap-2">
                         <Progress value={session.progress} className="w-24" />
                         <span className="text-xs text-muted-foreground">{session.progress}%</span>
