@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,6 @@ interface TrainingSession {
   created_by: string | null;
   description: string | null;
   performance_metrics: any;
-  completed_at: string | null;
 }
 
 const AITrainingCenter = () => {
@@ -45,7 +43,7 @@ const AITrainingCenter = () => {
     try {
       const { data, error } = await supabase
         .from('training_sessions')
-        .select('id, name, status, created_at, updated_at, version, created_by, description, performance_metrics, completed_at')
+        .select('id, name, status, created_at, updated_at, version, created_by, description, performance_metrics')
         .order('created_at', { ascending: false })
         .limit(10);
 
