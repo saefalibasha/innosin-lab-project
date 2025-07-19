@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -138,42 +139,26 @@ export const ChatLogsViewer: React.FC<ChatLogsViewerProps> = ({ onDataChange }) 
     try {
       console.log('Starting chat clearing process...');
       
-      // Use raw SQL to delete all chat messages first
-      const { error: messagesError } = await supabase.rpc('exec_sql', {
-        query: 'DELETE FROM chat_messages'
-      });
-      
-      // If RPC doesn't work, use standard delete
+      // First delete all chat messages
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records by using a condition that matches all
+
       if (messagesError) {
-        console.log('RPC failed, using standard delete for messages');
-        const { error: standardMessagesError } = await supabase
-          .from('chat_messages')
-          .delete()
-          .gte('created_at', '1970-01-01T00:00:00Z'); // Delete all records
-        
-        if (standardMessagesError) {
-          console.error('Error deleting messages:', standardMessagesError);
-          throw new Error('Failed to delete chat messages');
-        }
+        console.error('Error deleting messages:', messagesError);
+        throw new Error('Failed to delete chat messages');
       }
 
       // Then delete all chat sessions
-      const { error: sessionsError } = await supabase.rpc('exec_sql', {
-        query: 'DELETE FROM chat_sessions'
-      });
-      
-      // If RPC doesn't work, use standard delete
+      const { error: sessionsError } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records by using a condition that matches all
+
       if (sessionsError) {
-        console.log('RPC failed, using standard delete for sessions');
-        const { error: standardSessionsError } = await supabase
-          .from('chat_sessions')
-          .delete()
-          .gte('created_at', '1970-01-01T00:00:00Z'); // Delete all records
-        
-        if (standardSessionsError) {
-          console.error('Error deleting sessions:', standardSessionsError);
-          throw new Error('Failed to delete chat sessions');
-        }
+        console.error('Error deleting sessions:', sessionsError);
+        throw new Error('Failed to delete chat sessions');
       }
 
       // Clear local state immediately
