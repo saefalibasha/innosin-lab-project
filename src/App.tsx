@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -19,9 +18,7 @@ import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import FloorPlanner from "./pages/FloorPlanner";
 import RFQCart from "./pages/RFQCart";
-import AdminPDF from "./pages/AdminPDF";
-import ChatbotAdmin from "./pages/ChatbotAdmin";
-import AdminSecurity from "./pages/AdminSecurity";
+import AdminDashboard from "./pages/AdminDashboard";
 import Auth from "./pages/Auth";
 import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
@@ -105,9 +102,7 @@ const DevelopmentApp = () => (
                     <Route path="/rfq-cart" element={<RFQCart />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/maintenance" element={<Maintenance />} />
-                    <Route path="/admin/pdf" element={<AdminPDF />} />
-                    <Route path="/admin/chatbot" element={<ChatbotAdmin />} />
-                    <Route path="/admin/security" element={<AdminSecurity />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>
