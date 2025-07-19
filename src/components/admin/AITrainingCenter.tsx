@@ -29,7 +29,6 @@ interface TrainingSession {
   created_by: string | null;
   description: string | null;
   performance_metrics: any;
-  progress: number | null;
   completed_at: string | null;
 }
 
@@ -46,7 +45,7 @@ const AITrainingCenter = () => {
     try {
       const { data, error } = await supabase
         .from('training_sessions')
-        .select('id, name, status, created_at, updated_at, version, created_by, description, performance_metrics, progress, completed_at')
+        .select('id, name, status, created_at, updated_at, version, created_by, description, performance_metrics, completed_at')
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -70,8 +69,7 @@ const AITrainingCenter = () => {
         .from('training_sessions')
         .insert({
           name: `Training Session ${new Date().toISOString()}`,
-          status: 'pending',
-          progress: 0
+          status: 'pending'
         });
 
       if (error) throw error;
@@ -242,12 +240,6 @@ const AITrainingCenter = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {session.status === 'running' && session.progress !== null && (
-                      <div className="flex items-center gap-2">
-                        <Progress value={session.progress} className="w-24" />
-                        <span className="text-xs text-muted-foreground">{session.progress}%</span>
-                      </div>
-                    )}
                     {getStatusBadge(session.status)}
                   </div>
                 </div>
