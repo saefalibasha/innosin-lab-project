@@ -51,7 +51,7 @@ const ProductVariantsManager = ({ productId, productName }: ProductVariantsManag
 
       if (error) throw error;
       
-      // Map the data to ensure additional_specs is included
+      // Map the data to ensure proper type conversion
       const mappedVariants: ProductVariant[] = (data || []).map(variant => ({
         id: variant.id,
         product_id: variant.product_id,
@@ -64,7 +64,7 @@ const ProductVariantsManager = ({ productId, productName }: ProductVariantsManag
         thumbnail_path: variant.thumbnail_path,
         model_path: variant.model_path,
         additional_images: variant.additional_images || [],
-        additional_specs: variant.additional_specs || {},
+        additional_specs: (variant.additional_specs as Record<string, any>) || {},
         is_active: variant.is_active,
         sort_order: variant.sort_order
       }));
