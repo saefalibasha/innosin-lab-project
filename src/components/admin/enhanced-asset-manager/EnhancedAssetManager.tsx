@@ -1,361 +1,306 @@
 
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, BarChart3, Package, AlertCircle, Wrench, Plus, Tag } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Search, Filter, Plus, Tag } from 'lucide-react';
 import { ProductSeriesSection } from './ProductSeriesSection';
-import { ProductAssetModal } from './ProductAssetModal';
-import { AssetStatistics } from './AssetStatistics';
 import { AddProductModal } from './AddProductModal';
-import { EditProductModal } from './EditProductModal';
 
 interface Product {
   id: string;
-  product_code: string;
   name: string;
+  product_code: string;
   category: string;
-  product_series: string;
+  series: string;
+  dimensions: string;
   finish_type: string;
   orientation: string;
   door_type: string;
   drawer_count: number;
-  dimensions: string;
-  editable_title: string;
-  editable_description: string;
+  description: string;
+  full_description: string;
+  specifications: string[];
   company_tags: string[];
-  is_active: boolean;
+  model_path?: string;
+  thumbnail?: string;
+  images?: string[];
+  created_at?: string;
+  updated_at?: string;
+}interface ProductSeries {
+  seriesName: string;
+  products: Product[];
 }
 
-export const EnhancedAssetManager: React.FC = () => {
+export const EnhancedAssetManager = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCompanyTag, setSelectedCompanyTag] = useState<string>('all');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [showStats, setShowStats] = useState(false);
+  const [availableCompanyTags, setAvailableCompanyTags] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const { toast } = useToast();
 
-  // Fetch all Innosin Lab products with the new clean structure
-  const { data: products = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['innosin-products'],
-    queryFn: async () => {
-      console.log('Fetching cleaned Innosin Lab products...');
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    filterProducts();
+  }, [products, searchTerm, selectedCategory, selectedCompanyTag]);
+
+  const fetchProducts = async () => {
+    try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('category', 'Innosin Lab')
-        .eq('is_active', true)
-        .order('product_series', { ascending: true })
-        .order('product_code', { ascending: true });
+        .order('series', { ascending: true })
+        .order('name', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log(`Fetched ${data?.length || 0} cleaned Innosin Lab products`);
-      return data as Product[];
+      const formattedProducts: Product[] = (data || []).map(product => ({
+        id: product.id,
+        name: product.name,
+        product_code: product.product_code || '',
+        category: product.category || '',
+        series: product.series || '',
+        dimensions: product.dimensions || '',
+        finish_type: product.finish_type || '',
+        orientation: product.orientation || '',
+        door_type: product.door_type || '',
+        drawer_count: product.drawer_count || 0,
+        description: product.description || '',
+        full_description: product.full_description || '',
+        specifications: product.specifications || [],
+        company_tags: product.company_tags || [],
+        model_path: product.model_path,
+        thumbnail: product.thumbnail,
+        images: product.images || [],
+        created_at: product.created_at,
+        updated_at: product.updated_at
+      }));
+
+      setProducts(formattedProducts);
+
+      // Extract unique company tags
+      const allTags = formattedProducts.flatMap(p => p.company_tags || []);
+      const uniqueTags = Array.from(new Set(allTags)).sort();
+      setAvailableCompanyTags(uniqueTags);
+
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  });
-
-  // Filter products based on search, category, and company tags
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchTerm || 
-      product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.product_series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.dimensions?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.editable_title?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesCategory = selectedCategory === 'all' || product.product_series === selectedCategory;
-    
-    const matchesCompanyTag = selectedCompanyTag === 'all' || 
-      (product.company_tags && product.company_tags.includes(selectedCompanyTag));
-
-    return matchesSearch && matchesCategory && matchesCompanyTag;
-  });
-
-  // Group products by series
-  const productSeries = filteredProducts.reduce((acc, product) => {
-    const series = product.product_series || 'Other';
-    if (!acc[series]) acc[series] = [];
-    acc[series].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
-
-  // Get unique categories for filtering (sorted by product count)
-  const categories = [...new Set(products.map(p => p.product_series).filter(Boolean))]
-    .sort((a, b) => {
-      const countA = products.filter(p => p.product_series === a).length;
-      const countB = products.filter(p => p.product_series === b).length;
-      return countB - countA; // Sort by count descending
-    });
-
-  // Get unique company tags for filtering
-  const companyTags = [...new Set(products.flatMap(p => p.company_tags || []))].sort();
-
-  const handleProductSelect = (product: Product) => {
-    setSelectedProduct(product);
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
+  const filterProducts = () => {
+    let filtered = products;
+
+    if (searchTerm) {
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.series.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === selectedCategory);
+    }
+
+    if (selectedCompanyTag !== 'all') {
+      filtered = filtered.filter(product => 
+        product.company_tags && product.company_tags.includes(selectedCompanyTag)
+      );
+    }
+
+    setFilteredProducts(filtered);
   };
 
-  const handleProductUpdated = () => {
-    refetch();
-    setEditingProduct(null);
+  const groupProductsBySeries = (products: Product[]): ProductSeries[] => {
+    const grouped = products.reduce((acc, product) => {
+      const series = product.series || 'Uncategorized';
+      if (!acc[series]) {
+        acc[series] = [];
+      }
+      acc[series].push(product);
+      return acc;
+    }, {} as Record<string, Product[]>);
+
+    return Object.entries(grouped).map(([seriesName, products]) => ({
+      seriesName,
+      products: products.sort((a, b) => a.name.localeCompare(b.name))
+    }));
   };
 
-  const handleProductAdded = () => {
-    refetch();
-    setShowAddModal(false);
-  };
+  const categories = Array.from(new Set(products.map(p => p.category))).filter(Boolean);
+  const productSeries = groupProductsBySeries(filteredProducts);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
-          <Package className="h-8 w-8 mx-auto mb-4 text-muted-foreground animate-pulse" />
-          <p className="text-muted-foreground">Loading laboratory equipment products...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading products...</p>
         </div>
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Card className="border-destructive">
-        <CardContent className="p-6">
-          <div className="flex items-center gap-2 text-destructive mb-4">
-            <AlertCircle className="h-5 w-5" />
-            <p>Error loading products: {error.message}</p>
-          </div>
-          <Button onClick={() => refetch()} variant="outline">
-            <Wrench className="h-4 w-4 mr-2" />
-            Retry
-          </Button>
-        </CardContent>
-      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Actions Bar */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <Button
-            variant={showStats ? 'default' : 'outline'}
-            onClick={() => setShowStats(!showStats)}
-          >
-            <BarChart3 className="h-4 w-4 mr-2" />
-            Statistics
-          </Button>
-          <Button onClick={() => refetch()} variant="outline" size="sm">
-            <Wrench className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
+        <div>
+          <h2 className="text-2xl font-bold">Laboratory Equipment Manager</h2>
+          <p className="text-muted-foreground">
+            Comprehensive asset management for all laboratory equipment
+          </p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="bg-primary">
-          <Plus className="h-4 w-4 mr-2" />
+        <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
           Add Product
         </Button>
       </div>
 
-      {/* Statistics */}
-      {showStats && <AssetStatistics products={products} />}
-
-      {/* Search and Filters */}
+      {/* Filters and Search */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Search & Filter Products
+            Filters & Search
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by product code, name, series, or dimensions..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={selectedCompanyTag} onValueChange={setSelectedCompanyTag}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Company Tags" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Company Tags</SelectItem>
+                {availableCompanyTags.map((tag) => (
+                  <SelectItem key={tag} value={tag}>
+                    <div className="flex items-center gap-2">
+                      <Tag className="h-3 w-3" />
+                      {tag}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                {filteredProducts.length} products found
+              </span>
+              {(searchTerm || selectedCategory !== 'all' || selectedCompanyTag !== 'all') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setSelectedCategory('all');
+                    setSelectedCompanyTag('all');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Button
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory('all')}
-            >
-              All Series ({products.length})
-            </Button>
-            {categories.slice(0, 5).map(category => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className="max-w-[200px] truncate"
-              >
-                {category.replace('Laboratory Bench Knee Space Series', 'KS Series')} 
-                ({products.filter(p => p.product_series === category).length})
-              </Button>
-            ))}
-            {categories.length > 5 && (
-              <Badge variant="secondary">
-                +{categories.length - 5} more
-              </Badge>
-            )}
-          </div>
-
-          {/* Company Tags Filter */}
-          {companyTags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              <div className="flex items-center gap-2 mr-2">
-                <Tag className="h-4 w-4" />
-                <span className="text-sm font-medium">Company Tags:</span>
+          {availableCompanyTags.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium mb-2">Available Company Tags:</p>
+              <div className="flex flex-wrap gap-2">
+                {availableCompanyTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={selectedCompanyTag === tag ? "default" : "secondary"}
+                    className="cursor-pointer"
+                    onClick={() => setSelectedCompanyTag(selectedCompanyTag === tag ? 'all' : tag)}
+                  >
+                    <Tag className="h-3 w-3 mr-1" />
+                    {tag}
+                  </Badge>
+                ))}
               </div>
-              <Button
-                variant={selectedCompanyTag === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCompanyTag('all')}
-              >
-                All Tags
-              </Button>
-              {companyTags.map(tag => (
-                <Button
-                  key={tag}
-                  variant={selectedCompanyTag === tag ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCompanyTag(tag)}
-                >
-                  {tag}
-                </Button>
-              ))}
             </div>
           )}
-
-          {/* Active Filters */}
-          <div className="flex flex-wrap gap-2">
-            {searchTerm && (
-              <Badge variant="secondary" className="gap-1">
-                Search: "{searchTerm}"
-                <button onClick={() => setSearchTerm('')} className="ml-1 hover:text-destructive">
-                  ×
-                </button>
-              </Badge>
-            )}
-            {selectedCategory !== 'all' && (
-              <Badge variant="secondary" className="gap-1">
-                Series: {selectedCategory.replace('Laboratory Bench Knee Space Series', 'KS Series')}
-                <button onClick={() => setSelectedCategory('all')} className="ml-1 hover:text-destructive">
-                  ×
-                </button>
-              </Badge>
-            )}
-            {selectedCompanyTag !== 'all' && (
-              <Badge variant="secondary" className="gap-1">
-                Tag: {selectedCompanyTag}
-                <button onClick={() => setSelectedCompanyTag('all')} className="ml-1 hover:text-destructive">
-                  ×
-                </button>
-              </Badge>
-            )}
-          </div>
         </CardContent>
       </Card>
 
-      {/* Product Series Sections */}
-      <div className="space-y-4">
-        {Object.entries(productSeries)
-          .sort(([a], [b]) => {
-            // Prioritize KS Series first
-            if (a.includes('Knee Space')) return -1;
-            if (b.includes('Knee Space')) return 1;
-            return a.localeCompare(b);
-          })
-          .map(([seriesName, seriesProducts]) => (
+      {/* Product Series */}
+      <div className="space-y-6">
+        {productSeries.length === 0 ? (
+          <Card>
+            <CardContent className="py-8">
+              <div className="text-center text-muted-foreground">
+                <p>No products found matching your criteria.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setShowAddModal(true)}
+                >
+                  Add Your First Product
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          productSeries.map((series) => (
             <ProductSeriesSection
-              key={seriesName}
-              seriesName={seriesName}
-              products={seriesProducts}
-              onProductSelect={handleProductSelect}
-              onEditProduct={handleEditProduct}
+              key={series.seriesName}
+              series={series}
+              onProductUpdated={fetchProducts}
             />
-          ))}
+          ))
+        )}
       </div>
 
-      {/* No Results */}
-      {Object.keys(productSeries).length === 0 && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No products found</h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search terms or filters
-            </p>
-            <Button onClick={() => {
-              setSearchTerm('');
-              setSelectedCategory('all');
-              setSelectedCompanyTag('all');
-            }} variant="outline">
-              Clear All Filters
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Success Message */}
-      {products.length > 0 && Object.keys(productSeries).length > 0 && (
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-green-700">
-              <Package className="h-5 w-5" />
-              <p className="font-medium">
-                Product database successfully optimized! 
-                Now showing {Object.keys(productSeries).length} product series with {filteredProducts.length} total variants.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Modals */}
-      {selectedProduct && (
-        <ProductAssetModal
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
-
-      {editingProduct && (
-        <EditProductModal
-          product={editingProduct}
-          onClose={() => setEditingProduct(null)}
-          onProductUpdated={handleProductUpdated}
-        />
-      )}
-
-      {showAddModal && (
-        <AddProductModal
-          onClose={() => setShowAddModal(false)}
-          onProductAdded={handleProductAdded}
-        />
-      )}
+      <AddProductModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onProductAdded={fetchProducts}
+      />
     </div>
   );
 };

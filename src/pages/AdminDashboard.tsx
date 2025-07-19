@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, Users, MessageSquare, BarChart3, FileText, Settings } from 'lucide-react';
-import { AdminAuthGuard } from '@/components/AdminAuthGuard';
+import AdminAuthGuard from '@/components/AdminAuthGuard';
 import { EnhancedAssetManager } from '@/components/admin/enhanced-asset-manager/EnhancedAssetManager';
 import { AdminProductEditor } from '@/components/admin/AdminProductEditor';
-import { ChatAdminDashboard } from '@/components/ChatAdminDashboard';
-import { AdminRoleManager } from '@/components/AdminRoleManager';
-import { PDFUploadManager } from '@/components/PDFUploadManager';
-import { KnowledgeBaseManager } from '@/components/KnowledgeBaseManager';
-import { ChatbotTraining } from '@/components/ChatbotTraining';
+import ChatAdminDashboard from '@/components/ChatAdminDashboard';
+import AdminRoleManager from '@/components/AdminRoleManager';
+import PDFUploadManager from '@/components/PDFUploadManager';
+import KnowledgeBaseManager from '@/components/KnowledgeBaseManager';
+import ChatbotTraining from '@/components/ChatbotTraining';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
@@ -99,12 +99,6 @@ export default function AdminDashboard() {
 
             <TabsContent value="assets">
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Laboratory Equipment Manager</h2>
-                  <p className="text-muted-foreground">
-                    Comprehensive asset management for all laboratory equipment
-                  </p>
-                </div>
                 <EnhancedAssetManager />
               </div>
             </TabsContent>
