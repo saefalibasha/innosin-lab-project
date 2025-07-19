@@ -20,6 +20,7 @@ interface ProductVariant {
   thumbnail_path?: string;
   model_path?: string;
   additional_images: string[];
+  additional_specs: Record<string, any>;
   is_active: boolean;
   sort_order: number;
 }
@@ -49,7 +50,26 @@ const ProductVariantsManager = ({ productId, productName }: ProductVariantsManag
         .order('sort_order', { ascending: true });
 
       if (error) throw error;
-      setVariants(data || []);
+      
+      // Map the data to ensure additional_specs is included
+      const mappedVariants: ProductVariant[] = (data || []).map(variant => ({
+        id: variant.id,
+        product_id: variant.product_id,
+        variant_name: variant.variant_name,
+        variant_code: variant.variant_code,
+        variant_type: variant.variant_type || 'standard',
+        finish_type: variant.finish_type,
+        color: variant.color,
+        size_dimensions: variant.size_dimensions,
+        thumbnail_path: variant.thumbnail_path,
+        model_path: variant.model_path,
+        additional_images: variant.additional_images || [],
+        additional_specs: variant.additional_specs || {},
+        is_active: variant.is_active,
+        sort_order: variant.sort_order
+      }));
+      
+      setVariants(mappedVariants);
     } catch (error) {
       console.error('Error loading variants:', error);
       toast({

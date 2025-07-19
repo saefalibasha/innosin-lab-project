@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +45,20 @@ const AITrainingCenter = () => {
         .limit(10);
 
       if (error) throw error;
-      setTrainingSessions(data || []);
+      
+      // Type cast and filter the data to match our interface
+      const sessions: TrainingSession[] = (data || []).map(session => ({
+        id: session.id,
+        name: session.name,
+        status: ['pending', 'running', 'completed', 'failed'].includes(session.status) 
+          ? session.status as 'pending' | 'running' | 'completed' | 'failed'
+          : 'pending',
+        progress: session.progress || 0,
+        created_at: session.created_at,
+        completed_at: session.completed_at
+      }));
+      
+      setTrainingSessions(sessions);
     } catch (error) {
       console.error('Error loading training sessions:', error);
       toast({
