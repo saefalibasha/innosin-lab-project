@@ -28,6 +28,7 @@ interface ProductSeriesSectionProps {
   products: Product[];
   onProductSelect: (product: Product) => void;
   onEditProduct: (product: Product) => void;
+  onProductUpdated: () => void;
 }
 
 export const ProductSeriesSection: React.FC<ProductSeriesSectionProps> = ({
@@ -35,6 +36,7 @@ export const ProductSeriesSection: React.FC<ProductSeriesSectionProps> = ({
   products,
   onProductSelect,
   onEditProduct,
+  onProductUpdated,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 

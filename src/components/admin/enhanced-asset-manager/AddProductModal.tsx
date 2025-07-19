@@ -12,11 +12,12 @@ import { toast } from 'sonner';
 import { X, Plus } from 'lucide-react';
 
 interface AddProductModalProps {
+  open: boolean;
   onClose: () => void;
   onProductAdded: () => void;
 }
 
-export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onProductAdded }) => {
+export const AddProductModal: React.FC<AddProductModalProps> = ({ open, onClose, onProductAdded }) => {
   const [formData, setFormData] = useState({
     product_code: '',
     name: '',
@@ -103,6 +104,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onPro
 
       toast.success('Product added successfully!');
       onProductAdded();
+      onClose();
     } catch (error) {
       console.error('Error adding product:', error);
       toast.error('Failed to add product');
@@ -112,7 +114,7 @@ export const AddProductModal: React.FC<AddProductModalProps> = ({ onClose, onPro
   };
 
   return (
-    <Dialog open onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>

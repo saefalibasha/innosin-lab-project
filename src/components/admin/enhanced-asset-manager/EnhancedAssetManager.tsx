@@ -17,7 +17,7 @@ interface Product {
   name: string;
   product_code: string;
   category: string;
-  series: string;
+  product_series: string;
   dimensions: string;
   finish_type: string;
   orientation: string;
@@ -25,14 +25,19 @@ interface Product {
   drawer_count: number;
   description: string;
   full_description: string;
-  specifications: string[];
+  specifications: any; // Keep as any since it comes from jsonb
   company_tags: string[];
   model_path?: string;
-  thumbnail?: string;
-  images?: string[];
+  thumbnail_path?: string;
+  additional_images?: string[];
   created_at?: string;
   updated_at?: string;
-}interface ProductSeries {
+  editable_title?: string;
+  editable_description?: string;
+  is_active: boolean;
+}
+
+interface ProductSeries {
   seriesName: string;
   products: Product[];
 }
@@ -61,7 +66,7 @@ export const EnhancedAssetManager = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('series', { ascending: true })
+        .order('product_series', { ascending: true })
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -71,7 +76,7 @@ export const EnhancedAssetManager = () => {
         name: product.name,
         product_code: product.product_code || '',
         category: product.category || '',
-        series: product.series || '',
+        product_series: product.product_series || '',
         dimensions: product.dimensions || '',
         finish_type: product.finish_type || '',
         orientation: product.orientation || '',
@@ -82,10 +87,13 @@ export const EnhancedAssetManager = () => {
         specifications: product.specifications || [],
         company_tags: product.company_tags || [],
         model_path: product.model_path,
-        thumbnail: product.thumbnail,
-        images: product.images || [],
+        thumbnail_path: product.thumbnail_path,
+        additional_images: product.additional_images || [],
         created_at: product.created_at,
-        updated_at: product.updated_at
+        updated_at: product.updated_at,
+        editable_title: product.editable_title,
+        editable_description: product.editable_description,
+        is_active: product.is_active
       }));
 
       setProducts(formattedProducts);
@@ -114,7 +122,7 @@ export const EnhancedAssetManager = () => {
       filtered = filtered.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.series.toLowerCase().includes(searchTerm.toLowerCase())
+        product.product_series.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -133,7 +141,7 @@ export const EnhancedAssetManager = () => {
 
   const groupProductsBySeries = (products: Product[]): ProductSeries[] => {
     const grouped = products.reduce((acc, product) => {
-      const series = product.series || 'Uncategorized';
+      const series = product.product_series || 'Uncategorized';
       if (!acc[series]) {
         acc[series] = [];
       }
@@ -289,7 +297,10 @@ export const EnhancedAssetManager = () => {
           productSeries.map((series) => (
             <ProductSeriesSection
               key={series.seriesName}
-              series={series}
+              seriesName={series.seriesName}
+              products={series.products}
+              onProductSelect={(product) => console.log('Product selected:', product)}
+              onEditProduct={(product) => console.log('Edit product:', product)}
               onProductUpdated={fetchProducts}
             />
           ))
@@ -297,7 +308,7 @@ export const EnhancedAssetManager = () => {
       </div>
 
       <AddProductModal
-        isOpen={showAddModal}
+        open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onProductAdded={fetchProducts}
       />
