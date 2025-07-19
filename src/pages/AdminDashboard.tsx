@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -11,13 +10,10 @@ import {
   MessageSquare, 
   BarChart3, 
   Settings,
-  Upload,
   Database,
-  Users,
   Activity
 } from 'lucide-react';
 import { EnhancedAssetManager } from '@/components/admin/enhanced-asset-manager';
-import { AdminPDFManager } from '@/components/admin/AdminPDFManager';
 import { AdminChatManager } from '@/components/admin/AdminChatManager';
 import { AdminProductEditor } from '@/components/admin/AdminProductEditor';
 
@@ -94,19 +90,6 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats?.documents || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              PDF knowledge base
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Asset Coverage</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -117,11 +100,24 @@ export default function AdminDashboard() {
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">System Health</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Good</div>
+            <p className="text-xs text-muted-foreground">
+              All systems operational
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-4 w-full lg:w-fit">
+        <TabsList className="grid grid-cols-3 w-full lg:w-fit">
           <TabsTrigger value="assets" className="flex items-center gap-2">
             <Package className="h-4 w-4" />
             Asset Manager
@@ -129,10 +125,6 @@ export default function AdminDashboard() {
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Database className="h-4 w-4" />
             Product Editor
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            PDF Manager
           </TabsTrigger>
           <TabsTrigger value="chats" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
@@ -146,10 +138,6 @@ export default function AdminDashboard() {
 
         <TabsContent value="products" className="space-y-6">
           <AdminProductEditor />
-        </TabsContent>
-
-        <TabsContent value="documents" className="space-y-6">
-          <AdminPDFManager />
         </TabsContent>
 
         <TabsContent value="chats" className="space-y-6">
