@@ -90,6 +90,7 @@ export const ChatLogsViewer: React.FC = () => {
       setSessions(sessionsWithCounts);
     } catch (error) {
       console.error('Error fetching chat sessions:', error);
+      toast.error('Failed to load chat sessions');
     } finally {
       setIsLoading(false);
     }
@@ -123,6 +124,7 @@ export const ChatLogsViewer: React.FC = () => {
       setMessages(data || []);
     } catch (error) {
       console.error('Error fetching chat messages:', error);
+      toast.error('Failed to load chat messages');
     } finally {
       setMessagesLoading(false);
     }
@@ -131,21 +133,41 @@ export const ChatLogsViewer: React.FC = () => {
   const clearAllChats = async () => {
     setIsClearingChats(true);
     try {
-      // Delete all chat messages first (due to foreign key constraints)
-      const { error: messagesError } = await supabase
-        .from('chat_messages')
-        .delete()
-        .gte('id', 0); // Delete all messages
+      // First, get all session IDs to properly delete messages
+      const { data: sessionsData, error: sessionsError } = await supabase
+        .from('chat_sessions')
+        .select('id');
 
-      if (messagesError) throw messagesError;
+      if (sessionsError) {
+        console.error('Error fetching sessions for deletion:', sessionsError);
+        throw new Error('Failed to fetch sessions for deletion');
+      }
 
-      // Then delete all chat sessions
-      const { error: sessionsError } = await supabase
+      if (sessionsData && sessionsData.length > 0) {
+        // Delete all chat messages for existing sessions
+        const { error: messagesError } = await supabase
+          .from('chat_messages')
+          .delete()
+          .in('session_id', sessionsData.map(s => s.id));
+
+        if (messagesError) {
+          console.error('Error deleting messages:', messagesError);
+          throw new Error('Failed to delete chat messages');
+        }
+
+        console.log(`Deleted messages for ${sessionsData.length} sessions`);
+      }
+
+      // Then delete all chat sessions using neq to delete all records
+      const { error: sessionsDeleteError } = await supabase
         .from('chat_sessions')
         .delete()
-        .gte('id', 0); // Delete all sessions
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // This will match all valid UUIDs
 
-      if (sessionsError) throw sessionsError;
+      if (sessionsDeleteError) {
+        console.error('Error deleting sessions:', sessionsDeleteError);
+        throw new Error('Failed to delete chat sessions');
+      }
 
       // Refresh the data
       setSessions([]);
@@ -154,9 +176,10 @@ export const ChatLogsViewer: React.FC = () => {
       setSelectedSession(null);
       
       toast.success('All chat logs have been cleared successfully');
+      console.log('Chat logs cleared successfully');
     } catch (error) {
       console.error('Error clearing chat logs:', error);
-      toast.error('Failed to clear chat logs. Please try again.');
+      toast.error(`Failed to clear chat logs: ${error.message}`);
     } finally {
       setIsClearingChats(false);
     }

@@ -39,6 +39,38 @@ interface HubSpotTicket {
   hs_ticket_priority: string;
 }
 
+// Enhanced error handling for HubSpot API responses
+const handleHubSpotError = (response: Response, responseText: string) => {
+  console.error('HubSpot API error:', response.status, responseText);
+  
+  if (response.status === 429) {
+    throw new Error('HubSpot API rate limit exceeded. Please try again later.');
+  }
+  
+  if (response.status === 401) {
+    throw new Error('HubSpot API authentication failed. Please check your API key.');
+  }
+  
+  if (response.status === 403) {
+    throw new Error('HubSpot API access forbidden. Please check your permissions.');
+  }
+
+  // Try to parse error details from HubSpot response
+  try {
+    const errorData = JSON.parse(responseText);
+    if (errorData.message) {
+      throw new Error(`HubSpot API error: ${errorData.message}`);
+    }
+    if (errorData.errors && errorData.errors.length > 0) {
+      throw new Error(`HubSpot API error: ${errorData.errors[0].message}`);
+    }
+  } catch (parseError) {
+    // If we can't parse the error, use the status text
+  }
+  
+  throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
+};
+
 async function findHubSpotContactByEmail(email: string): Promise<any> {
   try {
     const response = await fetch(`https://api.hubapi.com/crm/v3/objects/contacts/search`, {
@@ -59,14 +91,23 @@ async function findHubSpotContactByEmail(email: string): Promise<any> {
       }),
     });
 
+    const responseText = await response.text();
+
     if (!response.ok) {
-      console.error('HubSpot Search API error:', response.status, await response.text());
+      if (response.status === 429) {
+        console.warn('Rate limit hit while searching for contact, will retry...');
+        throw new Error('Rate limit exceeded');
+      }
+      console.error('HubSpot Search API error:', response.status, responseText);
       return null;
     }
 
-    const result = await response.json();
+    const result = JSON.parse(responseText);
     return result.results.length > 0 ? result.results[0] : null;
   } catch (error) {
+    if (error.message?.includes('Rate limit')) {
+      throw error; // Re-throw rate limit errors for retry logic
+    }
     console.error('Error searching for contact:', error);
     return null;
   }
@@ -91,13 +132,13 @@ async function createHubSpotContact(contactData: HubSpotContact): Promise<any> {
     }),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('HubSpot Contact API error:', response.status, errorText);
-    throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
+    handleHubSpotError(response, responseText);
   }
 
-  return await response.json();
+  return JSON.parse(responseText);
 }
 
 async function createHubSpotDeal(dealData: HubSpotDeal, contactId?: string): Promise<any> {
@@ -116,13 +157,13 @@ async function createHubSpotDeal(dealData: HubSpotDeal, contactId?: string): Pro
     }),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('HubSpot Deal API error:', response.status, errorText);
-    throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
+    handleHubSpotError(response, responseText);
   }
 
-  return await response.json();
+  return JSON.parse(responseText);
 }
 
 async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string): Promise<any> {
@@ -141,13 +182,13 @@ async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string
     }),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('HubSpot Ticket API error:', response.status, errorText);
-    throw new Error(`HubSpot API error: ${response.status} ${response.statusText}`);
+    handleHubSpotError(response, responseText);
   }
 
-  return await response.json();
+  return JSON.parse(responseText);
 }
 
 async function createHubSpotNote(contactId: string, noteContent: string): Promise<any> {
@@ -169,13 +210,13 @@ async function createHubSpotNote(contactId: string, noteContent: string): Promis
     }),
   });
 
+  const responseText = await response.text();
+
   if (!response.ok) {
-    const errorText = await response.text();
-    console.error('HubSpot Note API error:', response.status, errorText);
-    throw new Error(`HubSpot Note API error: ${response.status} ${response.statusText}`);
+    handleHubSpotError(response, responseText);
   }
 
-  return await response.json();
+  return JSON.parse(responseText);
 }
 
 async function logIntegrationAction(sessionId: string, action: string, objectType: string, objectId: string, success: boolean, error?: string, requestData?: any, responseData?: any) {
@@ -254,7 +295,15 @@ serve(async (req) => {
         } catch (error) {
           console.error('Error creating/finding HubSpot contact:', error);
           await logIntegrationAction(sessionId, 'create_contact', 'contact', '', false, error.message, contactData);
-          throw error;
+          
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
+          }), {
+            status: error.message?.includes('rate limit') ? 429 : 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
       }
 
@@ -289,7 +338,15 @@ serve(async (req) => {
         } catch (error) {
           console.error('Error creating HubSpot deal:', error);
           await logIntegrationAction(sessionId, 'create_deal', 'deal', '', false, error.message, dealData);
-          throw error;
+          
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
+          }), {
+            status: error.message?.includes('rate limit') ? 429 : 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
       }
 
@@ -325,7 +382,15 @@ serve(async (req) => {
         } catch (error) {
           console.error('Error creating HubSpot ticket:', error);
           await logIntegrationAction(sessionId, 'create_ticket', 'ticket', '', false, error.message, ticketData);
-          throw error;
+          
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
+          }), {
+            status: error.message?.includes('rate limit') ? 429 : 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
       }
 
@@ -393,7 +458,15 @@ serve(async (req) => {
         } catch (error) {
           console.error('Error syncing conversation:', error);
           await logIntegrationAction(sessionId, 'sync_conversation', 'note', contactId, false, error.message);
-          throw error;
+          
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message,
+            isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
+          }), {
+            status: error.message?.includes('rate limit') ? 429 : 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
       }
 
@@ -405,7 +478,10 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('HubSpot Integration error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
