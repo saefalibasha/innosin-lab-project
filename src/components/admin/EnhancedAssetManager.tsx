@@ -1,0 +1,454 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2, Search, Filter, Plus, Eye, Edit, Trash2, Package } from 'lucide-react';
+import ProductFormDialog from './ProductFormDialog';
+import ProductViewDialog from './ProductViewDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+interface Product {
+  id: string;
+  name: string;
+  product_code: string;
+  category: string;
+  dimensions?: string;
+  description?: string;
+  full_description?: string;
+  product_series?: string;
+  finish_type?: string;
+  orientation?: string;
+  door_type?: string;
+  drawer_count?: number;
+  specifications?: any;
+  keywords?: string[];
+  company_tags?: string[];
+  thumbnail_path?: string;
+  model_path?: string;
+  additional_images?: string[];
+  overview_image_path?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+const EnhancedAssetManager = () => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [finishFilter, setFinishFilter] = useState('all');
+  const [seriesFilter, setSeriesFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+
+      fetchProducts();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: !currentStatus })
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+
+      fetchProducts();
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleProductSaved = () => {
+    fetchProducts();
+    setIsFormOpen(false);
+    setEditingProduct(null);
+  };
+
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (product.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (product.keywords?.some(keyword => 
+                             keyword.toLowerCase().includes(searchTerm.toLowerCase())
+                           ));
+
+      const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+      const matchesFinish = finishFilter === 'all' || product.finish_type === finishFilter;
+      const matchesSeries = seriesFilter === 'all' || product.product_series === seriesFilter;
+      const matchesStatus = statusFilter === 'all' || 
+                           (statusFilter === 'active' && product.is_active) ||
+                           (statusFilter === 'inactive' && !product.is_active);
+
+      return matchesSearch && matchesCategory && matchesFinish && matchesSeries && matchesStatus;
+    });
+
+    filtered.sort((a, b) => {
+      let aValue = a[sortBy as keyof Product] as string;
+      let bValue = b[sortBy as keyof Product] as string;
+
+      if (sortBy === 'created_at' || sortBy === 'updated_at') {
+        aValue = new Date(aValue).getTime().toString();
+        bValue = new Date(bValue).getTime().toString();
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue.localeCompare(bValue);
+      } else {
+        return bValue.localeCompare(aValue);
+      }
+    });
+
+    return filtered;
+  }, [products, searchTerm, categoryFilter, finishFilter, seriesFilter, statusFilter, sortBy, sortOrder]);
+
+  const uniqueCategories = [...new Set(products.map(p => p.category))];
+  const uniqueFinishes = [...new Set(products.map(p => p.finish_type).filter(Boolean))];
+  const uniqueSeries = [...new Set(products.map(p => p.product_series).filter(Boolean))];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading products...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Filters & Search Card */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <CardTitle>Filters & Search</CardTitle>
+          </div>
+          <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Product
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products by name, code, description, or keywords..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {uniqueCategories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={finishFilter} onValueChange={setFinishFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Finish" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Finishes</SelectItem>
+                  {uniqueFinishes.map(finish => (
+                    <SelectItem key={finish} value={finish!}>{finish}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={seriesFilter} onValueChange={setSeriesFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Series" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Series</SelectItem>
+                  {uniqueSeries.map(series => (
+                    <SelectItem key={series} value={series!}>{series}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {filteredAndSortedProducts.length} product{filteredAndSortedProducts.length !== 1 ? 's' : ''} found
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Sort by:</span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="product_code">Product Code</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                  <SelectItem value="created_at">Date Created</SelectItem>
+                  <SelectItem value="updated_at">Last Modified</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredAndSortedProducts.map((product) => (
+          <Card key={product.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-base truncate">{product.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{product.product_code}</p>
+                </div>
+                <div className="flex items-center gap-1 ml-2">
+                  <Badge variant={product.is_active ? "default" : "secondary"} className="text-xs">
+                    {product.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{product.category}</span>
+              </div>
+              
+              {product.dimensions && (
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">Dimensions:</span> {product.dimensions}
+                </p>
+              )}
+              
+              {product.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {product.description}
+                </p>
+              )}
+              
+              {product.keywords && product.keywords.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {product.keywords.slice(0, 3).map((keyword, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {keyword}
+                    </Badge>
+                  ))}
+                  {product.keywords.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{product.keywords.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedProduct(product);
+                      setIsViewOpen(true);
+                    }}
+                  >
+                    <Eye className="h-3 w-3" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setEditingProduct(product);
+                      setIsFormOpen(true);
+                    }}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                
+                <Button
+                  variant={product.is_active ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => toggleProductStatus(product.id, product.is_active)}
+                >
+                  {product.is_active ? "Deactivate" : "Activate"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredAndSortedProducts.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No products found</h3>
+            <p className="text-muted-foreground mb-4">
+              Try adjusting your search criteria or filters.
+            </p>
+            <Button onClick={() => setIsFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Product
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dialogs */}
+      <ProductFormDialog
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        product={editingProduct}
+        onProductSaved={handleProductSaved}
+      />
+
+      <ProductViewDialog
+        isOpen={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        product={selectedProduct}
+        onEdit={(product) => {
+          setEditingProduct(product);
+          setIsViewOpen(false);
+          setIsFormOpen(true);
+        }}
+        onDelete={handleDeleteProduct}
+        onToggleStatus={toggleProductStatus}
+      />
+    </div>
+  );
+};
+
+export default EnhancedAssetManager;
