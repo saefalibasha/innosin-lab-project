@@ -3,12 +3,13 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Package2, Ruler, Settings } from 'lucide-react';
+import { Eye, Package, Ruler } from 'lucide-react';
 
 interface Product {
   id: string;
   product_code: string;
   name: string;
+  category: string;
   product_series: string;
   finish_type: string;
   orientation: string;
@@ -17,95 +18,95 @@ interface Product {
   dimensions: string;
   editable_title: string;
   editable_description: string;
+  is_active: boolean;
 }
 
 interface ProductVariantCardProps {
   product: Product;
-  onClick: () => void;
+  onSelect: () => void;
 }
 
 export const ProductVariantCard: React.FC<ProductVariantCardProps> = ({
   product,
-  onClick
+  onSelect
 }) => {
-  const getOrientationDisplay = (orientation: string) => {
-    if (!orientation || orientation === 'None') return null;
-    return orientation;
+  const isKneeSpace = product.product_series?.includes('Knee Space');
+  
+  // Get finish label
+  const getFinishLabel = (finishType: string) => {
+    switch (finishType) {
+      case 'PC': return 'Powder Coat';
+      case 'SS': return 'Stainless Steel';
+      default: return finishType;
+    }
   };
 
-  const getConfigurationDisplay = () => {
-    const parts = [];
-    
-    if (product.door_type && product.door_type !== 'None') {
-      parts.push(product.door_type);
+  // Get variant display name for KS series
+  const getDisplayName = () => {
+    if (isKneeSpace && product.product_code?.startsWith('KS')) {
+      return product.product_code; // Show KS700, KS750, etc.
     }
-    
-    if (product.drawer_count > 0) {
-      parts.push(`${product.drawer_count} Drawers`);
-    }
-
-    const orientation = getOrientationDisplay(product.orientation);
-    if (orientation) {
-      parts.push(orientation);
-    }
-
-    return parts.join(' • ');
+    return product.editable_title || product.name;
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group" onClick={onClick}>
+    <Card className="group hover:shadow-md transition-shadow duration-200 cursor-pointer" onClick={onSelect}>
       <CardContent className="p-4">
         <div className="space-y-3">
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <Package2 className="h-4 w-4 text-primary" />
-              <div className="text-sm font-medium text-primary">
-                {product.product_code}
-              </div>
-            </div>
-            <Badge 
-              variant={product.finish_type === 'SS' ? 'default' : 'secondary'}
-              className="text-xs"
-            >
-              {product.finish_type}
-            </Badge>
-          </div>
-
-          {/* Title */}
+          {/* Product Name */}
           <div>
-            <h5 className="font-medium text-sm leading-tight">
-              {product.editable_title || product.name}
-            </h5>
-            {product.editable_description && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                {product.editable_description}
+            <h4 className="font-medium text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
+              {getDisplayName()}
+            </h4>
+            {product.product_code && !isKneeSpace && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Code: {product.product_code}
               </p>
             )}
           </div>
 
-          {/* Configuration */}
-          {getConfigurationDisplay() && (
+          {/* Dimensions */}
+          {product.dimensions && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Settings className="h-3 w-3" />
-              <span>{getConfigurationDisplay()}</span>
+              <Ruler className="h-3 w-3" />
+              <span>{product.dimensions}</span>
             </div>
           )}
 
-          {/* Dimensions */}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Ruler className="h-3 w-3" />
-            <span>{product.dimensions}</span>
+          {/* Badges */}
+          <div className="flex flex-wrap gap-1">
+            {product.finish_type && (
+              <Badge 
+                variant={product.finish_type === 'SS' ? 'default' : 'secondary'} 
+                className="text-xs"
+              >
+                {product.finish_type} ({getFinishLabel(product.finish_type)})
+              </Badge>
+            )}
+            {product.orientation && product.orientation !== 'None' && (
+              <Badge variant="outline" className="text-xs">
+                {product.orientation}
+              </Badge>
+            )}
+            {product.drawer_count > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {product.drawer_count} Drawers
+              </Badge>
+            )}
           </div>
 
           {/* Action Button */}
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect();
+            }}
           >
-            <ExternalLink className="h-3 w-3 mr-1" />
-            Manage Assets
+            <Eye className="h-3 w-3 mr-1" />
+            View Details
           </Button>
         </div>
       </CardContent>

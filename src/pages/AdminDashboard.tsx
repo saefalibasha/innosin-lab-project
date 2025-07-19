@@ -107,7 +107,7 @@ const AdminDashboard = () => {
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="assets" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Product Manager
+              Laboratory Equipment
             </TabsTrigger>
             <TabsTrigger value="chatbot" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -129,9 +129,9 @@ const AdminDashboard = () => {
 
           <TabsContent value="assets" className="space-y-6">
             <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">Laboratory Equipment Product Manager</h2>
+              <h2 className="text-2xl font-bold mb-2">Laboratory Equipment Manager</h2>
               <p className="text-muted-foreground">
-                Comprehensive management of all Innosin Lab product lines including KS Series, Mobile Cabinets, Modular Cabinets, and more
+                Manage all Innosin Lab product series including KS Series, Mobile Cabinets, Modular Cabinets, and more
               </p>
             </div>
             <EnhancedAssetManager />
