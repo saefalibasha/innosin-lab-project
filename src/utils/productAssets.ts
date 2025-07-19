@@ -1,4 +1,5 @@
 
+
 import { Product, ProductVariant } from '@/types/product';
 
 // Supabase storage base URL
@@ -70,7 +71,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-700',
         size: 'KS700',
-        dimensions: '700×600×650 mm',
+        dimensions: '700×550×880 mm',
         type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
@@ -80,7 +81,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-750', 
         size: 'KS750',
-        dimensions: '750×600×650 mm',
+        dimensions: '750×550×880 mm',
         type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
@@ -90,7 +91,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-800',
         size: 'KS800', 
-        dimensions: '800×600×650 mm',
+        dimensions: '800×550×880 mm',
         type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
@@ -100,7 +101,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-850',
         size: 'KS850',
-        dimensions: '850×600×650 mm', 
+        dimensions: '850×550×880 mm', 
         type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
@@ -110,7 +111,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-900',
         size: 'KS900',
-        dimensions: '900×600×650 mm',
+        dimensions: '900×550×880 mm',
         type: 'Knee Space', 
         orientation: 'None',
         modelPath: '',
@@ -120,7 +121,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-1000',
         size: 'KS1000',
-        dimensions: '1000×600×650 mm',
+        dimensions: '1000×550×880 mm',
         type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
@@ -130,7 +131,7 @@ const kneeSpaceSeriesProducts: Product[] = [
       {
         id: 'innosin-ks-1200',
         size: 'KS1200', 
-        dimensions: '1200×600×650 mm',
+        dimensions: '1200×550×880 mm',
         type: 'Knee Space',
         orientation: 'None',
         modelPath: '',
@@ -407,3 +408,4 @@ export const debugAssetUrls = (productId: string) => {
     }
   }
 };
+
