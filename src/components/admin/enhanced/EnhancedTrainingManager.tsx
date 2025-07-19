@@ -5,579 +5,493 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
+  Search, 
   Plus, 
-  Play, 
+  Edit2, 
+  Trash2, 
   Save, 
-  Upload, 
-  Download, 
-  Settings, 
-  BarChart3, 
-  Brain, 
-  MessageSquare,
-  Zap,
-  Target,
-  TrendingUp,
-  Users,
-  Clock,
-  CheckCircle,
+  X, 
+  Loader2,
   AlertCircle,
-  RefreshCw
+  MessageSquare
 } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-
-interface TrainingSession {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'draft' | 'active' | 'archived';
-  version: number;
-  created_by?: string;
-  created_at: string;
-  updated_at: string;
-  performance_metrics: any;
-}
+import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface TrainingEntry {
   id: string;
-  session_id: string;
   intent: string;
   example_inputs: string[];
   response_template: string;
-  category?: string;
+  category: string;
+  confidence_threshold: number;
   priority: number;
   is_active: boolean;
   performance_score: number;
   usage_count: number;
-  confidence_threshold: number;
   created_at: string;
-}
-
-interface ConversationFlow {
-  id: string;
-  name: string;
-  description?: string;
-  flow_data: any;
-  is_active: boolean;
-  created_at: string;
+  updated_at: string;
 }
 
 const EnhancedTrainingManager = () => {
-  const [activeTab, setActiveTab] = useState('sessions');
-  const [selectedSession, setSelectedSession] = useState<string | null>(null);
-  const [isCreateSessionOpen, setIsCreateSessionOpen] = useState(false);
-  const [isCreateEntryOpen, setIsCreateEntryOpen] = useState(false);
-  const [testInput, setTestInput] = useState('');
-  const [testResult, setTestResult] = useState<any>(null);
-  
-  const queryClient = useQueryClient();
+  const [entries, setEntries] = useState<TrainingEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<TrainingEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [editingEntry, setEditingEntry] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  // Fetch training sessions
-  const { data: sessions = [], isLoading: sessionsLoading } = useQuery({
-    queryKey: ['training-sessions'],
-    queryFn: async () => {
+  const [formData, setFormData] = useState({
+    intent: '',
+    example_inputs: '',
+    response_template: '',
+    category: '',
+    confidence_threshold: 0.8,
+    priority: 1,
+  });
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  useEffect(() => {
+    filterEntries();
+  }, [entries, searchTerm, filterCategory]);
+
+  const fetchEntries = async () => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
-        .from('training_sessions')
+        .from('training_data_entries')
         .select('*')
         .order('updated_at', { ascending: false });
+
       if (error) throw error;
-      return data as TrainingSession[];
+      setEntries(data || []);
+    } catch (error) {
+      console.error('Error fetching training entries:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load training data entries",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  });
-
-  // Fetch training entries for selected session
-  const { data: entries = [], isLoading: entriesLoading } = useQuery({
-    queryKey: ['training-entries', selectedSession],
-    queryFn: async () => {
-      if (!selectedSession) return [];
-      const { data, error } = await supabase
-        .from('training_data_entries')
-        .select('*')
-        .eq('session_id', selectedSession)
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as TrainingEntry[];
-    },
-    enabled: !!selectedSession
-  });
-
-  // Fetch conversation flows
-  const { data: flows = [] } = useQuery({
-    queryKey: ['conversation-flows'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('conversation_flows')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) throw error;
-      return data as ConversationFlow[];
-    }
-  });
-
-  // Create training session mutation
-  const createSessionMutation = useMutation({
-    mutationFn: async (sessionData: { name: string; description?: string }) => {
-      const { data, error } = await supabase
-        .from('training_sessions')
-        .insert([sessionData])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['training-sessions'] });
-      setSelectedSession(data.id);
-      setIsCreateSessionOpen(false);
-      toast.success('Training session created successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to create session: ' + error.message);
-    }
-  });
-
-  // Create training entry mutation
-  const createEntryMutation = useMutation({
-    mutationFn: async (entryData: {
-      session_id: string;
-      intent: string;
-      example_inputs: string[];
-      response_template: string;
-      category?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('training_data_entries')
-        .insert([entryData])
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['training-entries'] });
-      setIsCreateEntryOpen(false);
-      toast.success('Training entry created successfully');
-    },
-    onError: (error) => {
-      toast.error('Failed to create entry: ' + error.message);
-    }
-  });
-
-  const handleCreateSession = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const name = formData.get('name') as string;
-    const description = formData.get('description') as string;
-    
-    createSessionMutation.mutate({ name, description });
   };
 
-  const handleCreateEntry = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSession) return;
-    
-    const formData = new FormData(e.target as HTMLFormElement);
-    const intent = formData.get('intent') as string;
-    const example_inputs = (formData.get('example_inputs') as string).split('\n').filter(s => s.trim());
-    const response_template = formData.get('response_template') as string;
-    const category = formData.get('category') as string;
-    
-    createEntryMutation.mutate({
-      session_id: selectedSession,
-      intent,
-      example_inputs,
-      response_template,
-      category: category || undefined
+  const filterEntries = () => {
+    let filtered = entries.filter(entry => {
+      const matchesSearch = 
+        entry.intent.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.example_inputs.some(input => input.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        entry.response_template.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesCategory = filterCategory === 'all' || entry.category === filterCategory;
+
+      return matchesSearch && matchesCategory && entry.is_active;
+    });
+
+    setFilteredEntries(filtered);
+  };
+
+  const handleSave = async (entryId?: string) => {
+    try {
+      const exampleInputsArray = formData.example_inputs
+        .split('\n')
+        .map(input => input.trim())
+        .filter(input => input);
+
+      const entryData = {
+        intent: formData.intent,
+        example_inputs: exampleInputsArray,
+        response_template: formData.response_template,
+        category: formData.category,
+        confidence_threshold: formData.confidence_threshold,
+        priority: formData.priority,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (entryId) {
+        const { error } = await supabase
+          .from('training_data_entries')
+          .update(entryData)
+          .eq('id', entryId);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Training entry updated successfully",
+        });
+      } else {
+        const { error } = await supabase
+          .from('training_data_entries')
+          .insert([entryData]);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Training entry created successfully",
+        });
+      }
+
+      setEditingEntry(null);
+      setFormData({
+        intent: '',
+        example_inputs: '',
+        response_template: '',
+        category: '',
+        confidence_threshold: 0.8,
+        priority: 1,
+      });
+      fetchEntries();
+    } catch (error) {
+      console.error('Error saving training entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save training entry",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEdit = (entry: TrainingEntry) => {
+    setEditingEntry(entry.id);
+    setFormData({
+      intent: entry.intent,
+      example_inputs: entry.example_inputs.join('\n'),
+      response_template: entry.response_template,
+      category: entry.category || '',
+      confidence_threshold: entry.confidence_threshold,
+      priority: entry.priority,
     });
   };
 
-  const handleTestBot = async () => {
-    if (!testInput.trim()) return;
-    
+  const handleDelete = async () => {
+    if (!entryToDelete) return;
+
     try {
-      // Mock testing functionality - in real implementation, this would call your AI service
-      setTestResult({
-        input: testInput,
-        intent: 'product_inquiry',
-        confidence: 0.85,
-        response: 'Based on your question about mobile cabinets, I can help you find the right solution...',
-        processing_time: 245
+      const { error } = await supabase
+        .from('training_data_entries')
+        .delete()
+        .eq('id', entryToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Training entry deleted successfully",
       });
-      toast.success('Test completed');
+      
+      fetchEntries();
     } catch (error) {
-      toast.error('Test failed');
+      console.error('Error deleting training entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete training entry",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
     }
   };
 
+  const uniqueCategories = [...new Set(entries.map(e => e.category).filter(Boolean))];
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading training data entries...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Training Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Brain className="w-5 h-5 text-blue-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Active Sessions</p>
-                <p className="text-2xl font-bold">
-                  {sessions.filter(s => s.status === 'active').length}
-                </p>
-              </div>
+      {/* Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Training Data Entries ({filteredEntries.length})</span>
+            <Button onClick={() => setEditingEntry('new')} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Training Data
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search training data..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <MessageSquare className="w-5 h-5 text-green-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Training Entries</p>
-                <p className="text-2xl font-bold">{entries.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Target className="w-5 h-5 text-purple-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Avg Performance</p>
-                <p className="text-2xl font-bold">
-                  {entries.length > 0 
-                    ? ((entries.reduce((sum, e) => sum + e.performance_score, 0) / entries.length) * 100).toFixed(1)
-                    : 0
-                  }%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Zap className="w-5 h-5 text-orange-500" />
-              <div>
-                <p className="text-sm text-muted-foreground">Conversation Flows</p>
-                <p className="text-2xl font-bold">{flows.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="sessions">Training Sessions</TabsTrigger>
-          <TabsTrigger value="entries">Training Data</TabsTrigger>
-          <TabsTrigger value="flows">Conversation Flows</TabsTrigger>
-          <TabsTrigger value="testing">Live Testing</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sessions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Training Sessions</span>
-                <Dialog open={isCreateSessionOpen} onOpenChange={setIsCreateSessionOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="w-4 h-4 mr-2" />
-                      New Session
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create Training Session</DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleCreateSession} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Session Name</label>
-                        <Input name="name" placeholder="e.g., Product Knowledge v1.0" required />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium mb-2">Description</label>
-                        <Textarea name="description" placeholder="Describe the purpose of this training session..." />
-                      </div>
-                      <Button type="submit" className="w-full" disabled={createSessionMutation.isPending}>
-                        {createSessionMutation.isPending ? (
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                        ) : (
-                          <Plus className="w-4 h-4 mr-2" />
-                        )}
-                        Create Session
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sessions.map((session) => (
-                  <Card 
-                    key={session.id} 
-                    className={`cursor-pointer transition-all hover:shadow-md ${
-                      selectedSession === session.id ? 'ring-2 ring-blue-500' : ''
-                    }`}
-                    onClick={() => setSelectedSession(session.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">{session.name}</h3>
-                          <Badge variant={
-                            session.status === 'active' ? 'default' : 
-                            session.status === 'draft' ? 'secondary' : 'destructive'
-                          }>
-                            {session.status}
-                          </Badge>
-                        </div>
-                        
-                        {session.description && (
-                          <p className="text-sm text-muted-foreground line-clamp-2">
-                            {session.description}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>v{session.version}</span>
-                          <span>{new Date(session.updated_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+            
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
                 ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Entry Form */}
+      {editingEntry && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingEntry === 'new' ? 'Add New Training Data' : 'Edit Training Data'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Intent</label>
+                <Input
+                  placeholder="e.g., product_inquiry, pricing_question"
+                  value={formData.intent}
+                  onChange={(e) => setFormData({...formData, intent: e.target.value})}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Category</label>
+                <Input
+                  placeholder="Category (optional)"
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                />
+              </div>
+            </div>
 
-        <TabsContent value="entries" className="space-y-4">
-          {selectedSession ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Training Entries</span>
-                  <Dialog open={isCreateEntryOpen} onOpenChange={setIsCreateEntryOpen}>
-                    <DialogTrigger asChild>
-                      <Button>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Entry
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl">
-                      <DialogHeader>
-                        <DialogTitle>Create Training Entry</DialogTitle>
-                      </DialogHeader>
-                      <form onSubmit={handleCreateEntry} className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Intent</label>
-                          <Input name="intent" placeholder="e.g., product_inquiry" required />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Example Inputs (one per line)</label>
-                          <Textarea 
-                            name="example_inputs" 
-                            placeholder="What mobile cabinets do you have?&#10;Show me your cabinet options&#10;I need storage solutions"
-                            rows={4}
-                            required 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Response Template</label>
-                          <Textarea 
-                            name="response_template" 
-                            placeholder="I can help you find the perfect mobile cabinet solution..."
-                            rows={3}
-                            required 
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium mb-2">Category (optional)</label>
-                          <Input name="category" placeholder="e.g., products, support" />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={createEntryMutation.isPending}>
-                          {createEntryMutation.isPending ? (
-                            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          ) : (
-                            <Plus className="w-4 h-4 mr-2" />
-                          )}
-                          Create Entry
-                        </Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {entries.map((entry) => (
-                    <Card key={entry.id}>
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Badge variant="outline">{entry.intent}</Badge>
-                              {entry.category && (
-                                <Badge variant="secondary">{entry.category}</Badge>
-                              )}
-                              <Badge variant={entry.is_active ? "default" : "destructive"}>
-                                {entry.is_active ? "Active" : "Inactive"}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                              <span>Score: {(entry.performance_score * 100).toFixed(1)}%</span>
-                              <span>Used: {entry.usage_count}</span>
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm font-medium mb-1">Example Inputs:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {entry.example_inputs.slice(0, 3).map((input, index) => (
-                                <Badge key={index} variant="outline" className="text-xs">
-                                  {input.length > 30 ? input.substring(0, 30) + '...' : input}
-                                </Badge>
-                              ))}
-                              {entry.example_inputs.length > 3 && (
-                                <Badge variant="outline" className="text-xs">
-                                  +{entry.example_inputs.length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <p className="text-sm font-medium mb-1">Response:</p>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                              {entry.response_template}
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardContent className="p-8 text-center">
-                <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Select a training session to view entries</p>
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+            <div>
+              <label className="text-sm font-medium mb-2 block">Example Inputs (one per line)</label>
+              <Textarea
+                placeholder="What products do you offer?&#10;Tell me about your lab equipment&#10;I need information about your products"
+                value={formData.example_inputs}
+                onChange={(e) => setFormData({...formData, example_inputs: e.target.value})}
+                rows={4}
+              />
+            </div>
 
-        <TabsContent value="flows" className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Response Template</label>
+              <Textarea
+                placeholder="Enter the response template that should be used for this intent..."
+                value={formData.response_template}
+                onChange={(e) => setFormData({...formData, response_template: e.target.value})}
+                rows={4}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Confidence Threshold</label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={formData.confidence_threshold}
+                  onChange={(e) => setFormData({...formData, confidence_threshold: parseFloat(e.target.value)})}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Priority</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({...formData, priority: parseInt(e.target.value)})}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingEntry(null);
+                  setFormData({
+                    intent: '',
+                    example_inputs: '',
+                    response_template: '',
+                    category: '',
+                    confidence_threshold: 0.8,
+                    priority: 1,
+                  });
+                }}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button onClick={() => handleSave(editingEntry === 'new' ? undefined : editingEntry)}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Entry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Entries List */}
+      <div className="space-y-4">
+        {filteredEntries.length === 0 ? (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Conversation Flows</span>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Flow
+            <CardContent className="text-center py-8">
+              <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No training data found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || filterCategory !== 'all'
+                  ? 'Try adjusting your search or filters'
+                  : 'Get started by adding your first training data entry'
+                }
+              </p>
+              {!searchTerm && filterCategory === 'all' && (
+                <Button onClick={() => setEditingEntry('new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Entry
                 </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {flows.map((flow) => (
-                  <Card key={flow.id}>
-                    <CardContent className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-medium">{flow.name}</h3>
-                          <Badge variant={flow.is_active ? "default" : "secondary"}>
-                            {flow.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        
-                        {flow.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {flow.description}
-                          </p>
-                        )}
-                        
-                        <div className="text-xs text-muted-foreground">
-                          Created: {new Date(flow.created_at).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="testing" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Live Bot Testing</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex space-x-4">
-                <div className="flex-1">
-                  <Input
-                    value={testInput}
-                    onChange={(e) => setTestInput(e.target.value)}
-                    placeholder="Type a message to test the chatbot..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleTestBot()}
-                  />
-                </div>
-                <Button onClick={handleTestBot} disabled={!testInput.trim()}>
-                  <Play className="w-4 h-4 mr-2" />
-                  Test
-                </Button>
-              </div>
-
-              {testResult && (
-                <Card>
-                  <CardContent className="p-4 space-y-3">
-                    <div>
-                      <p className="text-sm font-medium">Input:</p>
-                      <p className="text-sm text-muted-foreground">{testResult.input}</p>
-                    </div>
-                    
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="text-sm font-medium">Intent:</p>
-                        <Badge variant="outline">{testResult.intent}</Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Confidence:</p>
-                        <Badge variant={testResult.confidence > 0.8 ? "default" : "secondary"}>
-                          {(testResult.confidence * 100).toFixed(1)}%
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">Processing Time:</p>
-                        <span className="text-sm text-muted-foreground">{testResult.processing_time}ms</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm font-medium">Response:</p>
-                      <p className="text-sm text-muted-foreground">{testResult.response}</p>
-                    </div>
-                  </CardContent>
-                </Card>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        ) : (
+          filteredEntries.map((entry) => (
+            <Card key={entry.id}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="secondary">{entry.intent}</Badge>
+                      {entry.category && <Badge variant="outline">{entry.category}</Badge>}
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(entry)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEntryToDelete(entry.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Example Inputs:</p>
+                    <div className="space-y-1">
+                      {entry.example_inputs.slice(0, 3).map((input, idx) => (
+                        <p key={idx} className="text-sm bg-muted p-2 rounded">
+                          "{input}"
+                        </p>
+                      ))}
+                      {entry.example_inputs.length > 3 && (
+                        <p className="text-sm text-muted-foreground">
+                          +{entry.example_inputs.length - 3} more examples
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-1">Response Template:</p>
+                    <p className="text-sm bg-muted p-3 rounded-md">
+                      {entry.response_template.length > 200 
+                        ? `${entry.response_template.substring(0, 200)}...` 
+                        : entry.response_template
+                      }
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Priority:</span>
+                      <span className="ml-2 font-medium">{entry.priority}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Confidence:</span>
+                      <span className="ml-2 font-medium">{entry.confidence_threshold}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Usage:</span>
+                      <span className="ml-2 font-medium">{entry.usage_count}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Performance:</span>
+                      <span className="ml-2 font-medium">{entry.performance_score.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the training data entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

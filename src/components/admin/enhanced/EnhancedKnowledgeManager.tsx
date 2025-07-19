@@ -1,15 +1,44 @@
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Search, 
+  Plus, 
+  Edit2, 
+  Trash2, 
+  Save, 
+  X, 
+  Filter,
+  ArrowUpDown,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  CheckCircle,
+  Loader2
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Bot, FileText, RefreshCw, Trash2, AlertTriangle, Filter, Download, Upload, Eye, Edit, Archive } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface KnowledgeEntry {
   id: string;
@@ -17,494 +46,574 @@ interface KnowledgeEntry {
   product_category: string;
   keywords: string[];
   response_template: string;
-  auto_generated: boolean;
-  priority: number;
   confidence_threshold: number;
+  priority: number;
   is_active: boolean;
+  tags: string[];
+  usage_count: number;
+  effectiveness_score: number;
   created_at: string;
-  last_updated: string;
-  version?: number;
-  usage_count?: number;
-  effectiveness_score?: number;
-  tags?: string[];
+  updated_at: string;
 }
 
 const EnhancedKnowledgeManager = () => {
+  const [entries, setEntries] = useState<KnowledgeEntry[]>([]);
+  const [filteredEntries, setFilteredEntries] = useState<KnowledgeEntry[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [brandFilter, setBrandFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('created_at');
-  const [selectedEntries, setSelectedEntries] = useState<string[]>([]);
+  const [filterBrand, setFilterBrand] = useState('all');
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [sortBy, setSortBy] = useState('updated_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [editingEntry, setEditingEntry] = useState<string | null>(null);
+  const [showInactive, setShowInactive] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
-  const { data: knowledgeEntries, isLoading, refetch } = useQuery({
-    queryKey: ['enhanced-knowledge-entries', searchTerm, brandFilter, statusFilter, sortBy],
-    queryFn: async () => {
-      let query = supabase
-        .from('knowledge_base_entries')
-        .select('*');
 
-      // Apply filters
-      if (searchTerm) {
-        query = query.or(`brand.ilike.%${searchTerm}%,product_category.ilike.%${searchTerm}%,keywords.cs.{${searchTerm}},response_template.ilike.%${searchTerm}%`);
-      }
-
-      if (brandFilter !== 'all') {
-        query = query.eq('brand', brandFilter);
-      }
-
-      if (statusFilter !== 'all') {
-        query = query.eq('is_active', statusFilter === 'active');
-      }
-
-      // Apply sorting
-      const [column, direction] = sortBy.split('_');
-      query = query.order(column, { ascending: direction === 'asc' });
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as KnowledgeEntry[];
-    },
+  const [formData, setFormData] = useState({
+    brand: '',
+    product_category: '',
+    keywords: '',
+    response_template: '',
+    confidence_threshold: 0.7,
+    priority: 1,
+    tags: '',
   });
 
-  // Get unique brands for filter
-  const { data: brands } = useQuery({
-    queryKey: ['knowledge-brands'],
-    queryFn: async () => {
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  useEffect(() => {
+    filterAndSortEntries();
+  }, [entries, searchTerm, filterBrand, filterCategory, sortBy, sortOrder, showInactive]);
+
+  const fetchEntries = async () => {
+    try {
+      setLoading(true);
       const { data, error } = await supabase
         .from('knowledge_base_entries')
-        .select('brand')
-        .not('brand', 'is', null);
-      
+        .select('*')
+        .order('updated_at', { ascending: false });
+
       if (error) throw error;
-      return [...new Set(data.map(item => item.brand))];
-    },
-  });
-
-  const deleteEntryMutation = useMutation({
-    mutationFn: async (entryId: string) => {
-      const { error } = await supabase
-        .from('knowledge_base_entries')
-        .delete()
-        .eq('id', entryId);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Knowledge base entry deleted successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ['enhanced-knowledge-entries'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to delete knowledge base entry",
-        variant: "destructive",
-      });
-      console.error('Delete error:', error);
-    },
-  });
-
-  const bulkActionMutation = useMutation({
-    mutationFn: async (action: { type: 'activate' | 'deactivate' | 'delete'; ids: string[] }) => {
-      if (action.type === 'delete') {
-        const { error } = await supabase
-          .from('knowledge_base_entries')
-          .delete()
-          .in('id', action.ids);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('knowledge_base_entries')
-          .update({ is_active: action.type === 'activate' })
-          .in('id', action.ids);
-        if (error) throw error;
-      }
-    },
-    onSuccess: (_, variables) => {
-      toast({
-        title: "Success",
-        description: `Bulk ${variables.type} completed successfully`,
-      });
-      setSelectedEntries([]);
-      queryClient.invalidateQueries({ queryKey: ['enhanced-knowledge-entries'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Bulk operation failed",
-        variant: "destructive",
-      });
-      console.error('Bulk action error:', error);
-    },
-  });
-
-  const clearAllDataMutation = useMutation({
-    mutationFn: async () => {
-      // Delete all knowledge base entries
-      const { error: kbError } = await supabase
-        .from('knowledge_base_entries')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (kbError) throw kbError;
-
-      // Delete all PDF content
-      const { error: contentError } = await supabase
-        .from('pdf_content')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (contentError) throw contentError;
-
-      // Reset all documents to pending status
-      const { error: docError } = await supabase
-        .from('pdf_documents')
-        .update({ 
-          processing_status: 'pending',
-          processing_error: null,
-          last_processed: null
-        })
-        .neq('id', '00000000-0000-0000-0000-000000000000');
-
-      if (docError) throw docError;
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "All knowledge base entries and processing history cleared",
-      });
-      queryClient.invalidateQueries({ queryKey: ['enhanced-knowledge-entries'] });
-      queryClient.invalidateQueries({ queryKey: ['pdf-documents'] });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: "Failed to clear data",
-        variant: "destructive",
-      });
-      console.error('Clear all error:', error);
-    },
-  });
-
-  const regenerateKnowledgeBase = async () => {
-    try {
-      const { error } = await supabase.functions.invoke('regenerate-knowledge-base');
-      if (error) throw error;
-      refetch();
-      toast({
-        title: "Success",
-        description: "Knowledge base regeneration initiated",
-      });
+      setEntries(data || []);
     } catch (error) {
-      console.error('Regeneration error:', error);
+      console.error('Error fetching knowledge entries:', error);
       toast({
         title: "Error",
-        description: "Failed to regenerate knowledge base",
+        description: "Failed to load knowledge base entries",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterAndSortEntries = () => {
+    let filtered = entries.filter(entry => {
+      const matchesSearch = 
+        entry.brand.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.product_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        entry.keywords.some(keyword => keyword.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        entry.response_template.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesBrand = filterBrand === 'all' || entry.brand === filterBrand;
+      const matchesCategory = filterCategory === 'all' || entry.product_category === filterCategory;
+      const matchesActive = showInactive || entry.is_active;
+
+      return matchesSearch && matchesBrand && matchesCategory && matchesActive;
+    });
+
+    // Sort entries
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (sortBy) {
+        case 'brand':
+          aValue = a.brand;
+          bValue = b.brand;
+          break;
+        case 'category':
+          aValue = a.product_category;
+          bValue = b.product_category;
+          break;
+        case 'priority':
+          aValue = a.priority;
+          bValue = b.priority;
+          break;
+        case 'effectiveness':
+          aValue = a.effectiveness_score;
+          bValue = b.effectiveness_score;
+          break;
+        case 'usage':
+          aValue = a.usage_count;
+          bValue = b.usage_count;
+          break;
+        default:
+          aValue = a.updated_at;
+          bValue = b.updated_at;
+      }
+
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    setFilteredEntries(filtered);
+  };
+
+  const handleSave = async (entryId?: string) => {
+    try {
+      const keywordsArray = formData.keywords.split(',').map(k => k.trim()).filter(k => k);
+      const tagsArray = formData.tags.split(',').map(t => t.trim()).filter(t => t);
+
+      const entryData = {
+        brand: formData.brand,
+        product_category: formData.product_category,
+        keywords: keywordsArray,
+        response_template: formData.response_template,
+        confidence_threshold: formData.confidence_threshold,
+        priority: formData.priority,
+        tags: tagsArray,
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (entryId) {
+        // Update existing entry
+        const { error } = await supabase
+          .from('knowledge_base_entries')
+          .update(entryData)
+          .eq('id', entryId);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Knowledge entry updated successfully",
+        });
+      } else {
+        // Create new entry
+        const { error } = await supabase
+          .from('knowledge_base_entries')
+          .insert([entryData]);
+
+        if (error) throw error;
+        toast({
+          title: "Success",
+          description: "Knowledge entry created successfully",
+        });
+      }
+
+      setEditingEntry(null);
+      setFormData({
+        brand: '',
+        product_category: '',
+        keywords: '',
+        response_template: '',
+        confidence_threshold: 0.7,
+        priority: 1,
+        tags: '',
+      });
+      fetchEntries();
+    } catch (error) {
+      console.error('Error saving knowledge entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save knowledge entry",
         variant: "destructive",
       });
     }
   };
 
-  const toggleEntryStatus = async (id: string, currentStatus: boolean) => {
+  const handleEdit = (entry: KnowledgeEntry) => {
+    setEditingEntry(entry.id);
+    setFormData({
+      brand: entry.brand,
+      product_category: entry.product_category,
+      keywords: entry.keywords.join(', '),
+      response_template: entry.response_template,
+      confidence_threshold: entry.confidence_threshold,
+      priority: entry.priority,
+      tags: entry.tags.join(', '),
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!entryToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('knowledge_base_entries')
+        .delete()
+        .eq('id', entryToDelete);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Knowledge entry deleted successfully",
+      });
+      
+      fetchEntries();
+    } catch (error) {
+      console.error('Error deleting knowledge entry:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete knowledge entry",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteDialogOpen(false);
+      setEntryToDelete(null);
+    }
+  };
+
+  const toggleEntryStatus = async (entryId: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
         .from('knowledge_base_entries')
         .update({ is_active: !currentStatus })
-        .eq('id', id);
-      
+        .eq('id', entryId);
+
       if (error) throw error;
-      refetch();
+      
+      toast({
+        title: "Success",
+        description: `Entry ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+      
+      fetchEntries();
     } catch (error) {
-      console.error('Toggle error:', error);
+      console.error('Error toggling entry status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update entry status",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleSelectEntry = (id: string) => {
-    setSelectedEntries(prev => 
-      prev.includes(id) 
-        ? prev.filter(entryId => entryId !== id)
-        : [...prev, id]
-    );
-  };
+  const uniqueBrands = [...new Set(entries.map(e => e.brand))];
+  const uniqueCategories = [...new Set(entries.map(e => e.product_category))];
 
-  const handleSelectAll = () => {
-    if (selectedEntries.length === knowledgeEntries?.length) {
-      setSelectedEntries([]);
-    } else {
-      setSelectedEntries(knowledgeEntries?.map(entry => entry.id) || []);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Loading knowledge base...</span>
-      </div>
+      <Card>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="h-8 w-8 animate-spin" />
+          <span className="ml-2">Loading knowledge base entries...</span>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header Actions */}
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Knowledge Base Entries</h3>
-        <div className="flex gap-2">
-          <Button onClick={regenerateKnowledgeBase} variant="outline" size="sm">
-            <Bot className="h-4 w-4 mr-2" />
-            Regenerate from PDFs
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear All Data
+      {/* Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Knowledge Base Entries ({filteredEntries.length})</span>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowInactive(!showInactive)}
+              >
+                {showInactive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showInactive ? 'Hide Inactive' : 'Show Inactive'}
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
-                  Clear All Data
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete all knowledge base entries, PDF content, and processing history. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => clearAllDataMutation.mutate()}
-                  className="bg-red-600 hover:bg-red-700"
-                  disabled={clearAllDataMutation.isPending}
-                >
-                  {clearAllDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </div>
+              <Button onClick={() => setEditingEntry('new')} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Entry
+              </Button>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Search and Filters */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search entries..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={filterBrand} onValueChange={setFilterBrand}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by brand" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Brands</SelectItem>
+                {uniqueBrands.map(brand => (
+                  <SelectItem key={brand} value={brand}>{brand}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-      {/* Enhanced Search and Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div className="relative col-span-2">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <Input
-            placeholder="Search entries..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        
-        <Select value={brandFilter} onValueChange={setBrandFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by brand" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Brands</SelectItem>
-            {brands?.map(brand => (
-              <SelectItem key={brand} value={brand}>{brand}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {uniqueCategories.map(category => (
+                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={sortBy} onValueChange={setSortBy}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="created_at_desc">Newest First</SelectItem>
-            <SelectItem value="created_at_asc">Oldest First</SelectItem>
-            <SelectItem value="priority_desc">Priority High to Low</SelectItem>
-            <SelectItem value="usage_count_desc">Most Used</SelectItem>
-            <SelectItem value="effectiveness_score_desc">Most Effective</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Bulk Actions */}
-      {selectedEntries.length > 0 && (
-        <div className="flex items-center gap-2 p-4 bg-blue-50 rounded-lg">
-          <span className="text-sm text-blue-700">
-            {selectedEntries.length} entries selected
-          </span>
-          <div className="flex gap-2 ml-auto">
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => bulkActionMutation.mutate({ type: 'activate', ids: selectedEntries })}
-            >
-              Activate
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline"
-              onClick={() => bulkActionMutation.mutate({ type: 'deactivate', ids: selectedEntries })}
-            >
-              Deactivate
-            </Button>
-            <Button 
-              size="sm" 
-              variant="destructive"
-              onClick={() => bulkActionMutation.mutate({ type: 'delete', ids: selectedEntries })}
-            >
-              Delete
-            </Button>
+            <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+              const [field, order] = value.split('-');
+              setSortBy(field);
+              setSortOrder(order as 'asc' | 'desc');
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="updated_at-desc">Latest Updated</SelectItem>
+                <SelectItem value="updated_at-asc">Oldest Updated</SelectItem>
+                <SelectItem value="brand-asc">Brand A-Z</SelectItem>
+                <SelectItem value="brand-desc">Brand Z-A</SelectItem>
+                <SelectItem value="priority-desc">Priority High-Low</SelectItem>
+                <SelectItem value="priority-asc">Priority Low-High</SelectItem>
+                <SelectItem value="effectiveness-desc">Most Effective</SelectItem>
+                <SelectItem value="usage-desc">Most Used</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </div>
+        </CardContent>
+      </Card>
+
+      {/* Entry Form */}
+      {editingEntry && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingEntry === 'new' ? 'Add New Knowledge Entry' : 'Edit Knowledge Entry'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Brand</label>
+                <Input
+                  placeholder="Brand name"
+                  value={formData.brand}
+                  onChange={(e) => setFormData({...formData, brand: e.target.value})}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Product Category</label>
+                <Input
+                  placeholder="Product category"
+                  value={formData.product_category}
+                  onChange={(e) => setFormData({...formData, product_category: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Keywords (comma-separated)</label>
+              <Input
+                placeholder="keyword1, keyword2, keyword3"
+                value={formData.keywords}
+                onChange={(e) => setFormData({...formData, keywords: e.target.value})}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">Response Template</label>
+              <Textarea
+                placeholder="Enter the response template..."
+                value={formData.response_template}
+                onChange={(e) => setFormData({...formData, response_template: e.target.value})}
+                rows={4}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Confidence Threshold</label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={formData.confidence_threshold}
+                  onChange={(e) => setFormData({...formData, confidence_threshold: parseFloat(e.target.value)})}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Priority</label>
+                <Input
+                  type="number"
+                  min="1"
+                  max="10"
+                  value={formData.priority}
+                  onChange={(e) => setFormData({...formData, priority: parseInt(e.target.value)})}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tags (comma-separated)</label>
+                <Input
+                  placeholder="tag1, tag2, tag3"
+                  value={formData.tags}
+                  onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditingEntry(null);
+                  setFormData({
+                    brand: '',
+                    product_category: '',
+                    keywords: '',
+                    response_template: '',
+                    confidence_threshold: 0.7,
+                    priority: 1,
+                    tags: '',
+                  });
+                }}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </Button>
+              <Button onClick={() => handleSave(editingEntry === 'new' ? undefined : editingEntry)}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Entry
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Entries List */}
-      <div className="grid gap-4">
-        {knowledgeEntries?.length === 0 ? (
+      <div className="space-y-4">
+        {filteredEntries.length === 0 ? (
           <Card>
-            <CardContent className="flex items-center justify-center p-8">
-              <div className="text-center">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">No knowledge entries found</p>
-                <p className="text-sm text-gray-500 mt-2">
-                  Upload some PDF documents to generate knowledge base entries
-                </p>
-              </div>
+            <CardContent className="text-center py-8">
+              <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium mb-2">No entries found</h3>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm || filterBrand !== 'all' || filterCategory !== 'all'
+                  ? 'Try adjusting your search or filters'
+                  : 'Get started by adding your first knowledge entry'
+                }
+              </p>
+              {!searchTerm && filterBrand === 'all' && filterCategory === 'all' && (
+                <Button onClick={() => setEditingEntry('new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Entry
+                </Button>
+              )}
             </CardContent>
           </Card>
         ) : (
-          knowledgeEntries?.map((entry) => (
-            <Card key={entry.id} className={selectedEntries.includes(entry.id) ? 'ring-2 ring-blue-500' : ''}>
+          filteredEntries.map((entry) => (
+            <Card key={entry.id} className={`${!entry.is_active ? 'opacity-60' : ''}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div className="flex items-start space-x-3">
-                    <input
-                      type="checkbox"
-                      checked={selectedEntries.includes(entry.id)}
-                      onChange={() => handleSelectEntry(entry.id)}
-                      className="mt-1"
-                    />
-                    <div>
-                      <CardTitle className="text-lg">
-                        {entry.brand} - {entry.product_category}
-                      </CardTitle>
-                      <div className="flex items-center space-x-2 mt-2">
-                        {entry.auto_generated && (
-                          <Badge variant="secondary">
-                            <Bot className="h-3 w-3 mr-1" />
-                            Auto-generated
-                          </Badge>
-                        )}
-                        <Badge variant={entry.is_active ? "default" : "outline"}>
-                          {entry.is_active ? "Active" : "Inactive"}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="secondary">{entry.brand}</Badge>
+                      <Badge variant="outline">{entry.product_category}</Badge>
+                      {!entry.is_active && <Badge variant="destructive">Inactive</Badge>}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {entry.keywords.slice(0, 5).map((keyword, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {keyword}
                         </Badge>
-                        <Badge variant="outline">Priority: {entry.priority}</Badge>
-                        <Badge variant="outline">
-                          Confidence: {(entry.confidence_threshold * 100).toFixed(0)}%
+                      ))}
+                      {entry.keywords.length > 5 && (
+                        <Badge variant="secondary" className="text-xs">
+                          +{entry.keywords.length - 5} more
                         </Badge>
-                        {entry.usage_count && (
-                          <Badge variant="outline">
-                            Used: {entry.usage_count} times
-                          </Badge>
-                        )}
-                        {entry.effectiveness_score && (
-                          <Badge variant="outline">
-                            Effectiveness: {(entry.effectiveness_score * 100).toFixed(0)}%
-                          </Badge>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center space-x-2">
                     <Button
+                      variant="ghost"
                       size="sm"
-                      variant={entry.is_active ? "destructive" : "default"}
                       onClick={() => toggleEntryStatus(entry.id, entry.is_active)}
                     >
-                      {entry.is_active ? <Archive className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {entry.is_active ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Knowledge Entry</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete this knowledge base entry for {entry.brand} - {entry.product_category}? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => deleteEntryMutation.mutate(entry.id)}
-                            className="bg-red-600 hover:bg-red-700"
-                            disabled={deleteEntryMutation.isPending}
-                          >
-                            {deleteEntryMutation.isPending ? 'Deleting...' : 'Delete'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleEdit(entry)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEntryToDelete(entry.id);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-1">Keywords:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {entry.keywords.map((keyword, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {keyword}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {entry.tags && entry.tags.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-sm text-gray-700 mb-1">Tags:</h4>
-                      <div className="flex flex-wrap gap-1">
-                        {entry.tags.map((tag, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div>
-                    <h4 className="font-medium text-sm text-gray-700 mb-1">Response Template:</h4>
-                    <div className="bg-gray-50 p-3 rounded text-sm">
+                    <p className="text-sm text-muted-foreground mb-1">Response Template:</p>
+                    <p className="text-sm bg-muted p-3 rounded-md">
                       {entry.response_template.length > 200 
-                        ? `${entry.response_template.substring(0, 200)}...`
+                        ? `${entry.response_template.substring(0, 200)}...` 
                         : entry.response_template
                       }
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Priority:</span>
+                      <span className="ml-2 font-medium">{entry.priority}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Confidence:</span>
+                      <span className="ml-2 font-medium">{entry.confidence_threshold}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Usage:</span>
+                      <span className="ml-2 font-medium">{entry.usage_count}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Effectiveness:</span>
+                      <span className="ml-2 font-medium">{entry.effectiveness_score.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="text-xs text-gray-500 flex justify-between">
-                    <span>Created: {new Date(entry.created_at).toLocaleDateString()}</span>
-                    <span>Updated: {new Date(entry.last_updated).toLocaleDateString()}</span>
-                    {entry.version && <span>Version: {entry.version}</span>}
-                  </div>
+                  {entry.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {entry.tags.map((tag, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          #{tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -512,22 +621,21 @@ const EnhancedKnowledgeManager = () => {
         )}
       </div>
 
-      {/* Select All Checkbox */}
-      {knowledgeEntries && knowledgeEntries.length > 0 && (
-        <div className="flex items-center justify-between">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={selectedEntries.length === knowledgeEntries.length}
-              onChange={handleSelectAll}
-            />
-            <span className="text-sm">Select all entries</span>
-          </label>
-          <span className="text-sm text-gray-500">
-            Showing {knowledgeEntries.length} entries
-          </span>
-        </div>
-      )}
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the knowledge entry.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

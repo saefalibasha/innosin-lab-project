@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,6 @@ import { Package, Users, MessageSquare, BarChart3, FileText, Settings, TrendingU
 import AdminAuthGuard from '@/components/AdminAuthGuard';
 import { EnhancedAssetManager } from '@/components/admin/enhanced-asset-manager/EnhancedAssetManager';
 import AdminRoleManager from '@/components/AdminRoleManager';
-import PDFUploadManager from '@/components/PDFUploadManager';
 import ChatbotTraining from '@/components/ChatbotTraining';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
 import { SystemHealthCard } from '@/components/admin/SystemHealthCard';
@@ -28,7 +28,7 @@ export default function AdminDashboard() {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage your laboratory equipment catalog and AI system settings</p>
+            <p className="text-gray-600">Comprehensive management system for products, AI training, chat sessions, and user administration</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                   </Card>
                 </div>
 
-                {/* Management Cards Row - Now with 2 columns instead of 3 */}
+                {/* Management Cards Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <SystemHealthCard />
                   
@@ -209,10 +209,10 @@ export default function AdminDashboard() {
                         variant="outline" 
                         size="sm" 
                         className="w-full justify-start"
-                        onClick={() => setActiveTab('knowledge')}
+                        onClick={() => setActiveTab('ai-center')}
                       >
-                        <FileText className="h-4 w-4 mr-2" />
-                        Add Knowledge
+                        <Brain className="h-4 w-4 mr-2" />
+                        AI Training Center
                       </Button>
                       <Button 
                         variant="outline" 
@@ -227,7 +227,7 @@ export default function AdminDashboard() {
                   </Card>
                 </div>
 
-                {/* Performance Metrics Card - Now full width */}
+                {/* Performance Metrics Card */}
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Performance Metrics</CardTitle>
@@ -335,20 +335,6 @@ export default function AdminDashboard() {
                   </div>
                 </div>
                 
-                {/* PDF Upload Section */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <FileText className="h-5 w-5 mr-2" />
-                      Document Upload & Processing
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <PDFUploadManager />
-                  </CardContent>
-                </Card>
-
-                {/* Main AI Training Interface */}
                 <ChatbotTraining />
               </div>
             </TabsContent>
@@ -356,8 +342,11 @@ export default function AdminDashboard() {
             <TabsContent value="users">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">User Management</h2>
-                  <Users className="h-5 w-5" />
+                  <div>
+                    <h2 className="text-2xl font-bold">User Management</h2>
+                    <p className="text-gray-600">Manage admin roles and user permissions</p>
+                  </div>
+                  <Users className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <AdminRoleManager />
               </div>
