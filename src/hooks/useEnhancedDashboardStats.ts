@@ -11,13 +11,6 @@ interface EnhancedDashboardStats {
   totalChatMessages: number;
   averageSessionDuration: number;
   hubspotSyncedSessions: number;
-  recentActivity: Array<{
-    id: string;
-    type: string;
-    description: string;
-    timestamp: string;
-    status?: string;
-  }>;
   chatMetrics: {
     totalSessions: number;
     completedSessions: number;
@@ -27,7 +20,7 @@ interface EnhancedDashboardStats {
   isLoading: boolean;
 }
 
-export const useEnhancedDashboardStats = () => {
+export const useEnhancedDashboardStats = (refreshTrigger: number = 0) => {
   const [stats, setStats] = useState<EnhancedDashboardStats>({
     totalProducts: 0,
     activeChatSessions: 0,
@@ -37,7 +30,6 @@ export const useEnhancedDashboardStats = () => {
     totalChatMessages: 0,
     averageSessionDuration: 0,
     hubspotSyncedSessions: 0,
-    recentActivity: [],
     chatMetrics: {
       totalSessions: 0,
       completedSessions: 0,
@@ -49,7 +41,11 @@ export const useEnhancedDashboardStats = () => {
 
   useEffect(() => {
     const fetchEnhancedStats = async () => {
+      setStats(prev => ({ ...prev, isLoading: true }));
+      
       try {
+        console.log('Fetching dashboard stats...');
+        
         // Fetch all stats in parallel
         const [
           productsResult,
@@ -59,7 +55,6 @@ export const useEnhancedDashboardStats = () => {
           knowledgeResult,
           messagesResult,
           hubspotSyncedResult,
-          recentSessionsResult,
           completedSessionsResult,
           satisfactionResult
         ] = await Promise.all([
@@ -104,13 +99,6 @@ export const useEnhancedDashboardStats = () => {
             .select('*', { count: 'exact', head: true })
             .not('hubspot_contact_id', 'is', null),
           
-          // Recent sessions for activity feed
-          supabase
-            .from('chat_sessions')
-            .select('id, created_at, status, name, company, email, satisfaction_score')
-            .order('created_at', { ascending: false })
-            .limit(15),
-          
           // Completed sessions for metrics
           supabase
             .from('chat_sessions')
@@ -130,15 +118,6 @@ export const useEnhancedDashboardStats = () => {
           ? satisfactionScores.reduce((a, b) => a + b, 0) / satisfactionScores.length 
           : 0;
 
-        // Build recent activity from sessions
-        const recentActivity = (recentSessionsResult.data || []).map(session => ({
-          id: session.id,
-          type: session.status === 'active' ? 'chat_active' : 'chat_completed',
-          description: `${session.status === 'active' ? 'Active chat' : 'Chat completed'}${session.name ? ` with ${session.name}` : ''}${session.company ? ` from ${session.company}` : ''}${session.satisfaction_score ? ` (${session.satisfaction_score}⭐)` : ''}`,
-          timestamp: session.created_at,
-          status: session.status,
-        }));
-
         setStats({
           totalProducts: productsResult.count || 0,
           activeChatSessions: activeSessionsResult.count || 0,
@@ -148,7 +127,6 @@ export const useEnhancedDashboardStats = () => {
           totalChatMessages: messagesResult.count || 0,
           averageSessionDuration: 0, // TODO: Calculate from session data
           hubspotSyncedSessions: hubspotSyncedResult.count || 0,
-          recentActivity,
           chatMetrics: {
             totalSessions: (monthlySessionsResult.count || 0),
             completedSessions: completedSessionsResult.count || 0,
@@ -157,6 +135,8 @@ export const useEnhancedDashboardStats = () => {
           },
           isLoading: false,
         });
+
+        console.log('Dashboard stats fetched successfully');
       } catch (error) {
         console.error('Error fetching enhanced dashboard stats:', error);
         setStats(prev => ({ ...prev, isLoading: false }));
@@ -164,11 +144,7 @@ export const useEnhancedDashboardStats = () => {
     };
 
     fetchEnhancedStats();
-    
-    // Refresh stats every 30 seconds
-    const interval = setInterval(fetchEnhancedStats, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  }, [refreshTrigger]);
 
   return stats;
 };
