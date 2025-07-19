@@ -46,7 +46,7 @@ const AITrainingCenter = () => {
     try {
       const { data, error } = await supabase
         .from('training_sessions')
-        .select('*')
+        .select('id, name, status, created_at, updated_at, version, created_by, description, performance_metrics, progress, completed_at')
         .order('created_at', { ascending: false })
         .limit(10);
 
