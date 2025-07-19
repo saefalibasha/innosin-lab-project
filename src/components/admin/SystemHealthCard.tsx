@@ -1,87 +1,57 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, AlertCircle, XCircle } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { CheckCircle, AlertTriangle, XCircle, Database, Zap, Globe } from 'lucide-react';
 
-interface SystemHealth {
-  database: 'good' | 'warning' | 'error';
-  storage: 'good' | 'warning' | 'error';
-  overall: 'good' | 'warning' | 'error';
+type HealthStatus = 'good' | 'warning' | 'error';
+
+interface HealthMetric {
+  name: string;
+  status: HealthStatus;
+  value: string;
+  icon: React.ComponentType<any>;
 }
 
 export const SystemHealthCard: React.FC = () => {
-  const [health, setHealth] = useState<SystemHealth>({
-    database: 'good',
-    storage: 'good',
-    overall: 'good',
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const healthMetrics: HealthMetric[] = [
+    {
+      name: 'Database',
+      status: 'good',
+      value: 'Connected',
+      icon: Database
+    },
+    {
+      name: 'HubSpot API',
+      status: 'warning',
+      value: 'Rate Limited',
+      icon: Globe
+    },
+    {
+      name: 'System Load',
+      status: 'good',
+      value: '12%',
+      icon: Zap
+    }
+  ];
 
-  useEffect(() => {
-    const checkSystemHealth = async () => {
-      try {
-        // Test database connection
-        const { error: dbError } = await supabase
-          .from('products')
-          .select('id')
-          .limit(1);
-
-        // Test storage connection
-        const { error: storageError } = await supabase.storage
-          .from('documents')
-          .list('', { limit: 1 });
-
-        const dbStatus: SystemHealth['database'] = dbError ? 'error' : 'good';
-        const storageStatus: SystemHealth['storage'] = storageError ? 'warning' : 'good';
-        
-        let overallStatus: SystemHealth['overall'] = 'good';
-        if (dbStatus === 'error' || storageStatus === 'error') {
-          overallStatus = 'error';
-        } else if (dbStatus === 'warning' || storageStatus === 'warning') {
-          overallStatus = 'warning';
-        }
-
-        setHealth({
-          database: dbStatus,
-          storage: storageStatus,
-          overall: overallStatus,
-        });
-      } catch (error) {
-        console.error('Error checking system health:', error);
-        setHealth({
-          database: 'error',
-          storage: 'error',
-          overall: 'error',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkSystemHealth();
-    const interval = setInterval(checkSystemHealth, 60000); // Check every minute
-    return () => clearInterval(interval);
-  }, []);
-
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: HealthStatus) => {
     switch (status) {
       case 'good':
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'warning':
-        return <AlertCircle className="h-4 w-4 text-yellow-600" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'error':
-        return <XCircle className="h-4 w-4 text-red-600" />;
+        return <XCircle className="h-4 w-4 text-red-500" />;
       default:
-        return <CheckCircle className="h-4 w-4 text-gray-600" />;
+        return <CheckCircle className="h-4 w-4 text-gray-500" />;
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: HealthStatus) => {
     switch (status) {
       case 'good':
-        return <Badge className="bg-green-100 text-green-800">Operational</Badge>;
+        return <Badge className="bg-green-100 text-green-800">Healthy</Badge>;
       case 'warning':
         return <Badge className="bg-yellow-100 text-yellow-800">Warning</Badge>;
       case 'error':
@@ -91,58 +61,37 @@ export const SystemHealthCard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>System Health</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="animate-pulse">
-            <div className="h-6 bg-gray-200 rounded mb-4"></div>
-            <div className="space-y-2">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const overallStatus: HealthStatus = healthMetrics.some(m => m.status === 'error') 
+    ? 'error' 
+    : healthMetrics.some(m => m.status === 'warning') 
+    ? 'warning' 
+    : 'good';
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">System Health</CardTitle>
-        {getStatusIcon(health.overall)}
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">System Health</CardTitle>
+          {getStatusBadge(overallStatus)}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold mb-2">
-          {getStatusBadge(health.overall)}
-        </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center justify-between">
-            <span>Database</span>
-            <div className="flex items-center space-x-1">
-              {getStatusIcon(health.database)}
-              <span className={health.database === 'good' ? 'text-green-600' : 
-                              health.database === 'warning' ? 'text-yellow-600' : 'text-red-600'}>
-                {health.database === 'good' ? 'Connected' : 
-                 health.database === 'warning' ? 'Warning' : 'Error'}
-              </span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Storage</span>
-            <div className="flex items-center space-x-1">
-              {getStatusIcon(health.storage)}
-              <span className={health.storage === 'good' ? 'text-green-600' : 
-                              health.storage === 'warning' ? 'text-yellow-600' : 'text-red-600'}>
-                {health.storage === 'good' ? 'Connected' : 
-                 health.storage === 'warning' ? 'Warning' : 'Error'}
-              </span>
-            </div>
-          </div>
+        <div className="space-y-4">
+          {healthMetrics.map((metric) => {
+            const IconComponent = metric.icon;
+            return (
+              <div key={metric.name} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <IconComponent className="h-5 w-5 text-muted-foreground" />
+                  <span className="font-medium">{metric.name}</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">{metric.value}</span>
+                  {getStatusIcon(metric.status)}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

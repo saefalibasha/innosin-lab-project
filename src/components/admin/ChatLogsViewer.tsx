@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Eye, Download, Calendar, User, Building } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Search, Eye, Download, Calendar, User, Building, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface ChatSession {
   id: string;
@@ -41,6 +43,7 @@ export const ChatLogsViewer: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [messagesLoading, setMessagesLoading] = useState(false);
+  const [isClearingChats, setIsClearingChats] = useState(false);
 
   useEffect(() => {
     fetchChatSessions();
@@ -125,6 +128,40 @@ export const ChatLogsViewer: React.FC = () => {
     }
   };
 
+  const clearAllChats = async () => {
+    setIsClearingChats(true);
+    try {
+      // Delete all chat messages first (due to foreign key constraints)
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .gte('id', 0); // Delete all messages
+
+      if (messagesError) throw messagesError;
+
+      // Then delete all chat sessions
+      const { error: sessionsError } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .gte('id', 0); // Delete all sessions
+
+      if (sessionsError) throw sessionsError;
+
+      // Refresh the data
+      setSessions([]);
+      setFilteredSessions([]);
+      setMessages([]);
+      setSelectedSession(null);
+      
+      toast.success('All chat logs have been cleared successfully');
+    } catch (error) {
+      console.error('Error clearing chat logs:', error);
+      toast.error('Failed to clear chat logs. Please try again.');
+    } finally {
+      setIsClearingChats(false);
+    }
+  };
+
   const viewSession = async (session: ChatSession) => {
     setSelectedSession(session);
     await fetchChatMessages(session.id);
@@ -152,7 +189,40 @@ export const ChatLogsViewer: React.FC = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Chat Sessions</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Chat Sessions</CardTitle>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  disabled={sessions.length === 0}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All Chats
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear All Chat Logs</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete all chat sessions and messages? This action cannot be undone and will permanently remove all chat history.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={clearAllChats}
+                    disabled={isClearingChats}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {isClearingChats ? 'Clearing...' : 'Clear All'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
           <div className="flex items-center space-x-2">
             <div className="relative flex-1">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
