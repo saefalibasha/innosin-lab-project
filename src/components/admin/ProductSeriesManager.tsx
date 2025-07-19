@@ -18,6 +18,8 @@ import {
   Eye,
   BarChart3
 } from 'lucide-react';
+import ProductFormDialog from './ProductFormDialog';
+import ProductViewDialog from './ProductViewDialog';
 
 interface Product {
   id: string;
@@ -29,6 +31,19 @@ interface Product {
   is_active: boolean;
   thumbnail_path?: string;
   model_path?: string;
+  dimensions?: string;
+  description?: string;
+  full_description?: string;
+  orientation?: string;
+  door_type?: string;
+  drawer_count?: number;
+  specifications?: any;
+  keywords?: string[];
+  company_tags?: string[];
+  additional_images?: string[];
+  overview_image_path?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ProductSeries {
@@ -52,6 +67,10 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [series, setSeries] = useState<ProductSeries[]>([]);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -117,6 +136,76 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       newExpanded.add(seriesName);
     }
     setExpandedSeries(newExpanded);
+  };
+
+  const handleView = (product: Product) => {
+    console.log('Viewing product:', product);
+    setSelectedProduct(product);
+    setIsViewOpen(true);
+    onProductSelect?.(product);
+  };
+
+  const handleEdit = (product: Product) => {
+    console.log('Editing product:', product);
+    setEditingProduct(product);
+    setIsEditOpen(true);
+    onProductEdit?.(product);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
+
+      fetchProductSeries();
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: !currentStatus })
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+
+      fetchProductSeries();
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleProductSaved = () => {
+    fetchProductSeries();
+    setIsEditOpen(false);
+    setEditingProduct(null);
   };
 
   const getSeriesStatusColor = (completionRate: number) => {
@@ -246,7 +335,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => onProductSelect?.(product)}
+                              onClick={() => handleView(product)}
                             >
                               <Eye className="h-3 w-3 mr-1" />
                               View
@@ -254,7 +343,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => onProductEdit?.(product)}
+                              onClick={() => handleEdit(product)}
                             >
                               <Edit className="h-3 w-3 mr-1" />
                               Edit
@@ -270,6 +359,24 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
           </Card>
         ))}
       </div>
+
+      {/* Product View Dialog */}
+      <ProductViewDialog
+        isOpen={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        product={selectedProduct}
+        onEdit={handleEdit}
+        onDelete={handleDeleteProduct}
+        onToggleStatus={toggleProductStatus}
+      />
+
+      {/* Product Edit Dialog */}
+      <ProductFormDialog
+        isOpen={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        product={editingProduct}
+        onProductSaved={handleProductSaved}
+      />
     </div>
   );
 };
