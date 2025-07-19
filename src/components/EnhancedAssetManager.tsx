@@ -23,6 +23,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ProductEditModal from './ProductEditModal';
+import { VariantFileUploadModal } from './admin/VariantFileUploadModal';
 
 interface Product {
   id: string;
@@ -82,11 +83,29 @@ const EnhancedAssetManager = () => {
   const [checkingAssets, setCheckingAssets] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productSeries, setProductSeries] = useState<string[]>([]);
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
+  const [uploadModal, setUploadModal] = useState<{
+    isOpen: boolean;
+    variantCode: string;
+    fileType: 'glb' | 'jpg';
+  }>({ isOpen: false, variantCode: '', fileType: 'glb' });
   const { toast } = useToast();
 
   useEffect(() => {
     loadProductData();
   }, [showAllProducts]);
+
+  // Auto-refresh functionality
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isLoading && !checkingAssets) {
+        setIsAutoRefreshing(true);
+        loadProductData().finally(() => setIsAutoRefreshing(false));
+      }
+    }, 45000); // Refresh every 45 seconds
+
+    return () => clearInterval(interval);
+  }, [isLoading, checkingAssets, showAllProducts]);
 
   const loadProductData = async () => {
     setIsLoading(true);
@@ -395,6 +414,20 @@ const EnhancedAssetManager = () => {
     loadProductData(); // Refresh data after edit
   };
 
+  const handleUploadClick = (variantCode: string, fileType: 'glb' | 'jpg') => {
+    setUploadModal({
+      isOpen: true,
+      variantCode,
+      fileType
+    });
+  };
+
+  const handleUploadComplete = () => {
+    setUploadModal({ isOpen: false, variantCode: '', fileType: 'glb' });
+    // Refresh asset data
+    loadProductData();
+  };
+
   const totalProducts = filteredAssetStatuses.length;
   const completeProducts = filteredAssetStatuses.filter(p => p.status === 'complete').length;
   const partialProducts = filteredAssetStatuses.filter(p => p.status === 'partial').length;
@@ -419,10 +452,10 @@ const EnhancedAssetManager = () => {
                 <Package className="w-5 h-5" />
                 <span>Innosin Lab Asset Manager</span>
               </div>
-              {checkingAssets && (
+              {(checkingAssets || isAutoRefreshing) && (
                 <div className="flex items-center text-sm text-muted-foreground">
                   <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                  Checking assets...
+                  {isAutoRefreshing ? 'Auto-refreshing...' : 'Checking assets...'}
                 </div>
               )}
             </div>
@@ -618,13 +651,39 @@ const EnhancedAssetManager = () => {
                                   {variant.status}
                                 </Badge>
                               </div>
-                              <div className="flex items-center space-x-4 text-sm">
-                                <span className={variant.hasGLB ? 'text-green-600' : 'text-red-600'}>
-                                  GLB: {variant.hasGLB ? '✓' : '✗'}
-                                </span>
-                                <span className={variant.hasJPG ? 'text-green-600' : 'text-red-600'}>
-                                  JPG: {variant.hasJPG ? '✓' : '✗'}
-                                </span>
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center space-x-2 text-sm">
+                                  <span className={variant.hasGLB ? 'text-green-600' : 'text-red-600'}>
+                                    GLB: {variant.hasGLB ? '✓' : '✗'}
+                                  </span>
+                                  {!variant.hasGLB && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleUploadClick(variant.size, 'glb')}
+                                      className="ml-1 h-6 px-2"
+                                    >
+                                      <Upload className="h-3 w-3 mr-1" />
+                                      Upload GLB
+                                    </Button>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2 text-sm">
+                                  <span className={variant.hasJPG ? 'text-green-600' : 'text-red-600'}>
+                                    JPG: {variant.hasJPG ? '✓' : '✗'}
+                                  </span>
+                                  {!variant.hasJPG && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleUploadClick(variant.size, 'jpg')}
+                                      className="ml-1 h-6 px-2"
+                                    >
+                                      <Upload className="h-3 w-3 mr-1" />
+                                      Upload JPG
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -644,6 +703,14 @@ const EnhancedAssetManager = () => {
         isOpen={!!editingProduct}
         onClose={() => setEditingProduct(null)}
         onSave={handleSaveEdit}
+      />
+
+      <VariantFileUploadModal
+        isOpen={uploadModal.isOpen}
+        onClose={() => setUploadModal({ isOpen: false, variantCode: '', fileType: 'glb' })}
+        variantCode={uploadModal.variantCode}
+        fileType={uploadModal.fileType}
+        onUploadComplete={handleUploadComplete}
       />
     </div>
   );
