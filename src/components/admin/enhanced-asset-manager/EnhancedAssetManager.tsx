@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, BarChart3, Package, AlertCircle } from 'lucide-react';
+import { Search, Filter, BarChart3, Package, AlertCircle, Wrench } from 'lucide-react';
 import { ProductSeriesSection } from './ProductSeriesSection';
 import { ProductAssetModal } from './ProductAssetModal';
 import { AssetStatistics } from './AssetStatistics';
@@ -33,11 +33,11 @@ export const EnhancedAssetManager: React.FC = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showStats, setShowStats] = useState(false);
 
-  // Fetch all Innosin Lab products
-  const { data: products = [], isLoading, error } = useQuery({
+  // Fetch all Innosin Lab products with the new clean structure
+  const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ['innosin-products'],
     queryFn: async () => {
-      console.log('Fetching Innosin Lab products...');
+      console.log('Fetching cleaned Innosin Lab products...');
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -51,7 +51,7 @@ export const EnhancedAssetManager: React.FC = () => {
         throw error;
       }
 
-      console.log(`Fetched ${data?.length || 0} Innosin Lab products`);
+      console.log(`Fetched ${data?.length || 0} cleaned Innosin Lab products`);
       return data as Product[];
     }
   });
@@ -62,7 +62,8 @@ export const EnhancedAssetManager: React.FC = () => {
       product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.product_series?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.dimensions?.toLowerCase().includes(searchTerm.toLowerCase());
+      product.dimensions?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.editable_title?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = selectedCategory === 'all' || product.product_series === selectedCategory;
 
@@ -77,8 +78,13 @@ export const EnhancedAssetManager: React.FC = () => {
     return acc;
   }, {} as Record<string, Product[]>);
 
-  // Get unique categories for filtering
-  const categories = [...new Set(products.map(p => p.product_series).filter(Boolean))];
+  // Get unique categories for filtering (sorted by product count)
+  const categories = [...new Set(products.map(p => p.product_series).filter(Boolean))]
+    .sort((a, b) => {
+      const countA = products.filter(p => p.product_series === a).length;
+      const countB = products.filter(p => p.product_series === b).length;
+      return countB - countA; // Sort by count descending
+    });
 
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
@@ -89,7 +95,7 @@ export const EnhancedAssetManager: React.FC = () => {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <Package className="h-8 w-8 mx-auto mb-4 text-muted-foreground animate-pulse" />
-          <p className="text-muted-foreground">Loading Innosin Lab products...</p>
+          <p className="text-muted-foreground">Loading laboratory equipment products...</p>
         </div>
       </div>
     );
@@ -99,10 +105,14 @@ export const EnhancedAssetManager: React.FC = () => {
     return (
       <Card className="border-destructive">
         <CardContent className="p-6">
-          <div className="flex items-center gap-2 text-destructive">
+          <div className="flex items-center gap-2 text-destructive mb-4">
             <AlertCircle className="h-5 w-5" />
             <p>Error loading products: {error.message}</p>
           </div>
+          <Button onClick={() => refetch()} variant="outline">
+            <Wrench className="h-4 w-4 mr-2" />
+            Retry
+          </Button>
         </CardContent>
       </Card>
     );
@@ -113,9 +123,9 @@ export const EnhancedAssetManager: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Enhanced Asset Manager</h2>
+          <h2 className="text-2xl font-bold">Laboratory Equipment Manager</h2>
           <p className="text-muted-foreground">
-            Manage all Innosin Lab product assets - {products.length} products total
+            Manage all Innosin Lab product series - {products.length} products across {categories.length} series
           </p>
         </div>
         <div className="flex gap-2">
@@ -125,6 +135,10 @@ export const EnhancedAssetManager: React.FC = () => {
           >
             <BarChart3 className="h-4 w-4 mr-2" />
             Statistics
+          </Button>
+          <Button onClick={() => refetch()} variant="outline" size="sm">
+            <Wrench className="h-4 w-4 mr-2" />
+            Refresh
           </Button>
         </div>
       </div>
@@ -137,7 +151,7 @@ export const EnhancedAssetManager: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Filter className="h-5 w-5" />
-            Filters & Search
+            Search & Filter Products
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -164,16 +178,23 @@ export const EnhancedAssetManager: React.FC = () => {
               >
                 All Series ({products.length})
               </Button>
-              {categories.map(category => (
+              {categories.slice(0, 5).map(category => (
                 <Button
                   key={category}
                   variant={selectedCategory === category ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
+                  className="max-w-[200px] truncate"
                 >
-                  {category} ({products.filter(p => p.product_series === category).length})
+                  {category.replace('Laboratory Bench Knee Space Series', 'KS Series')} 
+                  ({products.filter(p => p.product_series === category).length})
                 </Button>
               ))}
+              {categories.length > 5 && (
+                <Badge variant="secondary">
+                  +{categories.length - 5} more
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -189,7 +210,7 @@ export const EnhancedAssetManager: React.FC = () => {
             )}
             {selectedCategory !== 'all' && (
               <Badge variant="secondary" className="gap-1">
-                Series: {selectedCategory}
+                Series: {selectedCategory.replace('Laboratory Bench Knee Space Series', 'KS Series')}
                 <button onClick={() => setSelectedCategory('all')} className="ml-1 hover:text-destructive">
                   ×
                 </button>
@@ -202,7 +223,12 @@ export const EnhancedAssetManager: React.FC = () => {
       {/* Product Series Sections */}
       <div className="space-y-4">
         {Object.entries(productSeries)
-          .sort(([a], [b]) => a.localeCompare(b))
+          .sort(([a], [b]) => {
+            // Prioritize KS Series first
+            if (a.includes('Knee Space')) return -1;
+            if (b.includes('Knee Space')) return 1;
+            return a.localeCompare(b);
+          })
           .map(([seriesName, seriesProducts]) => (
             <ProductSeriesSection
               key={seriesName}
@@ -219,9 +245,30 @@ export const EnhancedAssetManager: React.FC = () => {
           <CardContent className="text-center py-8">
             <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No products found</h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               Try adjusting your search terms or filters
             </p>
+            <Button onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('all');
+            }} variant="outline">
+              Clear All Filters
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Success Message */}
+      {products.length > 0 && Object.keys(productSeries).length > 0 && (
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-green-700">
+              <Package className="h-5 w-5" />
+              <p className="font-medium">
+                Product database successfully optimized! 
+                Now showing {Object.keys(productSeries).length} product series with {filteredProducts.length} total variants.
+              </p>
+            </div>
           </CardContent>
         </Card>
       )}

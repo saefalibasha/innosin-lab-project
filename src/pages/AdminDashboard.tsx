@@ -52,7 +52,7 @@ const AdminDashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Comprehensive management system for products, chatbot, security, and maintenance</p>
+          <p className="text-gray-600">Comprehensive management system for laboratory equipment products, chatbot, security, and maintenance</p>
         </div>
 
         {/* Quick Stats */}
@@ -64,7 +64,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats?.products || 0}</div>
-              <p className="text-xs text-muted-foreground">Product catalog</p>
+              <p className="text-xs text-muted-foreground">Laboratory equipment catalog</p>
             </CardContent>
           </Card>
 
@@ -107,7 +107,7 @@ const AdminDashboard = () => {
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="assets" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Asset Manager
+              Product Manager
             </TabsTrigger>
             <TabsTrigger value="chatbot" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -129,8 +129,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="assets" className="space-y-6">
             <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">Product Asset Management</h2>
-              <p className="text-muted-foreground">Manage all product assets including KS Series and other product lines</p>
+              <h2 className="text-2xl font-bold mb-2">Laboratory Equipment Product Manager</h2>
+              <p className="text-muted-foreground">
+                Comprehensive management of all Innosin Lab product lines including KS Series, Mobile Cabinets, Modular Cabinets, and more
+              </p>
             </div>
             <EnhancedAssetManager />
           </TabsContent>
@@ -138,7 +140,7 @@ const AdminDashboard = () => {
           <TabsContent value="chatbot" className="space-y-6">
             <div className="mb-4">
               <h2 className="text-2xl font-bold mb-2">Chatbot Management</h2>
-              <p className="text-muted-foreground">Train and monitor the AI chatbot system</p>
+              <p className="text-muted-foreground">Train and monitor the AI chatbot system for customer support</p>
             </div>
             <Tabs defaultValue="training" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
@@ -187,6 +189,10 @@ const AdminDashboard = () => {
                     <span>Storage Usage</span>
                     <span>2.3 GB / 10 GB</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span>Products Count</span>
+                    <span className="font-medium">{stats?.products || 0}</span>
+                  </div>
                   <Button variant="outline" className="w-full">
                     <Database className="h-4 w-4 mr-2" />
                     Optimize Database
@@ -203,12 +209,16 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span>Missing Assets</span>
-                    <span className="text-yellow-600 font-medium">12</span>
+                    <span>Product Series</span>
+                    <span className="text-blue-600 font-medium">11</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span>Broken Links</span>
-                    <span className="text-red-600 font-medium">3</span>
+                    <span>Missing Assets</span>
+                    <span className="text-yellow-600 font-medium">0</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>System Status</span>
+                    <span className="text-green-600 font-medium">Optimized</span>
                   </div>
                   <Button variant="outline" className="w-full">
                     <Activity className="h-4 w-4 mr-2" />
@@ -233,6 +243,10 @@ const AdminDashboard = () => {
                     <span>API Response</span>
                     <span className="text-green-600 font-medium">245ms</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span>Database Query</span>
+                    <span className="text-green-600 font-medium">65ms</span>
+                  </div>
                   <Button variant="outline" className="w-full">
                     <Activity className="h-4 w-4 mr-2" />
                     Run Performance Test
@@ -253,6 +267,9 @@ const AdminDashboard = () => {
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
                     Rebuild Search Index
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    Export Product Data
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
                     Export System Logs
@@ -278,9 +295,17 @@ const AdminDashboard = () => {
                     <label className="text-sm font-medium">Site Name</label>
                     <input 
                       type="text" 
-                      defaultValue="Laboratory Equipment Store" 
+                      defaultValue="Innosin Lab Equipment Store" 
                       className="w-full p-2 border rounded-md"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Default Product Display</label>
+                    <select className="w-full p-2 border rounded-md">
+                      <option value="all">All Products</option>
+                      <option value="ks-series">KS Series Only</option>
+                      <option value="featured">Featured Products</option>
+                    </select>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Maintenance Mode</label>
@@ -306,8 +331,15 @@ const AdminDashboard = () => {
                     <span>Auto Backup</span>
                     <span className="text-green-600 font-medium">Enabled</span>
                   </div>
+                  <div className="flex justify-between items-center">
+                    <span>Backup Size</span>
+                    <span className="text-sm text-muted-foreground">245 MB</span>
+                  </div>
                   <Button variant="outline" className="w-full">
                     Create Backup Now
+                  </Button>
+                  <Button variant="outline" className="w-full">
+                    Export Product Catalog
                   </Button>
                 </CardContent>
               </Card>
