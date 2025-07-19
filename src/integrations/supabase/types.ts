@@ -517,6 +517,7 @@ export type Database = {
         Row: {
           additional_images: string[] | null
           category: string
+          company_tags: string[] | null
           created_at: string
           description: string | null
           dimensions: string | null
@@ -542,6 +543,7 @@ export type Database = {
         Insert: {
           additional_images?: string[] | null
           category?: string
+          company_tags?: string[] | null
           created_at?: string
           description?: string | null
           dimensions?: string | null
@@ -567,6 +569,7 @@ export type Database = {
         Update: {
           additional_images?: string[] | null
           category?: string
+          company_tags?: string[] | null
           created_at?: string
           description?: string | null
           dimensions?: string | null

@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ChevronDown, ChevronUp, Package, Edit } from 'lucide-react';
 import { ProductVariantCard } from './ProductVariantCard';
-import { Package, Info } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -18,6 +19,7 @@ interface Product {
   dimensions: string;
   editable_title: string;
   editable_description: string;
+  company_tags: string[];
   is_active: boolean;
 }
 
@@ -25,98 +27,62 @@ interface ProductSeriesSectionProps {
   seriesName: string;
   products: Product[];
   onProductSelect: (product: Product) => void;
+  onEditProduct: (product: Product) => void;
 }
 
 export const ProductSeriesSection: React.FC<ProductSeriesSectionProps> = ({
   seriesName,
   products,
-  onProductSelect
+  onProductSelect,
+  onEditProduct,
 }) => {
-  const displayName = seriesName.replace('Laboratory Bench Knee Space Series', 'KS Series');
-  const isKneeSpaceSeries = seriesName.includes('Knee Space');
-  
-  // Group products by finish type for KS Series
-  const productsByFinish = products.reduce((acc, product) => {
-    const finish = product.finish_type || 'PC';
-    if (!acc[finish]) acc[finish] = [];
-    acc[finish].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const finishLabels = {
-    'PC': 'Powder Coat',
-    'SS': 'Stainless Steel'
-  };
+  const displayName = seriesName.replace('Laboratory Bench Knee Space Series', 'Laboratory Bench KS Series');
 
   return (
-    <Card className="border-l-4 border-l-blue-500">
+    <Card className="border-l-4 border-l-primary">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Package className="h-6 w-6 text-blue-600" />
+            <Package className="h-5 w-5 text-primary" />
             <div>
-              <CardTitle className="text-xl">{displayName}</CardTitle>
-              <p className="text-sm text-muted-foreground mt-1">
-                {products.length} {products.length === 1 ? 'variant' : 'variants'} available
-                {isKneeSpaceSeries && ' • 7 sizes (KS700-KS1200) • 2 finishes (PC/SS)'}
+              <CardTitle className="text-lg">{displayName}</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {products.length} product{products.length !== 1 ? 's' : ''}
               </p>
             </div>
           </div>
-          <Badge variant="secondary" className="bg-blue-50 text-blue-700">
-            {seriesName.replace('Laboratory Bench Knee Space Series', 'Knee Space')}
-          </Badge>
-        </div>
-        
-        {isKneeSpaceSeries && (
-          <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg mt-4">
-            <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-blue-700">
-              <p className="font-medium">Laboratory Bench Knee Space Series</p>
-              <p>Ergonomic solutions with 7 width configurations (700-1200mm) available in both Powder Coat (PC) and Stainless Steel (SS) finishes.</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">
+              {products.length} variants
+            </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="ml-2"
+            >
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
           </div>
-        )}
+        </div>
       </CardHeader>
       
-      <CardContent>
-        {isKneeSpaceSeries && Object.keys(productsByFinish).length > 1 ? (
-          // Show finish groups for KS Series
-          <div className="space-y-6">
-            {Object.entries(productsByFinish).map(([finish, finishProducts]) => (
-              <div key={finish}>
-                <div className="flex items-center gap-2 mb-3">
-                  <Badge variant={finish === 'SS' ? 'default' : 'secondary'} className="text-xs">
-                    {finish} ({finishLabels[finish as keyof typeof finishLabels] || finish})
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {finishProducts.length} sizes available
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                  {finishProducts.map((product) => (
-                    <ProductVariantCard
-                      key={product.id}
-                      product={product}
-                      onSelect={() => onProductSelect(product)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          // Regular product grid
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      {isExpanded && (
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {products.map((product) => (
               <ProductVariantCard
                 key={product.id}
                 product={product}
                 onSelect={() => onProductSelect(product)}
+                onEdit={() => onEditProduct(product)}
               />
             ))}
           </div>
-        )}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 };

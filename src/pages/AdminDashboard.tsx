@@ -1,354 +1,173 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Package, 
-  MessageSquare, 
-  Shield, 
-  Settings,
-  Database,
-  Activity,
-  Users,
-  FileText,
-  BarChart3,
-  Wrench
-} from 'lucide-react';
-import { EnhancedAssetManager } from '@/components/admin/enhanced-asset-manager';
-import ChatbotTraining from '@/components/ChatbotTraining';
-import ChatAdminDashboard from '@/components/ChatAdminDashboard';
-import AdminRoleManager from '@/components/AdminRoleManager';
-import AdminAuthGuard from '@/components/AdminAuthGuard';
+import { Package, Users, MessageSquare, BarChart3, FileText, Settings } from 'lucide-react';
+import { AdminAuthGuard } from '@/components/AdminAuthGuard';
+import { EnhancedAssetManager } from '@/components/admin/enhanced-asset-manager/EnhancedAssetManager';
+import { AdminProductEditor } from '@/components/admin/AdminProductEditor';
+import { ChatAdminDashboard } from '@/components/ChatAdminDashboard';
+import { AdminRoleManager } from '@/components/AdminRoleManager';
+import { PDFUploadManager } from '@/components/PDFUploadManager';
+import { KnowledgeBaseManager } from '@/components/KnowledgeBaseManager';
+import { ChatbotTraining } from '@/components/ChatbotTraining';
 
-const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('assets');
-
-  // Fetch admin statistics
-  const { data: stats } = useQuery({
-    queryKey: ['admin-stats'],
-    queryFn: async () => {
-      const [productsResult, sessionsResult, documentsResult, usersResult] = await Promise.all([
-        supabase.from('products').select('id', { count: 'exact' }),
-        supabase.from('chat_sessions').select('id', { count: 'exact' }),
-        supabase.from('pdf_documents').select('id', { count: 'exact' }),
-        supabase.from('admin_roles').select('id', { count: 'exact' })
-      ]);
-
-      return {
-        products: productsResult.count || 0,
-        sessions: sessionsResult.count || 0,
-        documents: documentsResult.count || 0,
-        users: usersResult.count || 0
-      };
-    }
-  });
+export default function AdminDashboard() {
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <AdminAuthGuard>
-      <div className="container mx-auto py-12 pt-20">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-          <p className="text-gray-600">Comprehensive management system for laboratory equipment products, chatbot, security, and maintenance</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+            <p className="text-gray-600">Manage your laboratory equipment catalog and system settings</p>
+          </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.products || 0}</div>
-              <p className="text-xs text-muted-foreground">Laboratory equipment catalog</p>
-            </CardContent>
-          </Card>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="grid w-full grid-cols-7 mb-8">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="products">Products</TabsTrigger>
+              <TabsTrigger value="assets">Asset Manager</TabsTrigger>
+              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
+              <TabsTrigger value="training">Training</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+            </TabsList>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Chat Sessions</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.sessions || 0}</div>
-              <p className="text-xs text-muted-foreground">Customer interactions</p>
-            </CardContent>
-          </Card>
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">127</div>
+                    <p className="text-xs text-muted-foreground">Active laboratory equipment</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Chat Sessions</CardTitle>
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">89</div>
+                    <p className="text-xs text-muted-foreground">This month</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Knowledge Base</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">45</div>
+                    <p className="text-xs text-muted-foreground">Active entries</p>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">System Health</CardTitle>
+                    <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-green-600">Good</div>
+                    <p className="text-xs text-muted-foreground">All systems operational</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Admin Users</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.users || 0}</div>
-              <p className="text-xs text-muted-foreground">System administrators</p>
-            </CardContent>
-          </Card>
+            <TabsContent value="products">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Product Management</h2>
+                  <Button onClick={() => setActiveTab('assets')}>
+                    <Package className="h-4 w-4 mr-2" />
+                    Go to Asset Manager
+                  </Button>
+                </div>
+                <AdminProductEditor />
+              </div>
+            </TabsContent>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">System Health</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">Good</div>
-              <p className="text-xs text-muted-foreground">All systems operational</p>
-            </CardContent>
-          </Card>
-        </div>
+            <TabsContent value="assets">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Laboratory Equipment Manager</h2>
+                  <p className="text-muted-foreground">
+                    Comprehensive asset management for all laboratory equipment
+                  </p>
+                </div>
+                <EnhancedAssetManager />
+              </div>
+            </TabsContent>
 
-        {/* Main Content Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid grid-cols-5 w-full">
-            <TabsTrigger value="assets" className="flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Laboratory Equipment
-            </TabsTrigger>
-            <TabsTrigger value="chatbot" className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4" />
-              Chatbot
-            </TabsTrigger>
-            <TabsTrigger value="security" className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              Security
-            </TabsTrigger>
-            <TabsTrigger value="maintenance" className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              Maintenance
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="assets" className="space-y-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">Laboratory Equipment Manager</h2>
-              <p className="text-muted-foreground">
-                Manage all Innosin Lab product series including KS Series, Mobile Cabinets, Modular Cabinets, and more
-              </p>
-            </div>
-            <EnhancedAssetManager />
-          </TabsContent>
-
-          <TabsContent value="chatbot" className="space-y-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">Chatbot Management</h2>
-              <p className="text-muted-foreground">Train and monitor the AI chatbot system for customer support</p>
-            </div>
-            <Tabs defaultValue="training" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="training">Bot Training</TabsTrigger>
-                <TabsTrigger value="dashboard">Chat Dashboard</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="training">
-                <ChatbotTraining />
-              </TabsContent>
-              
-              <TabsContent value="dashboard">
+            <TabsContent value="chat">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Chat Management</h2>
+                  <MessageSquare className="h-5 w-5" />
+                </div>
                 <ChatAdminDashboard />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="security" className="space-y-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">Security Management</h2>
-              <p className="text-muted-foreground">Manage user roles, permissions, and security settings</p>
-            </div>
-            <AdminRoleManager />
-          </TabsContent>
+            <TabsContent value="knowledge">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Knowledge Base</h2>
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>PDF Document Upload</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <PDFUploadManager />
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Knowledge Base Manager</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <KnowledgeBaseManager />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="maintenance" className="space-y-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">System Maintenance</h2>
-              <p className="text-muted-foreground">Monitor system health and perform maintenance tasks</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    Database Health
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>Database Status</span>
-                    <span className="text-green-600 font-medium">Healthy</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Storage Usage</span>
-                    <span>2.3 GB / 10 GB</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Products Count</span>
-                    <span className="font-medium">{stats?.products || 0}</span>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    <Database className="h-4 w-4 mr-2" />
-                    Optimize Database
-                  </Button>
-                </CardContent>
-              </Card>
+            <TabsContent value="training">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">Chatbot Training</h2>
+                  <Settings className="h-5 w-5" />
+                </div>
+                <ChatbotTraining />
+              </div>
+            </TabsContent>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Asset Health
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>Product Series</span>
-                    <span className="text-blue-600 font-medium">11</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Missing Assets</span>
-                    <span className="text-yellow-600 font-medium">0</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>System Status</span>
-                    <span className="text-green-600 font-medium">Optimized</span>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Scan Assets
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <BarChart3 className="h-5 w-5" />
-                    Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>Page Load Time</span>
-                    <span className="text-green-600 font-medium">1.2s</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>API Response</span>
-                    <span className="text-green-600 font-medium">245ms</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Database Query</span>
-                    <span className="text-green-600 font-medium">65ms</span>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    <Activity className="h-4 w-4 mr-2" />
-                    Run Performance Test
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wrench className="h-5 w-5" />
-                    Maintenance Tools
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
-                    Clear Cache
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    Rebuild Search Index
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    Export Product Data
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    Export System Logs
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <div className="mb-4">
-              <h2 className="text-2xl font-bold mb-2">System Settings</h2>
-              <p className="text-muted-foreground">Configure general system settings and preferences</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>General Settings</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Site Name</label>
-                    <input 
-                      type="text" 
-                      defaultValue="Innosin Lab Equipment Store" 
-                      className="w-full p-2 border rounded-md"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Default Product Display</label>
-                    <select className="w-full p-2 border rounded-md">
-                      <option value="all">All Products</option>
-                      <option value="ks-series">KS Series Only</option>
-                      <option value="featured">Featured Products</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Maintenance Mode</label>
-                    <select className="w-full p-2 border rounded-md">
-                      <option value="off">Off</option>
-                      <option value="on">On</option>
-                    </select>
-                  </div>
-                  <Button className="w-full">Save Settings</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Backup & Recovery</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span>Last Backup</span>
-                    <span className="text-sm text-muted-foreground">2 hours ago</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Auto Backup</span>
-                    <span className="text-green-600 font-medium">Enabled</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Backup Size</span>
-                    <span className="text-sm text-muted-foreground">245 MB</span>
-                  </div>
-                  <Button variant="outline" className="w-full">
-                    Create Backup Now
-                  </Button>
-                  <Button variant="outline" className="w-full">
-                    Export Product Catalog
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="users">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-bold">User Management</h2>
+                  <Users className="h-5 w-5" />
+                </div>
+                <AdminRoleManager />
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </AdminAuthGuard>
   );
-};
-
-export default AdminDashboard;
+}

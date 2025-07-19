@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Eye, Package, Ruler } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Edit, Eye, Package, Tag } from 'lucide-react';
 
 interface Product {
   id: string;
@@ -18,96 +18,126 @@ interface Product {
   dimensions: string;
   editable_title: string;
   editable_description: string;
+  company_tags: string[];
   is_active: boolean;
 }
 
 interface ProductVariantCardProps {
   product: Product;
   onSelect: () => void;
+  onEdit: () => void;
 }
 
 export const ProductVariantCard: React.FC<ProductVariantCardProps> = ({
   product,
-  onSelect
+  onSelect,
+  onEdit,
 }) => {
-  const isKneeSpace = product.product_series?.includes('Knee Space');
-  
-  // Get finish label
-  const getFinishLabel = (finishType: string) => {
-    switch (finishType) {
-      case 'PC': return 'Powder Coat';
-      case 'SS': return 'Stainless Steel';
-      default: return finishType;
-    }
-  };
-
-  // Get variant display name for KS series
-  const getDisplayName = () => {
-    if (isKneeSpace && product.product_code?.startsWith('KS')) {
-      return product.product_code; // Show KS700, KS750, etc.
-    }
-    return product.editable_title || product.name;
-  };
+  const displayTitle = product.editable_title || product.name;
+  const displayDescription = product.editable_description || `${product.product_code} - ${product.dimensions || 'No dimensions'}`;
 
   return (
-    <Card className="group hover:shadow-md transition-shadow duration-200 cursor-pointer" onClick={onSelect}>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Product Name */}
-          <div>
-            <h4 className="font-medium text-sm line-clamp-2 group-hover:text-blue-600 transition-colors">
-              {getDisplayName()}
-            </h4>
-            {product.product_code && !isKneeSpace && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Code: {product.product_code}
+    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-primary" />
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-sm font-medium truncate">
+                {product.product_code}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground truncate">
+                {displayTitle}
               </p>
-            )}
+            </div>
           </div>
-
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect();
+              }}
+              className="h-6 w-6 p-0"
+            >
+              <Eye className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0" onClick={onSelect}>
+        <div className="space-y-2">
           {/* Dimensions */}
           {product.dimensions && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Ruler className="h-3 w-3" />
-              <span>{product.dimensions}</span>
+            <div className="text-xs text-muted-foreground">
+              📏 {product.dimensions}
             </div>
           )}
-
-          {/* Badges */}
+          
+          {/* Finish & Orientation */}
           <div className="flex flex-wrap gap-1">
             {product.finish_type && (
-              <Badge 
-                variant={product.finish_type === 'SS' ? 'default' : 'secondary'} 
-                className="text-xs"
-              >
-                {product.finish_type} ({getFinishLabel(product.finish_type)})
+              <Badge variant="outline" className="text-xs">
+                {product.finish_type === 'PC' ? 'Powder Coat' : 
+                 product.finish_type === 'SS' ? 'Stainless Steel' : 
+                 product.finish_type}
               </Badge>
             )}
             {product.orientation && product.orientation !== 'None' && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="secondary" className="text-xs">
                 {product.orientation}
-              </Badge>
-            )}
-            {product.drawer_count > 0 && (
-              <Badge variant="outline" className="text-xs">
-                {product.drawer_count} Drawers
               </Badge>
             )}
           </div>
 
-          {/* Action Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full text-xs h-8 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelect();
-            }}
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            View Details
-          </Button>
+          {/* Door Type & Drawer Count */}
+          <div className="flex flex-wrap gap-1">
+            {product.door_type && (
+              <Badge variant="outline" className="text-xs">
+                {product.door_type}
+              </Badge>
+            )}
+            {product.drawer_count > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {product.drawer_count} drawer{product.drawer_count !== 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+
+          {/* Company Tags */}
+          {product.company_tags && product.company_tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              <Tag className="h-3 w-3 text-muted-foreground" />
+              {product.company_tags.slice(0, 2).map(tag => (
+                <Badge key={tag} variant="secondary" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+              {product.company_tags.length > 2 && (
+                <Badge variant="secondary" className="text-xs">
+                  +{product.company_tags.length - 2}
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Description */}
+          <p className="text-xs text-muted-foreground line-clamp-2">
+            {displayDescription}
+          </p>
         </div>
       </CardContent>
     </Card>

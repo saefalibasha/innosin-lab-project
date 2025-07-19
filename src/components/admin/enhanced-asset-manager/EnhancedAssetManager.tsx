@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, BarChart3, Package, AlertCircle, Wrench } from 'lucide-react';
+import { Search, Filter, BarChart3, Package, AlertCircle, Wrench, Plus, Tag } from 'lucide-react';
 import { ProductSeriesSection } from './ProductSeriesSection';
 import { ProductAssetModal } from './ProductAssetModal';
 import { AssetStatistics } from './AssetStatistics';
+import { AddProductModal } from './AddProductModal';
+import { EditProductModal } from './EditProductModal';
 
 interface Product {
   id: string;
@@ -24,14 +26,18 @@ interface Product {
   dimensions: string;
   editable_title: string;
   editable_description: string;
+  company_tags: string[];
   is_active: boolean;
 }
 
 export const EnhancedAssetManager: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCompanyTag, setSelectedCompanyTag] = useState<string>('all');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showStats, setShowStats] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   // Fetch all Innosin Lab products with the new clean structure
   const { data: products = [], isLoading, error, refetch } = useQuery({
@@ -56,7 +62,7 @@ export const EnhancedAssetManager: React.FC = () => {
     }
   });
 
-  // Filter products based on search and category
+  // Filter products based on search, category, and company tags
   const filteredProducts = products.filter(product => {
     const matchesSearch = !searchTerm || 
       product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -66,8 +72,11 @@ export const EnhancedAssetManager: React.FC = () => {
       product.editable_title?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesCategory = selectedCategory === 'all' || product.product_series === selectedCategory;
+    
+    const matchesCompanyTag = selectedCompanyTag === 'all' || 
+      (product.company_tags && product.company_tags.includes(selectedCompanyTag));
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesCompanyTag;
   });
 
   // Group products by series
@@ -86,8 +95,25 @@ export const EnhancedAssetManager: React.FC = () => {
       return countB - countA; // Sort by count descending
     });
 
+  // Get unique company tags for filtering
+  const companyTags = [...new Set(products.flatMap(p => p.company_tags || []))].sort();
+
   const handleProductSelect = (product: Product) => {
     setSelectedProduct(product);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+  };
+
+  const handleProductUpdated = () => {
+    refetch();
+    setEditingProduct(null);
+  };
+
+  const handleProductAdded = () => {
+    refetch();
+    setShowAddModal(false);
   };
 
   if (isLoading) {
@@ -120,14 +146,8 @@ export const EnhancedAssetManager: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Actions Bar */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Laboratory Equipment Manager</h2>
-          <p className="text-muted-foreground">
-            Manage all Innosin Lab product series - {products.length} products across {categories.length} series
-          </p>
-        </div>
         <div className="flex gap-2">
           <Button
             variant={showStats ? 'default' : 'outline'}
@@ -141,6 +161,10 @@ export const EnhancedAssetManager: React.FC = () => {
             Refresh
           </Button>
         </div>
+        <Button onClick={() => setShowAddModal(true)} className="bg-primary">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Product
+        </Button>
       </div>
 
       {/* Statistics */}
@@ -155,7 +179,7 @@ export const EnhancedAssetManager: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4 mb-4">
             {/* Search */}
             <div className="flex-1">
               <div className="relative">
@@ -168,38 +192,65 @@ export const EnhancedAssetManager: React.FC = () => {
                 />
               </div>
             </div>
-
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory('all')}
-              >
-                All Series ({products.length})
-              </Button>
-              {categories.slice(0, 5).map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="max-w-[200px] truncate"
-                >
-                  {category.replace('Laboratory Bench Knee Space Series', 'KS Series')} 
-                  ({products.filter(p => p.product_series === category).length})
-                </Button>
-              ))}
-              {categories.length > 5 && (
-                <Badge variant="secondary">
-                  +{categories.length - 5} more
-                </Badge>
-              )}
-            </div>
           </div>
 
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button
+              variant={selectedCategory === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setSelectedCategory('all')}
+            >
+              All Series ({products.length})
+            </Button>
+            {categories.slice(0, 5).map(category => (
+              <Button
+                key={category}
+                variant={selectedCategory === category ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory(category)}
+                className="max-w-[200px] truncate"
+              >
+                {category.replace('Laboratory Bench Knee Space Series', 'KS Series')} 
+                ({products.filter(p => p.product_series === category).length})
+              </Button>
+            ))}
+            {categories.length > 5 && (
+              <Badge variant="secondary">
+                +{categories.length - 5} more
+              </Badge>
+            )}
+          </div>
+
+          {/* Company Tags Filter */}
+          {companyTags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              <div className="flex items-center gap-2 mr-2">
+                <Tag className="h-4 w-4" />
+                <span className="text-sm font-medium">Company Tags:</span>
+              </div>
+              <Button
+                variant={selectedCompanyTag === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCompanyTag('all')}
+              >
+                All Tags
+              </Button>
+              {companyTags.map(tag => (
+                <Button
+                  key={tag}
+                  variant={selectedCompanyTag === tag ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCompanyTag(tag)}
+                >
+                  {tag}
+                </Button>
+              ))}
+            </div>
+          )}
+
           {/* Active Filters */}
-          <div className="flex flex-wrap gap-2 mt-4">
+          <div className="flex flex-wrap gap-2">
             {searchTerm && (
               <Badge variant="secondary" className="gap-1">
                 Search: "{searchTerm}"
@@ -212,6 +263,14 @@ export const EnhancedAssetManager: React.FC = () => {
               <Badge variant="secondary" className="gap-1">
                 Series: {selectedCategory.replace('Laboratory Bench Knee Space Series', 'KS Series')}
                 <button onClick={() => setSelectedCategory('all')} className="ml-1 hover:text-destructive">
+                  ×
+                </button>
+              </Badge>
+            )}
+            {selectedCompanyTag !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                Tag: {selectedCompanyTag}
+                <button onClick={() => setSelectedCompanyTag('all')} className="ml-1 hover:text-destructive">
                   ×
                 </button>
               </Badge>
@@ -235,6 +294,7 @@ export const EnhancedAssetManager: React.FC = () => {
               seriesName={seriesName}
               products={seriesProducts}
               onProductSelect={handleProductSelect}
+              onEditProduct={handleEditProduct}
             />
           ))}
       </div>
@@ -251,6 +311,7 @@ export const EnhancedAssetManager: React.FC = () => {
             <Button onClick={() => {
               setSearchTerm('');
               setSelectedCategory('all');
+              setSelectedCompanyTag('all');
             }} variant="outline">
               Clear All Filters
             </Button>
@@ -273,11 +334,26 @@ export const EnhancedAssetManager: React.FC = () => {
         </Card>
       )}
 
-      {/* Product Asset Modal */}
+      {/* Modals */}
       {selectedProduct && (
         <ProductAssetModal
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onProductUpdated={handleProductUpdated}
+        />
+      )}
+
+      {showAddModal && (
+        <AddProductModal
+          onClose={() => setShowAddModal(false)}
+          onProductAdded={handleProductAdded}
         />
       )}
     </div>
