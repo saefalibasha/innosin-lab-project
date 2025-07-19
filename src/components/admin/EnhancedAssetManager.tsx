@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Search, Filter, Plus, Eye, Edit, Trash2, Package } from 'lucide-react';
+import { Loader2, Search, Filter, Plus, Eye, Edit, Trash2, Package, Upload, Download } from 'lucide-react';
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -134,6 +135,16 @@ const EnhancedAssetManager = () => {
     setEditingProduct(null);
   };
 
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setIsFormOpen(true);
+  };
+
+  const handleView = (product: Product) => {
+    setSelectedProduct(product);
+    setIsViewOpen(true);
+  };
+
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -194,10 +205,20 @@ const EnhancedAssetManager = () => {
             <Filter className="h-4 w-4" />
             <CardTitle>Filters & Search</CardTitle>
           </div>
-          <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Product
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
@@ -353,10 +374,7 @@ const EnhancedAssetManager = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setSelectedProduct(product);
-                      setIsViewOpen(true);
-                    }}
+                    onClick={() => handleView(product)}
                   >
                     <Eye className="h-3 w-3" />
                   </Button>
@@ -364,10 +382,7 @@ const EnhancedAssetManager = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      setEditingProduct(product);
-                      setIsFormOpen(true);
-                    }}
+                    onClick={() => handleEdit(product)}
                   >
                     <Edit className="h-3 w-3" />
                   </Button>
@@ -439,11 +454,7 @@ const EnhancedAssetManager = () => {
         isOpen={isViewOpen}
         onOpenChange={setIsViewOpen}
         product={selectedProduct}
-        onEdit={(product) => {
-          setEditingProduct(product);
-          setIsViewOpen(false);
-          setIsFormOpen(true);
-        }}
+        onEdit={handleEdit}
         onDelete={handleDeleteProduct}
         onToggleStatus={toggleProductStatus}
       />
