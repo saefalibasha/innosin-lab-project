@@ -61,11 +61,17 @@ export const SystemHealthCard: React.FC = () => {
     }
   };
 
-  const overallStatus: HealthStatus = healthMetrics.some(m => m.status === 'error') 
-    ? 'error' 
-    : healthMetrics.some(m => m.status === 'warning') 
-    ? 'warning' 
-    : 'good';
+  // Fix the overall status determination logic
+  const determineOverallStatus = (): HealthStatus => {
+    const hasError = healthMetrics.some(metric => metric.status === 'error');
+    const hasWarning = healthMetrics.some(metric => metric.status === 'warning');
+    
+    if (hasError) return 'error';
+    if (hasWarning) return 'warning';
+    return 'good';
+  };
+
+  const overallStatus = determineOverallStatus();
 
   return (
     <Card>
