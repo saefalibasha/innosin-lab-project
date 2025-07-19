@@ -1,14 +1,12 @@
-
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Users, MessageSquare, BarChart3, FileText, Settings, TrendingUp, Activity, ExternalLink } from 'lucide-react';
+import { Package, Users, MessageSquare, BarChart3, FileText, Settings, TrendingUp, Activity, ExternalLink, Brain } from 'lucide-react';
 import AdminAuthGuard from '@/components/AdminAuthGuard';
 import { EnhancedAssetManager } from '@/components/admin/enhanced-asset-manager/EnhancedAssetManager';
 import AdminRoleManager from '@/components/AdminRoleManager';
 import PDFUploadManager from '@/components/PDFUploadManager';
-import KnowledgeBaseManager from '@/components/KnowledgeBaseManager';
 import ChatbotTraining from '@/components/ChatbotTraining';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
 import { SystemHealthCard } from '@/components/admin/SystemHealthCard';
@@ -30,16 +28,15 @@ export default function AdminDashboard() {
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage your laboratory equipment catalog and system settings</p>
+            <p className="text-gray-600">Manage your laboratory equipment catalog and AI system settings</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-6 mb-8">
+            <TabsList className="grid w-full grid-cols-5 mb-8">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="products">Products & Assets</TabsTrigger>
               <TabsTrigger value="chat">Chat & Inquiries</TabsTrigger>
-              <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
-              <TabsTrigger value="training">Training</TabsTrigger>
+              <TabsTrigger value="ai-center">AI Training Center</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
             </TabsList>
 
@@ -326,39 +323,32 @@ export default function AdminDashboard() {
               </div>
             </TabsContent>
 
-            <TabsContent value="knowledge">
+            <TabsContent value="ai-center">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Knowledge Base</h2>
-                  <FileText className="h-5 w-5" />
+                  <div>
+                    <h2 className="text-2xl font-bold flex items-center">
+                      <Brain className="h-6 w-6 mr-2" />
+                      AI Training Center
+                    </h2>
+                    <p className="text-gray-600">Comprehensive AI chatbot management, knowledge base, and training platform</p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>PDF Document Upload</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <PDFUploadManager />
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Knowledge Base Manager</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <KnowledgeBaseManager />
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </TabsContent>
+                
+                {/* PDF Upload Section */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <FileText className="h-5 w-5 mr-2" />
+                      Document Upload & Processing
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <PDFUploadManager />
+                  </CardContent>
+                </Card>
 
-            <TabsContent value="training">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-bold">Chatbot Training</h2>
-                  <Settings className="h-5 w-5" />
-                </div>
+                {/* Main AI Training Interface */}
                 <ChatbotTraining />
               </div>
             </TabsContent>
