@@ -33,10 +33,15 @@ export const SystemHealthCard: React.FC = () => {
           .from('documents')
           .list('', { limit: 1 });
 
-        const dbStatus = dbError ? 'error' : 'good';
-        const storageStatus = storageError ? 'warning' : 'good';
-        const overallStatus = dbStatus === 'error' || storageStatus === 'error' ? 'error' : 
-                             dbStatus === 'warning' || storageStatus === 'warning' ? 'warning' : 'good';
+        const dbStatus: SystemHealth['database'] = dbError ? 'error' : 'good';
+        const storageStatus: SystemHealth['storage'] = storageError ? 'warning' : 'good';
+        
+        let overallStatus: SystemHealth['overall'] = 'good';
+        if (dbStatus === 'error' || storageStatus === 'error') {
+          overallStatus = 'error';
+        } else if (dbStatus === 'warning' || storageStatus === 'warning') {
+          overallStatus = 'warning';
+        }
 
         setHealth({
           database: dbStatus,
