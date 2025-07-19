@@ -12,7 +12,8 @@ import { Search, Filter, Plus, Tag } from 'lucide-react';
 import { ProductSeriesSection } from './ProductSeriesSection';
 import { AddProductModal } from './AddProductModal';
 
-interface Product {
+// Define the Product interface to match our database schema
+interface DatabaseProduct {
   id: string;
   name: string;
   product_code: string;
@@ -39,12 +40,12 @@ interface Product {
 
 interface ProductSeries {
   seriesName: string;
-  products: Product[];
+  products: DatabaseProduct[];
 }
 
 export const EnhancedAssetManager = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<DatabaseProduct[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<DatabaseProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -71,7 +72,7 @@ export const EnhancedAssetManager = () => {
 
       if (error) throw error;
 
-      const formattedProducts: Product[] = (data || []).map(product => ({
+      const formattedProducts: DatabaseProduct[] = (data || []).map(product => ({
         id: product.id,
         name: product.name,
         product_code: product.product_code || '',
@@ -139,7 +140,7 @@ export const EnhancedAssetManager = () => {
     setFilteredProducts(filtered);
   };
 
-  const groupProductsBySeries = (products: Product[]): ProductSeries[] => {
+  const groupProductsBySeries = (products: DatabaseProduct[]): ProductSeries[] => {
     const grouped = products.reduce((acc, product) => {
       const series = product.product_series || 'Uncategorized';
       if (!acc[series]) {
@@ -147,7 +148,7 @@ export const EnhancedAssetManager = () => {
       }
       acc[series].push(product);
       return acc;
-    }, {} as Record<string, Product[]>);
+    }, {} as Record<string, DatabaseProduct[]>);
 
     return Object.entries(grouped).map(([seriesName, products]) => ({
       seriesName,

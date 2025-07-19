@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, ChevronUp, Package, Edit } from 'lucide-react';
 import { ProductVariantCard } from './ProductVariantCard';
 
-interface Product {
+interface DatabaseProduct {
   id: string;
   product_code: string;
   name: string;
@@ -17,17 +17,17 @@ interface Product {
   door_type: string;
   drawer_count: number;
   dimensions: string;
-  editable_title: string;
-  editable_description: string;
+  editable_title?: string;
+  editable_description?: string;
   company_tags: string[];
   is_active: boolean;
 }
 
 interface ProductSeriesSectionProps {
   seriesName: string;
-  products: Product[];
-  onProductSelect: (product: Product) => void;
-  onEditProduct: (product: Product) => void;
+  products: DatabaseProduct[];
+  onProductSelect: (product: DatabaseProduct) => void;
+  onEditProduct: (product: DatabaseProduct) => void;
   onProductUpdated: () => void;
 }
 
