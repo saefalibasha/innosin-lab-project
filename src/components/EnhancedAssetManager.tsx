@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,80 +125,145 @@ const EnhancedAssetManager = () => {
     const assetStatuses: AssetStatus[] = [];
 
     try {
-      // Group products by base name for variant handling
+      // Handle KS series specially - group by base product code
       const productGroups = new Map<string, Product[]>();
       
       productsToCheck.forEach(product => {
-        const baseName = getProductBaseName(product.product_code);
-        if (!productGroups.has(baseName)) {
-          productGroups.set(baseName, []);
+        // For KS series, group all variants under the base series
+        if (product.product_series === 'Laboratory Bench Knee Space Series') {
+          const seriesKey = 'Laboratory Bench Knee Space Series';
+          if (!productGroups.has(seriesKey)) {
+            productGroups.set(seriesKey, []);
+          }
+          productGroups.get(seriesKey)!.push(product);
+        } else {
+          // For other products, use the existing grouping logic
+          const baseName = getProductBaseName(product.product_code);
+          if (!productGroups.has(baseName)) {
+            productGroups.set(baseName, []);
+          }
+          productGroups.get(baseName)!.push(product);
         }
-        productGroups.get(baseName)!.push(product);
       });
 
-      for (const [baseName, groupProducts] of productGroups) {
-        const mainProduct = groupProducts[0];
-        
-        // Check main product assets
-        const hasOverviewImage = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/overview.jpg`);
-        const hasGLB = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.glb`);
-        const hasJPG = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.jpg`);
-        
-        const isMainComplete = hasGLB && hasJPG && !isPlaceholderAsset(mainProduct.model_path) && !isPlaceholderAsset(mainProduct.thumbnail_path);
-
-        // Check variants
-        const variants: VariantStatus[] = [];
-        for (const variant of groupProducts) {
-          if (variant.id !== mainProduct.id) {
-            const variantHasGLB = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`);
-            const variantHasJPG = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`);
+      for (const [groupKey, groupProducts] of productGroups) {
+        if (groupKey === 'Laboratory Bench Knee Space Series') {
+          // Handle KS series as a single group with variants
+          const mainProduct = groupProducts[0];
+          
+          // Check overview image for the series
+          const hasOverviewImage = await checkAssetExists(`products/laboratory-bench-knee-space-series/overview.jpg`);
+          
+          // Check each KS variant
+          const variants: VariantStatus[] = [];
+          for (const variant of groupProducts) {
+            const variantCode = variant.product_code; // KS700, KS750, etc.
+            const variantHasGLB = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.glb`);
+            const variantHasJPG = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.jpg`);
             
             const variantStatus: 'complete' | 'partial' | 'missing' = 
               (variantHasGLB && variantHasJPG) ? 'complete' :
               (variantHasGLB || variantHasJPG) ? 'partial' : 'missing';
 
-            // Include all variants when showing all products, or only incomplete ones when filtering
-            if (showAllProducts || variantStatus !== 'complete') {
-              variants.push({
-                id: variant.id,
-                size: variant.product_code,
-                hasGLB: variantHasGLB,
-                hasJPG: variantHasJPG,
-                status: variantStatus,
-                glbPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`,
-                jpgPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`
-              });
-            }
+            variants.push({
+              id: variant.id,
+              size: variantCode,
+              hasGLB: variantHasGLB,
+              hasJPG: variantHasJPG,
+              status: variantStatus,
+              glbPath: `products/${variantCode.toLowerCase()}/${variantCode}.glb`,
+              jpgPath: `products/${variantCode.toLowerCase()}/${variantCode}.jpg`
+            });
           }
-        }
 
-        // Include products based on showAllProducts setting
-        const needsOverviewImage = !hasOverviewImage;
-        const hasIncompleteVariants = variants.some(v => v.status !== 'complete');
-        
-        if (showAllProducts || needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
-          const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variants);
+          const completionPercentage = calculateKSSeriesCompletion(hasOverviewImage, variants);
           const status: 'complete' | 'partial' | 'missing' = 
             completionPercentage === 100 ? 'complete' :
             completionPercentage > 0 ? 'partial' : 'missing';
 
-          assetStatuses.push({
-            productId: mainProduct.id,
-            productCode: mainProduct.product_code,
-            productName: mainProduct.name,
-            editableTitle: mainProduct.editable_title || mainProduct.name,
-            productSeries: mainProduct.product_series || 'Unknown',
-            finishType: mainProduct.finish_type || 'PC',
-            orientation: mainProduct.orientation || 'None',
-            dimensions: mainProduct.dimensions || 'N/A',
-            hasOverviewImage,
-            hasGLB,
-            hasJPG,
-            isMainComplete,
-            variants,
-            completionPercentage,
-            status
-          });
+          // Only show if not complete or if showing all products
+          if (showAllProducts || status !== 'complete') {
+            assetStatuses.push({
+              productId: mainProduct.id,
+              productCode: 'KS Series',
+              productName: 'Laboratory Bench Knee Space Series',
+              editableTitle: 'Laboratory Bench Knee Space Series',
+              productSeries: mainProduct.product_series,
+              finishType: 'PC/SS',
+              orientation: 'None',
+              dimensions: '700-1200mm widths',
+              hasOverviewImage,
+              hasGLB: false, // Not applicable for series
+              hasJPG: false, // Not applicable for series
+              isMainComplete: status === 'complete',
+              variants,
+              completionPercentage,
+              status
+            });
+          }
+        } else {
+          // Handle other products with existing logic
+          const mainProduct = groupProducts[0];
+          
+          // Check main product assets
+          const hasOverviewImage = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/overview.jpg`);
+          const hasGLB = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.glb`);
+          const hasJPG = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.jpg`);
+          
+          const isMainComplete = hasGLB && hasJPG && !isPlaceholderAsset(mainProduct.model_path) && !isPlaceholderAsset(mainProduct.thumbnail_path);
+
+          // Check variants
+          const variants: VariantStatus[] = [];
+          for (const variant of groupProducts) {
+            if (variant.id !== mainProduct.id) {
+              const variantHasGLB = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`);
+              const variantHasJPG = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`);
+              
+              const variantStatus: 'complete' | 'partial' | 'missing' = 
+                (variantHasGLB && variantHasJPG) ? 'complete' :
+                (variantHasGLB || variantHasJPG) ? 'partial' : 'missing';
+
+              if (showAllProducts || variantStatus !== 'complete') {
+                variants.push({
+                  id: variant.id,
+                  size: variant.product_code,
+                  hasGLB: variantHasGLB,
+                  hasJPG: variantHasJPG,
+                  status: variantStatus,
+                  glbPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`,
+                  jpgPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`
+                });
+              }
+            }
+          }
+
+          const needsOverviewImage = !hasOverviewImage;
+          const hasIncompleteVariants = variants.some(v => v.status !== 'complete');
+          
+          if (showAllProducts || needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
+            const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variants);
+            const status: 'complete' | 'partial' | 'missing' = 
+              completionPercentage === 100 ? 'complete' :
+              completionPercentage > 0 ? 'partial' : 'missing';
+
+            assetStatuses.push({
+              productId: mainProduct.id,
+              productCode: mainProduct.product_code,
+              productName: mainProduct.name,
+              editableTitle: mainProduct.editable_title || mainProduct.name,
+              productSeries: mainProduct.product_series || 'Unknown',
+              finishType: mainProduct.finish_type || 'PC',
+              orientation: mainProduct.orientation || 'None',
+              dimensions: mainProduct.dimensions || 'N/A',
+              hasOverviewImage,
+              hasGLB,
+              hasJPG,
+              isMainComplete,
+              variants,
+              completionPercentage,
+              status
+            });
+          }
         }
       }
 
@@ -237,6 +301,18 @@ const EnhancedAssetManager = () => {
 
   const isPlaceholderAsset = (path: string | null): boolean => {
     return !path || path.includes('PLACEHOLDER') || path.includes('placeholder');
+  };
+
+  const calculateKSSeriesCompletion = (hasOverview: boolean, variants: VariantStatus[]): number => {
+    const totalAssets = 1 + (variants.length * 2); // 1 overview + GLB/JPG per variant
+    let completedAssets = hasOverview ? 1 : 0;
+    
+    variants.forEach(variant => {
+      if (variant.hasGLB) completedAssets++;
+      if (variant.hasJPG) completedAssets++;
+    });
+
+    return Math.round((completedAssets / totalAssets) * 100);
   };
 
   const calculateCompletionPercentage = (

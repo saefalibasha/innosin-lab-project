@@ -1,5 +1,3 @@
-
-
 import { Product, ProductVariant } from '@/types/product';
 
 // Supabase storage base URL
@@ -48,10 +46,10 @@ const enhanceProductWithAssets = (product: Product): Product => {
   return enhancedProduct;
 };
 
-// Updated Knee Space Series data with correct naming and specifications
+// Updated KS Series data with standardized naming and specifications
 const kneeSpaceSeriesProducts: Product[] = [
   {
-    id: 'innosin-laboratory-bench-knee-space',
+    id: 'laboratory-bench-knee-space-series',
     name: 'Laboratory Bench Knee Space Series',
     category: 'Innosin Lab',
     description: 'Ergonomic knee space units providing comfortable leg room for laboratory workstations',
@@ -69,7 +67,7 @@ const kneeSpaceSeriesProducts: Product[] = [
     ],
     variants: [
       {
-        id: 'innosin-ks-700',
+        id: 'KS700',
         size: 'KS700',
         dimensions: '700×550×880 mm',
         type: 'Knee Space',
@@ -79,7 +77,7 @@ const kneeSpaceSeriesProducts: Product[] = [
         images: []
       },
       {
-        id: 'innosin-ks-750', 
+        id: 'KS750', 
         size: 'KS750',
         dimensions: '750×550×880 mm',
         type: 'Knee Space',
@@ -89,7 +87,7 @@ const kneeSpaceSeriesProducts: Product[] = [
         images: []
       },
       {
-        id: 'innosin-ks-800',
+        id: 'KS800',
         size: 'KS800', 
         dimensions: '800×550×880 mm',
         type: 'Knee Space',
@@ -99,7 +97,7 @@ const kneeSpaceSeriesProducts: Product[] = [
         images: []
       },
       {
-        id: 'innosin-ks-850',
+        id: 'KS850',
         size: 'KS850',
         dimensions: '850×550×880 mm', 
         type: 'Knee Space',
@@ -109,7 +107,7 @@ const kneeSpaceSeriesProducts: Product[] = [
         images: []
       },
       {
-        id: 'innosin-ks-900',
+        id: 'KS900',
         size: 'KS900',
         dimensions: '900×550×880 mm',
         type: 'Knee Space', 
@@ -119,7 +117,7 @@ const kneeSpaceSeriesProducts: Product[] = [
         images: []
       },
       {
-        id: 'innosin-ks-1000',
+        id: 'KS1000',
         size: 'KS1000',
         dimensions: '1000×550×880 mm',
         type: 'Knee Space',
@@ -129,7 +127,7 @@ const kneeSpaceSeriesProducts: Product[] = [
         images: []
       },
       {
-        id: 'innosin-ks-1200',
+        id: 'KS1200',
         size: 'KS1200', 
         dimensions: '1200×550×880 mm',
         type: 'Knee Space',
@@ -408,4 +406,3 @@ export const debugAssetUrls = (productId: string) => {
     }
   }
 };
-
