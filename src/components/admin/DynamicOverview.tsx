@@ -238,16 +238,25 @@ export const DynamicOverview = () => {
         </Card>
       </div>
 
-      {/* Series Completion Chart */}
+      {/* Series Completion Chart with Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Variants Completion Status
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Variants completion rates by product series
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Variants Completion Status
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Variants completion rates by product series
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Updates in last 7 days</span>
+              <Badge variant="outline">{stats.recentUpdates} updates</Badge>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="w-full overflow-x-auto">
@@ -279,22 +288,6 @@ export const DynamicOverview = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Updates in last 7 days</span>
-            <Badge variant="outline">{stats.recentUpdates} updates</Badge>
           </div>
         </CardContent>
       </Card>
