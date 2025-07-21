@@ -49,8 +49,16 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
 
-  // Get unique dimensions
-  const uniqueDimensions = [...new Set(variants.map(v => v.dimensions || 'Standard'))];
+  // Get unique dimensions and sort by length value (smallest to largest)
+  const uniqueDimensions = [...new Set(variants.map(v => v.dimensions || 'Standard'))]
+    .sort((a, b) => {
+      // Extract the length value from dimension strings (e.g., "1200 x 600 x 800" -> 1200)
+      const getLengthValue = (dim: string) => {
+        const match = dim.match(/^(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      };
+      return getLengthValue(a) - getLengthValue(b);
+    });
   
   // Get selected dimension
   const selectedDimension = selectedVariant?.dimensions || uniqueDimensions[0];

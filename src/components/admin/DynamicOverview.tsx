@@ -284,6 +284,7 @@ export const DynamicOverview = () => {
                   <Bar 
                     dataKey="completion_rate" 
                     radius={[4, 4, 0, 0]}
+                    fill="hsl(var(--primary))"
                   />
                 </BarChart>
               </ResponsiveContainer>
