@@ -123,7 +123,7 @@ export const DynamicOverview = () => {
 
           return {
             id: series.id,
-            name: series.name.length > 20 ? series.name.substring(0, 20) + '...' : series.name,
+            name: series.name,
             variant_count: currentVariants,
             completion_rate: completionRate,
             fill: getColor(completionRate),
