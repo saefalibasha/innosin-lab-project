@@ -21,6 +21,8 @@ const EnhancedProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [series, setSeries] = useState<any>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
+  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const [currentAssets, setCurrentAssets] = useState<any>(null);
   
   useEffect(() => {
     if (productId) {
@@ -52,34 +54,51 @@ const EnhancedProductDetail = () => {
   const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
   const isInnosinProduct = series?.category === 'Innosin Lab';
 
+  // Update assets when variant or finish changes
+  useEffect(() => {
+    if (currentVariant) {
+      const assets = getVariantAssetUrls(currentVariant);
+      // Update assets based on finish selection
+      const finishSuffix = selectedFinish === 'SS' ? '-ss' : '';
+      
+      setCurrentAssets({
+        thumbnail: assets.thumbnail,
+        model: assets.model,
+        images: assets.images || []
+      });
+      
+      console.log('Updated assets for variant:', currentVariant.id, 'with finish:', selectedFinish);
+    } else if (series) {
+      setCurrentAssets({
+        thumbnail: series.series_thumbnail_path || series.thumbnail_path,
+        model: series.series_model_path || series.model_path,
+        images: series.additional_images || []
+      });
+    }
+  }, [currentVariant, selectedFinish, series]);
+
   const handleAddToQuote = () => {
     if (!series) return;
     
     const itemToAdd = {
       id: currentVariant ? currentVariant.id : series.id,
       name: currentVariant ? 
-        `${series.name} - ${currentVariant.dimensions || 'Standard'}` : 
+        `${series.name} - ${currentVariant.dimensions || 'Standard'} - ${selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}` : 
         series.name,
       category: series.category,
       dimensions: currentVariant ? currentVariant.dimensions : series.dimensions || '',
-      image: currentVariant ? currentVariant.thumbnail_path : series.series_thumbnail_path || series.thumbnail_path
+      image: currentAssets?.thumbnail || series.series_thumbnail_path || series.thumbnail_path
     };
     
     addItem(itemToAdd);
     toast.success(`${itemToAdd.name} added to quote`);
   };
 
-  const currentAssets = currentVariant ? getVariantAssetUrls(currentVariant) : {
-    thumbnail: series?.series_thumbnail_path || series?.thumbnail_path,
-    model: series?.series_model_path || series?.model_path,
-    images: series?.additional_images || []
-  };
-
   const getDisplayImages = () => {
-    if (currentAssets.images && currentAssets.images.length > 0) {
+    if (currentAssets?.images && currentAssets.images.length > 0) {
       return currentAssets.images;
     }
-    if (currentAssets.thumbnail) {
+    if (currentAssets?.thumbnail) {
       return [currentAssets.thumbnail];
     }
     return [];
@@ -138,7 +157,7 @@ const EnhancedProductDetail = () => {
                 <TabsContent value="photos">
                   <ProductImageGallery
                     images={getDisplayImages()}
-                    thumbnail={currentAssets.thumbnail || ''}
+                    thumbnail={currentAssets?.thumbnail || ''}
                     productName={series.name}
                     className="w-full h-96 lg:h-[500px]"
                   />
@@ -146,7 +165,7 @@ const EnhancedProductDetail = () => {
 
                 <TabsContent value="3d">
                   <Enhanced3DViewer
-                    modelPath={currentAssets.model || ''}
+                    modelPath={currentAssets?.model || ''}
                     className="w-full h-96 lg:h-[500px]"
                   />
                 </TabsContent>
@@ -174,6 +193,8 @@ const EnhancedProductDetail = () => {
                   variants={series.variants}
                   selectedVariantId={selectedVariantId}
                   onVariantChange={setSelectedVariantId}
+                  selectedFinish={selectedFinish}
+                  onFinishChange={setSelectedFinish}
                   groupByDimensions={true}
                 />
               </AnimatedSection>
@@ -207,26 +228,41 @@ const EnhancedProductDetail = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h4 className="font-semibold text-foreground mb-2">Features</h4>
+                    <h4 className="font-semibold text-foreground mb-2">Features & Benefits</h4>
                     <ul className="text-muted-foreground space-y-1">
-                      <li>• Chemical-resistant construction</li>
-                      <li>• Professional laboratory grade materials</li>
-                      <li>• Ergonomic design for optimal workflow</li>
-                      <li>• Available in multiple configurations</li>
+                      <li>• Chemical-resistant construction for laboratory environments</li>
+                      <li>• Professional laboratory grade materials and finishes</li>
+                      <li>• Ergonomic design optimized for laboratory workflow</li>
+                      <li>• Available in multiple configurations and sizes</li>
+                      <li>• Meets stringent laboratory safety standards</li>
+                      <li>• Easy to clean and maintain surfaces</li>
                     </ul>
                   </div>
+                  
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Technical Specifications</h4>
+                    <ul className="text-muted-foreground space-y-1">
+                      <li>• Finish Options: Powder Coat (PC) or Stainless Steel (SS)</li>
+                      <li>• Construction: Heavy-duty steel frame with reinforced joints</li>
+                      <li>• Mobility: Heavy-duty casters with locking mechanism</li>
+                      <li>• Compliance: Meets laboratory furniture standards</li>
+                      <li>• Warranty: Comprehensive manufacturer warranty included</li>
+                    </ul>
+                  </div>
+
                   {currentVariant && (
                     <div>
-                      <h4 className="font-semibold text-foreground mb-2">Selected Variant</h4>
+                      <h4 className="font-semibold text-foreground mb-2">Current Selection</h4>
                       <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-sm">
+                          <span className="font-medium">Product Code:</span> {currentVariant.product_code}
+                        </p>
                         <p className="text-sm">
                           <span className="font-medium">Dimensions:</span> {currentVariant.dimensions}
                         </p>
-                        {currentVariant.finish_type && (
-                          <p className="text-sm">
-                            <span className="font-medium">Finish:</span> {currentVariant.finish_type === 'PC' ? 'Powder Coat' : currentVariant.finish_type === 'SS' ? 'Stainless Steel' : currentVariant.finish_type}
-                          </p>
-                        )}
+                        <p className="text-sm">
+                          <span className="font-medium">Finish:</span> {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                        </p>
                         {currentVariant.orientation && currentVariant.orientation !== 'None' && (
                           <p className="text-sm">
                             <span className="font-medium">Orientation:</span> {currentVariant.orientation}

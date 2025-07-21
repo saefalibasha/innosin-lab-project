@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
@@ -19,8 +20,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
   
   const { scene } = useGLTF(modelPath, true);
   
-  // Check if this is a Hamilton product
+  // Check if this is a Hamilton or Innosin product
   const isHamiltonProduct = modelPath.includes('hls-product');
+  const isInnosinProduct = modelPath.includes('innosin');
   
   // Handle loading success and model enhancement
   useEffect(() => {
@@ -37,9 +39,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
             // Enhance materials with PBR properties
             if (child.material instanceof THREE.MeshStandardMaterial) {
               // Improve material properties for better lighting response
-              child.material.roughness = child.material.roughness || 0.4;
-              child.material.metalness = child.material.metalness || 0.1;
-              child.material.envMapIntensity = 1.5;
+              child.material.roughness = child.material.roughness || 0.5;
+              child.material.metalness = child.material.metalness || 0.2;
+              child.material.envMapIntensity = 0.8; // Reduced for less overexposure
               
               // Enable shadows
               child.castShadow = true;
@@ -62,26 +64,19 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          const isRecessedEyeBodyShower = modelPath.includes('bl-ebs-recessed-003');
-          
-          // Standard centering for all products
+          // Center the model properly
           modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // Standard scaling logic for all products
+          // Improved scaling logic for laboratory furniture
           const maxDimension = Math.max(size.x, size.y, size.z);
-          let targetSize = 3; // Default target size
-          let scale = 1;
+          let targetSize = 2.5; // More conservative target size
           
-          if (isRecessedEyeBodyShower) {
-            // Wall-recessed products need different scaling
-            targetSize = 2.8;
-            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
-          } else {
-            // Standard scaling for all products (including Hamilton)
-            targetSize = 3;
-            scale = maxDimension > 0 ? targetSize / maxDimension : 1;
+          if (isInnosinProduct) {
+            // Laboratory furniture specific scaling
+            targetSize = 2.2;
           }
           
+          const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
           // Clear previous children and add the centered/scaled model
@@ -99,38 +94,37 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension, actualCenter });
           
-          // Camera positioning based on product type
+          // Improved camera positioning for laboratory furniture
           const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
           const radius = boundingSphere.radius;
           
-          if (isRecessedEyeBodyShower) {
-            // Position camera directly in front of the door/handle area
-            const distance = radius * 3;
+          if (isInnosinProduct) {
+            // Laboratory furniture specific positioning
+            const distance = radius * 2.5;
             
-            const cameraX = actualCenter.x;
-            const cameraY = actualCenter.y + distance * 0.3;
-            const cameraZ = actualCenter.z + distance;
+            const cameraX = actualCenter.x + distance * 0.8;
+            const cameraY = actualCenter.y + distance * 0.6;
+            const cameraZ = actualCenter.z + distance * 0.8;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
-            console.log('Camera positioned for wall-recessed shower at:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned for laboratory furniture:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isHamiltonProduct) {
-            // Much closer positioning for Hamilton products - similar to the reference image angle
-            const distance = radius * 1.6; // Slightly closer for better detail viewing
+            // Hamilton product positioning
+            const distance = radius * 1.6;
             
-            // Position camera at an angle similar to the reference image
-            const cameraX = actualCenter.x + distance * 0.7; // Right side, slightly adjusted
-            const cameraY = actualCenter.y + distance * 0.4; // Lower angle for better product view
-            const cameraZ = actualCenter.z + distance * 0.8; // Closer to front
+            const cameraX = actualCenter.x + distance * 0.7;
+            const cameraY = actualCenter.y + distance * 0.4;
+            const cameraZ = actualCenter.z + distance * 0.8;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
-            console.log('Camera positioned close for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius, center: actualCenter });
+            console.log('Camera positioned for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else {
-            // Standard positioning for Broen Lab products
-            const distance = radius * 4;
+            // Standard positioning
+            const distance = radius * 3;
             
             const cameraX = actualCenter.x + distance * 0.7;
             const cameraY = actualCenter.y + distance * 0.5;
@@ -139,7 +133,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
-            console.log('Camera positioned at standard angle for Broen product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           }
           
           camera.updateProjectionMatrix();
@@ -151,21 +145,19 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
     }
   }, [scene, camera, isLoaded, modelPath, onCenterCalculated]);
   
-  // Animation - completely disabled for Hamilton products for maximum stability
+  // Minimal animation for laboratory furniture
   useFrame((state) => {
     if (groupRef.current && isLoaded && !isHamiltonProduct) {
-      // Only apply animations to non-Hamilton products
-      // Gentle floating animation
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02;
+      // Very subtle floating animation
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.01;
       
       // Subtle rotation when hovered
       if (hovered) {
-        groupRef.current.rotation.y += 0.005;
+        groupRef.current.rotation.y += 0.003;
       }
     }
   });
   
-  // Return null if no scene is available
   if (!scene) {
     return null;
   }
@@ -173,9 +165,9 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
   return (
     <group 
       ref={groupRef}
-      scale={isHamiltonProduct ? 1 : (hovered ? 1.02 : 1)} // Disable hover scaling for Hamilton products
-      onPointerOver={() => !isHamiltonProduct && setHovered(true)} // Disable hover for Hamilton products
-      onPointerOut={() => !isHamiltonProduct && setHovered(false)} // Disable hover for Hamilton products
+      scale={hovered ? 1.01 : 1}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
     />
   );
 };
@@ -213,11 +205,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
   const isHamiltonProduct = modelPath.includes('hls-product');
+  const isInnosinProduct = modelPath.includes('innosin');
   
   const handleCenterCalculated = (center: THREE.Vector3) => {
     setRotationCenter(center);
     
-    // Update OrbitControls target if it exists
     if (orbitControlsRef.current) {
       orbitControlsRef.current.target.copy(center);
       orbitControlsRef.current.update();
@@ -239,7 +231,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             antialias: true, 
             alpha: true,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2
+            toneMappingExposure: 0.8 // Reduced exposure to prevent overexposure
           }}
           onCreated={({ gl }) => {
             gl.shadowMap.enabled = true;
@@ -247,20 +239,20 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           }}
         >
           <Suspense fallback={null}>
-            {/* HDR Environment for realistic reflections and lighting */}
+            {/* Reduced environment intensity for less overexposure */}
             <Environment 
               preset="studio" 
               background={false}
-              environmentIntensity={0.6}
+              environmentIntensity={0.4}
             />
             
-            {/* Standard lighting setup for all products */}
-            <ambientLight intensity={0.3} color="#ffffff" />
+            {/* Reduced lighting intensity for more realistic appearance */}
+            <ambientLight intensity={0.2} color="#ffffff" />
             
-            {/* Key light - main illumination */}
+            {/* Main light with reduced intensity */}
             <directionalLight 
               position={[10, 10, 5]} 
-              intensity={1.2} 
+              intensity={0.8} 
               castShadow 
               shadow-mapSize={[2048, 2048]}
               shadow-camera-near={0.1}
@@ -272,28 +264,28 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               color="#ffffff"
             />
             
-            {/* Fill light - soften shadows */}
+            {/* Softer fill light */}
             <directionalLight 
               position={[-5, 5, -5]} 
-              intensity={0.4} 
+              intensity={0.3} 
               color="#b6d7ff"
             />
             
-            {/* Rim light - edge definition */}
+            {/* Subtle rim light */}
             <directionalLight 
               position={[0, 2, -10]} 
-              intensity={0.3}
+              intensity={0.2}
               color="#fff4e6"
             />
             
-            {/* Additional ambient lights for better material definition */}
-            <pointLight position={[5, 5, 5]} intensity={0.3} color="#ffffff" />
-            <pointLight position={[-5, -2, 5]} intensity={0.2} color="#e6f3ff" />
+            {/* Reduced point light intensities */}
+            <pointLight position={[5, 5, 5]} intensity={0.2} color="#ffffff" />
+            <pointLight position={[-5, -2, 5]} intensity={0.15} color="#e6f3ff" />
             
-            {/* Contact shadows for ground contact realism */}
+            {/* Softer contact shadows */}
             <ContactShadows
               position={[0, -1.5, 0]}
-              opacity={0.4}
+              opacity={0.3}
               scale={10}
               blur={2.5}
               far={4}
@@ -309,31 +301,20 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             <OrbitControls 
               ref={orbitControlsRef}
               enableZoom={true}
-              enablePan={isHamiltonProduct ? false : true} // Disable panning for Hamilton products
+              enablePan={true}
               enableRotate={true}
-              autoRotate={false} // Ensure auto-rotate is disabled for stability
+              autoRotate={false}
               autoRotateSpeed={0}
-              maxPolarAngle={Math.PI * 0.75} // More restrictive for Hamilton products
-              minPolarAngle={Math.PI * 0.25} // Better viewing angles
-              minDistance={isHamiltonProduct ? 1 : 2} // Allow closer zoom for Hamilton products
-              maxDistance={isHamiltonProduct ? 8 : 20} // More controlled max distance for Hamilton
+              maxPolarAngle={Math.PI * 0.8}
+              minPolarAngle={Math.PI * 0.2}
+              minDistance={2}
+              maxDistance={15}
               enableDamping={true}
-              dampingFactor={isHamiltonProduct ? 0.03 : 0.08} // Very smooth damping for Hamilton products
+              dampingFactor={0.05}
               target={isHamiltonProduct ? rotationCenter : new THREE.Vector3(0, 0, 0)}
-              minAzimuthAngle={-Infinity}
-              maxAzimuthAngle={Infinity}
-              zoomSpeed={isHamiltonProduct ? 0.2 : 0.8} // Very slow, controlled zoom for Hamilton
-              panSpeed={isHamiltonProduct ? 0.2 : 0.8} // Slower panning when enabled
-              rotateSpeed={isHamiltonProduct ? 0.2 : 0.8} // Very slow rotation for precise control
-              mouseButtons={{
-                LEFT: THREE.MOUSE.ROTATE,
-                MIDDLE: THREE.MOUSE.DOLLY,
-                RIGHT: isHamiltonProduct ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN // Consistent behavior for Hamilton
-              }}
-              touches={{
-                ONE: THREE.TOUCH.ROTATE,
-                TWO: THREE.TOUCH.DOLLY_ROTATE // More controlled touch interaction
-              }}
+              zoomSpeed={0.5}
+              panSpeed={0.5}
+              rotateSpeed={0.5}
             />
           </Suspense>
         </Canvas>
