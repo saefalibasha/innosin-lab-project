@@ -57,7 +57,7 @@ const CustomXAxisTick = (props: any) => {
         <text
           key={index}
           x={x}
-          y={y + (index * lineHeight)}
+          y={y + 10 + (index * lineHeight)}
           textAnchor="middle"
           fontSize={12}
           fill="#666"
@@ -255,7 +255,7 @@ export const DynamicOverview = () => {
               <ResponsiveContainer width="100%" height={600}>
                 <BarChart 
                   data={seriesData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 120 }}
+                  margin={{ top: 10, right: 10, left: 10, bottom: 80 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
