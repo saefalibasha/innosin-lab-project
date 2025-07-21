@@ -108,22 +108,16 @@ export const DynamicOverview = () => {
             .eq('parent_series_id', series.id)
             .eq('is_active', true);
 
-          const { data: variants } = await supabase
-            .from('products')
-            .select('thumbnail_path, model_path')
-            .eq('parent_series_id', series.id)
-            .eq('is_active', true);
-
-          const completedVariants = variants?.filter(v => 
-            v.thumbnail_path && v.model_path
-          ).length || 0;
-
-          const completionRate = variantCount ? Math.round((completedVariants / variantCount) * 100) : 0;
+          // Calculate completion rate based on current variants vs target variants
+          const targetVariants = series.target_variant_count || 4;
+          const currentVariants = variantCount || 0;
+          const completionRate = targetVariants > 0 ? 
+            Math.min(Math.round((currentVariants / targetVariants) * 100), 100) : 0;
 
           return {
             id: series.id,
             name: series.name.length > 20 ? series.name.substring(0, 20) + '...' : series.name,
-            variant_count: variantCount || 0,
+            variant_count: currentVariants,
             completion_rate: completionRate,
             updated_at: series.updated_at
           };
@@ -202,10 +196,10 @@ export const DynamicOverview = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Series Completion Status
+            Variants Completion Status
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Asset completion rates by product series
+            Variants completion rates by product series
           </p>
         </CardHeader>
         <CardContent>
