@@ -252,7 +252,7 @@ export const DynamicOverview = () => {
         <CardContent>
           <div className="w-full overflow-x-auto">
             <div style={{ minWidth: Math.max(600, seriesData.length * 120) + 'px' }}>
-              <ResponsiveContainer width="100%" height={400}>
+              <ResponsiveContainer width="100%" height={600}>
                 <BarChart 
                   data={seriesData}
                   margin={{ top: 20, right: 30, left: 20, bottom: 120 }}
