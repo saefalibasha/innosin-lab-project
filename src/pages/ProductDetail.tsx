@@ -211,7 +211,12 @@ const ProductDetail = () => {
           <div className="space-y-6">
             <AnimatedSection animation="slide-in-right" delay={300}>
               <div>
-                <Badge variant="outline" className="mb-4 border-sea text-sea">
+                <Badge 
+                  variant="outline" 
+                  className="mb-4 border-sea text-sea"
+                  logo={product.category === 'Innosin Lab' ? '/brand-logos/innosin-lab-logo.png' : undefined}
+                  logoAlt="Innosin Lab"
+                >
                   {product.category}
                 </Badge>
                 <h1 className="text-4xl font-serif font-bold text-primary mb-4">

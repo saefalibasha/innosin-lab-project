@@ -1,3 +1,4 @@
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 
@@ -25,11 +26,23 @@ const badgeVariants = cva(
 
 export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof badgeVariants> {}
+    VariantProps<typeof badgeVariants> {
+  logo?: string;
+  logoAlt?: string;
+}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+function Badge({ className, variant, logo, logoAlt, children, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div className={cn(badgeVariants({ variant }), className)} {...props}>
+      {logo && (
+        <img 
+          src={logo} 
+          alt={logoAlt || "Company logo"} 
+          className="w-4 h-4 mr-1.5 rounded-sm bg-gray-300 p-0.5"
+        />
+      )}
+      {children}
+    </div>
   )
 }
 
