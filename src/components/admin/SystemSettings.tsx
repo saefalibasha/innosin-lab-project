@@ -14,9 +14,7 @@ import {
   Database, 
   Shield, 
   Users, 
-  Mail, 
   Bell,
-  Palette,
   Globe,
   Save,
   RefreshCw,
@@ -47,7 +45,6 @@ export const SystemSettings = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
