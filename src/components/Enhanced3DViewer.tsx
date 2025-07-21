@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
@@ -191,11 +192,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             toneMappingExposure: 1.0 // Balanced exposure for light background
           }}
           onCreated={({ gl, scene }) => {
-            // Professional laboratory background - subtle gradient
+            // Professional laboratory background - slightly grey gradient for better contrast
             const gradientTexture = new THREE.DataTexture(
               new Uint8Array([
-                245, 245, 245, 255, // Light gray top
-                255, 255, 255, 255, // White bottom
+                232, 232, 232, 255, // Medium-light gray top (0xe8e8e8)
+                248, 248, 248, 255, // Very light gray bottom (0xf8f8f8)
               ]),
               1, 2, THREE.RGBAFormat
             );
@@ -205,8 +206,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             const geometry = new THREE.PlaneGeometry(2, 2);
             const material = new THREE.ShaderMaterial({
               uniforms: {
-                topColor: { value: new THREE.Color(0xf5f5f5) },
-                bottomColor: { value: new THREE.Color(0xffffff) },
+                topColor: { value: new THREE.Color(0xe8e8e8) },
+                bottomColor: { value: new THREE.Color(0xf8f8f8) },
               },
               vertexShader: `
                 varying vec2 vUv;
