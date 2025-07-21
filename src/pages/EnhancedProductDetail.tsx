@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ShoppingCart, Package, Ruler, Camera, Box } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
@@ -13,7 +13,6 @@ import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import VariantSelector from '@/components/product/VariantSelector';
 import { fetchSeriesWithVariants, getVariantAssetUrls } from '@/services/variantService';
-import { productPageContent } from '@/data/productPageContent';
 
 const EnhancedProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -33,13 +32,11 @@ const EnhancedProductDetail = () => {
     try {
       setLoading(true);
       
-      // Fetch series data with variants
       const seriesData = await fetchSeriesWithVariants();
       const foundSeries = seriesData.find(s => s.id === productId);
       
       if (foundSeries) {
         setSeries(foundSeries);
-        // Set the first variant as default if available
         if (foundSeries.variants && foundSeries.variants.length > 0) {
           setSelectedVariantId(foundSeries.variants[0].id);
         }
@@ -72,7 +69,6 @@ const EnhancedProductDetail = () => {
     toast.success(`${itemToAdd.name} added to quote`);
   };
 
-  // Get current display assets
   const currentAssets = currentVariant ? getVariantAssetUrls(currentVariant) : {
     thumbnail: series?.series_thumbnail_path || series?.thumbnail_path,
     model: series?.series_model_path || series?.model_path,
@@ -168,12 +164,6 @@ const EnhancedProductDetail = () => {
                 <h1 className="text-4xl font-serif font-bold text-primary mb-4">
                   {series.name}
                 </h1>
-                <div className="flex items-center gap-2 text-muted-foreground mb-6">
-                  <Ruler className="w-4 h-4" />
-                  <span>
-                    Dimensions: {currentVariant ? currentVariant.dimensions : 'Multiple sizes available'}
-                  </span>
-                </div>
               </div>
             </AnimatedSection>
 
@@ -189,6 +179,7 @@ const EnhancedProductDetail = () => {
               </AnimatedSection>
             )}
 
+            {/* Product Overview */}
             <AnimatedSection animation="slide-in-right" delay={400}>
               <Card>
                 <CardHeader>
@@ -199,13 +190,56 @@ const EnhancedProductDetail = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-muted-foreground leading-relaxed">
-                    {series.description || 'Product description not available.'}
+                    {series.description || 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.'}
                   </p>
                 </CardContent>
               </Card>
             </AnimatedSection>
 
-            <AnimatedSection animation="slide-in-right" delay={600}>
+            {/* Product Details */}
+            <AnimatedSection animation="slide-in-right" delay={450}>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Product Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-2">Features</h4>
+                    <ul className="text-muted-foreground space-y-1">
+                      <li>• Chemical-resistant construction</li>
+                      <li>• Professional laboratory grade materials</li>
+                      <li>• Ergonomic design for optimal workflow</li>
+                      <li>• Available in multiple configurations</li>
+                    </ul>
+                  </div>
+                  {currentVariant && (
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-2">Selected Variant</h4>
+                      <div className="bg-muted p-3 rounded-lg">
+                        <p className="text-sm">
+                          <span className="font-medium">Dimensions:</span> {currentVariant.dimensions}
+                        </p>
+                        {currentVariant.finish_type && (
+                          <p className="text-sm">
+                            <span className="font-medium">Finish:</span> {currentVariant.finish_type === 'PC' ? 'Powder Coat' : currentVariant.finish_type === 'SS' ? 'Stainless Steel' : currentVariant.finish_type}
+                          </p>
+                        )}
+                        {currentVariant.orientation && currentVariant.orientation !== 'None' && (
+                          <p className="text-sm">
+                            <span className="font-medium">Orientation:</span> {currentVariant.orientation}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </AnimatedSection>
+
+            <AnimatedSection animation="slide-in-right" delay={500}>
               <Button
                 onClick={handleAddToQuote}
                 size="lg"

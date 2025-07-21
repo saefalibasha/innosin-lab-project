@@ -1,19 +1,29 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Package } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Ruler, Package, Settings } from 'lucide-react';
 
 interface ProductVariant {
   id: string;
   name: string;
+  product_code: string;
+  category: string;
   dimensions: string;
-  finish_type: string;
-  orientation: string;
+  description: string;
+  full_description: string;
+  specifications: any;
   thumbnail_path: string;
   model_path: string;
+  additional_images: string[];
+  finish_type: string;
+  orientation: string;
+  door_type: string;
   variant_type: string;
   drawer_count?: number;
+  parent_series_id: string;
 }
 
 interface VariantSelectorProps {
@@ -33,6 +43,8 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
     return null;
   }
 
+  const selectedVariant = variants.find(v => v.id === selectedVariantId);
+
   if (groupByDimensions) {
     // Group variants by dimensions
     const variantsByDimensions = variants.reduce((acc, variant) => {
@@ -46,48 +58,52 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
     const dimensionKeys = Object.keys(variantsByDimensions);
 
-    if (dimensionKeys.length === 1) {
-      // If there's only one dimension group, show variants directly
-      return (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Available Variants
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-3">
-              {variants.map((variant) => (
-                <VariantOption
-                  key={variant.id}
-                  variant={variant}
-                  isSelected={selectedVariantId === variant.id}
-                  onSelect={() => onVariantChange(variant.id)}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
     return (
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Ruler className="w-5 h-5" />
-            Select by Dimensions
+            <Settings className="w-5 h-5" />
+            Product Configuration
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {dimensionKeys.map((dimensions) => (
-            <div key={dimensions}>
+          {/* Dimension Selection */}
+          <div>
+            <h4 className="font-medium mb-3 flex items-center gap-2">
+              <Ruler className="w-4 h-4" />
+              Available Dimensions
+            </h4>
+            <Select 
+              value={selectedVariant?.dimensions || ''} 
+              onValueChange={(dimensions) => {
+                const variant = variants.find(v => v.dimensions === dimensions);
+                if (variant) {
+                  onVariantChange(variant.id);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select dimensions" />
+              </SelectTrigger>
+              <SelectContent>
+                {dimensionKeys.map((dimensions) => (
+                  <SelectItem key={dimensions} value={dimensions}>
+                    {dimensions}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Configuration Options for Selected Dimension */}
+          {selectedVariant && (
+            <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Badge variant="outline">{dimensions}</Badge>
+                <Package className="w-4 h-4" />
+                Configuration Options
               </h4>
-              <div className="grid grid-cols-1 gap-2">
-                {variantsByDimensions[dimensions].map((variant) => (
+              <div className="space-y-3">
+                {variantsByDimensions[selectedVariant.dimensions]?.map((variant) => (
                   <VariantOption
                     key={variant.id}
                     variant={variant}
@@ -98,7 +114,34 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                 ))}
               </div>
             </div>
-          ))}
+          )}
+
+          {/* Selected Variant Summary */}
+          {selectedVariant && (
+            <div className="bg-muted p-4 rounded-lg">
+              <h4 className="font-medium mb-2">Selected Configuration</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="font-medium">Dimensions:</span> {selectedVariant.dimensions}
+                </div>
+                {selectedVariant.finish_type && (
+                  <div>
+                    <span className="font-medium">Finish:</span> {selectedVariant.finish_type === 'PC' ? 'Powder Coat' : selectedVariant.finish_type === 'SS' ? 'Stainless Steel' : selectedVariant.finish_type}
+                  </div>
+                )}
+                {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
+                  <div>
+                    <span className="font-medium">Orientation:</span> {selectedVariant.orientation}
+                  </div>
+                )}
+                {selectedVariant.drawer_count && (
+                  <div>
+                    <span className="font-medium">Drawers:</span> {selectedVariant.drawer_count}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
