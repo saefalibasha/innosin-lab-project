@@ -15,6 +15,27 @@ interface ProductGridProps {
 }
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => {
+  const getProductImages = (product: Product) => {
+    // Priority: seriesOverviewImage > overviewImage > thumbnail
+    const primaryImage = product.seriesOverviewImage || product.overviewImage || product.thumbnail;
+    
+    if (primaryImage) {
+      return [primaryImage];
+    }
+    
+    // Fallback to additional images if available
+    if (product.images && product.images.length > 0) {
+      return product.images;
+    }
+    
+    // Final fallback to empty array
+    return [];
+  };
+
+  const getThumbnail = (product: Product) => {
+    return product.seriesOverviewImage || product.overviewImage || product.thumbnail || '';
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {products.map((product, index) => (
@@ -22,9 +43,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
           <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group">
             <CardHeader className="p-0">
               <ProductImageGallery
-                images={product.seriesOverviewImage ? [product.seriesOverviewImage] : 
-                        product.overviewImage ? [product.overviewImage] : product.images}
-                thumbnail={product.seriesOverviewImage || product.overviewImage || product.thumbnail}
+                images={getProductImages(product)}
+                thumbnail={getThumbnail(product)}
                 productName={product.name}
                 className="w-full h-64"
               />

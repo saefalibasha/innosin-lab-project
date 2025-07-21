@@ -4,12 +4,13 @@ import { Product } from '@/types/product';
 
 export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
   try {
-    // First, get all active products (both series parents and variants)
+    // Fetch only series parents (not individual variants)
     const { data: products, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
-      .order('product_series', { ascending: true });
+      .eq('is_series_parent', true)
+      .order('series_order', { ascending: true });
 
     if (error) {
       console.error('Error fetching products:', error);
@@ -24,10 +25,10 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       name: product.name,
       category: product.category || 'Uncategorized',
       dimensions: product.dimensions || '',
-      modelPath: product.model_path || '',
-      thumbnail: product.thumbnail_path || '',
-      overviewImage: product.overview_image_path || product.thumbnail_path || '',
-      seriesOverviewImage: product.series_overview_image_path || '',
+      modelPath: product.series_model_path || product.model_path || '',
+      thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
+      overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
+      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || '',
       images: product.additional_images || [],
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
@@ -36,8 +37,8 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       finishes: [{
         type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
         name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
-        modelPath: product.model_path,
-        thumbnail: product.thumbnail_path
+        modelPath: product.series_model_path || product.model_path,
+        thumbnail: product.series_thumbnail_path || product.thumbnail_path
       }],
       variants: [],
       baseProductId: product.parent_series_id || undefined
@@ -55,7 +56,8 @@ export const fetchCategoriesFromDatabase = async (): Promise<string[]> => {
     const { data: products, error } = await supabase
       .from('products')
       .select('category')
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .eq('is_series_parent', true);
 
     if (error) {
       console.error('Error fetching categories:', error);
@@ -79,8 +81,9 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       .from('products')
       .select('*')
       .eq('is_active', true)
+      .eq('is_series_parent', true)
       .eq('category', category)
-      .order('product_series', { ascending: true });
+      .order('series_order', { ascending: true });
 
     if (error) {
       console.error('Error fetching products by category:', error);
@@ -95,10 +98,10 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       name: product.name,
       category: product.category || 'Uncategorized',
       dimensions: product.dimensions || '',
-      modelPath: product.model_path || '',
-      thumbnail: product.thumbnail_path || '',
-      overviewImage: product.overview_image_path || product.thumbnail_path || '',
-      seriesOverviewImage: product.series_overview_image_path || '',
+      modelPath: product.series_model_path || product.model_path || '',
+      thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
+      overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
+      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || '',
       images: product.additional_images || [],
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
@@ -107,8 +110,8 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       finishes: [{
         type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
         name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
-        modelPath: product.model_path,
-        thumbnail: product.thumbnail_path
+        modelPath: product.series_model_path || product.model_path,
+        thumbnail: product.series_thumbnail_path || product.thumbnail_path
       }],
       variants: [],
       baseProductId: product.parent_series_id || undefined

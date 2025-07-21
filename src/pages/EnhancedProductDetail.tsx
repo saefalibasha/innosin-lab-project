@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -32,14 +33,9 @@ const EnhancedProductDetail = () => {
     try {
       setLoading(true);
       
-      // For now, we'll fetch all series and find the one that matches
-      // In a real implementation, you'd fetch by series slug or ID
+      // Fetch series data with variants
       const seriesData = await fetchSeriesWithVariants();
-      const foundSeries = seriesData.find(s => 
-        s.series_slug === productId || 
-        s.id === productId ||
-        s.variants.some(v => v.id === productId)
-      );
+      const foundSeries = seriesData.find(s => s.id === productId);
       
       if (foundSeries) {
         setSeries(foundSeries);
@@ -50,6 +46,7 @@ const EnhancedProductDetail = () => {
       }
     } catch (error) {
       console.error('Error fetching product data:', error);
+      toast.error('Failed to load product details');
     } finally {
       setLoading(false);
     }
@@ -67,8 +64,8 @@ const EnhancedProductDetail = () => {
         `${series.name} - ${currentVariant.dimensions || 'Standard'}` : 
         series.name,
       category: series.category,
-      dimensions: currentVariant ? currentVariant.dimensions : series.dimensions,
-      image: currentVariant ? currentVariant.thumbnail_path : series.series_thumbnail_path
+      dimensions: currentVariant ? currentVariant.dimensions : series.dimensions || '',
+      image: currentVariant ? currentVariant.thumbnail_path : series.series_thumbnail_path || series.thumbnail_path
     };
     
     addItem(itemToAdd);
@@ -77,9 +74,19 @@ const EnhancedProductDetail = () => {
 
   // Get current display assets
   const currentAssets = currentVariant ? getVariantAssetUrls(currentVariant) : {
-    thumbnail: series?.series_thumbnail_path,
-    model: series?.series_model_path,
-    images: []
+    thumbnail: series?.series_thumbnail_path || series?.thumbnail_path,
+    model: series?.series_model_path || series?.model_path,
+    images: series?.additional_images || []
+  };
+
+  const getDisplayImages = () => {
+    if (currentAssets.images && currentAssets.images.length > 0) {
+      return currentAssets.images;
+    }
+    if (currentAssets.thumbnail) {
+      return [currentAssets.thumbnail];
+    }
+    return [];
   };
 
   if (loading) {
@@ -111,7 +118,7 @@ const EnhancedProductDetail = () => {
           <div className="flex items-center gap-2 mb-8">
             <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />
-              {productPageContent.productDetail.backToCatalog}
+              Back to Catalog
             </Link>
           </div>
         </AnimatedSection>
@@ -124,18 +131,17 @@ const EnhancedProductDetail = () => {
                 <TabsList className="grid w-full grid-cols-2 mb-6">
                   <TabsTrigger value="photos" className="flex items-center gap-2">
                     <Camera className="w-4 h-4" />
-                    {productPageContent.productDetail.photosTab}
+                    Photos
                   </TabsTrigger>
                   <TabsTrigger value="3d" className="flex items-center gap-2">
                     <Box className="w-4 h-4" />
-                    {productPageContent.productDetail.modelTab}
+                    3D Model
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="photos">
                   <ProductImageGallery
-                    images={currentAssets.images?.length ? currentAssets.images : 
-                            currentAssets.thumbnail ? [currentAssets.thumbnail] : []}
+                    images={getDisplayImages()}
                     thumbnail={currentAssets.thumbnail || ''}
                     productName={series.name}
                     className="w-full h-96 lg:h-[500px]"
@@ -165,8 +171,7 @@ const EnhancedProductDetail = () => {
                 <div className="flex items-center gap-2 text-muted-foreground mb-6">
                   <Ruler className="w-4 h-4" />
                   <span>
-                    {productPageContent.productDetail.dimensionsLabel} 
-                    {currentVariant ? currentVariant.dimensions : 'Multiple sizes available'}
+                    Dimensions: {currentVariant ? currentVariant.dimensions : 'Multiple sizes available'}
                   </span>
                 </div>
               </div>
@@ -189,7 +194,7 @@ const EnhancedProductDetail = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Package className="w-5 h-5" />
-                    {productPageContent.productDetail.overviewTitle}
+                    Product Overview
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -207,7 +212,7 @@ const EnhancedProductDetail = () => {
                 className="w-full bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-105"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {productPageContent.productDetail.addToQuoteButton}
+                Add to Quote
               </Button>
             </AnimatedSection>
           </div>
