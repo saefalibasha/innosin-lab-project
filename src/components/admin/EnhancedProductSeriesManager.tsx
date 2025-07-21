@@ -17,7 +17,8 @@ import {
   Save,
   X,
   Settings,
-  Tag
+  Tag,
+  Plus
 } from 'lucide-react';
 import {
   Dialog,
@@ -27,6 +28,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { VariantManager } from './product-series/VariantManager';
+import { ProductSeriesFormDialog } from './product-series/ProductSeriesFormDialog';
 
 interface ProductSeries {
   id: string;
@@ -55,6 +57,7 @@ export const EnhancedProductSeriesManager = () => {
   const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showVariantManager, setShowVariantManager] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const { toast } = useToast();
 
   // Form state for editing
@@ -89,7 +92,7 @@ export const EnhancedProductSeriesManager = () => {
 
       if (error) throw error;
 
-      // Calculate variant counts and completion rates
+      // Calculate variant counts and completion rates using target_variant_count
       const seriesWithStats = await Promise.all(
         (seriesData || []).map(async (s) => {
           const { count: variantCount } = await supabase
@@ -98,23 +101,17 @@ export const EnhancedProductSeriesManager = () => {
             .eq('parent_series_id', s.id)
             .eq('is_active', true);
 
-          const { data: variants } = await supabase
-            .from('products')
-            .select('thumbnail_path, model_path')
-            .eq('parent_series_id', s.id)
-            .eq('is_active', true);
-
-          const completedVariants = variants?.filter(v => 
-            v.thumbnail_path && v.model_path
-          ).length || 0;
-
-          const completionRate = variantCount ? Math.round((completedVariants / variantCount) * 100) : 0;
+          const targetCount = s.target_variant_count || 4;
+          const currentCount = variantCount || 0;
+          
+          // Calculate completion rate: current variants / target variants * 100
+          const completionRate = targetCount > 0 ? Math.round((currentCount / targetCount) * 100) : 0;
 
           return {
             ...s,
-            variant_count: variantCount || 0,
-            completion_rate: completionRate,
-            target_variant_count: s.target_variant_count || 4,
+            variant_count: currentCount,
+            completion_rate: Math.min(completionRate, 100), // Cap at 100%
+            target_variant_count: targetCount,
             company_tags: s.company_tags || []
           };
         })
@@ -145,6 +142,16 @@ export const EnhancedProductSeriesManager = () => {
     }
 
     setFilteredSeries(filtered);
+  };
+
+  const handleSeriesAdded = () => {
+    console.log('Series added, refreshing list...');
+    setShowAddDialog(false);
+    fetchSeries();
+    toast({
+      title: "Success",
+      description: "Product series created successfully",
+    });
   };
 
   const handleEditSeries = (series: ProductSeries) => {
@@ -283,6 +290,10 @@ export const EnhancedProductSeriesManager = () => {
             Manage INNOSIN Lab product series, descriptions, and assets
           </p>
         </div>
+        <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
+          <Plus className="h-4 w-4" />
+          Add Series
+        </Button>
       </div>
 
       {/* Search and Filters */}
@@ -401,6 +412,13 @@ export const EnhancedProductSeriesManager = () => {
           </Card>
         ))}
       </div>
+
+      {/* Add Series Dialog */}
+      <ProductSeriesFormDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onSeriesAdded={handleSeriesAdded}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
