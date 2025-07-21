@@ -1,7 +1,7 @@
 
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
 import { ErrorBoundary } from 'react-error-boundary';
 import * as THREE from 'three';
 
@@ -33,62 +33,65 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
         
-        // Enhanced material processing for better visibility against black background
+        // Enhanced material processing for better visibility and sharpness
         modelClone.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material) {
-            // Enhance materials with PBR properties for black background
+            // Enhance materials with optimized properties for black background
             if (child.material instanceof THREE.MeshStandardMaterial) {
-              // Optimize material properties for black background visibility
-              child.material.roughness = child.material.roughness || 0.3;
-              child.material.metalness = child.material.metalness || 0.1;
-              child.material.envMapIntensity = 1.2; // Increased for better visibility
+              // Optimize material properties for maximum clarity
+              child.material.roughness = child.material.roughness || 0.2;
+              child.material.metalness = child.material.metalness || 0.05;
+              child.material.envMapIntensity = 1.5; // Increased for better visibility
               
-              // Enhance material brightness for black background
+              // Enhance material brightness and contrast for black background
               if (child.material.color) {
-                child.material.color.multiplyScalar(1.3); // Brighten colors slightly
+                child.material.color.multiplyScalar(1.4); // Brighten colors for clarity
               }
               
-              // Enable shadows
-              child.castShadow = true;
-              child.receiveShadow = true;
-              
-              // Improve material quality
+              // Improve material quality for sharpness
               if (child.material.map) {
                 child.material.map.generateMipmaps = true;
                 child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
                 child.material.map.magFilter = THREE.LinearFilter;
+                child.material.map.anisotropy = gl.capabilities.getMaxAnisotropy();
+              }
+              
+              // Enhance normal maps for better detail
+              if (child.material.normalMap) {
+                child.material.normalMap.generateMipmaps = true;
+                child.material.normalScale.set(1.2, 1.2);
               }
             }
           }
         });
         
-        // Calculate bounding box with more precision
+        // Enhanced bounding box calculation for perfect centering
         const box = new THREE.Box3().setFromObject(modelClone);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          // Center the model properly
+          // Perfect centering - move model so its center is at origin
           modelClone.position.set(-center.x, -center.y, -center.z);
           
           // Improved scaling logic for laboratory furniture
           const maxDimension = Math.max(size.x, size.y, size.z);
-          let targetSize = 2.5;
+          let targetSize = 2.8; // Increased for better detail visibility
           
           if (isInnosinProduct) {
-            // Laboratory furniture specific scaling for better knee space visibility
-            targetSize = 2.8; // Slightly larger for better detail visibility
+            // Laboratory furniture specific scaling for optimal knee space visibility
+            targetSize = 3.2; // Larger for better feature visibility
           }
           
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
-          // Clear previous children and add the centered/scaled model
+          // Clear previous children and add the perfectly centered model
           groupRef.current.clear();
           groupRef.current.add(modelClone);
           
-          // Calculate the actual center after positioning and scaling
+          // Calculate the final center for camera targeting
           const finalBox = new THREE.Box3().setFromObject(groupRef.current);
           const actualCenter = finalBox.getCenter(new THREE.Vector3());
           
@@ -97,49 +100,49 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
             onCenterCalculated(actualCenter);
           }
           
-          console.log('Model centered and scaled:', { center, size, scale, maxDimension, actualCenter });
+          console.log('Model perfectly centered and scaled:', { center, size, scale, maxDimension, actualCenter });
           
-          // Improved camera positioning for knee space visibility
+          // Optimized camera positioning for best feature visibility
           const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
           const radius = boundingSphere.radius;
           
           if (isInnosinProduct) {
             // Laboratory furniture specific positioning for optimal knee space view
-            const distance = radius * 2.2; // Closer for better detail
+            const distance = radius * 2.5; // Optimal distance for detail visibility
             
-            // Position camera to show knee space clearly
-            const cameraX = actualCenter.x + distance * 0.6;
-            const cameraY = actualCenter.y + distance * 0.4; // Lower angle for knee space
-            const cameraZ = actualCenter.z + distance * 0.9;
+            // Position camera to show knee space and all features clearly
+            const cameraX = actualCenter.x + distance * 0.7;
+            const cameraY = actualCenter.y + distance * 0.3; // Slightly lower for knee space
+            const cameraZ = actualCenter.z + distance * 0.8;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
-            console.log('Camera positioned for knee space visibility:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned for optimal knee space visibility:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isHamiltonProduct) {
             // Hamilton product positioning
-            const distance = radius * 1.6;
+            const distance = radius * 2.0;
             
-            const cameraX = actualCenter.x + distance * 0.7;
+            const cameraX = actualCenter.x + distance * 0.8;
             const cameraY = actualCenter.y + distance * 0.4;
-            const cameraZ = actualCenter.z + distance * 0.8;
+            const cameraZ = actualCenter.z + distance * 0.7;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
             console.log('Camera positioned for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else {
-            // Standard positioning
-            const distance = radius * 3;
+            // Standard positioning for maximum clarity
+            const distance = radius * 2.2;
             
-            const cameraX = actualCenter.x + distance * 0.7;
-            const cameraY = actualCenter.y + distance * 0.5;
+            const cameraX = actualCenter.x + distance * 0.8;
+            const cameraY = actualCenter.y + distance * 0.4;
             const cameraZ = actualCenter.z + distance * 0.7;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
-            console.log('Camera positioned at standard angle:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned for maximum clarity:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           }
           
           camera.updateProjectionMatrix();
@@ -149,20 +152,7 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         console.error(`Failed to process GLB model: ${modelPath}. Error:`, error);
       }
     }
-  }, [scene, camera, isLoaded, modelPath, onCenterCalculated]);
-  
-  // Minimal animation for laboratory furniture
-  useFrame((state) => {
-    if (groupRef.current && isLoaded && !isHamiltonProduct) {
-      // Very subtle floating animation
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.3) * 0.01;
-      
-      // Subtle rotation when hovered
-      if (hovered) {
-        groupRef.current.rotation.y += 0.003;
-      }
-    }
-  });
+  }, [scene, camera, isLoaded, modelPath, onCenterCalculated, gl]);
   
   if (!scene) {
     return null;
@@ -171,7 +161,6 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
   return (
     <group 
       ref={groupRef}
-      scale={hovered ? 1.01 : 1}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
     />
@@ -227,68 +216,49 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     <div className={`${className} bg-black rounded-lg overflow-hidden border border-gray-800`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [8, 6, 8], fov: 45 }}
-          shadows
+          camera={{ position: [8, 6, 8], fov: 40 }}
           gl={{ 
-            antialias: true, 
-            alpha: false, // Disable alpha for solid black background
+            antialias: true,
+            alpha: false,
+            pixelRatio: Math.min(window.devicePixelRatio, 2), // High pixel ratio for sharpness
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.1 // Slightly increased for better visibility
+            toneMappingExposure: 1.2 // Optimized exposure for clarity
           }}
           onCreated={({ gl, scene }) => {
-            gl.shadowMap.enabled = true;
-            gl.shadowMap.type = THREE.PCFSoftShadowMap;
-            scene.background = new THREE.Color(0x000000); // Solid black background
+            scene.background = new THREE.Color(0x000000); // Pure black background
+            
+            // Optimize renderer for maximum sharpness
+            gl.outputColorSpace = THREE.SRGBColorSpace;
+            gl.physicallyCorrectLights = true;
           }}
         >
           <Suspense fallback={null}>
-            {/* Enhanced lighting setup for black background and knee space visibility */}
-            <ambientLight intensity={0.3} color="#ffffff" />
+            {/* Simplified and optimized lighting setup for maximum clarity */}
+            <ambientLight intensity={0.4} color="#ffffff" />
             
-            {/* Primary light for knee space visibility */}
+            {/* Primary key light for feature definition */}
             <directionalLight 
-              position={[10, 8, 5]} 
-              intensity={1.2} 
-              castShadow 
-              shadow-mapSize={[2048, 2048]}
-              shadow-camera-near={0.1}
-              shadow-camera-far={50}
-              shadow-camera-left={-10}
-              shadow-camera-right={10}
-              shadow-camera-top={10}
-              shadow-camera-bottom={-10}
+              position={[12, 10, 8]} 
+              intensity={1.4} 
               color="#ffffff"
             />
             
-            {/* Fill light for better detail visibility */}
+            {/* Fill light for even illumination */}
             <directionalLight 
-              position={[-8, 6, -3]} 
+              position={[-8, 8, -4]} 
               intensity={0.8} 
-              color="#f0f0f0"
+              color="#f8f8f8"
             />
             
-            {/* Additional light for knee space area */}
+            {/* Accent light for knee space visibility */}
             <directionalLight 
-              position={[0, -5, 8]} 
-              intensity={0.6}
+              position={[0, -6, 10]} 
+              intensity={0.7}
               color="#ffffff"
             />
             
-            {/* Point lights for enhanced visibility */}
-            <pointLight position={[8, 8, 8]} intensity={0.4} color="#ffffff" />
-            <pointLight position={[-8, -4, 8]} intensity={0.3} color="#e6f3ff" />
-            <pointLight position={[0, -8, 0]} intensity={0.2} color="#ffffff" />
-            
-            {/* Subtle contact shadows for depth */}
-            <ContactShadows
-              position={[0, -1.5, 0]}
-              opacity={0.2}
-              scale={10}
-              blur={3}
-              far={4}
-              resolution={512}
-              color="#000000"
-            />
+            {/* Single point light for enhanced detail */}
+            <pointLight position={[10, 10, 10]} intensity={0.5} color="#ffffff" />
             
             <GLBModel 
               modelPath={modelPath} 
@@ -301,17 +271,16 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={true}
               enableRotate={true}
               autoRotate={false}
-              autoRotateSpeed={0}
-              maxPolarAngle={Math.PI * 0.8}
-              minPolarAngle={Math.PI * 0.2}
-              minDistance={2}
-              maxDistance={15}
+              maxPolarAngle={Math.PI * 0.85}
+              minPolarAngle={Math.PI * 0.15}
+              minDistance={3}
+              maxDistance={20}
               enableDamping={true}
-              dampingFactor={0.05}
+              dampingFactor={0.08}
               target={isHamiltonProduct ? rotationCenter : new THREE.Vector3(0, 0, 0)}
-              zoomSpeed={0.5}
-              panSpeed={0.5}
-              rotateSpeed={0.5}
+              zoomSpeed={0.8}
+              panSpeed={0.8}
+              rotateSpeed={0.8}
             />
           </Suspense>
         </Canvas>
