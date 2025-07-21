@@ -1,9 +1,8 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings } from 'lucide-react';
 
 interface Variant {
   id: string;
@@ -55,8 +54,8 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   // Get unique dimension groups
   const dimensionGroups = Object.keys(groupedVariants).sort();
 
-  // Get unique orientations from all variants
-  const orientations = [...new Set(variants.map(v => v.orientation).filter(Boolean))].sort();
+  // Get unique orientations from all variants (excluding 'None')
+  const orientations = [...new Set(variants.map(v => v.orientation).filter(o => o && o !== 'None'))].sort();
 
   // Get unique drawer counts from all variants
   const drawerCounts = [...new Set(variants.map(v => v.drawer_count).filter(Boolean))].sort((a, b) => a - b);
@@ -87,15 +86,44 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     }
   };
 
+  // Helper function to find the best matching variant when switching between options
+  const findBestMatchingVariant = (targetCriteria: Partial<Variant>) => {
+    const currentVariant = selectedVariant;
+    if (!currentVariant) return variants[0];
+
+    // Try to find exact match first
+    let bestMatch = variants.find(v => 
+      (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
+      (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
+      (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) &&
+      (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type)
+    );
+
+    // If no exact match, try to preserve as many current attributes as possible
+    if (!bestMatch) {
+      bestMatch = variants.find(v => 
+        (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
+        (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
+        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type)
+      );
+    }
+
+    // Fallback to first variant matching the target criteria
+    if (!bestMatch) {
+      bestMatch = variants.find(v => 
+        (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) ||
+        (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) ||
+        (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) ||
+        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type)
+      );
+    }
+
+    return bestMatch || variants[0];
+  };
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
-          Product Configuration
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-6">
         {/* Dimension Selection */}
         {groupByDimensions && dimensionGroups.length > 1 && (
           <div>
@@ -109,9 +137,9 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                     variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      const firstVariant = groupedVariants[dimension][0];
-                      if (firstVariant) {
-                        onVariantChange(firstVariant.id);
+                      const bestMatch = findBestMatchingVariant({ dimensions: dimension });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
                       }
                     }}
                     className="text-sm"
@@ -130,7 +158,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
             <h4 className="font-medium mb-3">Configuration Type</h4>
             <div className="grid grid-cols-2 gap-2">
               {variantTypes.map((type) => {
-                const typeVariants = variants.filter(v => v.variant_type === type);
                 const isSelected = selectedVariant?.variant_type === type;
                 
                 return (
@@ -139,9 +166,9 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                     variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      const firstOfType = typeVariants[0];
-                      if (firstOfType) {
-                        onVariantChange(firstOfType.id);
+                      const bestMatch = findBestMatchingVariant({ variant_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
                       }
                     }}
                     className="text-sm"
@@ -158,9 +185,8 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
         {drawerCounts.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Drawer Configuration</h4>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {drawerCounts.map((count) => {
-                const drawerVariants = variants.filter(v => v.drawer_count === count);
                 const isSelected = selectedVariant?.drawer_count === count;
                 
                 return (
@@ -169,13 +195,9 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                     variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      const matchingVariant = drawerVariants.find(v => 
-                        v.orientation === selectedVariant?.orientation || 
-                        (!selectedVariant?.orientation && v.orientation === 'None')
-                      ) || drawerVariants[0];
-                      
-                      if (matchingVariant) {
-                        onVariantChange(matchingVariant.id);
+                      const bestMatch = findBestMatchingVariant({ drawer_count: count });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
                       }
                     }}
                     className="text-sm"
@@ -189,12 +211,11 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
         )}
 
         {/* Orientation Selection */}
-        {orientations.length > 1 && orientations.some(o => o !== 'None') && (
+        {orientations.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Orientation</h4>
             <div className="grid grid-cols-2 gap-2">
-              {orientations.filter(o => o !== 'None').map((orientation) => {
-                const orientationVariants = variants.filter(v => v.orientation === orientation);
+              {orientations.map((orientation) => {
                 const isSelected = selectedVariant?.orientation === orientation;
                 
                 return (
@@ -203,13 +224,9 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                     variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      const matchingVariant = orientationVariants.find(v => 
-                        v.drawer_count === selectedVariant?.drawer_count ||
-                        v.variant_type === selectedVariant?.variant_type
-                      ) || orientationVariants[0];
-                      
-                      if (matchingVariant) {
-                        onVariantChange(matchingVariant.id);
+                      const bestMatch = findBestMatchingVariant({ orientation });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
                       }
                     }}
                     className="text-sm"
