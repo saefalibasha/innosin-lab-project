@@ -145,7 +145,6 @@ const ProductDetail = () => {
                   <ProductImageGallery
                     images={images}
                     thumbnail={thumbnail}
-                    seriesOverviewImage={product.seriesOverviewImage}
                     productName={product.name}
                     className="w-full h-96 lg:h-[500px]"
                   />
@@ -211,7 +210,7 @@ const ProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {!isInnosinProduct && product.specifications.length > 0 && (
+            {!isInnosinProduct && product.specifications?.length > 0 && (
               <AnimatedSection animation="slide-in-right" delay={500}>
                 <Card>
                   <CardHeader>
