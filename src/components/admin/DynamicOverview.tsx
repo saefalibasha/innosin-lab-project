@@ -212,16 +212,20 @@ export const DynamicOverview = () => {
         </CardHeader>
         <CardContent>
           <div className="w-full overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, seriesData.length * 80) + 'px' }}>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={seriesData}>
+            <div style={{ minWidth: Math.max(600, seriesData.length * 120) + 'px' }}>
+              <ResponsiveContainer width="100%" height={400}>
+                <BarChart 
+                  data={seriesData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 120 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis 
                     dataKey="name" 
                     interval={0}
                     angle={-45}
                     textAnchor="end"
-                    height={80}
+                    height={120}
+                    tick={{ fontSize: 12 }}
                   />
                   <YAxis domain={[0, 100]} />
                   <Tooltip 
