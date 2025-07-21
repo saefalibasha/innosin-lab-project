@@ -6,8 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
 import { VariantFormDialog } from './VariantFormDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface Product {
   id: string;
@@ -20,7 +31,6 @@ interface Product {
   thumbnail_path?: string;
   model_path?: string;
   dimensions?: string;
-  description?: string;
   orientation?: string;
   door_type?: string;
   drawer_count?: number;
@@ -94,9 +104,7 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
     setEditingVariant(null);
   };
 
-  const handleDeleteVariant = async (variantId: string) => {
-    if (!confirm('Are you sure you want to delete this variant?')) return;
-
+  const handleDeleteVariant = async (variantId: string, variantName: string) => {
     try {
       const { error } = await supabase
         .from('products')
@@ -104,6 +112,15 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
         .eq('id', variantId);
 
       if (error) throw error;
+
+      // Log the activity
+      await supabase
+        .from('product_activity_log')
+        .insert([{
+          action: 'variant_deleted',
+          changed_by: 'admin',
+          old_data: { id: variantId, name: variantName }
+        }]);
 
       toast({
         title: "Success",
@@ -191,14 +208,34 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
                           <Edit className="h-3 w-3 mr-1" />
                           Edit
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteVariant(variant.id)}
-                        >
-                          <Trash2 className="h-3 w-3 mr-1" />
-                          Delete
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-red-500" />
+                                Delete Variant
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the variant "{variant.name}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteVariant(variant.id, variant.name)}
+                                className="bg-red-500 hover:bg-red-600"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </CardContent>
                   </Card>

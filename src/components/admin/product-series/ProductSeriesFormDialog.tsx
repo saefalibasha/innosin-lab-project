@@ -10,6 +10,19 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
+// Standardized INNOSIN product series names
+const INNOSIN_SERIES_OPTIONS = [
+  'KNEE SPACE',
+  'MOBILE CABINET FOR 750mm H BENCH',
+  'MOBILE CABINET FOR 900mm H BENCH',
+  'MODULAR CABINET',
+  'OPEN RACK',
+  'SINK CABINET',
+  'TALL CABINET GLASS DOOR',
+  'TALL CABINET SOLID DOOR',
+  'WALL CABINET'
+];
+
 interface ProductSeriesFormDialogProps {
   open: boolean;
   onClose: () => void;
@@ -39,9 +52,39 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
       return;
     }
 
+    if (!INNOSIN_SERIES_OPTIONS.includes(formData.product_series)) {
+      toast({
+        title: "Error",
+        description: "Please select a valid product series from the dropdown",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       
+      // Check if this series already exists
+      const { data: existingSeries, error: checkError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('product_series', formData.product_series)
+        .eq('is_series_parent', true)
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (existingSeries) {
+        toast({
+          title: "Error",
+          description: "This product series already exists",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Create series slug from product_series
       const seriesSlug = formData.product_series.toLowerCase().replace(/[^a-z0-9]+/g, '-');
       
@@ -123,13 +166,18 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
 
           <div>
             <Label htmlFor="product_series">Product Series *</Label>
-            <Input
-              id="product_series"
-              value={formData.product_series}
-              onChange={(e) => setFormData(prev => ({ ...prev, product_series: e.target.value }))}
-              placeholder="e.g., Mobile Cabinet"
-              required
-            />
+            <Select value={formData.product_series} onValueChange={(value) => setFormData(prev => ({ ...prev, product_series: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a product series" />
+              </SelectTrigger>
+              <SelectContent>
+                {INNOSIN_SERIES_OPTIONS.map((series) => (
+                  <SelectItem key={series} value={series}>
+                    {series}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

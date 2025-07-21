@@ -6,9 +6,20 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Search, Package, Edit, Eye, Upload, AlertCircle } from 'lucide-react';
+import { Plus, Search, Package, Edit, Eye, Upload, AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { ProductSeriesFormDialog } from './ProductSeriesFormDialog';
 import { VariantManager } from './VariantManager';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 interface ProductSeries {
   id: string;
@@ -165,6 +176,49 @@ export const ProductSeriesManager = () => {
     fetchSeries();
   };
 
+  const handleDeleteSeries = async (seriesId: string, seriesName: string) => {
+    try {
+      // First, delete all variants in this series
+      const { error: variantsError } = await supabase
+        .from('products')
+        .delete()
+        .eq('parent_series_id', seriesId);
+
+      if (variantsError) throw variantsError;
+
+      // Then delete the series itself
+      const { error: seriesError } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', seriesId);
+
+      if (seriesError) throw seriesError;
+
+      // Log the activity
+      await supabase
+        .from('product_activity_log')
+        .insert([{
+          action: 'series_deleted',
+          changed_by: 'admin',
+          old_data: { id: seriesId, name: seriesName }
+        }]);
+
+      toast({
+        title: "Success",
+        description: "Product series and all its variants deleted successfully",
+      });
+
+      fetchSeries();
+    } catch (error) {
+      console.error('Error deleting series:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product series",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -289,6 +343,33 @@ export const ProductSeriesManager = () => {
                   <Upload className="h-3 w-3" />
                   Assets
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        Delete Series
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete the series "{series.product_series}" and all its variants? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteSeries(series.id, series.product_series)}
+                        className="bg-red-500 hover:bg-red-600"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>

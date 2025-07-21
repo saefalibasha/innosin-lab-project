@@ -4,104 +4,151 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
+interface ProductSeries {
+  id: string;
+  name: string;
+  product_code: string;
+  product_series: string;
+  category: string;
+  description: string;
+  series_slug: string;
+  is_active: boolean;
+  variant_count: number;
+  completion_rate: number;
+  series_thumbnail_path?: string;
+  series_model_path?: string;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  product_code: string;
+  category: string;
+  product_series: string;
+  finish_type: string;
+  is_active: boolean;
+  thumbnail_path?: string;
+  model_path?: string;
+  dimensions?: string;
+  orientation?: string;
+  door_type?: string;
+  drawer_count?: number;
+}
+
 interface VariantFormDialogProps {
   open: boolean;
   onClose: () => void;
-  seriesId: string;
-  seriesName: string;
-  onVariantAdded: () => void;
+  series: ProductSeries;
+  variant?: Product | null;
+  onVariantSaved: () => void;
 }
 
 export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
   open,
   onClose,
-  seriesId,
-  seriesName,
-  onVariantAdded
+  series,
+  variant,
+  onVariantSaved
 }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    product_code: '',
-    dimensions: '',
-    finish_type: 'PC',
-    orientation: 'None',
-    door_type: '',
-    drawer_count: 0,
-    description: '',
-    full_description: ''
+    name: variant?.name || '',
+    product_code: variant?.product_code || '',
+    dimensions: variant?.dimensions || '',
+    finish_type: variant?.finish_type || 'PC',
+    orientation: variant?.orientation || 'None',
+    door_type: variant?.door_type || '',
+    drawer_count: variant?.drawer_count || 0
   });
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting variant form for series:', seriesId);
+    console.log('Submitting variant form for series:', series.id);
     setLoading(true);
 
     try {
-      const { error } = await supabase
-        .from('products')
-        .insert([{
-          name: formData.name,
-          product_code: formData.product_code,
-          product_series: seriesName,
-          category: 'Innosin Lab',
-          dimensions: formData.dimensions,
-          finish_type: formData.finish_type,
-          orientation: formData.orientation,
-          door_type: formData.door_type,
-          drawer_count: formData.drawer_count,
-          description: formData.description,
-          full_description: formData.full_description,
-          is_series_parent: false,
-          parent_series_id: seriesId,
-          is_active: true,
-          inherits_series_assets: true
-        }]);
+      if (variant) {
+        // Update existing variant
+        const { error } = await supabase
+          .from('products')
+          .update({
+            name: formData.name,
+            product_code: formData.product_code,
+            dimensions: formData.dimensions,
+            finish_type: formData.finish_type,
+            orientation: formData.orientation,
+            door_type: formData.door_type,
+            drawer_count: formData.drawer_count
+          })
+          .eq('id', variant.id);
 
-      if (error) {
-        console.error('Error creating variant:', error);
-        throw error;
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Product variant updated successfully",
+        });
+      } else {
+        // Create new variant
+        const { error } = await supabase
+          .from('products')
+          .insert([{
+            name: formData.name,
+            product_code: formData.product_code,
+            product_series: series.product_series,
+            category: series.category,
+            dimensions: formData.dimensions,
+            finish_type: formData.finish_type,
+            orientation: formData.orientation,
+            door_type: formData.door_type,
+            drawer_count: formData.drawer_count,
+            is_series_parent: false,
+            parent_series_id: series.id,
+            is_active: true,
+            inherits_series_assets: true
+          }]);
+
+        if (error) throw error;
+
+        toast({
+          title: "Success",
+          description: "Product variant created successfully",
+        });
       }
-
-      console.log('Variant created successfully');
 
       // Log the activity
       await supabase
         .from('product_activity_log')
         .insert([{
-          action: 'variant_created',
+          action: variant ? 'variant_updated' : 'variant_created',
           changed_by: 'admin',
-          new_data: { ...formData, parent_series_id: seriesId }
+          new_data: { ...formData, parent_series_id: series.id }
         }]);
 
-      setFormData({
-        name: '',
-        product_code: '',
-        dimensions: '',
-        finish_type: 'PC',
-        orientation: 'None',
-        door_type: '',
-        drawer_count: 0,
-        description: '',
-        full_description: ''
-      });
+      if (!variant) {
+        setFormData({
+          name: '',
+          product_code: '',
+          dimensions: '',
+          finish_type: 'PC',
+          orientation: 'None',
+          door_type: '',
+          drawer_count: 0
+        });
+      }
 
-      onVariantAdded();
-      toast({
-        title: "Success",
-        description: "Product variant created successfully",
-      });
+      onVariantSaved();
+      onClose();
     } catch (error) {
-      console.error('Error creating variant:', error);
+      console.error('Error saving variant:', error);
       toast({
         title: "Error",
-        description: "Failed to create product variant",
+        description: "Failed to save product variant",
         variant: "destructive",
       });
     } finally {
@@ -117,7 +164,9 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Variant for {seriesName}</DialogTitle>
+          <DialogTitle>
+            {variant ? 'Edit' : 'Create New'} Variant for {series.product_series}
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -209,32 +258,9 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
             />
           </div>
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Brief description of the product variant..."
-              rows={3}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="full-description">Full Description</Label>
-            <Textarea
-              id="full-description"
-              value={formData.full_description}
-              onChange={(e) => handleChange('full_description', e.target.value)}
-              placeholder="Detailed description including specifications and features..."
-              rows={4}
-            />
-          </div>
-
           <div className="flex items-center gap-2 pt-4">
             <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Variant'}
+              {loading ? 'Saving...' : variant ? 'Update Variant' : 'Create Variant'}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
