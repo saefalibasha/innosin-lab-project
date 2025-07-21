@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Search, Package, Edit, Eye, Upload } from 'lucide-react';
+import { Plus, Search, Package, Edit, Eye, Upload, AlertCircle } from 'lucide-react';
 import { ProductSeriesFormDialog } from './ProductSeriesFormDialog';
 import { VariantManager } from './VariantManager';
 
@@ -29,6 +29,7 @@ export const ProductSeriesManager = () => {
   const [series, setSeries] = useState<ProductSeries[]>([]);
   const [filteredSeries, setFilteredSeries] = useState<ProductSeries[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(null);
@@ -45,7 +46,9 @@ export const ProductSeriesManager = () => {
 
   const fetchSeries = async () => {
     try {
+      console.log('Fetching product series...');
       setLoading(true);
+      setError(null);
       
       // Fetch series with variant counts
       const { data: seriesData, error } = await supabase
@@ -65,23 +68,36 @@ export const ProductSeriesManager = () => {
         .eq('is_series_parent', true)
         .order('product_series', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching series:', error);
+        throw error;
+      }
+
+      console.log('Series data fetched:', seriesData);
 
       // Get variant counts for each series
       const seriesWithCounts = await Promise.all(
         (seriesData || []).map(async (s) => {
-          const { count: variantCount } = await supabase
+          const { count: variantCount, error: countError } = await supabase
             .from('products')
             .select('*', { count: 'exact', head: true })
             .eq('parent_series_id', s.id)
             .eq('is_active', true);
 
+          if (countError) {
+            console.error('Error counting variants for series:', s.id, countError);
+          }
+
           // Get completion rate (variants with both thumbnail and model)
-          const { data: variants } = await supabase
+          const { data: variants, error: variantsError } = await supabase
             .from('products')
             .select('thumbnail_path, model_path')
             .eq('parent_series_id', s.id)
             .eq('is_active', true);
+
+          if (variantsError) {
+            console.error('Error fetching variants for completion rate:', s.id, variantsError);
+          }
 
           const completedVariants = variants?.filter(v => 
             v.thumbnail_path && v.model_path
@@ -97,9 +113,11 @@ export const ProductSeriesManager = () => {
         })
       );
 
+      console.log('Series with counts:', seriesWithCounts);
       setSeries(seriesWithCounts);
     } catch (error) {
       console.error('Error fetching series:', error);
+      setError('Failed to fetch product series');
       toast({
         title: "Error",
         description: "Failed to fetch product series",
@@ -125,6 +143,7 @@ export const ProductSeriesManager = () => {
   };
 
   const handleSeriesAdded = () => {
+    console.log('Series added, refreshing list...');
     setShowAddDialog(false);
     fetchSeries();
     toast({
@@ -134,14 +153,36 @@ export const ProductSeriesManager = () => {
   };
 
   const handleManageVariants = (series: ProductSeries) => {
+    console.log('Managing variants for series:', series.id);
     setSelectedSeries(series);
     setShowVariantManager(true);
+  };
+
+  const handleVariantManagerClose = () => {
+    console.log('Variant manager closed, refreshing series...');
+    setShowVariantManager(false);
+    setSelectedSeries(null);
+    fetchSeries();
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-500 mb-4">{error}</p>
+          <Button onClick={fetchSeries} variant="outline">
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
@@ -281,7 +322,7 @@ export const ProductSeriesManager = () => {
       {selectedSeries && (
         <VariantManager
           open={showVariantManager}
-          onClose={() => setShowVariantManager(false)}
+          onClose={handleVariantManagerClose}
           series={selectedSeries}
           onVariantsUpdated={fetchSeries}
         />

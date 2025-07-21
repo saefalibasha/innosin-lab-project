@@ -40,6 +40,7 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('Submitting variant form for series:', seriesId);
     setLoading(true);
 
     try {
@@ -48,8 +49,8 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
         .insert([{
           name: formData.name,
           product_code: formData.product_code,
-          category: 'Innosin Lab',
           product_series: seriesName,
+          category: 'Innosin Lab',
           dimensions: formData.dimensions,
           finish_type: formData.finish_type,
           orientation: formData.orientation,
@@ -57,13 +58,18 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
           drawer_count: formData.drawer_count,
           description: formData.description,
           full_description: formData.full_description,
-          parent_series_id: seriesId,
           is_series_parent: false,
+          parent_series_id: seriesId,
           is_active: true,
           inherits_series_assets: true
         }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating variant:', error);
+        throw error;
+      }
+
+      console.log('Variant created successfully');
 
       // Log the activity
       await supabase
@@ -71,7 +77,7 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
         .insert([{
           action: 'variant_created',
           changed_by: 'admin',
-          new_data: { ...formData, series_id: seriesId }
+          new_data: { ...formData, parent_series_id: seriesId }
         }]);
 
       setFormData({
@@ -87,6 +93,10 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
       });
 
       onVariantAdded();
+      toast({
+        title: "Success",
+        description: "Product variant created successfully",
+      });
     } catch (error) {
       console.error('Error creating variant:', error);
       toast({
@@ -105,9 +115,9 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Variant - {seriesName}</DialogTitle>
+          <DialogTitle>Create New Variant for {seriesName}</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -118,18 +128,18 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
                 id="variant-name"
                 value={formData.name}
                 onChange={(e) => handleChange('name', e.target.value)}
-                placeholder="e.g., Mobile Cabinet Left Hand"
+                placeholder="e.g., MC-PC (755065)"
                 required
               />
             </div>
             
             <div>
-              <Label htmlFor="variant-code">Product Code</Label>
+              <Label htmlFor="product-code">Product Code</Label>
               <Input
-                id="variant-code"
+                id="product-code"
                 value={formData.product_code}
                 onChange={(e) => handleChange('product_code', e.target.value)}
-                placeholder="e.g., MC-PC-LH-505065"
+                placeholder="e.g., MC-PC-755065"
                 required
               />
             </div>
@@ -142,7 +152,7 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
                 id="dimensions"
                 value={formData.dimensions}
                 onChange={(e) => handleChange('dimensions', e.target.value)}
-                placeholder="e.g., 500×500×650 mm"
+                placeholder="e.g., 750×500×650 mm"
               />
             </div>
             
@@ -150,13 +160,12 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               <Label htmlFor="finish-type">Finish Type</Label>
               <Select value={formData.finish_type} onValueChange={(value) => handleChange('finish_type', value)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select finish" />
+                  <SelectValue placeholder="Select finish type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PC">Powder Coat</SelectItem>
-                  <SelectItem value="SS">Stainless Steel</SelectItem>
-                  <SelectItem value="Wood">Wood</SelectItem>
-                  <SelectItem value="Laminate">Laminate</SelectItem>
+                  <SelectItem value="PC">Powder Coat (PC)</SelectItem>
+                  <SelectItem value="SS">Stainless Steel (SS)</SelectItem>
+                  <SelectItem value="GLS">Glass (GLS)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -173,7 +182,6 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
                   <SelectItem value="None">None</SelectItem>
                   <SelectItem value="Left Hand">Left Hand</SelectItem>
                   <SelectItem value="Right Hand">Right Hand</SelectItem>
-                  <SelectItem value="Center">Center</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -197,6 +205,7 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               value={formData.drawer_count}
               onChange={(e) => handleChange('drawer_count', parseInt(e.target.value) || 0)}
               min="0"
+              max="10"
             />
           </div>
 
@@ -206,8 +215,9 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
               id="description"
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Brief description of the variant..."
+              placeholder="Brief description of the product variant..."
               rows={3}
+              required
             />
           </div>
 

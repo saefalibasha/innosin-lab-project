@@ -11,6 +11,8 @@ import { BarChart3, Package, Database, Upload, Settings, TrendingUp } from 'luci
 export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
+  console.log('AdminDashboard rendering, activeTab:', activeTab);
+
   const tabs = [
     {
       id: "overview",
@@ -44,6 +46,11 @@ export const AdminDashboard = () => {
     }
   ];
 
+  const handleTabChange = (value: string) => {
+    console.log('Tab changed to:', value);
+    setActiveTab(value);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -61,14 +68,18 @@ export const AdminDashboard = () => {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5 bg-muted rounded-lg p-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+              <TabsTrigger 
+                key={tab.id} 
+                value={tab.id} 
+                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground"
+              >
                 <Icon className="h-4 w-4" />
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
               </TabsTrigger>
             );
           })}
@@ -83,8 +94,8 @@ export const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => setActiveTab("series")}>
+                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                      onClick={() => handleTabChange("series")}>
                   <div className="flex items-center gap-3">
                     <Package className="h-8 w-8 text-blue-600" />
                     <div>
@@ -94,8 +105,8 @@ export const AdminDashboard = () => {
                   </div>
                 </Card>
                 
-                <Card className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => setActiveTab("assets")}>
+                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                      onClick={() => handleTabChange("assets")}>
                   <div className="flex items-center gap-3">
                     <Upload className="h-8 w-8 text-green-600" />
                     <div>
@@ -105,8 +116,8 @@ export const AdminDashboard = () => {
                   </div>
                 </Card>
                 
-                <Card className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => setActiveTab("products")}>
+                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                      onClick={() => handleTabChange("products")}>
                   <div className="flex items-center gap-3">
                     <Database className="h-8 w-8 text-purple-600" />
                     <div>
@@ -116,8 +127,8 @@ export const AdminDashboard = () => {
                   </div>
                 </Card>
                 
-                <Card className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                      onClick={() => setActiveTab("settings")}>
+                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
+                      onClick={() => handleTabChange("settings")}>
                   <div className="flex items-center gap-3">
                     <Settings className="h-8 w-8 text-orange-600" />
                     <div>
@@ -131,19 +142,19 @@ export const AdminDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="series">
+        <TabsContent value="series" className="space-y-6">
           <ProductSeriesManager />
         </TabsContent>
 
-        <TabsContent value="assets">
+        <TabsContent value="assets" className="space-y-6">
           <EnhancedAssetManager />
         </TabsContent>
 
-        <TabsContent value="products">
+        <TabsContent value="products" className="space-y-6">
           <AdminProductEditor />
         </TabsContent>
 
-        <TabsContent value="settings">
+        <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>System Settings</CardTitle>
