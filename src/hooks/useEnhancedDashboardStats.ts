@@ -69,8 +69,20 @@ export const useEnhancedDashboardStats = () => {
         p.thumbnail_path || p.model_path
       ).length || 0;
 
-      // Calculate completion rate
-      const completionRate = totalProducts ? (assetsUploaded / totalProducts) * 100 : 0;
+      // Calculate completion rate using current variants vs target variants
+      const { data: seriesData, error: seriesCompletionError } = await supabase
+        .from('products')
+        .select('target_variant_count')
+        .eq('is_series_parent', true)
+        .eq('is_active', true);
+
+      if (seriesCompletionError) throw seriesCompletionError;
+
+      const totalTargetVariants = seriesData?.reduce((sum, series) => 
+        sum + (series.target_variant_count || 4), 0) || 0;
+      
+      const completionRate = totalTargetVariants > 0 ? 
+        Math.min((totalVariants || 0) / totalTargetVariants * 100, 100) : 0;
 
       // Get recent activity (products updated in last 24 hours)
       const yesterday = new Date();
