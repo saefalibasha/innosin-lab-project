@@ -1,35 +1,24 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Ruler, Palette, Settings2, Grid3X3, RotateCcw } from 'lucide-react';
+import { Settings } from 'lucide-react';
 
-interface ProductVariant {
+interface Variant {
   id: string;
   name: string;
   product_code: string;
-  category: string;
   dimensions: string;
-  description: string;
-  full_description: string;
-  specifications: any;
-  thumbnail_path: string;
-  model_path: string;
-  additional_images: string[];
-  finish_type: string;
   orientation: string;
-  door_type: string;
+  door_type?: string;
   variant_type: string;
   drawer_count?: number;
-  parent_series_id: string;
+  finish_type: string;
 }
 
 interface VariantSelectorProps {
-  variants: ProductVariant[];
+  variants: Variant[];
   selectedVariantId: string;
   onVariantChange: (variantId: string) => void;
   selectedFinish: string;
@@ -37,246 +26,255 @@ interface VariantSelectorProps {
   groupByDimensions?: boolean;
 }
 
-export const VariantSelector: React.FC<VariantSelectorProps> = ({
+const VariantSelector: React.FC<VariantSelectorProps> = ({
   variants,
   selectedVariantId,
   onVariantChange,
   selectedFinish,
   onFinishChange,
-  groupByDimensions = true
+  groupByDimensions = false
 }) => {
+  console.log('🔍 VariantSelector rendering with variants:', variants);
+  console.log('🔍 Selected variant ID:', selectedVariantId);
+  console.log('🔍 Selected finish:', selectedFinish);
+
   if (!variants || variants.length === 0) {
     return null;
   }
 
+  // Group variants by dimensions if requested
+  const groupedVariants = groupByDimensions ? 
+    variants.reduce((acc, variant) => {
+      const key = variant.dimensions || 'Unknown';
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(variant);
+      return acc;
+    }, {} as Record<string, Variant[]>) :
+    { 'All': variants };
+
+  // Get unique dimension groups
+  const dimensionGroups = Object.keys(groupedVariants).sort();
+
+  // Get unique orientations from all variants
+  const orientations = [...new Set(variants.map(v => v.orientation).filter(Boolean))].sort();
+
+  // Get unique drawer counts from all variants
+  const drawerCounts = [...new Set(variants.map(v => v.drawer_count).filter(Boolean))].sort((a, b) => a - b);
+
+  // Get unique variant types
+  const variantTypes = [...new Set(variants.map(v => v.variant_type).filter(Boolean))];
+
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
 
-  // Get unique dimensions and sort by length value (smallest to largest)
-  const uniqueDimensions = [...new Set(variants.map(v => v.dimensions || 'Standard'))]
-    .sort((a, b) => {
-      // Extract the length value from dimension strings (e.g., "1200 x 600 x 800" -> 1200)
-      const getLengthValue = (dim: string) => {
-        const match = dim.match(/^(\d+)/);
-        return match ? parseInt(match[1]) : 0;
-      };
-      return getLengthValue(a) - getLengthValue(b);
-    });
-  
-  // Get selected dimension
-  const selectedDimension = selectedVariant?.dimensions || uniqueDimensions[0];
+  console.log('🔍 Dimension groups:', dimensionGroups);
+  console.log('🔍 Available orientations:', orientations);
+  console.log('🔍 Available drawer counts:', drawerCounts);
+  console.log('🔍 Selected variant:', selectedVariant);
 
-  // Get available drawer counts for selected dimension
-  const getAvailableDrawerCounts = (dimension: string) => {
-    const dimensionVariants = variants.filter(v => v.dimensions === dimension);
-    const drawerCounts = dimensionVariants
-      .map(v => v.drawer_count)
-      .filter(count => count !== undefined && count !== null)
-      .sort((a, b) => a! - b!);
-    return [...new Set(drawerCounts)] as number[];
-  };
-
-  const availableDrawerCounts = getAvailableDrawerCounts(selectedDimension);
-  const selectedDrawerCount = selectedVariant?.drawer_count || (availableDrawerCounts[0] || null);
-
-  // Get available orientations for selected dimension and drawer count
-  const getAvailableOrientations = (dimension: string, drawerCount: number | null) => {
-    let dimensionVariants = variants.filter(v => v.dimensions === dimension);
-    
-    if (drawerCount !== null) {
-      dimensionVariants = dimensionVariants.filter(v => v.drawer_count === drawerCount);
-    }
-    
-    const orientations = dimensionVariants
-      .map(v => v.orientation)
-      .filter(o => o && o !== 'None' && (o === 'LH' || o === 'RH'));
-    
-    return [...new Set(orientations)] as ('LH' | 'RH')[];
-  };
-
-  const availableOrientations = getAvailableOrientations(selectedDimension, selectedDrawerCount);
-  const selectedOrientation = selectedVariant?.orientation && selectedVariant.orientation !== 'None' 
-    ? selectedVariant.orientation as 'LH' | 'RH'
-    : (availableOrientations[0] || null);
-
-  // Find the best matching variant based on all criteria
-  const findMatchingVariant = (dimension: string, drawerCount: number | null, orientation: 'LH' | 'RH' | null) => {
-    let filtered = variants.filter(v => v.dimensions === dimension);
-    
-    if (drawerCount !== null) {
-      filtered = filtered.filter(v => v.drawer_count === drawerCount);
-    }
-    
-    if (orientation) {
-      filtered = filtered.filter(v => v.orientation === orientation);
-    }
-    
-    return filtered[0] || variants.find(v => v.dimensions === dimension);
-  };
-
-  // Handle dimension change
-  const handleDimensionChange = (dimensions: string) => {
-    const newDrawerCounts = getAvailableDrawerCounts(dimensions);
-    const newDrawerCount = newDrawerCounts[0] || null;
-    const newOrientations = getAvailableOrientations(dimensions, newDrawerCount);
-    const newOrientation = newOrientations[0] || null;
-    
-    const variant = findMatchingVariant(dimensions, newDrawerCount, newOrientation);
-    if (variant) {
-      onVariantChange(variant.id);
+  const formatOrientation = (orientation: string) => {
+    switch (orientation) {
+      case 'LH': return 'Left Hand';
+      case 'RH': return 'Right Hand';
+      default: return orientation;
     }
   };
 
-  // Handle drawer count change
-  const handleDrawerCountChange = (drawerCount: number) => {
-    const newOrientations = getAvailableOrientations(selectedDimension, drawerCount);
-    const newOrientation = newOrientations[0] || null;
-    
-    const variant = findMatchingVariant(selectedDimension, drawerCount, newOrientation);
-    if (variant) {
-      onVariantChange(variant.id);
+  const formatVariantType = (type: string) => {
+    switch (type) {
+      case 'standard': return 'Standard';
+      case 'combination': return 'Combination';
+      default: return type.charAt(0).toUpperCase() + type.slice(1);
     }
   };
-
-  // Handle orientation change
-  const handleOrientationChange = (orientation: 'LH' | 'RH') => {
-    const variant = findMatchingVariant(selectedDimension, selectedDrawerCount, orientation);
-    if (variant) {
-      onVariantChange(variant.id);
-    }
-  };
-
-  // Available finish options
-  const finishOptions = [
-    { value: 'PC', label: 'Powder Coat', description: 'Durable powder coating finish' },
-    { value: 'SS', label: 'Stainless Steel', description: 'Premium stainless steel finish' }
-  ];
 
   return (
-    <Card className="shadow-sm border-muted">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-xl">
-          <Settings2 className="w-5 h-5 text-primary" />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Settings className="w-5 h-5" />
           Product Configuration
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Dimension Selection */}
-        <div>
-          <div className="flex items-center gap-2 mb-3">
-            <Ruler className="w-4 h-4 text-muted-foreground" />
-            <h4 className="font-semibold text-foreground">Dimensions</h4>
+        {groupByDimensions && dimensionGroups.length > 1 && (
+          <div>
+            <h4 className="font-medium mb-3">Dimensions</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {dimensionGroups.map((dimension) => {
+                const isSelected = groupedVariants[dimension].some(v => v.id === selectedVariantId);
+                return (
+                  <Button
+                    key={dimension}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const firstVariant = groupedVariants[dimension][0];
+                      if (firstVariant) {
+                        onVariantChange(firstVariant.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {dimension}
+                  </Button>
+                );
+              })}
+            </div>
           </div>
-          <Select value={selectedDimension} onValueChange={handleDimensionChange}>
-            <SelectTrigger className="w-full h-11 border-muted">
-              <SelectValue placeholder="Select dimensions" />
-            </SelectTrigger>
-            <SelectContent>
-              {uniqueDimensions.map((dimension) => (
-                <SelectItem key={dimension} value={dimension} className="py-2">
-                  {dimension}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        )}
+
+        {/* Variant Type Selection */}
+        {variantTypes.length > 1 && (
+          <div>
+            <h4 className="font-medium mb-3">Configuration Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {variantTypes.map((type) => {
+                const typeVariants = variants.filter(v => v.variant_type === type);
+                const isSelected = selectedVariant?.variant_type === type;
+                
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const firstOfType = typeVariants[0];
+                      if (firstOfType) {
+                        onVariantChange(firstOfType.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {formatVariantType(type)}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Drawer Count Selection */}
-        {availableDrawerCounts.length > 0 && (
+        {drawerCounts.length > 1 && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <Grid3X3 className="w-4 h-4 text-muted-foreground" />
-              <h4 className="font-semibold text-foreground">Number of Drawers</h4>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {availableDrawerCounts.map((count) => (
-                <Button
-                  key={count}
-                  variant={selectedDrawerCount === count ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleDrawerCountChange(count)}
-                  className="transition-all duration-200"
-                >
-                  {count} {count === 1 ? 'Drawer' : 'Drawers'}
-                </Button>
-              ))}
+            <h4 className="font-medium mb-3">Drawer Configuration</h4>
+            <div className="grid grid-cols-3 gap-2">
+              {drawerCounts.map((count) => {
+                const drawerVariants = variants.filter(v => v.drawer_count === count);
+                const isSelected = selectedVariant?.drawer_count === count;
+                
+                return (
+                  <Button
+                    key={count}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const matchingVariant = drawerVariants.find(v => 
+                        v.orientation === selectedVariant?.orientation || 
+                        (!selectedVariant?.orientation && v.orientation === 'None')
+                      ) || drawerVariants[0];
+                      
+                      if (matchingVariant) {
+                        onVariantChange(matchingVariant.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {count} {count === 1 ? 'Drawer' : 'Drawers'}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Orientation Selection */}
-        {availableOrientations.length > 0 && (
+        {orientations.length > 1 && orientations.some(o => o !== 'None') && (
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <RotateCcw className="w-4 h-4 text-muted-foreground" />
-              <h4 className="font-semibold text-foreground">Orientation</h4>
-            </div>
-            <div className="flex gap-2">
-              {availableOrientations.map((orientation) => (
-                <Button
-                  key={orientation}
-                  variant={selectedOrientation === orientation ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleOrientationChange(orientation)}
-                  className="transition-all duration-200 min-w-20"
-                >
-                  {orientation === 'LH' ? 'Left Hand' : 'Right Hand'}
-                </Button>
-              ))}
+            <h4 className="font-medium mb-3">Orientation</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {orientations.filter(o => o !== 'None').map((orientation) => {
+                const orientationVariants = variants.filter(v => v.orientation === orientation);
+                const isSelected = selectedVariant?.orientation === orientation;
+                
+                return (
+                  <Button
+                    key={orientation}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const matchingVariant = orientationVariants.find(v => 
+                        v.drawer_count === selectedVariant?.drawer_count ||
+                        v.variant_type === selectedVariant?.variant_type
+                      ) || orientationVariants[0];
+                      
+                      if (matchingVariant) {
+                        onVariantChange(matchingVariant.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {formatOrientation(orientation)}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* Finish Selection */}
         <div>
-          <div className="flex items-center gap-2 mb-4">
-            <Palette className="w-4 h-4 text-muted-foreground" />
-            <h4 className="font-semibold text-foreground">Finish Type</h4>
+          <h4 className="font-medium mb-3">Finish</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={selectedFinish === 'PC' ? "default" : "outline"}
+              size="sm"
+              onClick={() => onFinishChange('PC')}
+              className="text-sm"
+            >
+              Powder Coat
+            </Button>
+            <Button
+              variant={selectedFinish === 'SS' ? "default" : "outline"}
+              size="sm"
+              onClick={() => onFinishChange('SS')}
+              className="text-sm"
+            >
+              Stainless Steel
+            </Button>
           </div>
-          <RadioGroup value={selectedFinish} onValueChange={onFinishChange} className="space-y-3">
-            {finishOptions.map((finish) => (
-              <div key={finish.value} className="flex items-start space-x-3 p-3 rounded-lg border border-muted hover:bg-muted/30 transition-colors">
-                <RadioGroupItem value={finish.value} id={finish.value} className="mt-1" />
-                <div className="flex-1 min-w-0">
-                  <Label htmlFor={finish.value} className="cursor-pointer font-medium text-foreground">
-                    {finish.label}
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {finish.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </RadioGroup>
         </div>
 
-        {/* Selected Configuration Summary */}
+        {/* Current Selection Summary */}
         {selectedVariant && (
-          <div className="bg-muted/30 p-4 rounded-lg border">
-            <h4 className="font-semibold text-foreground mb-3 text-base">Selected Configuration</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-              <div>
-                <span className="font-medium text-foreground">Product Code:</span>
-                <p className="text-muted-foreground">{selectedVariant.product_code}</p>
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-3">Current Selection</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Product Code:</span>
+                <Badge variant="outline">{selectedVariant.product_code}</Badge>
               </div>
-              <div>
-                <span className="font-medium text-foreground">Dimensions:</span>
-                <p className="text-muted-foreground">{selectedVariant.dimensions}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Dimensions:</span>
+                <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
               </div>
-              {selectedDrawerCount && (
-                <div>
-                  <span className="font-medium text-foreground">Drawers:</span>
-                  <p className="text-muted-foreground">{selectedDrawerCount}</p>
+              {selectedVariant.drawer_count && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Drawers:</span>
+                  <span className="text-sm font-medium">{selectedVariant.drawer_count}</span>
                 </div>
               )}
-              {selectedOrientation && (
-                <div>
-                  <span className="font-medium text-foreground">Orientation:</span>
-                  <p className="text-muted-foreground">{selectedOrientation === 'LH' ? 'Left Hand' : 'Right Hand'}</p>
+              {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Orientation:</span>
+                  <span className="text-sm font-medium">{formatOrientation(selectedVariant.orientation)}</span>
                 </div>
               )}
-              <div>
-                <span className="font-medium text-foreground">Finish:</span>
-                <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Finish:</span>
+                <span className="text-sm font-medium">
+                  {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                </span>
               </div>
             </div>
           </div>

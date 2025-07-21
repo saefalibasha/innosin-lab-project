@@ -9,13 +9,17 @@ interface ProductImageGalleryProps {
   thumbnail: string;
   productName: string;
   className?: string;
+  overviewImage?: string;
+  seriesOverviewImage?: string;
 }
 
 const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   images,
   thumbnail,
   productName,
-  className = "w-full h-48"
+  className = "w-full h-48",
+  overviewImage,
+  seriesOverviewImage
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
@@ -23,11 +27,44 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   console.log('🔍 ProductImageGallery rendering for:', productName);
   console.log('🔍 Thumbnail path:', thumbnail);
   console.log('🔍 Additional images:', images);
+  console.log('🔍 Overview image:', overviewImage);
+  console.log('🔍 Series overview image:', seriesOverviewImage);
   
-  // Use thumbnail as fallback if no images or if main image fails
-  const displayImages = images.length > 0 ? images : [thumbnail];
-  const currentImage = displayImages[currentImageIndex];
+  // Build display images with priority: series overview > overview > additional images > thumbnail
+  const buildDisplayImages = () => {
+    const displayImages = [];
+    
+    // Priority 1: Series overview image
+    if (seriesOverviewImage) {
+      displayImages.push(seriesOverviewImage);
+    }
+    
+    // Priority 2: Overview image (if different from series overview)
+    if (overviewImage && overviewImage !== seriesOverviewImage) {
+      displayImages.push(overviewImage);
+    }
+    
+    // Priority 3: Additional images
+    if (images && images.length > 0) {
+      images.forEach(img => {
+        if (img && img !== seriesOverviewImage && img !== overviewImage && img !== thumbnail) {
+          displayImages.push(img);
+        }
+      });
+    }
+    
+    // Priority 4: Thumbnail (if not already included)
+    if (thumbnail && !displayImages.includes(thumbnail)) {
+      displayImages.push(thumbnail);
+    }
+    
+    return displayImages.filter(Boolean);
+  };
 
+  const displayImages = buildDisplayImages();
+  const currentImage = displayImages[currentImageIndex] || thumbnail;
+
+  console.log('🔍 Final display images:', displayImages);
   console.log('🔍 Current image to display:', currentImage);
 
   const nextImage = () => {
@@ -50,7 +87,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
 
   return (
     <div className={`${className} relative bg-white rounded-lg overflow-hidden border border-gray-100 flex items-center justify-center`}>
-      {!imageError ? (
+      {!imageError && currentImage ? (
         <img
           src={currentImage}
           alt={`${productName} - Image ${currentImageIndex + 1}`}
@@ -62,7 +99,9 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-gray-50">
           <Image className="w-12 h-12 mb-2" />
           <span className="text-xs">Image not found</span>
-          <span className="text-xs mt-1 px-2 text-center break-all">{currentImage}</span>
+          {currentImage && (
+            <span className="text-xs mt-1 px-2 text-center break-all">{currentImage}</span>
+          )}
         </div>
       )}
       
@@ -118,7 +157,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             <DialogTitle className="font-serif">{productName} - Gallery</DialogTitle>
           </DialogHeader>
           <div className="relative">
-            {!imageError ? (
+            {!imageError && currentImage ? (
               <div className="w-full h-96 bg-white rounded-lg border border-gray-100 flex items-center justify-center">
                 <img
                   src={currentImage}
@@ -132,7 +171,9 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
               <div className="w-full h-96 flex flex-col items-center justify-center text-muted-foreground bg-gray-50 rounded border border-gray-100">
                 <Image className="w-16 h-16 mb-2" />
                 <span>Image not available</span>
-                <span className="text-sm mt-1 px-4 text-center break-all">{currentImage}</span>
+                {currentImage && (
+                  <span className="text-sm mt-1 px-4 text-center break-all">{currentImage}</span>
+                )}
               </div>
             )}
             
