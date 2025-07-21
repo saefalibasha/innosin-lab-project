@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
@@ -240,13 +239,13 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           }}
         >
           <Suspense fallback={null}>
-            {/* Enhanced lighting setup for light background */}
-            <ambientLight intensity={0.4} color="#f8f8f8" />
+            {/* Enhanced lighting setup for brighter space */}
+            <ambientLight intensity={0.7} color="#f8f8f8" />
             
-            {/* Primary directional light with shadows */}
+            {/* Primary directional light with enhanced intensity and shadows */}
             <directionalLight 
               position={[10, 10, 8]} 
-              intensity={0.8} 
+              intensity={1.2} 
               color="#ffffff"
               castShadow
               shadow-mapSize-width={2048}
@@ -258,11 +257,25 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               shadow-camera-bottom={-10}
             />
             
-            {/* Fill light for even illumination */}
+            {/* Enhanced fill light for reducing shadows */}
             <directionalLight 
               position={[-8, 6, -6]} 
-              intensity={0.3} 
+              intensity={0.5} 
               color="#f0f0f0"
+            />
+            
+            {/* Additional fill light for better illumination */}
+            <directionalLight 
+              position={[0, 8, 0]} 
+              intensity={0.4} 
+              color="#f8f8f8"
+            />
+            
+            {/* Overhead laboratory lighting simulation */}
+            <directionalLight 
+              position={[0, 12, 0]} 
+              intensity={0.3} 
+              color="#ffffff"
             />
             
             {/* Subtle rim light for edge definition */}
@@ -272,11 +285,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               color="#e8e8e8"
             />
             
-            {/* Subtle environment lighting for laboratory context */}
+            {/* Enhanced environment lighting for brighter space */}
             <Environment 
-              preset="apartment" 
+              preset="studio" 
               background={false}
-              environmentIntensity={0.3}
+              environmentIntensity={0.6}
             />
             
             <GLBModel 
