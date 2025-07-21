@@ -5,13 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { 
   BarChart3, 
   Package, 
-  MessageSquare, 
   Settings,
   Activity
 } from 'lucide-react';
 import { DynamicOverview } from './DynamicOverview';
 import { EnhancedProductSeriesManager } from './EnhancedProductSeriesManager';
-import { ChatSessionManager } from './ChatSessionManager';
 import { SystemSettings } from './SystemSettings';
 
 export const AdminDashboard = () => {
@@ -33,7 +31,7 @@ export const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
@@ -41,10 +39,6 @@ export const AdminDashboard = () => {
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
             Product Series
-          </TabsTrigger>
-          <TabsTrigger value="chat" className="flex items-center gap-2">
-            <MessageSquare className="w-4 h-4" />
-            Chat Sessions
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -58,10 +52,6 @@ export const AdminDashboard = () => {
 
         <TabsContent value="products">
           <EnhancedProductSeriesManager />
-        </TabsContent>
-
-        <TabsContent value="chat">
-          <ChatSessionManager />
         </TabsContent>
 
         <TabsContent value="settings">

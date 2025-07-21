@@ -19,7 +19,8 @@ import {
   Box,
   Tag,
   Save,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import {
   Dialog,
@@ -29,13 +30,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { VariantManager } from './product-series/VariantManager';
 
 interface ProductSeries {
   id: string;
@@ -62,7 +57,7 @@ export const EnhancedProductSeriesManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [showVariantManager, setShowVariantManager] = useState(false);
   const { toast } = useToast();
 
   // Form state for editing
@@ -253,6 +248,30 @@ export const EnhancedProductSeriesManager = () => {
     }
   };
 
+  const handleManageVariants = (series: ProductSeries) => {
+    setSelectedSeries(series);
+    setShowVariantManager(true);
+  };
+
+  const handleVariantManagerClose = () => {
+    setShowVariantManager(false);
+    setSelectedSeries(null);
+    fetchSeries();
+  };
+
+  const handleViewSeries = (series: ProductSeries) => {
+    // Navigate to product catalog or preview
+    window.open(`/products/${series.series_slug}`, '_blank');
+  };
+
+  const handleManageAssets = (series: ProductSeries) => {
+    // Open asset management dialog
+    toast({
+      title: "Asset Management",
+      description: `Opening asset management for ${series.product_series}`,
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -271,23 +290,6 @@ export const EnhancedProductSeriesManager = () => {
             Manage INNOSIN Lab product series, descriptions, and assets
           </p>
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Series
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Product Series</DialogTitle>
-              <DialogDescription>
-                Create a new product series for INNOSIN Lab
-              </DialogDescription>
-            </DialogHeader>
-            {/* Add form content here */}
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Search and Filters */}
@@ -374,7 +376,7 @@ export const EnhancedProductSeriesManager = () => {
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -387,6 +389,16 @@ export const EnhancedProductSeriesManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => handleManageVariants(series)}
+                  className="flex items-center gap-1"
+                >
+                  <Settings className="h-3 w-3" />
+                  Variants
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewSeries(series)}
                   className="flex items-center gap-1"
                 >
                   <Eye className="h-3 w-3" />
@@ -395,6 +407,7 @@ export const EnhancedProductSeriesManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => handleManageAssets(series)}
                   className="flex items-center gap-1"
                 >
                   <Upload className="h-3 w-3" />
@@ -492,6 +505,16 @@ export const EnhancedProductSeriesManager = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Variant Manager */}
+      {selectedSeries && (
+        <VariantManager
+          open={showVariantManager}
+          onClose={handleVariantManagerClose}
+          series={selectedSeries}
+          onVariantsUpdated={fetchSeries}
+        />
+      )}
     </div>
   );
 };
