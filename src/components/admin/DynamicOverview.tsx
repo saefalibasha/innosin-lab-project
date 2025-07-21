@@ -17,7 +17,7 @@ interface OverviewStats {
   totalSeries: number;
   totalVariants: number;
   completedAssets: number;
-  pendingAssets: number;
+  totalProducts: number;
   recentUpdates: number;
 }
 
@@ -35,7 +35,7 @@ export const DynamicOverview = () => {
     totalSeries: 0,
     totalVariants: 0,
     completedAssets: 0,
-    pendingAssets: 0,
+    totalProducts: 0,
     recentUpdates: 0
   });
   const [seriesData, setSeriesData] = useState<SeriesData[]>([]);
@@ -83,7 +83,6 @@ export const DynamicOverview = () => {
 
       // Calculate stats
       const completedAssets = variants.filter(v => v.thumbnail_path && v.model_path).length;
-      const pendingAssets = variants.length - completedAssets;
       
       // Recent updates (last 7 days)
       const weekAgo = new Date();
@@ -96,7 +95,7 @@ export const DynamicOverview = () => {
         totalSeries: seriesParents.length,
         totalVariants: variants.length,
         completedAssets,
-        pendingAssets,
+        totalProducts: allProducts?.length || 0,
         recentUpdates
       });
 
@@ -188,13 +187,13 @@ export const DynamicOverview = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Assets</CardTitle>
-            <AlertCircle className="h-4 w-4 text-orange-600" />
+            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.pendingAssets}</div>
+            <div className="text-2xl font-bold">{stats.totalProducts}</div>
             <p className="text-xs text-muted-foreground">
-              Variants missing thumbnails or 3D models
+              All products including series and variants
             </p>
           </CardContent>
         </Card>
