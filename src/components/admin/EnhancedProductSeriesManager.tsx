@@ -39,6 +39,7 @@ interface ProductSeries {
   is_active: boolean;
   variant_count: number;
   completion_rate: number;
+  target_variant_count: number;
   series_thumbnail_path?: string;
   series_model_path?: string;
   company_tags: string[];
@@ -61,7 +62,8 @@ export const EnhancedProductSeriesManager = () => {
     name: '',
     description: '',
     company_tags: [] as string[],
-    series_thumbnail_path: ''
+    series_thumbnail_path: '',
+    target_variant_count: 4
   });
 
   // New tag input
@@ -112,6 +114,7 @@ export const EnhancedProductSeriesManager = () => {
             ...s,
             variant_count: variantCount || 0,
             completion_rate: completionRate,
+            target_variant_count: s.target_variant_count || 4,
             company_tags: s.company_tags || []
           };
         })
@@ -150,7 +153,8 @@ export const EnhancedProductSeriesManager = () => {
       name: series.name,
       description: series.description || '',
       company_tags: series.company_tags || [],
-      series_thumbnail_path: series.series_thumbnail_path || ''
+      series_thumbnail_path: series.series_thumbnail_path || '',
+      target_variant_count: series.target_variant_count || 4
     });
     setIsEditDialogOpen(true);
   };
@@ -166,6 +170,7 @@ export const EnhancedProductSeriesManager = () => {
           description: editForm.description,
           company_tags: editForm.company_tags,
           series_thumbnail_path: editForm.series_thumbnail_path,
+          target_variant_count: editForm.target_variant_count,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedSeries.id);
@@ -350,7 +355,7 @@ export const EnhancedProductSeriesManager = () => {
               
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Variants:</span>
-                <Badge variant="outline">{series.variant_count}</Badge>
+                <Badge variant="outline">{series.variant_count} / {series.target_variant_count}</Badge>
               </div>
               
               <div className="flex items-center justify-between text-sm">
@@ -469,6 +474,22 @@ export const EnhancedProductSeriesManager = () => {
                   />
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="target_variant_count">Expected Number of Variants</Label>
+              <Input
+                id="target_variant_count"
+                type="number"
+                min="1"
+                max="20"
+                value={editForm.target_variant_count}
+                onChange={(e) => setEditForm(prev => ({ ...prev, target_variant_count: parseInt(e.target.value) || 4 }))}
+                placeholder="4"
+              />
+              <p className="text-xs text-muted-foreground">
+                How many variants do you plan to create for this series?
+              </p>
             </div>
 
             <div className="flex justify-end gap-2">

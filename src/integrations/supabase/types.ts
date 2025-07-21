@@ -852,6 +852,7 @@ export type Database = {
           series_slug: string | null
           series_thumbnail_path: string | null
           specifications: Json | null
+          target_variant_count: number | null
           thumbnail_path: string | null
           updated_at: string
           variant_order: number | null
@@ -888,6 +889,7 @@ export type Database = {
           series_slug?: string | null
           series_thumbnail_path?: string | null
           specifications?: Json | null
+          target_variant_count?: number | null
           thumbnail_path?: string | null
           updated_at?: string
           variant_order?: number | null
@@ -924,6 +926,7 @@ export type Database = {
           series_slug?: string | null
           series_thumbnail_path?: string | null
           specifications?: Json | null
+          target_variant_count?: number | null
           thumbnail_path?: string | null
           updated_at?: string
           variant_order?: number | null

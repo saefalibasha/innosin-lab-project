@@ -190,7 +190,9 @@ export const DynamicOverview = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.pendingAssets}</div>
-            <p className="text-xs text-muted-foreground">Missing assets</p>
+            <p className="text-xs text-muted-foreground">
+              Variants missing thumbnails or 3D models
+            </p>
           </CardContent>
         </Card>
       </div>

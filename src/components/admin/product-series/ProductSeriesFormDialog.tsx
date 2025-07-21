@@ -36,7 +36,8 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
     product_series: '',
     category: 'Innosin Lab',
     description: '',
-    product_code: ''
+    product_code: '',
+    target_variant_count: 4
   });
   const { toast } = useToast();
 
@@ -99,7 +100,8 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
           description: formData.description,
           series_slug: seriesSlug,
           is_series_parent: true,
-          is_active: true
+          is_active: true,
+          target_variant_count: formData.target_variant_count
         });
 
       if (error) throw error;
@@ -115,7 +117,8 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
         product_series: '',
         category: 'Innosin Lab',
         description: '',
-        product_code: ''
+        product_code: '',
+        target_variant_count: 4
       });
 
       onSeriesAdded();
@@ -204,6 +207,22 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
               placeholder="Describe the product series..."
               rows={3}
             />
+          </div>
+
+          <div>
+            <Label htmlFor="target_variant_count">Expected Number of Variants</Label>
+            <Input
+              id="target_variant_count"
+              type="number"
+              min="1"
+              max="20"
+              value={formData.target_variant_count}
+              onChange={(e) => setFormData(prev => ({ ...prev, target_variant_count: parseInt(e.target.value) || 4 }))}
+              placeholder="4"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              How many variants do you plan to create for this series?
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

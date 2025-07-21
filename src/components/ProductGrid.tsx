@@ -22,8 +22,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
           <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group">
             <CardHeader className="p-0">
               <ProductImageGallery
-                images={product.overviewImage ? [product.overviewImage] : product.images}
-                thumbnail={product.overviewImage || product.thumbnail}
+                images={product.seriesOverviewImage ? [product.seriesOverviewImage] : 
+                        product.overviewImage ? [product.overviewImage] : product.images}
+                thumbnail={product.seriesOverviewImage || product.overviewImage || product.thumbnail}
                 productName={product.name}
                 className="w-full h-64"
               />
