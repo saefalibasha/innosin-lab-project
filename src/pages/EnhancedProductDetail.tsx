@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText, Building2 } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText, Building2, Settings } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
@@ -186,36 +186,22 @@ const EnhancedProductDetail = () => {
           </div>
 
           {/* Right Column - Product Info */}
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Product Header */}
             <AnimatedSection animation="slide-in-right" delay={300}>
               <div className="space-y-4">
-                <h1 className="text-4xl lg:text-5xl font-serif font-bold text-foreground leading-tight">
+                <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
                   {series.name}
                 </h1>
-                <Badge variant="outline" className="border-sea text-sea text-sm px-4 py-2 font-medium">
+                <Badge variant="outline" className="border-sea text-sea text-base px-4 py-2 font-medium">
                   <Building2 className="w-4 h-4 mr-2" />
                   {series.category}
                 </Badge>
               </div>
             </AnimatedSection>
 
-            {/* Variant Selection */}
-            {isInnosinProduct && series.variants && series.variants.length > 0 && (
-              <AnimatedSection animation="slide-in-right" delay={350}>
-                <VariantSelector
-                  variants={series.variants}
-                  selectedVariantId={selectedVariantId}
-                  onVariantChange={setSelectedVariantId}
-                  selectedFinish={selectedFinish}
-                  onFinishChange={setSelectedFinish}
-                  groupByDimensions={true}
-                />
-              </AnimatedSection>
-            )}
-
-            {/* Product Overview */}
-            <AnimatedSection animation="slide-in-right" delay={400}>
+            {/* Product Overview - Moved above configuration */}
+            <AnimatedSection animation="slide-in-right" delay={350}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-xl">
@@ -230,6 +216,30 @@ const EnhancedProductDetail = () => {
                 </CardContent>
               </Card>
             </AnimatedSection>
+
+            {/* Product Configuration - Moved below overview */}
+            {isInnosinProduct && series.variants && series.variants.length > 0 && (
+              <AnimatedSection animation="slide-in-right" delay={400}>
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Settings className="w-5 h-5 text-primary" />
+                      Product Configuration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <VariantSelector
+                      variants={series.variants}
+                      selectedVariantId={selectedVariantId}
+                      onVariantChange={setSelectedVariantId}
+                      selectedFinish={selectedFinish}
+                      onFinishChange={setSelectedFinish}
+                      groupByDimensions={true}
+                    />
+                  </CardContent>
+                </Card>
+              </AnimatedSection>
+            )}
 
             {/* Technical Specifications */}
             <AnimatedSection animation="slide-in-right" delay={450}>

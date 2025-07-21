@@ -33,15 +33,20 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
         
-        // Enhanced material processing for better realism
+        // Enhanced material processing for better visibility against black background
         modelClone.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material) {
-            // Enhance materials with PBR properties
+            // Enhance materials with PBR properties for black background
             if (child.material instanceof THREE.MeshStandardMaterial) {
-              // Improve material properties for better lighting response
-              child.material.roughness = child.material.roughness || 0.5;
-              child.material.metalness = child.material.metalness || 0.2;
-              child.material.envMapIntensity = 0.8; // Reduced for less overexposure
+              // Optimize material properties for black background visibility
+              child.material.roughness = child.material.roughness || 0.3;
+              child.material.metalness = child.material.metalness || 0.1;
+              child.material.envMapIntensity = 1.2; // Increased for better visibility
+              
+              // Enhance material brightness for black background
+              if (child.material.color) {
+                child.material.color.multiplyScalar(1.3); // Brighten colors slightly
+              }
               
               // Enable shadows
               child.castShadow = true;
@@ -69,11 +74,11 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
           
           // Improved scaling logic for laboratory furniture
           const maxDimension = Math.max(size.x, size.y, size.z);
-          let targetSize = 2.5; // More conservative target size
+          let targetSize = 2.5;
           
           if (isInnosinProduct) {
-            // Laboratory furniture specific scaling
-            targetSize = 2.2;
+            // Laboratory furniture specific scaling for better knee space visibility
+            targetSize = 2.8; // Slightly larger for better detail visibility
           }
           
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
@@ -94,22 +99,23 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
           
           console.log('Model centered and scaled:', { center, size, scale, maxDimension, actualCenter });
           
-          // Improved camera positioning for laboratory furniture
+          // Improved camera positioning for knee space visibility
           const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
           const radius = boundingSphere.radius;
           
           if (isInnosinProduct) {
-            // Laboratory furniture specific positioning
-            const distance = radius * 2.5;
+            // Laboratory furniture specific positioning for optimal knee space view
+            const distance = radius * 2.2; // Closer for better detail
             
-            const cameraX = actualCenter.x + distance * 0.8;
-            const cameraY = actualCenter.y + distance * 0.6;
-            const cameraZ = actualCenter.z + distance * 0.8;
+            // Position camera to show knee space clearly
+            const cameraX = actualCenter.x + distance * 0.6;
+            const cameraY = actualCenter.y + distance * 0.4; // Lower angle for knee space
+            const cameraZ = actualCenter.z + distance * 0.9;
             
             camera.position.set(cameraX, cameraY, cameraZ);
             camera.lookAt(actualCenter);
             
-            console.log('Camera positioned for laboratory furniture:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
+            console.log('Camera positioned for knee space visibility:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
           } else if (isHamiltonProduct) {
             // Hamilton product positioning
             const distance = radius * 1.6;
@@ -174,17 +180,17 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
 
 const LoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full">
-    <div className="animate-pulse text-muted-foreground">Loading 3D model...</div>
+    <div className="animate-pulse text-white">Loading 3D model...</div>
   </div>
 );
 
 const ErrorFallback: React.FC = () => {
   console.log('Error boundary triggered for 3D model');
   return (
-    <div className="flex items-center justify-center h-full bg-white rounded-lg">
-      <div className="text-muted-foreground text-center">
+    <div className="flex items-center justify-center h-full bg-black rounded-lg">
+      <div className="text-white text-center">
         <div className="text-lg mb-2">3D Model Unavailable</div>
-        <div className="text-sm">Unable to load 3D preview</div>
+        <div className="text-sm text-gray-300">Unable to load 3D preview</div>
       </div>
     </div>
   );
@@ -218,41 +224,31 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   };
   
   return (
-    <div className={`${className} ${
-      isHamiltonProduct 
-        ? 'bg-black' 
-        : 'bg-gradient-to-br from-gray-50 to-gray-100'
-    } rounded-lg overflow-hidden border border-gray-100`}>
+    <div className={`${className} bg-black rounded-lg overflow-hidden border border-gray-800`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
           camera={{ position: [8, 6, 8], fov: 45 }}
           shadows
           gl={{ 
             antialias: true, 
-            alpha: true,
+            alpha: false, // Disable alpha for solid black background
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 0.8 // Reduced exposure to prevent overexposure
+            toneMappingExposure: 1.1 // Slightly increased for better visibility
           }}
-          onCreated={({ gl }) => {
+          onCreated={({ gl, scene }) => {
             gl.shadowMap.enabled = true;
             gl.shadowMap.type = THREE.PCFSoftShadowMap;
+            scene.background = new THREE.Color(0x000000); // Solid black background
           }}
         >
           <Suspense fallback={null}>
-            {/* Reduced environment intensity for less overexposure */}
-            <Environment 
-              preset="studio" 
-              background={false}
-              environmentIntensity={0.4}
-            />
+            {/* Enhanced lighting setup for black background and knee space visibility */}
+            <ambientLight intensity={0.3} color="#ffffff" />
             
-            {/* Reduced lighting intensity for more realistic appearance */}
-            <ambientLight intensity={0.2} color="#ffffff" />
-            
-            {/* Main light with reduced intensity */}
+            {/* Primary light for knee space visibility */}
             <directionalLight 
-              position={[10, 10, 5]} 
-              intensity={0.8} 
+              position={[10, 8, 5]} 
+              intensity={1.2} 
               castShadow 
               shadow-mapSize={[2048, 2048]}
               shadow-camera-near={0.1}
@@ -264,32 +260,33 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               color="#ffffff"
             />
             
-            {/* Softer fill light */}
+            {/* Fill light for better detail visibility */}
             <directionalLight 
-              position={[-5, 5, -5]} 
-              intensity={0.3} 
-              color="#b6d7ff"
+              position={[-8, 6, -3]} 
+              intensity={0.8} 
+              color="#f0f0f0"
             />
             
-            {/* Subtle rim light */}
+            {/* Additional light for knee space area */}
             <directionalLight 
-              position={[0, 2, -10]} 
-              intensity={0.2}
-              color="#fff4e6"
+              position={[0, -5, 8]} 
+              intensity={0.6}
+              color="#ffffff"
             />
             
-            {/* Reduced point light intensities */}
-            <pointLight position={[5, 5, 5]} intensity={0.2} color="#ffffff" />
-            <pointLight position={[-5, -2, 5]} intensity={0.15} color="#e6f3ff" />
+            {/* Point lights for enhanced visibility */}
+            <pointLight position={[8, 8, 8]} intensity={0.4} color="#ffffff" />
+            <pointLight position={[-8, -4, 8]} intensity={0.3} color="#e6f3ff" />
+            <pointLight position={[0, -8, 0]} intensity={0.2} color="#ffffff" />
             
-            {/* Softer contact shadows */}
+            {/* Subtle contact shadows for depth */}
             <ContactShadows
               position={[0, -1.5, 0]}
-              opacity={0.3}
+              opacity={0.2}
               scale={10}
-              blur={2.5}
+              blur={3}
               far={4}
-              resolution={256}
+              resolution={512}
               color="#000000"
             />
             
