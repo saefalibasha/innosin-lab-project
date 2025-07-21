@@ -30,6 +30,45 @@ interface SeriesData {
   updated_at: string;
 }
 
+const CustomXAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+  const words = payload.value.split(' ');
+  const lineHeight = 14;
+  const maxWidth = 100;
+  
+  // Group words into lines that fit within maxWidth
+  const lines: string[] = [];
+  let currentLine = '';
+  
+  words.forEach((word: string) => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length * 7 <= maxWidth) { // Rough estimate: 7px per character
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+  
+  return (
+    <g>
+      {lines.map((line, index) => (
+        <text
+          key={index}
+          x={x}
+          y={y + (index * lineHeight)}
+          textAnchor="middle"
+          fontSize={12}
+          fill="#666"
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+};
+
 export const DynamicOverview = () => {
   const [stats, setStats] = useState<OverviewStats>({
     totalSeries: 0,
@@ -222,10 +261,11 @@ export const DynamicOverview = () => {
                   <XAxis 
                     dataKey="name" 
                     interval={0}
-                    angle={-45}
-                    textAnchor="end"
+                    textAnchor="middle"
                     height={120}
-                    tick={{ fontSize: 12 }}
+                    tick={<CustomXAxisTick />}
+                    axisLine={false}
+                    tickLine={false}
                   />
                   <YAxis domain={[0, 100]} />
                   <Tooltip 
