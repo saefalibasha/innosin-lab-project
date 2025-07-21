@@ -4,7 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Ruler, Palette, Settings2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Ruler, Palette, Settings2, Grid3X3, RotateCcw } from 'lucide-react';
 
 interface ProductVariant {
   id: string;
@@ -63,9 +65,81 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
   // Get selected dimension
   const selectedDimension = selectedVariant?.dimensions || uniqueDimensions[0];
 
+  // Get available drawer counts for selected dimension
+  const getAvailableDrawerCounts = (dimension: string) => {
+    const dimensionVariants = variants.filter(v => v.dimensions === dimension);
+    const drawerCounts = dimensionVariants
+      .map(v => v.drawer_count)
+      .filter(count => count !== undefined && count !== null)
+      .sort((a, b) => a! - b!);
+    return [...new Set(drawerCounts)] as number[];
+  };
+
+  const availableDrawerCounts = getAvailableDrawerCounts(selectedDimension);
+  const selectedDrawerCount = selectedVariant?.drawer_count || (availableDrawerCounts[0] || null);
+
+  // Get available orientations for selected dimension and drawer count
+  const getAvailableOrientations = (dimension: string, drawerCount: number | null) => {
+    let dimensionVariants = variants.filter(v => v.dimensions === dimension);
+    
+    if (drawerCount !== null) {
+      dimensionVariants = dimensionVariants.filter(v => v.drawer_count === drawerCount);
+    }
+    
+    const orientations = dimensionVariants
+      .map(v => v.orientation)
+      .filter(o => o && o !== 'None' && (o === 'LH' || o === 'RH'));
+    
+    return [...new Set(orientations)] as ('LH' | 'RH')[];
+  };
+
+  const availableOrientations = getAvailableOrientations(selectedDimension, selectedDrawerCount);
+  const selectedOrientation = selectedVariant?.orientation && selectedVariant.orientation !== 'None' 
+    ? selectedVariant.orientation as 'LH' | 'RH'
+    : (availableOrientations[0] || null);
+
+  // Find the best matching variant based on all criteria
+  const findMatchingVariant = (dimension: string, drawerCount: number | null, orientation: 'LH' | 'RH' | null) => {
+    let filtered = variants.filter(v => v.dimensions === dimension);
+    
+    if (drawerCount !== null) {
+      filtered = filtered.filter(v => v.drawer_count === drawerCount);
+    }
+    
+    if (orientation) {
+      filtered = filtered.filter(v => v.orientation === orientation);
+    }
+    
+    return filtered[0] || variants.find(v => v.dimensions === dimension);
+  };
+
   // Handle dimension change
   const handleDimensionChange = (dimensions: string) => {
-    const variant = variants.find(v => v.dimensions === dimensions);
+    const newDrawerCounts = getAvailableDrawerCounts(dimensions);
+    const newDrawerCount = newDrawerCounts[0] || null;
+    const newOrientations = getAvailableOrientations(dimensions, newDrawerCount);
+    const newOrientation = newOrientations[0] || null;
+    
+    const variant = findMatchingVariant(dimensions, newDrawerCount, newOrientation);
+    if (variant) {
+      onVariantChange(variant.id);
+    }
+  };
+
+  // Handle drawer count change
+  const handleDrawerCountChange = (drawerCount: number) => {
+    const newOrientations = getAvailableOrientations(selectedDimension, drawerCount);
+    const newOrientation = newOrientations[0] || null;
+    
+    const variant = findMatchingVariant(selectedDimension, drawerCount, newOrientation);
+    if (variant) {
+      onVariantChange(variant.id);
+    }
+  };
+
+  // Handle orientation change
+  const handleOrientationChange = (orientation: 'LH' | 'RH') => {
+    const variant = findMatchingVariant(selectedDimension, selectedDrawerCount, orientation);
     if (variant) {
       onVariantChange(variant.id);
     }
@@ -106,6 +180,52 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
           </Select>
         </div>
 
+        {/* Drawer Count Selection */}
+        {availableDrawerCounts.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <Grid3X3 className="w-4 h-4 text-muted-foreground" />
+              <h4 className="font-semibold text-foreground">Number of Drawers</h4>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {availableDrawerCounts.map((count) => (
+                <Button
+                  key={count}
+                  variant={selectedDrawerCount === count ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleDrawerCountChange(count)}
+                  className="transition-all duration-200"
+                >
+                  {count} {count === 1 ? 'Drawer' : 'Drawers'}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Orientation Selection */}
+        {availableOrientations.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <RotateCcw className="w-4 h-4 text-muted-foreground" />
+              <h4 className="font-semibold text-foreground">Orientation</h4>
+            </div>
+            <div className="flex gap-2">
+              {availableOrientations.map((orientation) => (
+                <Button
+                  key={orientation}
+                  variant={selectedOrientation === orientation ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleOrientationChange(orientation)}
+                  className="transition-all duration-200 min-w-20"
+                >
+                  {orientation === 'LH' ? 'Left Hand' : 'Right Hand'}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Finish Selection */}
         <div>
           <div className="flex items-center gap-2 mb-4">
@@ -142,22 +262,22 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
                 <span className="font-medium text-foreground">Dimensions:</span>
                 <p className="text-muted-foreground">{selectedVariant.dimensions}</p>
               </div>
+              {selectedDrawerCount && (
+                <div>
+                  <span className="font-medium text-foreground">Drawers:</span>
+                  <p className="text-muted-foreground">{selectedDrawerCount}</p>
+                </div>
+              )}
+              {selectedOrientation && (
+                <div>
+                  <span className="font-medium text-foreground">Orientation:</span>
+                  <p className="text-muted-foreground">{selectedOrientation === 'LH' ? 'Left Hand' : 'Right Hand'}</p>
+                </div>
+              )}
               <div>
                 <span className="font-medium text-foreground">Finish:</span>
                 <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
               </div>
-              {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
-                <div>
-                  <span className="font-medium text-foreground">Orientation:</span>
-                  <p className="text-muted-foreground">{selectedVariant.orientation}</p>
-                </div>
-              )}
-              {selectedVariant.drawer_count && (
-                <div>
-                  <span className="font-medium text-foreground">Drawers:</span>
-                  <p className="text-muted-foreground">{selectedVariant.drawer_count}</p>
-                </div>
-              )}
             </div>
           </div>
         )}
