@@ -2,149 +2,107 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface EnhancedDashboardStats {
+interface DashboardStats {
   totalProducts: number;
-  activeChatSessions: number;
-  chatSessionsThisMonth: number;
-  chatSessionsToday: number;
-  knowledgeBaseEntries: number;
-  totalChatMessages: number;
-  averageSessionDuration: number;
-  hubspotSyncedSessions: number;
-  chatMetrics: {
-    totalSessions: number;
-    completedSessions: number;
-    averageSatisfaction: number;
-    responseTime: string;
-  };
-  isLoading: boolean;
+  activeSeries: number;
+  totalVariants: number;
+  assetsUploaded: number;
+  recentActivity: number;
+  completionRate: number;
+  lastUpdated: Date;
 }
 
-export const useEnhancedDashboardStats = (refreshTrigger: number = 0) => {
-  const [stats, setStats] = useState<EnhancedDashboardStats>({
+export const useEnhancedDashboardStats = () => {
+  const [stats, setStats] = useState<DashboardStats>({
     totalProducts: 0,
-    activeChatSessions: 0,
-    chatSessionsThisMonth: 0,
-    chatSessionsToday: 0,
-    knowledgeBaseEntries: 0,
-    totalChatMessages: 0,
-    averageSessionDuration: 0,
-    hubspotSyncedSessions: 0,
-    chatMetrics: {
-      totalSessions: 0,
-      completedSessions: 0,
-      averageSatisfaction: 0,
-      responseTime: '~250ms',
-    },
-    isLoading: true,
+    activeSeries: 0,
+    totalVariants: 0,
+    assetsUploaded: 0,
+    recentActivity: 0,
+    completionRate: 0,
+    lastUpdated: new Date()
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchStats = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch total products
+      const { count: totalProducts } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Fetch active series
+      const { count: activeSeries } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_series_parent', true)
+        .eq('is_active', true);
+
+      // Fetch total variants
+      const { count: totalVariants } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_series_parent', false)
+        .eq('is_active', true);
+
+      // Fetch assets uploaded count
+      const { count: assetsUploaded } = await supabase
+        .from('asset_uploads')
+        .select('*', { count: 'exact', head: true })
+        .eq('upload_status', 'completed');
+
+      // Fetch recent activity (last 7 days)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const { count: recentActivity } = await supabase
+        .from('product_activity_log')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo.toISOString());
+
+      // Calculate completion rate (products with both thumbnail and model)
+      const { data: productsWithAssets } = await supabase
+        .from('products')
+        .select('thumbnail_path, model_path')
+        .eq('is_active', true)
+        .eq('is_series_parent', false);
+
+      const completedProducts = productsWithAssets?.filter(p => 
+        p.thumbnail_path && p.model_path
+      ).length || 0;
+
+      const completionRate = totalVariants ? (completedProducts / totalVariants) * 100 : 0;
+
+      setStats({
+        totalProducts: totalProducts || 0,
+        activeSeries: activeSeries || 0,
+        totalVariants: totalVariants || 0,
+        assetsUploaded: assetsUploaded || 0,
+        recentActivity: recentActivity || 0,
+        completionRate: Math.round(completionRate),
+        lastUpdated: new Date()
+      });
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError('Failed to fetch dashboard statistics');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchEnhancedStats = async () => {
-      setStats(prev => ({ ...prev, isLoading: true }));
-      
-      try {
-        console.log('Fetching dashboard stats...');
-        
-        // Fetch all stats in parallel
-        const [
-          productsResult,
-          activeSessionsResult,
-          monthlySessionsResult,
-          todaySessionsResult,
-          knowledgeResult,
-          messagesResult,
-          hubspotSyncedResult,
-          completedSessionsResult,
-          satisfactionResult
-        ] = await Promise.all([
-          // Total active products
-          supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true })
-            .eq('is_active', true),
-          
-          // Active chat sessions
-          supabase
-            .from('chat_sessions')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'active'),
-          
-          // Chat sessions this month
-          supabase
-            .from('chat_sessions')
-            .select('*', { count: 'exact', head: true })
-            .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-          
-          // Chat sessions today
-          supabase
-            .from('chat_sessions')
-            .select('*', { count: 'exact', head: true })
-            .gte('created_at', new Date().toISOString().split('T')[0] + 'T00:00:00.000Z'),
-          
-          // Knowledge base entries
-          supabase
-            .from('knowledge_base_entries')
-            .select('*', { count: 'exact', head: true })
-            .eq('is_active', true),
-          
-          // Total chat messages
-          supabase
-            .from('chat_messages')
-            .select('*', { count: 'exact', head: true }),
-          
-          // HubSpot synced sessions
-          supabase
-            .from('chat_sessions')
-            .select('*', { count: 'exact', head: true })
-            .not('hubspot_contact_id', 'is', null),
-          
-          // Completed sessions for metrics
-          supabase
-            .from('chat_sessions')
-            .select('*', { count: 'exact', head: true })
-            .neq('status', 'active'),
-          
-          // Average satisfaction score
-          supabase
-            .from('chat_sessions')
-            .select('satisfaction_score')
-            .not('satisfaction_score', 'is', null)
-        ]);
+    fetchStats();
+    
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchStats, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
-        // Process satisfaction scores
-        const satisfactionScores = satisfactionResult.data?.map(s => s.satisfaction_score).filter(Boolean) || [];
-        const averageSatisfaction = satisfactionScores.length > 0 
-          ? satisfactionScores.reduce((a, b) => a + b, 0) / satisfactionScores.length 
-          : 0;
-
-        setStats({
-          totalProducts: productsResult.count || 0,
-          activeChatSessions: activeSessionsResult.count || 0,
-          chatSessionsThisMonth: monthlySessionsResult.count || 0,
-          chatSessionsToday: todaySessionsResult.count || 0,
-          knowledgeBaseEntries: knowledgeResult.count || 0,
-          totalChatMessages: messagesResult.count || 0,
-          averageSessionDuration: 0, // TODO: Calculate from session data
-          hubspotSyncedSessions: hubspotSyncedResult.count || 0,
-          chatMetrics: {
-            totalSessions: (monthlySessionsResult.count || 0),
-            completedSessions: completedSessionsResult.count || 0,
-            averageSatisfaction: Math.round(averageSatisfaction * 10) / 10,
-            responseTime: '~250ms',
-          },
-          isLoading: false,
-        });
-
-        console.log('Dashboard stats fetched successfully');
-      } catch (error) {
-        console.error('Error fetching enhanced dashboard stats:', error);
-        setStats(prev => ({ ...prev, isLoading: false }));
-      }
-    };
-
-    fetchEnhancedStats();
-  }, [refreshTrigger]);
-
-  return stats;
+  return { stats, loading, error, refetch: fetchStats };
 };

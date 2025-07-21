@@ -1,14 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Search, Filter, Plus, Tag } from 'lucide-react';
+import { Search, Filter, Plus, Tag, RefreshCw } from 'lucide-react';
 import { ProductSeriesSection } from './ProductSeriesSection';
 import { AddProductModal } from './AddProductModal';
 
@@ -26,7 +24,7 @@ interface DatabaseProduct {
   drawer_count: number;
   description: string;
   full_description: string;
-  specifications: any; // Keep as any since it comes from jsonb
+  specifications: any;
   company_tags: string[];
   model_path?: string;
   thumbnail_path?: string;
@@ -36,6 +34,11 @@ interface DatabaseProduct {
   editable_title?: string;
   editable_description?: string;
   is_active: boolean;
+  is_series_parent: boolean;
+  parent_series_id?: string;
+  series_thumbnail_path?: string;
+  series_model_path?: string;
+  inherits_series_assets: boolean;
 }
 
 interface ProductSeries {
@@ -52,6 +55,7 @@ export const EnhancedAssetManager = () => {
   const [selectedCompanyTag, setSelectedCompanyTag] = useState<string>('all');
   const [availableCompanyTags, setAvailableCompanyTags] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -62,11 +66,23 @@ export const EnhancedAssetManager = () => {
     filterProducts();
   }, [products, searchTerm, selectedCategory, selectedCompanyTag]);
 
+  // Auto-refresh every 45 seconds
+  useEffect(() => {
+    if (!autoRefresh) return;
+    
+    const interval = setInterval(() => {
+      fetchProducts();
+    }, 45000);
+    
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
+
   const fetchProducts = async () => {
     try {
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('is_series_parent', false) // Only get variants, not series parents
         .order('product_series', { ascending: true })
         .order('name', { ascending: true });
 
@@ -94,7 +110,12 @@ export const EnhancedAssetManager = () => {
         updated_at: product.updated_at,
         editable_title: product.editable_title,
         editable_description: product.editable_description,
-        is_active: product.is_active
+        is_active: product.is_active,
+        is_series_parent: product.is_series_parent,
+        parent_series_id: product.parent_series_id,
+        series_thumbnail_path: product.series_thumbnail_path,
+        series_model_path: product.series_model_path,
+        inherits_series_assets: product.inherits_series_assets
       }));
 
       setProducts(formattedProducts);
@@ -174,15 +195,25 @@ export const EnhancedAssetManager = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Laboratory Equipment Manager</h2>
+          <h2 className="text-2xl font-bold">Enhanced Asset Manager</h2>
           <p className="text-muted-foreground">
-            Comprehensive asset management for all laboratory equipment
+            Comprehensive asset management for laboratory equipment variants
           </p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Add Product
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin' : ''}`} />
+            Auto-refresh: {autoRefresh ? 'On' : 'Off'}
+          </Button>
+          <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}

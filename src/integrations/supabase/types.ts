@@ -74,6 +74,47 @@ export type Database = {
         }
         Relationships: []
       }
+      asset_uploads: {
+        Row: {
+          created_at: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string
+          id: string
+          product_id: string | null
+          upload_status: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type: string
+          id?: string
+          product_id?: string | null
+          upload_status?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string
+          id?: string
+          product_id?: string | null
+          upload_status?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_uploads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulk_upload_sessions: {
         Row: {
           created_at: string
@@ -587,6 +628,86 @@ export type Database = {
         }
         Relationships: []
       }
+      product_activity_log: {
+        Row: {
+          action: string
+          changed_by: string | null
+          created_at: string | null
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          product_id: string | null
+        }
+        Insert: {
+          action: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          product_id?: string | null
+        }
+        Update: {
+          action?: string
+          changed_by?: string | null
+          created_at?: string | null
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          product_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_activity_log_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_series: {
+        Row: {
+          brand: string | null
+          branding_assets: string[] | null
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          overview_image_path: string | null
+          series_code: string
+          series_name: string
+          updated_at: string
+        }
+        Insert: {
+          brand?: string | null
+          branding_assets?: string[] | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          overview_image_path?: string | null
+          series_code: string
+          series_name: string
+          updated_at?: string
+        }
+        Update: {
+          brand?: string | null
+          branding_assets?: string[] | null
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          overview_image_path?: string | null
+          series_code?: string
+          series_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       product_specifications: {
         Row: {
           category: string | null
@@ -634,6 +755,71 @@ export type Database = {
           },
         ]
       }
+      product_variants: {
+        Row: {
+          additional_images: string[] | null
+          additional_specs: Json | null
+          color: string | null
+          created_at: string
+          finish_type: string | null
+          id: string
+          is_active: boolean | null
+          model_path: string | null
+          product_id: string
+          size_dimensions: string | null
+          sort_order: number | null
+          thumbnail_path: string | null
+          updated_at: string
+          variant_code: string
+          variant_name: string
+          variant_type: string | null
+        }
+        Insert: {
+          additional_images?: string[] | null
+          additional_specs?: Json | null
+          color?: string | null
+          created_at?: string
+          finish_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          model_path?: string | null
+          product_id: string
+          size_dimensions?: string | null
+          sort_order?: number | null
+          thumbnail_path?: string | null
+          updated_at?: string
+          variant_code: string
+          variant_name: string
+          variant_type?: string | null
+        }
+        Update: {
+          additional_images?: string[] | null
+          additional_specs?: Json | null
+          color?: string | null
+          created_at?: string
+          finish_type?: string | null
+          id?: string
+          is_active?: boolean | null
+          model_path?: string | null
+          product_id?: string
+          size_dimensions?: string | null
+          sort_order?: number | null
+          thumbnail_path?: string | null
+          updated_at?: string
+          variant_code?: string
+          variant_name?: string
+          variant_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           additional_images: string[] | null
@@ -649,17 +835,27 @@ export type Database = {
           finish_type: string | null
           full_description: string | null
           id: string
+          inherits_series_assets: boolean | null
           is_active: boolean | null
+          is_series_parent: boolean | null
           keywords: string[] | null
           model_path: string | null
           name: string
           orientation: string | null
           overview_image_path: string | null
+          parent_series_id: string | null
           product_code: string
           product_series: string | null
+          series_model_path: string | null
+          series_order: number | null
+          series_overview_image_path: string | null
+          series_slug: string | null
+          series_thumbnail_path: string | null
           specifications: Json | null
           thumbnail_path: string | null
           updated_at: string
+          variant_order: number | null
+          variant_type: string | null
         }
         Insert: {
           additional_images?: string[] | null
@@ -675,17 +871,27 @@ export type Database = {
           finish_type?: string | null
           full_description?: string | null
           id?: string
+          inherits_series_assets?: boolean | null
           is_active?: boolean | null
+          is_series_parent?: boolean | null
           keywords?: string[] | null
           model_path?: string | null
           name: string
           orientation?: string | null
           overview_image_path?: string | null
+          parent_series_id?: string | null
           product_code: string
           product_series?: string | null
+          series_model_path?: string | null
+          series_order?: number | null
+          series_overview_image_path?: string | null
+          series_slug?: string | null
+          series_thumbnail_path?: string | null
           specifications?: Json | null
           thumbnail_path?: string | null
           updated_at?: string
+          variant_order?: number | null
+          variant_type?: string | null
         }
         Update: {
           additional_images?: string[] | null
@@ -701,19 +907,37 @@ export type Database = {
           finish_type?: string | null
           full_description?: string | null
           id?: string
+          inherits_series_assets?: boolean | null
           is_active?: boolean | null
+          is_series_parent?: boolean | null
           keywords?: string[] | null
           model_path?: string | null
           name?: string
           orientation?: string | null
           overview_image_path?: string | null
+          parent_series_id?: string | null
           product_code?: string
           product_series?: string | null
+          series_model_path?: string | null
+          series_order?: number | null
+          series_overview_image_path?: string | null
+          series_slug?: string | null
+          series_thumbnail_path?: string | null
           specifications?: Json | null
           thumbnail_path?: string | null
           updated_at?: string
+          variant_order?: number | null
+          variant_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "products_parent_series_id_fkey"
+            columns: ["parent_series_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rate_limit_log: {
         Row: {
@@ -860,34 +1084,40 @@ export type Database = {
       }
       training_sessions: {
         Row: {
+          completed_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
           id: string
           name: string
           performance_metrics: Json | null
+          progress: number | null
           status: string
           updated_at: string
           version: number
         }
         Insert: {
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           name: string
           performance_metrics?: Json | null
+          progress?: number | null
           status?: string
           updated_at?: string
           version?: number
         }
         Update: {
+          completed_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           id?: string
           name?: string
           performance_metrics?: Json | null
+          progress?: number | null
           status?: string
           updated_at?: string
           version?: number
