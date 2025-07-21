@@ -1,4 +1,3 @@
-
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
@@ -20,10 +19,6 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
   
   const { scene } = useGLTF(modelPath, true);
   
-  // Check if this is a Hamilton or Innosin product
-  const isHamiltonProduct = modelPath.includes('hls-product');
-  const isInnosinProduct = modelPath.includes('innosin');
-  
   // Handle loading success and model enhancement
   useEffect(() => {
     if (scene && groupRef.current && !isLoaded) {
@@ -33,22 +28,16 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
         
-        // Enhanced material processing for better visibility and sharpness
+        // Clean material processing for natural appearance
         modelClone.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material) {
-            // Enhance materials with optimized properties for black background
             if (child.material instanceof THREE.MeshStandardMaterial) {
-              // Optimize material properties for maximum clarity
-              child.material.roughness = child.material.roughness || 0.2;
-              child.material.metalness = child.material.metalness || 0.05;
-              child.material.envMapIntensity = 1.5; // Increased for better visibility
+              // Keep natural material properties
+              child.material.roughness = child.material.roughness || 0.4;
+              child.material.metalness = child.material.metalness || 0.1;
+              child.material.envMapIntensity = 0.8; // Reduced for natural look
               
-              // Enhance material brightness and contrast for black background
-              if (child.material.color) {
-                child.material.color.multiplyScalar(1.4); // Brighten colors for clarity
-              }
-              
-              // Improve material quality for sharpness
+              // Optimize texture quality
               if (child.material.map) {
                 child.material.map.generateMipmaps = true;
                 child.material.map.minFilter = THREE.LinearMipmapLinearFilter;
@@ -56,96 +45,66 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
                 child.material.map.anisotropy = gl.capabilities.getMaxAnisotropy();
               }
               
-              // Enhance normal maps for better detail
+              // Natural normal map scaling
               if (child.material.normalMap) {
                 child.material.normalMap.generateMipmaps = true;
-                child.material.normalScale.set(1.2, 1.2);
+                child.material.normalScale.set(1.0, 1.0);
               }
             }
           }
         });
         
-        // Enhanced bounding box calculation for perfect centering
+        // Improved centering calculation
         const box = new THREE.Box3().setFromObject(modelClone);
         const center = box.getCenter(new THREE.Vector3());
         const size = box.getSize(new THREE.Vector3());
         
         // Only proceed if we have valid dimensions
         if (size.length() > 0) {
-          // Perfect centering - move model so its center is at origin
+          // Center the model at origin
           modelClone.position.set(-center.x, -center.y, -center.z);
           
-          // Improved scaling logic for laboratory furniture
+          // Consistent scaling for all products
           const maxDimension = Math.max(size.x, size.y, size.z);
-          let targetSize = 2.8; // Increased for better detail visibility
-          
-          if (isInnosinProduct) {
-            // Laboratory furniture specific scaling for optimal knee space visibility
-            targetSize = 3.2; // Larger for better feature visibility
-          }
+          let targetSize = 2.5; // Consistent size for all products
           
           const scale = maxDimension > 0 ? targetSize / maxDimension : 1;
           modelClone.scale.setScalar(scale);
           
-          // Clear previous children and add the perfectly centered model
+          // Clear and add the centered model
           groupRef.current.clear();
           groupRef.current.add(modelClone);
           
-          // Calculate the final center for camera targeting
+          // Calculate final center after transformations
           const finalBox = new THREE.Box3().setFromObject(groupRef.current);
           const actualCenter = finalBox.getCenter(new THREE.Vector3());
           
-          // For Hamilton products, notify parent about the calculated center
-          if (isHamiltonProduct && onCenterCalculated) {
+          console.log('Model centered and scaled:', { 
+            originalCenter: center, 
+            size, 
+            scale, 
+            actualCenter 
+          });
+          
+          // Simple camera positioning
+          const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
+          const radius = boundingSphere.radius;
+          const distance = radius * 2.5;
+          
+          // Position camera for optimal viewing
+          camera.position.set(
+            actualCenter.x + distance * 0.7,
+            actualCenter.y + distance * 0.4,
+            actualCenter.z + distance * 0.7
+          );
+          camera.lookAt(actualCenter);
+          camera.updateProjectionMatrix();
+          
+          // Notify parent about center for OrbitControls
+          if (onCenterCalculated) {
             onCenterCalculated(actualCenter);
           }
           
-          console.log('Model perfectly centered and scaled:', { center, size, scale, maxDimension, actualCenter });
-          
-          // Optimized camera positioning for best feature visibility
-          const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
-          const radius = boundingSphere.radius;
-          
-          if (isInnosinProduct) {
-            // Laboratory furniture specific positioning for optimal knee space view
-            const distance = radius * 2.5; // Optimal distance for detail visibility
-            
-            // Position camera to show knee space and all features clearly
-            const cameraX = actualCenter.x + distance * 0.7;
-            const cameraY = actualCenter.y + distance * 0.3; // Slightly lower for knee space
-            const cameraZ = actualCenter.z + distance * 0.8;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(actualCenter);
-            
-            console.log('Camera positioned for optimal knee space visibility:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          } else if (isHamiltonProduct) {
-            // Hamilton product positioning
-            const distance = radius * 2.0;
-            
-            const cameraX = actualCenter.x + distance * 0.8;
-            const cameraY = actualCenter.y + distance * 0.4;
-            const cameraZ = actualCenter.z + distance * 0.7;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(actualCenter);
-            
-            console.log('Camera positioned for Hamilton product:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          } else {
-            // Standard positioning for maximum clarity
-            const distance = radius * 2.2;
-            
-            const cameraX = actualCenter.x + distance * 0.8;
-            const cameraY = actualCenter.y + distance * 0.4;
-            const cameraZ = actualCenter.z + distance * 0.7;
-            
-            camera.position.set(cameraX, cameraY, cameraZ);
-            camera.lookAt(actualCenter);
-            
-            console.log('Camera positioned for maximum clarity:', { x: cameraX, y: cameraY, z: cameraZ, distance, radius });
-          }
-          
-          camera.updateProjectionMatrix();
           setIsLoaded(true);
         }
       } catch (error) {
@@ -199,9 +158,6 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   
   console.log('Enhanced3DViewer rendering with modelPath:', modelPath);
   
-  const isHamiltonProduct = modelPath.includes('hls-product');
-  const isInnosinProduct = modelPath.includes('innosin');
-  
   const handleCenterCalculated = (center: THREE.Vector3) => {
     setRotationCenter(center);
     
@@ -216,52 +172,49 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
     <div className={`${className} bg-black rounded-lg overflow-hidden border border-gray-800`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
-          camera={{ position: [8, 6, 8], fov: 40 }}
+          camera={{ position: [6, 4, 6], fov: 45 }}
           gl={{ 
             antialias: true,
             alpha: false,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 1.2 // Optimized exposure for clarity
+            toneMappingExposure: 0.9 // Reduced from 1.2 to fix overexposure
           }}
           onCreated={({ gl, scene }) => {
             scene.background = new THREE.Color(0x000000); // Pure black background
             
-            // Optimize renderer for maximum sharpness
+            // Optimize renderer settings
             gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             gl.outputColorSpace = THREE.SRGBColorSpace;
           }}
         >
           <Suspense fallback={null}>
-            {/* Simplified and optimized lighting setup for maximum clarity */}
-            <ambientLight intensity={0.4} color="#ffffff" />
+            {/* Simplified, balanced lighting setup */}
+            <ambientLight intensity={0.3} color="#ffffff" />
             
-            {/* Primary key light for feature definition */}
+            {/* Primary light for definition */}
             <directionalLight 
-              position={[12, 10, 8]} 
-              intensity={1.4} 
+              position={[8, 8, 6]} 
+              intensity={0.8} 
               color="#ffffff"
             />
             
             {/* Fill light for even illumination */}
             <directionalLight 
-              position={[-8, 8, -4]} 
-              intensity={0.8} 
+              position={[-6, 6, -4]} 
+              intensity={0.4} 
               color="#f8f8f8"
             />
             
-            {/* Accent light for knee space visibility */}
-            <directionalLight 
-              position={[0, -6, 10]} 
-              intensity={0.7}
-              color="#ffffff"
+            {/* Subtle environment lighting */}
+            <Environment 
+              preset="city" 
+              background={false}
+              environmentIntensity={0.2}
             />
-            
-            {/* Single point light for enhanced detail */}
-            <pointLight position={[10, 10, 10]} intensity={0.5} color="#ffffff" />
             
             <GLBModel 
               modelPath={modelPath} 
-              onCenterCalculated={isHamiltonProduct ? handleCenterCalculated : undefined}
+              onCenterCalculated={handleCenterCalculated}
             />
             
             <OrbitControls 
@@ -272,11 +225,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               autoRotate={false}
               maxPolarAngle={Math.PI * 0.85}
               minPolarAngle={Math.PI * 0.15}
-              minDistance={3}
-              maxDistance={20}
+              minDistance={2}
+              maxDistance={15}
               enableDamping={true}
               dampingFactor={0.08}
-              target={isHamiltonProduct ? rotationCenter : new THREE.Vector3(0, 0, 0)}
+              target={rotationCenter}
               zoomSpeed={0.8}
               panSpeed={0.8}
               rotateSpeed={0.8}
