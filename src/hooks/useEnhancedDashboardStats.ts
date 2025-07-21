@@ -1,8 +1,9 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-interface DashboardStats {
+interface EnhancedDashboardStats {
   totalProducts: number;
   activeSeries: number;
   totalVariants: number;
@@ -13,7 +14,7 @@ interface DashboardStats {
 }
 
 export const useEnhancedDashboardStats = () => {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [stats, setStats] = useState<EnhancedDashboardStats>({
     totalProducts: 0,
     activeSeries: 0,
     totalVariants: 0,
@@ -24,6 +25,7 @@ export const useEnhancedDashboardStats = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchStats = async () => {
     try {
@@ -31,65 +33,74 @@ export const useEnhancedDashboardStats = () => {
       setError(null);
 
       // Fetch total products
-      const { count: totalProducts } = await supabase
+      const { count: totalProducts, error: productsError } = await supabase
         .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
+        .select('*', { count: 'exact', head: true });
 
-      // Fetch active series
-      const { count: activeSeries } = await supabase
+      if (productsError) throw productsError;
+
+      // Fetch active series (series parents)
+      const { count: activeSeries, error: seriesError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
         .eq('is_series_parent', true)
         .eq('is_active', true);
 
-      // Fetch total variants
-      const { count: totalVariants } = await supabase
+      if (seriesError) throw seriesError;
+
+      // Fetch total variants (non-series parents)
+      const { count: totalVariants, error: variantsError } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
         .eq('is_series_parent', false)
         .eq('is_active', true);
 
-      // Fetch assets uploaded count
-      const { count: assetsUploaded } = await supabase
-        .from('asset_uploads')
-        .select('*', { count: 'exact', head: true })
-        .eq('upload_status', 'completed');
+      if (variantsError) throw variantsError;
 
-      // Fetch recent activity (last 7 days)
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      
-      const { count: recentActivity } = await supabase
-        .from('product_activity_log')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', sevenDaysAgo.toISOString());
-
-      // Calculate completion rate (products with both thumbnail and model)
-      const { data: productsWithAssets } = await supabase
+      // Fetch products with assets
+      const { data: productsWithAssets, error: assetsError } = await supabase
         .from('products')
         .select('thumbnail_path, model_path')
-        .eq('is_active', true)
-        .eq('is_series_parent', false);
+        .eq('is_active', true);
 
-      const completedProducts = productsWithAssets?.filter(p => 
-        p.thumbnail_path && p.model_path
+      if (assetsError) throw assetsError;
+
+      const assetsUploaded = productsWithAssets?.filter(p => 
+        p.thumbnail_path || p.model_path
       ).length || 0;
 
-      const completionRate = totalVariants ? (completedProducts / totalVariants) * 100 : 0;
+      // Calculate completion rate
+      const completionRate = totalProducts ? (assetsUploaded / totalProducts) * 100 : 0;
+
+      // Get recent activity (products updated in last 24 hours)
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const { count: recentActivity, error: activityError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .gte('updated_at', yesterday.toISOString());
+
+      if (activityError) throw activityError;
 
       setStats({
         totalProducts: totalProducts || 0,
         activeSeries: activeSeries || 0,
         totalVariants: totalVariants || 0,
-        assetsUploaded: assetsUploaded || 0,
+        assetsUploaded,
         recentActivity: recentActivity || 0,
         completionRate: Math.round(completionRate),
         lastUpdated: new Date()
       });
-    } catch (err) {
-      console.error('Error fetching dashboard stats:', err);
+
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
       setError('Failed to fetch dashboard statistics');
+      toast({
+        title: "Error",
+        description: "Failed to fetch dashboard statistics",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

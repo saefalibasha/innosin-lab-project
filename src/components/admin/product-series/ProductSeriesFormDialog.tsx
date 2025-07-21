@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
 
 interface ProductSeriesFormDialogProps {
   open: boolean;
@@ -15,66 +16,68 @@ interface ProductSeriesFormDialogProps {
   onSeriesAdded: () => void;
 }
 
-export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = ({
-  open,
-  onClose,
-  onSeriesAdded
-}) => {
+export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: ProductSeriesFormDialogProps) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    product_code: '',
     product_series: '',
     category: 'Innosin Lab',
     description: '',
-    full_description: ''
+    product_code: ''
   });
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    
+    if (!formData.name || !formData.product_series || !formData.product_code) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const seriesSlug = formData.product_series.toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
-
+      setLoading(true);
+      
+      // Create series slug from product_series
+      const seriesSlug = formData.product_series.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      
+      // Create the series parent product
       const { error } = await supabase
         .from('products')
-        .insert([{
+        .insert({
           name: formData.name,
           product_code: formData.product_code,
           product_series: formData.product_series,
           category: formData.category,
           description: formData.description,
-          full_description: formData.full_description,
           series_slug: seriesSlug,
           is_series_parent: true,
           is_active: true
-        }]);
+        });
 
       if (error) throw error;
 
-      // Log the activity
-      await supabase
-        .from('product_activity_log')
-        .insert([{
-          action: 'series_created',
-          changed_by: 'admin',
-          new_data: formData
-        }]);
+      toast({
+        title: "Success",
+        description: "Product series created successfully",
+      });
 
+      // Reset form
       setFormData({
         name: '',
-        product_code: '',
         product_series: '',
         category: 'Innosin Lab',
         description: '',
-        full_description: ''
+        product_code: ''
       });
 
       onSeriesAdded();
+      onClose();
+
     } catch (error) {
       console.error('Error creating series:', error);
       toast({
@@ -87,68 +90,61 @@ export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = (
     }
   };
 
-  const handleChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create New Product Series</DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="series-name">Series Name</Label>
+              <Label htmlFor="name">Series Name *</Label>
               <Input
-                id="series-name"
+                id="name"
                 value={formData.name}
-                onChange={(e) => handleChange('name', e.target.value)}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                 placeholder="e.g., Mobile Cabinet Series"
                 required
               />
             </div>
-            
             <div>
-              <Label htmlFor="product-code">Product Code</Label>
+              <Label htmlFor="product_code">Product Code *</Label>
               <Input
-                id="product-code"
+                id="product_code"
                 value={formData.product_code}
-                onChange={(e) => handleChange('product_code', e.target.value)}
-                placeholder="e.g., MC-SERIES"
+                onChange={(e) => setFormData(prev => ({ ...prev, product_code: e.target.value }))}
+                placeholder="e.g., MC-PC-SERIES"
                 required
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="product-series">Product Series</Label>
-              <Input
-                id="product-series"
-                value={formData.product_series}
-                onChange={(e) => handleChange('product_series', e.target.value)}
-                placeholder="e.g., Mobile Cabinet"
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Innosin Lab">Innosin Lab</SelectItem>
-                  <SelectItem value="Storage Solutions">Storage Solutions</SelectItem>
-                  <SelectItem value="Laboratory Equipment">Laboratory Equipment</SelectItem>
-                  <SelectItem value="Workspace Furniture">Workspace Furniture</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label htmlFor="product_series">Product Series *</Label>
+            <Input
+              id="product_series"
+              value={formData.product_series}
+              onChange={(e) => setFormData(prev => ({ ...prev, product_series: e.target.value }))}
+              placeholder="e.g., Mobile Cabinet"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="category">Category</Label>
+            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Innosin Lab">Innosin Lab</SelectItem>
+                <SelectItem value="Storage Solutions">Storage Solutions</SelectItem>
+                <SelectItem value="Laboratory Equipment">Laboratory Equipment</SelectItem>
+                <SelectItem value="Furniture">Furniture</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
@@ -156,30 +152,19 @@ export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = (
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              placeholder="Brief description of the product series..."
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Describe the product series..."
               rows={3}
-              required
             />
           </div>
 
-          <div>
-            <Label htmlFor="full-description">Full Description</Label>
-            <Textarea
-              id="full-description"
-              value={formData.full_description}
-              onChange={(e) => handleChange('full_description', e.target.value)}
-              placeholder="Detailed description including features, benefits, and use cases..."
-              rows={4}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 pt-4">
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Creating...' : 'Create Series'}
-            </Button>
+          <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Series
             </Button>
           </div>
         </form>
