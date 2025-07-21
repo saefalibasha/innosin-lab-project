@@ -1,170 +1,213 @@
 
 import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EnhancedDashboardStats } from './enhanced-dashboard/EnhancedDashboardStats';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  BarChart3, 
+  Package, 
+  Users, 
+  MessageSquare, 
+  BookOpen, 
+  Settings,
+  TrendingUp,
+  Activity,
+  Database,
+  Shield
+} from 'lucide-react';
 import { ProductSeriesManager } from './product-series/ProductSeriesManager';
-import { EnhancedAssetManager } from './enhanced-asset-manager/EnhancedAssetManager';
-import { AdminProductEditor } from './AdminProductEditor';
-import { BarChart3, Package, Database, Upload, Settings, TrendingUp } from 'lucide-react';
+import { ProductSeriesManager as ProductEditor } from './ProductSeriesManager';
+import { SystemSettings } from './SystemSettings';
 
 export const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState('overview');
 
-  console.log('AdminDashboard rendering, activeTab:', activeTab);
-
-  const tabs = [
+  const stats = [
     {
-      id: "overview",
-      label: "Overview",
-      icon: BarChart3,
-      description: "Dashboard statistics and insights"
-    },
-    {
-      id: "series",
-      label: "Product Series",
+      title: 'Total Products',
+      value: '24',
+      change: '+2 this month',
       icon: Package,
-      description: "Manage product series and variants"
+      color: 'text-blue-600'
     },
     {
-      id: "assets",
-      label: "Asset Manager",
-      icon: Upload,
-      description: "Upload and manage product assets"
+      title: 'Product Series',
+      value: '9',
+      change: 'Standardized',
+      icon: BarChart3,
+      color: 'text-green-600'
     },
     {
-      id: "products",
-      label: "Product Editor",
-      icon: Database,
-      description: "Advanced product management"
+      title: 'Active Users',
+      value: '12',
+      change: '+3 this week',
+      icon: Users,
+      color: 'text-purple-600'
     },
     {
-      id: "settings",
-      label: "Settings",
-      icon: Settings,
-      description: "System configuration"
+      title: 'Chat Sessions',
+      value: '156',
+      change: '+23 today',
+      icon: MessageSquare,
+      color: 'text-orange-600'
     }
   ];
 
-  const handleTabChange = (value: string) => {
-    console.log('Tab changed to:', value);
-    setActiveTab(value);
-  };
+  const recentActivity = [
+    { action: 'Product series standardized', time: '2 hours ago', type: 'system' },
+    { action: 'New product variant added', time: '4 hours ago', type: 'product' },
+    { action: 'User permissions updated', time: '1 day ago', type: 'user' },
+    { action: 'Database cleanup completed', time: '1 day ago', type: 'system' }
+  ];
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
           <p className="text-muted-foreground">
-            Comprehensive management system for products and assets
+            Manage your INNOSIN product catalog and system settings
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <TrendingUp className="h-4 w-4" />
-            <span>Auto-refreshing every 30s</span>
-          </div>
-        </div>
+        <Badge variant="outline" className="px-3 py-1">
+          <Activity className="w-4 h-4 mr-1" />
+          System Online
+        </Badge>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 bg-muted rounded-lg p-1">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <TabsTrigger 
-                key={tab.id} 
-                value={tab.id} 
-                className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground"
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </TabsTrigger>
-            );
-          })}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="products" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            Product Series
+          </TabsTrigger>
+          <TabsTrigger value="editor" className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            Product Editor
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            System Settings
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <EnhancedDashboardStats />
-          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <Card key={index}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
+                  <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">{stat.change}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  System Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Database</span>
+                  <Badge variant="default">Healthy</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Product Series</span>
+                  <Badge variant="default">9 Standardized</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">Asset Storage</span>
+                  <Badge variant="default">Available</Badge>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">User Authentication</span>
+                  <Badge variant="default">Active</Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="w-5 h-5" />
+                  Recent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">{activity.action}</span>
+                      <span className="text-xs text-muted-foreground">{activity.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Common administrative tasks and shortcuts
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
-                      onClick={() => handleTabChange("series")}>
-                  <div className="flex items-center gap-3">
-                    <Package className="h-8 w-8 text-blue-600" />
-                    <div>
-                      <h3 className="font-semibold">Add Series</h3>
-                      <p className="text-sm text-muted-foreground">Create new product series</p>
-                    </div>
-                  </div>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
-                      onClick={() => handleTabChange("assets")}>
-                  <div className="flex items-center gap-3">
-                    <Upload className="h-8 w-8 text-green-600" />
-                    <div>
-                      <h3 className="font-semibold">Upload Assets</h3>
-                      <p className="text-sm text-muted-foreground">Manage product assets</p>
-                    </div>
-                  </div>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
-                      onClick={() => handleTabChange("products")}>
-                  <div className="flex items-center gap-3">
-                    <Database className="h-8 w-8 text-purple-600" />
-                    <div>
-                      <h3 className="font-semibold">Edit Products</h3>
-                      <p className="text-sm text-muted-foreground">Advanced product editing</p>
-                    </div>
-                  </div>
-                </Card>
-                
-                <Card className="p-4 cursor-pointer hover:bg-accent transition-colors"
-                      onClick={() => handleTabChange("settings")}>
-                  <div className="flex items-center gap-3">
-                    <Settings className="h-8 w-8 text-orange-600" />
-                    <div>
-                      <h3 className="font-semibold">Settings</h3>
-                      <p className="text-sm text-muted-foreground">System configuration</p>
-                    </div>
-                  </div>
-                </Card>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveTab('products')}
+                  className="flex items-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  Manage Products
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveTab('editor')}
+                  className="flex items-center gap-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Product Editor
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setActiveTab('settings')}
+                  className="flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  System Settings
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="series" className="space-y-6">
+        <TabsContent value="products">
           <ProductSeriesManager />
         </TabsContent>
 
-        <TabsContent value="assets" className="space-y-6">
-          <EnhancedAssetManager />
+        <TabsContent value="editor">
+          <ProductEditor />
         </TabsContent>
 
-        <TabsContent value="products" className="space-y-6">
-          <AdminProductEditor />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>System Settings</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                System configuration options will be available here.
-              </p>
-            </CardContent>
-          </Card>
+        <TabsContent value="settings">
+          <SystemSettings />
         </TabsContent>
       </Tabs>
     </div>
