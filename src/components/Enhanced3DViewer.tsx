@@ -192,11 +192,11 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             toneMappingExposure: 1.0 // Balanced exposure for light background
           }}
           onCreated={({ gl, scene }) => {
-            // Professional laboratory background - slightly grey gradient for better contrast
+            // Professional laboratory background - darker gradient for better contrast
             const gradientTexture = new THREE.DataTexture(
               new Uint8Array([
-                232, 232, 232, 255, // Medium-light gray top (0xe8e8e8)
-                248, 248, 248, 255, // Very light gray bottom (0xf8f8f8)
+                160, 160, 160, 255, // Medium gray top (0xa0a0a0)
+                200, 200, 200, 255, // Light gray bottom (0xc8c8c8)
               ]),
               1, 2, THREE.RGBAFormat
             );
@@ -206,8 +206,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             const geometry = new THREE.PlaneGeometry(2, 2);
             const material = new THREE.ShaderMaterial({
               uniforms: {
-                topColor: { value: new THREE.Color(0xe8e8e8) },
-                bottomColor: { value: new THREE.Color(0xf8f8f8) },
+                topColor: { value: new THREE.Color(0xa0a0a0) },
+                bottomColor: { value: new THREE.Color(0xc8c8c8) },
               },
               vertexShader: `
                 varying vec2 vUv;
@@ -240,13 +240,13 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           }}
         >
           <Suspense fallback={null}>
-            {/* Balanced lighting setup to reduce overexposure */}
-            <ambientLight intensity={0.3} color="#f8f8f8" />
+            {/* Enhanced lighting setup for darker background */}
+            <ambientLight intensity={0.5} color="#ffffff" />
             
-            {/* Primary directional light with reduced intensity */}
+            {/* Primary directional light with increased intensity for darker background */}
             <directionalLight 
               position={[10, 10, 8]} 
-              intensity={0.8} 
+              intensity={1.2} 
               color="#ffffff"
               castShadow
               shadow-mapSize-width={2048}
@@ -258,25 +258,25 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               shadow-camera-bottom={-10}
             />
             
-            {/* Reduced fill light for better contrast */}
+            {/* Enhanced fill light for better product visibility */}
             <directionalLight 
               position={[-8, 6, -6]} 
-              intensity={0.2} 
-              color="#f0f0f0"
+              intensity={0.4} 
+              color="#ffffff"
             />
             
-            {/* Subtle overhead lighting */}
+            {/* Additional overhead lighting */}
             <directionalLight 
               position={[0, 8, 0]} 
-              intensity={0.2} 
-              color="#f8f8f8"
+              intensity={0.3} 
+              color="#ffffff"
             />
             
-            {/* Reduced environment lighting for sharper details */}
+            {/* Environment lighting optimized for darker background */}
             <Environment 
               preset="studio" 
               background={false}
-              environmentIntensity={0.3}
+              environmentIntensity={0.5}
             />
             
             <GLBModel 
