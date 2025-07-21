@@ -9,15 +9,18 @@ import ProductFilters from '@/components/ProductFilters';
 import ProductGrid from '@/components/ProductGrid';
 import QuoteCartSummary from '@/components/QuoteCartSummary';
 import CompanyLandingHeader from '@/components/CompanyLandingHeader';
-import { products, getCategories } from '@/data/products';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
+import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
 
 const ProductCatalog = () => {
   const { addItem, itemCount } = useRFQ();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Read category from URL on component mount and handle navigation changes
   useEffect(() => {
@@ -30,7 +33,28 @@ const ProductCatalog = () => {
     }
   }, [searchParams]);
 
-  const categories = getCategories();
+  // Fetch products and categories from database
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          fetchProductsFromDatabase(),
+          fetchCategoriesFromDatabase()
+        ]);
+        
+        setProducts(productsData);
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,6 +73,20 @@ const ProductCatalog = () => {
     });
     toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-20">
+          <div className="container-custom py-12">
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

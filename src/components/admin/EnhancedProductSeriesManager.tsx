@@ -260,14 +260,6 @@ export const EnhancedProductSeriesManager = () => {
     window.open(`/products/${series.series_slug}`, '_blank');
   };
 
-  const handleManageAssets = (series: ProductSeries) => {
-    // Open asset management dialog
-    toast({
-      title: "Asset Management",
-      description: `Opening asset management for ${series.product_series}`,
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -321,7 +313,6 @@ export const EnhancedProductSeriesManager = () => {
                   <Package className="h-5 w-5 text-blue-600" />
                   <div>
                     <CardTitle className="text-lg">{series.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{series.category}</p>
                   </div>
                 </div>
                 <Badge variant={series.is_active ? "default" : "secondary"}>
@@ -399,15 +390,6 @@ export const EnhancedProductSeriesManager = () => {
                 >
                   <Eye className="h-3 w-3" />
                   View
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleManageAssets(series)}
-                  className="flex items-center gap-1"
-                >
-                  <Upload className="h-3 w-3" />
-                  Assets
                 </Button>
               </div>
             </CardContent>

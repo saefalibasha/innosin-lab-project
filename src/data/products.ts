@@ -1,9 +1,22 @@
-
 import { Product } from '@/types/product';
-import { getProductsSync, getCategories as getCategoriesFromAssets } from '@/utils/productAssets';
+import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
 
-// Export products from the enhanced asset management system  
-export const products: Product[] = getProductsSync();
+// For backwards compatibility, we'll keep the synchronous export
+// but recommend using the async fetchProductsFromDatabase function directly
+export const products: Product[] = [];
 
-// Generate unique categories from products
-export const getCategories = getCategoriesFromAssets;
+// For new code, use these async functions
+export { fetchProductsFromDatabase as getProductsAsync };
+export { fetchCategoriesFromDatabase as getCategoriesAsync };
+
+// Sync version for backwards compatibility (returns empty array, should be replaced with async calls)
+export const getProductsSync = (): Product[] => {
+  console.warn('getProductsSync is deprecated. Use fetchProductsFromDatabase instead.');
+  return [];
+};
+
+// Sync version for backwards compatibility (returns empty array, should be replaced with async calls)
+export const getCategories = (): string[] => {
+  console.warn('getCategories is deprecated. Use fetchCategoriesFromDatabase instead.');
+  return [];
+};
