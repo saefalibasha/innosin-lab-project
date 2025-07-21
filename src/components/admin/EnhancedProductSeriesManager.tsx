@@ -9,18 +9,15 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
-  Plus, 
   Search, 
   Package, 
   Edit, 
   Eye, 
   Upload, 
-  Image,
-  Box,
-  Tag,
   Save,
   X,
-  Settings
+  Settings,
+  Tag
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,7 +25,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { VariantManager } from './product-series/VariantManager';
 
@@ -182,7 +178,7 @@ export const EnhancedProductSeriesManager = () => {
       });
 
       setIsEditDialogOpen(false);
-      fetchSeries();
+      fetchSeries(); // Refresh the data to show updated names
     } catch (error) {
       console.error('Error updating series:', error);
       toast({
@@ -256,7 +252,7 @@ export const EnhancedProductSeriesManager = () => {
   const handleVariantManagerClose = () => {
     setShowVariantManager(false);
     setSelectedSeries(null);
-    fetchSeries();
+    fetchSeries(); // Refresh data when variant manager closes
   };
 
   const handleViewSeries = (series: ProductSeries) => {
@@ -324,7 +320,7 @@ export const EnhancedProductSeriesManager = () => {
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-blue-600" />
                   <div>
-                    <CardTitle className="text-lg">{series.product_series}</CardTitle>
+                    <CardTitle className="text-lg">{series.name}</CardTitle>
                     <p className="text-sm text-muted-foreground">{series.category}</p>
                   </div>
                 </div>
