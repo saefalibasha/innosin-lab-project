@@ -240,13 +240,13 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           }}
         >
           <Suspense fallback={null}>
-            {/* Enhanced lighting setup for brighter space */}
-            <ambientLight intensity={0.7} color="#f8f8f8" />
+            {/* Balanced lighting setup to reduce overexposure */}
+            <ambientLight intensity={0.3} color="#f8f8f8" />
             
-            {/* Primary directional light with enhanced intensity and shadows */}
+            {/* Primary directional light with reduced intensity */}
             <directionalLight 
               position={[10, 10, 8]} 
-              intensity={1.2} 
+              intensity={0.8} 
               color="#ffffff"
               castShadow
               shadow-mapSize-width={2048}
@@ -258,39 +258,25 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               shadow-camera-bottom={-10}
             />
             
-            {/* Enhanced fill light for reducing shadows */}
+            {/* Reduced fill light for better contrast */}
             <directionalLight 
               position={[-8, 6, -6]} 
-              intensity={0.5} 
+              intensity={0.2} 
               color="#f0f0f0"
             />
             
-            {/* Additional fill light for better illumination */}
+            {/* Subtle overhead lighting */}
             <directionalLight 
               position={[0, 8, 0]} 
-              intensity={0.4} 
+              intensity={0.2} 
               color="#f8f8f8"
             />
             
-            {/* Overhead laboratory lighting simulation */}
-            <directionalLight 
-              position={[0, 12, 0]} 
-              intensity={0.3} 
-              color="#ffffff"
-            />
-            
-            {/* Subtle rim light for edge definition */}
-            <directionalLight 
-              position={[0, -8, 8]} 
-              intensity={0.2} 
-              color="#e8e8e8"
-            />
-            
-            {/* Enhanced environment lighting for brighter space */}
+            {/* Reduced environment lighting for sharper details */}
             <Environment 
               preset="studio" 
               background={false}
-              environmentIntensity={0.6}
+              environmentIntensity={0.3}
             />
             
             <GLBModel 
