@@ -101,7 +101,7 @@ export const DynamicOverview = () => {
 
       // Prepare chart data
       const chartData = await Promise.all(
-        seriesParents.slice(0, 6).map(async (series) => {
+        seriesParents.map(async (series) => {
           const { count: variantCount } = await supabase
             .from('products')
             .select('*', { count: 'exact', head: true })
@@ -211,21 +211,31 @@ export const DynamicOverview = () => {
           </p>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={seriesData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis domain={[0, 100]} />
-              <Tooltip 
-                formatter={(value) => [`${value}%`, 'Completion Rate']}
-                labelFormatter={(label) => `Series: ${label}`}
-              />
-              <Bar 
-                dataKey="completion_rate" 
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="w-full overflow-x-auto">
+            <div style={{ minWidth: Math.max(600, seriesData.length * 80) + 'px' }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={seriesData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    interval={0}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip 
+                    formatter={(value) => [`${value}%`, 'Completion Rate']}
+                    labelFormatter={(label) => `Series: ${label}`}
+                  />
+                  <Bar 
+                    dataKey="completion_rate" 
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
