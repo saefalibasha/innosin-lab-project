@@ -220,7 +220,6 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
           gl={{ 
             antialias: true,
             alpha: false,
-            pixelRatio: Math.min(window.devicePixelRatio, 2), // High pixel ratio for sharpness
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.2 // Optimized exposure for clarity
           }}
@@ -228,8 +227,8 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             scene.background = new THREE.Color(0x000000); // Pure black background
             
             // Optimize renderer for maximum sharpness
+            gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             gl.outputColorSpace = THREE.SRGBColorSpace;
-            gl.physicallyCorrectLights = true;
           }}
         >
           <Suspense fallback={null}>
