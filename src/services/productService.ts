@@ -31,7 +31,7 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
       specifications: product.specifications ? 
-        (Array.isArray(product.specifications) ? product.specifications : []) : [],
+        (Array.isArray(product.specifications) ? product.specifications.map(spec => String(spec)) : []) : [],
       finishes: [{
         type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
         name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
@@ -101,7 +101,7 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
       specifications: product.specifications ? 
-        (Array.isArray(product.specifications) ? product.specifications : []) : [],
+        (Array.isArray(product.specifications) ? product.specifications.map(spec => String(spec)) : []) : [],
       finishes: [{
         type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
         name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
