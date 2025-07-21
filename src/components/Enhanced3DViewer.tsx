@@ -1,3 +1,4 @@
+
 import React, { Suspense, useState, useRef, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment } from '@react-three/drei';
@@ -28,14 +29,25 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
         // Create a copy of the scene to avoid modifying the original
         const modelClone = scene.clone();
         
-        // Clean material processing for natural appearance
+        // Enhanced material processing for better visibility against light background
         modelClone.traverse((child) => {
           if (child instanceof THREE.Mesh && child.material) {
             if (child.material instanceof THREE.MeshStandardMaterial) {
-              // Keep natural material properties
-              child.material.roughness = child.material.roughness || 0.4;
-              child.material.metalness = child.material.metalness || 0.1;
-              child.material.envMapIntensity = 0.8; // Reduced for natural look
+              // Optimize materials for light background
+              child.material.roughness = child.material.roughness || 0.5;
+              child.material.metalness = child.material.metalness || 0.2;
+              child.material.envMapIntensity = 0.6; // Reduced for natural look
+              
+              // Ensure materials have good contrast against light background
+              if (child.material.color) {
+                const hsl = { h: 0, s: 0, l: 0 };
+                child.material.color.getHSL(hsl);
+                
+                // If the material is too light, darken it slightly for better contrast
+                if (hsl.l > 0.8) {
+                  child.material.color.setHSL(hsl.h, hsl.s, Math.max(0.3, hsl.l - 0.2));
+                }
+              }
               
               // Optimize texture quality
               if (child.material.map) {
@@ -45,10 +57,10 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
                 child.material.map.anisotropy = gl.capabilities.getMaxAnisotropy();
               }
               
-              // Natural normal map scaling
+              // Enhanced normal mapping for better feature definition
               if (child.material.normalMap) {
                 child.material.normalMap.generateMipmaps = true;
-                child.material.normalScale.set(1.0, 1.0);
+                child.material.normalScale.set(1.2, 1.2); // Slightly enhanced for better detail
               }
             }
           }
@@ -86,16 +98,16 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
             actualCenter 
           });
           
-          // Simple camera positioning
+          // Enhanced camera positioning for better feature visibility
           const boundingSphere = finalBox.getBoundingSphere(new THREE.Sphere());
           const radius = boundingSphere.radius;
-          const distance = radius * 2.5;
+          const distance = radius * 2.8; // Slightly increased for better overview
           
-          // Position camera for optimal viewing
+          // Position camera for optimal viewing of laboratory furniture
           camera.position.set(
-            actualCenter.x + distance * 0.7,
-            actualCenter.y + distance * 0.4,
-            actualCenter.z + distance * 0.7
+            actualCenter.x + distance * 0.8, // Better angle for knee space visibility
+            actualCenter.y + distance * 0.5, // Elevated view
+            actualCenter.z + distance * 0.8
           );
           camera.lookAt(actualCenter);
           camera.updateProjectionMatrix();
@@ -128,17 +140,17 @@ const GLBModel: React.FC<GLBModelProps> = ({ modelPath, onCenterCalculated }) =>
 
 const LoadingFallback: React.FC = () => (
   <div className="flex items-center justify-center h-full">
-    <div className="animate-pulse text-white">Loading 3D model...</div>
+    <div className="animate-pulse text-gray-600">Loading 3D model...</div>
   </div>
 );
 
 const ErrorFallback: React.FC = () => {
   console.log('Error boundary triggered for 3D model');
   return (
-    <div className="flex items-center justify-center h-full bg-black rounded-lg">
-      <div className="text-white text-center">
+    <div className="flex items-center justify-center h-full bg-gradient-to-b from-gray-50 to-white rounded-lg">
+      <div className="text-gray-600 text-center">
         <div className="text-lg mb-2">3D Model Unavailable</div>
-        <div className="text-sm text-gray-300">Unable to load 3D preview</div>
+        <div className="text-sm text-gray-400">Unable to load 3D preview</div>
       </div>
     </div>
   );
@@ -169,7 +181,7 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
   };
   
   return (
-    <div className={`${className} bg-black rounded-lg overflow-hidden border border-gray-800`}>
+    <div className={`${className} bg-gradient-to-b from-gray-50 to-white rounded-lg overflow-hidden border border-gray-200`}>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
         <Canvas 
           camera={{ position: [6, 4, 6], fov: 45 }}
@@ -177,39 +189,94 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
             antialias: true,
             alpha: false,
             toneMapping: THREE.ACESFilmicToneMapping,
-            toneMappingExposure: 0.9 // Reduced from 1.2 to fix overexposure
+            toneMappingExposure: 1.0 // Balanced exposure for light background
           }}
           onCreated={({ gl, scene }) => {
-            scene.background = new THREE.Color(0x000000); // Pure black background
+            // Professional laboratory background - subtle gradient
+            const gradientTexture = new THREE.DataTexture(
+              new Uint8Array([
+                245, 245, 245, 255, // Light gray top
+                255, 255, 255, 255, // White bottom
+              ]),
+              1, 2, THREE.RGBAFormat
+            );
+            gradientTexture.needsUpdate = true;
             
-            // Optimize renderer settings
+            // Create gradient background
+            const geometry = new THREE.PlaneGeometry(2, 2);
+            const material = new THREE.ShaderMaterial({
+              uniforms: {
+                topColor: { value: new THREE.Color(0xf5f5f5) },
+                bottomColor: { value: new THREE.Color(0xffffff) },
+              },
+              vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                  vUv = uv;
+                  gl_Position = vec4(position, 1.0);
+                }
+              `,
+              fragmentShader: `
+                uniform vec3 topColor;
+                uniform vec3 bottomColor;
+                varying vec2 vUv;
+                void main() {
+                  gl_FragColor = vec4(mix(bottomColor, topColor, vUv.y), 1.0);
+                }
+              `,
+              depthWrite: false,
+              depthTest: false,
+            });
+            
+            const backgroundMesh = new THREE.Mesh(geometry, material);
+            backgroundMesh.renderOrder = -1;
+            scene.add(backgroundMesh);
+            
+            // Optimize renderer settings for light background
             gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             gl.outputColorSpace = THREE.SRGBColorSpace;
+            gl.shadowMap.enabled = true;
+            gl.shadowMap.type = THREE.PCFSoftShadowMap;
           }}
         >
           <Suspense fallback={null}>
-            {/* Simplified, balanced lighting setup */}
-            <ambientLight intensity={0.3} color="#ffffff" />
+            {/* Enhanced lighting setup for light background */}
+            <ambientLight intensity={0.4} color="#f8f8f8" />
             
-            {/* Primary light for definition */}
+            {/* Primary directional light with shadows */}
             <directionalLight 
-              position={[8, 8, 6]} 
+              position={[10, 10, 8]} 
               intensity={0.8} 
               color="#ffffff"
+              castShadow
+              shadow-mapSize-width={2048}
+              shadow-mapSize-height={2048}
+              shadow-camera-far={50}
+              shadow-camera-left={-10}
+              shadow-camera-right={10}
+              shadow-camera-top={10}
+              shadow-camera-bottom={-10}
             />
             
             {/* Fill light for even illumination */}
             <directionalLight 
-              position={[-6, 6, -4]} 
-              intensity={0.4} 
-              color="#f8f8f8"
+              position={[-8, 6, -6]} 
+              intensity={0.3} 
+              color="#f0f0f0"
             />
             
-            {/* Subtle environment lighting */}
+            {/* Subtle rim light for edge definition */}
+            <directionalLight 
+              position={[0, -8, 8]} 
+              intensity={0.2} 
+              color="#e8e8e8"
+            />
+            
+            {/* Subtle environment lighting for laboratory context */}
             <Environment 
-              preset="city" 
+              preset="apartment" 
               background={false}
-              environmentIntensity={0.2}
+              environmentIntensity={0.3}
             />
             
             <GLBModel 
@@ -223,16 +290,16 @@ const Enhanced3DViewer: React.FC<Enhanced3DViewerProps> = ({
               enablePan={true}
               enableRotate={true}
               autoRotate={false}
-              maxPolarAngle={Math.PI * 0.85}
-              minPolarAngle={Math.PI * 0.15}
+              maxPolarAngle={Math.PI * 0.8}
+              minPolarAngle={Math.PI * 0.2}
               minDistance={2}
-              maxDistance={15}
+              maxDistance={12}
               enableDamping={true}
-              dampingFactor={0.08}
+              dampingFactor={0.05}
               target={rotationCenter}
-              zoomSpeed={0.8}
-              panSpeed={0.8}
-              rotateSpeed={0.8}
+              zoomSpeed={0.6}
+              panSpeed={0.6}
+              rotateSpeed={0.6}
             />
           </Suspense>
         </Canvas>
