@@ -5,54 +5,93 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Settings, 
-  Users, 
-  Shield, 
   Database, 
-  Bell, 
+  Shield, 
+  Users, 
+  Mail, 
+  Bell,
+  Palette,
   Globe,
-  Lock,
-  Activity,
-  Server,
-  AlertCircle
+  Save,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle,
+  Server
 } from 'lucide-react';
 
 export const SystemSettings = () => {
+  const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
     siteName: 'INNOSIN Admin',
+    siteDescription: 'Product catalog management system',
     maintenanceMode: false,
-    enableNotifications: true,
+    userRegistration: true,
+    emailNotifications: true,
+    systemNotifications: true,
+    darkMode: false,
     autoBackup: true,
-    debugMode: false,
-    cacheEnabled: true
+    backupRetention: 30,
+    maxFileSize: 10,
+    allowedFileTypes: 'jpg,jpeg,png,gif,pdf,glb,obj',
+    apiRateLimit: 100,
+    sessionTimeout: 60
   });
   const { toast } = useToast();
 
-  const handleSave = () => {
-    toast({
-      title: "Settings Saved",
-      description: "System settings have been updated successfully.",
-    });
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "Settings Saved",
+        description: "System settings have been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const systemInfo = [
-    { label: 'Database Status', value: 'Connected', status: 'success' },
-    { label: 'Storage Usage', value: '45% of 100GB', status: 'warning' },
-    { label: 'Active Sessions', value: '12', status: 'info' },
-    { label: 'System Uptime', value: '15 days', status: 'success' },
-    { label: 'Last Backup', value: '2 hours ago', status: 'success' }
-  ];
+  const handleSettingChange = (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  const systemHealth = {
+    database: 'healthy',
+    storage: 'healthy',
+    api: 'healthy',
+    cache: 'warning',
+    backup: 'healthy'
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'success': return 'bg-green-500';
-      case 'warning': return 'bg-yellow-500';
-      case 'error': return 'bg-red-500';
-      default: return 'bg-blue-500';
+      case 'healthy': return 'text-green-600';
+      case 'warning': return 'text-yellow-600';
+      case 'error': return 'text-red-600';
+      default: return 'text-gray-600';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'healthy': return <CheckCircle className="h-4 w-4" />;
+      case 'warning': return <AlertCircle className="h-4 w-4" />;
+      case 'error': return <AlertCircle className="h-4 w-4" />;
+      default: return <Server className="h-4 w-4" />;
     }
   };
 
@@ -62,35 +101,39 @@ export const SystemSettings = () => {
         <div>
           <h2 className="text-2xl font-bold">System Settings</h2>
           <p className="text-muted-foreground">
-            Configure system preferences and administrative options
+            Configure system-wide settings and preferences
           </p>
         </div>
-        <Badge variant="outline" className="px-3 py-1">
-          <Settings className="w-4 h-4 mr-1" />
-          Admin Access
-        </Badge>
+        <Button onClick={handleSave} disabled={loading} className="flex items-center gap-2">
+          {loading ? (
+            <RefreshCw className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          Save Changes
+        </Button>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="general">
-            <Settings className="w-4 h-4 mr-2" />
+          <TabsTrigger value="general" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
             General
           </TabsTrigger>
-          <TabsTrigger value="users">
-            <Users className="w-4 h-4 mr-2" />
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
             Users
           </TabsTrigger>
-          <TabsTrigger value="security">
-            <Shield className="w-4 h-4 mr-2" />
+          <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Notifications
+          </TabsTrigger>
+          <TabsTrigger value="security" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="database">
-            <Database className="w-4 h-4 mr-2" />
-            Database
-          </TabsTrigger>
-          <TabsTrigger value="system">
-            <Server className="w-4 h-4 mr-2" />
+          <TabsTrigger value="system" className="flex items-center gap-2">
+            <Database className="h-4 w-4" />
             System
           </TabsTrigger>
         </TabsList>
@@ -98,63 +141,65 @@ export const SystemSettings = () => {
         <TabsContent value="general" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Globe className="h-5 w-5" />
+                Site Configuration
+              </CardTitle>
               <CardDescription>
-                Basic system configuration and preferences
+                Basic site settings and appearance
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="siteName">Site Name</Label>
-                <Input
-                  id="siteName"
-                  value={settings.siteName}
-                  onChange={(e) => setSettings(prev => ({ ...prev, siteName: e.target.value }))}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Maintenance Mode</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable maintenance mode to restrict access
-                  </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="siteName">Site Name</Label>
+                  <Input
+                    id="siteName"
+                    value={settings.siteName}
+                    onChange={(e) => handleSettingChange('siteName', e.target.value)}
+                  />
                 </div>
-                <Switch
-                  checked={settings.maintenanceMode}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, maintenanceMode: checked }))}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Enable Notifications</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Show system notifications and alerts
-                  </p>
+                <div className="space-y-2">
+                  <Label htmlFor="siteDescription">Site Description</Label>
+                  <Input
+                    id="siteDescription"
+                    value={settings.siteDescription}
+                    onChange={(e) => handleSettingChange('siteDescription', e.target.value)}
+                  />
                 </div>
-                <Switch
-                  checked={settings.enableNotifications}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enableNotifications: checked }))}
-                />
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Auto Backup</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Automatically backup data daily
-                  </p>
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="maintenanceMode">Maintenance Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Temporarily disable site access for maintenance
+                    </p>
+                  </div>
+                  <Switch
+                    id="maintenanceMode"
+                    checked={settings.maintenanceMode}
+                    onCheckedChange={(checked) => handleSettingChange('maintenanceMode', checked)}
+                  />
                 </div>
-                <Switch
-                  checked={settings.autoBackup}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoBackup: checked }))}
-                />
-              </div>
 
-              <Button onClick={handleSave} className="w-full">
-                Save General Settings
-              </Button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="darkMode">Dark Mode</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enable dark theme for the admin interface
+                    </p>
+                  </div>
+                  <Switch
+                    id="darkMode"
+                    checked={settings.darkMode}
+                    onCheckedChange={(checked) => handleSettingChange('darkMode', checked)}
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -162,22 +207,85 @@ export const SystemSettings = () => {
         <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>User Management</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Management
+              </CardTitle>
               <CardDescription>
-                Manage user accounts and permissions
+                Configure user registration and access controls
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <Users className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">User Management</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Advanced user management features will be implemented here
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="userRegistration">User Registration</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Allow new users to register accounts
                   </p>
-                  <Button variant="outline">
-                    Configure User Roles
-                  </Button>
+                </div>
+                <Switch
+                  id="userRegistration"
+                  checked={settings.userRegistration}
+                  onCheckedChange={(checked) => handleSettingChange('userRegistration', checked)}
+                />
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sessionTimeout">Session Timeout (minutes)</Label>
+                  <Input
+                    id="sessionTimeout"
+                    type="number"
+                    value={settings.sessionTimeout}
+                    onChange={(e) => handleSettingChange('sessionTimeout', parseInt(e.target.value))}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notification Settings
+              </CardTitle>
+              <CardDescription>
+                Configure system and user notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="emailNotifications">Email Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Send notifications via email
+                    </p>
+                  </div>
+                  <Switch
+                    id="emailNotifications"
+                    checked={settings.emailNotifications}
+                    onCheckedChange={(checked) => handleSettingChange('emailNotifications', checked)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="systemNotifications">System Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show in-app system notifications
+                    </p>
+                  </div>
+                  <Switch
+                    id="systemNotifications"
+                    checked={settings.systemNotifications}
+                    onCheckedChange={(checked) => handleSettingChange('systemNotifications', checked)}
+                  />
                 </div>
               </div>
             </CardContent>
@@ -187,89 +295,47 @@ export const SystemSettings = () => {
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Security Settings
+              </CardTitle>
               <CardDescription>
-                Configure security policies and authentication
+                Configure security and access controls
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Require 2FA for admin accounts
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Session Timeout</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Auto-logout after inactivity
-                  </p>
-                </div>
-                <Badge variant="outline">30 minutes</Badge>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>API Rate Limiting</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Limit API requests per hour
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-
-              <Button onClick={handleSave} className="w-full">
-                Save Security Settings
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="database" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Database Management</CardTitle>
-              <CardDescription>
-                Monitor and manage database operations
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>Database Size</Label>
-                  <div className="text-2xl font-bold">2.4 GB</div>
-                  <p className="text-sm text-muted-foreground">45% of allocated space</p>
+                  <Label htmlFor="apiRateLimit">API Rate Limit (requests/minute)</Label>
+                  <Input
+                    id="apiRateLimit"
+                    type="number"
+                    value={settings.apiRateLimit}
+                    onChange={(e) => handleSettingChange('apiRateLimit', parseInt(e.target.value))}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label>Active Connections</Label>
-                  <div className="text-2xl font-bold">15</div>
-                  <p className="text-sm text-muted-foreground">Out of 100 max</p>
+                  <Label htmlFor="maxFileSize">Max File Size (MB)</Label>
+                  <Input
+                    id="maxFileSize"
+                    type="number"
+                    value={settings.maxFileSize}
+                    onChange={(e) => handleSettingChange('maxFileSize', parseInt(e.target.value))}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Product Series Constraint</Label>
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                  <p className="text-sm text-green-800">
-                    ✓ Database constraint active - Only 9 approved INNOSIN series allowed
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Database className="w-4 h-4" />
-                  Backup Now
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  View Logs
-                </Button>
+                <Label htmlFor="allowedFileTypes">Allowed File Types</Label>
+                <Input
+                  id="allowedFileTypes"
+                  value={settings.allowedFileTypes}
+                  onChange={(e) => handleSettingChange('allowedFileTypes', e.target.value)}
+                  placeholder="jpg,jpeg,png,gif,pdf,glb,obj"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Comma-separated list of allowed file extensions
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -278,67 +344,57 @@ export const SystemSettings = () => {
         <TabsContent value="system" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>System Information</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                System Health
+              </CardTitle>
               <CardDescription>
-                View system status and performance metrics
+                Monitor system status and performance
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {systemInfo.map((info, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2 h-2 rounded-full ${getStatusColor(info.status)}`} />
-                    <span className="font-medium">{info.label}</span>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Object.entries(systemHealth).map(([service, status]) => (
+                  <div key={service} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className={getStatusColor(status)}>
+                        {getStatusIcon(status)}
+                      </div>
+                      <span className="capitalize font-medium">{service}</span>
+                    </div>
+                    <Badge variant={status === 'healthy' ? 'default' : status === 'warning' ? 'secondary' : 'destructive'}>
+                      {status}
+                    </Badge>
                   </div>
-                  <span className="text-muted-foreground">{info.value}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>System Actions</CardTitle>
-              <CardDescription>
-                Advanced system maintenance and debugging
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Debug Mode</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable detailed logging and debugging
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.debugMode}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, debugMode: checked }))}
-                />
+                ))}
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Cache Enabled</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Enable system caching for better performance
-                  </p>
-                </div>
-                <Switch
-                  checked={settings.cacheEnabled}
-                  onCheckedChange={(checked) => setSettings(prev => ({ ...prev, cacheEnabled: checked }))}
-                />
-              </div>
+              <Separator />
 
-              <div className="flex gap-2 pt-4">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4" />
-                  Clear Cache
-                </Button>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Activity className="w-4 h-4" />
-                  Restart Services
-                </Button>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="autoBackup">Automatic Backup</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Enable automatic database backups
+                    </p>
+                  </div>
+                  <Switch
+                    id="autoBackup"
+                    checked={settings.autoBackup}
+                    onCheckedChange={(checked) => handleSettingChange('autoBackup', checked)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="backupRetention">Backup Retention (days)</Label>
+                  <Input
+                    id="backupRetention"
+                    type="number"
+                    value={settings.backupRetention}
+                    onChange={(e) => handleSettingChange('backupRetention', parseInt(e.target.value))}
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
