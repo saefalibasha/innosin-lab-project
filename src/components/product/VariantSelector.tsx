@@ -1,12 +1,10 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Ruler, Settings, Palette } from 'lucide-react';
+import { Ruler, Palette, Settings2 } from 'lucide-react';
 
 interface ProductVariant {
   id: string;
@@ -67,32 +65,32 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
   // Available finish options
   const finishOptions = [
-    { value: 'PC', label: 'Powder Coat' },
-    { value: 'SS', label: 'Stainless Steel' }
+    { value: 'PC', label: 'Powder Coat', description: 'Durable powder coating finish' },
+    { value: 'SS', label: 'Stainless Steel', description: 'Premium stainless steel finish' }
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
+    <Card className="shadow-sm border-muted">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2 text-xl">
+          <Settings2 className="w-5 h-5 text-primary" />
           Product Configuration
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Dimension Selection */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Ruler className="w-4 h-4" />
-            Dimensions
-          </h4>
+          <div className="flex items-center gap-2 mb-3">
+            <Ruler className="w-4 h-4 text-muted-foreground" />
+            <h4 className="font-semibold text-foreground">Dimensions</h4>
+          </div>
           <Select value={selectedDimension} onValueChange={handleDimensionChange}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full h-11 border-muted">
               <SelectValue placeholder="Select dimensions" />
             </SelectTrigger>
             <SelectContent>
               {uniqueDimensions.map((dimension) => (
-                <SelectItem key={dimension} value={dimension}>
+                <SelectItem key={dimension} value={dimension} className="py-2">
                   {dimension}
                 </SelectItem>
               ))}
@@ -102,46 +100,54 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
         {/* Finish Selection */}
         <div>
-          <h4 className="font-medium mb-3 flex items-center gap-2">
-            <Palette className="w-4 h-4" />
-            Finish Type
-          </h4>
-          <RadioGroup value={selectedFinish} onValueChange={onFinishChange}>
-            <div className="grid grid-cols-2 gap-4">
-              {finishOptions.map((finish) => (
-                <div key={finish.value} className="flex items-center space-x-2">
-                  <RadioGroupItem value={finish.value} id={finish.value} />
-                  <Label htmlFor={finish.value} className="cursor-pointer">
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-4 h-4 text-muted-foreground" />
+            <h4 className="font-semibold text-foreground">Finish Type</h4>
+          </div>
+          <RadioGroup value={selectedFinish} onValueChange={onFinishChange} className="space-y-3">
+            {finishOptions.map((finish) => (
+              <div key={finish.value} className="flex items-start space-x-3 p-3 rounded-lg border border-muted hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value={finish.value} id={finish.value} className="mt-1" />
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor={finish.value} className="cursor-pointer font-medium text-foreground">
                     {finish.label}
                   </Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {finish.description}
+                  </p>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </RadioGroup>
         </div>
 
         {/* Selected Configuration Summary */}
         {selectedVariant && (
-          <div className="bg-muted p-4 rounded-lg">
-            <h4 className="font-medium mb-2">Selected Configuration</h4>
-            <div className="space-y-2 text-sm">
+          <div className="bg-muted/30 p-4 rounded-lg border">
+            <h4 className="font-semibold text-foreground mb-3 text-base">Selected Configuration</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div>
-                <span className="font-medium">Product Code:</span> {selectedVariant.product_code}
+                <span className="font-medium text-foreground">Product Code:</span>
+                <p className="text-muted-foreground">{selectedVariant.product_code}</p>
               </div>
               <div>
-                <span className="font-medium">Dimensions:</span> {selectedVariant.dimensions}
+                <span className="font-medium text-foreground">Dimensions:</span>
+                <p className="text-muted-foreground">{selectedVariant.dimensions}</p>
               </div>
               <div>
-                <span className="font-medium">Finish:</span> {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                <span className="font-medium text-foreground">Finish:</span>
+                <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
               </div>
               {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
                 <div>
-                  <span className="font-medium">Orientation:</span> {selectedVariant.orientation}
+                  <span className="font-medium text-foreground">Orientation:</span>
+                  <p className="text-muted-foreground">{selectedVariant.orientation}</p>
                 </div>
               )}
               {selectedVariant.drawer_count && (
                 <div>
-                  <span className="font-medium">Drawers:</span> {selectedVariant.drawer_count}
+                  <span className="font-medium text-foreground">Drawers:</span>
+                  <p className="text-muted-foreground">{selectedVariant.drawer_count}</p>
                 </div>
               )}
             </div>

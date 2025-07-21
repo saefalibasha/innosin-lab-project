@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText, Building2 } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
@@ -58,8 +58,6 @@ const EnhancedProductDetail = () => {
   useEffect(() => {
     if (currentVariant) {
       const assets = getVariantAssetUrls(currentVariant);
-      // Update assets based on finish selection
-      const finishSuffix = selectedFinish === 'SS' ? '-ss' : '';
       
       setCurrentAssets({
         thumbnail: assets.thumbnail,
@@ -104,6 +102,16 @@ const EnhancedProductDetail = () => {
     return [];
   };
 
+  const getProductDescription = () => {
+    if (currentVariant && currentVariant.description) {
+      return currentVariant.description;
+    }
+    if (series?.description) {
+      return series.description;
+    }
+    return 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -127,7 +135,7 @@ const EnhancedProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container-custom py-12 pt-20">
+      <div className="container-custom py-8 pt-20">
         {/* Breadcrumb */}
         <AnimatedSection animation="fade-in" delay={100}>
           <div className="flex items-center gap-2 mb-8">
@@ -143,46 +151,52 @@ const EnhancedProductDetail = () => {
           <div className="space-y-6">
             <AnimatedSection animation="slide-in-left" delay={200}>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="photos" className="flex items-center gap-2">
+                <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
+                  <TabsTrigger value="photos" className="flex items-center gap-2 text-sm font-medium">
                     <Camera className="w-4 h-4" />
                     Photos
                   </TabsTrigger>
-                  <TabsTrigger value="3d" className="flex items-center gap-2">
+                  <TabsTrigger value="3d" className="flex items-center gap-2 text-sm font-medium">
                     <Box className="w-4 h-4" />
                     3D Model
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="photos">
-                  <ProductImageGallery
-                    images={getDisplayImages()}
-                    thumbnail={currentAssets?.thumbnail || ''}
-                    productName={series.name}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
+                <TabsContent value="photos" className="mt-0">
+                  <div className="rounded-xl overflow-hidden border shadow-sm">
+                    <ProductImageGallery
+                      images={getDisplayImages()}
+                      thumbnail={currentAssets?.thumbnail || ''}
+                      productName={series.name}
+                      className="w-full h-96 lg:h-[500px]"
+                    />
+                  </div>
                 </TabsContent>
 
-                <TabsContent value="3d">
-                  <Enhanced3DViewer
-                    modelPath={currentAssets?.model || ''}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
+                <TabsContent value="3d" className="mt-0">
+                  <div className="rounded-xl overflow-hidden border shadow-sm">
+                    <Enhanced3DViewer
+                      modelPath={currentAssets?.model || ''}
+                      className="w-full h-96 lg:h-[500px]"
+                    />
+                  </div>
                 </TabsContent>
               </Tabs>
             </AnimatedSection>
           </div>
 
           {/* Right Column - Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-8">
+            {/* Product Header */}
             <AnimatedSection animation="slide-in-right" delay={300}>
-              <div>
-                <Badge variant="outline" className="mb-4 border-sea text-sea">
-                  {series.category}
-                </Badge>
-                <h1 className="text-4xl font-serif font-bold text-primary mb-4">
+              <div className="space-y-4">
+                <h1 className="text-4xl lg:text-5xl font-serif font-bold text-foreground leading-tight">
                   {series.name}
                 </h1>
+                <Badge variant="outline" className="border-sea text-sea text-sm px-4 py-2 font-medium">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  {series.category}
+                </Badge>
               </div>
             </AnimatedSection>
 
@@ -202,71 +216,100 @@ const EnhancedProductDetail = () => {
 
             {/* Product Overview */}
             <AnimatedSection animation="slide-in-right" delay={400}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
+              <Card className="shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Package className="w-5 h-5 text-primary" />
                     Product Overview
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {series.description || 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.'}
+                  <p className="text-muted-foreground leading-relaxed text-base">
+                    {getProductDescription()}
                   </p>
                 </CardContent>
               </Card>
             </AnimatedSection>
 
-            {/* Product Details */}
+            {/* Technical Specifications */}
             <AnimatedSection animation="slide-in-right" delay={450}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Product Details
+              <Card className="shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Technical Specifications
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
                   <div>
-                    <h4 className="font-semibold text-foreground mb-2">Features & Benefits</h4>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>• Chemical-resistant construction for laboratory environments</li>
-                      <li>• Professional laboratory grade materials and finishes</li>
-                      <li>• Ergonomic design optimized for laboratory workflow</li>
-                      <li>• Available in multiple configurations and sizes</li>
-                      <li>• Meets stringent laboratory safety standards</li>
-                      <li>• Easy to clean and maintain surfaces</li>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">Key Features</h4>
+                    <ul className="text-muted-foreground space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Chemical-resistant construction for laboratory environments
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Professional laboratory grade materials and finishes
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Ergonomic design optimized for laboratory workflow
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Available in multiple configurations and sizes
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Meets stringent laboratory safety standards
+                      </li>
                     </ul>
                   </div>
                   
                   <div>
-                    <h4 className="font-semibold text-foreground mb-2">Technical Specifications</h4>
-                    <ul className="text-muted-foreground space-y-1">
-                      <li>• Finish Options: Powder Coat (PC) or Stainless Steel (SS)</li>
-                      <li>• Construction: Heavy-duty steel frame with reinforced joints</li>
-                      <li>• Mobility: Heavy-duty casters with locking mechanism</li>
-                      <li>• Compliance: Meets laboratory furniture standards</li>
-                      <li>• Warranty: Comprehensive manufacturer warranty included</li>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">Construction Details</h4>
+                    <ul className="text-muted-foreground space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Finish Options: Powder Coat (PC) or Stainless Steel (SS)
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Heavy-duty steel frame with reinforced joints
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Heavy-duty casters with locking mechanism
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Comprehensive manufacturer warranty included
+                      </li>
                     </ul>
                   </div>
 
                   {currentVariant && (
-                    <div>
-                      <h4 className="font-semibold text-foreground mb-2">Current Selection</h4>
-                      <div className="bg-muted p-3 rounded-lg">
-                        <p className="text-sm">
-                          <span className="font-medium">Product Code:</span> {currentVariant.product_code}
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">Dimensions:</span> {currentVariant.dimensions}
-                        </p>
-                        <p className="text-sm">
-                          <span className="font-medium">Finish:</span> {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
-                        </p>
+                    <div className="bg-muted/30 p-4 rounded-lg border">
+                      <h4 className="font-semibold text-foreground mb-3 text-base">Current Selection</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-foreground">Product Code:</span>
+                          <p className="text-muted-foreground">{currentVariant.product_code}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Dimensions:</span>
+                          <p className="text-muted-foreground">{currentVariant.dimensions}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Finish:</span>
+                          <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
+                        </div>
                         {currentVariant.orientation && currentVariant.orientation !== 'None' && (
-                          <p className="text-sm">
-                            <span className="font-medium">Orientation:</span> {currentVariant.orientation}
-                          </p>
+                          <div>
+                            <span className="font-medium text-foreground">Orientation:</span>
+                            <p className="text-muted-foreground">{currentVariant.orientation}</p>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -275,11 +318,12 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
+            {/* Add to Quote Button */}
             <AnimatedSection animation="slide-in-right" delay={500}>
               <Button
                 onClick={handleAddToQuote}
                 size="lg"
-                className="w-full bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-105"
+                className="w-full h-12 bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-[1.02] text-white font-semibold shadow-lg hover:shadow-xl"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
                 Add to Quote
