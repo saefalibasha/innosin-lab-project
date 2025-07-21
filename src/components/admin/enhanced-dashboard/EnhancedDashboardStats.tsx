@@ -61,7 +61,7 @@ export const EnhancedDashboardStats = () => {
       bgColor: 'bg-pink-50'
     },
     {
-      title: 'Completion Rate',
+      title: 'Variants Completion',
       value: `${stats.completionRate}%`,
       icon: Target,
       color: 'text-indigo-600',
