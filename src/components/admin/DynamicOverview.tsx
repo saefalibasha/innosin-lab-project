@@ -26,6 +26,7 @@ interface SeriesData {
   name: string;
   variant_count: number;
   completion_rate: number;
+  fill: string;
   updated_at: string;
 }
 
@@ -114,11 +115,19 @@ export const DynamicOverview = () => {
           const completionRate = targetVariants > 0 ? 
             Math.min(Math.round((currentVariants / targetVariants) * 100), 100) : 0;
 
+          // Get color based on completion rate
+          const getColor = (rate: number) => {
+            if (rate >= 80) return '#22c55e'; // green
+            if (rate >= 50) return '#f59e0b'; // yellow
+            return '#ef4444'; // red
+          };
+
           return {
             id: series.id,
             name: series.name.length > 20 ? series.name.substring(0, 20) + '...' : series.name,
             variant_count: currentVariants,
             completion_rate: completionRate,
+            fill: getColor(completionRate),
             updated_at: series.updated_at
           };
         })
@@ -207,9 +216,15 @@ export const DynamicOverview = () => {
             <BarChart data={seriesData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="completion_rate" fill="#3b82f6" />
+              <YAxis domain={[0, 100]} />
+              <Tooltip 
+                formatter={(value) => [`${value}%`, 'Completion Rate']}
+                labelFormatter={(label) => `Series: ${label}`}
+              />
+              <Bar 
+                dataKey="completion_rate" 
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
