@@ -5,126 +5,84 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ShoppingCart, Package, Ruler, Camera, Box } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, Camera, Box } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
-import ProductFinishToggle from '@/components/ProductFinishToggle';
-import ProductSizeSelector from '@/components/ProductSizeSelector';
-import ProductTypeSelector from '@/components/ProductTypeSelector';
-import ProductOrientationSelector from '@/components/ProductOrientationSelector';
-import { products } from '@/data/products';
+import VariantSelector from '@/components/product/VariantSelector';
+import { fetchProductWithVariants } from '@/services/productService';
 import { productPageContent } from '@/data/productPageContent';
-import { debugAssetUrls } from '@/utils/productAssets';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
   const { addItem } = useRFQ();
   const [activeTab, setActiveTab] = useState('photos');
-  const [selectedFinish, setSelectedFinish] = useState<string>('powder-coat');
-  const [selectedType, setSelectedType] = useState<string>('');
-  const [selectedOrientation, setSelectedOrientation] = useState<'LH' | 'RH' | 'None'>('None');
-  const [selectedVariant, setSelectedVariant] = useState<string>('');
-  
-  const product = products.find(p => p.id === productId);
-  
-  // Debug asset URLs when product changes
-  useEffect(() => {
-    if (product && product.id) {
-      debugAssetUrls(product.id);
-      console.log('🔍 Current product data:', product);
-    }
-  }, [product]);
-  
-  // Get unique types and orientations from variants
-  const availableTypes = product?.variants ? 
-    [...new Set(product.variants.map(v => v.type || 'Default').filter(Boolean))] : [];
-  
-  const getAvailableOrientations = (type: string): ('LH' | 'RH')[] => {
-    if (!product?.variants) return [];
-    const typeVariants = product.variants.filter(v => (v.type || 'Default') === type);
-    const orientations = typeVariants
-      .map(v => v.orientation)
-      .filter((o): o is 'LH' | 'RH' => o === 'LH' || o === 'RH');
-    return [...new Set(orientations)];
-  };
+  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
+  const [product, setProduct] = useState<any>(null);
+  const [variants, setVariants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const getFilteredVariants = () => {
-    if (!product?.variants) return [];
-    let filtered = product.variants.filter(v => (v.type || 'Default') === selectedType);
-    
-    if (selectedOrientation !== 'None') {
-      filtered = filtered.filter(v => v.orientation === selectedOrientation);
-    }
-    
-    return filtered;
-  };
-
-  // Initialize selections when product changes
   useEffect(() => {
-    if (product && product.variants && product.variants.length > 0) {
-      // Set first available type
-      if (availableTypes.length > 0 && !selectedType) {
-        const firstType = availableTypes[0];
-        setSelectedType(firstType);
-        console.log('🔍 Setting initial type:', firstType);
-      } else if (availableTypes.length === 0 && product.variants.length > 0) {
-        // Fallback for products without types
-        const firstVariant = product.variants[0];
-        setSelectedVariant(firstVariant.id);
-        console.log('🔍 Setting initial variant (no types):', firstVariant.id);
+    const loadProductData = async () => {
+      if (!productId) return;
+      
+      setLoading(true);
+      console.log('🔍 Loading product data for ID:', productId);
+      
+      const data = await fetchProductWithVariants(productId);
+      if (data) {
+        console.log('🔍 Loaded product:', data.product);
+        console.log('🔍 Loaded variants:', data.variants);
+        setProduct(data.product);
+        setVariants(data.variants);
+        
+        // Set initial variant selection
+        if (data.variants.length > 0) {
+          setSelectedVariantId(data.variants[0].id);
+        }
+      } else {
+        console.error('❌ Failed to load product data');
       }
-    }
-  }, [product, availableTypes.length]);
+      setLoading(false);
+    };
 
-  // Update orientation when type changes
-  useEffect(() => {
-    if (selectedType) {
-      const orientations = getAvailableOrientations(selectedType);
-      const newOrientation = orientations.length > 0 ? orientations[0] : 'None';
-      setSelectedOrientation(newOrientation);
-      console.log('🔍 Setting orientation for type', selectedType, ':', newOrientation);
-    }
-  }, [selectedType]);
+    loadProductData();
+  }, [productId]);
 
-  // Update variant when type or orientation changes
-  useEffect(() => {
-    const filteredVariants = getFilteredVariants();
-    if (filteredVariants.length > 0) {
-      const newVariant = filteredVariants[0];
-      setSelectedVariant(newVariant.id);
-      console.log('🔍 Setting variant:', newVariant.id);
-      console.log('🔍 Variant assets:', {
-        modelPath: newVariant.modelPath,
-        thumbnail: newVariant.thumbnail,
-        images: newVariant.images
-      });
-    }
-  }, [selectedType, selectedOrientation]);
-  
-  // Get current variant data for display
-  const currentVariant = product?.variants?.find(v => v.id === selectedVariant);
+  const selectedVariant = variants.find(v => v.id === selectedVariantId);
   const isInnosinProduct = product?.category === 'Innosin Lab';
 
-  // Enhanced logging for current assets
-  useEffect(() => {
-    if (currentVariant) {
-      console.log('🔍 Current variant changed:', {
-        id: currentVariant.id,
-        modelPath: currentVariant.modelPath,
-        thumbnail: currentVariant.thumbnail,
-        images: currentVariant.images
-      });
-    } else if (product) {
-      console.log('🔍 Using main product assets:', {
-        modelPath: product.modelPath,
-        thumbnail: product.thumbnail,
-        images: product.images
-      });
+  // Get current display assets
+  const getCurrentAssets = () => {
+    if (selectedVariant) {
+      return {
+        modelPath: selectedVariant.model_path,
+        images: selectedVariant.additional_images,
+        thumbnail: selectedVariant.thumbnail_path
+      };
     }
-  }, [currentVariant, product]);
+    
+    return {
+      modelPath: product?.modelPath || '',
+      images: product?.images || [],
+      thumbnail: product?.thumbnail || ''
+    };
+  };
+
+  const { modelPath, images, thumbnail } = getCurrentAssets();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+        </div>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -141,23 +99,18 @@ const ProductDetail = () => {
 
   const handleAddToQuote = () => {
     const itemToAdd = {
-      id: currentVariant ? currentVariant.id : product.id,
-      name: isInnosinProduct && currentVariant ? 
-        `${product.name} - ${currentVariant.size}` : 
+      id: selectedVariant ? selectedVariant.id : product.id,
+      name: isInnosinProduct && selectedVariant ? 
+        `${product.name} - ${selectedVariant.dimensions}` : 
         product.name,
       category: product.category,
-      dimensions: currentVariant ? currentVariant.dimensions : product.dimensions,
-      image: currentVariant ? currentVariant.thumbnail : product.thumbnail
+      dimensions: selectedVariant ? selectedVariant.dimensions : product.dimensions,
+      image: selectedVariant ? selectedVariant.thumbnail_path : product.thumbnail
     };
     
     addItem(itemToAdd);
     toast.success(`${itemToAdd.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
-
-  // Get current display assets
-  const currentModelPath = currentVariant ? currentVariant.modelPath : product.modelPath;
-  const currentImages = currentVariant ? currentVariant.images : product.images;
-  const currentThumbnail = currentVariant ? currentVariant.thumbnail : product.thumbnail;
 
   return (
     <div className="min-h-screen bg-background">
@@ -190,8 +143,9 @@ const ProductDetail = () => {
 
                 <TabsContent value="photos">
                   <ProductImageGallery
-                    images={currentImages}
-                    thumbnail={currentThumbnail}
+                    images={images}
+                    thumbnail={thumbnail}
+                    seriesOverviewImage={product.seriesOverviewImage}
                     productName={product.name}
                     className="w-full h-96 lg:h-[500px]"
                   />
@@ -199,7 +153,7 @@ const ProductDetail = () => {
 
                 <TabsContent value="3d">
                   <Enhanced3DViewer
-                    modelPath={currentModelPath}
+                    modelPath={modelPath}
                     className="w-full h-96 lg:h-[500px]"
                   />
                 </TabsContent>
@@ -223,62 +177,21 @@ const ProductDetail = () => {
                   {product.name}
                 </h1>
                 <div className="flex items-center gap-2 text-muted-foreground mb-6">
-                  <Ruler className="w-4 h-4" />
-                  <span>{productPageContent.productDetail.dimensionsLabel} {currentVariant ? currentVariant.dimensions : product.dimensions}</span>
+                  <span>{productPageContent.productDetail.dimensionsLabel} {selectedVariant ? selectedVariant.dimensions : product.dimensions}</span>
                 </div>
               </div>
             </AnimatedSection>
 
-            {/* Innosin Lab Product Configuration */}
-            {isInnosinProduct && (product.finishes || product.variants) && (
+            {/* Variant Selector */}
+            {isInnosinProduct && variants.length > 0 && (
               <AnimatedSection animation="slide-in-right" delay={350}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Product Configuration</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {product.finishes && (
-                      <ProductFinishToggle
-                        finishes={product.finishes}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                      />
-                    )}
-                    {product.variants && (
-                      <>
-                        {availableTypes.length > 0 ? (
-                          <>
-                            <ProductTypeSelector
-                              types={availableTypes}
-                              selectedType={selectedType}
-                              onTypeChange={setSelectedType}
-                            />
-                            {selectedType && (
-                              <ProductOrientationSelector
-                                orientations={getAvailableOrientations(selectedType)}
-                                selectedOrientation={selectedOrientation}
-                                onOrientationChange={setSelectedOrientation}
-                              />
-                            )}
-                            {selectedType && (
-                              <ProductSizeSelector
-                                variants={getFilteredVariants()}
-                                selectedVariant={selectedVariant}
-                                onVariantChange={setSelectedVariant}
-                              />
-                            )}
-                          </>
-                        ) : (
-                          <ProductSizeSelector
-                            variants={product.variants}
-                            selectedVariant={selectedVariant}
-                            onVariantChange={setSelectedVariant}
-                          />
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                <VariantSelector
+                  variants={variants}
+                  selectedVariantId={selectedVariantId}
+                  onVariantChange={setSelectedVariantId}
+                  selectedFinish={selectedFinish}
+                  onFinishChange={setSelectedFinish}
+                />
               </AnimatedSection>
             )}
 
@@ -306,7 +219,7 @@ const ProductDetail = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="flex flex-wrap gap-2">
-                      {product.specifications.map((spec, index) => (
+                      {product.specifications.map((spec: string, index: number) => (
                         <Badge key={index} variant="secondary">
                           {spec}
                         </Badge>
