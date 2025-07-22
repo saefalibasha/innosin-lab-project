@@ -24,10 +24,11 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
     dimensions: product.dimensions || '',
     description: product.description || '',
     fullDescription: product.full_description || product.description || '',
-    specifications: Array.isArray(product.specifications) ? product.specifications : [],
+    specifications: Array.isArray(product.specifications) ? 
+      product.specifications.map((spec: any) => String(spec)) : [],
     keywords: product.keywords || [],
     thumbnail: product.thumbnail_path || '',
-    model: product.model_path || '',
+    modelPath: product.model_path || '',
     images: product.additional_images || [],
     overviewImage: product.overview_image_path || '',
     // Improved series image fallback logic
@@ -85,10 +86,11 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
     dimensions: product.dimensions || '',
     description: product.description || '',
     fullDescription: product.full_description || product.description || '',
-    specifications: Array.isArray(product.specifications) ? product.specifications : [],
+    specifications: Array.isArray(product.specifications) ? 
+      product.specifications.map((spec: any) => String(spec)) : [],
     keywords: product.keywords || [],
     thumbnail: product.thumbnail_path || '',
-    model: product.model_path || '',
+    modelPath: product.model_path || '',
     images: product.additional_images || [],
     overviewImage: product.overview_image_path || '',
     // Improved series image fallback logic
@@ -101,7 +103,7 @@ export const fetchProductById = async (id: string): Promise<Product | null> => {
     orientation: product.orientation || 'None',
     doorType: product.door_type || '',
     drawerCount: product.drawer_count || 0,
-    companyTags: product.companyTags || [],
+    companyTags: product.company_tags || [],
     isSeriesParent: product.is_series_parent || false,
     seriesSlug: product.series_slug || '',
     variantType: product.variant_type || 'standard'
