@@ -1,64 +1,83 @@
-
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 interface FormData {
-  name: string;
-  product_code: string;
-  dimensions: string;
-  orientation: string;
-  door_type: string;
-  drawer_count: string;
-  finish_type: string;
-  is_active: boolean;
-  description: string;
+  [key: string]: any;
 }
 
-const STORAGE_KEY = 'variant_form_previous_data';
+interface StoredEntry {
+  data: FormData;
+  timestamp: number;
+  id: string;
+}
 
-export const useFormPersistence = () => {
-  const [previousData, setPreviousData] = useState<Partial<FormData> | null>(() => {
+interface UseFormPersistenceOptions {
+  storageKey: string;
+  maxEntries?: number;
+}
+
+export const useFormPersistence = ({ storageKey, maxEntries = 10 }: UseFormPersistenceOptions) => {
+  const [previousEntries, setPreviousEntries] = useState<StoredEntry[]>([]);
+
+  // Load previous entries on mount
+  useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const entries = JSON.parse(stored) as StoredEntry[];
+        // Sort by timestamp descending (most recent first)
+        const sortedEntries = entries.sort((a, b) => b.timestamp - a.timestamp);
+        setPreviousEntries(sortedEntries);
+      }
+    } catch (error) {
+      console.error('Error loading previous entries:', error);
     }
-  });
+  }, [storageKey]);
 
-  const savePreviousData = useCallback((data: FormData) => {
+  const saveEntry = (data: FormData) => {
     try {
-      // Only save fields that are commonly reused (exclude name and product_code)
-      const dataToSave = {
-        dimensions: data.dimensions,
-        orientation: data.orientation,
-        door_type: data.door_type,
-        drawer_count: data.drawer_count,
-        finish_type: data.finish_type,
-        is_active: data.is_active,
-        description: data.description
+      const newEntry: StoredEntry = {
+        data,
+        timestamp: Date.now(),
+        id: Math.random().toString(36).substr(2, 9)
       };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-      setPreviousData(dataToSave);
-    } catch (error) {
-      console.warn('Failed to save form data to localStorage:', error);
-    }
-  }, []);
 
-  const clearPreviousData = useCallback(() => {
+      // Add new entry to the beginning of the array (most recent first)
+      const updatedEntries = [newEntry, ...previousEntries];
+      
+      // Keep only the specified number of entries
+      const trimmedEntries = updatedEntries.slice(0, maxEntries);
+      
+      localStorage.setItem(storageKey, JSON.stringify(trimmedEntries));
+      setPreviousEntries(trimmedEntries);
+    } catch (error) {
+      console.error('Error saving entry:', error);
+    }
+  };
+
+  const clearEntries = () => {
     try {
-      localStorage.removeItem(STORAGE_KEY);
-      setPreviousData(null);
+      localStorage.removeItem(storageKey);
+      setPreviousEntries([]);
     } catch (error) {
-      console.warn('Failed to clear form data from localStorage:', error);
+      console.error('Error clearing entries:', error);
     }
-  }, []);
+  };
 
-  const hasPreviousData = Boolean(previousData);
+  const removeEntry = (id: string) => {
+    try {
+      const filteredEntries = previousEntries.filter(entry => entry.id !== id);
+      localStorage.setItem(storageKey, JSON.stringify(filteredEntries));
+      setPreviousEntries(filteredEntries);
+    } catch (error) {
+      console.error('Error removing entry:', error);
+    }
+  };
 
   return {
-    previousData,
-    savePreviousData,
-    clearPreviousData,
-    hasPreviousData
+    previousEntries, // Already sorted with most recent first
+    saveEntry,
+    clearEntries,
+    removeEntry,
+    hasPreviousEntries: previousEntries.length > 0
   };
 };
