@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Variant {
   id: string;
@@ -41,6 +42,12 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     return null;
   }
 
+  // Helper function to extract length from dimensions string (e.g., "1200×550×880 mm" -> 1200)
+  const extractLength = (dimensions: string): number => {
+    const match = dimensions.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
   // Group variants by dimensions if requested
   const groupedVariants = groupByDimensions ? 
     variants.reduce((acc, variant) => {
@@ -51,8 +58,11 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     }, {} as Record<string, Variant[]>) :
     { 'All': variants };
 
-  // Get unique dimension groups
-  const dimensionGroups = Object.keys(groupedVariants).sort();
+  // Get unique dimension groups and sort by length (smallest to largest)
+  const dimensionGroups = Object.keys(groupedVariants).sort((a, b) => {
+    if (a === 'Unknown' || b === 'Unknown') return 0;
+    return extractLength(a) - extractLength(b);
+  });
 
   // Get unique orientations from all variants (excluding 'None')
   const orientations = [...new Set(variants.map(v => v.orientation).filter(o => o && o !== 'None'))].sort();
@@ -124,31 +134,54 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   return (
     <Card>
       <CardContent className="space-y-6 p-6">
-        {/* Dimension Selection */}
+        {/* Dimension Selection - Use Dropdown when multiple dimensions */}
         {groupByDimensions && dimensionGroups.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Dimensions</h4>
-            <div className="grid grid-cols-2 gap-2">
-              {dimensionGroups.map((dimension) => {
-                const isSelected = groupedVariants[dimension].some(v => v.id === selectedVariantId);
-                return (
-                  <Button
-                    key={dimension}
-                    variant={isSelected ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      const bestMatch = findBestMatchingVariant({ dimensions: dimension });
-                      if (bestMatch) {
-                        onVariantChange(bestMatch.id);
-                      }
-                    }}
-                    className="text-sm"
-                  >
-                    {dimension}
-                  </Button>
-                );
-              })}
-            </div>
+            {dimensionGroups.length > 3 ? (
+              <Select 
+                value={selectedVariant?.dimensions || ''} 
+                onValueChange={(dimensions) => {
+                  const bestMatch = findBestMatchingVariant({ dimensions });
+                  if (bestMatch) {
+                    onVariantChange(bestMatch.id);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select dimensions" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dimensionGroups.map((dimension) => (
+                    <SelectItem key={dimension} value={dimension}>
+                      {dimension}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {dimensionGroups.map((dimension) => {
+                  const isSelected = groupedVariants[dimension].some(v => v.id === selectedVariantId);
+                  return (
+                    <Button
+                      key={dimension}
+                      variant={isSelected ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        const bestMatch = findBestMatchingVariant({ dimensions: dimension });
+                        if (bestMatch) {
+                          onVariantChange(bestMatch.id);
+                        }
+                      }}
+                      className="text-sm"
+                    >
+                      {dimension}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
