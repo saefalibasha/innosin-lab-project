@@ -24,28 +24,37 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
   const [selectedDepth, setSelectedDepth] = useState<string>('');
   const [selectedHeight, setSelectedHeight] = useState<string>('');
 
-  // Extract unique width, depth and height options from dimensions
-  const { widths, depths, heights } = useMemo(() => {
-    const dimensionPairs = variants.map(v => v.dimensions).filter(Boolean);
+  // Extract unique width, depth and height options from actual product dimensions
+  const { widths, depths, heights, availableCombinations } = useMemo(() => {
+    console.log('Processing Open Rack variants:', variants);
+    
     const widthSet = new Set<string>();
     const depthSet = new Set<string>();
     const heightSet = new Set<string>();
+    const combinations = new Map<string, any[]>();
 
-    console.log('Processing dimensions:', dimensionPairs);
-
-    dimensionPairs.forEach(dim => {
-      // Remove "mm" suffix first, then split by "x"
-      const cleanDim = dim.replace(/mm/g, '');
+    variants.forEach(variant => {
+      if (!variant.dimensions) return;
+      
+      // Parse dimensions (e.g., "380x380x1800mm" or "600x450x1800mm")
+      const cleanDim = variant.dimensions.replace(/mm/g, '');
       const parts = cleanDim.split('x').map(p => p.trim());
-      console.log('Dimension parts after cleaning:', parts);
       
       if (parts.length >= 3) {
-        const width = parts[0]; // First value is width
-        const depth = parts[1]; // Second value is depth
-        const height = parts[2]; // Third value is height
+        const width = parts[0];
+        const depth = parts[1]; 
+        const height = parts[2];
+        
         widthSet.add(width);
         depthSet.add(depth);
         heightSet.add(height);
+        
+        // Store combinations for validation
+        const key = `${width}x${depth}x${height}`;
+        if (!combinations.has(key)) {
+          combinations.set(key, []);
+        }
+        combinations.get(key)?.push(variant);
       }
     });
 
@@ -53,95 +62,80 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
     const sortedDepths = Array.from(depthSet).sort((a, b) => parseInt(a) - parseInt(b));
     const sortedHeights = Array.from(heightSet).sort((a, b) => parseInt(a) - parseInt(b));
 
-    console.log('Extracted widths:', sortedWidths);
-    console.log('Extracted depths:', sortedDepths);
-    console.log('Extracted heights:', sortedHeights);
+    console.log('Extracted dimensions - Widths:', sortedWidths, 'Depths:', sortedDepths, 'Heights:', sortedHeights);
+    console.log('Available combinations:', Array.from(combinations.keys()));
 
     return {
       widths: sortedWidths,
       depths: sortedDepths,
-      heights: sortedHeights
+      heights: sortedHeights,
+      availableCombinations: combinations
     };
   }, [variants]);
 
-  // Find matching variant based on current selections
+  // Check if a dimension combination is available
+  const isDimensionCombinationAvailable = (width: string, depth: string, height: string) => {
+    if (!width || !depth || !height) return false;
+    const key = `${width}x${depth}x${height}`;
+    return availableCombinations.has(key);
+  };
+
+  // Find matching variant based on selections
   const findMatchingVariant = (width: string, depth: string, height: string, finish: string) => {
-    console.log('Finding variant for:', { width, depth, height, finish });
+    console.log('Finding variant for dimensions:', { width, depth, height, finish });
     
-    const matchingVariant = variants.find(v => {
-      if (!v.dimensions) return false;
+    const targetDimensions = `${width}x${depth}x${height}mm`;
+    const dbFinishValue = finish === 'PC' ? 'PC' : 'SS304';
+    
+    const matchingVariant = variants.find(variant => {
+      const matches = variant.dimensions === targetDimensions && 
+                     variant.finish_type === dbFinishValue;
       
-      // Remove "mm" suffix first, then split by "x"
-      const cleanDim = v.dimensions.replace(/mm/g, '');
-      const dimParts = cleanDim.split('x').map(p => p.trim());
-      
-      if (dimParts.length < 3) return false;
-      
-      // Map finish values to database values
-      const dbFinishValue = finish === 'PC' ? 'PC' : 'SS304';
-      
-      const matches = dimParts[0] === width && 
-             dimParts[1] === depth && 
-             dimParts[2] === height && 
-             v.finish_type === dbFinishValue;
-             
       if (matches) {
-        console.log('Found matching variant:', v);
+        console.log('Found matching variant:', variant);
       }
       
       return matches;
     });
     
+    if (!matchingVariant) {
+      console.log('No matching variant found for:', targetDimensions, dbFinishValue);
+    }
+    
     return matchingVariant;
   };
 
-  // Handle width selection
+  // Handle dimension selections
   const handleWidthSelect = (width: string) => {
     console.log('Selected width:', width);
     setSelectedWidth(width);
-    
-    if (selectedDepth && selectedHeight && selectedFinish) {
-      const matchingVariant = findMatchingVariant(width, selectedDepth, selectedHeight, selectedFinish);
-      if (matchingVariant) {
-        onVariantChange(matchingVariant.id);
-      }
-    }
+    updateVariantSelection(width, selectedDepth, selectedHeight, selectedFinish);
   };
 
-  // Handle depth selection
   const handleDepthSelect = (depth: string) => {
     console.log('Selected depth:', depth);
     setSelectedDepth(depth);
-    
-    if (selectedWidth && selectedHeight && selectedFinish) {
-      const matchingVariant = findMatchingVariant(selectedWidth, depth, selectedHeight, selectedFinish);
-      if (matchingVariant) {
-        onVariantChange(matchingVariant.id);
-      }
-    }
+    updateVariantSelection(selectedWidth, depth, selectedHeight, selectedFinish);
   };
 
-  // Handle height selection
   const handleHeightSelect = (height: string) => {
     console.log('Selected height:', height);
     setSelectedHeight(height);
-    
-    if (selectedWidth && selectedDepth && selectedFinish) {
-      const matchingVariant = findMatchingVariant(selectedWidth, selectedDepth, height, selectedFinish);
-      if (matchingVariant) {
-        onVariantChange(matchingVariant.id);
-      }
-    }
+    updateVariantSelection(selectedWidth, selectedDepth, height, selectedFinish);
   };
 
-  // Handle finish selection
   const handleFinishSelect = (finish: string) => {
     console.log('Selected finish:', finish);
     onFinishChange(finish);
-    
-    if (selectedWidth && selectedDepth && selectedHeight) {
-      const matchingVariant = findMatchingVariant(selectedWidth, selectedDepth, selectedHeight, finish);
+    updateVariantSelection(selectedWidth, selectedDepth, selectedHeight, finish);
+  };
+
+  // Update variant selection when all parameters are available
+  const updateVariantSelection = (width: string, depth: string, height: string, finish: string) => {
+    if (width && depth && height && finish) {
+      const matchingVariant = findMatchingVariant(width, depth, height, finish);
       if (matchingVariant) {
+        console.log('Updating to variant:', matchingVariant.id);
         onVariantChange(matchingVariant.id);
       }
     }
@@ -153,7 +147,6 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
     console.log('Current variant:', currentVariant);
     
     if (currentVariant && currentVariant.dimensions) {
-      // Remove "mm" suffix first, then split by "x"
       const cleanDim = currentVariant.dimensions.replace(/mm/g, '');
       const dimParts = cleanDim.split('x').map(p => p.trim());
       
@@ -213,7 +206,11 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
                     <SelectItem value="" disabled>No depths available</SelectItem>
                   ) : (
                     depths.map((depth) => (
-                      <SelectItem key={depth} value={depth}>
+                      <SelectItem 
+                        key={depth} 
+                        value={depth}
+                        disabled={selectedWidth && selectedHeight && !isDimensionCombinationAvailable(selectedWidth, depth, selectedHeight)}
+                      >
                         {depth}mm
                       </SelectItem>
                     ))
@@ -234,7 +231,11 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
                     <SelectItem value="" disabled>No heights available</SelectItem>
                   ) : (
                     heights.map((height) => (
-                      <SelectItem key={height} value={height}>
+                      <SelectItem 
+                        key={height} 
+                        value={height}
+                        disabled={selectedWidth && selectedDepth && !isDimensionCombinationAvailable(selectedWidth, selectedDepth, height)}
+                      >
                         {height}mm
                       </SelectItem>
                     ))
