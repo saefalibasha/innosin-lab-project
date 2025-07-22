@@ -7,36 +7,12 @@ import { heroContent } from '@/data/heroContent';
 import { usePerformanceMonitoring, logComponentPerformance } from '@/hooks/usePerformanceMonitoring';
 import { OptimizedImage } from './OptimizedImage';
 
-// Lazy load the carousel component with better error handling
-const LazyCarousel = lazy(() => 
-  import('@/components/ui/carousel').then(module => ({
-    default: module.Carousel
-  })).catch(() => ({ default: () => <div>Failed to load carousel</div> }))
-);
-
-const LazyCarouselContent = lazy(() => 
-  import('@/components/ui/carousel').then(module => ({
-    default: module.CarouselContent
-  })).catch(() => ({ default: () => <div>Loading...</div> }))
-);
-
-const LazyCarouselItem = lazy(() => 
-  import('@/components/ui/carousel').then(module => ({
-    default: module.CarouselItem
-  })).catch(() => ({ default: () => <div>Loading...</div> }))
-);
-
-const LazyCarouselNext = lazy(() => 
-  import('@/components/ui/carousel').then(module => ({
-    default: module.CarouselNext
-  })).catch(() => ({ default: () => <div>Loading...</div> }))
-);
-
-const LazyCarouselPrevious = lazy(() => 
-  import('@/components/ui/carousel').then(module => ({
-    default: module.CarouselPrevious
-  })).catch(() => ({ default: () => <div>Loading...</div> }))
-);
+// Simplified lazy loading without fallback components that cause type issues
+const LazyCarousel = lazy(() => import('@/components/ui/carousel').then(module => ({ default: module.Carousel })));
+const LazyCarouselContent = lazy(() => import('@/components/ui/carousel').then(module => ({ default: module.CarouselContent })));
+const LazyCarouselItem = lazy(() => import('@/components/ui/carousel').then(module => ({ default: module.CarouselItem })));
+const LazyCarouselNext = lazy(() => import('@/components/ui/carousel').then(module => ({ default: module.CarouselNext })));
+const LazyCarouselPrevious = lazy(() => import('@/components/ui/carousel').then(module => ({ default: module.CarouselPrevious })));
 
 const VideoHero = () => {
   const { startMonitoring } = usePerformanceMonitoring();

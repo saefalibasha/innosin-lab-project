@@ -26,6 +26,7 @@ export const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
 }) => {
   const [isInView, setIsInView] = useState(priority);
   const [isLoaded, setIsLoaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -44,8 +45,8 @@ export const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
       }
     );
 
-    if (videoRef.current) {
-      observer.observe(videoRef.current);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
     }
 
     return () => observer.disconnect();
@@ -60,9 +61,10 @@ export const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
   const mp4Src = src;
 
   return (
-    <div ref={videoRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       {(isInView || priority) ? (
         <video
+          ref={videoRef}
           className="w-full h-full object-cover"
           autoPlay={autoPlay}
           muted={muted}
