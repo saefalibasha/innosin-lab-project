@@ -1,7 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { logComponentPerformance } from '@/hooks/usePerformanceMonitoring';
 
 interface LazyProductImageProps {
   src: string;
@@ -9,8 +8,6 @@ interface LazyProductImageProps {
   className?: string;
   fallback?: string;
   priority?: boolean;
-  sizes?: string;
-  quality?: number;
 }
 
 const LazyProductImage: React.FC<LazyProductImageProps> = ({
@@ -18,15 +15,12 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
   alt,
   className = '',
   fallback = '/placeholder.svg',
-  priority = false,
-  sizes = '100vw',
-  quality = 75
+  priority = false
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
   const [isInView, setIsInView] = useState(priority); // If priority, start loading immediately
   const imgRef = useRef<HTMLImageElement>(null);
-  const startTime = performance.now();
 
   useEffect(() => {
     if (priority) return; // Skip intersection observer for priority images
@@ -40,7 +34,7 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
       },
       { 
         threshold: 0.1, 
-        rootMargin: '50px' // Start loading earlier for better UX
+        rootMargin: '100px' // Start loading earlier
       }
     );
 
@@ -54,20 +48,12 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
   const handleLoad = () => {
     setIsLoaded(true);
     setIsError(false);
-    
-    // Log performance
-    const endTime = performance.now();
-    logComponentPerformance('LazyProductImage', endTime - startTime);
   };
 
   const handleError = () => {
     setIsError(true);
     setIsLoaded(false);
   };
-
-  // Optimize image formats
-  const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
-  const originalSrc = src;
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
@@ -76,26 +62,17 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
       )}
       
       {(isInView || priority) && (
-        <picture>
-          <source srcSet={webpSrc} type="image/webp" sizes={sizes} />
-          <img
-            src={isError ? fallback : originalSrc}
-            alt={alt}
-            sizes={sizes}
-            className={`w-full h-full object-cover transition-opacity duration-500 ${
-              isLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
-            onLoad={handleLoad}
-            onError={handleError}
-            loading={priority ? "eager" : "lazy"}
-            decoding="async"
-            style={{ 
-              filter: isLoaded ? 'none' : 'blur(10px)',
-              transform: isLoaded ? 'scale(1)' : 'scale(1.1)',
-              transition: 'all 0.5s ease-out'
-            }}
-          />
-        </picture>
+        <img
+          src={isError ? fallback : src}
+          alt={alt}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={handleLoad}
+          onError={handleError}
+          loading={priority ? "eager" : "lazy"}
+          decoding="async"
+        />
       )}
     </div>
   );
