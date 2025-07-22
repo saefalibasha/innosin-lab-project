@@ -145,8 +145,6 @@ const ProductDetail = () => {
                   <ProductImageGallery
                     images={images}
                     thumbnail={thumbnail}
-                    overviewImage={product.overviewImage}
-                    seriesOverviewImage={product.seriesOverviewImage}
                     productName={product.name}
                     className="w-full h-96 lg:h-[500px]"
                   />
