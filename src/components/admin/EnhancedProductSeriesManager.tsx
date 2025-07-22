@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +43,7 @@ interface ProductSeries {
   target_variant_count: number;
   series_thumbnail_path?: string;
   series_model_path?: string;
+  series_overview_image_path?: string;
   company_tags: string[];
   created_at: string;
   updated_at: string;
@@ -177,6 +177,7 @@ export const EnhancedProductSeriesManager = () => {
           description: editForm.description,
           company_tags: editForm.company_tags,
           series_thumbnail_path: editForm.series_thumbnail_path,
+          series_overview_image_path: editForm.series_thumbnail_path, // Sync overview image with thumbnail
           target_variant_count: editForm.target_variant_count,
           updated_at: new Date().toISOString()
         })
@@ -190,7 +191,7 @@ export const EnhancedProductSeriesManager = () => {
       });
 
       setIsEditDialogOpen(false);
-      fetchSeries(); // Refresh the data to show updated names
+      fetchSeries(); // Refresh the data to show updated images
     } catch (error) {
       console.error('Error updating series:', error);
       toast({
@@ -337,11 +338,11 @@ export const EnhancedProductSeriesManager = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Series Image */}
-              {series.series_thumbnail_path && (
+              {/* Series Image - Use series_overview_image_path or series_thumbnail_path */}
+              {(series.series_overview_image_path || series.series_thumbnail_path) && (
                 <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
                   <img 
-                    src={series.series_thumbnail_path} 
+                    src={series.series_overview_image_path || series.series_thumbnail_path} 
                     alt={series.name}
                     className="w-full h-full object-cover"
                   />
@@ -426,7 +427,7 @@ export const EnhancedProductSeriesManager = () => {
           <DialogHeader>
             <DialogTitle>Edit Product Series</DialogTitle>
             <DialogDescription>
-              Update series information and assets
+              Update series information and assets. The uploaded thumbnail will be used as the series overview image.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -476,7 +477,7 @@ export const EnhancedProductSeriesManager = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">Series Thumbnail</Label>
+              <Label htmlFor="image">Series Thumbnail & Overview Image</Label>
               <div className="flex items-center gap-4">
                 <Input
                   id="image"
@@ -492,6 +493,9 @@ export const EnhancedProductSeriesManager = () => {
                   />
                 )}
               </div>
+              <p className="text-xs text-muted-foreground">
+                This image will be used as both the series thumbnail and the overview image on the product catalog.
+              </p>
             </div>
 
             <div className="space-y-2">

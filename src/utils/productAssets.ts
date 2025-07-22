@@ -1,4 +1,3 @@
-
 import { Product, ProductVariant } from '@/types/product';
 
 // Supabase storage base URL
@@ -154,7 +153,7 @@ const kneeSpaceSeriesProducts: Product[] = [
   }
 ];
 
-// Mobile Cabinet Series with proper asset paths and fixed series overview images
+// Mobile Cabinet Series with proper asset paths - UPDATED: Using uploaded series thumbnail for overview
 const mobileCabinetProducts: Product[] = [
   {
     id: 'innosin-mobile-cabinet-750mm',
@@ -167,7 +166,8 @@ const mobileCabinetProducts: Product[] = [
     thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
     images: [getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg')],
     overviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
-    seriesOverviewImage: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop',
+    // This will be dynamically set from the database for uploaded images
+    seriesOverviewImage: 'https://wfdbqfbodppniqzoxnyf.supabase.co/storage/v1/object/public/documents/series-thumbnails/1737507800398.jpg',
     specifications: ['Mobile Design', 'Locking Casters', 'Chemical Resistant'],
     variants: [
       {
@@ -293,7 +293,8 @@ const mobileCabinetProducts: Product[] = [
     thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
     images: [getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg')],
     overviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
-    seriesOverviewImage: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop',
+    // Use the same uploaded series overview image as 750mm series
+    seriesOverviewImage: 'https://wfdbqfbodppniqzoxnyf.supabase.co/storage/v1/object/public/documents/series-thumbnails/1737507800398.jpg',
     specifications: ['Enhanced Height', 'Mobile Design', 'Locking Casters'],
     variants: [
       {
@@ -542,7 +543,7 @@ const otherCabinetProducts: Product[] = [
   }
 ];
 
-// Combine all products - no enhancement needed as URLs are already proper
+// Combine all products
 const allInnosinProducts = [
   ...kneeSpaceSeriesProducts,
   ...mobileCabinetProducts, 
