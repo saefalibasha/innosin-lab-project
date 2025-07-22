@@ -1,35 +1,35 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { logComponentPerformance } from '@/hooks/usePerformanceMonitoring';
 
-interface LazyProductImageProps {
+interface OptimizedImageProps {
   src: string;
   alt: string;
   className?: string;
-  fallback?: string;
   priority?: boolean;
   sizes?: string;
   quality?: number;
+  placeholder?: 'blur' | 'empty';
+  blurDataURL?: string;
 }
 
-const LazyProductImage: React.FC<LazyProductImageProps> = ({
+export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   src,
   alt,
   className = '',
-  fallback = '/placeholder.svg',
   priority = false,
   sizes = '100vw',
-  quality = 75
+  quality = 75,
+  placeholder = 'blur',
+  blurDataURL
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [isInView, setIsInView] = useState(priority); // If priority, start loading immediately
+  const [isInView, setIsInView] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
-  const startTime = performance.now();
 
   useEffect(() => {
-    if (priority) return; // Skip intersection observer for priority images
+    if (priority) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -39,8 +39,8 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
         }
       },
       { 
-        threshold: 0.1, 
-        rootMargin: '50px' // Start loading earlier for better UX
+        threshold: 0.1,
+        rootMargin: '50px'
       }
     );
 
@@ -54,10 +54,6 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
   const handleLoad = () => {
     setIsLoaded(true);
     setIsError(false);
-    
-    // Log performance
-    const endTime = performance.now();
-    logComponentPerformance('LazyProductImage', endTime - startTime);
   };
 
   const handleError = () => {
@@ -65,21 +61,31 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
     setIsLoaded(false);
   };
 
-  // Optimize image formats
+  // Generate WebP and fallback URLs
   const webpSrc = src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
   const originalSrc = src;
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
-      {!isLoaded && !isError && (
-        <Skeleton className="absolute inset-0 bg-muted animate-pulse" />
+      {placeholder === 'blur' && !isLoaded && !isError && (
+        <div className="absolute inset-0">
+          {blurDataURL ? (
+            <img
+              src={blurDataURL}
+              alt=""
+              className="w-full h-full object-cover filter blur-sm scale-110"
+            />
+          ) : (
+            <Skeleton className="w-full h-full bg-muted animate-pulse" />
+          )}
+        </div>
       )}
       
       {(isInView || priority) && (
         <picture>
-          <source srcSet={webpSrc} type="image/webp" sizes={sizes} />
+          <source srcSet={webpSrc} type="image/webp" />
           <img
-            src={isError ? fallback : originalSrc}
+            src={originalSrc}
             alt={alt}
             sizes={sizes}
             className={`w-full h-full object-cover transition-opacity duration-500 ${
@@ -89,16 +95,9 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
             onError={handleError}
             loading={priority ? "eager" : "lazy"}
             decoding="async"
-            style={{ 
-              filter: isLoaded ? 'none' : 'blur(10px)',
-              transform: isLoaded ? 'scale(1)' : 'scale(1.1)',
-              transition: 'all 0.5s ease-out'
-            }}
           />
         </picture>
       )}
     </div>
   );
 };
-
-export default LazyProductImage;

@@ -3,19 +3,43 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import VideoHero from "@/components/VideoHero";
 import { brandCollections } from "@/data/brandCollections";
 import { homePageContent } from "@/data/homePageContent";
-import { usePerformanceLogger } from "@/hooks/usePerformanceLogger";
+import { usePerformanceMonitoring, logComponentPerformance } from "@/hooks/usePerformanceMonitoring";
+import { OptimizedImage } from "@/components/OptimizedImage";
 
-// Lazy load heavy components
-const LazyBeforeAfterComparison = lazy(() => import("@/components/BeforeAfterComparison"));
-const LazyShopTheLook = lazy(() => import("@/components/ShopTheLook"));
-const LazyLabTransformCTA = lazy(() => import("@/components/LabTransformCTA"));
+// Lazy load heavy components with better error handling
+const LazyBeforeAfterComparison = lazy(() => 
+  import("@/components/BeforeAfterComparison").catch(() => ({
+    default: () => <div className="h-96 bg-muted rounded-lg flex items-center justify-center">Failed to load comparison</div>
+  }))
+);
+
+const LazyShopTheLook = lazy(() => 
+  import("@/components/ShopTheLook").catch(() => ({
+    default: () => <div className="h-80 bg-muted rounded-lg flex items-center justify-center">Failed to load shop component</div>
+  }))
+);
+
+const LazyLabTransformCTA = lazy(() => 
+  import("@/components/LabTransformCTA").catch(() => ({
+    default: () => <div className="h-48 bg-muted rounded-lg flex items-center justify-center">Failed to load CTA</div>
+  }))
+);
 
 const Index = () => {
-  usePerformanceLogger('Index');
+  const { startMonitoring } = usePerformanceMonitoring();
+  const startTime = performance.now();
+
+  useEffect(() => {
+    startMonitoring();
+    
+    // Log page load performance
+    const endTime = performance.now();
+    logComponentPerformance('Index', endTime - startTime);
+  }, [startMonitoring, startTime]);
 
   const ComponentFallback = ({ height = "h-64" }: { height?: string }) => (
     <div className={`${height} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg animate-pulse flex items-center justify-center`}>
@@ -50,13 +74,12 @@ const Index = () => {
                   <CardContent className="p-6 text-center flex flex-col items-center justify-center h-full">
                     {/* Brand Logo with optimized loading */}
                     <div className="flex justify-center mb-2 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
-                      <img 
+                      <OptimizedImage
                         src={collection.logoPath}
                         alt={`${collection.title} Logo`}
                         className="w-36 h-36 object-contain object-center transition-transform duration-300 group-hover:scale-110"
-                        style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                        loading={index < 2 ? "eager" : "lazy"}
-                        decoding="async"
+                        priority={index < 2}
+                        sizes="144px"
                       />
                     </div>
                     <p className="text-muted-foreground text-base leading-relaxed mb-4 font-light text-center">

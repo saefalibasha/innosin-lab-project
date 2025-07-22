@@ -4,53 +4,70 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { heroContent } from '@/data/heroContent';
-import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
+import { usePerformanceMonitoring, logComponentPerformance } from '@/hooks/usePerformanceMonitoring';
+import { OptimizedImage } from './OptimizedImage';
 
-// Lazy load the carousel component
-const LazyCarousel = lazy(() => import('@/components/ui/carousel').then(module => ({
-  default: module.Carousel
-})));
+// Lazy load the carousel component with better error handling
+const LazyCarousel = lazy(() => 
+  import('@/components/ui/carousel').then(module => ({
+    default: module.Carousel
+  })).catch(() => ({ default: () => <div>Failed to load carousel</div> }))
+);
 
-const LazyCarouselContent = lazy(() => import('@/components/ui/carousel').then(module => ({
-  default: module.CarouselContent
-})));
+const LazyCarouselContent = lazy(() => 
+  import('@/components/ui/carousel').then(module => ({
+    default: module.CarouselContent
+  })).catch(() => ({ default: () => <div>Loading...</div> }))
+);
 
-const LazyCarouselItem = lazy(() => import('@/components/ui/carousel').then(module => ({
-  default: module.CarouselItem
-})));
+const LazyCarouselItem = lazy(() => 
+  import('@/components/ui/carousel').then(module => ({
+    default: module.CarouselItem
+  })).catch(() => ({ default: () => <div>Loading...</div> }))
+);
 
-const LazyCarouselNext = lazy(() => import('@/components/ui/carousel').then(module => ({
-  default: module.CarouselNext
-})));
+const LazyCarouselNext = lazy(() => 
+  import('@/components/ui/carousel').then(module => ({
+    default: module.CarouselNext
+  })).catch(() => ({ default: () => <div>Loading...</div> }))
+);
 
-const LazyCarouselPrevious = lazy(() => import('@/components/ui/carousel').then(module => ({
-  default: module.CarouselPrevious
-})));
+const LazyCarouselPrevious = lazy(() => 
+  import('@/components/ui/carousel').then(module => ({
+    default: module.CarouselPrevious
+  })).catch(() => ({ default: () => <div>Loading...</div> }))
+);
 
 const VideoHero = () => {
-  usePerformanceLogger('VideoHero');
+  const { startMonitoring } = usePerformanceMonitoring();
   const [scrolled, setScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [isCarouselVisible, setIsCarouselVisible] = useState(false);
+  
+  const startTime = performance.now();
 
   useEffect(() => {
+    startMonitoring();
+    
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
       setScrolled(scrollPosition > 100);
       setScrollY(scrollPosition);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [startMonitoring]);
 
-  // Load carousel after initial render
+  // Load carousel after initial render with performance logging
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsCarouselVisible(true);
+      const endTime = performance.now();
+      logComponentPerformance('VideoHero', endTime - startTime);
     }, 100);
     return () => clearTimeout(timer);
-  }, []);
+  }, [startTime]);
 
   const CarouselFallback = () => (
     <div className="w-full h-[65vh] min-h-[500px] rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 animate-pulse flex items-center justify-center">
@@ -83,14 +100,13 @@ const VideoHero = () => {
                     {heroContent.slides.map((slide) => (
                       <LazyCarouselItem key={slide.id} className="pl-2 md:pl-4 basis-full md:basis-[85%] lg:basis-[90%]">
                         <div className="relative w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden">
-                          {/* Background Image with lazy loading */}
-                          <div 
-                            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                            style={{ 
-                              backgroundImage: `url(${slide.image})`,
-                              backgroundSize: 'cover',
-                              willChange: 'transform'
-                            }}
+                          {/* Optimized Background Image */}
+                          <OptimizedImage
+                            src={slide.image}
+                            alt={`Hero slide ${slide.id}`}
+                            className="absolute inset-0"
+                            priority={slide.id === 1}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 90vw"
                           />
                           
                           {/* Dark Overlay for better text readability */}
