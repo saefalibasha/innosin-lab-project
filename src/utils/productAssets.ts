@@ -1,3 +1,4 @@
+
 import { Product, ProductVariant } from '@/types/product';
 
 // Supabase storage base URL
@@ -153,7 +154,7 @@ const kneeSpaceSeriesProducts: Product[] = [
   }
 ];
 
-// Mobile Cabinet Series with proper asset paths (no more placeholder images)
+// Mobile Cabinet Series with proper asset paths and fixed series overview images
 const mobileCabinetProducts: Product[] = [
   {
     id: 'innosin-mobile-cabinet-750mm',
@@ -166,7 +167,7 @@ const mobileCabinetProducts: Product[] = [
     thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
     images: [getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg')],
     overviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
-    seriesOverviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
+    seriesOverviewImage: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop',
     specifications: ['Mobile Design', 'Locking Casters', 'Chemical Resistant'],
     variants: [
       {
@@ -198,6 +199,76 @@ const mobileCabinetProducts: Product[] = [
         modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).glb'),
         thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg'),
         images: [getSupabaseAssetUrl('products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr2-505065',
+        size: '500×500×650 mm',
+        dimensions: '500×500×650 mm',
+        type: '2 Drawers',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr2-505065/MC-PC-DWR2 (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr2-505065/MC-PC-DWR2 (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr2-505065/MC-PC-DWR2 (505065).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr3-1-505065',
+        size: '500×500×650 mm',
+        dimensions: '500×500×650 mm',
+        type: '3 Drawers Config 1',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-1-505065/MC-PC-DRW3-1 (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-1-505065/MC-PC-DRW3-1 (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-1-505065/MC-PC-DRW3-1 (505065).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr3-2-505065',
+        size: '500×500×650 mm',
+        dimensions: '500×500×650 mm',
+        type: '3 Drawers Config 2',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-2-505065/MC-PC-DRW3-2 (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-2-505065/MC-PC-DRW3-2 (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-2-505065/MC-PC-DRW3-2 (505065).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr6-505065',
+        size: '500×500×650 mm',
+        dimensions: '500×500×650 mm',
+        type: '6 Drawers',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr6-505065/MC-PC-DWR6 (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr6-505065/MC-PC-DWR6 (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr6-505065/MC-PC-DWR6 (505065).jpg')]
+      },
+      {
+        id: 'innosin-mcc-pc-755065',
+        size: '750×500×650 mm',
+        dimensions: '750×500×650 mm',
+        type: 'Combination Cabinet',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mcc-pc-755065/MCC-PC (755065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mcc-pc-755065/MCC-PC (755065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mcc-pc-755065/MCC-PC (755065).jpg')]
+      },
+      {
+        id: 'innosin-mcc-pc-lh-505065',
+        size: '500×500×650 mm',
+        dimensions: '500×500×650 mm',
+        type: 'Combination LH',
+        orientation: 'LH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mcc-pc-lh-505065/MCC-PC-LH (505065).jpg')]
+      },
+      {
+        id: 'innosin-mcc-pc-rh-505065',
+        size: '500×500×650 mm',
+        dimensions: '500×500×650 mm',
+        type: 'Combination RH',
+        orientation: 'RH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mcc-pc-rh-505065/MCC-PC-RH (505065).jpg')]
       }
     ],
     finishes: [
@@ -222,7 +293,7 @@ const mobileCabinetProducts: Product[] = [
     thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
     images: [getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg')],
     overviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
-    seriesOverviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
+    seriesOverviewImage: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?w=800&h=600&fit=crop',
     specifications: ['Enhanced Height', 'Mobile Design', 'Locking Casters'],
     variants: [
       {
@@ -254,6 +325,106 @@ const mobileCabinetProducts: Product[] = [
         modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).glb'),
         thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg'),
         images: [getSupabaseAssetUrl('products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr2-505080',
+        size: '500×500×800 mm',
+        dimensions: '500×500×800 mm',
+        type: '2 Drawers',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr2-505080/MC-PC-DWR2 (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr2-505080/MC-PC-DWR2 (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr2-505080/MC-PC-DWR2 (505080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr3-505080',
+        size: '500×500×800 mm',
+        dimensions: '500×500×800 mm',
+        type: '3 Drawers',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr3-505080/MC-PC-DWR3 (505080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr4-505080',
+        size: '500×500×800 mm',
+        dimensions: '500×500×800 mm',
+        type: '4 Drawers',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr4-505080/MC-PC-DWR4 (505080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr6-905080',
+        size: '900×500×800 mm',
+        dimensions: '900×500×800 mm',
+        type: '6 Drawers Wide',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr6-905080/MC-PC-DWR6 (905080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-dwr8-905080',
+        size: '900×500×800 mm',
+        dimensions: '900×500×800 mm',
+        type: '8 Drawers Wide',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-dwr8-905080/MC-PC-DWR8 (905080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-dwr8-905080/MC-PC-DWR8 (905080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-dwr8-905080/MC-PC-DWR8 (905080).jpg')]
+      },
+      {
+        id: 'innosin-mcc-pc-755080',
+        size: '750×500×800 mm',
+        dimensions: '750×500×800 mm',
+        type: 'Combination Cabinet',
+        orientation: 'None',
+        modelPath: getSupabaseAssetUrl('products/innosin-mcc-pc-755080/MCC-PC (755080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mcc-pc-755080/MCC-PC (755080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mcc-pc-755080/MCC-PC (755080).jpg')]
+      },
+      {
+        id: 'innosin-mcc-pc-lh-505080',
+        size: '500×500×800 mm',
+        dimensions: '500×500×800 mm',
+        type: 'Combination LH',
+        orientation: 'LH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mcc-pc-lh-505080/MCC-PC-LH (505080).jpg')]
+      },
+      {
+        id: 'innosin-mcc-pc-rh-505080',
+        size: '500×500×800 mm',
+        dimensions: '500×500×800 mm',
+        type: 'Combination RH',
+        orientation: 'RH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mcc-pc-rh-505080/MCC-PC-RH (505080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-lh-905080',
+        size: '900×500×800 mm',
+        dimensions: '900×500×800 mm',
+        type: 'Hand Configuration Wide',
+        orientation: 'LH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-lh-905080/MC-PC-LH (905080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-lh-905080/MC-PC-LH (905080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-lh-905080/MC-PC-LH (905080).jpg')]
+      },
+      {
+        id: 'innosin-mc-pc-rh-905080',
+        size: '900×500×800 mm',
+        dimensions: '900×500×800 mm',
+        type: 'Hand Configuration Wide',
+        orientation: 'RH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-rh-905080/MC-PC-RH (905080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-rh-905080/MC-PC-RH (905080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-rh-905080/MC-PC-RH (905080).jpg')]
       }
     ],
     finishes: [
