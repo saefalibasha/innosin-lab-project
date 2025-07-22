@@ -13,6 +13,7 @@ import AnimatedSection from '@/components/AnimatedSection';
 import VariantSelector from '@/components/product/VariantSelector';
 import { fetchSeriesWithVariants, getVariantAssetUrls } from '@/services/variantService';
 import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurator';
+import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
 
 const EnhancedProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -54,6 +55,7 @@ const EnhancedProductDetail = () => {
   const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
   const isInnosinProduct = series?.category === 'Innosin Lab';
   const isTallCabinetSeries = series?.product_series?.toLowerCase().includes('tall cabinet');
+  const isOpenRackSeries = series?.product_series?.toLowerCase().includes('open rack');
 
   // Update assets when variant or finish changes
   useEffect(() => {
@@ -231,6 +233,14 @@ const EnhancedProductDetail = () => {
                   <CardContent>
                     {isTallCabinetSeries ? (
                       <TallCabinetConfigurator
+                        variants={series.variants}
+                        selectedVariantId={selectedVariantId}
+                        onVariantChange={setSelectedVariantId}
+                        selectedFinish={selectedFinish}
+                        onFinishChange={setSelectedFinish}
+                      />
+                    ) : isOpenRackSeries ? (
+                      <OpenRackConfigurator
                         variants={series.variants}
                         selectedVariantId={selectedVariantId}
                         onVariantChange={setSelectedVariantId}
