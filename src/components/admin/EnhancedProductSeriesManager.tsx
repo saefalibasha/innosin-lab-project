@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,9 @@ import {
   X,
   Settings,
   Tag,
-  Plus
+  Plus,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import {
   Dialog,
@@ -26,6 +29,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { VariantManager } from './product-series/VariantManager';
 import { ProductSeriesFormDialog } from './product-series/ProductSeriesFormDialog';
 
@@ -197,6 +211,55 @@ export const EnhancedProductSeriesManager = () => {
       toast({
         title: "Error",
         description: "Failed to update series",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteSeries = async (series: ProductSeries) => {
+    try {
+      console.log('Deleting series:', series.product_series);
+      
+      // First, delete all child variants that reference this series parent
+      const { error: variantsError } = await supabase
+        .from('products')
+        .delete()
+        .eq('parent_series_id', series.id);
+
+      if (variantsError) throw variantsError;
+
+      // Then delete the series parent itself
+      const { error: seriesError } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', series.id);
+
+      if (seriesError) throw seriesError;
+
+      // Log the deletion activity
+      await supabase
+        .from('product_activity_log')
+        .insert([{
+          action: 'series_deleted',
+          changed_by: 'admin',
+          old_data: { 
+            id: series.id, 
+            name: series.product_series,
+            deleted_at: new Date().toISOString()
+          }
+        }]);
+
+      toast({
+        title: "Success",
+        description: `Series "${series.product_series}" and all its variants deleted successfully`,
+      });
+
+      fetchSeries(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting series:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product series",
         variant: "destructive",
       });
     }
@@ -408,13 +471,71 @@ export const EnhancedProductSeriesManager = () => {
                   <Eye className="h-3 w-3" />
                   View
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                        Delete Product Series
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete the series "{series.product_series}" and all its variants? 
+                        <br /><br />
+                        <strong>This action cannot be undone.</strong>
+                        <br /><br />
+                        This will permanently delete:
+                        <ul className="list-disc list-inside mt-2">
+                          <li>The series parent product</li>
+                          <li>All {series.variant_count} variant(s) in this series</li>
+                          <li>All associated product data</li>
+                        </ul>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteSeries(series)}
+                        className="bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        Delete Series
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Add Series Dialog */}
+      {filteredSeries.length === 0 && (
+        <Card>
+          <CardContent className="py-8">
+            <div className="text-center text-muted-foreground">
+              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>No product series found matching your criteria.</p>
+              <Button 
+                variant="outline" 
+                className="mt-4"
+                onClick={() => setShowAddDialog(true)}
+              >
+                Create Your First Series
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <ProductSeriesFormDialog
         open={showAddDialog}
         onClose={() => setShowAddDialog(false)}
