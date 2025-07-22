@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -271,7 +270,7 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
               disabled={!isDimensionsComplete}
             >
               {selectedFinish === 'SS' && <Check className="w-3 h-3" />}
-              <span className="font-medium">Stainless Steel</span>
+              <span className="font-medium">SS304</span>
             </Button>
           </div>
         </CardContent>
@@ -301,7 +300,7 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
                 <span className="text-muted-foreground">Finish:</span>
                 <span className="font-medium">
                   {selectedFinish === 'PC' ? 'Powder Coat' : 
-                   selectedFinish === 'SS' ? 'Stainless Steel' : 'Not selected'}
+                   selectedFinish === 'SS' ? 'SS304' : 'Not selected'}
                 </span>
               </div>
               <div className="flex justify-between col-span-2">

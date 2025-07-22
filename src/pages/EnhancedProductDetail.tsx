@@ -81,10 +81,15 @@ const EnhancedProductDetail = () => {
   const handleAddToQuote = () => {
     if (!series) return;
     
+    // Use SS304 for Open Rack series, Stainless Steel for others
+    const finishText = isOpenRackSeries ? 
+      (selectedFinish === 'PC' ? 'Powder Coat' : 'SS304') :
+      (selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel');
+    
     const itemToAdd = {
       id: currentVariant ? currentVariant.id : series.id,
       name: currentVariant ? 
-        `${series.name} - ${currentVariant.dimensions || 'Standard'} - ${selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}` : 
+        `${series.name} - ${currentVariant.dimensions || 'Standard'} - ${finishText}` : 
         series.name,
       category: series.category,
       dimensions: currentVariant ? currentVariant.dimensions : series.dimensions || '',
@@ -303,7 +308,10 @@ const EnhancedProductDetail = () => {
                     <ul className="text-muted-foreground space-y-2 text-sm">
                       <li className="flex items-start gap-2">
                         <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Finish Options: Powder Coat (PC) or Stainless Steel (SS)
+                        {isOpenRackSeries ? 
+                          'Finish Options: Powder Coat (PC) or SS304' :
+                          'Finish Options: Powder Coat (PC) or Stainless Steel (SS)'
+                        }
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
@@ -320,7 +328,8 @@ const EnhancedProductDetail = () => {
                     </ul>
                   </div>
 
-                  {currentVariant && (
+                  {/* Only show Current Selection for non-Open Rack series */}
+                  {currentVariant && !isOpenRackSeries && (
                     <div className="bg-muted/30 p-4 rounded-lg border">
                       <h4 className="font-semibold text-foreground mb-3 text-base">Current Selection</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
