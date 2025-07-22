@@ -27,7 +27,8 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       modelPath: product.series_model_path || product.model_path || '',
       thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
       overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
-      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || '',
+      // Prioritize series_overview_image_path for series display
+      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || product.series_thumbnail_path || '',
       images: product.additional_images || [],
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
@@ -100,7 +101,8 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       modelPath: product.series_model_path || product.model_path || '',
       thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
       overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
-      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || '',
+      // Prioritize series_overview_image_path for series display
+      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || product.series_thumbnail_path || '',
       images: product.additional_images || [],
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
@@ -191,7 +193,8 @@ export const fetchProductWithVariants = async (productId: string) => {
       modelPath: product.series_model_path || product.model_path || '',
       thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
       overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
-      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || '',
+      // Prioritize series_overview_image_path for series display
+      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || product.series_thumbnail_path || '',
       images: product.additional_images || [],
       description: product.description || '',
       fullDescription: product.full_description || product.description || '',
