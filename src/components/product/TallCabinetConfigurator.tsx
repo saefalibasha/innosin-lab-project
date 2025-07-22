@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Ruler, DoorOpen, Palette } from 'lucide-react';
+import { Check, Ruler, DoorOpen, Palette, Settings } from 'lucide-react';
 
 interface TallCabinetConfiguratorProps {
   variants: any[];
@@ -33,9 +33,11 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Processing dimensions:', dimensionPairs);
 
     dimensionPairs.forEach(dim => {
-      // Parse dimensions like "750×400×1800" to extract depth and height
-      const parts = dim.split('×').map(p => p.trim());
-      console.log('Dimension parts:', parts);
+      // Handle both separators and remove "mm" suffix
+      const cleanDim = dim.replace(/mm/g, '');
+      const parts = cleanDim.split(/[×x]/).map(p => p.trim());
+      console.log('Dimension parts after cleaning:', parts);
+      
       if (parts.length >= 3) {
         const depth = parts[1]; // Second value is depth
         const height = parts[2]; // Third value is height
@@ -67,8 +69,13 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Finding variant for:', { depth, height, doorType, finish });
     
     const matchingVariant = variants.find(v => {
-      const dimParts = v.dimensions?.split('×').map(p => p.trim());
-      if (!dimParts || dimParts.length < 3) return false;
+      if (!v.dimensions) return false;
+      
+      // Handle both separators and remove "mm" suffix
+      const cleanDim = v.dimensions.replace(/mm/g, '');
+      const dimParts = cleanDim.split(/[×x]/).map(p => p.trim());
+      
+      if (dimParts.length < 3) return false;
       
       const matches = dimParts[1] === depth && 
              dimParts[2] === height && 
@@ -143,7 +150,10 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Current variant:', currentVariant);
     
     if (currentVariant && currentVariant.dimensions) {
-      const dimParts = currentVariant.dimensions.split('×').map(p => p.trim());
+      // Handle both separators and remove "mm" suffix
+      const cleanDim = currentVariant.dimensions.replace(/mm/g, '');
+      const dimParts = cleanDim.split(/[×x]/).map(p => p.trim());
+      
       if (dimParts.length >= 3) {
         setSelectedDepth(dimParts[1]);
         setSelectedHeight(dimParts[2]);
@@ -153,9 +163,54 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
   }, [selectedVariantId, variants]);
 
   const isDimensionsComplete = selectedDepth && selectedHeight;
+  const isConfigurationComplete = selectedDepth && selectedHeight && selectedDoorType && selectedFinish;
 
   return (
     <div className="space-y-3">
+      {/* Configuration Summary */}
+      {(selectedDepth || selectedHeight || selectedDoorType || selectedFinish) && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm text-primary">
+              <Settings className="w-4 h-4" />
+              Configuration Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Dimensions:</span>
+                <span className="font-medium">
+                  {selectedDepth && selectedHeight 
+                    ? `750×${selectedDepth}×${selectedHeight}mm`
+                    : 'Incomplete'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Door Type:</span>
+                <span className="font-medium">
+                  {selectedDoorType ? `${selectedDoorType} Door` : 'Not selected'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Finish:</span>
+                <span className="font-medium">
+                  {selectedFinish === 'PC' ? 'Powder Coat' : 
+                   selectedFinish === 'SS' ? 'Stainless Steel' : 'Not selected'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                <span className={`font-medium ${isConfigurationComplete ? 'text-green-600' : 'text-orange-600'}`}>
+                  {isConfigurationComplete ? 'Complete' : 'In Progress'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Step 1: Dimensions */}
       <Card>
         <CardHeader className="pb-2">
@@ -174,11 +229,15 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
                   <SelectValue placeholder="Choose depth" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
-                  {depths.map((depth) => (
-                    <SelectItem key={depth} value={depth}>
-                      {depth}mm
-                    </SelectItem>
-                  ))}
+                  {depths.length === 0 ? (
+                    <SelectItem value="" disabled>No depths available</SelectItem>
+                  ) : (
+                    depths.map((depth) => (
+                      <SelectItem key={depth} value={depth}>
+                        {depth}mm
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -191,11 +250,15 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
                   <SelectValue placeholder="Choose height" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
-                  {heights.map((height) => (
-                    <SelectItem key={height} value={height}>
-                      {height}mm
-                    </SelectItem>
-                  ))}
+                  {heights.length === 0 ? (
+                    <SelectItem value="" disabled>No heights available</SelectItem>
+                  ) : (
+                    heights.map((height) => (
+                      <SelectItem key={height} value={height}>
+                        {height}mm
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -214,19 +277,23 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
-            {doorTypes.map((doorType) => (
-              <Button
-                key={doorType}
-                variant={selectedDoorType === doorType ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleDoorTypeSelect(doorType)}
-                className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
-                disabled={!isDimensionsComplete}
-              >
-                {selectedDoorType === doorType && <Check className="w-3 h-3" />}
-                <span className="font-medium">{doorType} Door</span>
-              </Button>
-            ))}
+            {doorTypes.length === 0 ? (
+              <p className="text-xs text-muted-foreground col-span-2">No door types available</p>
+            ) : (
+              doorTypes.map((doorType) => (
+                <Button
+                  key={doorType}
+                  variant={selectedDoorType === doorType ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleDoorTypeSelect(doorType)}
+                  className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
+                  disabled={!isDimensionsComplete}
+                >
+                  {selectedDoorType === doorType && <Check className="w-3 h-3" />}
+                  <span className="font-medium">{doorType} Door</span>
+                </Button>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
