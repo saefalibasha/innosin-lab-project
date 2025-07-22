@@ -1,84 +1,113 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { ArrowLeft, Download, ShoppingCart, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ShoppingCart, Package, Camera, Box } from 'lucide-react';
+import ProductImageGallery from '@/components/ProductImageGallery';
+import ModelViewer from '@/components/ModelViewer';
+import AnimatedSection from '@/components/AnimatedSection';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
-import Enhanced3DViewer from '@/components/Enhanced3DViewer';
-import ProductImageGallery from '@/components/ProductImageGallery';
-import AnimatedSection from '@/components/AnimatedSection';
-import VariantSelector from '@/components/product/VariantSelector';
-import { fetchProductWithVariants } from '@/services/productService';
+import { Product } from '@/types/product';
+import { fetchProductsFromDatabase } from '@/services/productService';
 import { productPageContent } from '@/data/productPageContent';
+import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
 
 const ProductDetail = () => {
-  const { productId } = useParams<{ productId: string }>();
+  usePerformanceLogger('ProductDetail');
+  const { id } = useParams<{ id: string }>();
   const { addItem } = useRFQ();
-  const [activeTab, setActiveTab] = useState('photos');
-  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
-  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [product, setProduct] = useState<any>(null);
-  const [variants, setVariants] = useState<any[]>([]);
+  const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    const loadProductData = async () => {
-      if (!productId) return;
-      
-      setLoading(true);
-      console.log('🔍 Loading product data for ID:', productId);
-      
-      const data = await fetchProductWithVariants(productId);
-      if (data) {
-        console.log('🔍 Loaded product:', data.product);
-        console.log('🔍 Loaded variants:', data.variants);
-        setProduct(data.product);
-        setVariants(data.variants);
-        
-        // Set initial variant selection
-        if (data.variants.length > 0) {
-          setSelectedVariantId(data.variants[0].id);
-        }
-      } else {
-        console.error('❌ Failed to load product data');
+    const fetchProduct = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        console.time('ProductDetail data fetch');
+        const products = await fetchProductsFromDatabase();
+        console.timeEnd('ProductDetail data fetch');
+        
+        const foundProduct = products.find(p => p.id === id);
+        setProduct(foundProduct || null);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        toast.error('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    loadProductData();
-  }, [productId]);
+    fetchProduct();
+  }, [id]);
 
-  const selectedVariant = variants.find(v => v.id === selectedVariantId);
-  const isInnosinProduct = product?.category === 'Innosin Lab';
-
-  // Get current display assets
-  const getCurrentAssets = () => {
-    if (selectedVariant) {
-      return {
-        modelPath: selectedVariant.model_path,
-        images: selectedVariant.additional_images,
-        thumbnail: selectedVariant.thumbnail_path
-      };
-    }
+  const handleAddToQuote = () => {
+    if (!product) return;
     
-    return {
-      modelPath: product?.modelPath || '',
-      images: product?.images || [],
-      thumbnail: product?.thumbnail || ''
-    };
+    addItem({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      dimensions: product.dimensions,
+      image: product.thumbnail
+    });
+    toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
   };
 
-  const { modelPath, images, thumbnail } = getCurrentAssets();
+  const getProductImages = (product: Product): string[] => {
+    const validImages: string[] = [];
+    
+    // Priority: seriesOverviewImage > overviewImage > thumbnail > images
+    if (product.seriesOverviewImage && !product.seriesOverviewImage.includes('placeholder')) {
+      validImages.push(product.seriesOverviewImage);
+    } else if (product.overviewImage && !product.overviewImage.includes('placeholder')) {
+      validImages.push(product.overviewImage);
+    } else if (product.thumbnail && !product.thumbnail.includes('placeholder')) {
+      validImages.push(product.thumbnail);
+    }
+    
+    // Add additional images if available and not placeholders
+    if (product.images && product.images.length > 0) {
+      const additionalImages = product.images.filter(img => 
+        img && 
+        !img.includes('placeholder') && 
+        !validImages.includes(img)
+      );
+      validImages.push(...additionalImages);
+    }
+    
+    return validImages.length > 0 ? validImages : ['/placeholder.svg'];
+  };
+
+  const getThumbnail = (product: Product): string => {
+    // Return the best available image, avoiding placeholders
+    return product.seriesOverviewImage || 
+           product.overviewImage || 
+           product.thumbnail || 
+           (product.images && product.images.length > 0 ? product.images[0] : '') ||
+           '/placeholder.svg';
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+      <div className="min-h-screen bg-background">
+        <div className="pt-20">
+          <div className="container-custom py-12">
+            <div className="flex items-center justify-center p-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading product details...</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -86,160 +115,232 @@ const ProductDetail = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">{productPageContent.productDetail.productNotFoundTitle}</h1>
-          <Link to="/products">
-            <Button>{productPageContent.productDetail.backToCatalogButton}</Button>
-          </Link>
+      <div className="min-h-screen bg-background">
+        <div className="pt-20">
+          <div className="container-custom py-12">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+              <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
+              <Link to="/products">
+                <Button variant="outline">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Products
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleAddToQuote = () => {
-    const itemToAdd = {
-      id: selectedVariant ? selectedVariant.id : product.id,
-      name: isInnosinProduct && selectedVariant ? 
-        `${product.name} - ${selectedVariant.dimensions}` : 
-        product.name,
-      category: product.category,
-      dimensions: selectedVariant ? selectedVariant.dimensions : product.dimensions,
-      image: selectedVariant ? selectedVariant.thumbnail_path : product.thumbnail
-    };
-    
-    addItem(itemToAdd);
-    toast.success(`${itemToAdd.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
-  };
+  const images = getProductImages(product);
+  const thumbnail = getThumbnail(product);
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container-custom py-12 pt-20">
-        {/* Breadcrumb */}
-        <AnimatedSection animation="fade-in" delay={100}>
-          <div className="flex items-center gap-2 mb-8">
-            <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              {productPageContent.productDetail.backToCatalog}
-            </Link>
-          </div>
-        </AnimatedSection>
+      <div className="pt-20">
+        <div className="container-custom py-8">
+          {/* Breadcrumb */}
+          <AnimatedSection animation="fade-in" delay={100}>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+              <Link to="/products" className="hover:text-foreground transition-colors">
+                Products
+              </Link>
+              <span>/</span>
+              <span className="text-foreground">{product.name}</span>
+            </div>
+          </AnimatedSection>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column - Photos/3D Model Toggle */}
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* Product Images */}
             <AnimatedSection animation="slide-in-left" delay={200}>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="photos" className="flex items-center gap-2">
-                    <Camera className="w-4 h-4" />
-                    {productPageContent.productDetail.photosTab}
-                  </TabsTrigger>
-                  <TabsTrigger value="3d" className="flex items-center gap-2">
-                    <Box className="w-4 h-4" />
-                    {productPageContent.productDetail.modelTab}
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="photos">
-                  <ProductImageGallery
-                    images={images}
-                    thumbnail={thumbnail}
-                    productName={product.name}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
-                </TabsContent>
-
-                <TabsContent value="3d">
-                  <Enhanced3DViewer
-                    modelPath={modelPath}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
-                </TabsContent>
-              </Tabs>
-            </AnimatedSection>
-          </div>
-
-          {/* Right Column - Product Info */}
-          <div className="space-y-6">
-            <AnimatedSection animation="slide-in-right" delay={300}>
-              <div>
-                <Badge 
-                  variant="outline" 
-                  className="mb-4 border-sea text-sea"
-                  logo={product.category === 'Innosin Lab' ? '/brand-logos/innosin-lab-logo.png' : undefined}
-                  logoAlt="Innosin Lab"
-                >
-                  {product.category}
-                </Badge>
-                <h1 className="text-4xl font-serif font-bold text-primary mb-4">
-                  {product.name}
-                </h1>
-                <div className="flex items-center gap-2 text-muted-foreground mb-6">
-                  <span>{productPageContent.productDetail.dimensionsLabel} {selectedVariant ? selectedVariant.dimensions : product.dimensions}</span>
-                </div>
+              <div className="space-y-6">
+                <ProductImageGallery
+                  images={images}
+                  thumbnail={thumbnail}
+                  productName={product.name}
+                  className="w-full h-96 lg:h-[500px]"
+                />
               </div>
             </AnimatedSection>
 
-            {/* Variant Selector */}
-            {isInnosinProduct && variants.length > 0 && (
-              <AnimatedSection animation="slide-in-right" delay={350}>
-                <VariantSelector
-                  variants={variants}
-                  selectedVariantId={selectedVariantId}
-                  onVariantChange={setSelectedVariantId}
-                  selectedFinish={selectedFinish}
-                  onFinishChange={setSelectedFinish}
-                />
-              </AnimatedSection>
-            )}
+            {/* Product Details */}
+            <AnimatedSection animation="slide-in-right" delay={300}>
+              <div className="space-y-6">
+                {/* Header */}
+                <div>
+                  <Badge variant="outline" className="mb-3 border-sea text-sea">
+                    {product.category}
+                  </Badge>
+                  <h1 className="text-3xl font-serif font-bold text-primary mb-2">
+                    {product.name}
+                  </h1>
+                  {product.dimensions && (
+                    <p className="text-lg text-muted-foreground">
+                      {productPageContent.productDetail.dimensions}: {product.dimensions}
+                    </p>
+                  )}
+                </div>
 
-            <AnimatedSection animation="slide-in-right" delay={400}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="w-5 h-5" />
-                    {productPageContent.productDetail.overviewTitle}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                {/* Description */}
+                <div>
                   <p className="text-muted-foreground leading-relaxed">
-                    {product.fullDescription}
+                    {product.fullDescription || product.description}
                   </p>
-                </CardContent>
-              </Card>
-            </AnimatedSection>
+                </div>
 
-            {!isInnosinProduct && product.specifications?.length > 0 && (
-              <AnimatedSection animation="slide-in-right" delay={500}>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{productPageContent.productDetail.specificationsTitle}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                {/* Specifications */}
+                {product.specifications && product.specifications.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3">{productPageContent.productDetail.keyFeatures}</h3>
                     <div className="flex flex-wrap gap-2">
-                      {product.specifications.map((spec: string, index: number) => (
+                      {product.specifications.map((spec, index) => (
                         <Badge key={index} variant="secondary">
                           {spec}
                         </Badge>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </AnimatedSection>
-            )}
+                  </div>
+                )}
 
-            <AnimatedSection animation="slide-in-right" delay={600}>
-              <Button
-                onClick={handleAddToQuote}
-                size="lg"
-                className="w-full bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-105"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                {productPageContent.productDetail.addToQuoteButton}
-              </Button>
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                  <Button 
+                    onClick={handleAddToQuote}
+                    className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
+                  >
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    {productPageContent.productDetail.addToQuote}
+                  </Button>
+                  {product.modelPath && !product.modelPath.includes('placeholder') && (
+                    <Button variant="outline" className="flex-1">
+                      <Eye className="w-4 h-4 mr-2" />
+                      View 3D Model
+                    </Button>
+                  )}
+                </div>
+              </div>
             </AnimatedSection>
           </div>
+
+          {/* Detailed Information Tabs */}
+          <AnimatedSection animation="fade-in" delay={400}>
+            <div className="mt-16">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+                  <TabsTrigger value="overview">{productPageContent.productDetail.tabs.overview}</TabsTrigger>
+                  <TabsTrigger value="specifications">{productPageContent.productDetail.tabs.specifications}</TabsTrigger>
+                  <TabsTrigger value="3d-model">{productPageContent.productDetail.tabs.model3D}</TabsTrigger>
+                  <TabsTrigger value="downloads">{productPageContent.productDetail.tabs.downloads}</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="overview" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{productPageContent.productDetail.productOverview}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground leading-relaxed">
+                        {product.fullDescription || product.description}
+                      </p>
+                      {product.specifications && product.specifications.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="font-semibold mb-3">{productPageContent.productDetail.keyFeatures}:</h4>
+                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                            {product.specifications.map((spec, index) => (
+                              <li key={index}>{spec}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="specifications" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{productPageContent.productDetail.technicalSpecs}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {product.dimensions && (
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="font-medium">{productPageContent.productDetail.dimensions}</span>
+                            <span className="text-muted-foreground">{product.dimensions}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="font-medium">{productPageContent.productDetail.category}</span>
+                          <span className="text-muted-foreground">{product.category}</span>
+                        </div>
+                        {product.specifications && product.specifications.map((spec, index) => (
+                          <div key={index} className="flex justify-between py-2 border-b">
+                            <span className="font-medium">Feature {index + 1}</span>
+                            <span className="text-muted-foreground">{spec}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="3d-model" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{productPageContent.productDetail.interactiveModel}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {product.modelPath && !product.modelPath.includes('placeholder') ? (
+                        <div className="h-96 bg-muted rounded-lg">
+                          <ModelViewer modelPath={product.modelPath} />
+                        </div>
+                      ) : (
+                        <div className="h-96 bg-muted rounded-lg flex items-center justify-center">
+                          <p className="text-muted-foreground">3D model not available for this product</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                <TabsContent value="downloads" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{productPageContent.productDetail.downloadResources}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                          <div>
+                            <h4 className="font-medium">Product Specification Sheet</h4>
+                            <p className="text-sm text-muted-foreground">Detailed technical specifications</p>
+                          </div>
+                          <Button variant="outline" size="sm">
+                            <Download className="w-4 h-4 mr-2" />
+                            Download PDF
+                          </Button>
+                        </div>
+                        {product.modelPath && !product.modelPath.includes('placeholder') && (
+                          <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <div>
+                              <h4 className="font-medium">3D Model File</h4>
+                              <p className="text-sm text-muted-foreground">GLB format for 3D visualization</p>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <Download className="w-4 h-4 mr-2" />
+                              Download 3D Model
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </AnimatedSection>
         </div>
       </div>
     </div>
