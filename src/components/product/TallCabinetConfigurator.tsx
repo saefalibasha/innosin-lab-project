@@ -33,9 +33,9 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Processing dimensions:', dimensionPairs);
 
     dimensionPairs.forEach(dim => {
-      // Handle both separators and remove "mm" suffix
+      // Remove "mm" suffix first, then split by "x"
       const cleanDim = dim.replace(/mm/g, '');
-      const parts = cleanDim.split(/[×x]/).map(p => p.trim());
+      const parts = cleanDim.split('x').map(p => p.trim());
       console.log('Dimension parts after cleaning:', parts);
       
       if (parts.length >= 3) {
@@ -71,9 +71,9 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     const matchingVariant = variants.find(v => {
       if (!v.dimensions) return false;
       
-      // Handle both separators and remove "mm" suffix
+      // Remove "mm" suffix first, then split by "x"
       const cleanDim = v.dimensions.replace(/mm/g, '');
-      const dimParts = cleanDim.split(/[×x]/).map(p => p.trim());
+      const dimParts = cleanDim.split('x').map(p => p.trim());
       
       if (dimParts.length < 3) return false;
       
@@ -150,9 +150,9 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Current variant:', currentVariant);
     
     if (currentVariant && currentVariant.dimensions) {
-      // Handle both separators and remove "mm" suffix
+      // Remove "mm" suffix first, then split by "x"
       const cleanDim = currentVariant.dimensions.replace(/mm/g, '');
-      const dimParts = cleanDim.split(/[×x]/).map(p => p.trim());
+      const dimParts = cleanDim.split('x').map(p => p.trim());
       
       if (dimParts.length >= 3) {
         setSelectedDepth(dimParts[1]);
@@ -167,50 +167,6 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
   return (
     <div className="space-y-3">
-      {/* Configuration Summary */}
-      {(selectedDepth || selectedHeight || selectedDoorType || selectedFinish) && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm text-primary">
-              <Settings className="w-4 h-4" />
-              Configuration Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Dimensions:</span>
-                <span className="font-medium">
-                  {selectedDepth && selectedHeight 
-                    ? `750×${selectedDepth}×${selectedHeight}mm`
-                    : 'Incomplete'
-                  }
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Door Type:</span>
-                <span className="font-medium">
-                  {selectedDoorType ? `${selectedDoorType} Door` : 'Not selected'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Finish:</span>
-                <span className="font-medium">
-                  {selectedFinish === 'PC' ? 'Powder Coat' : 
-                   selectedFinish === 'SS' ? 'Stainless Steel' : 'Not selected'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Status:</span>
-                <span className={`font-medium ${isConfigurationComplete ? 'text-green-600' : 'text-orange-600'}`}>
-                  {isConfigurationComplete ? 'Complete' : 'In Progress'}
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Step 1: Dimensions */}
       <Card>
         <CardHeader className="pb-2">
@@ -331,6 +287,50 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Configuration Summary - After Finish Selection */}
+      {(selectedDepth || selectedHeight || selectedDoorType || selectedFinish) && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm text-primary">
+              <Settings className="w-4 h-4" />
+              Configuration Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Dimensions:</span>
+                <span className="font-medium">
+                  {selectedDepth && selectedHeight 
+                    ? `750×${selectedDepth}×${selectedHeight}mm`
+                    : 'Incomplete'
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Door Type:</span>
+                <span className="font-medium">
+                  {selectedDoorType ? `${selectedDoorType} Door` : 'Not selected'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Finish:</span>
+                <span className="font-medium">
+                  {selectedFinish === 'PC' ? 'Powder Coat' : 
+                   selectedFinish === 'SS' ? 'Stainless Steel' : 'Not selected'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                <span className={`font-medium ${isConfigurationComplete ? 'text-green-600' : 'text-orange-600'}`}>
+                  {isConfigurationComplete ? 'Complete' : 'In Progress'}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
