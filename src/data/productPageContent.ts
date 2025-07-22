@@ -35,8 +35,22 @@ export const productPageContent = {
     overviewTitle: "Product Overview",
     specificationsTitle: "Key Features & Specifications",
     dimensionsLabel: "Dimensions:",
+    dimensions: "Dimensions",
+    category: "Category",
+    keyFeatures: "Key Features",
+    addToQuote: "Add to Quote",
     addToQuoteButton: "Add to Quote Request",
     addToQuoteSuccess: "added to quote request",
+    productOverview: "Product Overview",
+    technicalSpecs: "Technical Specifications",
+    interactiveModel: "Interactive 3D Model",
+    downloadResources: "Download Resources",
+    tabs: {
+      overview: "Overview",
+      specifications: "Specifications",
+      model3D: "3D Model",
+      downloads: "Downloads"
+    },
     // Product detail images
     placeholderImage: "/page-images/products/product-placeholder.jpg", // Default product image
     placeholderImageAlt: "Product image placeholder"
