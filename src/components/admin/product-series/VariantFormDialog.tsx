@@ -99,7 +99,15 @@ export const VariantFormDialog = ({
   });
 
   const { toast } = useToast();
-  const { previousData, savePreviousData, clearPreviousData, hasPreviousData } = useFormPersistence();
+  const { 
+    previousEntries, 
+    saveEntry, 
+    clearEntries, 
+    hasPreviousEntries 
+  } = useFormPersistence({ 
+    storageKey: 'variant_form_entries',
+    maxEntries: 5 
+  });
 
   useEffect(() => {
     if (variant) {
@@ -160,14 +168,22 @@ export const VariantFormDialog = ({
   }, [variant, open]);
 
   const loadPreviousData = () => {
-    if (previousData && !variant) {
+    if (previousEntries.length > 0 && !variant) {
+      const mostRecentEntry = previousEntries[0]; // Most recent is already first
       setFormData(prev => ({
         ...prev,
-        ...previousData
+        // Only load common fields, not name/product_code which should be unique
+        dimensions: mostRecentEntry.data.dimensions || '',
+        orientation: mostRecentEntry.data.orientation || '',
+        door_type: mostRecentEntry.data.door_type || '',
+        drawer_count: mostRecentEntry.data.drawer_count || '',
+        finish_type: mostRecentEntry.data.finish_type || 'PC',
+        is_active: mostRecentEntry.data.is_active !== undefined ? mostRecentEntry.data.is_active : true,
+        description: mostRecentEntry.data.description || ''
       }));
       toast({
         title: "Previous data loaded",
-        description: "Form filled with your last entry data",
+        description: "Form filled with your most recent entry data",
       });
     }
   };
@@ -222,7 +238,15 @@ export const VariantFormDialog = ({
         variantId = variant.id;
       } else {
         // Create new variant - save data for next time
-        savePreviousData(formData);
+        saveEntry({
+          dimensions: formData.dimensions,
+          orientation: formData.orientation,
+          door_type: formData.door_type,
+          drawer_count: formData.drawer_count,
+          finish_type: formData.finish_type,
+          is_active: formData.is_active,
+          description: formData.description
+        });
         
         const { data: newVariant, error } = await supabase
           .from('products')
@@ -391,7 +415,7 @@ export const VariantFormDialog = ({
             <span>
               {variant ? 'Edit Variant' : 'Add New Variant'} - {series.product_series}
             </span>
-            {!variant && hasPreviousData && (
+            {!variant && hasPreviousEntries && (
               <div className="flex gap-2">
                 <Button
                   variant="outline"
@@ -405,7 +429,7 @@ export const VariantFormDialog = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearPreviousData}
+                  onClick={clearEntries}
                   className="flex items-center gap-2"
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -417,7 +441,7 @@ export const VariantFormDialog = ({
         </DialogHeader>
         
         <div className="space-y-6">
-          {!variant && hasPreviousData && (
+          {!variant && hasPreviousEntries && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-700">
                 💡 Previous entry data available. Click "Use Previous Data" to quickly fill common fields.
