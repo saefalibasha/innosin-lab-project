@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +12,7 @@ import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import VariantSelector from '@/components/product/VariantSelector';
 import { fetchSeriesWithVariants, getVariantAssetUrls } from '@/services/variantService';
+import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurator';
 
 const EnhancedProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -53,6 +53,7 @@ const EnhancedProductDetail = () => {
 
   const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
   const isInnosinProduct = series?.category === 'Innosin Lab';
+  const isTallCabinetSeries = series?.product_series?.toLowerCase().includes('tall cabinet');
 
   // Update assets when variant or finish changes
   useEffect(() => {
@@ -200,7 +201,7 @@ const EnhancedProductDetail = () => {
               </div>
             </AnimatedSection>
 
-            {/* Product Overview - Moved above configuration */}
+            {/* Product Overview */}
             <AnimatedSection animation="slide-in-right" delay={350}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -217,7 +218,7 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {/* Product Configuration - Moved below overview */}
+            {/* Product Configuration */}
             {isInnosinProduct && series.variants && series.variants.length > 0 && (
               <AnimatedSection animation="slide-in-right" delay={400}>
                 <Card className="shadow-sm">
@@ -228,14 +229,24 @@ const EnhancedProductDetail = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <VariantSelector
-                      variants={series.variants}
-                      selectedVariantId={selectedVariantId}
-                      onVariantChange={setSelectedVariantId}
-                      selectedFinish={selectedFinish}
-                      onFinishChange={setSelectedFinish}
-                      groupByDimensions={true}
-                    />
+                    {isTallCabinetSeries ? (
+                      <TallCabinetConfigurator
+                        variants={series.variants}
+                        selectedVariantId={selectedVariantId}
+                        onVariantChange={setSelectedVariantId}
+                        selectedFinish={selectedFinish}
+                        onFinishChange={setSelectedFinish}
+                      />
+                    ) : (
+                      <VariantSelector
+                        variants={series.variants}
+                        selectedVariantId={selectedVariantId}
+                        onVariantChange={setSelectedVariantId}
+                        selectedFinish={selectedFinish}
+                        onFinishChange={setSelectedFinish}
+                        groupByDimensions={true}
+                      />
+                    )}
                   </CardContent>
                 </Card>
               </AnimatedSection>
@@ -315,6 +326,12 @@ const EnhancedProductDetail = () => {
                           <span className="font-medium text-foreground">Finish:</span>
                           <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
                         </div>
+                        {currentVariant.door_type && (
+                          <div>
+                            <span className="font-medium text-foreground">Door Type:</span>
+                            <p className="text-muted-foreground">{currentVariant.door_type}</p>
+                          </div>
+                        )}
                         {currentVariant.orientation && currentVariant.orientation !== 'None' && (
                           <div>
                             <span className="font-medium text-foreground">Orientation:</span>

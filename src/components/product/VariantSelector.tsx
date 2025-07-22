@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import DoorTypeSelector from './DoorTypeSelector';
 
 interface Variant {
   id: string;
@@ -35,18 +36,28 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   groupByDimensions = false
 }) => {
   console.log('🔍 VariantSelector rendering with variants:', variants);
-  console.log('🔍 Selected variant ID:', selectedVariantId);
-  console.log('🔍 Selected finish:', selectedFinish);
 
   if (!variants || variants.length === 0) {
     return null;
   }
 
-  // Helper function to extract length from dimensions string (e.g., "1200×550×880 mm" -> 1200)
+  // Helper function to extract length from dimensions string
   const extractLength = (dimensions: string): number => {
     const match = dimensions.match(/^(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   };
+
+  // Get unique door types from all variants
+  const doorTypes = [...new Set(variants.map(v => v.door_type).filter(Boolean))].sort();
+
+  // Get unique orientations from all variants (excluding 'None')
+  const orientations = [...new Set(variants.map(v => v.orientation).filter(o => o && o !== 'None'))].sort();
+
+  // Get unique drawer counts from all variants
+  const drawerCounts = [...new Set(variants.map(v => v.drawer_count).filter(Boolean))].sort((a, b) => a - b);
+
+  // Get unique variant types
+  const variantTypes = [...new Set(variants.map(v => v.variant_type).filter(Boolean))];
 
   // Group variants by dimensions if requested
   const groupedVariants = groupByDimensions ? 
@@ -64,21 +75,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     return extractLength(a) - extractLength(b);
   });
 
-  // Get unique orientations from all variants (excluding 'None')
-  const orientations = [...new Set(variants.map(v => v.orientation).filter(o => o && o !== 'None'))].sort();
-
-  // Get unique drawer counts from all variants
-  const drawerCounts = [...new Set(variants.map(v => v.drawer_count).filter(Boolean))].sort((a, b) => a - b);
-
-  // Get unique variant types
-  const variantTypes = [...new Set(variants.map(v => v.variant_type).filter(Boolean))];
-
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
-
-  console.log('🔍 Dimension groups:', dimensionGroups);
-  console.log('🔍 Available orientations:', orientations);
-  console.log('🔍 Available drawer counts:', drawerCounts);
-  console.log('🔍 Selected variant:', selectedVariant);
 
   const formatOrientation = (orientation: string) => {
     switch (orientation) {
@@ -106,7 +103,8 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
       (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
       (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
       (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) &&
-      (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type)
+      (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
+      (!targetCriteria.door_type || v.door_type === targetCriteria.door_type)
     );
 
     // If no exact match, try to preserve as many current attributes as possible
@@ -114,17 +112,8 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
       bestMatch = variants.find(v => 
         (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
         (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
-        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type)
-      );
-    }
-
-    // Fallback to first variant matching the target criteria
-    if (!bestMatch) {
-      bestMatch = variants.find(v => 
-        (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) ||
-        (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) ||
-        (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) ||
-        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type)
+        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
+        (!targetCriteria.door_type || v.door_type === targetCriteria.door_type)
       );
     }
 
@@ -134,11 +123,11 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   return (
     <Card>
       <CardContent className="space-y-6 p-6">
-        {/* Dimension Selection - Use Dropdown when multiple dimensions */}
+        {/* Dimension Selection */}
         {groupByDimensions && dimensionGroups.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Dimensions</h4>
-            {dimensionGroups.length > 3 ? (
+            {dimensionGroups.length > 4 ? (
               <Select 
                 value={selectedVariant?.dimensions || ''} 
                 onValueChange={(dimensions) => {
@@ -184,6 +173,18 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
             )}
           </div>
         )}
+
+        {/* Door Type Selection */}
+        <DoorTypeSelector
+          doorTypes={doorTypes}
+          selectedDoorType={selectedVariant?.door_type || ''}
+          onDoorTypeChange={(doorType) => {
+            const bestMatch = findBestMatchingVariant({ door_type: doorType });
+            if (bestMatch) {
+              onVariantChange(bestMatch.id);
+            }
+          }}
+        />
 
         {/* Variant Type Selection */}
         {variantTypes.length > 1 && (
@@ -308,6 +309,12 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 <span className="text-sm text-muted-foreground">Dimensions:</span>
                 <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
               </div>
+              {selectedVariant.door_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Door Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.door_type}</span>
+                </div>
+              )}
               {selectedVariant.drawer_count && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Drawers:</span>
