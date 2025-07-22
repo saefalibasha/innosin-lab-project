@@ -12,8 +12,10 @@ import CompanyLandingHeader from '@/components/CompanyLandingHeader';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
 import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
+import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
 
 const ProductCatalog = () => {
+  usePerformanceLogger('ProductCatalog');
   const { addItem, itemCount } = useRFQ();
   const [searchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
@@ -33,15 +35,17 @@ const ProductCatalog = () => {
     }
   }, [searchParams]);
 
-  // Fetch products and categories from database
+  // Fetch products and categories from database with performance logging
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        console.time('ProductCatalog data fetch');
         const [productsData, categoriesData] = await Promise.all([
           fetchProductsFromDatabase(),
           fetchCategoriesFromDatabase()
         ]);
+        console.timeEnd('ProductCatalog data fetch');
         
         setProducts(productsData);
         setCategories(categoriesData);
@@ -80,7 +84,10 @@ const ProductCatalog = () => {
         <div className="pt-20">
           <div className="container-custom py-12">
             <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading products...</p>
+              </div>
             </div>
           </div>
         </div>
