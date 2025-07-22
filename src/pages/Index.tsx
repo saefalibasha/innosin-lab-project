@@ -3,29 +3,14 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { lazy, Suspense } from "react";
 import VideoHero from "@/components/VideoHero";
 import { brandCollections } from "@/data/brandCollections";
 import { homePageContent } from "@/data/homePageContent";
-import { usePerformanceLogger } from "@/hooks/usePerformanceLogger";
-
-// Lazy load heavy components
-const LazyBeforeAfterComparison = lazy(() => import("@/components/BeforeAfterComparison"));
-const LazyShopTheLook = lazy(() => import("@/components/ShopTheLook"));
-const LazyLabTransformCTA = lazy(() => import("@/components/LabTransformCTA"));
+import BeforeAfterComparison from "@/components/BeforeAfterComparison";
+import ShopTheLook from "@/components/ShopTheLook";
+import LabTransformCTA from "@/components/LabTransformCTA";
 
 const Index = () => {
-  usePerformanceLogger('Index');
-
-  const ComponentFallback = ({ height = "h-64" }: { height?: string }) => (
-    <div className={`${height} bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg animate-pulse flex items-center justify-center`}>
-      <div className="text-center">
-        <div className="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-        <p className="text-gray-600 text-sm">Loading content...</p>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-background">
       {/* Video Hero Section */}
@@ -48,7 +33,7 @@ const Index = () => {
               <Link key={index} to={`/products?category=${encodeURIComponent(collection.category)}`}>
                 <Card className={`group hover:shadow-xl transition-all duration-500 border-2 border-transparent hover:border-sea/20 h-full glass-card hover:scale-105 animate-bounce-in`} style={{animationDelay: `${100 + index * 100}ms`}}>
                   <CardContent className="p-6 text-center flex flex-col items-center justify-center h-full">
-                    {/* Brand Logo with optimized loading */}
+                    {/* Brand Logo */}
                     <div className="flex justify-center mb-2 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
                       <img 
                         src={collection.logoPath}
@@ -81,7 +66,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Before/After Comparison Section - Lazy Loaded */}
+      {/* Before/After Comparison Section */}
       <section className="section bg-gradient-to-b from-secondary/30 to-background">
         <div className="container-custom">
           <div className="text-center mb-16">
@@ -93,28 +78,22 @@ const Index = () => {
             </p>
           </div>
           <div className="animate-scale-in animate-delay-300">
-            <Suspense fallback={<ComponentFallback height="h-96" />}>
-              <LazyBeforeAfterComparison />
-            </Suspense>
+            <BeforeAfterComparison />
           </div>
         </div>
       </section>
 
-      {/* Build This Lab Section - Lazy Loaded */}
+      {/* Build This Lab Section */}
       <section className="section bg-background">
         <div className="container-custom">
           <div className="animate-fade-in-right animate-delay-300">
-            <Suspense fallback={<ComponentFallback height="h-80" />}>
-              <LazyShopTheLook />
-            </Suspense>
+            <ShopTheLook />
           </div>
         </div>
       </section>
 
-      {/* Ready to Transform Your Laboratory CTA Section - Lazy Loaded */}
-      <Suspense fallback={<ComponentFallback height="h-48" />}>
-        <LazyLabTransformCTA />
-      </Suspense>
+      {/* Ready to Transform Your Laboratory CTA Section */}
+      <LabTransformCTA />
     </div>
   );
 };

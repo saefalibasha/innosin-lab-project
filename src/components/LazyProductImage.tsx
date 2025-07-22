@@ -1,6 +1,5 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface LazyProductImageProps {
   src: string;
@@ -19,11 +18,11 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
 }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [isInView, setIsInView] = useState(priority); // If priority, start loading immediately
+  const [isInView, setIsInView] = useState(priority);
   const imgRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
-    if (priority) return; // Skip intersection observer for priority images
+    if (priority) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -32,10 +31,7 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
           observer.disconnect();
         }
       },
-      { 
-        threshold: 0.1, 
-        rootMargin: '100px' // Start loading earlier
-      }
+      { threshold: 0.1 }
     );
 
     if (imgRef.current) {
@@ -57,15 +53,11 @@ const LazyProductImage: React.FC<LazyProductImageProps> = ({
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
-      {!isLoaded && !isError && (
-        <Skeleton className="absolute inset-0 bg-muted animate-pulse" />
-      )}
-      
       {(isInView || priority) && (
         <img
           src={isError ? fallback : src}
           alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${
+          className={`w-full h-full object-cover transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={handleLoad}
