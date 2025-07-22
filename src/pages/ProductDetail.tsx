@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ShoppingCart, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,42 +11,18 @@ import AnimatedSection from '@/components/AnimatedSection';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import { Product } from '@/types/product';
-import { fetchProductsFromDatabase } from '@/services/productService';
 import { productPageContent } from '@/data/productPageContent';
 import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
+import { useProductById } from '@/hooks/useEnhancedProducts';
 
 const ProductDetail = () => {
   usePerformanceLogger('ProductDetail');
   const { id } = useParams<{ id: string }>();
   const { addItem } = useRFQ();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        console.time('ProductDetail data fetch');
-        const products = await fetchProductsFromDatabase();
-        console.timeEnd('ProductDetail data fetch');
-        
-        const foundProduct = products.find(p => p.id === id);
-        setProduct(foundProduct || null);
-      } catch (error) {
-        console.error('Error fetching product:', error);
-        toast.error('Failed to load product details');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProduct();
-  }, [id]);
+  // Use the enhanced hook instead of manual fetching
+  const { product, loading, error } = useProductById(id);
 
   const handleAddToQuote = () => {
     if (!product) return;
@@ -106,6 +81,27 @@ const ProductDetail = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading product details...</p>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="pt-20">
+          <div className="container-custom py-12">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-foreground mb-4">Error Loading Product</h1>
+              <p className="text-muted-foreground mb-8">{error}</p>
+              <Link to="/products">
+                <Button variant="outline">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Products
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
