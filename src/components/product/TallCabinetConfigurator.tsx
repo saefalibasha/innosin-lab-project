@@ -30,9 +30,12 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     const depthSet = new Set<string>();
     const heightSet = new Set<string>();
 
+    console.log('Processing dimensions:', dimensionPairs);
+
     dimensionPairs.forEach(dim => {
       // Parse dimensions like "750×400×1800" to extract depth and height
-      const parts = dim.split('×');
+      const parts = dim.split('×').map(p => p.trim());
+      console.log('Dimension parts:', parts);
       if (parts.length >= 3) {
         const depth = parts[1]; // Second value is depth
         const height = parts[2]; // Third value is height
@@ -41,31 +44,50 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
       }
     });
 
+    const sortedDepths = Array.from(depthSet).sort((a, b) => parseInt(a) - parseInt(b));
+    const sortedHeights = Array.from(heightSet).sort((a, b) => parseInt(a) - parseInt(b));
+
+    console.log('Extracted depths:', sortedDepths);
+    console.log('Extracted heights:', sortedHeights);
+
     return {
-      depths: Array.from(depthSet).sort((a, b) => parseInt(a) - parseInt(b)),
-      heights: Array.from(heightSet).sort((a, b) => parseInt(a) - parseInt(b))
+      depths: sortedDepths,
+      heights: sortedHeights
     };
   }, [variants]);
 
   const doorTypes = useMemo(() => {
-    return [...new Set(variants.map(v => v.door_type).filter(Boolean))].sort();
+    const types = [...new Set(variants.map(v => v.door_type).filter(Boolean))].sort();
+    console.log('Door types:', types);
+    return types;
   }, [variants]);
 
   // Find matching variant based on current selections
   const findMatchingVariant = (depth: string, height: string, doorType: string, finish: string) => {
-    return variants.find(v => {
-      const dimParts = v.dimensions?.split('×');
+    console.log('Finding variant for:', { depth, height, doorType, finish });
+    
+    const matchingVariant = variants.find(v => {
+      const dimParts = v.dimensions?.split('×').map(p => p.trim());
       if (!dimParts || dimParts.length < 3) return false;
       
-      return dimParts[1] === depth && 
+      const matches = dimParts[1] === depth && 
              dimParts[2] === height && 
              v.door_type === doorType && 
              v.finish_type === finish;
+             
+      if (matches) {
+        console.log('Found matching variant:', v);
+      }
+      
+      return matches;
     });
+    
+    return matchingVariant;
   };
 
   // Handle depth selection
   const handleDepthSelect = (depth: string) => {
+    console.log('Selected depth:', depth);
     setSelectedDepth(depth);
     
     if (selectedHeight && selectedDoorType) {
@@ -78,6 +100,7 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
   // Handle height selection
   const handleHeightSelect = (height: string) => {
+    console.log('Selected height:', height);
     setSelectedHeight(height);
     
     if (selectedDepth && selectedDoorType) {
@@ -90,6 +113,7 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
   // Handle door type selection
   const handleDoorTypeSelect = (doorType: string) => {
+    console.log('Selected door type:', doorType);
     setSelectedDoorType(doorType);
     
     if (selectedDepth && selectedHeight) {
@@ -102,6 +126,7 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
   // Handle finish selection
   const handleFinishSelect = (finish: string) => {
+    console.log('Selected finish:', finish);
     onFinishChange(finish);
     
     if (selectedDepth && selectedHeight && selectedDoorType) {
@@ -115,8 +140,10 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
   // Initialize selections based on current variant
   React.useEffect(() => {
     const currentVariant = variants.find(v => v.id === selectedVariantId);
+    console.log('Current variant:', currentVariant);
+    
     if (currentVariant && currentVariant.dimensions) {
-      const dimParts = currentVariant.dimensions.split('×');
+      const dimParts = currentVariant.dimensions.split('×').map(p => p.trim());
       if (dimParts.length >= 3) {
         setSelectedDepth(dimParts[1]);
         setSelectedHeight(dimParts[2]);
@@ -149,10 +176,7 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
                 <SelectContent className="bg-background border shadow-lg z-50">
                   {depths.map((depth) => (
                     <SelectItem key={depth} value={depth}>
-                      <div className="flex items-center gap-2">
-                        {selectedDepth === depth && <Check className="w-3 h-3 text-primary" />}
-                        <span>{depth}mm</span>
-                      </div>
+                      {depth}mm
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -169,10 +193,7 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
                 <SelectContent className="bg-background border shadow-lg z-50">
                   {heights.map((height) => (
                     <SelectItem key={height} value={height}>
-                      <div className="flex items-center gap-2">
-                        {selectedHeight === height && <Check className="w-3 h-3 text-primary" />}
-                        <span>{height}mm</span>
-                      </div>
+                      {height}mm
                     </SelectItem>
                   ))}
                 </SelectContent>
