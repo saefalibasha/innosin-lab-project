@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -76,10 +77,13 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
       
       if (dimParts.length < 3) return false;
       
+      // Map finish values to database values
+      const dbFinishValue = finish === 'PC' ? 'PC' : 'SS304';
+      
       const matches = dimParts[0] === width && 
              dimParts[1] === depth && 
              dimParts[2] === height && 
-             v.finish_type === finish;
+             v.finish_type === dbFinishValue;
              
       if (matches) {
         console.log('Found matching variant:', v);
@@ -96,7 +100,7 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
     console.log('Selected width:', width);
     setSelectedWidth(width);
     
-    if (selectedDepth && selectedHeight) {
+    if (selectedDepth && selectedHeight && selectedFinish) {
       const matchingVariant = findMatchingVariant(width, selectedDepth, selectedHeight, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
@@ -109,7 +113,7 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
     console.log('Selected depth:', depth);
     setSelectedDepth(depth);
     
-    if (selectedWidth && selectedHeight) {
+    if (selectedWidth && selectedHeight && selectedFinish) {
       const matchingVariant = findMatchingVariant(selectedWidth, depth, selectedHeight, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
@@ -122,7 +126,7 @@ const OpenRackConfigurator: React.FC<OpenRackConfiguratorProps> = ({
     console.log('Selected height:', height);
     setSelectedHeight(height);
     
-    if (selectedWidth && selectedDepth) {
+    if (selectedWidth && selectedDepth && selectedFinish) {
       const matchingVariant = findMatchingVariant(selectedWidth, selectedDepth, height, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
