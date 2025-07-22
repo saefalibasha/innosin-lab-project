@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,8 +7,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, Upload, FileImage, Box, X, Check } from 'lucide-react';
+import { Save, Upload, FileImage, Box, X, Check, RotateCcw, Copy } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { useFormPersistence } from '@/hooks/useFormPersistence';
 
 interface Product {
   id: string;
@@ -99,9 +99,11 @@ export const VariantFormDialog = ({
   });
 
   const { toast } = useToast();
+  const { previousData, savePreviousData, clearPreviousData, hasPreviousData } = useFormPersistence();
 
   useEffect(() => {
     if (variant) {
+      // Editing existing variant
       setFormData({
         name: variant.name,
         product_code: variant.product_code,
@@ -114,7 +116,6 @@ export const VariantFormDialog = ({
         description: variant.description || ''
       });
       
-      // Set existing asset status
       setFileUploadState({
         thumbnail: {
           uploading: false,
@@ -129,7 +130,7 @@ export const VariantFormDialog = ({
         }
       });
     } else {
-      // Reset form for new variant
+      // New variant - reset form
       setFormData({
         name: '',
         product_code: '',
@@ -157,6 +158,19 @@ export const VariantFormDialog = ({
       });
     }
   }, [variant, open]);
+
+  const loadPreviousData = () => {
+    if (previousData && !variant) {
+      setFormData(prev => ({
+        ...prev,
+        ...previousData
+      }));
+      toast({
+        title: "Previous data loaded",
+        description: "Form filled with your last entry data",
+      });
+    }
+  };
 
   const uploadFile = async (file: File, type: 'thumbnail' | 'model', variantId: string) => {
     const fileExt = file.name.split('.').pop();
@@ -207,7 +221,9 @@ export const VariantFormDialog = ({
         if (error) throw error;
         variantId = variant.id;
       } else {
-        // Create new variant
+        // Create new variant - save data for next time
+        savePreviousData(formData);
+        
         const { data: newVariant, error } = await supabase
           .from('products')
           .insert([{
@@ -284,7 +300,7 @@ export const VariantFormDialog = ({
 
       toast({
         title: "Success",
-        description: variant ? "Variant updated successfully" : "Variant created successfully",
+        description: variant ? "Variant updated successfully" : "Variant created successfully. Previous data saved for next entry.",
       });
 
       onVariantSaved();
@@ -371,12 +387,44 @@ export const VariantFormDialog = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {variant ? 'Edit Variant' : 'Add New Variant'} - {series.product_series}
+          <DialogTitle className="flex items-center justify-between">
+            <span>
+              {variant ? 'Edit Variant' : 'Add New Variant'} - {series.product_series}
+            </span>
+            {!variant && hasPreviousData && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadPreviousData}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Use Previous Data
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearPreviousData}
+                  className="flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Clear
+                </Button>
+              </div>
+            )}
           </DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6">
+          {!variant && hasPreviousData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-sm text-blue-700">
+                💡 Previous entry data available. Click "Use Previous Data" to quickly fill common fields.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">Variant Name</Label>
