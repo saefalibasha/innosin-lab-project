@@ -1,11 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Package, Ruler, DoorOpen, Palette } from 'lucide-react';
+import { Check, Ruler, DoorOpen, Palette } from 'lucide-react';
 
 interface TallCabinetConfiguratorProps {
   variants: any[];
@@ -92,15 +90,12 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     }
   }, [selectedVariantId, variants]);
 
-  const currentVariant = variants.find(v => v.id === selectedVariantId);
-  const isConfigurationComplete = selectedDimension && selectedDoorType && selectedFinish;
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Step 1: Dimensions */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <Ruler className="w-4 h-4 text-primary" />
             Step 1: Select Dimensions
           </CardTitle>
@@ -128,25 +123,25 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
       {/* Step 2: Door Type */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <DoorOpen className="w-4 h-4 text-primary" />
             Step 2: Select Door Type
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             {doorTypes.map((doorType) => (
               <Button
                 key={doorType}
                 variant={selectedDoorType === doorType ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleDoorTypeSelect(doorType)}
-                className="h-auto py-2 flex flex-col items-center gap-1"
+                className="h-auto py-1.5 flex flex-col items-center gap-1 text-xs"
                 disabled={!selectedDimension}
               >
                 {selectedDoorType === doorType && <Check className="w-3 h-3" />}
-                <span className="text-sm font-medium">{doorType} Door</span>
+                <span className="font-medium">{doorType} Door</span>
                 <span className="text-xs text-muted-foreground">
                   {doorType === 'Glass' ? 'Transparent' : 'Solid'}
                 </span>
@@ -158,86 +153,39 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
       {/* Step 3: Finish */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-sm">
             <Palette className="w-4 h-4 text-primary" />
             Step 3: Select Finish
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               variant={selectedFinish === 'PC' ? "default" : "outline"}
               size="sm"
               onClick={() => handleFinishSelect('PC')}
-              className="h-auto py-2 flex flex-col items-center gap-1"
+              className="h-auto py-1.5 flex flex-col items-center gap-1 text-xs"
               disabled={!selectedDimension || !selectedDoorType}
             >
               {selectedFinish === 'PC' && <Check className="w-3 h-3" />}
-              <span className="text-sm font-medium">Powder Coat</span>
+              <span className="font-medium">Powder Coat</span>
               <span className="text-xs text-muted-foreground">Standard</span>
             </Button>
             <Button
               variant={selectedFinish === 'SS' ? "default" : "outline"}
               size="sm"
               onClick={() => handleFinishSelect('SS')}
-              className="h-auto py-2 flex flex-col items-center gap-1"
+              className="h-auto py-1.5 flex flex-col items-center gap-1 text-xs"
               disabled={!selectedDimension || !selectedDoorType}
             >
               {selectedFinish === 'SS' && <Check className="w-3 h-3" />}
-              <span className="text-sm font-medium">Stainless Steel</span>
+              <span className="font-medium">Stainless Steel</span>
               <span className="text-xs text-muted-foreground">Premium</span>
             </Button>
           </div>
         </CardContent>
       </Card>
-
-      {/* Configuration Summary */}
-      {isConfigurationComplete && currentVariant && (
-        <Card className="border-2 border-primary/20 bg-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Package className="w-4 h-4 text-primary" />
-              Configuration Summary
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium">Product Code:</span>
-                  <Badge variant="outline" className="font-mono text-xs">
-                    {currentVariant.product_code}
-                  </Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Dimensions:</span>
-                  <span className="text-sm">{selectedDimension}</span>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Door Type:</span>
-                  <span className="text-sm">{selectedDoorType}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm font-medium">Finish:</span>
-                  <span className="text-sm">
-                    {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <Separator />
-            
-            <div>
-              <h4 className="font-medium mb-1 text-sm">Product Name</h4>
-              <p className="text-sm text-muted-foreground">{currentVariant.name}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
