@@ -16,24 +16,37 @@ interface ProductGridProps {
 
 const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => {
   const getProductImages = (product: Product) => {
-    // Priority: seriesOverviewImage > overviewImage > thumbnail
-    const primaryImage = product.seriesOverviewImage || product.overviewImage || product.thumbnail;
+    const validImages: string[] = [];
     
-    if (primaryImage) {
-      return [primaryImage];
+    // Priority: seriesOverviewImage > overviewImage > thumbnail > images
+    if (product.seriesOverviewImage && !product.seriesOverviewImage.includes('placeholder')) {
+      validImages.push(product.seriesOverviewImage);
+    } else if (product.overviewImage && !product.overviewImage.includes('placeholder')) {
+      validImages.push(product.overviewImage);
+    } else if (product.thumbnail && !product.thumbnail.includes('placeholder')) {
+      validImages.push(product.thumbnail);
     }
     
-    // Fallback to additional images if available
+    // Add additional images if available and not placeholders
     if (product.images && product.images.length > 0) {
-      return product.images;
+      const additionalImages = product.images.filter(img => 
+        img && 
+        !img.includes('placeholder') && 
+        !validImages.includes(img)
+      );
+      validImages.push(...additionalImages);
     }
     
-    // Final fallback to empty array
-    return [];
+    return validImages;
   };
 
   const getThumbnail = (product: Product) => {
-    return product.seriesOverviewImage || product.overviewImage || product.thumbnail || '';
+    // Return the best available image, avoiding placeholders
+    return product.seriesOverviewImage || 
+           product.overviewImage || 
+           product.thumbnail || 
+           (product.images && product.images.length > 0 ? product.images[0] : '') ||
+           '/placeholder.svg';
   };
 
   return (

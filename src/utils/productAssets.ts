@@ -27,26 +27,27 @@ const enhanceVariantWithAssets = (variant: ProductVariant, productFolder: string
 const enhanceProductWithAssets = (product: Product): Product => {
   const productFolder = `products/${product.id}`;
   
-  // Enhance main product assets
+  // Enhanced main product assets with proper fallbacks
   const enhancedProduct: Product = {
     ...product,
-    modelPath: getSupabaseAssetUrl(`${productFolder}/${product.name}.glb`),
-    thumbnail: getSupabaseAssetUrl(`${productFolder}/${product.name}.jpg`),
-    images: [getSupabaseAssetUrl(`${productFolder}/${product.name}.jpg`)],
-    overviewImage: product.overviewImage ? getSupabaseAssetUrl(`${productFolder}/overview.jpg`) : undefined
+    modelPath: product.modelPath || getSupabaseAssetUrl(`${productFolder}/${product.name}.glb`),
+    thumbnail: product.thumbnail || getSupabaseAssetUrl(`${productFolder}/${product.name}.jpg`),
+    images: product.images && product.images.length > 0 ? product.images : [getSupabaseAssetUrl(`${productFolder}/${product.name}.jpg`)],
+    overviewImage: product.overviewImage || getSupabaseAssetUrl(`${productFolder}/overview.jpg`),
+    seriesOverviewImage: product.seriesOverviewImage || product.overviewImage
   };
 
   // Enhance variants if they exist
   if (product.variants && product.variants.length > 0) {
     enhancedProduct.variants = product.variants.map(variant => 
-      enhanceVariantWithAssets(variant, `products/${product.name}/variants`)
+      enhanceVariantWithAssets(variant, `products/${product.id}/variants`)
     );
   }
 
   return enhancedProduct;
 };
 
-// Updated KS Series data with standardized naming and specifications
+// Updated KS Series data with actual asset paths
 const kneeSpaceSeriesProducts: Product[] = [
   {
     id: 'laboratory-bench-knee-space-series',
@@ -152,7 +153,7 @@ const kneeSpaceSeriesProducts: Product[] = [
   }
 ];
 
-// Mobile Cabinet Series with proper variant structure
+// Mobile Cabinet Series with proper asset paths (no more placeholder images)
 const mobileCabinetProducts: Product[] = [
   {
     id: 'innosin-mobile-cabinet-750mm',
@@ -161,9 +162,11 @@ const mobileCabinetProducts: Product[] = [
     description: 'Mobile storage solutions designed for 750mm height laboratory benches',
     fullDescription: 'Comprehensive mobile cabinet series offering various configurations for 750mm bench height applications.',
     dimensions: 'Variable',
-    modelPath: '',
-    thumbnail: '',
-    images: [],
+    modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).glb'),
+    thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
+    images: [getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg')],
+    overviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
+    seriesOverviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
     specifications: ['Mobile Design', 'Locking Casters', 'Chemical Resistant'],
     variants: [
       {
@@ -172,9 +175,9 @@ const mobileCabinetProducts: Product[] = [
         dimensions: '750×500×650 mm',
         type: 'Single Door',
         orientation: 'None',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-755065/MC-PC (755065).jpg')]
       },
       {
         id: 'innosin-mc-pc-lh-505065',
@@ -182,9 +185,9 @@ const mobileCabinetProducts: Product[] = [
         dimensions: '500×500×650 mm', 
         type: 'Hand Configuration',
         orientation: 'LH',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-lh-505065/MC-PC-LH (505065).jpg')]
       },
       {
         id: 'innosin-mc-pc-rh-505065',
@@ -192,9 +195,9 @@ const mobileCabinetProducts: Product[] = [
         dimensions: '500×500×650 mm',
         type: 'Hand Configuration', 
         orientation: 'RH',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-rh-505065/MC-PC-RH (505065).jpg')]
       }
     ],
     finishes: [
@@ -215,9 +218,11 @@ const mobileCabinetProducts: Product[] = [
     description: 'Mobile storage solutions designed for 900mm height laboratory benches',
     fullDescription: 'Enhanced mobile cabinet series offering increased storage capacity for 900mm bench height applications.',
     dimensions: 'Variable',
-    modelPath: '',
-    thumbnail: '',
-    images: [],
+    modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).glb'),
+    thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
+    images: [getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg')],
+    overviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
+    seriesOverviewImage: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
     specifications: ['Enhanced Height', 'Mobile Design', 'Locking Casters'],
     variants: [
       {
@@ -226,9 +231,9 @@ const mobileCabinetProducts: Product[] = [
         dimensions: '750×500×800 mm',
         type: 'Single Door',
         orientation: 'None',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-755080/MC-PC (755080).jpg')]
       },
       {
         id: 'innosin-mc-pc-lh-505080',
@@ -236,19 +241,19 @@ const mobileCabinetProducts: Product[] = [
         dimensions: '500×500×800 mm',
         type: 'Hand Configuration',
         orientation: 'LH',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-lh-505080/MC-PC-LH (505080).jpg')]
       },
       {
         id: 'innosin-mc-pc-rh-505080',
         size: '500×500×800 mm',
         dimensions: '500×500×800 mm',
         type: 'Hand Configuration',
-        orientation: 'RH', 
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        orientation: 'RH',
+        modelPath: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-mc-pc-rh-505080/MC-PC-RH (505080).jpg')]
       }
     ],
     finishes: [
@@ -264,7 +269,7 @@ const mobileCabinetProducts: Product[] = [
   }
 ];
 
-// Other cabinet products
+// Other cabinet products with proper asset paths
 const otherCabinetProducts: Product[] = [
   {
     id: 'innosin-wall-cabinet',
@@ -273,9 +278,9 @@ const otherCabinetProducts: Product[] = [
     description: 'Space-efficient wall-mounted storage solutions',
     fullDescription: 'Professional wall-mounted cabinets designed to maximize laboratory storage while minimizing floor space usage.',
     dimensions: '750×330×750 mm',
-    modelPath: '',
-    thumbnail: '',
-    images: [],
+    modelPath: getSupabaseAssetUrl('products/innosin-wcg-pc-753375/WCG-PC (753375).glb'),
+    thumbnail: getSupabaseAssetUrl('products/innosin-wcg-pc-753375/WCG-PC (753375).jpg'),
+    images: [getSupabaseAssetUrl('products/innosin-wcg-pc-753375/WCG-PC (753375).jpg')],
     specifications: ['Wall Mounted', 'Space Efficient', 'Glass Door Options'],
     variants: [
       {
@@ -284,9 +289,9 @@ const otherCabinetProducts: Product[] = [
         dimensions: '750×330×750 mm',
         type: 'Glass Door',
         orientation: 'None',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-wcg-pc-753375/WCG-PC (753375).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-wcg-pc-753375/WCG-PC (753375).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-wcg-pc-753375/WCG-PC (753375).jpg')]
       }
     ],
     finishes: [
@@ -307,9 +312,9 @@ const otherCabinetProducts: Product[] = [
     description: 'Tall storage cabinets with glass doors for maximum visibility',
     fullDescription: 'High-capacity tall cabinets featuring glass doors for easy content identification and secure storage.',
     dimensions: '750×400×1800 mm',
-    modelPath: '',
-    thumbnail: '',
-    images: [],
+    modelPath: getSupabaseAssetUrl('products/innosin-tcg-pc-754018/TCG-PC (754018).glb'),
+    thumbnail: getSupabaseAssetUrl('products/innosin-tcg-pc-754018/TCG-PC (754018).jpg'),
+    images: [getSupabaseAssetUrl('products/innosin-tcg-pc-754018/TCG-PC (754018).jpg')],
     specifications: ['Maximum Height', 'Glass Door', 'Secure Storage'],
     variants: [
       {
@@ -318,9 +323,9 @@ const otherCabinetProducts: Product[] = [
         dimensions: '750×400×1800 mm',
         type: 'Glass Door',
         orientation: 'None',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-tcg-pc-754018/TCG-PC (754018).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-tcg-pc-754018/TCG-PC (754018).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-tcg-pc-754018/TCG-PC (754018).jpg')]
       }
     ],
     finishes: [
@@ -341,9 +346,9 @@ const otherCabinetProducts: Product[] = [
     description: 'Open rack storage system for maximum accessibility',
     fullDescription: 'Versatile open rack design providing maximum accessibility and flexibility for laboratory equipment storage.',
     dimensions: '380×380×1800 mm',
-    modelPath: '',
-    thumbnail: '',
-    images: [], 
+    modelPath: getSupabaseAssetUrl('products/innosin-or-pc-604518/OR-PC-3838 (604518).glb'),
+    thumbnail: getSupabaseAssetUrl('products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg'),
+    images: [getSupabaseAssetUrl('products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg')],
     specifications: ['Open Design', 'Maximum Accessibility', 'Adjustable Shelves'],
     variants: [
       {
@@ -352,9 +357,9 @@ const otherCabinetProducts: Product[] = [
         dimensions: '380×380×1800 mm',
         type: 'Standard',
         orientation: 'None',
-        modelPath: '',
-        thumbnail: '',
-        images: []
+        modelPath: getSupabaseAssetUrl('products/innosin-or-pc-604518/OR-PC-3838 (604518).glb'),
+        thumbnail: getSupabaseAssetUrl('products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg'),
+        images: [getSupabaseAssetUrl('products/innosin-or-pc-604518/OR-PC-3838 (604518).jpg')]
       }
     ],
     finishes: [
@@ -366,16 +371,16 @@ const otherCabinetProducts: Product[] = [
   }
 ];
 
-// Combine all products and enhance with assets
+// Combine all products - no enhancement needed as URLs are already proper
 const allInnosinProducts = [
   ...kneeSpaceSeriesProducts,
   ...mobileCabinetProducts, 
   ...otherCabinetProducts
 ];
 
-// Export enhanced products
+// Export products without unnecessary enhancement
 export const getProductsSync = (): Product[] => {
-  return allInnosinProducts.map(enhanceProductWithAssets);
+  return allInnosinProducts;
 };
 
 // Get unique categories
@@ -384,25 +389,15 @@ export const getCategories = (): string[] => {
   return [...new Set(categories)];
 };
 
-// Debug function to log asset URLs
+// Simplified debug function
 export const debugAssetUrls = (productId: string) => {
   const product = allInnosinProducts.find(p => p.id === productId);
   if (product) {
-    const enhanced = enhanceProductWithAssets(product);
-    console.log(`🔍 Debug assets for ${productId}:`);
-    console.log('Main product:', {
-      modelPath: enhanced.modelPath,
-      thumbnail: enhanced.thumbnail,
-      images: enhanced.images
+    console.log(`🔍 Debug assets for ${productId}:`, {
+      modelPath: product.modelPath,
+      thumbnail: product.thumbnail,
+      images: product.images,
+      overviewImage: product.overviewImage
     });
-    if (enhanced.variants) {
-      enhanced.variants.forEach(variant => {
-        console.log(`Variant ${variant.id}:`, {
-          modelPath: variant.modelPath,
-          thumbnail: variant.thumbnail,
-          images: variant.images
-        });
-      });
-    }
   }
 };
