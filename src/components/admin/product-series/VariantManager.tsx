@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
 import { VariantFormDialog } from './VariantFormDialog';
+import { useProductRealtime } from '@/hooks/useProductRealtime';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,12 +65,6 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
   const [editingVariant, setEditingVariant] = useState<Product | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (open) {
-      fetchVariants();
-    }
-  }, [open, series.id]);
-
   const fetchVariants = async () => {
     try {
       setLoading(true);
@@ -96,6 +90,21 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
       setLoading(false);
     }
   };
+
+  // Set up real-time updates for variants
+  useProductRealtime({
+    onProductChange: () => {
+      fetchVariants();
+      onVariantsUpdated();
+    },
+    enabled: open
+  });
+
+  useEffect(() => {
+    if (open) {
+      fetchVariants();
+    }
+  }, [open, series.id]);
 
   const handleVariantSaved = () => {
     fetchVariants();

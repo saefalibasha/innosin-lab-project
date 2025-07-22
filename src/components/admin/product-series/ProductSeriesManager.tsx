@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Plus, Search, Package, Edit, Eye, Upload, AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { ProductSeriesFormDialog } from './ProductSeriesFormDialog';
 import { VariantManager } from './VariantManager';
+import { SeriesEditDialog } from './SeriesEditDialog';
+import { useProductRealtime } from '@/hooks/useProductRealtime';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,16 +45,9 @@ export const ProductSeriesManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(null);
+  const [editingSeries, setEditingSeries] = useState<ProductSeries | null>(null);
   const [showVariantManager, setShowVariantManager] = useState(false);
   const { toast } = useToast();
-
-  useEffect(() => {
-    fetchSeries();
-  }, []);
-
-  useEffect(() => {
-    filterSeries();
-  }, [series, searchTerm]);
 
   const fetchSeries = async () => {
     try {
@@ -79,10 +73,7 @@ export const ProductSeriesManager = () => {
         .eq('is_series_parent', true)
         .order('product_series', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching series:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log('Series data fetched:', seriesData);
 
@@ -139,6 +130,20 @@ export const ProductSeriesManager = () => {
     }
   };
 
+  // Set up real-time updates
+  useProductRealtime({
+    onSeriesChange: fetchSeries,
+    enabled: true
+  });
+
+  useEffect(() => {
+    fetchSeries();
+  }, []);
+
+  useEffect(() => {
+    filterSeries();
+  }, [series, searchTerm]);
+
   const filterSeries = () => {
     let filtered = series;
 
@@ -160,6 +165,16 @@ export const ProductSeriesManager = () => {
     toast({
       title: "Success",
       description: "Product series created successfully",
+    });
+  };
+
+  const handleSeriesUpdated = () => {
+    console.log('Series updated, refreshing list...');
+    setEditingSeries(null);
+    fetchSeries();
+    toast({
+      title: "Success",
+      description: "Product series updated successfully",
     });
   };
 
@@ -321,19 +336,20 @@ export const ProductSeriesManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleManageVariants(series)}
+                  onClick={() => setEditingSeries(series)}
                   className="flex items-center gap-1"
                 >
                   <Edit className="h-3 w-3" />
-                  Manage
+                  Edit
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => handleManageVariants(series)}
                   className="flex items-center gap-1"
                 >
-                  <Eye className="h-3 w-3" />
-                  View
+                  <Package className="h-3 w-3" />
+                  Variants
                 </Button>
                 <Button
                   variant="outline"
@@ -406,6 +422,15 @@ export const ProductSeriesManager = () => {
           onClose={handleVariantManagerClose}
           series={selectedSeries}
           onVariantsUpdated={fetchSeries}
+        />
+      )}
+
+      {editingSeries && (
+        <SeriesEditDialog
+          open={true}
+          onClose={() => setEditingSeries(null)}
+          series={editingSeries}
+          onSeriesUpdated={handleSeriesUpdated}
         />
       )}
     </div>

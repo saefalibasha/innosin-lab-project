@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useProductRealtime } from '@/hooks/useProductRealtime';
 
 interface OverviewStats {
   totalSeries: number;
@@ -79,31 +79,6 @@ export const DynamicOverview = () => {
   });
   const [seriesData, setSeriesData] = useState<SeriesData[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchOverviewData();
-    
-    // Set up real-time subscription for product updates
-    const channel = supabase
-      .channel('products-overview-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        },
-        () => {
-          console.log('Product updated, refreshing overview...');
-          fetchOverviewData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   const fetchOverviewData = async () => {
     try {
@@ -178,6 +153,17 @@ export const DynamicOverview = () => {
       setLoading(false);
     }
   };
+
+  // Set up real-time updates
+  useProductRealtime({
+    onProductChange: fetchOverviewData,
+    onSeriesChange: fetchOverviewData,
+    enabled: true
+  });
+
+  useEffect(() => {
+    fetchOverviewData();
+  }, []);
 
   if (loading) {
     return (
