@@ -11,7 +11,7 @@ import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import VariantSelector from '@/components/product/VariantSelector';
-import { getWallCabinetVariants } from '@/services/variantService';
+import { fetchSeriesWithVariants, getVariantAssetUrls } from '@/services/variantService';
 import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurator';
 import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
 
@@ -35,9 +35,15 @@ const EnhancedProductDetail = () => {
     try {
       setLoading(true);
       
-      // Simplified for now - remove non-existent function call
-      console.log('Fetching product data for:', productId);
-      toast.error('Product data loading not implemented');
+      const seriesData = await fetchSeriesWithVariants();
+      const foundSeries = seriesData.find(s => s.id === productId);
+      
+      if (foundSeries) {
+        setSeries(foundSeries);
+        if (foundSeries.variants && foundSeries.variants.length > 0) {
+          setSelectedVariantId(foundSeries.variants[0].id);
+        }
+      }
     } catch (error) {
       console.error('Error fetching product data:', error);
       toast.error('Failed to load product details');
@@ -54,10 +60,12 @@ const EnhancedProductDetail = () => {
   // Update assets when variant or finish changes
   useEffect(() => {
     if (currentVariant) {
+      const assets = getVariantAssetUrls(currentVariant);
+      
       setCurrentAssets({
-        thumbnail: currentVariant.thumbnail_path,
-        model: currentVariant.model_path,
-        images: currentVariant.additional_images || []
+        thumbnail: assets.thumbnail,
+        model: assets.model,
+        images: assets.images || []
       });
       
       console.log('Updated assets for variant:', currentVariant.id, 'with finish:', selectedFinish);

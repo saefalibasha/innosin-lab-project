@@ -1,340 +1,373 @@
 
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Download, ShoppingCart, Eye, Package } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import ProductImageGallery from '@/components/ProductImageGallery';
-import ModelViewer from '@/components/ModelViewer';
-import AnimatedSection from '@/components/AnimatedSection';
-import { useRFQ } from '@/contexts/RFQContext';
-import { toast } from 'sonner';
-import { Product } from '@/types/product';
-import { productPageContent } from '@/data/productPageContent';
-import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
-import { getWallCabinetVariants } from '@/services/variantService';
+import { fetchSeriesWithVariants } from '@/services/variantService';
+import { useLoadingState } from '@/hooks/useLoadingState';
+import ProductImageGallery from './ProductImageGallery';
+import ProductOrientationSelector from './ProductOrientationSelector';
+import TechnicalSpecifications from './TechnicalSpecifications';
+import OpenRackConfigurator from './product/OpenRackConfigurator';
+import TallCabinetConfigurator from './product/TallCabinetConfigurator';
 import WallCabinetConfigurator from './product/WallCabinetConfigurator';
+import { WallCabinetConfiguration } from '@/types/product';
 
 const ProductDetail: React.FC = () => {
-  usePerformanceLogger('ProductDetail');
   const { id } = useParams<{ id: string }>();
   const { product, loading: productLoading, error } = useProductById(id);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const [selectedConfiguration, setSelectedConfiguration] = useState<WallCabinetConfiguration | null>(null);
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
   
   // Enhanced loading state management
-  const [variantsLoading, setVariantsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-  const { addItem } = useRFQ();
+  const {
+    isLoading: variantsLoading,
+    error: variantError,
+    startLoading,
+    stopLoading,
+    setError,
+    reset
+  } = useLoadingState(false);
 
-  // Load variants when product changes
+  // Extract series information from product category or name
+  const getSeriesInfo = (product: any) => {
+    if (!product) return { series: '', slug: '' };
+    
+    const name = product.name.toLowerCase();
+    const category = product.category.toLowerCase();
+    
+    if (name.includes('open rack') || category.includes('open rack')) {
+      return { series: 'Open Rack', slug: 'open-rack' };
+    }
+    if (name.includes('tall cabinet') || category.includes('tall cabinet')) {
+      return { series: 'Tall Cabinet', slug: 'tall-cabinet' };
+    }
+    if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
+      return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
+    }
+    
+    return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
+  };
+
+  // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
-    const loadVariants = async () => {
-      if (!product?.id) return;
-      
-      console.log('🔍 Loading variants for product:', product.id);
-      setVariantsLoading(true);
+    const fetchVariants = async () => {
+      if (!product || productLoading) return;
+
+      console.log('🚀 Starting variant fetch process for product:', product.id);
+      startLoading();
+      reset();
       
       try {
-        if (product.category === 'Wall Cabinet') {
-          const variants = await getWallCabinetVariants(product.id);
-          console.log('✅ Loaded wall cabinet variants:', variants.length);
+        const seriesInfo = getSeriesInfo(product);
+        console.log('🔍 Series info determined:', seriesInfo);
+        
+        const startTime = performance.now();
+        const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
+        const endTime = performance.now();
+        
+        console.log(`⏱️ Variant fetch took ${endTime - startTime}ms`);
+        console.log('📦 Raw fetched variants response:', fetchedVariants);
+        
+        if (fetchedVariants && fetchedVariants.length > 0) {
+          const variants = fetchedVariants[0].variants || [];
+          console.log('🎯 Extracted variants array:', variants);
+          
+          // Enhanced variant analysis
+          const glassVariants = variants.filter(v => v.door_type === 'Glass');
+          const solidVariants = variants.filter(v => v.door_type === 'Solid');
+          
+          console.log('📊 Comprehensive variant analysis:');
+          console.log('- Total variants:', variants.length);
+          console.log('- Glass variants:', glassVariants.length);
+          console.log('- Solid variants:', solidVariants.length);
+          console.log('- Unique door types:', [...new Set(variants.map(v => v.door_type))]);
+          console.log('- Unique dimensions:', [...new Set(variants.map(v => v.dimensions))]);
+          console.log('- Unique orientations:', [...new Set(variants.map(v => v.orientation))]);
+          console.log('- Unique finishes:', [...new Set(variants.map(v => v.finish_type))]);
+          
+          // Validate that all expected variants are present
+          const expectedSmallDimensions = ['450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm'];
+          const expectedOrientations = ['Left-Handed', 'Right-Handed'];
+          const expectedDoorTypes = ['Glass', 'Solid'];
+          
+          expectedSmallDimensions.forEach(dim => {
+            expectedDoorTypes.forEach(doorType => {
+              expectedOrientations.forEach(orientation => {
+                const exists = variants.some(v => 
+                  v.dimensions === dim && 
+                  v.door_type === doorType && 
+                  v.orientation === orientation
+                );
+                if (!exists) {
+                  console.warn(`⚠️ Missing variant: ${dim} ${doorType} ${orientation}`);
+                }
+              });
+            });
+          });
+          
           setSeriesVariants(variants);
+          
+          if (glassVariants.length === 0) {
+            console.error('❌ No glass variants found!');
+            setError('No glass variants found for this product series');
+          }
         } else {
-          // For other product types, you might want to implement similar logic
-          console.log('ℹ️ Product type not configured for variants:', product.category);
+          console.log('⚠️ No variants found for series:', seriesInfo.slug);
           setSeriesVariants([]);
+          setError('No variants found for this product series');
         }
-      } catch (error) {
-        console.error('❌ Error loading variants:', error);
+      } catch (err) {
+        console.error("❌ Failed to fetch variants:", err);
         setSeriesVariants([]);
+        setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
-        setVariantsLoading(false);
+        stopLoading();
       }
     };
 
-    loadVariants();
-  }, [product?.id, product?.category]);
+    fetchVariants();
+  }, [product, productLoading]);
 
-  // Handle variant selection from configurator
+  // Handle variant selection - convert between ID and object
+  const handleVariantChange = (variantId: string) => {
+    const variant = seriesVariants.find(v => v.id === variantId);
+    console.log('🎯 Variant selected by ID:', variantId, 'found:', variant);
+    setSelectedVariant(variant || null);
+  };
+
   const handleVariantSelect = (variant: any) => {
-    console.log('🎯 Variant selected:', variant?.product_code);
+    console.log('🎯 Variant selected directly:', variant);
     setSelectedVariant(variant);
   };
 
-  // Handle add to quote
-  const handleAddToQuote = () => {
-    if (!product) return;
-    
-    const itemToAdd = selectedVariant || product;
-    const displayName = selectedVariant 
-      ? `${product.name} - ${selectedVariant.product_code} (${selectedFinish})`
-      : `${product.name} (${selectedFinish})`;
-    
-    addItem({
-      id: itemToAdd.id,
-      name: displayName,
-      category: product.category,
-      dimensions: itemToAdd.dimensions || product.dimensions,
-      image: itemToAdd.thumbnail_path || product.thumbnail
-    });
-    
-    toast.success(`${displayName} added to quote`);
+  // Handle wall cabinet configuration selection
+  const handleConfigurationSelect = (configuration: WallCabinetConfiguration) => {
+    console.log('🎯 Configuration selected:', configuration);
+    setSelectedConfiguration(configuration);
+    // Set the first variant as the selected variant for display purposes
+    if (configuration.variants && configuration.variants.length > 0) {
+      setSelectedVariant(configuration.variants[0]);
+    }
   };
 
-  // Get the current display image
-  const getCurrentImage = () => {
-    if (selectedVariant?.thumbnail_path && !selectedVariant.thumbnail_path.includes('placeholder')) {
-      return selectedVariant.thumbnail_path;
-    }
-    return product?.seriesOverviewImage || 
-           product?.overviewImage || 
-           product?.thumbnail || 
-           '/placeholder.svg';
-  };
-
-  // Get the current model path
-  const getCurrentModel = () => {
-    if (selectedVariant?.model_path && !selectedVariant.model_path.includes('placeholder')) {
-      return selectedVariant.model_path;
-    }
-    return product?.modelPath || '';
-  };
-
-  // Get current product images for gallery
-  const getCurrentImages = () => {
-    const images = [];
-    const currentImage = getCurrentImage();
-    
-    if (currentImage) {
-      images.push(currentImage);
-    }
-    
-    // Add additional images if available
-    if (selectedVariant?.additional_images && selectedVariant.additional_images.length > 0) {
-      const additionalImages = selectedVariant.additional_images.filter(img => 
-        img && !img.includes('placeholder') && img !== currentImage
-      );
-      images.push(...additionalImages);
-    }
-    
-    return images.length > 0 ? images : ['/placeholder.svg'];
-  };
-
-  // Determine which configurator to use
+  // Determine which configurator to use based on product series
   const getConfiguratorComponent = () => {
     if (!product) return null;
+
+    const seriesInfo = getSeriesInfo(product);
+    const series = seriesInfo.series.toLowerCase();
     
-    const productSeries = product.category;
-    
-    if (productSeries.includes('Wall Cabinet') || product.category === 'Wall Cabinet') {
+    if (series.includes('open rack')) {
       return (
-        <WallCabinetConfigurator
+        <OpenRackConfigurator
           variants={seriesVariants}
-          selectedVariant={selectedVariant}
-          onVariantSelect={handleVariantSelect}
-          isLoading={variantsLoading}
+          selectedVariantId={selectedVariant?.id || ''}
+          onVariantChange={handleVariantChange}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
         />
       );
     }
     
-    // Add other configurators as needed
-    return null;
+    if (series.includes('tall cabinet')) {
+      return (
+        <TallCabinetConfigurator
+          variants={seriesVariants}
+          selectedVariantId={selectedVariant?.id || ''}
+          onVariantChange={handleVariantChange}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+        />
+      );
+    }
+    
+    if (series.includes('wall cabinet')) {
+      console.log('🏗️ Rendering WallCabinetConfigurator with variants:', seriesVariants.length);
+      return (
+        <WallCabinetConfigurator
+          variants={seriesVariants}
+          selectedConfiguration={selectedConfiguration}
+          onConfigurationSelect={handleConfigurationSelect}
+          isLoading={variantsLoading}
+        />
+      );
+    }
+
+    // Default to simple variant display for other series
+    return (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {seriesVariants.length > 0 ? `${seriesVariants.length} variants available` : 'No variants available'}
+        </p>
+        {seriesVariants.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {seriesVariants.slice(0, 4).map((variant: any, index: number) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedVariant(variant)}
+                className={selectedVariant?.id === variant.id ? 'bg-primary text-primary-foreground' : ''}
+              >
+                {variant.name || `Variant ${index + 1}`}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
+    );
   };
 
-  // Loading state
+  // Enhanced loading state with progressive loading
   if (productLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="flex items-center justify-center p-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading product details...</p>
-              </div>
-            </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading product details...</p>
           </div>
         </div>
       </div>
     );
   }
 
-  // Error state
-  if (error) {
+  if (error || !product) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-4">Error Loading Product</h1>
-              <p className="text-muted-foreground mb-8">{error}</p>
-              <Link to="/products">
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Products
-                </Button>
-              </Link>
-            </div>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            {error || 'The product you are looking for does not exist.'}
+          </p>
+          <Button onClick={() => window.history.back()} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Go Back
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Not found state
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
-              <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
-              <Link to="/products">
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Products
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const displayProduct = selectedVariant || product;
 
-  const images = getCurrentImages();
-  const currentModel = getCurrentModel();
+  // Get product images for the gallery
+  const getProductImages = () => {
+    const images = [];
+    if (displayProduct.thumbnail) images.push(displayProduct.thumbnail);
+    if (displayProduct.images && displayProduct.images.length > 0) {
+      images.push(...displayProduct.images);
+    }
+    return images.length > 0 ? images : ['/placeholder.svg'];
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="pt-20">
-        <div className="container-custom py-8">
-          {/* Breadcrumb */}
-          <AnimatedSection animation="fade-in" delay={100}>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-              <Link to="/products" className="hover:text-foreground transition-colors">
-                Products
-              </Link>
-              <span>/</span>
-              <span className="text-foreground">
-                {selectedVariant?.product_code || product.name}
-              </span>
+    <div className="container mx-auto px-4 py-8">
+      <Button
+        onClick={() => window.history.back()}
+        variant="ghost"
+        className="mb-6 gap-2"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Products
+      </Button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Images */}
+        <div className="space-y-6">
+          <ProductImageGallery
+            images={getProductImages()}
+            thumbnail={displayProduct.thumbnail || '/placeholder.svg'}
+            productName={displayProduct.name}
+          />
+        </div>
+
+        {/* Right Column - Product Information */}
+        <div className="space-y-6">
+          <div>
+            <Badge variant="secondary" className="mb-2">
+              {displayProduct.category}
+            </Badge>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {displayProduct.name}
+            </h1>
+            <p className="text-lg text-muted-foreground mb-4">
+              {displayProduct.description}
+            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Package className="w-4 h-4" />
+                <span>{displayProduct.id}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Ruler className="w-4 h-4" />
+                <span>{displayProduct.dimensions}</span>
+              </div>
             </div>
-          </AnimatedSection>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Images */}
-            <AnimatedSection animation="slide-in-left" delay={200}>
-              <div className="space-y-6">
-                <ProductImageGallery
-                  images={images}
-                  thumbnail={getCurrentImage()}
-                  productName={selectedVariant?.product_code || product.name}
-                  className="w-full h-96 lg:h-[500px]"
-                />
-              </div>
-            </AnimatedSection>
-
-            {/* Product Details */}
-            <AnimatedSection animation="slide-in-right" delay={300}>
-              <div className="space-y-6">
-                {/* Header */}
-                <div>
-                  <Badge variant="outline" className="mb-3 border-sea text-sea">
-                    {product.category}
-                  </Badge>
-                  <h1 className="text-3xl font-serif font-bold text-primary mb-2">
-                    {selectedVariant?.product_code || product.name}
-                  </h1>
-                  <p className="text-lg text-muted-foreground">
-                    {selectedVariant?.dimensions || product.dimensions}
-                  </p>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {product.fullDescription || product.description}
-                  </p>
-                </div>
-
-                {/* Finish Selection */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold">Finish</h3>
-                  <Select value={selectedFinish} onValueChange={setSelectedFinish}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select finish" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PC">Powder Coat</SelectItem>
-                      <SelectItem value="SS">Stainless Steel</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                  <Button 
-                    onClick={handleAddToQuote}
-                    className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Quote
-                  </Button>
-                  {currentModel && (
-                    <Button variant="outline" className="flex-1">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View 3D Model
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </AnimatedSection>
           </div>
 
-          {/* Configurator */}
-          {getConfiguratorComponent() && (
-            <AnimatedSection animation="fade-in" delay={400}>
-              <div className="mt-16">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="w-5 h-5" />
-                      Product Configuration
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {getConfiguratorComponent()}
-                  </CardContent>
-                </Card>
-              </div>
-            </AnimatedSection>
-          )}
+          <Separator />
 
-          {/* 3D Model Section */}
-          {currentModel && (
-            <AnimatedSection animation="fade-in" delay={500}>
-              <div className="mt-16">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>3D Model</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-96 bg-muted rounded-lg">
-                      <ModelViewer modelPath={currentModel} />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </AnimatedSection>
-          )}
+          {/* Product Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Product Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {variantError ? (
+                <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{variantError}</span>
+                </div>
+              ) : (
+                getConfiguratorComponent()
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4">
+            <Button className="flex-1 gap-2" disabled={variantsLoading}>
+              <ShoppingCart className="w-4 h-4" />
+              Add to Cart
+            </Button>
+            <Button variant="outline" className="gap-2" disabled={variantsLoading}>
+              <Download className="w-4 h-4" />
+              Download Specs
+            </Button>
+          </div>
+
+          {/* Product Description */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Product Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {displayProduct.fullDescription || displayProduct.description}
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Technical Specifications */}
+          <TechnicalSpecifications 
+            product={displayProduct} 
+            selectedVariant={selectedVariant}
+          />
         </div>
       </div>
     </div>

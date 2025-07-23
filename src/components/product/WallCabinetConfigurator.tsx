@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, Ruler, DoorClosed, RotateCcw, AlertTriangle } from 'lucide-react';
+import { WallCabinetConfiguration } from '@/types/product';
 
 interface WallCabinetVariant {
   id: string;
@@ -22,134 +22,334 @@ interface WallCabinetVariant {
 
 interface WallCabinetConfiguratorProps {
   variants: WallCabinetVariant[];
-  onVariantSelect: (variant: WallCabinetVariant | null) => void;
-  selectedVariant?: WallCabinetVariant | null;
+  onConfigurationSelect: (config: WallCabinetConfiguration) => void;
+  selectedConfiguration?: WallCabinetConfiguration;
   isLoading?: boolean;
 }
 
+// Fixed orientation mapping
+const mapOrientation = (orientation: string): string => {
+  if (!orientation) return 'None';
+  
+  const orientationMap: { [key: string]: string } = {
+    'Left-Handed': 'LH',
+    'Right-Handed': 'RH',
+    'LH': 'LH',
+    'RH': 'RH',
+    'None': 'None',
+    '': 'None',
+    'null': 'None',
+    'undefined': 'None'
+  };
+  
+  return orientationMap[orientation] || 'None';
+};
+
+// Enhanced dimension parsing
+const extractDimensionWidth = (dimensions: string): number => {
+  if (!dimensions) return 0;
+  
+  // Handle formats like "450x330x750mm", "450×330×750mm", "450 x 330 x 750 mm"
+  const cleanDimensions = dimensions.replace(/[^\d×x]/g, '');
+  const match = cleanDimensions.match(/(\d+)/);
+  
+  if (!match) return 0;
+  
+  return parseInt(match[1]);
+};
+
 const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   variants,
-  onVariantSelect,
-  selectedVariant,
+  onConfigurationSelect,
+  selectedConfiguration,
   isLoading = false
 }) => {
   const [selectedDimension, setSelectedDimension] = useState<string>('');
   const [selectedDoorType, setSelectedDoorType] = useState<string>('');
   const [selectedOrientation, setSelectedOrientation] = useState<string>('');
 
-  console.log('🔧 WallCabinetConfigurator received:', { 
-    variantCount: variants.length,
-    selectedVariant: selectedVariant?.product_code 
-  });
+  // Enhanced debug logging
+  useEffect(() => {
+    console.log('🔧 WallCabinetConfigurator - Total variants received:', variants.length);
+    
+    if (variants.length === 0) {
+      console.warn('⚠️ No variants provided to configurator');
+      return;
+    }
 
-  // Get unique dimensions
-  const availableDimensions = useMemo(() => {
-    const dimensions = new Set<string>();
-    variants.forEach(variant => {
-      if (variant.dimensions) {
-        dimensions.add(variant.dimensions);
-      }
+    // Debug: Show all variants with their properties
+    console.log('📋 All variants breakdown:');
+    variants.forEach((variant, index) => {
+      console.log(`  ${index + 1}. ${variant.product_code}:`, {
+        dimensions: variant.dimensions,
+        finish: variant.finish_type,
+        doorType: variant.door_type,
+        orientation: variant.orientation,
+        mappedOrientation: mapOrientation(variant.orientation)
+      });
     });
-    return Array.from(dimensions).sort();
+
+    // Check for both Glass and Solid door types
+    const glassDoorVariants = variants.filter(v => v.door_type === 'Glass');
+    const solidDoorVariants = variants.filter(v => v.door_type === 'Solid');
+    
+    console.log(`🔍 Glass door variants: ${glassDoorVariants.length}`);
+    console.log(`🔍 Solid door variants: ${solidDoorVariants.length}`);
+    
+    // Check dimension distribution
+    const dimensionGroups = variants.reduce((acc, v) => {
+      acc[v.dimensions] = (acc[v.dimensions] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    console.log('📐 Dimension distribution:', dimensionGroups);
   }, [variants]);
 
-  // Get available door types for selected dimension
-  const availableDoorTypes = useMemo(() => {
-    if (!selectedDimension) return [];
-    
+  // Extract unique options - NO FINISH FILTERING
+  const options = useMemo(() => {
+    if (variants.length === 0) {
+      return {
+        dimensions: [],
+        doorTypes: [],
+        orientations: []
+      };
+    }
+
+    const dimensions = new Set<string>();
     const doorTypes = new Set<string>();
-    variants.forEach(variant => {
-      if (variant.dimensions === selectedDimension && variant.door_type) {
-        doorTypes.add(variant.door_type);
-      }
-    });
-    return Array.from(doorTypes).sort();
-  }, [variants, selectedDimension]);
-
-  // Get available orientations for selected dimension and door type
-  const availableOrientations = useMemo(() => {
-    if (!selectedDimension || !selectedDoorType) return [];
-    
     const orientations = new Set<string>();
+
     variants.forEach(variant => {
-      if (variant.dimensions === selectedDimension && 
-          variant.door_type === selectedDoorType &&
-          variant.orientation && 
-          variant.orientation !== 'None') {
-        orientations.add(variant.orientation);
+      if (variant.dimensions) dimensions.add(variant.dimensions);
+      if (variant.door_type) doorTypes.add(variant.door_type);
+      
+      const mappedOrientation = mapOrientation(variant.orientation);
+      if (mappedOrientation && mappedOrientation !== 'None') {
+        orientations.add(mappedOrientation);
       }
     });
-    return Array.from(orientations).sort();
-  }, [variants, selectedDimension, selectedDoorType]);
 
-  // Check if orientation is required (for smaller dimensions)
-  const requiresOrientation = useMemo(() => {
-    if (!selectedDimension) return false;
-    
-    // Extract width from dimensions (e.g., "450x330x750mm" -> 450)
-    const widthMatch = selectedDimension.match(/(\d+)/);
-    if (!widthMatch) return false;
-    
-    const width = parseInt(widthMatch[1]);
-    return width < 750; // Require orientation for widths less than 750mm
-  }, [selectedDimension]);
+    const result = {
+      dimensions: Array.from(dimensions).sort(),
+      doorTypes: Array.from(doorTypes).sort(),
+      orientations: Array.from(orientations).sort()
+    };
 
-  // Find the matching variant
-  const matchingVariant = useMemo(() => {
-    if (!selectedDimension || !selectedDoorType) return null;
+    console.log('🎯 All possible options (no finish filtering):', result);
+    return result;
+  }, [variants]);
+
+  // NEW FILTERING LOGIC - NO FINISH INVOLVED
+  const getAvailableOptions = (optionType: 'doorType' | 'orientation') => {
+    console.log(`\n🔍 === Getting available ${optionType} options ===`);
+    console.log('Current selections:', {
+      selectedDimension,
+      selectedDoorType,
+      selectedOrientation
+    });
+
+    if (variants.length === 0) {
+      console.log('❌ No variants available');
+      return [];
+    }
+
+    // Start with all variants
+    let filteredVariants = [...variants];
+    console.log(`Starting with ${filteredVariants.length} variants`);
+
+    // STEP 1: Filter by dimension (always apply if selected)
+    if (selectedDimension) {
+      filteredVariants = filteredVariants.filter(v => v.dimensions === selectedDimension);
+      console.log(`After dimension filter (${selectedDimension}): ${filteredVariants.length} variants`);
+    }
+
+    // STEP 2: Apply additional filters based on what we're looking for
+    if (optionType === 'doorType') {
+      // For door types, only filter by dimension
+      console.log('Looking for door types - only filtering by dimension');
+    } else if (optionType === 'orientation') {
+      // For orientations, filter by dimension and door type
+      if (selectedDoorType) {
+        filteredVariants = filteredVariants.filter(v => v.door_type === selectedDoorType);
+        console.log(`After door type filter (${selectedDoorType}): ${filteredVariants.length} variants`);
+      }
+    }
+
+    // Log the filtered variants for debugging
+    console.log('Filtered variants for option extraction:');
+    filteredVariants.forEach(v => {
+      console.log(`  ${v.product_code}: ${v.dimensions} | ${v.finish_type} | ${v.door_type} | ${v.orientation}`);
+    });
+
+    // Extract the requested options from filtered variants
+    const optionSet = new Set<string>();
     
-    return variants.find(variant => {
+    filteredVariants.forEach(variant => {
+      switch (optionType) {
+        case 'doorType':
+          if (variant.door_type) optionSet.add(variant.door_type);
+          break;
+        case 'orientation':
+          const mappedOrientation = mapOrientation(variant.orientation);
+          if (mappedOrientation && mappedOrientation !== 'None') {
+            optionSet.add(mappedOrientation);
+          }
+          break;
+      }
+    });
+
+    const result = Array.from(optionSet).sort();
+    console.log(`✅ Available ${optionType} options:`, result);
+    console.log(`=== End ${optionType} options ===\n`);
+    return result;
+  };
+
+  // Get current configuration
+  const getCurrentConfiguration = (): WallCabinetConfiguration | null => {
+    console.log('\n🎯 === Getting current configuration ===');
+    console.log('Selections:', {
+      selectedDimension,
+      selectedDoorType,
+      selectedOrientation
+    });
+
+    if (!selectedDimension || !selectedDoorType) {
+      console.log('❌ Missing required selections');
+      return null;
+    }
+
+    const dimensionWidth = extractDimensionWidth(selectedDimension);
+    const requiresOrientation = dimensionWidth < 750;
+    
+    console.log(`Dimension width: ${dimensionWidth}mm, requires orientation: ${requiresOrientation}`);
+    
+    if (requiresOrientation && !selectedOrientation) {
+      console.log('❌ Small dimension requires orientation, but none selected');
+      return null;
+    }
+
+    // Find matching variants (all finishes for this configuration)
+    const matchingVariants = variants.filter(variant => {
       const dimensionMatch = variant.dimensions === selectedDimension;
       const doorTypeMatch = variant.door_type === selectedDoorType;
+      const mappedOrientation = mapOrientation(variant.orientation);
       
       let orientationMatch = false;
       if (requiresOrientation) {
-        orientationMatch = variant.orientation === selectedOrientation;
+        orientationMatch = mappedOrientation === selectedOrientation;
       } else {
-        orientationMatch = variant.orientation === 'None' || !variant.orientation;
+        orientationMatch = mappedOrientation === 'None';
       }
+
+      const isMatch = dimensionMatch && doorTypeMatch && orientationMatch;
       
-      return dimensionMatch && doorTypeMatch && orientationMatch;
-    }) || null;
-  }, [variants, selectedDimension, selectedDoorType, selectedOrientation, requiresOrientation]);
+      console.log(`Checking ${variant.product_code}:`, {
+        dimensionMatch,
+        doorTypeMatch,
+        orientationMatch,
+        mappedOrientation,
+        isMatch
+      });
+      
+      return isMatch;
+    });
 
-  // Update parent when variant changes
-  useEffect(() => {
-    console.log('🎯 Matching variant changed:', matchingVariant?.product_code);
-    onVariantSelect(matchingVariant);
-  }, [matchingVariant, onVariantSelect]);
+    console.log(`Found ${matchingVariants.length} matching variants`);
+    
+    if (matchingVariants.length === 0) {
+      console.log('❌ No matching variants found');
+      return null;
+    }
 
-  // Selection handlers
+    // Get available finishes for this configuration
+    const availableFinishes = [...new Set(matchingVariants.map(v => v.finish_type))];
+    console.log('Available finishes:', availableFinishes);
+
+    const configuration: WallCabinetConfiguration = {
+      dimension: selectedDimension,
+      doorType: selectedDoorType,
+      orientation: requiresOrientation ? selectedOrientation : undefined,
+      availableFinishes,
+      variants: matchingVariants
+    };
+
+    console.log('✅ Current configuration:', configuration);
+    console.log('=== End current configuration ===\n');
+    return configuration;
+  };
+
+  // Check if orientation should be shown
+  const shouldShowOrientation = () => {
+    if (!selectedDimension || !selectedDoorType) {
+      return false;
+    }
+    
+    const dimensionWidth = extractDimensionWidth(selectedDimension);
+    if (dimensionWidth >= 750) {
+      return false;
+    }
+    
+    const availableOrientations = getAvailableOptions('orientation');
+    return availableOrientations.length > 0;
+  };
+
+  // Enhanced selection handlers
   const handleDimensionChange = (dimension: string) => {
-    console.log('📏 Dimension selected:', dimension);
+    console.log(`\n🔄 Dimension changed to: ${dimension}`);
     setSelectedDimension(dimension);
     setSelectedDoorType('');
     setSelectedOrientation('');
   };
 
   const handleDoorTypeChange = (doorType: string) => {
-    console.log('🚪 Door type selected:', doorType);
+    console.log(`\n🔄 Door type changed to: ${doorType}`);
     setSelectedDoorType(doorType);
     setSelectedOrientation('');
   };
 
   const handleOrientationChange = (orientation: string) => {
-    console.log('🔄 Orientation selected:', orientation);
+    console.log(`\n🔄 Orientation changed to: ${orientation}`);
     setSelectedOrientation(orientation);
   };
+
+  // Auto-select configuration when all required options are selected
+  useEffect(() => {
+    const config = getCurrentConfiguration();
+    if (config) {
+      console.log('🎯 Auto-selecting configuration:', config);
+      onConfigurationSelect(config);
+    }
+  }, [selectedDimension, selectedDoorType, selectedOrientation]);
+
+  // State calculations
+  const currentConfig = getCurrentConfiguration();
+  const needsOrientation = shouldShowOrientation();
+  const canProceed = currentConfig && (!needsOrientation || selectedOrientation);
 
   // Loading state
   if (isLoading) {
     return (
       <div className="space-y-6">
         <div className="space-y-3">
-          <Skeleton className="h-6 w-32" />
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-5 w-5" />
+            <Skeleton className="h-6 w-16" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-8 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-32 w-full" />
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-24" />
           <div className="grid grid-cols-2 gap-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
           </div>
         </div>
-        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
@@ -159,21 +359,21 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     return (
       <div className="flex items-center gap-2 p-4 bg-muted rounded-md">
         <AlertTriangle className="w-5 h-5 text-muted-foreground" />
-        <span className="text-muted-foreground">No variants available</span>
+        <span className="text-muted-foreground">No variants available for configuration</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Dimension Selection */}
+      {/* Dimension selection */}
       <div className="space-y-3">
         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Ruler className="w-5 h-5" />
           Dimensions
         </h3>
         <div className="grid grid-cols-2 gap-2">
-          {availableDimensions.map((dimension) => (
+          {options.dimensions.map((dimension) => (
             <Button
               key={dimension}
               variant={selectedDimension === dimension ? "default" : "outline"}
@@ -187,57 +387,11 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
         </div>
       </div>
 
-      {/* Door Type Selection */}
-      {selectedDimension && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <DoorClosed className="w-5 h-5" />
-            Door Type
-          </h3>
-          <div className="flex gap-2">
-            {availableDoorTypes.map((doorType) => (
-              <Button
-                key={doorType}
-                variant={selectedDoorType === doorType ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleDoorTypeChange(doorType)}
-                className="transition-all duration-200"
-              >
-                {doorType}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Orientation Selection */}
-      {selectedDimension && selectedDoorType && requiresOrientation && availableOrientations.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <RotateCcw className="w-5 h-5" />
-            Orientation
-          </h3>
-          <div className="flex gap-2">
-            {availableOrientations.map((orientation) => (
-              <Button
-                key={orientation}
-                variant={selectedOrientation === orientation ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleOrientationChange(orientation)}
-                className="transition-all duration-200"
-              >
-                {orientation}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Current Selection Summary */}
+      {/* Configuration summary */}
       {selectedDimension && (
         <Card className="bg-muted/50">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Current Selection</CardTitle>
+            <CardTitle className="text-sm font-medium">Configuration Summary</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-center justify-between">
@@ -256,41 +410,93 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
                 <Badge variant="secondary">{selectedOrientation}</Badge>
               </div>
             )}
-            {matchingVariant && (
+            {currentConfig && (
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Product Code:</span>
-                <Badge variant="outline">{matchingVariant.product_code}</Badge>
+                <span className="text-sm text-muted-foreground">Available Finishes:</span>
+                <div className="flex gap-1">
+                  {currentConfig.availableFinishes.map(finish => (
+                    <Badge key={finish} variant="outline" className="text-xs">
+                      {finish === 'PC' ? 'Powder Coat' : finish === 'SS' ? 'Stainless Steel' : finish}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* Selection Status */}
-      {selectedDimension && selectedDoorType && (
-        <div className="text-sm text-muted-foreground">
-          {!matchingVariant && requiresOrientation && !selectedOrientation && (
-            "Please select orientation to continue."
-          )}
-          {!matchingVariant && !requiresOrientation && (
-            "No matching variant found."
-          )}
-          {matchingVariant && (
-            <span className="text-green-600">✓ Variant selected: {matchingVariant.product_code}</span>
-          )}
+      <Separator />
+
+      {/* Door type selection */}
+      {selectedDimension && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <DoorClosed className="w-5 h-5" />
+            Door Type
+          </h3>
+          <div className="flex gap-2">
+            {getAvailableOptions('doorType').map((doorType) => (
+              <Button
+                key={doorType}
+                variant={selectedDoorType === doorType ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDoorTypeChange(doorType)}
+                className="transition-all duration-200"
+              >
+                {doorType}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Debug Info */}
+      {/* Orientation selection */}
+      {needsOrientation && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <RotateCcw className="w-5 h-5" />
+            Orientation
+          </h3>
+          <div className="flex gap-2">
+            {getAvailableOptions('orientation').map((orientation) => (
+              <Button
+                key={orientation}
+                variant={selectedOrientation === orientation ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleOrientationChange(orientation)}
+                className="transition-all duration-200"
+              >
+                {orientation}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Selection status */}
+      {!canProceed && selectedDimension && (
+        <div className="text-sm text-muted-foreground">
+          {!selectedDoorType && "Please select door type to continue."}
+          {selectedDoorType && needsOrientation && !selectedOrientation && "Please select orientation to continue."}
+        </div>
+      )}
+
+      {/* Enhanced debug info in development */}
       {process.env.NODE_ENV === 'development' && (
         <div className="text-xs text-muted-foreground bg-muted p-3 rounded space-y-1">
           <p><strong>Debug Info:</strong></p>
           <p>Total variants: {variants.length}</p>
-          <p>Available dimensions: {availableDimensions.join(', ')}</p>
-          <p>Available door types: {availableDoorTypes.join(', ')}</p>
-          <p>Available orientations: {availableOrientations.join(', ')}</p>
-          <p>Requires orientation: {requiresOrientation ? 'Yes' : 'No'}</p>
-          <p>Matching variant: {matchingVariant?.product_code || 'None'}</p>
+          <p>Glass variants: {variants.filter(v => v.door_type === 'Glass').length}</p>
+          <p>Solid variants: {variants.filter(v => v.door_type === 'Solid').length}</p>
+          <p>Current: {selectedDimension} / {selectedDoorType} / {selectedOrientation}</p>
+          <p>Available door types: {getAvailableOptions('doorType').join(', ')}</p>
+          <p>Available orientations: {getAvailableOptions('orientation').join(', ')}</p>
+          <p>Needs orientation: {needsOrientation ? 'Yes' : 'No'}</p>
+          <p>Can proceed: {canProceed ? 'Yes' : 'No'}</p>
+          {currentConfig && (
+            <p>Config variants: {currentConfig.variants.length} ({currentConfig.availableFinishes.join(', ')})</p>
+          )}
         </div>
       )}
     </div>
