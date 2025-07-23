@@ -1,4 +1,3 @@
-
 export interface ProductFinish {
   type: 'powder-coat' | 'stainless-steel';
   name: string;
@@ -38,15 +37,7 @@ export interface Product {
   baseProductId?: string;
 }
 
-// New interface for wall cabinet configuration
-export interface WallCabinetConfiguration {
-  dimension: string;
-  doorType: string;
-  orientation?: string;
-  availableFinishes: string[];
-  variants: WallCabinetVariant[];
-}
-
+// Simplified interface for wall cabinet variants
 export interface WallCabinetVariant {
   id: string;
   product_code: string;
