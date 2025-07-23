@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ShoppingCart, Eye } from 'lucide-react';
@@ -14,7 +15,6 @@ import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
 import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
 import { useProductById } from '@/hooks/useEnhancedProducts';
-import VariantSelector from '@/components/VariantSelector';
 import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurator';
 import ModularCabinetConfigurator from '@/components/product/ModularCabinetConfigurator';
 
@@ -154,12 +154,12 @@ const ProductDetail = () => {
     // Enhanced modular cabinet detection
     const productSeries = (product as any).product_series?.toLowerCase() || '';
     const productCode = (product as any).product_code?.toUpperCase() || '';
-    const isModularCabinet = productSeries.includes('modular cabinet') ||
-                           productSeries.includes('mobile cabinet') ||
-                           product.category?.toLowerCase().includes('modular cabinet') ||
-                           product.category?.toLowerCase().includes('mobile cabinet') ||
-                           product.name.toLowerCase().includes('mobile cabinet') ||
-                           product.name.toLowerCase().includes('modular cabinet') ||
+    const productName = product.name.toLowerCase();
+    const productCategory = product.category?.toLowerCase() || '';
+    
+    const isModularCabinet = productSeries.includes('mobile cabinet') ||
+                           productCategory.includes('mobile cabinet') ||
+                           productName.includes('mobile cabinet') ||
                            productCode.includes('MC-') ||
                            productCode.includes('MCC-');
 
@@ -194,19 +194,14 @@ const ProductDetail = () => {
                 model_path: v.modelPath,
                 additional_images: v.images || []
               }))}
-              onVariantSelect={handleVariantSelect}
-              selectedVariant={selectedVariant ? {
-                id: selectedVariant.id,
-                name: (selectedVariant as any).name || product.name,
-                product_code: (selectedVariant as any).product_code || '',
-                dimensions: selectedVariant.dimensions,
-                finish_type: (selectedVariant as any).finish_type || 'PC',
-                orientation: selectedVariant.orientation || 'None',
-                door_type: (selectedVariant as any).door_type || 'Single-Door',
-                thumbnail_path: selectedVariant.thumbnail,
-                model_path: selectedVariant.modelPath,
-                additional_images: selectedVariant.images || []
-              } : undefined}
+              selectedConfiguration={null}
+              onConfigurationSelect={(config) => {
+                console.log('Wall cabinet configuration selected:', config);
+                if (config.variants && config.variants.length > 0) {
+                  setSelectedVariant(config.variants[0]);
+                }
+              }}
+              isLoading={false}
             />
           </CardContent>
         </Card>
@@ -255,18 +250,33 @@ const ProductDetail = () => {
       );
     }
 
-    // Default variant selector for other products
+    // Default simple variant display for other products
     return (
       <Card>
         <CardHeader>
           <CardTitle>Product Configuration</CardTitle>
         </CardHeader>
         <CardContent>
-          <VariantSelector
-            variants={product.variants}
-            onVariantSelect={handleVariantSelect}
-            selectedVariant={selectedVariant}
-          />
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {product.variants.length > 0 ? `${product.variants.length} variants available` : 'No variants available'}
+            </p>
+            {product.variants.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {product.variants.slice(0, 4).map((variant: any, index: number) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedVariant(variant)}
+                    className={selectedVariant?.id === variant.id ? 'bg-primary text-primary-foreground' : ''}
+                  >
+                    {variant.name || `Variant ${index + 1}`}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     );
@@ -362,7 +372,9 @@ const ProductDetail = () => {
           {/* Variant Configuration */}
           {product.variants && product.variants.length > 0 && (
             <AnimatedSection animation="fade-in" delay={350}>
-              {renderVariantSelector()}
+              <div className="mt-12">
+                {renderVariantSelector()}
+              </div>
             </AnimatedSection>
           )}
 
