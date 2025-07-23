@@ -108,6 +108,36 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     };
   }, [variants]);
 
+  // Get available dimensions based on current selections
+  const getAvailableDimensions = (): string[] => {
+    if (variants.length === 0) return [];
+
+    let filteredVariants = [...variants];
+
+    // Filter by door type if selected
+    if (selectedDoorType) {
+      filteredVariants = filteredVariants.filter(v => v.door_type === selectedDoorType);
+    }
+
+    // Filter by orientation if selected
+    if (selectedOrientation) {
+      filteredVariants = filteredVariants.filter(v => {
+        const mappedOrientation = mapOrientation(v.orientation);
+        return mappedOrientation === selectedOrientation;
+      });
+    }
+
+    // Extract dimensions from filtered variants
+    const availableDimensions = new Set<string>();
+    filteredVariants.forEach(variant => {
+      if (variant.dimensions) {
+        availableDimensions.add(variant.dimensions);
+      }
+    });
+
+    return sortDimensionsBySize(Array.from(availableDimensions));
+  };
+
   // Get available options based on current selections
   const getAvailableOptions = (optionType: 'doorType' | 'orientation') => {
     if (variants.length === 0) return [];
@@ -119,7 +149,15 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       filteredVariants = filteredVariants.filter(v => v.dimensions === selectedDimension);
     }
 
-    // For orientations, also filter by door type
+    // For door types, also filter by orientation if selected
+    if (optionType === 'doorType' && selectedOrientation) {
+      filteredVariants = filteredVariants.filter(v => {
+        const mappedOrientation = mapOrientation(v.orientation);
+        return mappedOrientation === selectedOrientation;
+      });
+    }
+
+    // For orientations, also filter by door type if selected
     if (optionType === 'orientation' && selectedDoorType) {
       filteredVariants = filteredVariants.filter(v => v.door_type === selectedDoorType);
     }
@@ -191,33 +229,67 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
 
   // Check if orientation should be shown
   const shouldShowOrientation = () => {
-    if (!selectedDimension || !selectedDoorType) {
-      return false;
+    if (!selectedDimension && !selectedDoorType) {
+      // If neither dimension nor door type is selected, check if any orientations are available
+      return getAvailableOptions('orientation').length > 0;
     }
     
-    const dimensionWidth = extractDimensionWidth(selectedDimension);
-    if (dimensionWidth >= 750) {
-      return false;
+    // If dimension is selected, check if it requires orientation
+    if (selectedDimension) {
+      const dimensionWidth = extractDimensionWidth(selectedDimension);
+      if (dimensionWidth >= 750) {
+        return false;
+      }
     }
     
     const availableOrientations = getAvailableOptions('orientation');
     return availableOrientations.length > 0;
   };
 
-  // Selection handlers
+  // Selection handlers with improved clearing logic
   const handleDimensionChange = (dimension: string) => {
     setSelectedDimension(dimension);
-    setSelectedDoorType('');
-    setSelectedOrientation('');
+    
+    // Clear door type and orientation if they're no longer available
+    const availableDoorTypes = getAvailableOptions('doorType');
+    const availableOrientations = getAvailableOptions('orientation');
+    
+    if (selectedDoorType && !availableDoorTypes.includes(selectedDoorType)) {
+      setSelectedDoorType('');
+    }
+    if (selectedOrientation && !availableOrientations.includes(selectedOrientation)) {
+      setSelectedOrientation('');
+    }
   };
 
   const handleDoorTypeChange = (doorType: string) => {
     setSelectedDoorType(doorType);
-    setSelectedOrientation('');
+    
+    // Clear dimension and orientation if they're no longer available
+    const availableDimensions = getAvailableDimensions();
+    const availableOrientations = getAvailableOptions('orientation');
+    
+    if (selectedDimension && !availableDimensions.includes(selectedDimension)) {
+      setSelectedDimension('');
+    }
+    if (selectedOrientation && !availableOrientations.includes(selectedOrientation)) {
+      setSelectedOrientation('');
+    }
   };
 
   const handleOrientationChange = (orientation: string) => {
     setSelectedOrientation(orientation);
+    
+    // Clear dimension and door type if they're no longer available
+    const availableDimensions = getAvailableDimensions();
+    const availableDoorTypes = getAvailableOptions('doorType');
+    
+    if (selectedDimension && !availableDimensions.includes(selectedDimension)) {
+      setSelectedDimension('');
+    }
+    if (selectedDoorType && !availableDoorTypes.includes(selectedDoorType)) {
+      setSelectedDoorType('');
+    }
   };
 
   // Auto-select configuration when all required options are selected
@@ -279,7 +351,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
             <SelectValue placeholder="Select cabinet dimensions" />
           </SelectTrigger>
           <SelectContent className="bg-background border-border shadow-lg z-50">
-            {options.dimensions.map((dimension) => (
+            {getAvailableDimensions().map((dimension) => (
               <SelectItem 
                 key={dimension} 
                 value={dimension}
@@ -293,27 +365,25 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       </div>
 
       {/* Door type selection */}
-      {selectedDimension && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <DoorClosed className="w-5 h-5" />
-            Door Type
-          </h3>
-          <div className="flex gap-2">
-            {getAvailableOptions('doorType').map((doorType) => (
-              <Button
-                key={doorType}
-                variant={selectedDoorType === doorType ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleDoorTypeChange(doorType)}
-                className="transition-all duration-200"
-              >
-                {doorType}
-              </Button>
-            ))}
-          </div>
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+          <DoorClosed className="w-5 h-5" />
+          Door Type
+        </h3>
+        <div className="flex gap-2">
+          {getAvailableOptions('doorType').map((doorType) => (
+            <Button
+              key={doorType}
+              variant={selectedDoorType === doorType ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleDoorTypeChange(doorType)}
+              className="transition-all duration-200"
+            >
+              {doorType}
+            </Button>
+          ))}
         </div>
-      )}
+      </div>
 
       {/* Orientation selection */}
       {needsOrientation && (
