@@ -132,15 +132,16 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
         <ModularCabinetConfigurator 
           variants={variants.map(v => ({
             id: v.id,
-            product_code: v.id,
-            name: v.size || `${v.dimensions}`,
+            product_code: (v as any).product_code || v.id,
+            name: (v as any).name || v.size || `${v.dimensions}`,
             dimensions: v.dimensions,
-            finish_type: 'PC',
-            orientation: v.orientation || 'None',
-            door_type: v.type || 'Single-Door',
-            thumbnail_path: v.thumbnail,
-            model_path: v.modelPath,
-            additional_images: v.images
+            finish_type: (v as any).finish_type || 'PC',
+            orientation: v.orientation || (v as any).orientation || 'None',
+            door_type: (v as any).door_type || v.type || 'Single-Door',
+            drawer_count: (v as any).drawer_count,
+            thumbnail_path: (v as any).thumbnail_path || v.thumbnail,
+            model_path: (v as any).model_path || v.modelPath,
+            additional_images: (v as any).additional_images || v.images || []
           }))}
           onVariantSelect={(variant) => {
             const originalVariant = variants.find(v => v.id === variant.id);
@@ -148,15 +149,16 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
           }}
           selectedVariant={selectedVariant ? {
             id: selectedVariant.id,
-            product_code: selectedVariant.id,
-            name: selectedVariant.size || `${selectedVariant.dimensions}`,
+            product_code: (selectedVariant as any).product_code || selectedVariant.id,
+            name: (selectedVariant as any).name || selectedVariant.size || `${selectedVariant.dimensions}`,
             dimensions: selectedVariant.dimensions,
-            finish_type: 'PC',
-            orientation: selectedVariant.orientation || 'None',
-            door_type: selectedVariant.type || 'Single-Door',
-            thumbnail_path: selectedVariant.thumbnail,
-            model_path: selectedVariant.modelPath,
-            additional_images: selectedVariant.images
+            finish_type: (selectedVariant as any).finish_type || 'PC',
+            orientation: selectedVariant.orientation || (selectedVariant as any).orientation || 'None',
+            door_type: (selectedVariant as any).door_type || selectedVariant.type || 'Single-Door',
+            drawer_count: (selectedVariant as any).drawer_count,
+            thumbnail_path: (selectedVariant as any).thumbnail_path || selectedVariant.thumbnail,
+            model_path: (selectedVariant as any).model_path || selectedVariant.modelPath,
+            additional_images: (selectedVariant as any).additional_images || selectedVariant.images || []
           } : null}
         />
       );
