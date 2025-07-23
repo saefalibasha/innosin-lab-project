@@ -400,6 +400,30 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
         </Select>
       </div>
 
+
+      {/* Door type selection */}
+      {selectedDimension && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <DoorClosed className="w-5 h-5" />
+            Door Type
+          </h3>
+          <div className="flex gap-2">
+            {getAvailableOptions('doorType').map((doorType) => (
+              <Button
+                key={doorType}
+                variant={selectedDoorType === doorType ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleDoorTypeChange(doorType)}
+                className="transition-all duration-200"
+              >
+                {doorType}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Configuration summary */}
       {selectedDimension && (
         <Card className="bg-muted/50">
@@ -441,29 +465,6 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
 
       <Separator />
 
-      {/* Door type selection */}
-      {selectedDimension && (
-        <div className="space-y-3">
-          <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <DoorClosed className="w-5 h-5" />
-            Door Type
-          </h3>
-          <div className="flex gap-2">
-            {getAvailableOptions('doorType').map((doorType) => (
-              <Button
-                key={doorType}
-                variant={selectedDoorType === doorType ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleDoorTypeChange(doorType)}
-                className="transition-all duration-200"
-              >
-                {doorType}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Orientation selection */}
       {needsOrientation && (
         <div className="space-y-3">
@@ -495,23 +496,6 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
         </div>
       )}
 
-      {/* Enhanced debug info in development */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="text-xs text-muted-foreground bg-muted p-3 rounded space-y-1">
-          <p><strong>Debug Info:</strong></p>
-          <p>Total variants: {variants.length}</p>
-          <p>Glass variants: {variants.filter(v => v.door_type === 'Glass').length}</p>
-          <p>Solid variants: {variants.filter(v => v.door_type === 'Solid').length}</p>
-          <p>Current: {selectedDimension} / {selectedDoorType} / {selectedOrientation}</p>
-          <p>Available door types: {getAvailableOptions('doorType').join(', ')}</p>
-          <p>Available orientations: {getAvailableOptions('orientation').join(', ')}</p>
-          <p>Needs orientation: {needsOrientation ? 'Yes' : 'No'}</p>
-          <p>Can proceed: {canProceed ? 'Yes' : 'No'}</p>
-          {currentConfig && (
-            <p>Config variants: {currentConfig.variants.length} ({currentConfig.availableFinishes.join(', ')})</p>
-          )}
-        </div>
-      )}
     </div>
   );
 };
