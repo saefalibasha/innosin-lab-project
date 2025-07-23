@@ -26,7 +26,7 @@ interface ModularCabinetConfiguratorProps {
   selectedVariant?: ModularCabinetVariant;
 }
 
-export const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
+const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
   variants,
   onVariantSelect,
   selectedVariant
@@ -294,3 +294,5 @@ export const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProp
     </div>
   );
 };
+
+export default ModularCabinetConfigurator;

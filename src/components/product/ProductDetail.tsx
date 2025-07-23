@@ -11,8 +11,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ImagePlus, Loader2 } from 'lucide-react';
 import { getVariantAssetUrls } from '@/services/variantService';
-import { WallCabinetConfigurator } from './WallCabinetConfigurator';
-import { ModularCabinetConfigurator } from './ModularCabinetConfigurator';
+import WallCabinetConfigurator from './WallCabinetConfigurator';
+import ModularCabinetConfigurator from './ModularCabinetConfigurator';
 
 interface ProductDetailProps {
   product?: Product;
@@ -35,6 +35,45 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
     setSelectedVariant(variant);
   }, []);
 
+  // Convert ProductVariant to ServiceProductVariant for asset URL generation
+  const convertToServiceVariant = (variant: ProductVariant) => ({
+    id: variant.id,
+    name: variant.size || variant.dimensions,
+    product_code: variant.id,
+    category: product?.category || '',
+    dimensions: variant.dimensions,
+    description: product?.description || '',
+    full_description: product?.fullDescription || '',
+    specifications: product?.specifications || [],
+    thumbnail_path: variant.thumbnail,
+    model_path: variant.modelPath,
+    additional_images: variant.images,
+    finish_type: 'PC',
+    orientation: variant.orientation || 'None',
+    door_type: variant.type || 'Single-Door',
+    variant_type: 'standard',
+    parent_series_id: product?.id || ''
+  });
+
+  const convertProductToServiceVariant = (product: Product) => ({
+    id: product.id,
+    name: product.name,
+    product_code: product.id,
+    category: product.category,
+    dimensions: product.dimensions,
+    description: product.description,
+    full_description: product.fullDescription,
+    specifications: product.specifications,
+    thumbnail_path: product.thumbnail,
+    model_path: product.modelPath,
+    additional_images: product.images,
+    finish_type: 'PC',
+    orientation: 'None',
+    door_type: 'Single-Door',
+    variant_type: 'standard',
+    parent_series_id: product.id
+  });
+
   if (loading) {
     return <div className="flex items-center justify-center h-screen">
       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -54,28 +93,71 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
     }
 
     // Check if this is a wall cabinet series
-    const isWallCabinet = product.product_series?.toLowerCase().includes('wall cabinet') || 
+    const isWallCabinet = product.category?.toLowerCase().includes('wall cabinet') || 
                          product.name.toLowerCase().includes('wall cabinet');
 
     // Check if this is a modular cabinet series
-    const isModularCabinet = product.product_series?.toLowerCase().includes('modular cabinet') ||
-                           product.product_series?.toLowerCase().includes('mobile cabinet') ||
+    const isModularCabinet = product.category?.toLowerCase().includes('modular cabinet') ||
+                           product.category?.toLowerCase().includes('mobile cabinet') ||
                            product.name.toLowerCase().includes('mobile cabinet');
 
     if (isWallCabinet) {
       return (
         <WallCabinetConfigurator 
-          variants={variants}
-          onVariantSelect={handleVariantSelect}
-          selectedVariant={selectedVariant}
+          variants={variants.map(v => ({
+            id: v.id,
+            product_code: v.id,
+            name: v.size || `${v.dimensions}`,
+            dimensions: v.dimensions,
+            finish_type: 'PC',
+            orientation: v.orientation || 'None',
+            door_type: v.type || 'Glass',
+            thumbnail_path: v.thumbnail,
+            model_path: v.modelPath,
+            additional_images: v.images
+          }))}
+          onConfigurationSelect={(config) => {
+            // For now, just select the first variant of the configuration
+            const firstVariant = config.variants[0];
+            if (firstVariant) {
+              const originalVariant = variants.find(v => v.id === firstVariant.id);
+              if (originalVariant) handleVariantSelect(originalVariant);
+            }
+          }}
+          selectedConfiguration={undefined}
         />
       );
     } else if (isModularCabinet) {
       return (
         <ModularCabinetConfigurator 
-          variants={variants}
-          onVariantSelect={handleVariantSelect}
-          selectedVariant={selectedVariant}
+          variants={variants.map(v => ({
+            id: v.id,
+            product_code: v.id,
+            name: v.size || `${v.dimensions}`,
+            dimensions: v.dimensions,
+            finish_type: 'PC',
+            orientation: v.orientation || 'None',
+            door_type: v.type || 'Single-Door',
+            thumbnail_path: v.thumbnail,
+            model_path: v.modelPath,
+            additional_images: v.images
+          }))}
+          onVariantSelect={(variant) => {
+            const originalVariant = variants.find(v => v.id === variant.id);
+            if (originalVariant) handleVariantSelect(originalVariant);
+          }}
+          selectedVariant={selectedVariant ? {
+            id: selectedVariant.id,
+            product_code: selectedVariant.id,
+            name: selectedVariant.size || `${selectedVariant.dimensions}`,
+            dimensions: selectedVariant.dimensions,
+            finish_type: 'PC',
+            orientation: selectedVariant.orientation || 'None',
+            door_type: selectedVariant.type || 'Single-Door',
+            thumbnail_path: selectedVariant.thumbnail,
+            model_path: selectedVariant.modelPath,
+            additional_images: selectedVariant.images
+          } : null}
         />
       );
     }
@@ -92,20 +174,20 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
               onClick={() => handleVariantSelect(variant)}
             >
               <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  {variant.thumbnail_path && (
-                    <img 
-                      src={getVariantAssetUrls(variant).thumbnail || undefined}
-                      alt={variant.name}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <h4 className="font-medium">{variant.name}</h4>
-                    <p className="text-sm text-muted-foreground">{variant.dimensions}</p>
-                    <p className="text-sm text-muted-foreground">Code: {variant.product_code}</p>
-                  </div>
-                </div>
+                 <div className="flex items-start gap-3">
+                   {variant.thumbnail && (
+                     <img 
+                       src={getVariantAssetUrls(convertToServiceVariant(variant)).thumbnail || undefined}
+                       alt={variant.size || variant.dimensions}
+                       className="w-16 h-16 object-cover rounded"
+                     />
+                   )}
+                   <div className="flex-1">
+                     <h4 className="font-medium">{variant.size || variant.dimensions}</h4>
+                     <p className="text-sm text-muted-foreground">{variant.dimensions}</p>
+                     <p className="text-sm text-muted-foreground">ID: {variant.id}</p>
+                   </div>
+                 </div>
               </CardContent>
             </Card>
           ))}
@@ -114,12 +196,9 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
     );
   };
 
-  const assetUrls = selectedVariant ? getVariantAssetUrls(selectedVariant) : getVariantAssetUrls({
-    ...product,
-    thumbnail_path: product.thumbnail,
-    model_path: product.modelPath,
-    additional_images: product.images
-  } as ProductVariant);
+  const assetUrls = selectedVariant 
+    ? getVariantAssetUrls(convertToServiceVariant(selectedVariant)) 
+    : getVariantAssetUrls(convertProductToServiceVariant(product));
 
   return (
     <div className="container mx-auto px-4 py-8">
