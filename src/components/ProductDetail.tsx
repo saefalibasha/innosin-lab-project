@@ -113,8 +113,6 @@ const ProductDetail: React.FC = () => {
           variants={seriesVariants}
           selectedVariant={selectedVariant}
           onVariantSelect={handleVariantSelect}
-          selectedFinish={selectedFinish}
-          onFinishChange={setSelectedFinish}
         />
       );
     }
