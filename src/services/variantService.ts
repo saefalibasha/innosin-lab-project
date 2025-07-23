@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProductVariant {
@@ -233,6 +232,70 @@ export const fetchVariantsByDimensions = async (seriesId: string): Promise<{
   }
 };
 
+// Get variants grouped by configuration (excluding finish)
+export const getVariantsByConfiguration = (variants: ProductVariant[]) => {
+  const configurationMap = new Map<string, ProductVariant[]>();
+  
+  variants.forEach(variant => {
+    const dimensionWidth = extractDimensionWidth(variant.dimensions);
+    const orientation = dimensionWidth < 750 ? variant.orientation : 'None';
+    
+    // Create configuration key (dimension + door type + orientation, NO FINISH)
+    const configKey = `${variant.dimensions}|${variant.door_type}|${orientation}`;
+    
+    if (!configurationMap.has(configKey)) {
+      configurationMap.set(configKey, []);
+    }
+    
+    configurationMap.get(configKey)!.push(variant);
+  });
+  
+  console.log('📊 Variants grouped by configuration:', configurationMap);
+  return configurationMap;
+};
+
+// Enhanced dimension width extraction
+const extractDimensionWidth = (dimensions: string): number => {
+  if (!dimensions) return 0;
+  
+  // Handle formats like "450x330x750mm", "450×330×750mm", "450 x 330 x 750 mm"
+  const cleanDimensions = dimensions.replace(/[^\d×x]/g, '');
+  const match = cleanDimensions.match(/(\d+)/);
+  
+  if (!match) return 0;
+  
+  return parseInt(match[1]);
+};
+
+// Validate that glass and solid dimensions match
+export const validateDimensionParity = (variants: ProductVariant[]): {
+  isValid: boolean;
+  mismatches: string[];
+} => {
+  const dimensionDoorTypeMap = new Map<string, Set<string>>();
+  
+  variants.forEach(variant => {
+    const key = `${variant.dimensions}|${variant.orientation || 'None'}`;
+    if (!dimensionDoorTypeMap.has(key)) {
+      dimensionDoorTypeMap.set(key, new Set());
+    }
+    dimensionDoorTypeMap.get(key)!.add(variant.door_type);
+  });
+  
+  const mismatches: string[] = [];
+  
+  dimensionDoorTypeMap.forEach((doorTypes, key) => {
+    if (!doorTypes.has('Glass') || !doorTypes.has('Solid')) {
+      mismatches.push(`${key}: Missing ${doorTypes.has('Glass') ? 'Solid' : 'Glass'} variant`);
+    }
+  });
+  
+  return {
+    isValid: mismatches.length === 0,
+    mismatches
+  };
+};
+
 export const getVariantDisplayName = (variant: ProductVariant): string => {
   const parts = [];
   
@@ -274,12 +337,13 @@ export const getVariantAssetUrls = (variant: ProductVariant) => {
   };
 };
 
-// Enhanced variant validation
+// Updated variant validation for new flow
 export const validateVariantCompleteness = (variants: ProductVariant[]): {
   isComplete: boolean;
   missingGlassVariants: string[];
   missingSolidVariants: string[];
   missingOrientations: string[];
+  dimensionParity: { isValid: boolean; mismatches: string[] };
 } => {
   const expectedDimensions = [
     '450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm',
@@ -335,10 +399,14 @@ export const validateVariantCompleteness = (variants: ProductVariant[]): {
     });
   });
   
+  // Validate dimension parity
+  const dimensionParity = validateDimensionParity(variants);
+  
   return {
     isComplete: missingGlassVariants.length === 0 && missingSolidVariants.length === 0,
     missingGlassVariants,
     missingSolidVariants,
-    missingOrientations
+    missingOrientations,
+    dimensionParity
   };
 };

@@ -37,3 +37,25 @@ export interface Product {
   variants?: ProductVariant[];
   baseProductId?: string;
 }
+
+// New interface for wall cabinet configuration
+export interface WallCabinetConfiguration {
+  dimension: string;
+  doorType: string;
+  orientation?: string;
+  availableFinishes: string[];
+  variants: WallCabinetVariant[];
+}
+
+export interface WallCabinetVariant {
+  id: string;
+  product_code: string;
+  name: string;
+  dimensions: string;
+  finish_type: string;
+  orientation: string;
+  door_type: string;
+  thumbnail_path: string;
+  model_path: string;
+  additional_images: string[];
+}
