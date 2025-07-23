@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Package, Ruler, Settings } from 'lucide-react';
 
 interface ModularCabinetVariant {
   id: string;
@@ -19,10 +20,23 @@ interface ModularCabinetVariant {
   additional_images: string[];
 }
 
+interface ModularCabinetConfiguration {
+  id: string;
+  name: string;
+  description: string;
+  doorType: string;
+  dimensions: string;
+  orientation?: string;
+  drawerCount?: number;
+  finishType: string;
+  variants: ModularCabinetVariant[];
+}
+
 interface ModularCabinetConfiguratorProps {
   variants: ModularCabinetVariant[];
-  onVariantSelect: (variant: ModularCabinetVariant) => void;
-  selectedVariant?: ModularCabinetVariant;
+  selectedConfiguration: ModularCabinetConfiguration | null;
+  onConfigurationSelect: (configuration: ModularCabinetConfiguration) => void;
+  isLoading?: boolean;
 }
 
 // Standardized dimension format utility
@@ -48,13 +62,6 @@ const getBenchHeight = (dimensions: string): number => {
   return parseInt(parts[parts.length - 1]) || 0;
 };
 
-// Extract width from dimensions (first number)
-const getWidth = (dimensions: string): number => {
-  if (!dimensions) return 0;
-  const parts = dimensions.replace(/mm$/i, '').split(/[×x*\s]+/);
-  return parseInt(parts[0]) || 0;
-};
-
 // Utility function to extract door type from variant data
 const getDoorTypeFromVariant = (variant: ModularCabinetVariant): string => {
   // First check if door_type is explicitly set and not empty
@@ -71,336 +78,234 @@ const getDoorTypeFromVariant = (variant: ModularCabinetVariant): string => {
     return 'Triple-Door';
   } else if (productCode.includes('SD') || productCode.includes('SINGLE')) {
     return 'Single-Door';
+  } else if (productCode.includes('DWR') || productCode.includes('DRAWER')) {
+    return 'Drawer-Only';
+  } else if (productCode.includes('MCC') || productCode.includes('COMBINATION')) {
+    return 'Combination';
   }
   
   // Default to Single-Door for standard cabinets
   return 'Single-Door';
 };
 
-// Custom sort function for door types - Single-Door first, then logical order
-const sortDoorTypes = (doorTypes: string[]): string[] => {
-  const order = ['Single-Door', 'Double-Door', 'Triple-Door', 'Combination', 'Drawer-Only'];
-  
-  return doorTypes.sort((a, b) => {
-    const aIndex = order.indexOf(a);
-    const bIndex = order.indexOf(b);
-    
-    if (aIndex !== -1 && bIndex !== -1) {
-      return aIndex - bIndex;
-    }
-    if (aIndex !== -1) return -1;
-    if (bIndex !== -1) return 1;
-    return a.localeCompare(b);
-  });
-};
+// Generate configurations from variants
+const generateConfigurations = (variants: ModularCabinetVariant[]): ModularCabinetConfiguration[] => {
+  const configMap = new Map<string, ModularCabinetConfiguration>();
 
-// Custom sort function for dimensions - sort by bench height first, then width
-const sortDimensions = (dimensions: string[]): string[] => {
-  return dimensions.sort((a, b) => {
-    const aHeight = getBenchHeight(a);
-    const bHeight = getBenchHeight(b);
+  variants.forEach(variant => {
+    const doorType = getDoorTypeFromVariant(variant);
+    const standardizedDimensions = standardizeDimensions(variant.dimensions);
+    const benchHeight = getBenchHeight(variant.dimensions);
     
-    // First sort by bench height
+    // Create a unique key for each configuration
+    const orientation = variant.orientation && variant.orientation !== 'None' ? variant.orientation : '';
+    const drawerCount = variant.drawer_count || 0;
+    
+    const configKey = `${doorType}_${standardizedDimensions}_${orientation}_${drawerCount}_${variant.finish_type}`;
+    
+    if (!configMap.has(configKey)) {
+      // Generate configuration name
+      let configName = doorType;
+      if (orientation) {
+        configName += ` (${orientation})`;
+      }
+      if (drawerCount > 0) {
+        configName += ` - ${drawerCount} Drawer${drawerCount > 1 ? 's' : ''}`;
+      }
+      
+      // Generate description
+      let description = `${standardizedDimensions} ${doorType.toLowerCase()} cabinet`;
+      if (orientation) {
+        description += ` with ${orientation.toLowerCase()} configuration`;
+      }
+      if (drawerCount > 0) {
+        description += ` featuring ${drawerCount} drawer${drawerCount > 1 ? 's' : ''}`;
+      }
+      
+      const benchType = benchHeight === 650 ? '750mm Bench' : benchHeight === 800 ? '900mm Bench' : `${benchHeight}mm Bench`;
+      description += ` for ${benchType}`;
+
+      configMap.set(configKey, {
+        id: configKey,
+        name: configName,
+        description,
+        doorType,
+        dimensions: standardizedDimensions,
+        orientation,
+        drawerCount,
+        finishType: variant.finish_type,
+        variants: [variant]
+      });
+    } else {
+      // Add variant to existing configuration
+      const existingConfig = configMap.get(configKey)!;
+      existingConfig.variants.push(variant);
+    }
+  });
+
+  return Array.from(configMap.values()).sort((a, b) => {
+    // Sort by bench height first, then door type, then dimensions
+    const aHeight = getBenchHeight(a.dimensions);
+    const bHeight = getBenchHeight(b.dimensions);
+    
     if (aHeight !== bHeight) {
       return aHeight - bHeight;
     }
     
-    // Then sort by width
-    const aWidth = getWidth(a);
-    const bWidth = getWidth(b);
-    return aWidth - bWidth;
-  });
-};
-
-// Group dimensions by bench height for better organization
-const groupDimensionsByHeight = (dimensions: string[]): Record<string, string[]> => {
-  const groups: Record<string, string[]> = {};
-  
-  dimensions.forEach(dim => {
-    const height = getBenchHeight(dim);
-    const key = height === 650 ? '750mm Bench' : height === 800 ? '900mm Bench' : `${height}mm Bench`;
+    const doorTypeOrder = ['Single-Door', 'Double-Door', 'Triple-Door', 'Combination', 'Drawer-Only'];
+    const aDoorIndex = doorTypeOrder.indexOf(a.doorType);
+    const bDoorIndex = doorTypeOrder.indexOf(b.doorType);
     
-    if (!groups[key]) {
-      groups[key] = [];
+    if (aDoorIndex !== -1 && bDoorIndex !== -1) {
+      return aDoorIndex - bDoorIndex;
     }
-    groups[key].push(dim);
+    
+    return a.name.localeCompare(b.name);
   });
-  
-  return groups;
 };
 
 const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
   variants,
-  onVariantSelect,
-  selectedVariant
+  selectedConfiguration,
+  onConfigurationSelect,
+  isLoading = false
 }) => {
-  const [selectedDoorType, setSelectedDoorType] = useState<string>('');
-  const [selectedDimensions, setSelectedDimensions] = useState<string>('');
-  const [selectedOrientation, setSelectedOrientation] = useState<string>('');
-  const [selectedDrawerCount, setSelectedDrawerCount] = useState<string>('');
-  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const configurations = useMemo(() => {
+    if (!variants || variants.length === 0) return [];
+    return generateConfigurations(variants);
+  }, [variants]);
 
-  // Get available options with proper filtering and standardization
-  const options = useMemo(() => {
-    console.log('🔧 ModularCabinetConfigurator - Processing variants:', variants.length);
+  // Group configurations by bench height
+  const configurationsByBench = useMemo(() => {
+    const groups: Record<string, ModularCabinetConfiguration[]> = {};
     
-    const doorTypes = new Set<string>();
-    const dimensionsSet = new Set<string>();
-    const orientations = new Set<string>();
-    const drawerCounts = new Set<number>();
-    const finishes = new Set<string>();
-
-    variants.forEach(variant => {
-      const doorType = getDoorTypeFromVariant(variant);
-      const standardizedDimensions = standardizeDimensions(variant.dimensions);
+    configurations.forEach(config => {
+      const height = getBenchHeight(config.dimensions);
+      const benchType = height === 650 ? '750mm Bench' : height === 800 ? '900mm Bench' : `${height}mm Bench`;
       
-      console.log(`Variant ${variant.id}: "${variant.product_code}" -> door_type="${doorType}", dimensions="${standardizedDimensions}"`);
-      
-      // Apply progressive filtering
-      const matchesDoorType = !selectedDoorType || doorType === selectedDoorType;
-      const matchesDimensions = !selectedDimensions || standardizedDimensions === selectedDimensions;
-      const matchesOrientation = !selectedOrientation || variant.orientation === selectedOrientation;
-      const matchesDrawerCount = !selectedDrawerCount || (variant.drawer_count?.toString() === selectedDrawerCount);
-      const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
-
-      // For door types, show all available
-      if (!selectedDoorType) {
-        doorTypes.add(doorType);
+      if (!groups[benchType]) {
+        groups[benchType] = [];
       }
-      
-      // For dimensions, only show those available for selected door type
-      if (matchesDoorType && !selectedDimensions) {
-        dimensionsSet.add(standardizedDimensions);
-      }
-      
-      // For other options, filter based on previous selections
-      if (matchesDoorType && matchesDimensions) {
-        if (variant.orientation && variant.orientation !== 'None' && variant.orientation !== '') {
-          orientations.add(variant.orientation);
-        }
-        if (variant.drawer_count) {
-          drawerCounts.add(variant.drawer_count);
-        }
-        finishes.add(variant.finish_type);
-      }
+      groups[benchType].push(config);
     });
-
-    const sortedDoorTypes = sortDoorTypes(Array.from(doorTypes));
-    const sortedDimensions = sortDimensions(Array.from(dimensionsSet));
-    const dimensionGroups = groupDimensionsByHeight(sortedDimensions);
     
-    console.log('🔧 Door types detected:', Array.from(doorTypes));
-    console.log('🔧 Door types sorted:', sortedDoorTypes);
-    console.log('🔧 Dimensions grouped:', dimensionGroups);
+    return groups;
+  }, [configurations]);
 
-    return {
-      doorTypes: sortedDoorTypes,
-      dimensions: sortedDimensions,
-      dimensionGroups,
-      orientations: Array.from(orientations).sort(),
-      drawerCounts: Array.from(drawerCounts).sort((a, b) => a - b),
-      finishes: Array.from(finishes).sort()
-    };
-  }, [variants, selectedDoorType, selectedDimensions, selectedOrientation, selectedDrawerCount, selectedFinish]);
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/2 mb-2" />
+                <Skeleton className="h-3 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
-  // Get matching variant based on current selections
-  const matchingVariant = useMemo(() => {
-    if (!selectedDoorType || !selectedDimensions || !selectedFinish) return null;
-
-    return variants.find(variant => {
-      const doorType = getDoorTypeFromVariant(variant);
-      const standardizedDimensions = standardizeDimensions(variant.dimensions);
-      
-      const matchesDoorType = doorType === selectedDoorType;
-      const matchesDimensions = standardizedDimensions === selectedDimensions;
-      const matchesOrientation = !selectedOrientation || variant.orientation === selectedOrientation;
-      const matchesDrawerCount = !selectedDrawerCount || (variant.drawer_count?.toString() === selectedDrawerCount);
-      const matchesFinish = variant.finish_type === selectedFinish;
-
-      return matchesDoorType && matchesDimensions && matchesOrientation && matchesDrawerCount && matchesFinish;
-    });
-  }, [variants, selectedDoorType, selectedDimensions, selectedOrientation, selectedDrawerCount, selectedFinish]);
-
-  // Handle door type selection
-  const handleDoorTypeSelect = (doorType: string) => {
-    setSelectedDoorType(doorType);
-    // Reset dependent selections
-    setSelectedDimensions('');
-    setSelectedOrientation('');
-    setSelectedDrawerCount('');
-  };
-
-  // Handle dimension selection
-  const handleDimensionSelect = (dimension: string) => {
-    setSelectedDimensions(dimension);
-    // Reset dependent selections
-    setSelectedOrientation('');
-    setSelectedDrawerCount('');
-  };
-
-  // Handle variant selection
-  const handleVariantSelect = () => {
-    if (matchingVariant) {
-      onVariantSelect(matchingVariant);
-    }
-  };
+  if (configurations.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Package className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+        <p className="text-muted-foreground">No cabinet configurations available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Door Type Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Step 1: Select Door Type</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {options.doorTypes.map(doorType => (
-              <Button
-                key={doorType}
-                variant={selectedDoorType === doorType ? "default" : "outline"}
-                onClick={() => handleDoorTypeSelect(doorType)}
-                className="h-auto py-3 px-4 text-left"
+      <div className="text-center mb-6">
+        <h3 className="text-lg font-semibold mb-2">Select Cabinet Configuration</h3>
+        <p className="text-sm text-muted-foreground">
+          Choose from {configurations.length} available configurations
+        </p>
+      </div>
+
+      {Object.entries(configurationsByBench).map(([benchType, configs]) => (
+        <div key={benchType} className="space-y-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Ruler className="w-4 h-4 text-primary" />
+            <h4 className="font-medium text-primary">{benchType}</h4>
+            <Badge variant="secondary">{configs.length} configurations</Badge>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {configs.map((config) => (
+              <Card 
+                key={config.id}
+                className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
+                  selectedConfiguration?.id === config.id 
+                    ? 'ring-2 ring-primary bg-primary/5' 
+                    : 'hover:bg-accent/50'
+                }`}
+                onClick={() => onConfigurationSelect(config)}
               >
-                <div className="text-center w-full">
-                  <div className="font-medium">{doorType}</div>
-                </div>
-              </Button>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="font-medium text-sm">{config.name}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {config.finishType === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                    </Badge>
+                  </div>
+                  
+                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                    {config.description}
+                  </p>
+                  
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Ruler className="w-3 h-3" />
+                      <span>{config.dimensions}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Settings className="w-3 h-3" />
+                      <span>{config.doorType}</span>
+                    </div>
+                  </div>
+                  
+                  {config.variants.length > 1 && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        {config.variants.length} finish options available
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      ))}
 
-      {/* Dimensions Selection */}
-      {selectedDoorType && options.dimensions.length > 0 && (
-        <Card>
+      {selectedConfiguration && (
+        <Card className="bg-primary/5 border-primary/20">
           <CardHeader>
-            <CardTitle className="text-lg">Step 2: Select Dimensions</CardTitle>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Selected Configuration
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <Select value={selectedDimensions} onValueChange={handleDimensionSelect}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Choose dimensions" />
-              </SelectTrigger>
-              <SelectContent className="max-h-64">
-                {Object.entries(options.dimensionGroups).map(([benchHeight, dimensions]) => (
-                  <div key={benchHeight}>
-                    <div className="px-2 py-1 text-sm font-medium text-muted-foreground bg-muted/50 sticky top-0">
-                      {benchHeight}
-                    </div>
-                    {dimensions.map(dimension => (
-                      <SelectItem key={dimension} value={dimension} className="pl-4">
-                        {dimension}
-                      </SelectItem>
-                    ))}
-                  </div>
-                ))}
-              </SelectContent>
-            </Select>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Orientation Selection */}
-      {selectedDimensions && options.orientations.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Step 3: Select Orientation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {options.orientations.map(orientation => (
-                <Button
-                  key={orientation}
-                  variant={selectedOrientation === orientation ? "default" : "outline"}
-                  onClick={() => setSelectedOrientation(orientation)}
-                  className="h-auto py-3 px-4"
-                >
-                  <div className="text-center w-full">
-                    <div className="font-medium">{orientation === 'Left-Handed' ? 'Left-Handed' : 'Right-Handed'}</div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Drawer Count Selection */}
-      {selectedDimensions && options.drawerCounts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Step 4: Select Drawer Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {options.drawerCounts.map(count => (
-                <Button
-                  key={count}
-                  variant={selectedDrawerCount === count.toString() ? "default" : "outline"}
-                  onClick={() => setSelectedDrawerCount(count.toString())}
-                  className="h-auto py-3 px-4"
-                >
-                  <div className="text-center w-full">
-                    <div className="font-medium">{count} Drawer{count > 1 ? 's' : ''}</div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Finish Selection */}
-      {selectedDimensions && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Step {options.orientations.length > 0 || options.drawerCounts.length > 0 ? '5' : '3'}: Select Finish</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {options.finishes.map(finish => (
-                <Button
-                  key={finish}
-                  variant={selectedFinish === finish ? "default" : "outline"}
-                  onClick={() => setSelectedFinish(finish)}
-                  className="h-auto py-3 px-4"
-                >
-                  <div className="text-center w-full">
-                    <div className="font-medium">
-                      {finish === 'PC' ? 'Powder Coat' : finish === 'SS' ? 'Stainless Steel' : finish}
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Configuration Summary */}
-      {matchingVariant && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Configuration Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Door Type: {selectedDoorType}</Badge>
-                <Badge variant="secondary">Dimensions: {selectedDimensions}</Badge>
-                {selectedOrientation && <Badge variant="secondary">Orientation: {selectedOrientation}</Badge>}
-                {selectedDrawerCount && <Badge variant="secondary">Drawers: {selectedDrawerCount}</Badge>}
-                <Badge variant="secondary">Finish: {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</Badge>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{selectedConfiguration.name}</span>
+                <Badge variant="secondary">
+                  {selectedConfiguration.finishType === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                </Badge>
               </div>
-
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <h4 className="font-medium">{matchingVariant.name}</h4>
-                  <p className="text-sm text-muted-foreground">Product Code: {matchingVariant.product_code}</p>
-                </div>
-                <Button onClick={handleVariantSelect} size="lg" className="bg-sea hover:bg-sea-dark">
-                  Select This Configuration
-                </Button>
+              <p className="text-sm text-muted-foreground">
+                {selectedConfiguration.description}
+              </p>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <span>Dimensions: {selectedConfiguration.dimensions}</span>
+                <span>Type: {selectedConfiguration.doorType}</span>
               </div>
             </div>
           </CardContent>
