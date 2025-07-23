@@ -69,7 +69,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   const [selectedDoorType, setSelectedDoorType] = useState<string>('');
   const [selectedOrientation, setSelectedOrientation] = useState<string>('');
 
-  // Enhanced debug logging with variant breakdown
+  // Enhanced debug logging
   useEffect(() => {
     console.log('🔧 WallCabinetConfigurator - Total variants received:', variants.length);
     
@@ -78,8 +78,8 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       return;
     }
 
-    // Log all 24 variants with their properties
-    console.log('📋 Complete variant breakdown:');
+    // Debug: Show all variants with their properties
+    console.log('📋 All variants breakdown:');
     variants.forEach((variant, index) => {
       console.log(`  ${index + 1}. ${variant.product_code}:`, {
         dimensions: variant.dimensions,
@@ -90,60 +90,26 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       });
     });
 
-    // Group by key properties for analysis
-    const byFinish = variants.reduce((acc, v) => {
-      acc[v.finish_type] = (acc[v.finish_type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const byDimension = variants.reduce((acc, v) => {
-      acc[v.dimensions] = (acc[v.dimensions] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const byDoorType = variants.reduce((acc, v) => {
-      acc[v.door_type] = (acc[v.door_type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    const byOrientation = variants.reduce((acc, v) => {
-      const mapped = mapOrientation(v.orientation);
-      acc[mapped] = (acc[mapped] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    console.log('📊 Variant counts by property:');
-    console.log('  Finishes:', byFinish);
-    console.log('  Dimensions:', byDimension);
-    console.log('  Door Types:', byDoorType);
-    console.log('  Orientations:', byOrientation);
-
-    // Validate we have all expected combinations
-    const expectedCombinations = [
-      // Glass doors with orientations (450-600mm)
-      { finish: 'PC', dimension: '450x330x750mm', doorType: 'Glass', orientation: 'LH' },
-      { finish: 'PC', dimension: '450x330x750mm', doorType: 'Glass', orientation: 'RH' },
-      { finish: 'PC', dimension: '600x330x750mm', doorType: 'Glass', orientation: 'LH' },
-      { finish: 'PC', dimension: '600x330x750mm', doorType: 'Glass', orientation: 'RH' },
-      // Solid doors with orientations (450-600mm)
-      { finish: 'PC', dimension: '450x330x750mm', doorType: 'Solid', orientation: 'LH' },
-      { finish: 'PC', dimension: '450x330x750mm', doorType: 'Solid', orientation: 'RH' },
-      { finish: 'PC', dimension: '600x330x750mm', doorType: 'Solid', orientation: 'LH' },
-      { finish: 'PC', dimension: '600x330x750mm', doorType: 'Solid', orientation: 'RH' },
-      // Large dimensions without orientations (750mm+)
-      { finish: 'PC', dimension: '750x330x750mm', doorType: 'Glass', orientation: 'None' },
-      { finish: 'PC', dimension: '750x330x750mm', doorType: 'Solid', orientation: 'None' },
-    ];
-
-    console.log('✅ Checking expected combinations:');
-    expectedCombinations.forEach(combo => {
-      const found = variants.find(v => 
-        v.finish_type === combo.finish &&
-        v.dimensions === combo.dimension &&
-        v.door_type === combo.doorType &&
-        mapOrientation(v.orientation) === combo.orientation
-      );
-      console.log(`  ${combo.dimension} ${combo.doorType} ${combo.orientation}:`, found ? '✅' : '❌');
+    // Check for both Glass and Solid door types
+    const glassDoorVariants = variants.filter(v => v.door_type === 'Glass');
+    const solidDoorVariants = variants.filter(v => v.door_type === 'Solid');
+    
+    console.log(`🔍 Glass door variants: ${glassDoorVariants.length}`);
+    console.log(`🔍 Solid door variants: ${solidDoorVariants.length}`);
+    
+    // Check PC finish variants specifically
+    const pcVariants = variants.filter(v => v.finish_type === 'PC');
+    console.log(`🔍 PC finish variants: ${pcVariants.length}`);
+    
+    // Check 450mm dimension variants
+    const dimension450Variants = variants.filter(v => v.dimensions === '450x330x750mm');
+    console.log(`🔍 450mm dimension variants: ${dimension450Variants.length}`);
+    
+    // Check PC + 450mm variants
+    const pc450Variants = variants.filter(v => v.finish_type === 'PC' && v.dimensions === '450x330x750mm');
+    console.log(`🔍 PC + 450mm variants: ${pc450Variants.length}`);
+    pc450Variants.forEach(v => {
+      console.log(`  - ${v.product_code}: ${v.door_type} | ${v.orientation}`);
     });
   }, [variants]);
 
@@ -181,11 +147,11 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       orientations: Array.from(orientations).sort()
     };
 
-    console.log('🎯 Extracted all possible options:', result);
+    console.log('🎯 All possible options:', result);
     return result;
   }, [variants]);
 
-  // COMPLETELY REWRITTEN: Fixed filtering logic with detailed debugging
+  // COMPLETELY REWRITTEN: Fixed filtering logic
   const getAvailableOptions = (optionType: 'dimension' | 'doorType' | 'orientation') => {
     console.log(`\n🔍 === Getting available ${optionType} options ===`);
     console.log('Current selections:', {
@@ -201,37 +167,47 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     }
 
     // Start with all variants
-    let availableVariants = [...variants];
-    console.log(`Starting with ${availableVariants.length} variants`);
+    let filteredVariants = [...variants];
+    console.log(`Starting with ${filteredVariants.length} variants`);
 
-    // STEP 1: Always filter by finish (if selected)
+    // STEP 1: Filter by finish (always apply if selected)
     if (selectedFinish) {
-      availableVariants = availableVariants.filter(v => v.finish_type === selectedFinish);
-      console.log(`After finish filter (${selectedFinish}): ${availableVariants.length} variants`);
+      filteredVariants = filteredVariants.filter(v => v.finish_type === selectedFinish);
+      console.log(`After finish filter (${selectedFinish}): ${filteredVariants.length} variants`);
     }
 
-    // STEP 2: Filter by dimension (if not looking for dimensions AND dimension is selected)
-    if (optionType !== 'dimension' && selectedDimension) {
-      availableVariants = availableVariants.filter(v => v.dimensions === selectedDimension);
-      console.log(`After dimension filter (${selectedDimension}): ${availableVariants.length} variants`);
+    // STEP 2: Apply additional filters based on what we're looking for
+    if (optionType === 'dimension') {
+      // For dimensions, only filter by finish
+      console.log('Looking for dimensions - only filtering by finish');
+    } else if (optionType === 'doorType') {
+      // For door types, filter by finish and dimension
+      if (selectedDimension) {
+        filteredVariants = filteredVariants.filter(v => v.dimensions === selectedDimension);
+        console.log(`After dimension filter (${selectedDimension}): ${filteredVariants.length} variants`);
+      }
+    } else if (optionType === 'orientation') {
+      // For orientations, filter by finish, dimension, and door type
+      if (selectedDimension) {
+        filteredVariants = filteredVariants.filter(v => v.dimensions === selectedDimension);
+        console.log(`After dimension filter (${selectedDimension}): ${filteredVariants.length} variants`);
+      }
+      if (selectedDoorType) {
+        filteredVariants = filteredVariants.filter(v => v.door_type === selectedDoorType);
+        console.log(`After door type filter (${selectedDoorType}): ${filteredVariants.length} variants`);
+      }
     }
 
-    // STEP 3: Filter by door type (if looking for orientations AND door type is selected)
-    if (optionType === 'orientation' && selectedDoorType) {
-      availableVariants = availableVariants.filter(v => v.door_type === selectedDoorType);
-      console.log(`After door type filter (${selectedDoorType}): ${availableVariants.length} variants`);
-    }
-
-    // Log remaining variants for debugging
-    console.log('Remaining variants after filtering:');
-    availableVariants.forEach(v => {
-      console.log(`  ${v.product_code}: ${v.dimensions} | ${v.door_type} | ${v.orientation}`);
+    // Log the filtered variants for debugging
+    console.log('Filtered variants for option extraction:');
+    filteredVariants.forEach(v => {
+      console.log(`  ${v.product_code}: ${v.dimensions} | ${v.finish_type} | ${v.door_type} | ${v.orientation}`);
     });
 
-    // Extract the requested options
+    // Extract the requested options from filtered variants
     const optionSet = new Set<string>();
     
-    availableVariants.forEach(variant => {
+    filteredVariants.forEach(variant => {
       switch (optionType) {
         case 'dimension':
           if (variant.dimensions) optionSet.add(variant.dimensions);
@@ -250,8 +226,24 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
 
     const result = Array.from(optionSet).sort();
     console.log(`✅ Available ${optionType} options:`, result);
-    console.log(`=== End ${optionType} options ===\n`);
     
+    // Special debugging for door types
+    if (optionType === 'doorType') {
+      console.log('🔍 Door type debugging:');
+      const glassVariants = filteredVariants.filter(v => v.door_type === 'Glass');
+      const solidVariants = filteredVariants.filter(v => v.door_type === 'Solid');
+      console.log(`  Glass variants found: ${glassVariants.length}`);
+      console.log(`  Solid variants found: ${solidVariants.length}`);
+      
+      if (glassVariants.length === 0) {
+        console.log('⚠️ No Glass variants found after filtering!');
+      }
+      if (solidVariants.length === 0) {
+        console.log('⚠️ No Solid variants found after filtering!');
+      }
+    }
+    
+    console.log(`=== End ${optionType} options ===\n`);
     return result;
   };
 
