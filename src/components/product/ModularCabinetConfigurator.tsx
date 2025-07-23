@@ -26,18 +26,30 @@ interface ModularCabinetConfiguratorProps {
   selectedVariant?: ModularCabinetVariant;
 }
 
-// Utility function to normalize dimension display
-const normalizeDimensions = (dimensions: string): string => {
+// Standardized dimension format utility
+const standardizeDimensions = (dimensions: string): string => {
   // Remove any existing "mm" suffix and normalize spacing
   const cleanDimensions = dimensions.replace(/mm$/i, '').trim();
   
-  // Handle different formats like "500×500×650" or "500 x 500 x 650"
+  // Handle different formats like "500×500×650", "500 x 500 x 650", "500*500*650"
   const normalized = cleanDimensions
-    .replace(/[×x]/g, ' × ')
+    .replace(/[×x*]/gi, ' × ')
     .replace(/\s+/g, ' ')
     .trim();
   
   return `${normalized} mm`;
+};
+
+// Extract bench height from dimensions (last number)
+const getBenchHeight = (dimensions: string): number => {
+  const parts = dimensions.replace(/mm$/i, '').split(/[×x*\s]+/);
+  return parseInt(parts[parts.length - 1]) || 0;
+};
+
+// Extract width from dimensions (first number)
+const getWidth = (dimensions: string): number => {
+  const parts = dimensions.replace(/mm$/i, '').split(/[×x*\s]+/);
+  return parseInt(parts[0]) || 0;
 };
 
 // Utility function to extract door type from variant data
@@ -73,27 +85,48 @@ const sortDoorTypes = (doorTypes: string[]): string[] => {
     const aIndex = order.indexOf(a);
     const bIndex = order.indexOf(b);
     
-    // If both are in the order array, use their positions
     if (aIndex !== -1 && bIndex !== -1) {
       return aIndex - bIndex;
     }
-    
-    // If only one is in the order array, prioritize it
     if (aIndex !== -1) return -1;
     if (bIndex !== -1) return 1;
-    
-    // If neither is in the order array, use alphabetical order
     return a.localeCompare(b);
   });
 };
 
-// Custom sort function for dimensions - sort by width (first number)
+// Custom sort function for dimensions - sort by bench height first, then width
 const sortDimensions = (dimensions: string[]): string[] => {
   return dimensions.sort((a, b) => {
-    const aWidth = parseInt(a.split('×')[0].trim());
-    const bWidth = parseInt(b.split('×')[0].trim());
+    const aHeight = getBenchHeight(a);
+    const bHeight = getBenchHeight(b);
+    
+    // First sort by bench height (750mm vs 900mm)
+    if (aHeight !== bHeight) {
+      return aHeight - bHeight;
+    }
+    
+    // Then sort by width
+    const aWidth = getWidth(a);
+    const bWidth = getWidth(b);
     return aWidth - bWidth;
   });
+};
+
+// Group dimensions by bench height for better organization
+const groupDimensionsByHeight = (dimensions: string[]): Record<string, string[]> => {
+  const groups: Record<string, string[]> = {};
+  
+  dimensions.forEach(dim => {
+    const height = getBenchHeight(dim);
+    const key = height === 650 ? '750mm Bench' : height === 800 ? '900mm Bench' : `${height}mm Bench`;
+    
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(dim);
+  });
+  
+  return groups;
 };
 
 const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
@@ -107,23 +140,25 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
   const [selectedDrawerCount, setSelectedDrawerCount] = useState<string>('');
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
 
-  // Get available options with proper filtering
+  // Get available options with proper filtering and standardization
   const options = useMemo(() => {
     console.log('🔧 ModularCabinetConfigurator - Processing variants:', variants.length);
     
     const doorTypes = new Set<string>();
-    const dimensions = new Set<string>();
+    const dimensionsSet = new Set<string>();
     const orientations = new Set<string>();
     const drawerCounts = new Set<number>();
     const finishes = new Set<string>();
 
     variants.forEach(variant => {
       const doorType = getDoorTypeFromVariant(variant);
-      console.log(`Variant ${variant.id}: "${variant.product_code}" -> door_type="${doorType}"`);
+      const standardizedDimensions = standardizeDimensions(variant.dimensions);
+      
+      console.log(`Variant ${variant.id}: "${variant.product_code}" -> door_type="${doorType}", dimensions="${standardizedDimensions}"`);
       
       // Apply progressive filtering
       const matchesDoorType = !selectedDoorType || doorType === selectedDoorType;
-      const matchesDimensions = !selectedDimensions || normalizeDimensions(variant.dimensions) === selectedDimensions;
+      const matchesDimensions = !selectedDimensions || standardizedDimensions === selectedDimensions;
       const matchesOrientation = !selectedOrientation || variant.orientation === selectedOrientation;
       const matchesDrawerCount = !selectedDrawerCount || (variant.drawer_count?.toString() === selectedDrawerCount);
       const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
@@ -135,7 +170,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
       
       // For dimensions, only show those available for selected door type
       if (matchesDoorType && !selectedDimensions) {
-        dimensions.add(normalizeDimensions(variant.dimensions));
+        dimensionsSet.add(standardizedDimensions);
       }
       
       // For other options, filter based on previous selections
@@ -151,12 +186,17 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
     });
 
     const sortedDoorTypes = sortDoorTypes(Array.from(doorTypes));
+    const sortedDimensions = sortDimensions(Array.from(dimensionsSet));
+    const dimensionGroups = groupDimensionsByHeight(sortedDimensions);
+    
     console.log('🔧 Door types detected:', Array.from(doorTypes));
     console.log('🔧 Door types sorted:', sortedDoorTypes);
+    console.log('🔧 Dimensions grouped:', dimensionGroups);
 
     return {
       doorTypes: sortedDoorTypes,
-      dimensions: sortDimensions(Array.from(dimensions)),
+      dimensions: sortedDimensions,
+      dimensionGroups,
       orientations: Array.from(orientations).sort(),
       drawerCounts: Array.from(drawerCounts).sort((a, b) => a - b),
       finishes: Array.from(finishes).sort()
@@ -169,10 +209,10 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
     return variants.find(variant => {
       const doorType = getDoorTypeFromVariant(variant);
-      const normalizedDimensions = normalizeDimensions(variant.dimensions);
+      const standardizedDimensions = standardizeDimensions(variant.dimensions);
       
       const matchesDoorType = doorType === selectedDoorType;
-      const matchesDimensions = normalizedDimensions === selectedDimensions;
+      const matchesDimensions = standardizedDimensions === selectedDimensions;
       const matchesOrientation = !selectedOrientation || variant.orientation === selectedOrientation;
       const matchesDrawerCount = !selectedDrawerCount || (variant.drawer_count?.toString() === selectedDrawerCount);
       const matchesFinish = variant.finish_type === selectedFinish;
@@ -241,11 +281,18 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose dimensions" />
               </SelectTrigger>
-              <SelectContent>
-                {options.dimensions.map(dimension => (
-                  <SelectItem key={dimension} value={dimension}>
-                    {dimension}
-                  </SelectItem>
+              <SelectContent className="bg-white border shadow-lg z-50">
+                {Object.entries(options.dimensionGroups).map(([benchHeight, dimensions]) => (
+                  <div key={benchHeight}>
+                    <div className="px-2 py-1 text-sm font-medium text-muted-foreground">
+                      {benchHeight}
+                    </div>
+                    {dimensions.map(dimension => (
+                      <SelectItem key={dimension} value={dimension}>
+                        {dimension}
+                      </SelectItem>
+                    ))}
+                  </div>
                 ))}
               </SelectContent>
             </Select>
