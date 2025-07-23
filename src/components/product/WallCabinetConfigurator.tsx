@@ -77,6 +77,18 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       return matchesFinish && matchesDimension && matchesDoorType && matchesOrientation;
     });
 
+    // Add debugging for orientation filtering
+    if (type === 'orientation') {
+      console.log('Debugging orientation filtering:');
+      console.log('Current selections:', { selectedFinish, selectedDimension, selectedDoorType });
+      console.log('Filtered variants:', filtered.map(v => ({ 
+        product_code: v.product_code, 
+        dimensions: v.dimensions, 
+        orientation: v.orientation,
+        finish_type: v.finish_type
+      })));
+    }
+
     const availableSet = new Set<string>();
     filtered.forEach(variant => {
       if (type === 'dimension') {
@@ -94,7 +106,14 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       }
     });
 
-    return Array.from(availableSet).sort();
+    const result = Array.from(availableSet).sort();
+    
+    // Add debugging for orientation results
+    if (type === 'orientation') {
+      console.log('Available orientations:', result);
+    }
+    
+    return result;
   };
 
   // Find matching variant based on current selections
@@ -119,6 +138,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     
     // Get available orientations for the current selections
     const availableOrientations = getAvailableOptions('orientation');
+    console.log('shouldShowOrientation - Available orientations:', availableOrientations);
     return availableOrientations.length > 0;
   };
 
