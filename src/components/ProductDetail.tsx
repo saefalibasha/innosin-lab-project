@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +18,7 @@ const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading, error } = useProductById(id);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
 
@@ -66,6 +66,16 @@ const ProductDetail: React.FC = () => {
     fetchVariants();
   }, [product]);
 
+  // Handle variant selection - convert between ID and object
+  const handleVariantChange = (variantId: string) => {
+    const variant = seriesVariants.find(v => v.id === variantId);
+    setSelectedVariant(variant || null);
+  };
+
+  const handleVariantSelect = (variant: any) => {
+    setSelectedVariant(variant);
+  };
+
   // Determine which configurator to use based on product series
   const getConfiguratorComponent = () => {
     if (!product) return null;
@@ -77,8 +87,10 @@ const ProductDetail: React.FC = () => {
       return (
         <OpenRackConfigurator
           variants={seriesVariants}
-          selectedVariant={selectedVariant}
-          onVariantChange={setSelectedVariant}
+          selectedVariantId={selectedVariant?.id || ''}
+          onVariantChange={handleVariantChange}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
         />
       );
     }
@@ -87,8 +99,10 @@ const ProductDetail: React.FC = () => {
       return (
         <TallCabinetConfigurator
           variants={seriesVariants}
-          selectedVariant={selectedVariant}
-          onVariantChange={setSelectedVariant}
+          selectedVariantId={selectedVariant?.id || ''}
+          onVariantChange={handleVariantChange}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
         />
       );
     }
@@ -98,7 +112,9 @@ const ProductDetail: React.FC = () => {
         <WallCabinetConfigurator
           variants={seriesVariants}
           selectedVariant={selectedVariant}
-          onVariantChange={setSelectedVariant}
+          onVariantSelect={handleVariantSelect}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
         />
       );
     }
