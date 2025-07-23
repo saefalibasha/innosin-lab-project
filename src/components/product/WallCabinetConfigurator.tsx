@@ -33,6 +33,9 @@ const mapOrientation = (orientation: string): string => {
     case 'Right-Handed':
       return 'RH';
     case 'None':
+    case '':
+    case null:
+    case undefined:
       return 'None';
     default:
       return orientation;
@@ -59,11 +62,9 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     variants.forEach(variant => {
       finishes.add(variant.finish_type);
       dimensions.add(variant.dimensions);
-      // Extract door type from product code
-      if (variant.product_code.includes('WCG')) {
-        doorTypes.add('Glass');
-      } else if (variant.product_code.includes('WCS')) {
-        doorTypes.add('Solid');
+      // Use door_type field directly instead of parsing product codes
+      if (variant.door_type) {
+        doorTypes.add(variant.door_type);
       }
       // Map orientation to display value
       const mappedOrientation = mapOrientation(variant.orientation);
@@ -86,7 +87,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
 
     // Apply filters progressively based on the dependency chain
     if (type === 'dimension') {
-      // For dimensions, only filter by finish (not door type or orientation)
+      // For dimensions, only filter by finish
       filtered = variants.filter(variant => {
         const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
         return matchesFinish;
@@ -103,9 +104,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       filtered = variants.filter(variant => {
         const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
         const matchesDimension = !selectedDimension || variant.dimensions === selectedDimension;
-        const matchesDoorType = !selectedDoorType || 
-          (selectedDoorType === 'Glass' && variant.product_code.includes('WCG')) ||
-          (selectedDoorType === 'Solid' && variant.product_code.includes('WCS'));
+        const matchesDoorType = !selectedDoorType || variant.door_type === selectedDoorType;
         return matchesFinish && matchesDimension && matchesDoorType;
       });
     }
@@ -124,10 +123,8 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       if (type === 'dimension') {
         availableSet.add(variant.dimensions);
       } else if (type === 'doorType') {
-        if (variant.product_code.includes('WCG')) {
-          availableSet.add('Glass');
-        } else if (variant.product_code.includes('WCS')) {
-          availableSet.add('Solid');
+        if (variant.door_type) {
+          availableSet.add(variant.door_type);
         }
       } else if (type === 'orientation') {
         const mappedOrientation = mapOrientation(variant.orientation);
@@ -149,13 +146,17 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     return variants.find(variant => {
       const matchesFinish = variant.finish_type === selectedFinish;
       const matchesDimension = variant.dimensions === selectedDimension;
-      const matchesDoorType = 
-        (selectedDoorType === 'Glass' && variant.product_code.includes('WCG')) ||
-        (selectedDoorType === 'Solid' && variant.product_code.includes('WCS'));
+      const matchesDoorType = variant.door_type === selectedDoorType;
       const mappedOrientation = mapOrientation(variant.orientation);
-      const matchesOrientation = !selectedOrientation || mappedOrientation === selectedOrientation;
-
-      return matchesFinish && matchesDimension && matchesDoorType && matchesOrientation;
+      
+      // Handle orientation matching properly
+      if (selectedOrientation) {
+        // If orientation is selected, match exactly
+        return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === selectedOrientation;
+      } else {
+        // If no orientation selected, match variants with no orientation (None)
+        return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === 'None';
+      }
     });
   };
 
