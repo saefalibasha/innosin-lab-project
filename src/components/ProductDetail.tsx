@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,8 +9,6 @@ import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download } from 'luc
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { fetchSeriesWithVariants } from '@/services/variantService';
 import ProductImageGallery from './ProductImageGallery';
-import ProductModel3D from './ProductModel3D';
-import VariantSelector from './VariantSelector';
 import ProductOrientationSelector from './ProductOrientationSelector';
 import TechnicalSpecifications from './TechnicalSpecifications';
 import OpenRackConfigurator from './product/OpenRackConfigurator';
@@ -23,13 +22,34 @@ const ProductDetail: React.FC = () => {
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
 
+  // Extract series information from product category or name
+  const getSeriesInfo = (product: any) => {
+    if (!product) return { series: '', slug: '' };
+    
+    const name = product.name.toLowerCase();
+    const category = product.category.toLowerCase();
+    
+    if (name.includes('open rack') || category.includes('open rack')) {
+      return { series: 'Open Rack', slug: 'open-rack' };
+    }
+    if (name.includes('tall cabinet') || category.includes('tall cabinet')) {
+      return { series: 'Tall Cabinet', slug: 'tall-cabinet' };
+    }
+    if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
+      return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
+    }
+    
+    return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
+  };
+
   useEffect(() => {
     const fetchVariants = async () => {
-      if (!product?.product_series) return;
+      if (!product) return;
 
       setLoadingVariants(true);
       try {
-        const fetchedVariants = await fetchSeriesWithVariants(product.series_slug);
+        const seriesInfo = getSeriesInfo(product);
+        const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
         if (fetchedVariants && fetchedVariants.length > 0) {
           setSeriesVariants(fetchedVariants[0].variants || []);
         } else {
@@ -44,20 +64,21 @@ const ProductDetail: React.FC = () => {
     };
 
     fetchVariants();
-  }, [product?.product_series, product?.series_slug]);
+  }, [product]);
 
   // Determine which configurator to use based on product series
   const getConfiguratorComponent = () => {
-    if (!product?.product_series) return null;
+    if (!product) return null;
 
-    const series = product.product_series.toLowerCase();
+    const seriesInfo = getSeriesInfo(product);
+    const series = seriesInfo.series.toLowerCase();
     
     if (series.includes('open rack')) {
       return (
         <OpenRackConfigurator
           variants={seriesVariants}
-          onVariantSelect={setSelectedVariant}
           selectedVariant={selectedVariant}
+          onVariantChange={setSelectedVariant}
         />
       );
     }
@@ -66,8 +87,8 @@ const ProductDetail: React.FC = () => {
       return (
         <TallCabinetConfigurator
           variants={seriesVariants}
-          onVariantSelect={setSelectedVariant}
           selectedVariant={selectedVariant}
+          onVariantChange={setSelectedVariant}
         />
       );
     }
@@ -76,19 +97,34 @@ const ProductDetail: React.FC = () => {
       return (
         <WallCabinetConfigurator
           variants={seriesVariants}
-          onVariantSelect={setSelectedVariant}
           selectedVariant={selectedVariant}
+          onVariantChange={setSelectedVariant}
         />
       );
     }
 
-    // Default to generic variant selector for other series
+    // Default to simple variant display for other series
     return (
-      <VariantSelector
-        variants={seriesVariants}
-        selectedVariant={selectedVariant}
-        onVariantSelect={setSelectedVariant}
-      />
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          {seriesVariants.length > 0 ? `${seriesVariants.length} variants available` : 'No variants available'}
+        </p>
+        {seriesVariants.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {seriesVariants.slice(0, 4).map((variant: any, index: number) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectedVariant(variant)}
+                className={selectedVariant?.id === variant.id ? 'bg-primary text-primary-foreground' : ''}
+              >
+                {variant.name || `Variant ${index + 1}`}
+              </Button>
+            ))}
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -124,6 +160,16 @@ const ProductDetail: React.FC = () => {
 
   const displayProduct = selectedVariant || product;
 
+  // Get product images for the gallery
+  const getProductImages = () => {
+    const images = [];
+    if (displayProduct.thumbnail) images.push(displayProduct.thumbnail);
+    if (displayProduct.images && displayProduct.images.length > 0) {
+      images.push(...displayProduct.images);
+    }
+    return images.length > 0 ? images : ['/placeholder.svg'];
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <Button
@@ -136,10 +182,13 @@ const ProductDetail: React.FC = () => {
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Images and 3D Model */}
+        {/* Left Column - Images */}
         <div className="space-y-6">
-          <ProductImageGallery product={displayProduct} />
-          <ProductModel3D product={displayProduct} />
+          <ProductImageGallery
+            images={getProductImages()}
+            thumbnail={displayProduct.thumbnail || '/placeholder.svg'}
+            productName={displayProduct.name}
+          />
         </div>
 
         {/* Right Column - Product Information */}
@@ -157,7 +206,7 @@ const ProductDetail: React.FC = () => {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Package className="w-4 h-4" />
-                <span>{displayProduct.product_code || displayProduct.id}</span>
+                <span>{displayProduct.id}</span>
               </div>
               <div className="flex items-center gap-1">
                 <Ruler className="w-4 h-4" />
@@ -212,7 +261,7 @@ const ProductDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground leading-relaxed">
-                {displayProduct.fullDescription || displayProduct.full_description}
+                {displayProduct.fullDescription || displayProduct.description}
               </p>
             </CardContent>
           </Card>
