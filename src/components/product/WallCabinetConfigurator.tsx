@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, Ruler, DoorClosed, RotateCcw, AlertTriangle } from 'lucide-react';
@@ -45,7 +46,7 @@ const mapOrientation = (orientation: string): string => {
   return orientationMap[orientation] || 'None';
 };
 
-// Enhanced dimension parsing
+// Enhanced dimension parsing and sorting
 const extractDimensionWidth = (dimensions: string): number => {
   if (!dimensions) return 0;
   
@@ -56,6 +57,15 @@ const extractDimensionWidth = (dimensions: string): number => {
   if (!match) return 0;
   
   return parseInt(match[1]);
+};
+
+// Sort dimensions from smallest to biggest
+const sortDimensionsBySize = (dimensions: string[]): string[] => {
+  return dimensions.sort((a, b) => {
+    const widthA = extractDimensionWidth(a);
+    const widthB = extractDimensionWidth(b);
+    return widthA - widthB;
+  });
 };
 
 const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
@@ -130,7 +140,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     });
 
     const result = {
-      dimensions: Array.from(dimensions).sort(),
+      dimensions: sortDimensionsBySize(Array.from(dimensions)),
       doorTypes: Array.from(doorTypes).sort(),
       orientations: Array.from(orientations).sort()
     };
@@ -372,19 +382,22 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
           <Ruler className="w-5 h-5" />
           Dimensions
         </h3>
-        <div className="grid grid-cols-2 gap-2">
-          {options.dimensions.map((dimension) => (
-            <Button
-              key={dimension}
-              variant={selectedDimension === dimension ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleDimensionChange(dimension)}
-              className="transition-all duration-200"
-            >
-              {dimension}
-            </Button>
-          ))}
-        </div>
+        <Select value={selectedDimension} onValueChange={handleDimensionChange}>
+          <SelectTrigger className="w-full bg-background border-input hover:border-ring transition-colors">
+            <SelectValue placeholder="Select cabinet dimensions" />
+          </SelectTrigger>
+          <SelectContent className="bg-background border-border shadow-lg z-50">
+            {options.dimensions.map((dimension) => (
+              <SelectItem 
+                key={dimension} 
+                value={dimension}
+                className="cursor-pointer hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+              >
+                {dimension}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Configuration summary */}
