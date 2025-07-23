@@ -11,9 +11,10 @@ import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import VariantSelector from '@/components/product/VariantSelector';
-import { fetchSeriesWithVariants, getVariantAssetUrls } from '@/services/variantService';
 import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurator';
 import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
+import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurator';
+import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
 
 const EnhancedProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -35,13 +36,17 @@ const EnhancedProductDetail = () => {
     try {
       setLoading(true);
       
-      const seriesData = await fetchSeriesWithVariants();
-      const foundSeries = seriesData.find(s => s.id === productId);
+      // Fetch the main product/series
+      const product = await fetchProductById(productId!);
+      setSeries(product);
       
-      if (foundSeries) {
-        setSeries(foundSeries);
-        if (foundSeries.variants && foundSeries.variants.length > 0) {
-          setSelectedVariantId(foundSeries.variants[0].id);
+      // If it's a series parent, fetch child products as variants
+      if (product.is_series_parent) {
+        const variants = await fetchProductsByParentSeriesId(productId!);
+        setSeries({...product, variants});
+        
+        if (variants.length > 0) {
+          setSelectedVariantId(variants[0].id);
         }
       }
     } catch (error) {
@@ -56,16 +61,15 @@ const EnhancedProductDetail = () => {
   const isInnosinProduct = series?.category === 'Innosin Lab';
   const isTallCabinetSeries = series?.product_series?.toLowerCase().includes('tall cabinet');
   const isOpenRackSeries = series?.product_series?.toLowerCase().includes('open rack');
+  const isWallCabinetSeries = series?.product_series?.toLowerCase().includes('wall cabinet');
 
   // Update assets when variant or finish changes
   useEffect(() => {
     if (currentVariant) {
-      const assets = getVariantAssetUrls(currentVariant);
-      
       setCurrentAssets({
-        thumbnail: assets.thumbnail,
-        model: assets.model,
-        images: assets.images || []
+        thumbnail: currentVariant.thumbnail_path,
+        model: currentVariant.model_path,
+        images: currentVariant.additional_images || []
       });
       
       console.log('Updated assets for variant:', currentVariant.id, 'with finish:', selectedFinish);
@@ -251,6 +255,26 @@ const EnhancedProductDetail = () => {
                         onVariantChange={setSelectedVariantId}
                         selectedFinish={selectedFinish}
                         onFinishChange={setSelectedFinish}
+                      />
+                    ) : isWallCabinetSeries ? (
+                      <WallCabinetConfigurator
+                        variants={series.variants.map(v => ({
+                          id: v.id,
+                          product_code: v.product_code,
+                          name: v.name,
+                          dimensions: v.dimensions,
+                          finish_type: v.finish_type,
+                          orientation: v.orientation || 'None',
+                          door_type: v.door_type,
+                          thumbnail_path: v.thumbnail_path,
+                          model_path: v.model_path,
+                          additional_images: v.additional_images || []
+                        }))}
+                        onConfigurationSelect={(config) => {
+                          if (config.variants && config.variants.length > 0) {
+                            setSelectedVariantId(config.variants[0].id);
+                          }
+                        }}
                       />
                     ) : (
                       <VariantSelector
