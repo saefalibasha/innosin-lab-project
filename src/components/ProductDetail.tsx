@@ -16,12 +16,14 @@ import TechnicalSpecifications from './TechnicalSpecifications';
 import OpenRackConfigurator from './product/OpenRackConfigurator';
 import TallCabinetConfigurator from './product/TallCabinetConfigurator';
 import WallCabinetConfigurator from './product/WallCabinetConfigurator';
+import { WallCabinetConfiguration } from '@/types/product';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading: productLoading, error } = useProductById(id);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const [selectedConfiguration, setSelectedConfiguration] = useState<WallCabinetConfiguration | null>(null);
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
   
   // Enhanced loading state management
@@ -146,6 +148,16 @@ const ProductDetail: React.FC = () => {
     setSelectedVariant(variant);
   };
 
+  // Handle wall cabinet configuration selection
+  const handleConfigurationSelect = (configuration: WallCabinetConfiguration) => {
+    console.log('🎯 Configuration selected:', configuration);
+    setSelectedConfiguration(configuration);
+    // Set the first variant as the selected variant for display purposes
+    if (configuration.variants && configuration.variants.length > 0) {
+      setSelectedVariant(configuration.variants[0]);
+    }
+  };
+
   // Determine which configurator to use based on product series
   const getConfiguratorComponent = () => {
     if (!product) return null;
@@ -182,8 +194,8 @@ const ProductDetail: React.FC = () => {
       return (
         <WallCabinetConfigurator
           variants={seriesVariants}
-          selectedVariant={selectedVariant}
-          onVariantSelect={handleVariantSelect}
+          selectedConfiguration={selectedConfiguration}
+          onConfigurationSelect={handleConfigurationSelect}
           isLoading={variantsLoading}
         />
       );
