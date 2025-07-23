@@ -48,30 +48,41 @@ const getDoorTypeFromVariant = (variant: ModularCabinetVariant): string => {
   }
   
   // Check product code for door type indicators
-  if (variant.product_code.includes('-DD-') || variant.name.toLowerCase().includes('double door')) {
+  const productCode = variant.product_code.toUpperCase();
+  const productName = variant.name.toLowerCase();
+  
+  if (productCode.includes('-DD-') || productName.includes('double door')) {
     return 'Double-Door';
-  } else if (variant.product_code.includes('-TD-') || variant.name.toLowerCase().includes('triple door')) {
+  } else if (productCode.includes('-TD-') || productName.includes('triple door')) {
     return 'Triple-Door';
-  }
-  
-  // Check if it's a drawer-only unit
-  if (variant.product_code.includes('DWR') || variant.name.toLowerCase().includes('drawer')) {
+  } else if (productCode.includes('DWR') && !productCode.includes('-DD-') && !productCode.includes('-TD-')) {
     return 'Drawer-Only';
+  } else if (productCode.includes('MCC')) {
+    return 'Combination';
   }
   
-  // Default to Single-Door
+  // Default to Single-Door for standard mobile cabinets
   return 'Single-Door';
 };
 
-// Custom sort function for door types - Single-Door first
+// Custom sort function for door types - Single-Door first, then logical order
 const sortDoorTypes = (doorTypes: string[]): string[] => {
+  const order = ['Single-Door', 'Double-Door', 'Triple-Door', 'Combination', 'Drawer-Only'];
+  
   return doorTypes.sort((a, b) => {
-    if (a === 'Single-Door') return -1;
-    if (b === 'Single-Door') return 1;
-    if (a === 'Double-Door') return -1;
-    if (b === 'Double-Door') return 1;
-    if (a === 'Triple-Door') return -1;
-    if (b === 'Triple-Door') return 1;
+    const aIndex = order.indexOf(a);
+    const bIndex = order.indexOf(b);
+    
+    // If both are in the order array, use their positions
+    if (aIndex !== -1 && bIndex !== -1) {
+      return aIndex - bIndex;
+    }
+    
+    // If only one is in the order array, prioritize it
+    if (aIndex !== -1) return -1;
+    if (bIndex !== -1) return 1;
+    
+    // If neither is in the order array, use alphabetical order
     return a.localeCompare(b);
   });
 };
@@ -98,7 +109,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
   // Get available options with proper filtering
   const options = useMemo(() => {
-    console.log('🔧 ModularCabinetConfigurator - Processing variants:', variants.map(v => ({ id: v.id, door_type: v.door_type })));
+    console.log('🔧 ModularCabinetConfigurator - Processing variants:', variants.length);
     
     const doorTypes = new Set<string>();
     const dimensions = new Set<string>();
@@ -108,7 +119,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
     variants.forEach(variant => {
       const doorType = getDoorTypeFromVariant(variant);
-      console.log(`Variant ${variant.id}: door_type="${variant.door_type}" -> detected="${doorType}"`);
+      console.log(`Variant ${variant.id}: "${variant.product_code}" -> door_type="${doorType}"`);
       
       // Apply progressive filtering
       const matchesDoorType = !selectedDoorType || doorType === selectedDoorType;
@@ -140,8 +151,8 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
     });
 
     const sortedDoorTypes = sortDoorTypes(Array.from(doorTypes));
-    console.log('🔧 Door types before sort:', Array.from(doorTypes));
-    console.log('🔧 Door types after sort:', sortedDoorTypes);
+    console.log('🔧 Door types detected:', Array.from(doorTypes));
+    console.log('🔧 Door types sorted:', sortedDoorTypes);
 
     return {
       doorTypes: sortedDoorTypes,
