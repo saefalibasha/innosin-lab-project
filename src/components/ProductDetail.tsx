@@ -17,9 +17,6 @@ import { productPageContent } from '@/data/productPageContent';
 import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { getWallCabinetVariants } from '@/services/variantService';
-import MobileCabinetConfigurator from './product/MobileCabinetConfigurator';
-import OpenRackConfigurator from './product/OpenRackConfigurator';
-import TallCabinetConfigurator from './product/TallCabinetConfigurator';
 import WallCabinetConfigurator from './product/WallCabinetConfigurator';
 
 const ProductDetail: React.FC = () => {
@@ -133,7 +130,7 @@ const ProductDetail: React.FC = () => {
   const getConfiguratorComponent = () => {
     if (!product) return null;
     
-    const productSeries = product.product_series || product.category;
+    const productSeries = product.category;
     
     if (productSeries.includes('Wall Cabinet') || product.category === 'Wall Cabinet') {
       return (
