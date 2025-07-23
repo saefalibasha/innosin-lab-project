@@ -149,13 +149,20 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       const matchesDoorType = variant.door_type === selectedDoorType;
       const mappedOrientation = mapOrientation(variant.orientation);
       
-      // Handle orientation matching properly
-      if (selectedOrientation) {
-        // If orientation is selected, match exactly
-        return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === selectedOrientation;
-      } else {
-        // If no orientation selected, match variants with no orientation (None)
+      // Handle orientation matching based on dimension size
+      const dimensionNum = parseInt(selectedDimension);
+      
+      if (dimensionNum >= 750) {
+        // For larger dimensions (750-1000mm), match variants with no orientation
         return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === 'None';
+      } else {
+        // For smaller dimensions (450-600mm), orientation is required
+        if (selectedOrientation) {
+          return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === selectedOrientation;
+        } else {
+          // Don't match any variant until orientation is selected for smaller dimensions
+          return false;
+        }
       }
     });
   };
@@ -164,6 +171,13 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   const shouldShowOrientation = () => {
     if (!selectedFinish || !selectedDimension || !selectedDoorType) return false;
     
+    // Check if the selected dimension requires orientation (smaller dimensions)
+    const dimensionNum = parseInt(selectedDimension);
+    if (dimensionNum >= 750) {
+      return false; // Larger dimensions don't need orientation
+    }
+    
+    // For smaller dimensions, check if orientations are available
     const availableOrientations = getAvailableOptions('orientation');
     return availableOrientations.length > 0;
   };
@@ -188,15 +202,14 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       setSelectedDoorType('');
       setSelectedOrientation('');
     }
+    // Clear orientation when dimension changes
+    setSelectedOrientation('');
   };
 
   const handleDoorTypeChange = (doorType: string) => {
     setSelectedDoorType(doorType);
-    // Clear orientation if not available with new door type
-    const availableOrientations = getAvailableOptions('orientation');
-    if (selectedOrientation && !availableOrientations.includes(selectedOrientation)) {
-      setSelectedOrientation('');
-    }
+    // Clear orientation when door type changes
+    setSelectedOrientation('');
   };
 
   const handleOrientationChange = (orientation: string) => {
@@ -206,13 +219,14 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   // Auto-select variant when all required options are selected
   React.useEffect(() => {
     const variant = getCurrentVariant();
-    if (variant && (!shouldShowOrientation() || selectedOrientation)) {
+    if (variant) {
       onVariantSelect(variant);
     }
   }, [selectedFinish, selectedDimension, selectedDoorType, selectedOrientation]);
 
   const currentVariant = getCurrentVariant();
-  const canProceed = currentVariant && (!shouldShowOrientation() || selectedOrientation);
+  const needsOrientation = shouldShowOrientation();
+  const canProceed = currentVariant && (!needsOrientation || selectedOrientation);
 
   return (
     <div className="space-y-6">
@@ -334,8 +348,8 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
         </div>
       )}
 
-      {/* Orientation Selection - Only show if orientations are available */}
-      {shouldShowOrientation() && (
+      {/* Orientation Selection - Only show if needed */}
+      {needsOrientation && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <RotateCcw className="w-5 h-5" />
@@ -362,7 +376,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
         <div className="text-sm text-muted-foreground">
           {!selectedDimension && "Please select dimensions to continue."}
           {selectedDimension && !selectedDoorType && "Please select door type to continue."}
-          {selectedDimension && selectedDoorType && shouldShowOrientation() && !selectedOrientation && "Please select orientation to continue."}
+          {selectedDimension && selectedDoorType && needsOrientation && !selectedOrientation && "Please select orientation to continue."}
         </div>
       )}
     </div>
