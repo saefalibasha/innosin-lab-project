@@ -1,10 +1,11 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download } from 'lucide-react';
+import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { fetchSeriesWithVariants } from '@/services/variantService';
 import ProductImageGallery from './ProductImageGallery';
@@ -16,11 +17,12 @@ import WallCabinetConfigurator from './product/WallCabinetConfigurator';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { product, loading, error } = useProductById(id);
+  const { product, loading: productLoading, error } = useProductById(id);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
   const [loadingVariants, setLoadingVariants] = useState(false);
+  const [variantError, setVariantError] = useState<string | null>(null);
 
   // Extract series information from product category or name
   const getSeriesInfo = (product: any) => {
@@ -42,53 +44,96 @@ const ProductDetail: React.FC = () => {
     return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
   };
 
+  // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
     const fetchVariants = async () => {
       if (!product) return;
 
+      console.log('🚀 Starting variant fetch process for product:', product.id);
       setLoadingVariants(true);
+      setVariantError(null);
+      
       try {
         const seriesInfo = getSeriesInfo(product);
-        console.log('🔍 Fetching variants for series:', seriesInfo);
+        console.log('🔍 Series info determined:', seriesInfo);
+        
+        // Add performance timing
+        const startTime = performance.now();
         
         const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
-        console.log('📦 Raw fetched variants:', fetchedVariants);
+        
+        const endTime = performance.now();
+        console.log(`⏱️ Variant fetch took ${endTime - startTime} milliseconds`);
+        
+        console.log('📦 Raw fetched variants response:', fetchedVariants);
         
         if (fetchedVariants && fetchedVariants.length > 0) {
           const variants = fetchedVariants[0].variants || [];
-          console.log('🎯 Extracted variants:', variants);
-          console.log('📊 Variant breakdown:');
+          console.log('🎯 Extracted variants array:', variants);
+          
+          // Enhanced variant analysis
+          const glassVariants = variants.filter(v => v.door_type === 'Glass');
+          const solidVariants = variants.filter(v => v.door_type === 'Solid');
+          
+          console.log('📊 Comprehensive variant analysis:');
           console.log('- Total variants:', variants.length);
-          console.log('- Glass variants:', variants.filter(v => v.door_type === 'Glass').length);
-          console.log('- Solid variants:', variants.filter(v => v.door_type === 'Solid').length);
-          console.log('- Door types found:', [...new Set(variants.map(v => v.door_type))]);
-          console.log('- Dimensions found:', [...new Set(variants.map(v => v.dimensions))]);
-          console.log('- Orientations found:', [...new Set(variants.map(v => v.orientation))]);
+          console.log('- Glass variants:', glassVariants.length);
+          console.log('- Solid variants:', solidVariants.length);
+          console.log('- Unique door types:', [...new Set(variants.map(v => v.door_type))]);
+          console.log('- Unique dimensions:', [...new Set(variants.map(v => v.dimensions))]);
+          console.log('- Unique orientations:', [...new Set(variants.map(v => v.orientation))]);
+          console.log('- Unique finishes:', [...new Set(variants.map(v => v.finish_type))]);
+          
+          // Check for missing glass variants with orientations
+          const smallDimensions = ['450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm'];
+          smallDimensions.forEach(dim => {
+            const glassVariantsForDim = glassVariants.filter(v => v.dimensions === dim);
+            const orientationsForDim = [...new Set(glassVariantsForDim.map(v => v.orientation))];
+            console.log(`🔍 Glass variants for ${dim}:`, glassVariantsForDim.length, 'orientations:', orientationsForDim);
+          });
+          
+          // Log each variant for debugging
+          variants.forEach((variant, index) => {
+            console.log(`Variant ${index + 1}:`, {
+              id: variant.id,
+              product_code: variant.product_code,
+              dimensions: variant.dimensions,
+              door_type: variant.door_type,
+              finish_type: variant.finish_type,
+              orientation: variant.orientation
+            });
+          });
           
           setSeriesVariants(variants);
         } else {
           console.log('⚠️ No variants found for series:', seriesInfo.slug);
           setSeriesVariants([]);
+          setVariantError('No variants found for this product series');
         }
       } catch (err) {
         console.error("❌ Failed to fetch variants:", err);
         setSeriesVariants([]);
+        setVariantError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
         setLoadingVariants(false);
       }
     };
 
-    fetchVariants();
-  }, [product]);
+    // Only fetch variants after product is loaded
+    if (product && !productLoading) {
+      fetchVariants();
+    }
+  }, [product, productLoading]);
 
   // Handle variant selection - convert between ID and object
   const handleVariantChange = (variantId: string) => {
     const variant = seriesVariants.find(v => v.id === variantId);
+    console.log('🎯 Variant selected by ID:', variantId, 'found:', variant);
     setSelectedVariant(variant || null);
   };
 
   const handleVariantSelect = (variant: any) => {
-    console.log('🎯 Variant selected:', variant);
+    console.log('🎯 Variant selected directly:', variant);
     setSelectedVariant(variant);
   };
 
@@ -159,7 +204,8 @@ const ProductDetail: React.FC = () => {
     );
   };
 
-  if (loading) {
+  // Enhanced loading state with progressive loading
+  if (productLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -258,11 +304,35 @@ const ProductDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               {loadingVariants ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Loading variants...</p>
+                <div className="space-y-4">
+                  {/* Skeleton loading for configurator */}
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-1/3"></div>
+                    <div className="flex gap-2">
+                      <div className="h-8 bg-muted rounded w-20"></div>
+                      <div className="h-8 bg-muted rounded w-24"></div>
+                    </div>
                   </div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-1/4"></div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="h-8 bg-muted rounded"></div>
+                      <div className="h-8 bg-muted rounded"></div>
+                      <div className="h-8 bg-muted rounded"></div>
+                      <div className="h-8 bg-muted rounded"></div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center py-4">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-sm text-muted-foreground">Loading variants...</p>
+                    </div>
+                  </div>
+                </div>
+              ) : variantError ? (
+                <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{variantError}</span>
                 </div>
               ) : (
                 getConfiguratorComponent()
@@ -272,11 +342,11 @@ const ProductDetail: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex gap-4">
-            <Button className="flex-1 gap-2">
+            <Button className="flex-1 gap-2" disabled={loadingVariants}>
               <ShoppingCart className="w-4 h-4" />
               Add to Cart
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" disabled={loadingVariants}>
               <Download className="w-4 h-4" />
               Download Specs
             </Button>

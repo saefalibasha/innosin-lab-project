@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProductVariant {
@@ -34,7 +35,9 @@ interface SeriesWithVariants {
 
 export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<SeriesWithVariants[]> => {
   try {
-    // Fetch series parents
+    console.log('🚀 fetchSeriesWithVariants called with seriesSlug:', seriesSlug);
+    
+    // Fetch series parents with enhanced error handling
     let seriesQuery = supabase
       .from('products')
       .select('*')
@@ -46,15 +49,24 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
     }
 
     const { data: seriesData, error: seriesError } = await seriesQuery;
-    if (seriesError) throw seriesError;
+    
+    if (seriesError) {
+      console.error('❌ Error fetching series:', seriesError);
+      throw seriesError;
+    }
 
     if (!seriesData || seriesData.length === 0) {
+      console.warn('⚠️ No series found for slug:', seriesSlug);
       return [];
     }
 
-    // Fetch variants for each series
+    console.log('📦 Found series data:', seriesData);
+
+    // Fetch variants for each series with enhanced querying
     const seriesWithVariants = await Promise.all(
       seriesData.map(async (series) => {
+        console.log('🔍 Fetching variants for series:', series.id, series.name);
+        
         const { data: variants, error: variantsError } = await supabase
           .from('products')
           .select('*')
@@ -63,27 +75,39 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
           .order('variant_order', { ascending: true });
 
         if (variantsError) {
-          console.error('Error fetching variants for series:', series.id, variantsError);
+          console.error('❌ Error fetching variants for series:', series.id, variantsError);
           return {
             ...series,
             variants: []
           };
         }
 
+        const processedVariants = (variants || []).map(v => ({
+          ...v,
+          specifications: Array.isArray(v.specifications) ? v.specifications : 
+                         v.specifications ? [v.specifications] : []
+        }));
+
+        console.log('✅ Processed variants for series:', series.id, {
+          total: processedVariants.length,
+          glass: processedVariants.filter(v => v.door_type === 'Glass').length,
+          solid: processedVariants.filter(v => v.door_type === 'Solid').length,
+          doorTypes: [...new Set(processedVariants.map(v => v.door_type))],
+          dimensions: [...new Set(processedVariants.map(v => v.dimensions))],
+          orientations: [...new Set(processedVariants.map(v => v.orientation))]
+        });
+
         return {
           ...series,
-          variants: (variants || []).map(v => ({
-            ...v,
-            specifications: Array.isArray(v.specifications) ? v.specifications : 
-                           v.specifications ? [v.specifications] : []
-          }))
+          variants: processedVariants
         };
       })
     );
 
+    console.log('🎯 Final series with variants:', seriesWithVariants);
     return seriesWithVariants;
   } catch (error) {
-    console.error('Error fetching series with variants:', error);
+    console.error('❌ Error in fetchSeriesWithVariants:', error);
     return [];
   }
 };
@@ -92,6 +116,8 @@ export const fetchVariantsByDimensions = async (seriesId: string): Promise<{
   [dimensions: string]: ProductVariant[]
 }> => {
   try {
+    console.log('🚀 fetchVariantsByDimensions called with seriesId:', seriesId);
+    
     const { data: variants, error } = await supabase
       .from('products')
       .select('*')
@@ -99,7 +125,10 @@ export const fetchVariantsByDimensions = async (seriesId: string): Promise<{
       .eq('is_active', true)
       .order('variant_order', { ascending: true });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Error fetching variants by dimensions:', error);
+      throw error;
+    }
 
     // Group variants by dimensions
     const variantsByDimensions: { [dimensions: string]: ProductVariant[] } = {};
@@ -117,9 +146,10 @@ export const fetchVariantsByDimensions = async (seriesId: string): Promise<{
       variantsByDimensions[dimensions].push(processedVariant);
     });
 
+    console.log('✅ Variants grouped by dimensions:', variantsByDimensions);
     return variantsByDimensions;
   } catch (error) {
-    console.error('Error fetching variants by dimensions:', error);
+    console.error('❌ Error in fetchVariantsByDimensions:', error);
     return {};
   }
 };
@@ -162,5 +192,76 @@ export const getVariantAssetUrls = (variant: ProductVariant) => {
     thumbnail: getAssetUrl(variant.thumbnail_path),
     model: getAssetUrl(variant.model_path),
     images: variant.additional_images?.map(img => getAssetUrl(img)).filter(Boolean) || []
+  };
+};
+
+// Enhanced variant validation
+export const validateVariantCompleteness = (variants: ProductVariant[]): {
+  isComplete: boolean;
+  missingGlassVariants: string[];
+  missingSolidVariants: string[];
+  missingOrientations: string[];
+} => {
+  const expectedDimensions = [
+    '450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm',
+    '750x330x750mm', '800x330x750mm', '900x330x750mm', '1000x330x750mm'
+  ];
+  
+  const expectedOrientations = ['LH', 'RH'];
+  const expectedDoorTypes = ['Glass', 'Solid'];
+  
+  const missingGlassVariants: string[] = [];
+  const missingSolidVariants: string[] = [];
+  const missingOrientations: string[] = [];
+  
+  expectedDimensions.forEach(dimension => {
+    expectedDoorTypes.forEach(doorType => {
+      const dimensionWidth = parseInt(dimension.split('x')[0]);
+      
+      if (dimensionWidth < 750) {
+        // Small dimensions need orientations
+        expectedOrientations.forEach(orientation => {
+          const exists = variants.some(v => 
+            v.dimensions === dimension && 
+            v.door_type === doorType && 
+            (v.orientation === orientation || 
+             (orientation === 'LH' && v.orientation === 'Left-Handed') ||
+             (orientation === 'RH' && v.orientation === 'Right-Handed'))
+          );
+          
+          if (!exists) {
+            const key = `${dimension}-${doorType}-${orientation}`;
+            if (doorType === 'Glass') {
+              missingGlassVariants.push(key);
+            } else {
+              missingSolidVariants.push(key);
+            }
+          }
+        });
+      } else {
+        // Large dimensions don't need orientations
+        const exists = variants.some(v => 
+          v.dimensions === dimension && 
+          v.door_type === doorType &&
+          (!v.orientation || v.orientation === 'None' || v.orientation === '')
+        );
+        
+        if (!exists) {
+          const key = `${dimension}-${doorType}`;
+          if (doorType === 'Glass') {
+            missingGlassVariants.push(key);
+          } else {
+            missingSolidVariants.push(key);
+          }
+        }
+      }
+    });
+  });
+  
+  return {
+    isComplete: missingGlassVariants.length === 0 && missingSolidVariants.length === 0,
+    missingGlassVariants,
+    missingSolidVariants,
+    missingOrientations
   };
 };
