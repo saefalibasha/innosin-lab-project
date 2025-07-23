@@ -222,7 +222,12 @@ export const VariantFormDialog = ({
         finish_type: formData.finish_type,
         is_active: formData.is_active,
         description: formData.description,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
+        // Preserve existing asset paths by default
+        ...(variant && {
+          thumbnail_path: variant.thumbnail_path,
+          model_path: variant.model_path
+        })
       };
 
       let variantId: string;
@@ -261,8 +266,8 @@ export const VariantFormDialog = ({
         variantId = newVariant.id;
       }
 
-      // Upload files if they exist
-      const updates: any = {};
+      // Upload files if they exist and update only the changed assets
+      const assetUpdates: any = {};
 
       if (fileUploadState.thumbnail.file) {
         setFileUploadState(prev => ({
@@ -272,12 +277,12 @@ export const VariantFormDialog = ({
 
         try {
           const thumbnailUrl = await uploadFile(fileUploadState.thumbnail.file, 'thumbnail', variantId);
-          updates.thumbnail_path = thumbnailUrl;
+          assetUpdates.thumbnail_path = thumbnailUrl;
         } catch (error) {
           console.error('Error uploading thumbnail:', error);
           toast({
             title: "Warning",
-            description: "Variant saved but thumbnail upload failed",
+            description: "Variant saved but thumbnail upload failed. Existing thumbnail preserved.",
             variant: "destructive",
           });
         }
@@ -296,12 +301,12 @@ export const VariantFormDialog = ({
 
         try {
           const modelUrl = await uploadFile(fileUploadState.model.file, 'model', variantId);
-          updates.model_path = modelUrl;
+          assetUpdates.model_path = modelUrl;
         } catch (error) {
           console.error('Error uploading model:', error);
           toast({
             title: "Warning",
-            description: "Variant saved but 3D model upload failed",
+            description: "Variant saved but 3D model upload failed. Existing model preserved.",
             variant: "destructive",
           });
         }
@@ -312,19 +317,30 @@ export const VariantFormDialog = ({
         }));
       }
 
-      // Update with asset URLs if any were uploaded
-      if (Object.keys(updates).length > 0) {
+      // Update with new asset URLs only if any were uploaded
+      if (Object.keys(assetUpdates).length > 0) {
         const { error: updateError } = await supabase
           .from('products')
-          .update(updates)
+          .update(assetUpdates)
           .eq('id', variantId);
 
-        if (updateError) throw updateError;
+        if (updateError) {
+          console.error('Error updating asset URLs:', updateError);
+          toast({
+            title: "Warning",
+            description: "Variant saved but asset URL updates failed. Assets may need to be re-uploaded.",
+            variant: "destructive",
+          });
+        }
       }
+
+      const successMessage = variant 
+        ? "Variant updated successfully. Existing assets preserved unless replaced."
+        : "Variant created successfully. Previous data saved for next entry.";
 
       toast({
         title: "Success",
-        description: variant ? "Variant updated successfully" : "Variant created successfully. Previous data saved for next entry.",
+        description: successMessage,
       });
 
       onVariantSaved();
@@ -332,7 +348,7 @@ export const VariantFormDialog = ({
       console.error('Error saving variant:', error);
       toast({
         title: "Error",
-        description: "Failed to save variant",
+        description: "Failed to save variant. Existing assets preserved.",
         variant: "destructive",
       });
     }
@@ -445,6 +461,14 @@ export const VariantFormDialog = ({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-700">
                 💡 Previous entry data available. Click "Use Previous Data" to quickly fill common fields.
+              </p>
+            </div>
+          )}
+
+          {variant && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+              <p className="text-sm text-green-700">
+                ✅ Existing assets will be preserved unless you upload new files to replace them.
               </p>
             </div>
           )}
@@ -588,6 +612,11 @@ export const VariantFormDialog = ({
                       <p className="text-sm text-muted-foreground">
                         {isThumbnailDragActive ? 'Drop image here' : 'Drag & drop or click to select'}
                       </p>
+                      {variant && variant.thumbnail_path && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Current: Existing thumbnail will be preserved
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -637,6 +666,11 @@ export const VariantFormDialog = ({
                       <p className="text-sm text-muted-foreground">
                         {isModelDragActive ? 'Drop GLB file here' : 'Drag & drop or click to select GLB'}
                       </p>
+                      {variant && variant.model_path && (
+                        <p className="text-xs text-green-600 mt-1">
+                          Current: Existing 3D model will be preserved
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
