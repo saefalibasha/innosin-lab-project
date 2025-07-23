@@ -49,14 +49,29 @@ const ProductDetail: React.FC = () => {
       setLoadingVariants(true);
       try {
         const seriesInfo = getSeriesInfo(product);
+        console.log('🔍 Fetching variants for series:', seriesInfo);
+        
         const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
+        console.log('📦 Raw fetched variants:', fetchedVariants);
+        
         if (fetchedVariants && fetchedVariants.length > 0) {
-          setSeriesVariants(fetchedVariants[0].variants || []);
+          const variants = fetchedVariants[0].variants || [];
+          console.log('🎯 Extracted variants:', variants);
+          console.log('📊 Variant breakdown:');
+          console.log('- Total variants:', variants.length);
+          console.log('- Glass variants:', variants.filter(v => v.door_type === 'Glass').length);
+          console.log('- Solid variants:', variants.filter(v => v.door_type === 'Solid').length);
+          console.log('- Door types found:', [...new Set(variants.map(v => v.door_type))]);
+          console.log('- Dimensions found:', [...new Set(variants.map(v => v.dimensions))]);
+          console.log('- Orientations found:', [...new Set(variants.map(v => v.orientation))]);
+          
+          setSeriesVariants(variants);
         } else {
+          console.log('⚠️ No variants found for series:', seriesInfo.slug);
           setSeriesVariants([]);
         }
       } catch (err) {
-        console.error("Failed to fetch variants:", err);
+        console.error("❌ Failed to fetch variants:", err);
         setSeriesVariants([]);
       } finally {
         setLoadingVariants(false);
@@ -73,6 +88,7 @@ const ProductDetail: React.FC = () => {
   };
 
   const handleVariantSelect = (variant: any) => {
+    console.log('🎯 Variant selected:', variant);
     setSelectedVariant(variant);
   };
 
@@ -108,6 +124,7 @@ const ProductDetail: React.FC = () => {
     }
     
     if (series.includes('wall cabinet')) {
+      console.log('🏗️ Rendering WallCabinetConfigurator with variants:', seriesVariants);
       return (
         <WallCabinetConfigurator
           variants={seriesVariants}

@@ -42,6 +42,13 @@ const mapOrientation = (orientation: string): string => {
   }
 };
 
+// Extract dimension width from strings like "450x330x750mm"
+const extractDimensionWidth = (dimensions: string): number => {
+  if (!dimensions) return 0;
+  const match = dimensions.match(/(\d+)/);
+  return match ? parseInt(match[1]) : 0;
+};
+
 const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   variants,
   onVariantSelect,
@@ -51,6 +58,31 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   const [selectedDimension, setSelectedDimension] = useState<string>('');
   const [selectedDoorType, setSelectedDoorType] = useState<string>('');
   const [selectedOrientation, setSelectedOrientation] = useState<string>('');
+
+  // Debug logging
+  React.useEffect(() => {
+    console.log('🔧 WallCabinetConfigurator received variants:', variants);
+    console.log('📊 Variant analysis:');
+    console.log('- Total variants:', variants.length);
+    console.log('- Glass variants:', variants.filter(v => v.door_type === 'Glass').length);
+    console.log('- Solid variants:', variants.filter(v => v.door_type === 'Solid').length);
+    console.log('- Unique door types:', [...new Set(variants.map(v => v.door_type))]);
+    console.log('- Unique dimensions:', [...new Set(variants.map(v => v.dimensions))]);
+    console.log('- Unique finishes:', [...new Set(variants.map(v => v.finish_type))]);
+    console.log('- Unique orientations:', [...new Set(variants.map(v => v.orientation))]);
+    
+    // Log each variant for debugging
+    variants.forEach((variant, index) => {
+      console.log(`Variant ${index + 1}:`, {
+        id: variant.id,
+        dimensions: variant.dimensions,
+        door_type: variant.door_type,
+        finish_type: variant.finish_type,
+        orientation: variant.orientation,
+        product_code: variant.product_code
+      });
+    });
+  }, [variants]);
 
   // Extract unique options from variants
   const options = useMemo(() => {
@@ -62,45 +94,42 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     variants.forEach(variant => {
       finishes.add(variant.finish_type);
       dimensions.add(variant.dimensions);
-      // Use door_type field directly instead of parsing product codes
       if (variant.door_type) {
         doorTypes.add(variant.door_type);
       }
-      // Map orientation to display value
       const mappedOrientation = mapOrientation(variant.orientation);
       if (mappedOrientation && mappedOrientation !== 'None') {
         orientations.add(mappedOrientation);
       }
     });
 
-    return {
+    const result = {
       finishes: Array.from(finishes).sort(),
       dimensions: Array.from(dimensions).sort(),
       doorTypes: Array.from(doorTypes).sort(),
       orientations: Array.from(orientations).sort()
     };
+
+    console.log('🎯 Extracted options:', result);
+    return result;
   }, [variants]);
 
-  // Filter available options based on current selections with proper dependency chain
+  // Filter available options based on current selections
   const getAvailableOptions = (type: 'dimension' | 'doorType' | 'orientation') => {
     let filtered = variants;
 
-    // Apply filters progressively based on the dependency chain
     if (type === 'dimension') {
-      // For dimensions, only filter by finish
       filtered = variants.filter(variant => {
         const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
         return matchesFinish;
       });
     } else if (type === 'doorType') {
-      // For door types, filter by finish and dimension
       filtered = variants.filter(variant => {
         const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
         const matchesDimension = !selectedDimension || variant.dimensions === selectedDimension;
         return matchesFinish && matchesDimension;
       });
     } else if (type === 'orientation') {
-      // For orientations, filter by finish, dimension, and door type
       filtered = variants.filter(variant => {
         const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
         const matchesDimension = !selectedDimension || variant.dimensions === selectedDimension;
@@ -109,13 +138,12 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
       });
     }
 
-    console.log(`Filtering ${type}:`, {
+    console.log(`🔍 Filtering ${type} with:`, {
       selectedFinish,
       selectedDimension,
       selectedDoorType,
       selectedOrientation,
-      totalVariants: variants.length,
-      filteredVariants: filtered.length
+      filteredCount: filtered.length
     });
 
     const availableSet = new Set<string>();
@@ -135,59 +163,93 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     });
 
     const result = Array.from(availableSet).sort();
-    console.log(`Available ${type}:`, result);
+    console.log(`✅ Available ${type}:`, result);
     return result;
   };
 
   // Find matching variant based on current selections
   const getCurrentVariant = () => {
-    if (!selectedFinish || !selectedDimension || !selectedDoorType) return null;
+    if (!selectedFinish || !selectedDimension || !selectedDoorType) {
+      console.log('⚠️ Missing required selections:', { selectedFinish, selectedDimension, selectedDoorType });
+      return null;
+    }
 
-    return variants.find(variant => {
+    const dimensionWidth = extractDimensionWidth(selectedDimension);
+    console.log('🔍 Looking for variant with:', {
+      selectedFinish,
+      selectedDimension,
+      selectedDoorType,
+      selectedOrientation,
+      dimensionWidth
+    });
+
+    const matchingVariant = variants.find(variant => {
       const matchesFinish = variant.finish_type === selectedFinish;
       const matchesDimension = variant.dimensions === selectedDimension;
       const matchesDoorType = variant.door_type === selectedDoorType;
       const mappedOrientation = mapOrientation(variant.orientation);
       
-      // Handle orientation matching based on dimension size
-      const dimensionNum = parseInt(selectedDimension);
-      
-      if (dimensionNum >= 750) {
-        // For larger dimensions (750-1000mm), match variants with no orientation
-        return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === 'None';
+      console.log('🔍 Checking variant:', {
+        variant: variant.product_code,
+        matchesFinish,
+        matchesDimension,
+        matchesDoorType,
+        mappedOrientation,
+        variantOrientation: variant.orientation
+      });
+
+      // For larger dimensions (750-1000mm), match variants with no orientation
+      if (dimensionWidth >= 750) {
+        const matches = matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === 'None';
+        console.log('🔍 Large dimension match:', matches);
+        return matches;
       } else {
         // For smaller dimensions (450-600mm), orientation is required
         if (selectedOrientation) {
-          return matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === selectedOrientation;
+          const matches = matchesFinish && matchesDimension && matchesDoorType && mappedOrientation === selectedOrientation;
+          console.log('🔍 Small dimension with orientation match:', matches);
+          return matches;
         } else {
-          // Don't match any variant until orientation is selected for smaller dimensions
+          console.log('🔍 Small dimension without orientation - no match');
           return false;
         }
       }
     });
+
+    console.log('🎯 Found matching variant:', matchingVariant);
+    return matchingVariant || null;
   };
 
-  // Check if orientation selection is available and should be shown
+  // Check if orientation selection is needed
   const shouldShowOrientation = () => {
-    if (!selectedFinish || !selectedDimension || !selectedDoorType) return false;
-    
-    // Check if the selected dimension requires orientation (smaller dimensions)
-    const dimensionNum = parseInt(selectedDimension);
-    if (dimensionNum >= 750) {
-      return false; // Larger dimensions don't need orientation
+    if (!selectedFinish || !selectedDimension || !selectedDoorType) {
+      console.log('⚠️ Not showing orientation - missing selections');
+      return false;
     }
     
-    // For smaller dimensions, check if orientations are available
+    const dimensionWidth = extractDimensionWidth(selectedDimension);
+    console.log('🔍 Checking if orientation needed for dimension:', dimensionWidth);
+    
+    if (dimensionWidth >= 750) {
+      console.log('✅ Large dimension - no orientation needed');
+      return false;
+    }
+    
     const availableOrientations = getAvailableOptions('orientation');
-    return availableOrientations.length > 0;
+    const shouldShow = availableOrientations.length > 0;
+    console.log('🔍 Should show orientation:', shouldShow, 'Available:', availableOrientations);
+    return shouldShow;
   };
 
   // Handle selection changes
   const handleFinishChange = (finish: string) => {
+    console.log('🎯 Finish changed to:', finish);
     setSelectedFinish(finish);
-    // Clear dependent selections that might not be available
+    
+    // Check if current dimension is still available
     const availableDimensions = getAvailableOptions('dimension');
     if (selectedDimension && !availableDimensions.includes(selectedDimension)) {
+      console.log('⚠️ Clearing dimension - not available with new finish');
       setSelectedDimension('');
       setSelectedDoorType('');
       setSelectedOrientation('');
@@ -195,24 +257,28 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   };
 
   const handleDimensionChange = (dimension: string) => {
+    console.log('🎯 Dimension changed to:', dimension);
     setSelectedDimension(dimension);
-    // Clear dependent selections that might not be available
+    
+    // Check if current door type is still available
     const availableDoorTypes = getAvailableOptions('doorType');
     if (selectedDoorType && !availableDoorTypes.includes(selectedDoorType)) {
+      console.log('⚠️ Clearing door type - not available with new dimension');
       setSelectedDoorType('');
-      setSelectedOrientation('');
     }
-    // Clear orientation when dimension changes
+    
+    // Always clear orientation when dimension changes
     setSelectedOrientation('');
   };
 
   const handleDoorTypeChange = (doorType: string) => {
+    console.log('🎯 Door type changed to:', doorType);
     setSelectedDoorType(doorType);
-    // Clear orientation when door type changes
     setSelectedOrientation('');
   };
 
   const handleOrientationChange = (orientation: string) => {
+    console.log('🎯 Orientation changed to:', orientation);
     setSelectedOrientation(orientation);
   };
 
@@ -220,6 +286,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   React.useEffect(() => {
     const variant = getCurrentVariant();
     if (variant) {
+      console.log('🎯 Auto-selecting variant:', variant.product_code);
       onVariantSelect(variant);
     }
   }, [selectedFinish, selectedDimension, selectedDoorType, selectedOrientation]);
@@ -227,6 +294,16 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   const currentVariant = getCurrentVariant();
   const needsOrientation = shouldShowOrientation();
   const canProceed = currentVariant && (!needsOrientation || selectedOrientation);
+
+  console.log('🎯 Current state:', {
+    currentVariant: currentVariant?.product_code,
+    needsOrientation,
+    canProceed,
+    selectedFinish,
+    selectedDimension,
+    selectedDoorType,
+    selectedOrientation
+  });
 
   return (
     <div className="space-y-6">
