@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { fetchSeriesWithVariants } from '@/services/variantService';
+import { useLoadingState } from '@/hooks/useLoadingState';
 import ProductImageGallery from './ProductImageGallery';
 import ProductOrientationSelector from './ProductOrientationSelector';
 import TechnicalSpecifications from './TechnicalSpecifications';
@@ -21,8 +23,16 @@ const ProductDetail: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
-  const [loadingVariants, setLoadingVariants] = useState(false);
-  const [variantError, setVariantError] = useState<string | null>(null);
+  
+  // Enhanced loading state management
+  const {
+    isLoading: variantsLoading,
+    error: variantError,
+    startLoading,
+    stopLoading,
+    setError,
+    reset
+  } = useLoadingState(false);
 
   // Extract series information from product category or name
   const getSeriesInfo = (product: any) => {
@@ -47,24 +57,21 @@ const ProductDetail: React.FC = () => {
   // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
     const fetchVariants = async () => {
-      if (!product) return;
+      if (!product || productLoading) return;
 
       console.log('🚀 Starting variant fetch process for product:', product.id);
-      setLoadingVariants(true);
-      setVariantError(null);
+      startLoading();
+      reset();
       
       try {
         const seriesInfo = getSeriesInfo(product);
         console.log('🔍 Series info determined:', seriesInfo);
         
-        // Add performance timing
         const startTime = performance.now();
-        
         const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
-        
         const endTime = performance.now();
-        console.log(`⏱️ Variant fetch took ${endTime - startTime} milliseconds`);
         
+        console.log(`⏱️ Variant fetch took ${endTime - startTime}ms`);
         console.log('📦 Raw fetched variants response:', fetchedVariants);
         
         if (fetchedVariants && fetchedVariants.length > 0) {
@@ -84,45 +91,47 @@ const ProductDetail: React.FC = () => {
           console.log('- Unique orientations:', [...new Set(variants.map(v => v.orientation))]);
           console.log('- Unique finishes:', [...new Set(variants.map(v => v.finish_type))]);
           
-          // Check for missing glass variants with orientations
-          const smallDimensions = ['450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm'];
-          smallDimensions.forEach(dim => {
-            const glassVariantsForDim = glassVariants.filter(v => v.dimensions === dim);
-            const orientationsForDim = [...new Set(glassVariantsForDim.map(v => v.orientation))];
-            console.log(`🔍 Glass variants for ${dim}:`, glassVariantsForDim.length, 'orientations:', orientationsForDim);
-          });
+          // Validate that all expected variants are present
+          const expectedSmallDimensions = ['450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm'];
+          const expectedOrientations = ['Left-Handed', 'Right-Handed'];
+          const expectedDoorTypes = ['Glass', 'Solid'];
           
-          // Log each variant for debugging
-          variants.forEach((variant, index) => {
-            console.log(`Variant ${index + 1}:`, {
-              id: variant.id,
-              product_code: variant.product_code,
-              dimensions: variant.dimensions,
-              door_type: variant.door_type,
-              finish_type: variant.finish_type,
-              orientation: variant.orientation
+          expectedSmallDimensions.forEach(dim => {
+            expectedDoorTypes.forEach(doorType => {
+              expectedOrientations.forEach(orientation => {
+                const exists = variants.some(v => 
+                  v.dimensions === dim && 
+                  v.door_type === doorType && 
+                  v.orientation === orientation
+                );
+                if (!exists) {
+                  console.warn(`⚠️ Missing variant: ${dim} ${doorType} ${orientation}`);
+                }
+              });
             });
           });
           
           setSeriesVariants(variants);
+          
+          if (glassVariants.length === 0) {
+            console.error('❌ No glass variants found!');
+            setError('No glass variants found for this product series');
+          }
         } else {
           console.log('⚠️ No variants found for series:', seriesInfo.slug);
           setSeriesVariants([]);
-          setVariantError('No variants found for this product series');
+          setError('No variants found for this product series');
         }
       } catch (err) {
         console.error("❌ Failed to fetch variants:", err);
         setSeriesVariants([]);
-        setVariantError(err instanceof Error ? err.message : 'Failed to load product variants');
+        setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
-        setLoadingVariants(false);
+        stopLoading();
       }
     };
 
-    // Only fetch variants after product is loaded
-    if (product && !productLoading) {
-      fetchVariants();
-    }
+    fetchVariants();
   }, [product, productLoading]);
 
   // Handle variant selection - convert between ID and object
@@ -169,12 +178,13 @@ const ProductDetail: React.FC = () => {
     }
     
     if (series.includes('wall cabinet')) {
-      console.log('🏗️ Rendering WallCabinetConfigurator with variants:', seriesVariants);
+      console.log('🏗️ Rendering WallCabinetConfigurator with variants:', seriesVariants.length);
       return (
         <WallCabinetConfigurator
           variants={seriesVariants}
           selectedVariant={selectedVariant}
           onVariantSelect={handleVariantSelect}
+          isLoading={variantsLoading}
         />
       );
     }
@@ -303,33 +313,7 @@ const ProductDetail: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loadingVariants ? (
-                <div className="space-y-4">
-                  {/* Skeleton loading for configurator */}
-                  <div className="space-y-2">
-                    <div className="h-4 bg-muted rounded w-1/3"></div>
-                    <div className="flex gap-2">
-                      <div className="h-8 bg-muted rounded w-20"></div>
-                      <div className="h-8 bg-muted rounded w-24"></div>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-muted rounded w-1/4"></div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="h-8 bg-muted rounded"></div>
-                      <div className="h-8 bg-muted rounded"></div>
-                      <div className="h-8 bg-muted rounded"></div>
-                      <div className="h-8 bg-muted rounded"></div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center py-4">
-                    <div className="text-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-                      <p className="text-sm text-muted-foreground">Loading variants...</p>
-                    </div>
-                  </div>
-                </div>
-              ) : variantError ? (
+              {variantError ? (
                 <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
                   <AlertCircle className="w-5 h-5" />
                   <span>{variantError}</span>
@@ -342,11 +326,11 @@ const ProductDetail: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex gap-4">
-            <Button className="flex-1 gap-2" disabled={loadingVariants}>
+            <Button className="flex-1 gap-2" disabled={variantsLoading}>
               <ShoppingCart className="w-4 h-4" />
               Add to Cart
             </Button>
-            <Button variant="outline" className="gap-2" disabled={loadingVariants}>
+            <Button variant="outline" className="gap-2" disabled={variantsLoading}>
               <Download className="w-4 h-4" />
               Download Specs
             </Button>

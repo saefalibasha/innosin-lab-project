@@ -37,12 +37,16 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
   try {
     console.log('🚀 fetchSeriesWithVariants called with seriesSlug:', seriesSlug);
     
-    // Fetch series parents with enhanced error handling
+    // Enhanced performance monitoring
+    const startTime = performance.now();
+    
+    // Fetch series parents with optimized query
     let seriesQuery = supabase
       .from('products')
       .select('*')
       .eq('is_series_parent', true)
-      .eq('is_active', true);
+      .eq('is_active', true)
+      .order('series_order', { ascending: true });
 
     if (seriesSlug) {
       seriesQuery = seriesQuery.eq('series_slug', seriesSlug);
@@ -62,10 +66,12 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
 
     console.log('📦 Found series data:', seriesData);
 
-    // Fetch variants for each series with enhanced querying
+    // Enhanced variant fetching with performance optimization
     const seriesWithVariants = await Promise.all(
       seriesData.map(async (series) => {
         console.log('🔍 Fetching variants for series:', series.id, series.name);
+        
+        const variantStartTime = performance.now();
         
         const { data: variants, error: variantsError } = await supabase
           .from('products')
@@ -73,6 +79,9 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
           .eq('parent_series_id', series.id)
           .eq('is_active', true)
           .order('variant_order', { ascending: true });
+
+        const variantEndTime = performance.now();
+        console.log(`⏱️ Variant fetch for series ${series.id} took ${variantEndTime - variantStartTime}ms`);
 
         if (variantsError) {
           console.error('❌ Error fetching variants for series:', series.id, variantsError);
@@ -88,14 +97,24 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
                          v.specifications ? [v.specifications] : []
         }));
 
+        // Enhanced variant analysis with validation
+        const glassVariants = processedVariants.filter(v => v.door_type === 'Glass');
+        const solidVariants = processedVariants.filter(v => v.door_type === 'Solid');
+        
         console.log('✅ Processed variants for series:', series.id, {
           total: processedVariants.length,
-          glass: processedVariants.filter(v => v.door_type === 'Glass').length,
-          solid: processedVariants.filter(v => v.door_type === 'Solid').length,
+          glass: glassVariants.length,
+          solid: solidVariants.length,
           doorTypes: [...new Set(processedVariants.map(v => v.door_type))],
           dimensions: [...new Set(processedVariants.map(v => v.dimensions))],
-          orientations: [...new Set(processedVariants.map(v => v.orientation))]
+          orientations: [...new Set(processedVariants.map(v => v.orientation))],
+          finishes: [...new Set(processedVariants.map(v => v.finish_type))]
         });
+
+        // Validate expected variants are present
+        if (series.name.toLowerCase().includes('wall cabinet')) {
+          validateWallCabinetVariants(processedVariants);
+        }
 
         return {
           ...series,
@@ -104,11 +123,71 @@ export const fetchSeriesWithVariants = async (seriesSlug?: string): Promise<Seri
       })
     );
 
+    const endTime = performance.now();
+    console.log(`🎯 Total fetchSeriesWithVariants took ${endTime - startTime}ms`);
     console.log('🎯 Final series with variants:', seriesWithVariants);
+    
     return seriesWithVariants;
   } catch (error) {
     console.error('❌ Error in fetchSeriesWithVariants:', error);
     return [];
+  }
+};
+
+// Enhanced wall cabinet variant validation
+const validateWallCabinetVariants = (variants: ProductVariant[]) => {
+  console.log('🔍 Validating wall cabinet variants...');
+  
+  const expectedSmallDimensions = ['450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm'];
+  const expectedLargeDimensions = ['750x330x750mm', '800x330x750mm', '900x330x750mm', '1000x330x750mm'];
+  const expectedOrientations = ['Left-Handed', 'Right-Handed'];
+  const expectedDoorTypes = ['Glass', 'Solid'];
+  const expectedFinishes = ['PC', 'SS'];
+  
+  let missingVariants = 0;
+  
+  // Check small dimensions (need orientations)
+  expectedSmallDimensions.forEach(dimension => {
+    expectedDoorTypes.forEach(doorType => {
+      expectedOrientations.forEach(orientation => {
+        expectedFinishes.forEach(finish => {
+          const exists = variants.some(v => 
+            v.dimensions === dimension && 
+            v.door_type === doorType && 
+            v.orientation === orientation &&
+            v.finish_type === finish
+          );
+          if (!exists) {
+            console.warn(`⚠️ Missing variant: ${dimension} ${doorType} ${orientation} ${finish}`);
+            missingVariants++;
+          }
+        });
+      });
+    });
+  });
+  
+  // Check large dimensions (no orientations needed)
+  expectedLargeDimensions.forEach(dimension => {
+    expectedDoorTypes.forEach(doorType => {
+      expectedFinishes.forEach(finish => {
+        const exists = variants.some(v => 
+          v.dimensions === dimension && 
+          v.door_type === doorType && 
+          (v.orientation === 'None' || v.orientation === '' || !v.orientation) &&
+          v.finish_type === finish
+        );
+        if (!exists) {
+          console.warn(`⚠️ Missing variant: ${dimension} ${doorType} ${finish} (no orientation)`);
+          missingVariants++;
+        }
+      });
+    });
+  });
+  
+  if (missingVariants > 0) {
+    console.error(`❌ Found ${missingVariants} missing wall cabinet variants`);
+  } else {
+    console.log('✅ All expected wall cabinet variants are present');
   }
 };
 
@@ -207,7 +286,7 @@ export const validateVariantCompleteness = (variants: ProductVariant[]): {
     '750x330x750mm', '800x330x750mm', '900x330x750mm', '1000x330x750mm'
   ];
   
-  const expectedOrientations = ['LH', 'RH'];
+  const expectedOrientations = ['Left-Handed', 'Right-Handed'];
   const expectedDoorTypes = ['Glass', 'Solid'];
   
   const missingGlassVariants: string[] = [];
@@ -224,9 +303,7 @@ export const validateVariantCompleteness = (variants: ProductVariant[]): {
           const exists = variants.some(v => 
             v.dimensions === dimension && 
             v.door_type === doorType && 
-            (v.orientation === orientation || 
-             (orientation === 'LH' && v.orientation === 'Left-Handed') ||
-             (orientation === 'RH' && v.orientation === 'Right-Handed'))
+            v.orientation === orientation
           );
           
           if (!exists) {
