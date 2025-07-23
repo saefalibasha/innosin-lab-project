@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,23 +117,9 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   const shouldShowOrientation = () => {
     if (!selectedFinish || !selectedDimension || !selectedDoorType) return false;
     
-    // Filter variants by current selections first
-    const matchingVariants = variants.filter(variant => {
-      const matchesFinish = variant.finish_type === selectedFinish;
-      const matchesDimension = variant.dimensions === selectedDimension;
-      const matchesDoorType = 
-        (selectedDoorType === 'Glass' && variant.product_code.includes('WCG')) ||
-        (selectedDoorType === 'Solid' && variant.product_code.includes('WCS'));
-      
-      return matchesFinish && matchesDimension && matchesDoorType;
-    });
-
-    // Check if any of the matching variants have orientations
-    const hasOrientations = matchingVariants.some(variant => 
-      variant.orientation && variant.orientation !== 'None'
-    );
-
-    return hasOrientations;
+    // Get available orientations for the current selections
+    const availableOrientations = getAvailableOptions('orientation');
+    return availableOrientations.length > 0;
   };
 
   // Handle selection changes
@@ -301,7 +288,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
         </div>
       )}
 
-      {/* Orientation Selection */}
+      {/* Orientation Selection - Only show if orientations are available */}
       {shouldShowOrientation() && (
         <div className="space-y-3">
           <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
