@@ -96,10 +96,21 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product: initialPr
     const isWallCabinet = product.category?.toLowerCase().includes('wall cabinet') || 
                          product.name.toLowerCase().includes('wall cabinet');
 
-    // Check if this is a modular cabinet series
-    const isModularCabinet = product.category?.toLowerCase().includes('modular cabinet') ||
+    // Check if this is a modular cabinet series - check product_series field
+    const productSeries = (product as any).product_series?.toLowerCase() || '';
+    const isModularCabinet = productSeries.includes('modular cabinet') ||
+                           product.category?.toLowerCase().includes('modular cabinet') ||
                            product.category?.toLowerCase().includes('mobile cabinet') ||
-                           product.name.toLowerCase().includes('mobile cabinet');
+                           product.name.toLowerCase().includes('mobile cabinet') ||
+                           product.name.toLowerCase().includes('modular cabinet');
+
+    console.log('🔍 Product detection:', {
+      category: product.category,
+      name: product.name,
+      product_series: (product as any).product_series,
+      isWallCabinet,
+      isModularCabinet
+    });
 
     if (isWallCabinet) {
       return (

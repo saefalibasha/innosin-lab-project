@@ -98,6 +98,8 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
   // Get available options with proper filtering
   const options = useMemo(() => {
+    console.log('🔧 ModularCabinetConfigurator - Processing variants:', variants.map(v => ({ id: v.id, door_type: v.door_type })));
+    
     const doorTypes = new Set<string>();
     const dimensions = new Set<string>();
     const orientations = new Set<string>();
@@ -106,6 +108,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
     variants.forEach(variant => {
       const doorType = getDoorTypeFromVariant(variant);
+      console.log(`Variant ${variant.id}: door_type="${variant.door_type}" -> detected="${doorType}"`);
       
       // Apply progressive filtering
       const matchesDoorType = !selectedDoorType || doorType === selectedDoorType;
@@ -136,8 +139,12 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
       }
     });
 
+    const sortedDoorTypes = sortDoorTypes(Array.from(doorTypes));
+    console.log('🔧 Door types before sort:', Array.from(doorTypes));
+    console.log('🔧 Door types after sort:', sortedDoorTypes);
+
     return {
-      doorTypes: sortDoorTypes(Array.from(doorTypes)),
+      doorTypes: sortedDoorTypes,
       dimensions: sortDimensions(Array.from(dimensions)),
       orientations: Array.from(orientations).sort(),
       drawerCounts: Array.from(drawerCounts).sort((a, b) => a - b),
