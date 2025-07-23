@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Download, ShoppingCart, Eye } from 'lucide-react';
@@ -138,9 +137,6 @@ const ProductDetail = () => {
     );
   }
 
-  const images = getProductImages(product);
-  const thumbnail = getThumbnail(product);
-
   // Enhanced variant configuration section
   const renderVariantSelector = () => {
     if (!product.variants || product.variants.length === 0) {
@@ -157,11 +153,10 @@ const ProductDetail = () => {
     const productName = product.name.toLowerCase();
     const productCategory = product.category?.toLowerCase() || '';
     
-    const isModularCabinet = productSeries.includes('mobile cabinet') ||
-                           productCategory.includes('mobile cabinet') ||
-                           productName.includes('mobile cabinet') ||
-                           productCode.includes('MC-') ||
-                           productCode.includes('MCC-');
+    // Check if this is the modular cabinet series specifically
+    const isModularCabinet = productSeries.includes('modular cabinet') ||
+                           productName.includes('modular cabinet') ||
+                           productCode.includes('MODULAR-CABINET');
 
     console.log('🔍 Product detection:', {
       id: product.id,
@@ -221,13 +216,13 @@ const ProductDetail = () => {
                 id: v.id,
                 name: (v as any).name || product.name,
                 product_code: (v as any).product_code || '',
-                dimensions: v.dimensions,
+                dimensions: v.dimensions || '',
                 finish_type: (v as any).finish_type || 'PC',
-                orientation: v.orientation || 'None',
+                orientation: v.orientation || '',
                 door_type: (v as any).door_type || '',
                 drawer_count: (v as any).drawer_count || undefined,
-                thumbnail_path: v.thumbnail,
-                model_path: v.modelPath,
+                thumbnail_path: v.thumbnail || '',
+                model_path: v.modelPath || '',
                 additional_images: v.images || []
               }))}
               onVariantSelect={handleVariantSelect}
@@ -235,13 +230,13 @@ const ProductDetail = () => {
                 id: selectedVariant.id,
                 name: (selectedVariant as any).name || product.name,
                 product_code: (selectedVariant as any).product_code || '',
-                dimensions: selectedVariant.dimensions,
+                dimensions: selectedVariant.dimensions || '',
                 finish_type: (selectedVariant as any).finish_type || 'PC',
-                orientation: selectedVariant.orientation || 'None',
+                orientation: selectedVariant.orientation || '',
                 door_type: (selectedVariant as any).door_type || '',
                 drawer_count: (selectedVariant as any).drawer_count || undefined,
-                thumbnail_path: selectedVariant.thumbnail,
-                model_path: selectedVariant.modelPath,
+                thumbnail_path: selectedVariant.thumbnail || '',
+                model_path: selectedVariant.modelPath || '',
                 additional_images: selectedVariant.images || []
               } : undefined}
             />
@@ -281,6 +276,9 @@ const ProductDetail = () => {
       </Card>
     );
   };
+
+  const images = getProductImages(product);
+  const thumbnail = getThumbnail(product);
 
   return (
     <div className="min-h-screen bg-background">

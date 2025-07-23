@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getVariantAssetUrls } from '@/services/variantService';
 
 interface ModularCabinetVariant {
   id: string;
@@ -28,6 +27,8 @@ interface ModularCabinetConfiguratorProps {
 
 // Standardized dimension format utility
 const standardizeDimensions = (dimensions: string): string => {
+  if (!dimensions) return '';
+  
   // Remove any existing "mm" suffix and normalize spacing
   const cleanDimensions = dimensions.replace(/mm$/i, '').trim();
   
@@ -42,12 +43,14 @@ const standardizeDimensions = (dimensions: string): string => {
 
 // Extract bench height from dimensions (last number)
 const getBenchHeight = (dimensions: string): number => {
+  if (!dimensions) return 0;
   const parts = dimensions.replace(/mm$/i, '').split(/[×x*\s]+/);
   return parseInt(parts[parts.length - 1]) || 0;
 };
 
 // Extract width from dimensions (first number)
 const getWidth = (dimensions: string): number => {
+  if (!dimensions) return 0;
   const parts = dimensions.replace(/mm$/i, '').split(/[×x*\s]+/);
   return parseInt(parts[0]) || 0;
 };
@@ -61,19 +64,16 @@ const getDoorTypeFromVariant = (variant: ModularCabinetVariant): string => {
   
   // Check product code for door type indicators
   const productCode = variant.product_code.toUpperCase();
-  const productName = variant.name.toLowerCase();
   
-  if (productCode.includes('-DD-') || productName.includes('double door')) {
+  if (productCode.includes('DD') || productCode.includes('DOUBLE')) {
     return 'Double-Door';
-  } else if (productCode.includes('-TD-') || productName.includes('triple door')) {
+  } else if (productCode.includes('TD') || productCode.includes('TRIPLE')) {
     return 'Triple-Door';
-  } else if (productCode.includes('DWR') && !productCode.includes('-DD-') && !productCode.includes('-TD-')) {
-    return 'Drawer-Only';
-  } else if (productCode.includes('MCC')) {
-    return 'Combination';
+  } else if (productCode.includes('SD') || productCode.includes('SINGLE')) {
+    return 'Single-Door';
   }
   
-  // Default to Single-Door for standard mobile cabinets
+  // Default to Single-Door for standard cabinets
   return 'Single-Door';
 };
 
@@ -100,7 +100,7 @@ const sortDimensions = (dimensions: string[]): string[] => {
     const aHeight = getBenchHeight(a);
     const bHeight = getBenchHeight(b);
     
-    // First sort by bench height (750mm vs 900mm)
+    // First sort by bench height
     if (aHeight !== bHeight) {
       return aHeight - bHeight;
     }
@@ -175,7 +175,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
       
       // For other options, filter based on previous selections
       if (matchesDoorType && matchesDimensions) {
-        if (variant.orientation && variant.orientation !== 'None') {
+        if (variant.orientation && variant.orientation !== 'None' && variant.orientation !== '') {
           orientations.add(variant.orientation);
         }
         if (variant.drawer_count) {
@@ -253,15 +253,15 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
           <CardTitle className="text-lg">Step 1: Select Door Type</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {options.doorTypes.map(doorType => (
               <Button
                 key={doorType}
                 variant={selectedDoorType === doorType ? "default" : "outline"}
                 onClick={() => handleDoorTypeSelect(doorType)}
-                className="h-auto py-3 px-4"
+                className="h-auto py-3 px-4 text-left"
               >
-                <div className="text-center">
+                <div className="text-center w-full">
                   <div className="font-medium">{doorType}</div>
                 </div>
               </Button>
@@ -281,14 +281,14 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Choose dimensions" />
               </SelectTrigger>
-              <SelectContent className="bg-white border shadow-lg z-50">
+              <SelectContent className="max-h-64">
                 {Object.entries(options.dimensionGroups).map(([benchHeight, dimensions]) => (
                   <div key={benchHeight}>
-                    <div className="px-2 py-1 text-sm font-medium text-muted-foreground">
+                    <div className="px-2 py-1 text-sm font-medium text-muted-foreground bg-muted/50 sticky top-0">
                       {benchHeight}
                     </div>
                     {dimensions.map(dimension => (
-                      <SelectItem key={dimension} value={dimension}>
+                      <SelectItem key={dimension} value={dimension} className="pl-4">
                         {dimension}
                       </SelectItem>
                     ))}
@@ -315,8 +315,8 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
                   onClick={() => setSelectedOrientation(orientation)}
                   className="h-auto py-3 px-4"
                 >
-                  <div className="text-center">
-                    <div className="font-medium">{orientation}</div>
+                  <div className="text-center w-full">
+                    <div className="font-medium">{orientation === 'Left-Handed' ? 'Left-Handed' : 'Right-Handed'}</div>
                   </div>
                 </Button>
               ))}
@@ -332,7 +332,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
             <CardTitle className="text-lg">Step 4: Select Drawer Configuration</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {options.drawerCounts.map(count => (
                 <Button
                   key={count}
@@ -340,7 +340,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
                   onClick={() => setSelectedDrawerCount(count.toString())}
                   className="h-auto py-3 px-4"
                 >
-                  <div className="text-center">
+                  <div className="text-center w-full">
                     <div className="font-medium">{count} Drawer{count > 1 ? 's' : ''}</div>
                   </div>
                 </Button>
@@ -354,7 +354,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
       {selectedDimensions && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Step 5: Select Finish</CardTitle>
+            <CardTitle className="text-lg">Step {options.orientations.length > 0 || options.drawerCounts.length > 0 ? '5' : '3'}: Select Finish</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -365,7 +365,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
                   onClick={() => setSelectedFinish(finish)}
                   className="h-auto py-3 px-4"
                 >
-                  <div className="text-center">
+                  <div className="text-center w-full">
                     <div className="font-medium">
                       {finish === 'PC' ? 'Powder Coat' : finish === 'SS' ? 'Stainless Steel' : finish}
                     </div>
@@ -398,7 +398,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
                   <h4 className="font-medium">{matchingVariant.name}</h4>
                   <p className="text-sm text-muted-foreground">Product Code: {matchingVariant.product_code}</p>
                 </div>
-                <Button onClick={handleVariantSelect} size="lg">
+                <Button onClick={handleVariantSelect} size="lg" className="bg-sea hover:bg-sea-dark">
                   Select This Configuration
                 </Button>
               </div>
