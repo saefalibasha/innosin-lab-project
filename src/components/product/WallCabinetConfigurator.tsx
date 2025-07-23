@@ -80,32 +80,44 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     };
   }, [variants]);
 
-  // Filter available options based on current selections
+  // Filter available options based on current selections with proper dependency chain
   const getAvailableOptions = (type: 'dimension' | 'doorType' | 'orientation') => {
-    const filtered = variants.filter(variant => {
-      const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
-      const matchesDimension = !selectedDimension || variant.dimensions === selectedDimension;
-      const matchesDoorType = !selectedDoorType || 
-        (selectedDoorType === 'Glass' && variant.product_code.includes('WCG')) ||
-        (selectedDoorType === 'Solid' && variant.product_code.includes('WCS'));
-      const mappedOrientation = mapOrientation(variant.orientation);
-      const matchesOrientation = !selectedOrientation || mappedOrientation === selectedOrientation;
+    let filtered = variants;
 
-      return matchesFinish && matchesDimension && matchesDoorType && matchesOrientation;
-    });
-
-    // Add debugging for orientation filtering
-    if (type === 'orientation') {
-      console.log('Debugging orientation filtering:');
-      console.log('Current selections:', { selectedFinish, selectedDimension, selectedDoorType });
-      console.log('Filtered variants:', filtered.map(v => ({ 
-        product_code: v.product_code, 
-        dimensions: v.dimensions, 
-        orientation: v.orientation,
-        mappedOrientation: mapOrientation(v.orientation),
-        finish_type: v.finish_type
-      })));
+    // Apply filters progressively based on the dependency chain
+    if (type === 'dimension') {
+      // For dimensions, only filter by finish (not door type or orientation)
+      filtered = variants.filter(variant => {
+        const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
+        return matchesFinish;
+      });
+    } else if (type === 'doorType') {
+      // For door types, filter by finish and dimension
+      filtered = variants.filter(variant => {
+        const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
+        const matchesDimension = !selectedDimension || variant.dimensions === selectedDimension;
+        return matchesFinish && matchesDimension;
+      });
+    } else if (type === 'orientation') {
+      // For orientations, filter by finish, dimension, and door type
+      filtered = variants.filter(variant => {
+        const matchesFinish = !selectedFinish || variant.finish_type === selectedFinish;
+        const matchesDimension = !selectedDimension || variant.dimensions === selectedDimension;
+        const matchesDoorType = !selectedDoorType || 
+          (selectedDoorType === 'Glass' && variant.product_code.includes('WCG')) ||
+          (selectedDoorType === 'Solid' && variant.product_code.includes('WCS'));
+        return matchesFinish && matchesDimension && matchesDoorType;
+      });
     }
+
+    console.log(`Filtering ${type}:`, {
+      selectedFinish,
+      selectedDimension,
+      selectedDoorType,
+      selectedOrientation,
+      totalVariants: variants.length,
+      filteredVariants: filtered.length
+    });
 
     const availableSet = new Set<string>();
     filtered.forEach(variant => {
@@ -126,12 +138,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
     });
 
     const result = Array.from(availableSet).sort();
-    
-    // Add debugging for orientation results
-    if (type === 'orientation') {
-      console.log('Available orientations:', result);
-    }
-    
+    console.log(`Available ${type}:`, result);
     return result;
   };
 
@@ -156,9 +163,7 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
   const shouldShowOrientation = () => {
     if (!selectedFinish || !selectedDimension || !selectedDoorType) return false;
     
-    // Get available orientations for the current selections
     const availableOrientations = getAvailableOptions('orientation');
-    console.log('shouldShowOrientation - Available orientations:', availableOrientations);
     return availableOrientations.length > 0;
   };
 
