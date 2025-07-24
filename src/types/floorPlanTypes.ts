@@ -1,3 +1,4 @@
+
 export interface Point {
   x: number;
   y: number;
@@ -78,7 +79,7 @@ export interface FloorPlanState {
 
 export type DrawingMode = 'select' | 'wall' | 'room' | 'door' | 'product' | 'text' | 'measure';
 
-export type DrawingTool = DrawingMode | 'rotate' | 'move' | 'delete';
+export type DrawingTool = 'select' | 'wall' | 'room' | 'door' | 'product' | 'text' | 'measure' | 'rotate' | 'move' | 'delete';
 
 export interface SnapSettings {
   enabled: boolean;

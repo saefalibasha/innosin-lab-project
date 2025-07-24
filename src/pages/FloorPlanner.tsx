@@ -127,20 +127,21 @@ const FloorPlanner = () => {
 
   // Tool change handler
   const handleToolChange = useCallback((tool: DrawingTool) => {
-    // Map DrawingTool to DrawingMode
-    const modeMap: Record<DrawingTool, DrawingMode> = {
+    // Map DrawingTool to DrawingMode - only include valid mappings
+    const modeMap: Partial<Record<DrawingTool, DrawingMode>> = {
       'select': 'select',
       'wall': 'wall',
+      'room': 'room',
       'door': 'door',
       'product': 'product',
-      'measure': 'measure',
-      'pan': 'select',
-      'line': 'wall',
-      'freehand': 'wall',
-      'eraser': 'select'
+      'text': 'text',
+      'measure': 'measure'
     };
     
-    setCurrentMode(modeMap[tool] || 'select');
+    const mappedMode = modeMap[tool];
+    if (mappedMode) {
+      setCurrentMode(mappedMode);
+    }
     
     if (tool === 'wall') {
       toast.info('Wall Drawing Mode: Click to start, continue clicking to add segments, double-click or ESC to finish');
