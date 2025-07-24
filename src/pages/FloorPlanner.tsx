@@ -33,7 +33,7 @@ import WallEditor from '@/components/canvas/WallEditor';
 const FloorPlanner = () => {
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
+  const [currentMode, setCurrentMode] = useState<DrawingTool>('select');
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
@@ -127,21 +127,7 @@ const FloorPlanner = () => {
 
   // Tool change handler
   const handleToolChange = useCallback((tool: DrawingTool) => {
-    // Map DrawingTool to DrawingMode - only include valid mappings
-    const modeMap: Partial<Record<DrawingTool, DrawingMode>> = {
-      'select': 'select',
-      'wall': 'wall',
-      'room': 'room',
-      'door': 'door',
-      'product': 'product',
-      'text': 'text',
-      'measure': 'measure'
-    };
-    
-    const mappedMode = modeMap[tool];
-    if (mappedMode) {
-      setCurrentMode(mappedMode);
-    }
+    setCurrentMode(tool);
     
     if (tool === 'wall') {
       toast.info('Wall Drawing Mode: Click to start, continue clicking to add segments, double-click or ESC to finish');
@@ -356,6 +342,20 @@ const FloorPlanner = () => {
     ? "fixed inset-0 z-50 bg-background" 
     : "min-h-screen bg-background";
 
+  // Convert DrawingTool to DrawingMode for components that need it
+  const getDrawingMode = (tool: DrawingTool): DrawingMode => {
+    const modeMap: Partial<Record<DrawingTool, DrawingMode>> = {
+      'select': 'select',
+      'wall': 'wall',
+      'room': 'room',
+      'door': 'door',
+      'product': 'product',
+      'text': 'text',
+      'measure': 'measure'
+    };
+    return modeMap[tool] || 'select';
+  };
+
   return (
     <div className={containerClass}>
       <div className="container mx-auto p-4">
@@ -442,7 +442,7 @@ const FloorPlanner = () => {
             <ProductStatistics placedProducts={placedProducts} />
             <SeriesSelector 
               onProductDrag={handleProductDrag}
-              currentTool={currentMode}
+              currentTool={getDrawingMode(currentMode)}
             />
             <QuickHelp />
           </div>
@@ -533,7 +533,7 @@ const FloorPlanner = () => {
                   rooms={rooms}
                   setRooms={setRooms}
                   scale={scale}
-                  currentMode={currentMode}
+                  currentMode={getDrawingMode(currentMode)}
                   showGrid={showGrid}
                   showMeasurements={showMeasurements}
                   gridSize={gridSize}
