@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { Point, WallSegment } from '@/types/floorPlanTypes';
-
-type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
+import { formatMeasurement, canvasToMm } from '@/utils/measurements';
 
 interface IntelligentMeasurementOverlayProps {
   roomPoints: Point[];
@@ -10,14 +9,14 @@ interface IntelligentMeasurementOverlayProps {
   scale: number;
   showMeasurements: boolean;
   canvas?: HTMLCanvasElement | null;
-  units: Units;
+  units: 'mm' | 'cm' | 'm' | 'ft' | 'in';
 }
 
 interface MeasurementLabel {
   id: string;
   x: number;
   y: number;
-  distance: number;
+  distance: number; // in mm
   type: 'room' | 'wall';
   angle: number;
 }
@@ -32,47 +31,33 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
 }) => {
   if (!showMeasurements || !canvas) return null;
 
-  const convertUnits = (meters: number): { value: number; unit: string } => {
-    switch (units) {
-      case 'mm':
-        return { value: meters * 1000, unit: 'mm' };
-      case 'cm':
-        return { value: meters * 100, unit: 'cm' };
-      case 'm':
-        return { value: meters, unit: 'm' };
-      case 'ft':
-        return { value: meters * 3.28084, unit: 'ft' };
-      case 'in':
-        return { value: meters * 39.3701, unit: 'in' };
-      default:
-        return { value: meters, unit: 'm' };
-    }
+  const formatMeasurementValue = (distanceMm: number): string => {
+    return formatMeasurement(distanceMm, {
+      unit: units,
+      precision: units === 'mm' ? 0 : units === 'cm' ? 1 : 2,
+      showUnit: true
+    });
   };
 
-  const formatMeasurement = (meters: number): string => {
-    const converted = convertUnits(meters);
-    const precision = units === 'mm' ? 0 : units === 'cm' ? 1 : 2;
-    return `${converted.value.toFixed(precision)}${converted.unit}`;
-  };
-
-  const calculateDistance = (p1: Point, p2: Point) => {
+  const calculateDistance = (p1: Point, p2: Point): number => {
     const dx = p2.x - p1.x;
     const dy = p2.y - p1.y;
-    return Math.sqrt(dx * dx + dy * dy) / scale;
+    const canvasDistance = Math.sqrt(dx * dx + dy * dy);
+    return canvasToMm(canvasDistance, scale);
   };
 
-  const calculateAngle = (p1: Point, p2: Point) => {
+  const calculateAngle = (p1: Point, p2: Point): number => {
     return Math.atan2(p2.y - p1.y, p2.x - p1.x) * 180 / Math.PI;
   };
 
-  const getMidpoint = (p1: Point, p2: Point) => ({
+  const getMidpoint = (p1: Point, p2: Point): Point => ({
     x: (p1.x + p2.x) / 2,
     y: (p1.y + p2.y) / 2
   });
 
-  const getOptimalLabelPosition = (midpoint: Point, angle: number, distance: number, isRoom: boolean) => {
+  const getOptimalLabelPosition = (midpoint: Point, angle: number, distanceMm: number, isRoom: boolean): Point => {
     const baseOffset = 30;
-    const dynamicOffset = Math.min(distance * 3, 20);
+    const dynamicOffset = Math.min(distanceMm * 0.01, 20); // Scale offset based on distance
     const totalOffset = baseOffset + dynamicOffset;
     
     const perpAngle = (angle + 90) * Math.PI / 180;
@@ -85,8 +70,8 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
     };
   };
 
-  const detectCollisions = (labels: MeasurementLabel[]) => {
-    const COLLISION_THRESHOLD = 70;
+  const detectCollisions = (labels: MeasurementLabel[]): MeasurementLabel[] => {
+    const COLLISION_THRESHOLD = 80; // Increased for better visibility
     const adjustedLabels = [...labels];
     
     for (let i = 0; i < adjustedLabels.length; i++) {
@@ -113,7 +98,7 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
     return adjustedLabels;
   };
 
-  const generateMeasurements = () => {
+  const generateMeasurements = (): MeasurementLabel[] => {
     const labels: MeasurementLabel[] = [];
 
     // Room perimeter measurements
@@ -121,6 +106,10 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
       const current = roomPoints[i];
       const next = roomPoints[(i + 1) % roomPoints.length];
       const distance = calculateDistance(current, next);
+      
+      // Only show measurements for significant distances (> 100mm)
+      if (distance < 100) continue;
+      
       const angle = calculateAngle(current, next);
       const midpoint = getMidpoint(current, next);
       const position = getOptimalLabelPosition(midpoint, angle, distance, true);
@@ -138,6 +127,10 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
     // Interior wall measurements
     wallSegments.forEach((wall, index) => {
       const distance = calculateDistance(wall.start, wall.end);
+      
+      // Only show measurements for significant distances (> 100mm)
+      if (distance < 100) return;
+      
       const angle = calculateAngle(wall.start, wall.end);
       const midpoint = getMidpoint(wall.start, wall.end);
       const position = getOptimalLabelPosition(midpoint, angle, distance, false);
@@ -160,35 +153,35 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
   return (
     <div className="absolute inset-0 pointer-events-none z-40">
       {measurements.map((measurement) => (
-        <div
-          key={measurement.id}
-          className={`absolute text-white text-xs px-2 py-1 rounded shadow-lg font-medium ${
-            measurement.type === 'room' 
-              ? 'bg-blue-600 border border-blue-700' 
-              : 'bg-orange-600 border border-orange-700'
-          }`}
-          style={{
-            left: measurement.x - 30,
-            top: measurement.y - 12,
-            transform: 'translate(0, 0)',
-            minWidth: '60px',
-            textAlign: 'center',
-            fontSize: '11px',
-            whiteSpace: 'nowrap',
-            zIndex: 50
-          }}
-        >
-          {formatMeasurement(measurement.distance)}
+        <div key={measurement.id} className="absolute">
           <div
-            className={`absolute w-px h-3 ${
-              measurement.type === 'room' ? 'bg-blue-400' : 'bg-orange-400'
+            className={`text-white text-xs px-2 py-1 rounded-md shadow-lg font-medium border ${
+              measurement.type === 'room' 
+                ? 'bg-blue-600 border-blue-700' 
+                : 'bg-orange-600 border-orange-700'
             }`}
             style={{
-              left: '50%',
-              top: measurement.type === 'room' ? '100%' : '-12px',
-              transform: 'translateX(-50%)'
+              left: measurement.x - 35,
+              top: measurement.y - 12,
+              minWidth: '70px',
+              textAlign: 'center',
+              fontSize: '11px',
+              whiteSpace: 'nowrap',
+              zIndex: 50
             }}
-          />
+          >
+            {formatMeasurementValue(measurement.distance)}
+            <div
+              className={`absolute w-px h-4 ${
+                measurement.type === 'room' ? 'bg-blue-400' : 'bg-orange-400'
+              }`}
+              style={{
+                left: '50%',
+                top: measurement.type === 'room' ? '100%' : '-16px',
+                transform: 'translateX(-50%)'
+              }}
+            />
+          </div>
         </div>
       ))}
     </div>

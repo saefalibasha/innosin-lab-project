@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,16 +12,20 @@ import {
   Trash2, 
   Info,
   RotateCcw,
-  Copy
+  Copy,
+  Maximize2
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
+import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
 import SeriesSelector from '@/components/floorplan/SeriesSelector';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
 import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
+import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
+import MeasurementInput from '@/components/canvas/MeasurementInput';
 
 type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
 
@@ -29,6 +34,7 @@ interface FloorPlanState {
   placedProducts: PlacedProduct[];
   doors: Door[];
   textAnnotations: TextAnnotation[];
+  wallSegments: WallSegment[];
 }
 
 const FloorPlanner = () => {
@@ -40,17 +46,20 @@ const FloorPlanner = () => {
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
+  const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
   
-  // View state
-  const [scale, setScale] = useState(1);
-  const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
+  // Enhanced measurement system
+  const [scale, setScale] = useState(0.2); // pixels per mm
+  const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
   const [showGrid, setShowGrid] = useState(true);
+  const [showMeasurements, setShowMeasurements] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
   
   // UI state
   const [projectName, setProjectName] = useState('Untitled Floor Plan');
+  const [isFullscreen, setIsFullscreen] = useState(false);
   
   // Usage tracking
   const { trackProductPlacement } = useProductUsageTracking();
@@ -60,266 +69,21 @@ const FloorPlanner = () => {
     roomPoints: [],
     placedProducts: [],
     doors: [],
-    textAnnotations: []
+    textAnnotations: [],
+    wallSegments: []
   };
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Larger canvas dimensions
+  // Canvas dimensions
   const CANVAS_WIDTH = 1200;
   const CANVAS_HEIGHT = 800;
-  const GRID_SIZE = 20;
 
-  // Utility functions
-  const getCanvasCoordinates = useCallback((e: React.MouseEvent<HTMLCanvasElement>): Point => {
-    const canvas = canvasRef.current;
-    if (!canvas) return { x: 0, y: 0 };
-    
-    const rect = canvas.getBoundingClientRect();
-    return {
-      x: (e.clientX - rect.left - offset.x) / scale,
-      y: (e.clientY - rect.top - offset.y) / scale
-    };
-  }, [scale, offset]);
-
-  const snapToGrid = useCallback((point: Point): Point => {
-    if (!showGrid) return point;
-    return {
-      x: Math.round(point.x / GRID_SIZE) * GRID_SIZE,
-      y: Math.round(point.y / GRID_SIZE) * GRID_SIZE
-    };
-  }, [showGrid]);
-
-  // Drawing functions
-  const drawGrid = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (!showGrid) return;
-    
-    ctx.strokeStyle = '#e5e7eb';
-    ctx.lineWidth = 0.5;
-    
-    for (let x = 0; x <= CANVAS_WIDTH; x += GRID_SIZE) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, CANVAS_HEIGHT);
-      ctx.stroke();
-    }
-    
-    for (let y = 0; y <= CANVAS_HEIGHT; y += GRID_SIZE) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_WIDTH, y);
-      ctx.stroke();
-    }
-  }, [showGrid]);
-
-  const drawRoom = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (roomPoints.length < 2) return;
-    
-    ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 3;
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
-    
-    ctx.beginPath();
-    ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
-    
-    for (let i = 1; i < roomPoints.length; i++) {
-      ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
-    }
-    
-    if (roomPoints.length > 2) {
-      ctx.closePath();
-      ctx.fill();
-    }
-    
-    ctx.stroke();
-  }, [roomPoints]);
-
-  const drawProducts = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (!showProducts) return;
-    
-    placedProducts.forEach(product => {
-      const isSelected = selectedProducts.includes(product.id);
-      
-      ctx.save();
-      ctx.translate(product.position.x, product.position.y);
-      ctx.rotate(product.rotation);
-      
-      const width = product.dimensions.length * 100;
-      const height = product.dimensions.width * 100;
-      
-      ctx.fillStyle = isSelected ? 'rgba(59, 130, 246, 0.3)' : product.color || '#6b7280';
-      ctx.strokeStyle = isSelected ? '#3b82f6' : '#374151';
-      ctx.lineWidth = isSelected ? 2 : 1;
-      
-      ctx.fillRect(-width/2, -height/2, width, height);
-      ctx.strokeRect(-width/2, -height/2, width, height);
-      
-      ctx.fillStyle = '#000';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText(product.name, 0, height/2 + 15);
-      
-      ctx.restore();
-    });
-  }, [placedProducts, selectedProducts, showProducts]);
-
-  const drawDoors = useCallback((ctx: CanvasRenderingContext2D) => {
-    doors.forEach(door => {
-      ctx.save();
-      ctx.translate(door.position.x, door.position.y);
-      ctx.rotate(door.rotation);
-      
-      const width = door.width * 100;
-      
-      ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(-width/2, 0);
-      ctx.lineTo(width/2, 0);
-      ctx.stroke();
-      
-      ctx.strokeStyle = '#dc2626';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(door.swingDirection === 'inward' ? -width/2 : width/2, 0, width, 0, Math.PI/2);
-      ctx.stroke();
-      
-      ctx.restore();
-    });
-  }, [doors]);
-
-  const render = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    
-    ctx.save();
-    ctx.scale(scale, scale);
-    ctx.translate(offset.x / scale, offset.y / scale);
-    
-    drawGrid(ctx);
-    drawRoom(ctx);
-    drawProducts(ctx);
-    drawDoors(ctx);
-    
-    ctx.restore();
-  }, [scale, offset, drawGrid, drawRoom, drawProducts, drawDoors]);
-
-  // Event handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const point = snapToGrid(getCanvasCoordinates(e));
-    setIsDrawing(true);
-    
-    switch (currentTool) {
-      case 'wall':
-        setRoomPoints(prev => [...prev, point]);
-        break;
-      case 'select':
-        // Handle product selection
-        const clickedProduct = placedProducts.find(product => {
-          const dx = point.x - product.position.x;
-          const dy = point.y - product.position.y;
-          const width = product.dimensions.length * 100;
-          const height = product.dimensions.width * 100;
-          return Math.abs(dx) < width/2 && Math.abs(dy) < height/2;
-        });
-        
-        if (clickedProduct) {
-          if (e.ctrlKey || e.metaKey) {
-            setSelectedProducts(prev => 
-              prev.includes(clickedProduct.id) 
-                ? prev.filter(id => id !== clickedProduct.id)
-                : [...prev, clickedProduct.id]
-            );
-          } else {
-            setSelectedProducts([clickedProduct.id]);
-          }
-        } else {
-          setSelectedProducts([]);
-        }
-        break;
-      case 'door':
-        const newDoor: Door = {
-          id: `door-${Date.now()}`,
-          position: point,
-          rotation: 0,
-          width: 0.9, // Default door width in meters
-          swingDirection: 'inward',
-          wallSegmentId: '',
-          wallPosition: 0,
-          isEmbedded: false
-        };
-        setDoors(prev => [...prev, newDoor]);
-        break;
-    }
-  }, [currentTool, getCanvasCoordinates, snapToGrid, placedProducts]);
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-    // Handle mouse move for different tools
-  }, [isDrawing, currentTool]);
-
-  const handleMouseUp = useCallback(() => {
-    setIsDrawing(false);
-    saveState({
-      roomPoints,
-      placedProducts,
-      doors,
-      textAnnotations
-    });
-  }, [roomPoints, placedProducts, doors, textAnnotations, saveState]);
-
+  // Enhanced product management
   const handleProductDrag = useCallback((product: any) => {
     setDraggedProduct(product);
   }, []);
 
-  const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    
-    if (!draggedProduct) return;
-    
-    const point = getCanvasCoordinates(e as any);
-    const newProduct: PlacedProduct = {
-      ...draggedProduct,
-      id: `${draggedProduct.id}-${Date.now()}`,
-      position: point,
-      rotation: 0,
-      scale: 1
-    };
-    
-    setPlacedProducts(prev => [...prev, newProduct]);
-    trackProductPlacement(newProduct);
-    setDraggedProduct(null);
-    toast.success(`Added ${newProduct.name} to floor plan`);
-  }, [draggedProduct, getCanvasCoordinates, trackProductPlacement]);
-
-  const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-  }, []);
-
-  // View controls
-  const handleZoomIn = useCallback(() => {
-    setScale(prev => Math.min(prev * 1.2, 3));
-  }, []);
-
-  const handleZoomOut = useCallback(() => {
-    setScale(prev => Math.max(prev / 1.2, 0.1));
-  }, []);
-
-  const handleFitToView = useCallback(() => {
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
-  }, []);
-
-  const handleToggleGrid = useCallback(() => {
-    setShowGrid(prev => !prev);
-  }, []);
-
-  // Product management
   const handleDeleteSelected = useCallback(() => {
     setPlacedProducts(prev => prev.filter(product => !selectedProducts.includes(product.id)));
     setSelectedProducts([]);
@@ -338,7 +102,20 @@ const FloorPlanner = () => {
     ));
   }, [selectedProducts]);
 
-  // File operations
+  // Enhanced view controls
+  const handleToggleGrid = useCallback(() => {
+    setShowGrid(prev => !prev);
+  }, []);
+
+  const handleToggleMeasurements = useCallback(() => {
+    setShowMeasurements(prev => !prev);
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
+
+  // File operations with mm precision
   const handleSave = useCallback(() => {
     const floorPlanData = {
       name: projectName,
@@ -346,8 +123,14 @@ const FloorPlanner = () => {
       placedProducts,
       doors,
       textAnnotations,
+      wallSegments,
       scale,
-      offset
+      gridSize,
+      settings: {
+        showGrid,
+        showMeasurements,
+        showProducts
+      }
     };
     
     const dataStr = JSON.stringify(floorPlanData, null, 2);
@@ -361,7 +144,7 @@ const FloorPlanner = () => {
     
     URL.revokeObjectURL(url);
     toast.success('Floor plan saved successfully');
-  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, scale, offset]);
+  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, scale, gridSize, showGrid, showMeasurements, showProducts]);
 
   const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -376,8 +159,16 @@ const FloorPlanner = () => {
         setPlacedProducts(data.placedProducts || []);
         setDoors(data.doors || []);
         setTextAnnotations(data.textAnnotations || []);
-        setScale(data.scale || 1);
-        setOffset(data.offset || { x: 0, y: 0 });
+        setWallSegments(data.wallSegments || []);
+        setScale(data.scale || 0.2);
+        setGridSize(data.gridSize || GRID_SIZES.standard);
+        
+        if (data.settings) {
+          setShowGrid(data.settings.showGrid ?? true);
+          setShowMeasurements(data.settings.showMeasurements ?? true);
+          setShowProducts(data.settings.showProducts ?? true);
+        }
+        
         toast.success('Floor plan loaded successfully');
       } catch (error) {
         toast.error('Failed to load floor plan');
@@ -391,9 +182,10 @@ const FloorPlanner = () => {
     setPlacedProducts([]);
     setDoors([]);
     setTextAnnotations([]);
+    setWallSegments([]);
     setSelectedProducts([]);
-    setScale(1);
-    setOffset({ x: 0, y: 0 });
+    setScale(0.2);
+    setGridSize(GRID_SIZES.standard);
     toast.success('Floor plan cleared');
   }, []);
 
@@ -405,6 +197,7 @@ const FloorPlanner = () => {
       setPlacedProducts(previousState.placedProducts);
       setDoors(previousState.doors);
       setTextAnnotations(previousState.textAnnotations);
+      setWallSegments(previousState.wallSegments);
     }
   }, [undo]);
 
@@ -415,15 +208,11 @@ const FloorPlanner = () => {
       setPlacedProducts(nextState.placedProducts);
       setDoors(nextState.doors);
       setTextAnnotations(nextState.textAnnotations);
+      setWallSegments(nextState.wallSegments);
     }
   }, [redo]);
 
-  // Render canvas
-  useEffect(() => {
-    render();
-  }, [render]);
-
-  // Keyboard shortcuts
+  // Enhanced keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
@@ -444,6 +233,14 @@ const FloorPlanner = () => {
             e.preventDefault();
             setSelectedProducts(placedProducts.map(p => p.id));
             break;
+          case 'g':
+            e.preventDefault();
+            handleToggleGrid();
+            break;
+          case 'm':
+            e.preventDefault();
+            handleToggleMeasurements();
+            break;
         }
       }
       
@@ -462,22 +259,64 @@ const FloorPlanner = () => {
         case 'Escape':
           setSelectedProducts([]);
           break;
+        case 'F11':
+          e.preventDefault();
+          handleToggleFullscreen();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleSave, selectedProducts, placedProducts, handleDeleteSelected, handleRotateSelected]);
+  }, [handleUndo, handleRedo, handleSave, selectedProducts, placedProducts, handleDeleteSelected, handleRotateSelected, handleToggleGrid, handleToggleMeasurements, handleToggleFullscreen]);
+
+  // Calculate room area and statistics
+  const roomStatistics = useMemo(() => {
+    if (roomPoints.length < 3) return null;
+    
+    // Calculate area using shoelace formula
+    let area = 0;
+    for (let i = 0; i < roomPoints.length; i++) {
+      const j = (i + 1) % roomPoints.length;
+      area += roomPoints[i].x * roomPoints[j].y;
+      area -= roomPoints[j].x * roomPoints[i].y;
+    }
+    area = Math.abs(area) / 2;
+    
+    // Convert to real-world area (mm²)
+    const realArea = canvasToMm(area, scale);
+    
+    // Calculate perimeter
+    let perimeter = 0;
+    for (let i = 0; i < roomPoints.length; i++) {
+      const j = (i + 1) % roomPoints.length;
+      const distance = Math.sqrt(
+        Math.pow(roomPoints[j].x - roomPoints[i].x, 2) + 
+        Math.pow(roomPoints[j].y - roomPoints[i].y, 2)
+      );
+      perimeter += canvasToMm(distance, scale);
+    }
+    
+    return {
+      area: realArea,
+      perimeter,
+      points: roomPoints.length
+    };
+  }, [roomPoints, scale]);
+
+  const containerClass = isFullscreen 
+    ? "fixed inset-0 z-50 bg-gray-50" 
+    : "min-h-screen bg-gray-50";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={containerClass}>
       <div className="container mx-auto p-4">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Floor Planner</h1>
-              <p className="text-gray-600">Design your laboratory layout with precision</p>
+              <h1 className="text-3xl font-bold text-gray-900">Enhanced Floor Planner</h1>
+              <p className="text-gray-600">Design your laboratory layout with millimeter precision</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -491,22 +330,41 @@ const FloorPlanner = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
+              <Button onClick={handleToggleFullscreen} variant="outline">
+                <Maximize2 className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           
-          {/* Quick Stats */}
-          <div className="flex items-center space-x-4 text-sm text-gray-600">
+          {/* Enhanced Stats */}
+          <div className="flex items-center space-x-6 text-sm text-gray-600">
             <span>Products: {placedProducts.length}</span>
-            <span>Room Points: {roomPoints.length}</span>
+            <span>Walls: {wallSegments.length}</span>
             <span>Doors: {doors.length}</span>
-            <span>Scale: {Math.round(scale * 100)}%</span>
+            <span>Scale: {scale.toFixed(4)} px/mm</span>
+            {roomStatistics && (
+              <>
+                <span>Area: {formatMeasurement(roomStatistics.area, { unit: 'mm', precision: 0, showUnit: true })}</span>
+                <span>Perimeter: {formatMeasurement(roomStatistics.perimeter, { unit: 'mm', precision: 0, showUnit: true })}</span>
+              </>
+            )}
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Left Sidebar */}
+          {/* Enhanced Left Sidebar */}
           <div className="lg:col-span-1 space-y-4">
             <ProductStatistics placedProducts={placedProducts} />
+            <MeasurementInput
+              scale={scale}
+              gridSize={gridSize}
+              onScaleChange={setScale}
+              onGridSizeChange={setGridSize}
+              showGrid={showGrid}
+              onToggleGrid={handleToggleGrid}
+              showMeasurements={showMeasurements}
+              onToggleMeasurements={handleToggleMeasurements}
+            />
             <SeriesSelector 
               onProductDrag={handleProductDrag}
               currentTool={currentTool}
@@ -514,9 +372,9 @@ const FloorPlanner = () => {
             <QuickHelp />
           </div>
 
-          {/* Main Content Area */}
+          {/* Enhanced Main Content Area */}
           <div className="lg:col-span-4 space-y-4">
-            {/* Horizontal Toolbar */}
+            {/* Enhanced Horizontal Toolbar */}
             <HorizontalToolbar
               currentTool={currentTool}
               onToolChange={setCurrentTool}
@@ -526,22 +384,27 @@ const FloorPlanner = () => {
               onRedo={handleRedo}
               canUndo={canUndo}
               canRedo={canRedo}
-              onZoomIn={handleZoomIn}
-              onZoomOut={handleZoomOut}
-              onFitToView={handleFitToView}
+              onZoomIn={() => setScale(prev => Math.min(prev * 1.2, 2))}
+              onZoomOut={() => setScale(prev => Math.max(prev / 1.2, 0.05))}
+              onFitToView={() => setScale(0.2)}
               onToggleGrid={handleToggleGrid}
               showGrid={showGrid}
               scale={scale}
             />
 
-            {/* Large Canvas */}
+            {/* Enhanced Canvas */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas</CardTitle>
+                  <CardTitle className="text-lg">Canvas - Millimeter Precision</CardTitle>
                   
-                  {/* Canvas Controls */}
                   <div className="flex items-center space-x-2">
+                    <Badge variant="outline" className="text-xs">
+                      {gridSize}mm grid
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {(1/scale).toFixed(2)}mm/px
+                    </Badge>
                     <Button variant="outline" size="sm" asChild>
                       <label>
                         <Upload className="h-4 w-4 mr-2" />
@@ -567,24 +430,30 @@ const FloorPlanner = () => {
               </CardHeader>
               
               <CardContent>
-                <div className="border rounded-lg overflow-hidden bg-white">
-                  <canvas
-                    ref={canvasRef}
-                    width={CANVAS_WIDTH}
-                    height={CANVAS_HEIGHT}
-                    className="block cursor-crosshair"
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onDrop={handleCanvasDrop}
-                    onDragOver={handleCanvasDragOver}
-                  />
-                </div>
+                <EnhancedCanvasWorkspace
+                  roomPoints={roomPoints}
+                  setRoomPoints={setRoomPoints}
+                  wallSegments={wallSegments}
+                  setWallSegments={setWallSegments}
+                  placedProducts={placedProducts}
+                  setPlacedProducts={setPlacedProducts}
+                  doors={doors}
+                  setDoors={setDoors}
+                  textAnnotations={textAnnotations}
+                  setTextAnnotations={setTextAnnotations}
+                  scale={scale}
+                  currentTool={currentTool}
+                  showGrid={showGrid}
+                  showMeasurements={showMeasurements}
+                  gridSize={gridSize}
+                  onClearAll={handleClear}
+                />
                 
-                {/* Canvas Status */}
+                {/* Enhanced Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                   <span>Tool: {currentTool}</span>
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
+                  <span>Grid: {gridSize}mm</span>
                   <span>
                     {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
                   </span>
@@ -592,7 +461,7 @@ const FloorPlanner = () => {
               </CardContent>
             </Card>
             
-            {/* Selection Properties */}
+            {/* Enhanced Selection Properties */}
             {selectedProducts.length > 0 && (
               <Card>
                 <CardHeader>
@@ -643,8 +512,8 @@ const FloorPlanner = () => {
                           <div className="space-y-1 text-xs">
                             <div><strong>Name:</strong> {product.name}</div>
                             <div><strong>Category:</strong> {product.category}</div>
-                            <div><strong>Dimensions:</strong> {product.dimensions.length.toFixed(1)} × {product.dimensions.width.toFixed(1)}m</div>
-                            <div><strong>Position:</strong> {product.position.x.toFixed(0)}, {product.position.y.toFixed(0)}</div>
+                            <div><strong>Dimensions:</strong> {product.dimensions.length}×{product.dimensions.width}mm</div>
+                            <div><strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm</div>
                             <div><strong>Rotation:</strong> {Math.round(product.rotation * 180 / Math.PI)}°</div>
                           </div>
                         );

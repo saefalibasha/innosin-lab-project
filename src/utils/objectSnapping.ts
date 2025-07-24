@@ -1,12 +1,14 @@
 
 import { Point, PlacedProduct } from '@/types/floorPlanTypes';
+import { mmToCanvas, canvasToMm } from './measurements';
 
 export interface SnapResult {
   snapped: boolean;
   position: Point;
-  snapType: 'edge' | 'corner' | 'grid' | null;
+  snapType: 'edge' | 'corner' | 'grid' | 'wall' | null;
   snapToObject?: PlacedProduct;
   snapDirection?: 'left' | 'right' | 'top' | 'bottom';
+  distance?: number; // in mm
 }
 
 export interface SnapGuide {
@@ -14,16 +16,17 @@ export interface SnapGuide {
   position: number;
   start: Point;
   end: Point;
+  measurement?: number; // in mm
 }
 
-const SNAP_THRESHOLD = 15; // pixels
-const GRID_SIZE = 20; // pixels
+const SNAP_THRESHOLD_MM = 50; // 50mm snap threshold
 
 export const calculateSnapPosition = (
   draggingObject: PlacedProduct,
   allObjects: PlacedProduct[],
   mousePosition: Point,
-  scale: number
+  scale: number,
+  gridSize: number = 20
 ): SnapResult => {
   let bestSnap: SnapResult = {
     snapped: false,
@@ -38,13 +41,13 @@ export const calculateSnapPosition = (
     const snap = checkObjectSnap(draggingObject, obj, mousePosition, scale);
     if (snap.snapped) {
       bestSnap = snap;
-      break; // Take the first valid object snap
+      break;
     }
   }
 
   // If no object snap, try grid snapping
   if (!bestSnap.snapped) {
-    const gridSnap = checkGridSnap(mousePosition, GRID_SIZE);
+    const gridSnap = checkGridSnap(mousePosition, gridSize, scale);
     if (gridSnap.snapped) {
       bestSnap = gridSnap;
     }
@@ -59,37 +62,44 @@ const checkObjectSnap = (
   mousePosition: Point,
   scale: number
 ): SnapResult => {
-  const dragWidth = draggingObject.dimensions.length * scale;
-  const dragHeight = draggingObject.dimensions.width * scale;
+  // Convert dimensions from mm to canvas pixels
+  const dragWidth = mmToCanvas(draggingObject.dimensions.length, scale);
+  const dragHeight = mmToCanvas(draggingObject.dimensions.width, scale);
   
-  const targetWidth = targetObject.dimensions.length * scale;
-  const targetHeight = targetObject.dimensions.width * scale;
+  const targetWidth = mmToCanvas(targetObject.dimensions.length, scale);
+  const targetHeight = mmToCanvas(targetObject.dimensions.width, scale);
+  
+  const snapThresholdPx = mmToCanvas(SNAP_THRESHOLD_MM, scale);
 
-  // Check for edge-to-edge snapping (table extension)
+  // Check for edge-to-edge snapping
   const snapPositions = [
     // Right edge of target to left edge of dragging
     {
-      x: targetObject.position.x + targetWidth,
+      x: targetObject.position.x + targetWidth / 2 + dragWidth / 2,
       y: targetObject.position.y,
-      direction: 'right' as const
+      direction: 'right' as const,
+      distance: SNAP_THRESHOLD_MM
     },
     // Left edge of target to right edge of dragging
     {
-      x: targetObject.position.x - dragWidth,
+      x: targetObject.position.x - targetWidth / 2 - dragWidth / 2,
       y: targetObject.position.y,
-      direction: 'left' as const
+      direction: 'left' as const,
+      distance: SNAP_THRESHOLD_MM
     },
     // Bottom edge of target to top edge of dragging
     {
       x: targetObject.position.x,
-      y: targetObject.position.y + targetHeight,
-      direction: 'bottom' as const
+      y: targetObject.position.y + targetHeight / 2 + dragHeight / 2,
+      direction: 'bottom' as const,
+      distance: SNAP_THRESHOLD_MM
     },
     // Top edge of target to bottom edge of dragging
     {
       x: targetObject.position.x,
-      y: targetObject.position.y - dragHeight,
-      direction: 'top' as const
+      y: targetObject.position.y - targetHeight / 2 - dragHeight / 2,
+      direction: 'top' as const,
+      distance: SNAP_THRESHOLD_MM
     }
   ];
 
@@ -99,34 +109,66 @@ const checkObjectSnap = (
       Math.pow(mousePosition.y - snapPos.y, 2)
     );
 
-    if (distance < SNAP_THRESHOLD) {
+    if (distance < snapThresholdPx) {
       return {
         snapped: true,
         position: { x: snapPos.x, y: snapPos.y },
         snapType: 'edge',
         snapToObject: targetObject,
-        snapDirection: snapPos.direction
+        snapDirection: snapPos.direction,
+        distance: canvasToMm(distance, scale)
       };
     }
+  }
+
+  // Check for alignment snapping (same X or Y position)
+  const alignmentThreshold = mmToCanvas(25, scale); // 25mm alignment threshold
+  
+  // Vertical alignment
+  if (Math.abs(mousePosition.y - targetObject.position.y) < alignmentThreshold) {
+    return {
+      snapped: true,
+      position: { x: mousePosition.x, y: targetObject.position.y },
+      snapType: 'edge',
+      snapToObject: targetObject,
+      snapDirection: 'top',
+      distance: canvasToMm(Math.abs(mousePosition.y - targetObject.position.y), scale)
+    };
+  }
+  
+  // Horizontal alignment
+  if (Math.abs(mousePosition.x - targetObject.position.x) < alignmentThreshold) {
+    return {
+      snapped: true,
+      position: { x: targetObject.position.x, y: mousePosition.y },
+      snapType: 'edge',
+      snapToObject: targetObject,
+      snapDirection: 'left',
+      distance: canvasToMm(Math.abs(mousePosition.x - targetObject.position.x), scale)
+    };
   }
 
   return { snapped: false, position: mousePosition, snapType: null };
 };
 
-const checkGridSnap = (position: Point, gridSize: number): SnapResult => {
-  const snappedX = Math.round(position.x / gridSize) * gridSize;
-  const snappedY = Math.round(position.y / gridSize) * gridSize;
+const checkGridSnap = (position: Point, gridSizeMm: number, scale: number): SnapResult => {
+  const gridSizePx = mmToCanvas(gridSizeMm, scale);
+  const snappedX = Math.round(position.x / gridSizePx) * gridSizePx;
+  const snappedY = Math.round(position.y / gridSizePx) * gridSizePx;
 
   const distance = Math.sqrt(
     Math.pow(position.x - snappedX, 2) + 
     Math.pow(position.y - snappedY, 2)
   );
 
-  if (distance < SNAP_THRESHOLD) {
+  const snapThresholdPx = mmToCanvas(SNAP_THRESHOLD_MM, scale);
+
+  if (distance < snapThresholdPx) {
     return {
       snapped: true,
       position: { x: snappedX, y: snappedY },
-      snapType: 'grid'
+      snapType: 'grid',
+      distance: canvasToMm(distance, scale)
     };
   }
 
@@ -135,7 +177,8 @@ const checkGridSnap = (position: Point, gridSize: number): SnapResult => {
 
 export const generateSnapGuides = (
   snapResult: SnapResult,
-  canvasSize: { width: number; height: number }
+  canvasSize: { width: number; height: number },
+  scale: number
 ): SnapGuide[] => {
   if (!snapResult.snapped || !snapResult.snapToObject) return [];
 
@@ -144,21 +187,25 @@ export const generateSnapGuides = (
 
   if (snapResult.snapDirection === 'right' || snapResult.snapDirection === 'left') {
     // Vertical guide line
+    const measurement = snapResult.distance;
     guides.push({
       type: 'vertical',
       position: snapResult.position.x,
       start: { x: snapResult.position.x, y: 0 },
-      end: { x: snapResult.position.x, y: canvasSize.height }
+      end: { x: snapResult.position.x, y: canvasSize.height },
+      measurement
     });
   }
 
   if (snapResult.snapDirection === 'top' || snapResult.snapDirection === 'bottom') {
     // Horizontal guide line
+    const measurement = snapResult.distance;
     guides.push({
       type: 'horizontal',
       position: snapResult.position.y,
       start: { x: 0, y: snapResult.position.y },
-      end: { x: canvasSize.width, y: snapResult.position.y }
+      end: { x: canvasSize.width, y: snapResult.position.y },
+      measurement
     });
   }
 
