@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import CanvasWorkspace from '@/components/CanvasWorkspace';
@@ -6,6 +7,7 @@ import Toolbar from '@/components/Toolbar';
 import SettingsSidebar from '@/components/SettingsSidebar';
 import { initialProducts } from '@/data/products';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
+import WallThicknessControl from '@/components/canvas/WallThicknessControl';
 
 const FloorPlanner = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
@@ -20,6 +22,7 @@ const FloorPlanner = () => {
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [gridSize, setGridSize] = useState(20);
   const [isDrawingRoom, setIsDrawingRoom] = useState(false);
+  const [wallThickness, setWallThickness] = useState(100); // Default 100mm
 
   const handleToolChange = (tool: DrawingMode) => {
     setCurrentTool(tool);
@@ -53,6 +56,10 @@ const FloorPlanner = () => {
     setGridSize(size);
   };
 
+  const handleWallThicknessChange = (thickness: number) => {
+    setWallThickness(thickness);
+  };
+
   const clearCanvas = useCallback(() => {
     setRoomPoints([]);
     setWallSegments([]);
@@ -83,59 +90,56 @@ const FloorPlanner = () => {
                 gridSize={gridSize}
                 onGridSizeChange={handleGridSizeChange}
               />
+              <WallThicknessControl
+                thickness={wallThickness}
+                onThicknessChange={handleWallThicknessChange}
+              />
             </div>
           </div>
               
-              {/* Enhanced Canvas Workspace */}
-              <div className="lg:col-span-3">
-                <div className="bg-card rounded-lg shadow-sm border">
-                  <div className="p-4 border-b">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold">Floor Plan Canvas</h2>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          Scale: 1:{Math.round(1/scale)}
-                        </span>
-                        <button
-                          onClick={clearCanvas}
-                          className="text-destructive hover:text-destructive/80"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4">
-                    <EnhancedCanvasWorkspace
-                      roomPoints={roomPoints}
-                      setRoomPoints={setRoomPoints}
-                      wallSegments={wallSegments}
-                      setWallSegments={setWallSegments}
-                      placedProducts={placedProducts}
-                      setPlacedProducts={setPlacedProducts}
-                      doors={doors}
-                      setDoors={setDoors}
-                      textAnnotations={textAnnotations}
-                      setTextAnnotations={setTextAnnotations}
-                      rooms={rooms}
-                      setRooms={setRooms}
-                      scale={scale}
-                      currentMode={currentTool}
-                      showGrid={showGrid}
-                      showMeasurements={showMeasurements}
-                      gridSize={gridSize}
-                      onClearAll={clearCanvas}
-                    />
+          {/* Enhanced Canvas Workspace */}
+          <div className="lg:col-span-3">
+            <div className="bg-card rounded-lg shadow-sm border">
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Floor Plan Canvas</h2>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      Scale: 1:{Math.round(1/scale)}
+                    </span>
+                    <button
+                      onClick={clearCanvas}
+                      className="text-destructive hover:text-destructive/80"
+                    >
+                      Clear All
+                    </button>
                   </div>
                 </div>
               </div>
-
-              {/* Right sidebar - Product Catalog */}
-              {/*<ProductSidebar*/}
-              {/*  placedProducts={placedProducts}*/}
-              {/*  setPlacedProducts={setPlacedProducts}*/}
-              {/*/>*/}
+              
+              <div className="p-4">
+                <EnhancedCanvasWorkspace
+                  roomPoints={roomPoints}
+                  setRoomPoints={setRoomPoints}
+                  wallSegments={wallSegments}
+                  setWallSegments={setWallSegments}
+                  placedProducts={placedProducts}
+                  setPlacedProducts={setPlacedProducts}
+                  doors={doors}
+                  setDoors={setDoors}
+                  textAnnotations={textAnnotations}
+                  setTextAnnotations={setTextAnnotations}
+                  rooms={rooms}
+                  setRooms={setRooms}
+                  scale={scale}
+                  currentMode={currentTool}
+                  showGrid={showGrid}
+                  showMeasurements={showMeasurements}
+                  gridSize={gridSize}
+                  wallThickness={wallThickness}
+                  onClearAll={clearCanvas}
+                />
+              </div>
             </div>
           </div>
         </div>
