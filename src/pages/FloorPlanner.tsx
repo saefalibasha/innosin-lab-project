@@ -119,7 +119,7 @@ const FloorPlanner = () => {
   }, []);
 
   const handleStartRoomCreation = useCallback(() => {
-    setCurrentMode('room');
+    setCurrentMode('room' as DrawingTool);
     setShowRoomCreator(false);
     toast.info('Click on canvas to start drawing room perimeter');
   }, []);
