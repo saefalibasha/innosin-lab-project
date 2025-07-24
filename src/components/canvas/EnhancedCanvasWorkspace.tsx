@@ -1,105 +1,54 @@
-import React, { useRef, useEffect, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
-import { toast } from 'sonner';
-import { formatMeasurement, canvasToMm, mmToCanvas } from '@/utils/measurements';
+
+import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { Point, WallSegment, Room, Door, TextAnnotation, PlacedProduct, WallType } from '@/types/floorPlanTypes';
 
 interface EnhancedCanvasWorkspaceProps {
+  currentMode: string;
   roomPoints: Point[];
-  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
+  setRoomPoints: (points: Point[]) => void;
   wallSegments: WallSegment[];
-  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
-  placedProducts: PlacedProduct[];
-  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
+  setWallSegments: (segments: WallSegment[]) => void;
   doors: Door[];
-  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
+  setDoors: (doors: Door[]) => void;
   textAnnotations: TextAnnotation[];
-  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
+  setTextAnnotations: (annotations: TextAnnotation[]) => void;
   rooms: Room[];
-  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
-  scale: number;
-  currentMode: DrawingMode;
-  showGrid: boolean;
-  showMeasurements: boolean;
-  gridSize: number;
-  onClearAll: () => void;
+  setRooms: (rooms: Room[]) => void;
+  placedProducts: PlacedProduct[];
+  setPlacedProducts: (products: PlacedProduct[]) => void;
+  onWallComplete?: (wall: WallSegment) => void;
+  onRoomComplete?: (room: Room) => void;
+  scale?: number;
+  gridSize?: number;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
 const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
+  currentMode,
   roomPoints,
   setRoomPoints,
   wallSegments,
   setWallSegments,
-  placedProducts,
-  setPlacedProducts,
   doors,
   setDoors,
   textAnnotations,
   setTextAnnotations,
   rooms,
   setRooms,
-  scale,
-  currentMode,
-  showGrid,
-  showMeasurements,
-  gridSize,
-  onClearAll
+  placedProducts,
+  setPlacedProducts,
+  onWallComplete,
+  onRoomComplete,
+  scale = 1,
+  gridSize = 10,
+  canvasRef
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const tempWallStart = useRef<Point | null>(null);
-  const tempRoomPoints = useRef<Point[]>([]);
-  const tempWallSegments = useRef<WallSegment[]>([]);
-  const [selectedProducts, setSelectedProducts] = React.useState<string[]>([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<Point | null>(null);
+  const [tempPoints, setTempPoints] = useState<Point[]>([]);
+  const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw grid
-    if (showGrid) {
-      drawGrid(ctx, canvas.width, canvas.height, gridSize, scale);
-    }
-
-    // Draw existing walls
-    wallSegments.forEach(wall => drawWall(ctx, wall, scale));
-
-    // Draw temporary walls
-    tempWallSegments.current.forEach(wall => drawWall(ctx, wall, scale));
-
-    // Draw rooms
-    rooms.forEach(room => drawRoom(ctx, room, scale));
-
-    // Draw room points
-    if (currentMode === 'room') {
-      roomPoints.forEach(point => drawPoint(ctx, point, scale));
-    }
-
-    // Draw temporary room points
-    tempRoomPoints.current.forEach(point => drawPoint(ctx, point, scale));
-
-    // Draw placed products
-    placedProducts.forEach(product => drawProduct(ctx, product, scale));
-
-    // Draw doors
-    doors.forEach(door => drawDoor(ctx, door, scale));
-
-    // Draw text annotations
-    textAnnotations.forEach(text => drawText(ctx, text, scale));
-
-    // Draw temporary wall in wall mode
-    if (currentMode === 'wall' && tempWallStart.current) {
-      const { x, y } = tempWallStart.current;
-      drawLine(ctx, x, y, 0, 0, 'rgba(0, 0, 0, 0.5)', scale);
-    }
-  }, [roomPoints, wallSegments, placedProducts, doors, textAnnotations, scale, currentMode, showGrid, gridSize, rooms]);
-
-  // Drawing functions
-  const drawGrid = (ctx: CanvasRenderingContext2D, width: number, height: number, gridSize: number, scale: number) => {
+  const drawGrid = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
     ctx.lineWidth = 0.5;
 
@@ -118,9 +67,9 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.lineTo(width, y);
       ctx.stroke();
     }
-  };
+  }, [gridSize, scale]);
 
-  const drawWall = (ctx: CanvasRenderingContext2D, wall: WallSegment, scale: number) => {
+  const drawWall = useCallback((ctx: CanvasRenderingContext2D, wall: WallSegment) => {
     ctx.strokeStyle = wall.color;
     ctx.lineWidth = wall.thickness * scale;
     ctx.lineCap = 'round';
@@ -128,36 +77,9 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     ctx.moveTo(wall.start.x, wall.start.y);
     ctx.lineTo(wall.end.x, wall.end.y);
     ctx.stroke();
+  }, [scale]);
 
-    if (showMeasurements) {
-      const lengthMm = Math.sqrt(
-        Math.pow(canvasToMm(wall.end.x, scale) - canvasToMm(wall.start.x, scale), 2) +
-        Math.pow(canvasToMm(wall.end.y, scale) - canvasToMm(wall.start.y, scale), 2)
-      );
-      const midX = (wall.start.x + wall.end.x) / 2;
-      const midY = (wall.start.y + wall.end.y) / 2;
-      drawMeasurementText(ctx, midX, midY, formatMeasurement(lengthMm, { unit: 'mm', precision: 0, showUnit: true }), scale);
-    }
-  };
-
-  const drawLine = (ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number, color: string, scale: number) => {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2 * scale;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-  };
-
-  const drawPoint = (ctx: CanvasRenderingContext2D, point: Point, scale: number) => {
-    ctx.fillStyle = 'blue';
-    ctx.beginPath();
-    ctx.arc(point.x, point.y, 3 * scale, 0, 2 * Math.PI);
-    ctx.fill();
-  };
-
-  const drawRoom = (ctx: CanvasRenderingContext2D, room: Room, scale: number) => {
+  const drawRoom = useCallback((ctx: CanvasRenderingContext2D, room: Room) => {
     ctx.fillStyle = room.color || 'rgba(173, 216, 230, 0.2)';
     ctx.beginPath();
     if (room.points.length > 0) {
@@ -178,56 +100,43 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       const textY = centroid.y / room.points.length;
       ctx.fillText(room.name, textX, textY);
     }
-  };
+  }, [scale]);
 
-  const drawProduct = (ctx: CanvasRenderingContext2D, product: PlacedProduct, scale: number) => {
-    const isSelected = selectedProducts.includes(product.id);
-    const selectionOffset = isSelected ? 5 : 0;
-
-    ctx.fillStyle = product.color;
-    ctx.translate(product.position.x, product.position.y);
-    ctx.rotate(product.rotation);
-    ctx.fillRect(
-      -product.dimensions.length / 2 * scale - selectionOffset,
-      -product.dimensions.width / 2 * scale - selectionOffset,
-      product.dimensions.length * scale + 2 * selectionOffset,
-      product.dimensions.width * scale + 2 * selectionOffset
-    );
-    ctx.rotate(-product.rotation);
-    ctx.translate(-product.position.x, -product.position.y);
-
-    // Draw product name
-    ctx.fillStyle = 'black';
-    ctx.font = `${12 * scale}px sans-serif`;
-    ctx.fillText(product.name, product.position.x + 10 * scale, product.position.y + 5 * scale);
-  };
-
-  const drawDoor = (ctx: CanvasRenderingContext2D, door: Door, scale: number) => {
+  const drawDoor = useCallback((ctx: CanvasRenderingContext2D, door: Door) => {
     ctx.strokeStyle = 'brown';
     ctx.lineWidth = 3 * scale;
     ctx.beginPath();
     ctx.arc(door.position.x, door.position.y, door.width / 2 * scale, 0, Math.PI);
     ctx.stroke();
-  };
+  }, [scale]);
 
-  const drawText = (ctx: CanvasRenderingContext2D, text: TextAnnotation, scale: number) => {
+  const drawText = useCallback((ctx: CanvasRenderingContext2D, text: TextAnnotation) => {
     ctx.fillStyle = text.color;
     ctx.font = `${text.fontSize * scale}px sans-serif`;
     ctx.fillText(text.text, text.position.x, text.position.y);
-  };
+  }, [scale]);
 
-  const drawMeasurementText = (ctx: CanvasRenderingContext2D, x: number, y: number, text: string, scale: number) => {
+  const drawProduct = useCallback((ctx: CanvasRenderingContext2D, product: PlacedProduct) => {
+    // Draw product as a rectangle for now
+    ctx.fillStyle = product.color || 'rgba(0, 100, 200, 0.3)';
+    ctx.strokeStyle = product.color || 'rgba(0, 100, 200, 0.8)';
+    ctx.lineWidth = 2;
+    
+    const width = product.dimensions.length * scale;
+    const height = product.dimensions.width * scale;
+    
+    ctx.fillRect(product.position.x - width/2, product.position.y - height/2, width, height);
+    ctx.strokeRect(product.position.x - width/2, product.position.y - height/2, width, height);
+    
+    // Draw product name
     ctx.fillStyle = 'black';
-    ctx.font = `${10 * scale}px sans-serif`;
+    ctx.font = `${12 * scale}px sans-serif`;
     ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x, y);
-    ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
-  };
+    ctx.fillText(product.name, product.position.x, product.position.y);
+    ctx.textAlign = 'left';
+  }, [scale]);
 
-  // Event handlers
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -236,25 +145,13 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const y = e.clientY - rect.top;
 
     if (currentMode === 'wall') {
-      if (!tempWallStart.current) {
-        tempWallStart.current = { x, y };
+      if (!isDrawing) {
+        setStartPoint({ x, y });
+        setIsDrawing(true);
+        setTempPoints([{ x, y }]);
       } else {
-        const newWall: WallSegment = {
-          id: `wall-${Date.now()}`,
-          start: tempWallStart.current,
-          end: { x, y },
-          thickness: 100,
-          color: 'black',
-          type: WallType.INTERIOR
-        };
-        setWallSegments(prev => [...prev, newWall]);
-        tempWallStart.current = null;
+        setTempPoints(prev => [...prev, { x, y }]);
       }
-    }
-
-    if (currentMode === 'room') {
-      tempRoomPoints.current.push({ x, y });
-      setRoomPoints(tempRoomPoints.current);
     }
 
     if (currentMode === 'door') {
@@ -263,9 +160,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         position: { x, y },
         width: 60,
         wallId: undefined,
+        wallSegmentId: undefined,
+        wallPosition: undefined,
         isEmbedded: false
       };
-      setDoors(prev => [...prev, newDoor]);
+      setDoors([...doors, newDoor]);
     }
 
     if (currentMode === 'text') {
@@ -276,34 +175,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         fontSize: 12,
         color: 'black'
       };
-      setTextAnnotations(prev => [...prev, newText]);
+      setTextAnnotations([...textAnnotations, newText]);
     }
+  }, [currentMode, isDrawing, setDoors, setTextAnnotations, canvasRef, doors, textAnnotations]);
 
-    if (currentMode === 'select') {
-      // Check if a product was clicked
-      let clickedProduct = null;
-      for (let i = placedProducts.length - 1; i >= 0; i--) {
-        const product = placedProducts[i];
-        const halfLength = product.dimensions.length / 2 * scale;
-        const halfWidth = product.dimensions.width / 2 * scale;
-
-        if (x >= product.position.x - halfLength && x <= product.position.x + halfLength &&
-            y >= product.position.y - halfWidth && y <= product.position.y + halfWidth) {
-          clickedProduct = product;
-          break;
-        }
-      }
-
-      if (clickedProduct) {
-        const multiSelect = e.shiftKey || e.ctrlKey || e.metaKey;
-        handleProductSelect(clickedProduct.id, multiSelect);
-      } else {
-        handleProductSelect('');
-      }
-    }
-  };
-
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -311,96 +187,138 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (currentMode === 'wall' && tempWallStart.current) {
-      // Clear temporary walls array
-      tempWallSegments.current = [];
+    if (currentMode === 'wall' && isDrawing && startPoint) {
+      // Optionally update a temporary wall for preview
+    }
+  }, [currentMode, isDrawing, startPoint]);
 
-      // Create a temporary wall segment
+  const finishWallDrawing = useCallback(() => {
+    if (startPoint && tempPoints.length > 0) {
+      const lastPoint = tempPoints[tempPoints.length - 1];
       const newWall: WallSegment = {
-        id: 'temp-wall',
-        start: tempWallStart.current,
-        end: { x, y },
-        thickness: 100,
-        color: 'rgba(0, 0, 0, 0.5)',
+        id: `wall-${Date.now()}`,
+        start: startPoint,
+        end: lastPoint,
+        thickness: 10,
+        color: '#000000',
         type: WallType.INTERIOR
       };
-      tempWallSegments.current.push(newWall);
+      
+      setWallSegments([...wallSegments, newWall]);
+      if (onWallComplete) onWallComplete(newWall);
+      
+      setStartPoint(null);
+      setTempPoints([]);
+      setIsDrawing(false);
     }
-  };
+  }, [startPoint, tempPoints, setWallSegments, onWallComplete, wallSegments]);
 
-  const handleCanvasDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Enter' && currentMode === 'wall') {
+      finishWallDrawing();
+    }
+  }, [currentMode, finishWallDrawing]);
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
-    const productData = e.dataTransfer.getData('product');
-    if (!productData) return;
-
-    try {
-      const product = JSON.parse(productData);
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const newProduct: PlacedProduct = {
-        id: `product-${Date.now()}`,
-        productId: product.id,
-        name: product.name,
-        category: product.category || 'Unknown',
-        position: { x, y },
-        rotation: 0,
-        dimensions: product.dimensions,
-        color: product.color,
-        scale: 1,
-        modelPath: product.modelPath,
-        thumbnail: product.thumbnail,
-        description: product.description,
-        specifications: product.specifications,
-        finishes: product.finishes,
-        variants: product.variants
-      };
-
-      setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
-    } catch (error) {
-      console.error('Error parsing dropped product:', error);
-    }
-  };
-
-  const handleWallComplete = (wall: WallSegment) => {
-    setWallSegments((prev: WallSegment[]) => [...prev, wall]);
-  };
-
-  const handleRoomComplete = (room: Room) => {
-    setRooms((prev: Room[]) => [...prev, room]);
-  };
-
-  const handleProductSelect = useCallback((productId: string, multiSelect: boolean = false) => {
-    if (multiSelect) {
-      setSelectedProducts(prev => 
-        prev.includes(productId) 
-          ? prev.filter(id => id !== productId)
-          : [...prev, productId]
-      );
-    } else {
-      setSelectedProducts([productId]);
-    }
   }, []);
 
+  const handleDrop = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
+    e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const productData = e.dataTransfer.getData('application/json');
+    if (productData) {
+      try {
+        const product = JSON.parse(productData);
+        const newProduct: PlacedProduct = {
+          id: `placed-${Date.now()}`,
+          productId: product.id,
+          name: product.name,
+          category: product.category,
+          position: { x, y },
+          rotation: 0,
+          dimensions: product.dimensions || { length: 100, width: 50, height: 30 },
+          color: product.color || '#4A90E2',
+          scale: 1,
+          modelPath: product.modelPath,
+          thumbnail: product.thumbnail,
+          description: product.description,
+          specifications: product.specifications,
+          finishes: product.finishes,
+          variants: product.variants
+        };
+        setPlacedProducts([...placedProducts, newProduct]);
+      } catch (error) {
+        console.error('Error parsing dropped product data:', error);
+      }
+    }
+  }, [canvasRef, setPlacedProducts, placedProducts]);
+
+  const handleProductDragStart = useCallback((e: React.DragEvent<HTMLCanvasElement>, product: PlacedProduct) => {
+    setDraggedProduct(product);
+  }, []);
+
+  const handleProductDragEnd = useCallback(() => {
+    setDraggedProduct(null);
+  }, []);
+
+  const handleProductMove = useCallback((productId: string, newPosition: Point) => {
+    setPlacedProducts(placedProducts.map(p => 
+      p.id === productId ? { ...p, position: newPosition } : p
+    ));
+  }, [placedProducts, setPlacedProducts]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw grid
+    drawGrid(ctx, canvas.width, canvas.height);
+
+    // Draw existing walls
+    wallSegments.forEach(wall => drawWall(ctx, wall));
+
+    // Draw rooms
+    rooms.forEach(room => drawRoom(ctx, room));
+
+    // Draw doors
+    doors.forEach(door => drawDoor(ctx, door));
+
+    // Draw text annotations
+    textAnnotations.forEach(text => drawText(ctx, text));
+
+    // Draw placed products
+    placedProducts.forEach(product => drawProduct(ctx, product));
+  }, [drawGrid, drawWall, drawRoom, drawDoor, drawText, drawProduct, wallSegments, rooms, doors, textAnnotations, placedProducts, canvasRef]);
+
   return (
-    <div
-      className="relative w-full h-full"
-      onDrop={handleCanvasDrop}
-      onDragOver={(e) => e.preventDefault()}
-    >
-      <canvas
-        ref={canvasRef}
-        width={1000}
-        height={600}
-        className="w-full h-full bg-white cursor-crosshair"
-        onClick={handleCanvasClick}
-        onMouseMove={handleCanvasMouseMove}
-      />
-    </div>
+    <canvas
+      ref={canvasRef}
+      width={1200}
+      height={800}
+      className="w-full h-full bg-white cursor-crosshair"
+      onClick={handleCanvasClick}
+      onMouseMove={handleCanvasMouseMove}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    />
   );
 };
 

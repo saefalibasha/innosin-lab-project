@@ -140,7 +140,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         wallPosition: undefined,
         isEmbedded: false
       };
-      setDoors((prev: Door[]) => [...prev, newDoor]);
+      setDoors([...doors, newDoor]);
     }
 
     if (currentMode === 'text') {
@@ -151,9 +151,9 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         fontSize: 12,
         color: 'black'
       };
-      setTextAnnotations((prev: TextAnnotation[]) => [...prev, newText]);
+      setTextAnnotations([...textAnnotations, newText]);
     }
-  }, [currentMode, setDoors, setTextAnnotations, canvasRef]);
+  }, [currentMode, setDoors, setTextAnnotations, canvasRef, doors, textAnnotations]);
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -180,14 +180,14 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         type: WallType.INTERIOR
       };
       
-      setWallSegments((prev: WallSegment[]) => [...prev, newWall]);
+      setWallSegments([...wallSegments, newWall]);
       if (onWallComplete) onWallComplete(newWall);
       
       startPoint.current = null;
       tempPoints.current = [];
       isDrawing.current = false;
     }
-  }, [setWallSegments, onWallComplete]);
+  }, [setWallSegments, onWallComplete, wallSegments]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Enter' && currentMode === 'wall') {
