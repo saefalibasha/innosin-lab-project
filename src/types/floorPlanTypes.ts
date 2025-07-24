@@ -60,11 +60,7 @@ export interface TextAnnotation {
   color: string;
 }
 
-export enum WallType {
-  EXTERIOR = 'exterior',
-  INTERIOR = 'interior',
-  PARTITION = 'partition'
-}
+export type WallType = 'exterior' | 'interior' | 'partition';
 
 export interface WallSegment {
   id: string;
@@ -114,4 +110,4 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
-export type DrawingTool = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
+export type DrawingTool = DrawingMode;

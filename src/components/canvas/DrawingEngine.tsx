@@ -322,8 +322,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
             start: drawingState.startPoint,
             end: finalPoint,
             type: WallType.INTERIOR,
-            thickness: 100, // 100mm default
-            color: '#94a3b8' // Added missing color property
+            thickness: 100 // 100mm default
           };
           onWallComplete(newWall);
         }
