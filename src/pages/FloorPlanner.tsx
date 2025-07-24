@@ -1,27 +1,16 @@
+
 import React, { useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { initialFloorPlanState } from '@/constants';
 import { useDisclosure } from "@/components/ui/use-disclosure"
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast"
 import { Delete, Save } from 'lucide-react';
-
-const EnhancedCanvasWorkspace = dynamic(() => import('@/components/canvas/EnhancedCanvasWorkspace'), {
-  ssr: false,
-});
-const ProductSidebar = dynamic(() => import('@/components/ProductSidebar'), {
-  ssr: false,
-});
-const Toolbar = dynamic(() => import('@/components/Toolbar'), {
-  ssr: false,
-});
-const DimensionSettings = dynamic(() => import('@/components/DimensionSettings'), {
-  ssr: false,
-});
-const ResetConfirmation = dynamic(() => import('@/components/ResetConfirmation'), {
-  ssr: false,
-});
+import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
+import ProductSidebar from '@/components/ProductSidebar';
+import Toolbar from '@/components/Toolbar';
+import DimensionSettings from '@/components/DimensionSettings';
+import ResetConfirmation from '@/components/ResetConfirmation';
 
 const FloorPlanner: React.FC = () => {
   const [roomPoints, setRoomPoints] = useState<Point[]>(initialFloorPlanState.roomPoints);

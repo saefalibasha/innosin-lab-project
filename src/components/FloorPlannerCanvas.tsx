@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
 import FloorPlannerViewControls from './FloorPlannerViewControls';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, DrawingMode } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];
@@ -16,7 +16,7 @@ interface FloorPlannerCanvasProps {
   textAnnotations: TextAnnotation[];
   setTextAnnotations: (annotations: TextAnnotation[]) => void;
   scale: number;
-  currentTool: string;
+  currentTool: DrawingMode;
   showGrid: boolean;
   showRuler: boolean;
   onClearAll: () => void;
