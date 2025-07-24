@@ -9,34 +9,21 @@ import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircl
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { fetchSeriesWithVariants } from '@/services/variantService';
 import { useLoadingState } from '@/hooks/useLoadingState';
-import ProductImageGallery from '../ProductImageGallery';
-import ProductOrientationSelector from '../ProductOrientationSelector';
-import TechnicalSpecifications from '../TechnicalSpecifications';
-import OpenRackConfigurator from './OpenRackConfigurator';
-import TallCabinetConfigurator from './TallCabinetConfigurator';
-import WallCabinetConfigurator from './WallCabinetConfigurator';
-import ModularCabinetConfigurator from './ModularCabinetConfigurator';
+import ProductImageGallery from './ProductImageGallery';
+import ProductOrientationSelector from './ProductOrientationSelector';
+import TechnicalSpecifications from './TechnicalSpecifications';
+import OpenRackConfigurator from './product/OpenRackConfigurator';
+import TallCabinetConfigurator from './product/TallCabinetConfigurator';
+import WallCabinetConfigurator from './product/WallCabinetConfigurator';
+import ModularCabinetConfigurator from './product/ModularCabinetConfigurator';
 import { WallCabinetConfiguration } from '@/types/product';
-
-interface ModularCabinetConfiguration {
-  id: string;
-  name: string;
-  description: string;
-  doorType: string;
-  dimensions: string;
-  orientation?: string;
-  drawerCount?: number;
-  finishType: string;
-  variants: any[];
-}
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading: productLoading, error } = useProductById(id);
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
-  const [selectedConfiguration, setSelectedConfiguration] = useState<WallCabinetConfiguration | null>(null);
-  const [selectedModularConfiguration, setSelectedModularConfiguration] = useState<ModularCabinetConfiguration | null>(null);
+  const [selectedConfiguration, setSelectedConfiguration] = useState<any>(null);
   const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
   
   // Enhanced loading state management
@@ -64,6 +51,9 @@ const ProductDetail: React.FC = () => {
     }
     if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
       return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
+    }
+    if (name.includes('mobile cabinet') || category.includes('mobile cabinet')) {
+      return { series: 'Mobile Cabinet', slug: 'mobile-cabinet' };
     }
     
     return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
@@ -93,44 +83,11 @@ const ProductDetail: React.FC = () => {
           const variants = fetchedVariants[0].variants || [];
           console.log('🎯 Extracted variants array:', variants);
           
-          // Enhanced variant analysis
-          const glassVariants = variants.filter(v => v.door_type === 'Glass');
-          const solidVariants = variants.filter(v => v.door_type === 'Solid');
-          
-          console.log('📊 Comprehensive variant analysis:');
-          console.log('- Total variants:', variants.length);
-          console.log('- Glass variants:', glassVariants.length);
-          console.log('- Solid variants:', solidVariants.length);
-          console.log('- Unique door types:', [...new Set(variants.map(v => v.door_type))]);
-          console.log('- Unique dimensions:', [...new Set(variants.map(v => v.dimensions))]);
-          console.log('- Unique orientations:', [...new Set(variants.map(v => v.orientation))]);
-          console.log('- Unique finishes:', [...new Set(variants.map(v => v.finish_type))]);
-          
-          // Validate that all expected variants are present
-          const expectedSmallDimensions = ['450x330x750mm', '500x330x750mm', '550x330x750mm', '600x330x750mm'];
-          const expectedOrientations = ['Left-Handed', 'Right-Handed'];
-          const expectedDoorTypes = ['Glass', 'Solid'];
-          
-          expectedSmallDimensions.forEach(dim => {
-            expectedDoorTypes.forEach(doorType => {
-              expectedOrientations.forEach(orientation => {
-                const exists = variants.some(v => 
-                  v.dimensions === dim && 
-                  v.door_type === doorType && 
-                  v.orientation === orientation
-                );
-                if (!exists) {
-                  console.warn(`⚠️ Missing variant: ${dim} ${doorType} ${orientation}`);
-                }
-              });
-            });
-          });
-          
           setSeriesVariants(variants);
           
-          if (glassVariants.length === 0) {
-            console.error('❌ No glass variants found!');
-            setError('No glass variants found for this product series');
+          if (variants.length === 0) {
+            console.log('⚠️ No variants found for series:', seriesInfo.slug);
+            setError('No variants found for this product series');
           }
         } else {
           console.log('⚠️ No variants found for series:', seriesInfo.slug);
@@ -161,20 +118,10 @@ const ProductDetail: React.FC = () => {
     setSelectedVariant(variant);
   };
 
-  // Handle wall cabinet configuration selection
-  const handleConfigurationSelect = (configuration: WallCabinetConfiguration) => {
+  // Handle configuration selection for wall and mobile cabinets
+  const handleConfigurationSelect = (configuration: any) => {
     console.log('🎯 Configuration selected:', configuration);
     setSelectedConfiguration(configuration);
-    // Set the first variant as the selected variant for display purposes
-    if (configuration.variants && configuration.variants.length > 0) {
-      setSelectedVariant(configuration.variants[0]);
-    }
-  };
-
-  // Handle modular cabinet configuration selection
-  const handleModularConfigurationSelect = (configuration: ModularCabinetConfiguration) => {
-    console.log('🎯 Modular configuration selected:', configuration);
-    setSelectedModularConfiguration(configuration);
     // Set the first variant as the selected variant for display purposes
     if (configuration.variants && configuration.variants.length > 0) {
       setSelectedVariant(configuration.variants[0]);
@@ -224,14 +171,13 @@ const ProductDetail: React.FC = () => {
       );
     }
 
-    // Check if it's a modular cabinet series
-    if (series.includes('mobile cabinet') || product.category.toLowerCase().includes('mobile cabinet')) {
+    if (series.includes('mobile cabinet')) {
       console.log('🏗️ Rendering ModularCabinetConfigurator with variants:', seriesVariants.length);
       return (
         <ModularCabinetConfigurator
           variants={seriesVariants}
-          selectedConfiguration={selectedModularConfiguration}
-          onConfigurationSelect={handleModularConfigurationSelect}
+          selectedConfiguration={selectedConfiguration}
+          onConfigurationSelect={handleConfigurationSelect}
           isLoading={variantsLoading}
         />
       );
