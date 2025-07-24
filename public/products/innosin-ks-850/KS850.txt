@@ -7,9 +7,6 @@ Model: KS850
 Dimensions: 850×600×650 mm
 Size: KS850
 
-Description:
-Ergonomic knee space unit providing comfortable leg room for laboratory workstations.
-
 Full Description:
 The KS850 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. This 850mm width unit provides excellent space for comfortable working positions.
 
