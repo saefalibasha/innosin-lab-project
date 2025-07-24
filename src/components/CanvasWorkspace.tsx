@@ -48,8 +48,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  const CANVAS_WIDTH = 800;
-  const CANVAS_HEIGHT = 600;
+  const CANVAS_WIDTH = 1200;
+  const CANVAS_HEIGHT = 800;
 
   useEffect(() => {
     const canvas = canvasRef.current;

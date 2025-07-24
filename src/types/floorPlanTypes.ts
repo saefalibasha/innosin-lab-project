@@ -48,8 +48,6 @@ export interface Door {
   width: number;
   wallId?: string;
   isEmbedded?: boolean;
-  wallSegmentId?: string;
-  wallPosition?: number;
 }
 
 export interface TextAnnotation {
@@ -60,15 +58,12 @@ export interface TextAnnotation {
   color: string;
 }
 
-export type WallType = 'exterior' | 'interior' | 'partition';
-
 export interface WallSegment {
   id: string;
   start: Point;
   end: Point;
   thickness: number;
   color: string;
-  type?: WallType;
 }
 
 export interface Room {
@@ -78,26 +73,6 @@ export interface Room {
   area: number;
   perimeter: number;
   color?: string;
-}
-
-export interface GridSettings {
-  size: number;
-  showMajorLines: boolean;
-  showMinorLines: boolean;
-  opacity: number;
-}
-
-export interface ViewportSettings {
-  zoom: number;
-  pan: Point;
-}
-
-export interface SnapSettings {
-  enabled: boolean;
-  snapToGrid: boolean;
-  snapToObjects: boolean;
-  snapToAlignment: boolean;
-  strength: 'weak' | 'medium' | 'strong';
 }
 
 export interface FloorPlanState {
@@ -110,4 +85,3 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
-export type DrawingTool = DrawingMode;

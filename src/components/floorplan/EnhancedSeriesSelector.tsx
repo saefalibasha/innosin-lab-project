@@ -1,292 +1,284 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Search, Filter, Grid3X3 } from 'lucide-react';
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  dimensions: {
-    length: number;
-    width: number;
-    height: number;
-  };
-  thumbnail: string;
-  modelPath: string;
-  color: string;
-  description: string;
-  specifications: string[];
-}
-
-interface SeriesData {
-  id: string;
-  name: string;
-  description: string;
-  products: Product[];
-  category: string;
-  thumbnail: string;
-}
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Input } from '@/components/ui/input';
+import { Package, Ruler, Search } from 'lucide-react';
+import LazyProductImage from '@/components/LazyProductImage';
+import { useProductSeries } from '@/hooks/useProductSeries';
+import { Product } from '@/types/product';
 
 interface EnhancedSeriesSelectorProps {
-  onProductDrag: (product: Product) => void;
+  onProductDrag: (product: any) => void;
   currentTool: string;
+  onProductUsed?: (productId: string) => void;
 }
 
-const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
-  onProductDrag,
-  currentTool
+interface SeriesVariant {
+  product: Product;
+  dimensions: string;
+  dimensionsParsed: { length: number; width: number; height: number };
+}
+
+const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ 
+  onProductDrag, 
+  currentTool, 
+  onProductUsed 
 }) => {
-  const [selectedSeries, setSelectedSeries] = useState<SeriesData | null>(null);
-  const [selectedDimension, setSelectedDimension] = useState<string>('');
+  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
+  const [selectedDimensions, setSelectedDimensions] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('all');
+  const { productSeries, loading, error } = useProductSeries();
 
-  // Mock data for demonstration
-  const seriesData: SeriesData[] = [
-    {
-      id: 'mobile-cabinets',
-      name: 'Mobile Cabinets',
-      description: 'Versatile mobile storage solutions',
-      category: 'Storage',
-      thumbnail: '/products/innosin-mc-pc-755065/MC-PC (755065).jpg',
-      products: [
-        {
-          id: 'mc-pc-755065',
-          name: 'MC-PC (755065)',
-          category: 'Mobile Cabinet',
-          dimensions: { length: 500, width: 500, height: 650 },
-          thumbnail: '/products/innosin-mc-pc-755065/MC-PC (755065).jpg',
-          modelPath: '/products/innosin-mc-pc-755065/MC-PC (755065).glb',
-          color: '#e2e8f0',
-          description: 'Standard mobile cabinet for 750mm benches',
-          specifications: ['750mm bench height', 'Locking casters', 'Chemical resistant']
-        },
-        {
-          id: 'mc-pc-755080',
-          name: 'MC-PC (755080)',
-          category: 'Mobile Cabinet',
-          dimensions: { length: 500, width: 500, height: 800 },
-          thumbnail: '/products/innosin-mc-pc-755080/MC-PC (755080).jpg',
-          modelPath: '/products/innosin-mc-pc-755080/MC-PC (755080).glb',
-          color: '#e2e8f0',
-          description: 'Mobile cabinet for 900mm benches',
-          specifications: ['900mm bench height', 'Locking casters', 'Chemical resistant']
-        }
-      ]
-    },
-    {
-      id: 'tall-cabinets',
-      name: 'Tall Cabinets',
-      description: 'High-capacity storage solutions',
-      category: 'Storage',
-      thumbnail: '/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg',
-      products: [
-        {
-          id: 'tcg-pc-754018',
-          name: 'TCG-PC (754018)',
-          category: 'Tall Cabinet',
-          dimensions: { length: 600, width: 600, height: 1800 },
-          thumbnail: '/products/innosin-tcg-pc-754018/TCG-PC (754018).jpg',
-          modelPath: '/products/innosin-tcg-pc-754018/TCG-PC (754018).glb',
-          color: '#f1f5f9',
-          description: 'Tall cabinet for maximum storage',
-          specifications: ['1800mm height', 'Adjustable shelves', 'Powder coat finish']
-        }
-      ]
+  // Extract dimensions from product data
+  const extractDimensions = (product: Product) => {
+    if (product.dimensions) {
+      const dimensionMatch = product.dimensions.match(/(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?/i);
+      if (dimensionMatch) {
+        const [, length, width, height, unit = 'mm'] = dimensionMatch;
+        const factor = unit === 'mm' ? 0.001 : unit === 'cm' ? 0.01 : 1;
+        return {
+          length: parseFloat(length) * factor,
+          width: parseFloat(width) * factor,
+          height: parseFloat(height) * factor
+        };
+      }
     }
-  ];
-
-  const filteredSeries = seriesData.filter(series => {
-    const matchesSearch = series.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         series.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || series.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const availableDimensions = selectedSeries?.products.map(product => ({
-    id: product.id,
-    label: `${product.dimensions.length}×${product.dimensions.width}×${product.dimensions.height}mm`,
-    dimensions: product.dimensions,
-    product: product
-  })) || [];
-
-  const selectedProduct = selectedSeries?.products.find(p => p.id === selectedDimension);
-
-  const handleDragStart = (e: React.DragEvent, product: Product) => {
-    e.dataTransfer.setData('product', JSON.stringify(product));
-    onProductDrag(product);
+    return { length: 1.0, width: 0.6, height: 0.85 };
   };
 
-  const categories = ['all', ...Array.from(new Set(seriesData.map(s => s.category)))];
+  // Group products by series and create variants
+  const seriesWithVariants = useMemo(() => {
+    const seriesMap = new Map<string, SeriesVariant[]>();
+    
+    productSeries.forEach(series => {
+      const variants: SeriesVariant[] = [];
+      
+      series.products.forEach(product => {
+        const dimensions = extractDimensions(product);
+        variants.push({
+          product,
+          dimensions: product.dimensions || 'Standard',
+          dimensionsParsed: dimensions
+        });
+      });
+      
+      if (variants.length > 0) {
+        seriesMap.set(series.id, variants);
+      }
+    });
+    
+    return seriesMap;
+  }, [productSeries]);
+
+  // Filter series based on search term
+  const filteredSeries = useMemo(() => {
+    if (!searchTerm) return productSeries;
+    
+    return productSeries.filter(series =>
+      series.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      series.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [productSeries, searchTerm]);
+
+  const handleDragStart = (e: React.DragEvent, variant: SeriesVariant) => {
+    const floorPlanProduct = {
+      id: variant.product.id,
+      productId: variant.product.id,
+      name: variant.product.name,
+      category: variant.product.category,
+      dimensions: variant.dimensionsParsed,
+      color: getCategoryColor(variant.product.category),
+      modelPath: variant.product.modelPath,
+      thumbnail: variant.product.thumbnail,
+      description: variant.product.description,
+      specifications: variant.product.specifications,
+      productCode: variant.product.id,
+      series: variant.product.category
+    };
+
+    e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
+    onProductDrag(floorPlanProduct);
+    
+    if (onProductUsed) {
+      onProductUsed(variant.product.id);
+    }
+  };
+
+  const getCategoryColor = (category: string): string => {
+    const colors: Record<string, string> = {
+      'Innosin Lab': '#10b981',
+      'Broen-Lab': '#3b82f6',
+      'Hamilton Laboratory Solutions': '#1d4ed8',
+      'Oriental Giken Inc.': '#ef4444'
+    };
+    return colors[category] || '#6b7280';
+  };
+
+  const isInteractionDisabled = currentTool !== 'select';
+
+  if (loading) {
+    return (
+      <div className="p-4 text-center">
+        <Package className="h-8 w-8 mx-auto mb-2 text-muted-foreground animate-spin" />
+        <p className="text-sm text-muted-foreground">Loading series...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <p className="text-sm text-destructive">Error loading series: {error}</p>
+      </div>
+    );
+  }
+
+  const selectedSeriesData = productSeries.find(s => s.id === selectedSeries);
+  const selectedVariants = selectedSeries ? seriesWithVariants.get(selectedSeries) || [] : [];
+  const selectedVariant = selectedVariants.find(v => v.dimensions === selectedDimensions) || selectedVariants[0];
 
   return (
-    <div className="space-y-6 p-4">
-      {/* Search and Filter */}
-      <div className="space-y-3">
+    <div className="h-full flex flex-col">
+      {isInteractionDisabled && (
+        <div className="p-3 bg-warning/10 border border-warning/20 rounded-t text-xs text-warning-foreground">
+          Switch to Select tool to place products
+        </div>
+      )}
+      
+      <div className="p-3 border-b">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-2 top-2.5 h-3 w-3 text-muted-foreground" />
           <Input
-            placeholder="Search product series..."
+            placeholder="Search series..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-10"
+            className="pl-7 h-8 text-xs"
           />
         </div>
-        
-        <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="h-10">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="Filter by category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(category => (
-              <SelectItem key={category} value={category}>
-                {category === 'all' ? 'All Categories' : category}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
-      {/* Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Column: Series Selection */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Product Series
-          </h3>
-          
-          <div className="space-y-3">
-            {filteredSeries.map((series) => (
-              <Card 
-                key={series.id} 
-                className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedSeries?.id === series.id ? 'ring-2 ring-primary' : ''
-                }`}
-                onClick={() => {
-                  setSelectedSeries(series);
-                  setSelectedDimension('');
-                }}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-center space-x-3">
-                    <img 
-                      src={series.thumbnail} 
+      <div className="flex-1 flex">
+        {/* Left column - Series selection */}
+        <div className="w-1/2 border-r">
+          <ScrollArea className="h-80">
+            <div className="space-y-2 p-3">
+              {filteredSeries.map(series => (
+                <Button
+                  key={series.id}
+                  variant={selectedSeries === series.id ? "default" : "ghost"}
+                  className="w-full p-3 h-auto justify-start"
+                  onClick={() => {
+                    setSelectedSeries(series.id);
+                    setSelectedDimensions('');
+                  }}
+                >
+                  <div className="flex items-center space-x-3 w-full">
+                    <LazyProductImage
+                      src={series.thumbnail || '/placeholder.svg'}
                       alt={series.name}
-                      className="w-16 h-16 object-contain rounded-md bg-gray-50"
+                      className="w-10 h-10 rounded object-cover flex-shrink-0"
+                      fallback="/placeholder.svg"
                     />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium truncate">{series.name}</h4>
-                      <p className="text-sm text-muted-foreground truncate">{series.description}</p>
-                      <Badge variant="outline" className="mt-1 text-xs">
-                        {series.products.length} variants
-                      </Badge>
+                    
+                    <div className="flex-1 text-left">
+                      <h3 className="font-medium text-xs">{series.name}</h3>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {series.description}
+                      </p>
                     </div>
+                    
+                    <Badge variant="outline" className="text-xs">
+                      {seriesWithVariants.get(series.id)?.length || 0}
+                    </Badge>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                </Button>
+              ))}
+            </div>
+          </ScrollArea>
         </div>
 
-        {/* Right Column: Dimension Selection and Preview */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Grid3X3 className="h-5 w-5" />
-            Dimensions & Preview
-          </h3>
-          
-          {selectedSeries ? (
-            <div className="space-y-4">
-              {/* Prominent Dimension Selector */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Select Dimensions</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Select value={selectedDimension} onValueChange={setSelectedDimension}>
-                    <SelectTrigger className="h-12 text-base">
-                      <SelectValue placeholder="Choose product dimensions..." />
+        {/* Right column - Dimension selection and preview */}
+        <div className="w-1/2 flex flex-col">
+          {selectedSeriesData ? (
+            <>
+              <div className="p-3 border-b">
+                <h4 className="font-medium text-sm mb-2">{selectedSeriesData.name}</h4>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    <Ruler className="inline h-3 w-3 mr-1" />
+                    Select Dimensions:
+                  </label>
+                  <Select
+                    value={selectedDimensions || selectedVariants[0]?.dimensions || ''}
+                    onValueChange={setSelectedDimensions}
+                  >
+                    <SelectTrigger className="w-full h-9 text-xs">
+                      <SelectValue placeholder="Choose size..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {availableDimensions.map((dim) => (
-                        <SelectItem key={dim.id} value={dim.id} className="h-12">
+                      {selectedVariants.map((variant) => (
+                        <SelectItem key={variant.dimensions} value={variant.dimensions}>
                           <div className="flex items-center justify-between w-full">
-                            <span className="font-medium">{dim.product.name}</span>
-                            <Badge variant="outline" className="ml-2">
-                              {dim.label}
-                            </Badge>
+                            <span>{variant.dimensions}</span>
+                            <span className="text-muted-foreground ml-2">
+                              {variant.dimensionsParsed.length.toFixed(1)} × {variant.dimensionsParsed.width.toFixed(1)}m
+                            </span>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                </CardContent>
-              </Card>
-
-              {/* Enhanced Product Preview */}
-              {selectedProduct && (
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">Product Preview</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex flex-col items-center space-y-4">
-                      <img 
-                        src={selectedProduct.thumbnail} 
-                        alt={selectedProduct.name}
-                        className="w-32 h-32 object-contain rounded-lg bg-gray-50 border-2 border-gray-200"
-                      />
-                      
-                      <div className="text-center space-y-2">
-                        <h4 className="font-semibold text-lg">{selectedProduct.name}</h4>
-                        <Badge variant="secondary" className="text-sm">
-                          {selectedProduct.dimensions.length} × {selectedProduct.dimensions.width} × {selectedProduct.dimensions.height} mm
-                        </Badge>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedProduct.description}
-                        </p>
-                      </div>
-
-                      <Button
-                        className="w-full h-12 text-base"
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, selectedProduct)}
-                        disabled={currentTool !== 'select'}
-                      >
-                        <Package className="h-5 w-5 mr-2" />
-                        Drag to Canvas
-                      </Button>
-                    </div>
-
-                    {/* Specifications */}
-                    <div className="space-y-2">
-                      <h5 className="font-medium text-sm">Specifications:</h5>
-                      <div className="space-y-1">
-                        {selectedProduct.specifications.map((spec, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {spec}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          ) : (
-            <Card className="h-48 flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Select a product series to view dimensions</p>
+                </div>
               </div>
-            </Card>
+              
+              {selectedVariant && (
+                <div className="flex-1 p-3">
+                  <div
+                    draggable={!isInteractionDisabled}
+                    onDragStart={(e) => handleDragStart(e, selectedVariant)}
+                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
+                      isInteractionDisabled 
+                        ? 'opacity-50 cursor-not-allowed border-gray-300' 
+                        : 'cursor-move hover:border-primary hover:bg-accent/50 border-primary/30'
+                    }`}
+                  >
+                    <LazyProductImage
+                      src={selectedVariant.product.thumbnail || '/placeholder.svg'}
+                      alt={selectedVariant.product.name}
+                      className="w-20 h-20 mx-auto rounded object-cover mb-3"
+                      fallback="/placeholder.svg"
+                    />
+                    
+                    <div className="space-y-2">
+                      <h5 className="font-medium text-sm">{selectedVariant.product.name}</h5>
+                      <div className="text-xs text-muted-foreground">
+                        <div>Dimensions: {selectedVariant.dimensions}</div>
+                        <div>
+                          Size: {selectedVariant.dimensionsParsed.length.toFixed(1)} × {selectedVariant.dimensionsParsed.width.toFixed(1)} × {selectedVariant.dimensionsParsed.height.toFixed(1)}m
+                        </div>
+                      </div>
+                      
+                      {!isInteractionDisabled && (
+                        <div className="text-xs text-primary font-medium">
+                          Drag to place on canvas
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="text-center">
+                <Package className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Select a series to view dimensions</p>
+              </div>
+            </div>
           )}
         </div>
       </div>
