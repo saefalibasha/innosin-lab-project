@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -162,34 +163,19 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     <TooltipTrigger asChild>
                       <Button
                         variant={selectedSeries === series.id ? "default" : "ghost"}
-                        className="w-full p-4 h-auto justify-start"
+                        className="w-full p-4 h-auto justify-center"
                         onClick={() => {
                           setSelectedSeries(series.id);
                           setSelectedVariants({});
                           setSelectedProduct(null);
                         }}
                       >
-                        <div className="flex items-center space-x-3 w-full min-w-0">
-                          <LazyProductImage
-                            src={series.thumbnail || '/placeholder.svg'}
-                            alt={series.name}
-                            className="w-12 h-12 rounded object-cover flex-shrink-0"
-                            fallback="/placeholder.svg"
-                          />
-                          
-                          <div className="flex-1 text-left min-w-0 mr-2">
-                            <h3 className="font-medium text-sm leading-tight mb-1 break-words">
-                              {series.name}
-                            </h3>
-                            <p className="text-xs text-muted-foreground leading-tight line-clamp-2 break-words">
-                              {series.description}
-                            </p>
-                          </div>
-                          
-                          <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
-                            {series.products.length}
-                          </Badge>
-                        </div>
+                        <LazyProductImage
+                          src={series.thumbnail || '/placeholder.svg'}
+                          alt={series.name}
+                          className="w-16 h-16 rounded object-cover"
+                          fallback="/placeholder.svg"
+                        />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
@@ -200,6 +186,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             {series.description}
                           </p>
                         )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {series.products.length} products
+                        </p>
                       </div>
                     </TooltipContent>
                   </Tooltip>
