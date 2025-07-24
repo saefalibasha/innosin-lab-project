@@ -65,8 +65,8 @@ const getBenchHeight = (dimensions: string): number => {
 
 // Map actual height to bench type (800mm height = 750mm bench, 900mm height = 900mm bench)
 const getBenchType = (height: number): string => {
-  if (height === 800) return '750mm Bench';
-  if (height === 900) return '900mm Bench';
+  if (height === 650) return '750mm Bench';
+  if (height === 800) return '900mm Bench';
   return `${height}mm Bench`;
 };
 
@@ -356,13 +356,6 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-semibold mb-2">Configure Your Cabinet</h3>
-        <p className="text-sm text-muted-foreground">
-          Select options to customize your cabinet configuration ({variants.length} variants available)
-        </p>
-      </div>
-
       {/* Step 1: Door Type Selection */}
       <div className="space-y-3">
         <div className="flex items-center gap-2">
