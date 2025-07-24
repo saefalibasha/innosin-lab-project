@@ -46,7 +46,10 @@ const ProductDetail: React.FC = () => {
     if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
       return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
     }
-    if (name.includes('mobile cabinet') || category.includes('mobile cabinet')) {
+    // Fix: Check for both 'mobile cabinet' and 'modular cabinet' patterns
+    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || 
+        name.includes('modular cabinet') || category.includes('modular cabinet') ||
+        name.includes('mc-pc') || name.includes('mcc-pc')) {
       return { series: 'Mobile Cabinet', slug: 'mobile-cabinet' };
     }
     
@@ -117,7 +120,8 @@ const ProductDetail: React.FC = () => {
     const seriesInfo = getSeriesInfo(product);
     const series = seriesInfo.series.toLowerCase();
     
-    if (series.includes('mobile cabinet')) {
+    // Fix: Check for mobile cabinet properly
+    if (series.includes('mobile cabinet') || series.includes('modular cabinet')) {
       console.log('🏗️ Rendering ModularCabinetConfigurator with variants:', seriesVariants.length);
       return (
         <ModularCabinetConfigurator
