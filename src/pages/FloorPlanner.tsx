@@ -1,10 +1,6 @@
+
 import React, { useState, useCallback } from 'react';
-import { FloorPlanState, Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
-import ProductPanel from '@/components/ProductPanel';
-import WallPanel from '@/components/WallPanel';
-import RoomPanel from '@/components/RoomPanel';
-import DoorPanel from '@/components/DoorPanel';
-import AnnotationPanel from '@/components/AnnotationPanel';
+import { FloorPlanState, Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 
 const FloorPlanner: React.FC = () => {
@@ -17,7 +13,7 @@ const FloorPlanner: React.FC = () => {
     rooms: []
   });
 
-  const [currentTool, setCurrentTool] = useState<string>('select');
+  const [currentTool, setCurrentTool] = useState<DrawingMode>('select');
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<PlacedProduct | null>(null);
@@ -36,6 +32,30 @@ const FloorPlanner: React.FC = () => {
     });
   }, []);
 
+  const updateRoomPoints = useCallback((points: Point[]) => {
+    setFloorPlanState(prev => ({ ...prev, roomPoints: points }));
+  }, []);
+
+  const updateWallSegments = useCallback((segments: WallSegment[]) => {
+    setFloorPlanState(prev => ({ ...prev, wallSegments: segments }));
+  }, []);
+
+  const updatePlacedProducts = useCallback((products: PlacedProduct[]) => {
+    setFloorPlanState(prev => ({ ...prev, placedProducts: products }));
+  }, []);
+
+  const updateDoors = useCallback((doors: Door[]) => {
+    setFloorPlanState(prev => ({ ...prev, doors }));
+  }, []);
+
+  const updateTextAnnotations = useCallback((annotations: TextAnnotation[]) => {
+    setFloorPlanState(prev => ({ ...prev, textAnnotations: annotations }));
+  }, []);
+
+  const updateRooms = useCallback((rooms: Room[]) => {
+    setFloorPlanState(prev => ({ ...prev, rooms }));
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -44,7 +64,7 @@ const FloorPlanner: React.FC = () => {
           <p className="text-gray-600">Design your laboratory layout with precision</p>
         </div>
 
-        <div className="mb-6 flex space-x-4">
+        <div className="mb-6 flex flex-wrap gap-4">
           <button
             onClick={() => setCurrentTool('select')}
             className={`px-4 py-2 rounded text-white ${currentTool === 'select' ? 'bg-blue-600' : 'bg-gray-500'} hover:bg-blue-700`}
@@ -76,6 +96,12 @@ const FloorPlanner: React.FC = () => {
             Product
           </button>
           <button
+            onClick={() => setCurrentTool('measure')}
+            className={`px-4 py-2 rounded text-white ${currentTool === 'measure' ? 'bg-blue-600' : 'bg-gray-500'} hover:bg-blue-700`}
+          >
+            Measure
+          </button>
+          <button
             onClick={handleClearAll}
             className="px-4 py-2 rounded bg-red-500 hover:bg-red-700 text-white"
           >
@@ -102,20 +128,20 @@ const FloorPlanner: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <EnhancedCanvasWorkspace
               roomPoints={floorPlanState.roomPoints}
-              setRoomPoints={(points) => setFloorPlanState(prev => ({ ...prev, roomPoints: points }))}
+              setRoomPoints={updateRoomPoints}
               wallSegments={floorPlanState.wallSegments}
-              setWallSegments={(segments) => setFloorPlanState(prev => ({ ...prev, wallSegments: segments }))}
+              setWallSegments={updateWallSegments}
               placedProducts={floorPlanState.placedProducts}
-              setPlacedProducts={(products) => setFloorPlanState(prev => ({ ...prev, placedProducts: products }))}
+              setPlacedProducts={updatePlacedProducts}
               doors={floorPlanState.doors}
-              setDoors={(doors) => setFloorPlanState(prev => ({ ...prev, doors }))}
+              setDoors={updateDoors}
               textAnnotations={floorPlanState.textAnnotations}
-              setTextAnnotations={(annotations) => setFloorPlanState(prev => ({ ...prev, textAnnotations: annotations }))}
+              setTextAnnotations={updateTextAnnotations}
               rooms={floorPlanState.rooms}
-              setRooms={(rooms) => setFloorPlanState(prev => ({ ...prev, rooms: rooms }))}
+              setRooms={updateRooms}
               scale={scale}
               setScale={setScale}
               currentMode={currentTool}
@@ -126,29 +152,21 @@ const FloorPlanner: React.FC = () => {
               onClearAll={handleClearAll}
             />
           </div>
+        </div>
 
-          <div className="lg:col-span-1 flex flex-col space-y-4">
-            <ProductPanel
-              placedProducts={floorPlanState.placedProducts}
-              setPlacedProducts={(products) => setFloorPlanState(prev => ({ ...prev, placedProducts: products }))}
-              setSelectedProduct={setSelectedProduct}
-            />
-            <WallPanel
-              wallSegments={floorPlanState.wallSegments}
-              setWallSegments={(segments) => setFloorPlanState(prev => ({ ...prev, wallSegments: segments }))}
-            />
-            <RoomPanel
-              rooms={floorPlanState.rooms}
-              setRooms={(rooms) => setFloorPlanState(prev => ({ ...prev, rooms: rooms }))}
-            />
-            <DoorPanel
-              doors={floorPlanState.doors}
-              setDoors={(doors) => setFloorPlanState(prev => ({ ...prev, doors: doors }))}
-            />
-            <AnnotationPanel
-              textAnnotations={floorPlanState.textAnnotations}
-              setTextAnnotations={(annotations) => setFloorPlanState(prev => ({ ...prev, textAnnotations: annotations }))}
-            />
+        {/* Statistics Panel */}
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h3 className="font-semibold text-gray-900 mb-2">Products</h3>
+            <p className="text-2xl font-bold text-blue-600">{floorPlanState.placedProducts.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h3 className="font-semibold text-gray-900 mb-2">Rooms</h3>
+            <p className="text-2xl font-bold text-green-600">{floorPlanState.rooms.length}</p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow">
+            <h3 className="font-semibold text-gray-900 mb-2">Walls</h3>
+            <p className="text-2xl font-bold text-purple-600">{floorPlanState.wallSegments.length}</p>
           </div>
         </div>
       </div>
