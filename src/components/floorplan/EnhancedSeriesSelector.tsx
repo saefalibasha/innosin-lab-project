@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -205,6 +206,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                 <h4 className="font-medium text-base mb-2 break-words leading-tight">
                   {selectedSeriesData.name}
                 </h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {selectedSeriesData.description}
+                </p>
               </div>
               
               <div className="flex-1 overflow-y-auto">
