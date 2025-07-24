@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -65,25 +64,27 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
     // Draw grid
     if (showGrid) {
-      GridSystem({ 
+      const gridRenderer = GridSystem({ 
         gridSize, 
         scale, 
         zoom, 
         showMajorLines: true, 
         showMinorLines: true, 
         opacity: 0.3 
-      }).renderGrid(ctx, canvas.width, canvas.height);
+      });
+      gridRenderer.renderGrid(ctx, canvas.width, canvas.height);
     }
 
     // Draw walls using vector-based renderer
-    WallRenderer({ 
+    const wallRenderer = WallRenderer({ 
       walls: wallSegments, 
       scale, 
       zoom, 
       selectedWalls, 
       onWallSelect: setSelectedWalls,
       showThickness: zoom > 1.5
-    }).renderWalls(ctx);
+    });
+    wallRenderer.renderWalls(ctx);
 
     // Draw rooms
     if (rooms.length > 0) {
@@ -204,7 +205,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     setRooms((prev: Room[]) => [...prev, newRoom]);
   }, [rooms.length, setRooms]);
 
-  const handleProductDrop = useCallback((e: React.DragEvent) => {
+  const handleProductDrop = useCallback((e: DragEvent) => {
     e.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -213,12 +214,12 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const y = e.clientY - rect.top;
 
     try {
-      const productData = JSON.parse(e.dataTransfer.getData('application/json'));
+      const productData = JSON.parse(e.dataTransfer?.getData('application/json') || '{}');
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: productData.id,
         name: productData.name,
-        category: productData.category,
+        category: productData.category || 'furniture',
         position: { x, y },
         rotation: 0,
         dimensions: productData.dimensions,
@@ -236,14 +237,18 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    canvas.addEventListener('click', handleCanvasClick);
-    canvas.addEventListener('drop', handleProductDrop);
-    canvas.addEventListener('dragover', (e) => e.preventDefault());
+    const handleClick = (e: MouseEvent) => handleCanvasClick(e);
+    const handleDrop = (e: DragEvent) => handleProductDrop(e);
+    const handleDragOver = (e: DragEvent) => e.preventDefault();
+
+    canvas.addEventListener('click', handleClick);
+    canvas.addEventListener('drop', handleDrop);
+    canvas.addEventListener('dragover', handleDragOver);
 
     return () => {
-      canvas.removeEventListener('click', handleCanvasClick);
-      canvas.removeEventListener('drop', handleProductDrop);
-      canvas.removeEventListener('dragover', (e) => e.preventDefault());
+      canvas.removeEventListener('click', handleClick);
+      canvas.removeEventListener('drop', handleDrop);
+      canvas.removeEventListener('dragover', handleDragOver);
     };
   }, [handleCanvasClick, handleProductDrop]);
 

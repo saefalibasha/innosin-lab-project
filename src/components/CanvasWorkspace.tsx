@@ -92,7 +92,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const snappedPosition = snapResult.snapped ? snapResult.position : { x, y };
 
-    setPlacedProducts(prev =>
+    setPlacedProducts((prev: PlacedProduct[]) =>
       prev.map(p =>
         p.id === draggedProduct.id
           ? { ...p, position: snappedPosition }
@@ -140,7 +140,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       type: 'single'
     };
 
-    setDoors(prev => [...prev, newDoor]);
+    setDoors((prev: Door[]) => [...prev, newDoor]);
   }, [currentTool, setDoors, canvasRef]);
 
   const handleProductPlacement = useCallback((e: MouseEvent) => {
@@ -164,7 +164,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       scale: 1
     };
 
-    setPlacedProducts(prev => [...prev, newProduct]);
+    setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
   }, [currentTool, setPlacedProducts, canvasRef]);
 
   const drawCanvas = useCallback(() => {
@@ -267,6 +267,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         height={800}
         className="border border-gray-300 bg-white cursor-crosshair"
         style={{ cursor: currentTool === 'select' ? 'default' : 'crosshair' }}
+        onDrop={handleProductDrop}
+        onDragOver={(e) => e.preventDefault()}
       />
     </div>
   );
