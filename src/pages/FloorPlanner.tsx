@@ -24,6 +24,7 @@ import SeriesSelector from '@/components/floorplan/SeriesSelector';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
 import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
+import TabbedSidebar from '@/components/floorplan/TabbedSidebar';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import MeasurementInput from '@/components/canvas/MeasurementInput';
 import RoomCreator from '@/components/canvas/RoomCreator';
@@ -368,41 +369,15 @@ const FloorPlanner = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Enhanced Left Sidebar */}
+          {/* Enhanced Left Sidebar with Tabs */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Room Creation Panel */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Home className="h-4 w-4" />
-                  Room Setup
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  onClick={() => setShowRoomCreator(true)}
-                  className="w-full"
-                  variant="outline"
-                >
-                  <Square className="h-4 w-4 mr-2" />
-                  Create Room
-                </Button>
-                <Button 
-                  onClick={handleStartRoomCreation}
-                  className="w-full"
-                  variant="outline"
-                >
-                  Draw Custom Room
-                </Button>
-              </CardContent>
-            </Card>
-
-            <ProductStatistics placedProducts={placedProducts} />
-            <SeriesSelector 
+            <TabbedSidebar
               onProductDrag={handleProductDrag}
               currentTool={currentMode}
+              placedProducts={placedProducts}
+              onRoomCreate={handleRoomCreate}
+              onStartRoomCreation={handleStartRoomCreation}
             />
-            <QuickHelp />
           </div>
 
           {/* Enhanced Main Content Area */}

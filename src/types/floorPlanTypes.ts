@@ -4,59 +4,65 @@ export interface Point {
   y: number;
 }
 
-export interface Dimensions {
-  length: number;  // in mm
-  width: number;   // in mm
-  height: number;  // in mm
+export interface PlacedProduct {
+  id: string;
+  productId: string;
+  name: string;
+  category: string;
+  position: Point;
+  rotation: number;
+  dimensions: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  color: string;
+  scale?: number;
+  modelPath?: string;
+  thumbnail?: string;
+  description?: string;
+  specifications?: string[];
+  finishes?: ProductFinish[];
+  variants?: ProductVariant[];
 }
 
-export enum WallType {
-  EXTERIOR = 'exterior',
-  INTERIOR = 'interior',
-  LOAD_BEARING = 'load_bearing',
-  PARTITION = 'partition'
+export interface ProductFinish {
+  type: string;
+  name: string;
+  price?: string;
+  modelPath?: string;
+  thumbnail?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  size: string;
+  dimensions: string;
+  modelPath: string;
+  thumbnail: string;
+}
+
+export interface Door {
+  id: string;
+  position: Point;
+  width: number;
+  wallId?: string;
+  isEmbedded?: boolean;
+}
+
+export interface TextAnnotation {
+  id: string;
+  position: Point;
+  text: string;
+  fontSize: number;
+  color: string;
 }
 
 export interface WallSegment {
   id: string;
   start: Point;
   end: Point;
-  type: WallType;
-  thickness: number; // in mm
-}
-
-export interface PlacedProduct {
-  id: string;
-  productId: string;
-  name: string;
-  category: string;
-  dimensions: Dimensions;
-  position: Point;
-  rotation: number;
-  scale: number;
-  color?: string;
-  finishes?: string[];
-  variants?: string[];
-  modelPath?: string;
-  thumbnail?: string;
-}
-
-export interface Door {
-  id: string;
-  position: Point;
-  width: number; // in meters
-  rotation: number;
-  swingDirection: 'inward' | 'outward';
-  type: 'single' | 'double';
-  wallSegmentId?: string;
-  wallPosition?: number;
-}
-
-export interface TextAnnotation {
-  id: string;
-  text: string;
-  position: Point;
-  fontSize: number;
+  thickness: number;
   color: string;
 }
 
@@ -64,8 +70,9 @@ export interface Room {
   id: string;
   name: string;
   points: Point[];
-  area: number; // in mm²
-  perimeter: number; // in mm
+  area: number;
+  perimeter: number;
+  color?: string;
 }
 
 export interface FloorPlanState {
@@ -77,27 +84,4 @@ export interface FloorPlanState {
   rooms: Room[];
 }
 
-export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
-export type DrawingTool = DrawingMode; // Unify the types
-
-export interface SnapSettings {
-  enabled: boolean;
-  strength: 'strong' | 'medium' | 'weak';
-  snapToGrid: boolean;
-  snapToObjects: boolean;
-  snapToAlignment: boolean;
-}
-
-export interface GridSettings {
-  size: number; // in mm
-  showMajorLines: boolean;
-  showMinorLines: boolean;
-  opacity: number;
-}
-
-export interface ViewportSettings {
-  zoom: number;
-  pan: Point;
-  showRulers: boolean;
-  showMeasurements: boolean;
-}
+export type DrawingMode = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
