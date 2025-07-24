@@ -1,7 +1,8 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { mmToCanvas, canvasToMm, formatMeasurement } from '@/utils/measurements';
+import { calculateSnapPosition, SnapResult } from '@/utils/objectSnapping';
 import DrawingEngine from './DrawingEngine';
 import IntelligentMeasurementOverlay from '../IntelligentMeasurementOverlay';
 
@@ -16,8 +17,10 @@ interface EnhancedCanvasWorkspaceProps {
   setDoors: (doors: Door[]) => void;
   textAnnotations: TextAnnotation[];
   setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  rooms: Room[];
+  setRooms: (rooms: Room[]) => void;
   scale: number;
-  currentTool: string;
+  currentMode: DrawingMode;
   showGrid: boolean;
   showMeasurements: boolean;
   gridSize: number;
@@ -35,117 +38,148 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   setDoors,
   textAnnotations,
   setTextAnnotations,
+  rooms,
+  setRooms,
   scale,
-  currentTool,
+  currentMode,
   showGrid,
   showMeasurements,
   gridSize,
   onClearAll
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [draggedProduct, setDraggedProduct] = useState<any>(null);
-  const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
+  const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
 
   const CANVAS_WIDTH = 1200;
   const CANVAS_HEIGHT = 800;
 
-  // Drawing functions with mm precision
+  // Check if point is inside room boundary
+  const isPointInRoom = useCallback((point: Point, room: Room): boolean => {
+    if (room.points.length < 3) return false;
+    
+    let inside = false;
+    for (let i = 0, j = room.points.length - 1; i < room.points.length; j = i++) {
+      const xi = room.points[i].x;
+      const yi = room.points[i].y;
+      const xj = room.points[j].x;
+      const yj = room.points[j].y;
+      
+      if (((yi > point.y) !== (yj > point.y)) && 
+          (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  }, []);
+
+  // Check if product placement is valid
+  const isValidProductPlacement = useCallback((product: PlacedProduct, position: Point): boolean => {
+    // Check if product is within any room boundary
+    const productInRoom = rooms.some(room => isPointInRoom(position, room));
+    if (!productInRoom && rooms.length > 0) return false;
+
+    // Check collision with other products
+    const productWidth = mmToCanvas(product.dimensions.length, scale);
+    const productHeight = mmToCanvas(product.dimensions.width, scale);
+    
+    for (const existingProduct of placedProducts) {
+      if (existingProduct.id === product.id) continue;
+      
+      const existingWidth = mmToCanvas(existingProduct.dimensions.length, scale);
+      const existingHeight = mmToCanvas(existingProduct.dimensions.width, scale);
+      
+      const distance = Math.sqrt(
+        Math.pow(position.x - existingProduct.position.x, 2) +
+        Math.pow(position.y - existingProduct.position.y, 2)
+      );
+      
+      const minDistance = Math.sqrt(
+        Math.pow((productWidth + existingWidth) / 2, 2) +
+        Math.pow((productHeight + existingHeight) / 2, 2)
+      );
+      
+      if (distance < minDistance) return false;
+    }
+
+    return true;
+  }, [rooms, placedProducts, scale, isPointInRoom]);
+
+  // Enhanced drawing functions
   const drawGrid = useCallback((ctx: CanvasRenderingContext2D) => {
     if (!showGrid) return;
     
-    ctx.strokeStyle = '#f3f4f6';
-    ctx.lineWidth = 0.5;
-    
-    const gridSizePx = mmToCanvas(gridSize, scale);
-    
-    // Major grid lines (every 10th line)
-    for (let x = 0; x <= CANVAS_WIDTH; x += gridSizePx * 10) {
-      ctx.strokeStyle = '#e5e7eb';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, CANVAS_HEIGHT);
-      ctx.stroke();
-    }
-    
-    for (let y = 0; y <= CANVAS_HEIGHT; y += gridSizePx * 10) {
-      ctx.strokeStyle = '#e5e7eb';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_WIDTH, y);
-      ctx.stroke();
-    }
+    const gridSizePx = mmToCanvas(gridSize, scale * zoom);
     
     // Minor grid lines
-    ctx.strokeStyle = '#f9fafb';
+    ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
     ctx.lineWidth = 0.5;
     
-    for (let x = 0; x <= CANVAS_WIDTH; x += gridSizePx) {
+    for (let x = (pan.x % gridSizePx); x <= CANVAS_WIDTH; x += gridSizePx) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, CANVAS_HEIGHT);
       ctx.stroke();
     }
     
-    for (let y = 0; y <= CANVAS_HEIGHT; y += gridSizePx) {
+    for (let y = (pan.y % gridSizePx); y <= CANVAS_HEIGHT; y += gridSizePx) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(CANVAS_WIDTH, y);
       ctx.stroke();
     }
-  }, [showGrid, gridSize, scale]);
+  }, [showGrid, gridSize, scale, zoom, pan]);
 
-  const drawRoom = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (roomPoints.length < 2) return;
-    
-    ctx.strokeStyle = '#374151';
-    ctx.lineWidth = 3;
-    ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
-    
-    ctx.beginPath();
-    ctx.moveTo(roomPoints[0].x, roomPoints[0].y);
-    
-    for (let i = 1; i < roomPoints.length; i++) {
-      ctx.lineTo(roomPoints[i].x, roomPoints[i].y);
-    }
-    
-    if (roomPoints.length > 2) {
+  const drawRooms = useCallback((ctx: CanvasRenderingContext2D) => {
+    rooms.forEach(room => {
+      if (room.points.length < 3) return;
+      
+      ctx.strokeStyle = '#374151';
+      ctx.lineWidth = 3;
+      ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+      
+      ctx.beginPath();
+      ctx.moveTo(room.points[0].x, room.points[0].y);
+      
+      for (let i = 1; i < room.points.length; i++) {
+        ctx.lineTo(room.points[i].x, room.points[i].y);
+      }
+      
       ctx.closePath();
       ctx.fill();
-    }
-    
-    ctx.stroke();
+      ctx.stroke();
 
-    // Draw room dimension labels
-    if (showMeasurements) {
-      for (let i = 0; i < roomPoints.length; i++) {
-        const current = roomPoints[i];
-        const next = roomPoints[(i + 1) % roomPoints.length];
-        
-        const distance = Math.sqrt(
-          Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2)
-        );
-        
-        const midX = (current.x + next.x) / 2;
-        const midY = (current.y + next.y) / 2;
-        
-        const measurement = formatMeasurement(canvasToMm(distance, scale), {
-          unit: 'mm',
-          precision: 0,
-          showUnit: true
-        });
-        
-        ctx.fillStyle = '#1f2937';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(measurement, midX, midY - 5);
+      // Draw room measurements
+      if (showMeasurements) {
+        for (let i = 0; i < room.points.length; i++) {
+          const current = room.points[i];
+          const next = room.points[(i + 1) % room.points.length];
+          
+          const distance = Math.sqrt(
+            Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2)
+          );
+          
+          const midX = (current.x + next.x) / 2;
+          const midY = (current.y + next.y) / 2;
+          
+          const measurement = formatMeasurement(canvasToMm(distance, scale), {
+            unit: 'mm',
+            precision: 0,
+            showUnit: true
+          });
+          
+          ctx.fillStyle = '#1f2937';
+          ctx.font = '12px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText(measurement, midX, midY - 5);
+        }
       }
-    }
-  }, [roomPoints, showMeasurements, scale]);
+    });
+  }, [rooms, showMeasurements, scale]);
 
   const drawWalls = useCallback((ctx: CanvasRenderingContext2D) => {
     wallSegments.forEach(wall => {
@@ -162,17 +196,21 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const drawProducts = useCallback((ctx: CanvasRenderingContext2D) => {
     placedProducts.forEach(product => {
       const isSelected = selectedProducts.includes(product.id);
+      const isValidPlacement = isValidProductPlacement(product, product.position);
       
       ctx.save();
       ctx.translate(product.position.x, product.position.y);
       ctx.rotate(product.rotation);
       
-      // Convert dimensions from mm to canvas pixels
       const width = mmToCanvas(product.dimensions.length, scale);
       const height = mmToCanvas(product.dimensions.width, scale);
       
-      ctx.fillStyle = isSelected ? 'rgba(59, 130, 246, 0.3)' : product.color || '#6b7280';
-      ctx.strokeStyle = isSelected ? '#3b82f6' : '#374151';
+      ctx.fillStyle = isValidPlacement 
+        ? (isSelected ? 'rgba(59, 130, 246, 0.3)' : product.color || '#6b7280')
+        : 'rgba(239, 68, 68, 0.3)';
+      ctx.strokeStyle = isValidPlacement
+        ? (isSelected ? '#3b82f6' : '#374151')
+        : '#ef4444';
       ctx.lineWidth = isSelected ? 2 : 1;
       
       ctx.fillRect(-width/2, -height/2, width, height);
@@ -194,7 +232,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       
       ctx.restore();
     });
-  }, [placedProducts, selectedProducts, showMeasurements, scale]);
+  }, [placedProducts, selectedProducts, showMeasurements, scale, isValidProductPlacement]);
 
   const drawDoors = useCallback((ctx: CanvasRenderingContext2D) => {
     doors.forEach(door => {
@@ -202,7 +240,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.translate(door.position.x, door.position.y);
       ctx.rotate(door.rotation);
       
-      const width = mmToCanvas(door.width * 1000, scale); // Convert m to mm
+      const width = mmToCanvas(door.width * 1000, scale);
       
       ctx.strokeStyle = '#dc2626';
       ctx.lineWidth = 2;
@@ -233,26 +271,65 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     
     ctx.save();
     ctx.scale(zoom, zoom);
-    ctx.translate(offset.x / zoom, offset.y / zoom);
+    ctx.translate(pan.x / zoom, pan.y / zoom);
     
     drawGrid(ctx);
-    drawRoom(ctx);
+    drawRooms(ctx);
     drawWalls(ctx);
     drawProducts(ctx);
     drawDoors(ctx);
     
     ctx.restore();
-  }, [zoom, offset, drawGrid, drawRoom, drawWalls, drawProducts, drawDoors]);
+  }, [zoom, pan, drawGrid, drawRooms, drawWalls, drawProducts, drawDoors]);
+
+  // Enhanced product drag handling
+  const handleProductDrag = useCallback((product: PlacedProduct, newPosition: Point) => {
+    const snapResult = calculateSnapPosition(product, placedProducts, newPosition, scale, gridSize);
+    const finalPosition = snapResult.position;
+    
+    if (isValidProductPlacement(product, finalPosition)) {
+      setPlacedProducts(prev => prev.map(p => 
+        p.id === product.id ? { ...p, position: finalPosition } : p
+      ));
+    }
+  }, [placedProducts, scale, gridSize, isValidProductPlacement, setPlacedProducts]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
     setWallSegments(prev => [...prev, wall]);
   }, [setWallSegments]);
 
-  const handlePointAdd = useCallback((point: Point) => {
-    if (currentTool === 'wall') {
-      setRoomPoints(prev => [...prev, point]);
+  const handleRoomUpdate = useCallback((points: Point[]) => {
+    if (points.length >= 3) {
+      // Calculate area and perimeter
+      let area = 0;
+      let perimeter = 0;
+      
+      for (let i = 0; i < points.length; i++) {
+        const j = (i + 1) % points.length;
+        area += points[i].x * points[j].y;
+        area -= points[j].x * points[i].y;
+        
+        const distance = Math.sqrt(
+          Math.pow(points[j].x - points[i].x, 2) + 
+          Math.pow(points[j].y - points[i].y, 2)
+        );
+        perimeter += canvasToMm(distance, scale);
+      }
+      area = Math.abs(area) / 2;
+      const realArea = canvasToMm(area, scale);
+      
+      const newRoom: Room = {
+        id: `room-${Date.now()}`,
+        name: `Room ${rooms.length + 1}`,
+        points,
+        area: realArea,
+        perimeter
+      };
+      
+      setRooms(prev => [...prev, newRoom]);
     }
-  }, [currentTool, setRoomPoints]);
+    setRoomPoints(points);
+  }, [rooms.length, scale, setRooms, setRoomPoints]);
 
   const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -267,17 +344,18 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       y: e.clientY - rect.top
     };
     
-    const newProduct: PlacedProduct = {
-      ...draggedProduct,
-      id: `${draggedProduct.id}-${Date.now()}`,
-      position: point,
-      rotation: 0,
-      scale: 1
-    };
-    
-    setPlacedProducts(prev => [...prev, newProduct]);
-    setDraggedProduct(null);
-  }, [draggedProduct, setPlacedProducts]);
+    if (isValidProductPlacement(draggedProduct, point)) {
+      const newProduct: PlacedProduct = {
+        ...draggedProduct,
+        id: `${draggedProduct.id}-${Date.now()}`,
+        position: point,
+        rotation: 0,
+        scale: 1
+      };
+      
+      setPlacedProducts(prev => [...prev, newProduct]);
+    }
+  }, [draggedProduct, isValidProductPlacement, setPlacedProducts]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -319,16 +397,16 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       
       <DrawingEngine
         canvasRef={canvasRef}
-        isDrawing={isDrawing}
-        currentTool={currentTool}
+        currentMode={currentMode}
         scale={scale}
         gridSize={gridSize}
         showGrid={showGrid}
         showMeasurements={showMeasurements}
         onWallComplete={handleWallComplete}
-        onPointAdd={handlePointAdd}
+        onRoomUpdate={handleRoomUpdate}
         roomPoints={roomPoints}
         wallSegments={wallSegments}
+        rooms={rooms}
       />
       
       <IntelligentMeasurementOverlay

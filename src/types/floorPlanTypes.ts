@@ -4,9 +4,17 @@ export interface Point {
   y: number;
 }
 
+export interface Dimensions {
+  length: number;  // in mm
+  width: number;   // in mm
+  height: number;  // in mm
+}
+
 export enum WallType {
   EXTERIOR = 'exterior',
-  INTERIOR = 'interior'
+  INTERIOR = 'interior',
+  LOAD_BEARING = 'load_bearing',
+  PARTITION = 'partition'
 }
 
 export interface WallSegment {
@@ -14,55 +22,52 @@ export interface WallSegment {
   start: Point;
   end: Point;
   type: WallType;
-  thickness?: number;
+  thickness: number; // in mm
 }
 
 export interface PlacedProduct {
   id: string;
-  productId: string;
   name: string;
+  category: string;
+  dimensions: Dimensions;
   position: Point;
   rotation: number;
-  dimensions: { length: number; width: number; height: number };
-  color: string;
-  scale?: number;
-  category?: string;
-  modelPath?: string;
-  thumbnail?: string;
-  description?: string;
-  specifications?: string[];
-  finishes?: Array<{
-    type: 'powder-coat' | 'stainless-steel';
-    name: string;
-    price?: string;
-    modelPath?: string;
-    thumbnail?: string;
-    images?: string[];
-  }>;
-  variants?: Array<{
-    id: string;
-    size: string;
-    dimensions: string;
-    modelPath: string;
-    thumbnail: string;
-    images: string[];
-  }>;
+  scale: number;
+  color?: string;
 }
 
 export interface Door {
   id: string;
   position: Point;
-  rotation: number;
   width: number; // in meters
+  rotation: number;
   swingDirection: 'inward' | 'outward';
-  wallSegmentId: string; // reference to wall segment instead of index
-  wallPosition: number; // position along the wall segment (0-1)
-  isEmbedded: boolean;
+  type: 'single' | 'double';
 }
 
 export interface TextAnnotation {
   id: string;
-  position: Point;
   text: string;
+  position: Point;
   fontSize: number;
+  color: string;
 }
+
+export interface Room {
+  id: string;
+  name: string;
+  points: Point[];
+  area: number; // in mm²
+  perimeter: number; // in mm
+}
+
+export interface FloorPlanState {
+  roomPoints: Point[];
+  placedProducts: PlacedProduct[];
+  doors: Door[];
+  textAnnotations: TextAnnotation[];
+  wallSegments: WallSegment[];
+  rooms: Room[];
+}
+
+export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';

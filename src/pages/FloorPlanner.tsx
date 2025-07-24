@@ -13,10 +13,12 @@ import {
   Info,
   RotateCcw,
   Copy,
-  Maximize2
+  Maximize2,
+  Home,
+  Square
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -26,29 +28,21 @@ import QuickHelp from '@/components/floorplan/QuickHelp';
 import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import MeasurementInput from '@/components/canvas/MeasurementInput';
-
-type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
-
-interface FloorPlanState {
-  roomPoints: Point[];
-  placedProducts: PlacedProduct[];
-  doors: Door[];
-  textAnnotations: TextAnnotation[];
-  wallSegments: WallSegment[];
-}
+import RoomCreator from '@/components/canvas/RoomCreator';
 
 const FloorPlanner = () => {
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentTool, setCurrentTool] = useState<DrawingTool>('select');
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
   const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
+  const [showRoomCreator, setShowRoomCreator] = useState(false);
   
   // Enhanced measurement system
   const [scale, setScale] = useState(0.2); // pixels per mm
@@ -70,7 +64,8 @@ const FloorPlanner = () => {
     placedProducts: [],
     doors: [],
     textAnnotations: [],
-    wallSegments: []
+    wallSegments: [],
+    rooms: []
   };
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
@@ -115,6 +110,28 @@ const FloorPlanner = () => {
     setIsFullscreen(prev => !prev);
   }, []);
 
+  // Room creation
+  const handleRoomCreate = useCallback((room: Room) => {
+    setRooms(prev => [...prev, room]);
+    setRoomPoints(room.points);
+    setShowRoomCreator(false);
+    toast.success(`Room "${room.name}" created successfully`);
+  }, []);
+
+  const handleStartRoomCreation = useCallback(() => {
+    setCurrentMode('room');
+    setShowRoomCreator(false);
+    toast.info('Click on canvas to start drawing room perimeter');
+  }, []);
+
+  // Tool change handler
+  const handleToolChange = useCallback((tool: string) => {
+    setCurrentMode(tool as DrawingMode);
+    if (tool === 'room') {
+      setShowRoomCreator(true);
+    }
+  }, []);
+
   // File operations with mm precision
   const handleSave = useCallback(() => {
     const floorPlanData = {
@@ -124,6 +141,7 @@ const FloorPlanner = () => {
       doors,
       textAnnotations,
       wallSegments,
+      rooms,
       scale,
       gridSize,
       settings: {
@@ -144,7 +162,7 @@ const FloorPlanner = () => {
     
     URL.revokeObjectURL(url);
     toast.success('Floor plan saved successfully');
-  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, scale, gridSize, showGrid, showMeasurements, showProducts]);
+  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, showGrid, showMeasurements, showProducts]);
 
   const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,6 +178,7 @@ const FloorPlanner = () => {
         setDoors(data.doors || []);
         setTextAnnotations(data.textAnnotations || []);
         setWallSegments(data.wallSegments || []);
+        setRooms(data.rooms || []);
         setScale(data.scale || 0.2);
         setGridSize(data.gridSize || GRID_SIZES.standard);
         
@@ -183,6 +202,7 @@ const FloorPlanner = () => {
     setDoors([]);
     setTextAnnotations([]);
     setWallSegments([]);
+    setRooms([]);
     setSelectedProducts([]);
     setScale(0.2);
     setGridSize(GRID_SIZES.standard);
@@ -198,6 +218,7 @@ const FloorPlanner = () => {
       setDoors(previousState.doors);
       setTextAnnotations(previousState.textAnnotations);
       setWallSegments(previousState.wallSegments);
+      setRooms(previousState.rooms);
     }
   }, [undo]);
 
@@ -209,6 +230,7 @@ const FloorPlanner = () => {
       setDoors(nextState.doors);
       setTextAnnotations(nextState.textAnnotations);
       setWallSegments(nextState.wallSegments);
+      setRooms(nextState.rooms);
     }
   }, [redo]);
 
@@ -258,6 +280,7 @@ const FloorPlanner = () => {
           break;
         case 'Escape':
           setSelectedProducts([]);
+          setShowRoomCreator(false);
           break;
         case 'F11':
           e.preventDefault();
@@ -272,37 +295,18 @@ const FloorPlanner = () => {
 
   // Calculate room area and statistics
   const roomStatistics = useMemo(() => {
-    if (roomPoints.length < 3) return null;
+    if (rooms.length === 0) return null;
     
-    // Calculate area using shoelace formula
-    let area = 0;
-    for (let i = 0; i < roomPoints.length; i++) {
-      const j = (i + 1) % roomPoints.length;
-      area += roomPoints[i].x * roomPoints[j].y;
-      area -= roomPoints[j].x * roomPoints[i].y;
-    }
-    area = Math.abs(area) / 2;
-    
-    // Convert to real-world area (mm²)
-    const realArea = canvasToMm(area, scale);
-    
-    // Calculate perimeter
-    let perimeter = 0;
-    for (let i = 0; i < roomPoints.length; i++) {
-      const j = (i + 1) % roomPoints.length;
-      const distance = Math.sqrt(
-        Math.pow(roomPoints[j].x - roomPoints[i].x, 2) + 
-        Math.pow(roomPoints[j].y - roomPoints[i].y, 2)
-      );
-      perimeter += canvasToMm(distance, scale);
-    }
+    const totalArea = rooms.reduce((sum, room) => sum + room.area, 0);
+    const totalPerimeter = rooms.reduce((sum, room) => sum + room.perimeter, 0);
     
     return {
-      area: realArea,
-      perimeter,
-      points: roomPoints.length
+      totalArea,
+      totalPerimeter,
+      roomCount: rooms.length,
+      averageRoomSize: totalArea / rooms.length
     };
-  }, [roomPoints, scale]);
+  }, [rooms]);
 
   const containerClass = isFullscreen 
     ? "fixed inset-0 z-50 bg-gray-50" 
@@ -316,7 +320,7 @@ const FloorPlanner = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Enhanced Floor Planner</h1>
-              <p className="text-gray-600">Design your laboratory layout with millimeter precision</p>
+              <p className="text-gray-600">Design your laboratory layout with room-based precision</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -338,14 +342,15 @@ const FloorPlanner = () => {
           
           {/* Enhanced Stats */}
           <div className="flex items-center space-x-6 text-sm text-gray-600">
+            <span>Rooms: {rooms.length}</span>
             <span>Products: {placedProducts.length}</span>
             <span>Walls: {wallSegments.length}</span>
             <span>Doors: {doors.length}</span>
             <span>Scale: {scale.toFixed(4)} px/mm</span>
             {roomStatistics && (
               <>
-                <span>Area: {formatMeasurement(roomStatistics.area, { unit: 'mm', precision: 0, showUnit: true })}</span>
-                <span>Perimeter: {formatMeasurement(roomStatistics.perimeter, { unit: 'mm', precision: 0, showUnit: true })}</span>
+                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, { unit: 'mm', precision: 0, showUnit: true })}</span>
+                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, { unit: 'mm', precision: 0, showUnit: true })}</span>
               </>
             )}
           </div>
@@ -354,6 +359,33 @@ const FloorPlanner = () => {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Enhanced Left Sidebar */}
           <div className="lg:col-span-1 space-y-4">
+            {/* Room Creation Panel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Home className="h-4 w-4" />
+                  Room Setup
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button 
+                  onClick={() => setShowRoomCreator(true)}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Square className="h-4 w-4 mr-2" />
+                  Create Room
+                </Button>
+                <Button 
+                  onClick={handleStartRoomCreation}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Draw Custom Room
+                </Button>
+              </CardContent>
+            </Card>
+
             <ProductStatistics placedProducts={placedProducts} />
             <MeasurementInput
               scale={scale}
@@ -367,7 +399,7 @@ const FloorPlanner = () => {
             />
             <SeriesSelector 
               onProductDrag={handleProductDrag}
-              currentTool={currentTool}
+              currentTool={currentMode}
             />
             <QuickHelp />
           </div>
@@ -376,8 +408,8 @@ const FloorPlanner = () => {
           <div className="lg:col-span-4 space-y-4">
             {/* Enhanced Horizontal Toolbar */}
             <HorizontalToolbar
-              currentTool={currentTool}
-              onToolChange={setCurrentTool}
+              currentTool={currentMode}
+              onToolChange={handleToolChange}
               selectedProducts={selectedProducts}
               onClearSelection={handleClearSelection}
               onUndo={handleUndo}
@@ -392,11 +424,22 @@ const FloorPlanner = () => {
               scale={scale}
             />
 
+            {/* Room Creator Modal */}
+            {showRoomCreator && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <RoomCreator
+                  onRoomCreate={handleRoomCreate}
+                  onCancel={() => setShowRoomCreator(false)}
+                  scale={scale}
+                />
+              </div>
+            )}
+
             {/* Enhanced Canvas */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Millimeter Precision</CardTitle>
+                  <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
                   
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline" className="text-xs">
@@ -404,6 +447,9 @@ const FloorPlanner = () => {
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       {(1/scale).toFixed(2)}mm/px
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Mode: {currentMode}
                     </Badge>
                     <Button variant="outline" size="sm" asChild>
                       <label>
@@ -441,8 +487,10 @@ const FloorPlanner = () => {
                   setDoors={setDoors}
                   textAnnotations={textAnnotations}
                   setTextAnnotations={setTextAnnotations}
+                  rooms={rooms}
+                  setRooms={setRooms}
                   scale={scale}
-                  currentTool={currentTool}
+                  currentMode={currentMode}
                   showGrid={showGrid}
                   showMeasurements={showMeasurements}
                   gridSize={gridSize}
@@ -451,15 +499,42 @@ const FloorPlanner = () => {
                 
                 {/* Enhanced Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
-                  <span>Tool: {currentTool}</span>
+                  <span>Mode: {currentMode}</span>
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>
+                  <span>Rooms: {rooms.length}</span>
                   <span>
                     {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
                   </span>
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Room Information Panel */}
+            {rooms.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Home className="h-4 w-4" />
+                    Room Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {rooms.map((room, index) => (
+                      <div key={room.id} className="border rounded p-3 space-y-2">
+                        <div className="font-medium">{room.name}</div>
+                        <div className="text-sm text-gray-600 space-y-1">
+                          <div>Area: {formatMeasurement(room.area, { unit: 'mm', precision: 0, showUnit: true })}</div>
+                          <div>Perimeter: {formatMeasurement(room.perimeter, { unit: 'mm', precision: 0, showUnit: true })}</div>
+                          <div>Points: {room.points.length}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             
             {/* Enhanced Selection Properties */}
             {selectedProducts.length > 0 && (
