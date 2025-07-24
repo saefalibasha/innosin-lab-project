@@ -45,9 +45,15 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     products.map(p => p.door_type).filter(Boolean)
   ));
   
+  // Sort dimensions numerically by width
   const availableDimensions = Array.from(new Set(
     products.map(p => p.dimensions).filter(Boolean)
-  ));
+  )).sort((a, b) => {
+    // Extract width from dimension string (e.g., "700×550×880 mm" -> 700)
+    const widthA = parseInt(a.match(/^(\d+)/)?.[1] || '0');
+    const widthB = parseInt(b.match(/^(\d+)/)?.[1] || '0');
+    return widthA - widthB;
+  });
 
   // Filter products based on selected variants
   const filteredProducts = products.filter(product => {
