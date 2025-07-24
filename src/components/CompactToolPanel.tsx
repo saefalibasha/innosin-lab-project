@@ -1,37 +1,33 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import ObjectLibrary from '@/components/ObjectLibrary';
-import ObjectLegend from '@/components/ObjectLegend';
-import UnitSelector from '@/components/UnitSelector';
-import ProductDimensionEditor from '@/components/ProductDimensionEditor';
-import HowToUseModal from '@/components/HowToUseModal';
 import { 
-  Mouse, 
-  Square, 
-  Minus, 
-  DoorOpen, 
-  RotateCcw, 
+  Ruler, 
+  MousePointer, 
   Eraser, 
-  Trash2, 
-  Grid3X3, 
+  Grid, 
   ZoomIn, 
   ZoomOut, 
-  Maximize,
-  HelpCircle
+  Fit, 
+  Trash2, 
+  RotateCcw,
+  Home,
+  Minus,
+  SquareDashedMousePointer
 } from 'lucide-react';
+import EnhancedProductLibrary from '@/components/floorplan/EnhancedProductLibrary';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
-type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
 type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
+type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
 
 interface CompactToolPanelProps {
-  currentTool: string;
-  onToolChange: (tool: string) => void;
+  currentTool: DrawingTool;
+  onToolChange: (tool: DrawingTool) => void;
   showGrid: boolean;
   onToggleGrid: () => void;
   onClear: () => void;
@@ -42,12 +38,12 @@ interface CompactToolPanelProps {
   units: Units;
   onUnitsChange: (units: Units) => void;
   onProductDrag: (product: any) => void;
-  placedProducts?: PlacedProduct[];
-  onObjectSelect?: (objectId: string) => void;
-  selectedObjects?: string[];
-  onUpdateProduct?: (product: PlacedProduct) => void;
-  onDeleteProduct?: () => void;
-  onDuplicateProduct?: () => void;
+  placedProducts: PlacedProduct[];
+  onObjectSelect: (objectId: string) => void;
+  selectedObjects: string[];
+  onUpdateProduct: (product: PlacedProduct) => void;
+  onDeleteProduct: () => void;
+  onDuplicateProduct: () => void;
 }
 
 const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
@@ -63,25 +59,59 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
   units,
   onUnitsChange,
   onProductDrag,
-  placedProducts = [],
-  onObjectSelect = () => {},
-  selectedObjects = [],
-  onUpdateProduct = () => {},
-  onDeleteProduct = () => {},
-  onDuplicateProduct = () => {}
+  placedProducts,
+  onObjectSelect,
+  selectedObjects,
+  onUpdateProduct,
+  onDeleteProduct,
+  onDuplicateProduct
 }) => {
-  // Get the selected product
-  const selectedProduct = selectedObjects.length === 1 
-    ? placedProducts.find(p => p.id === selectedObjects[0]) || null 
-    : null;
   const tools = [
-    { id: 'select', label: 'Select', icon: Mouse, shortcut: 'S' },
-    { id: 'wall', label: 'Wall', icon: Minus, shortcut: 'W' },
-    { id: 'interior-wall', label: 'Interior Wall', icon: Square, shortcut: 'I' },
-    { id: 'door', label: 'Door', icon: DoorOpen, shortcut: 'D' },
-    { id: 'rotate', label: 'Rotate', icon: RotateCcw, shortcut: 'R' },
-    { id: 'eraser', label: 'Eraser', icon: Eraser, shortcut: 'E' }
+    { 
+      id: 'wall' as DrawingTool, 
+      name: 'Wall', 
+      icon: Home, 
+      description: 'Draw exterior walls',
+      shortcut: 'W'
+    },
+    { 
+      id: 'interior-wall' as DrawingTool, 
+      name: 'Interior', 
+      icon: Minus, 
+      description: 'Draw interior walls',
+      shortcut: 'I'
+    },
+    { 
+      id: 'door' as DrawingTool, 
+      name: 'Door', 
+      icon: SquareDashedMousePointer, 
+      description: 'Place doors',
+      shortcut: 'D'
+    },
+    { 
+      id: 'select' as DrawingTool, 
+      name: 'Select', 
+      icon: MousePointer, 
+      description: 'Select and move objects',
+      shortcut: 'S'
+    },
+    { 
+      id: 'rotate' as DrawingTool, 
+      name: 'Rotate', 
+      icon: RotateCcw, 
+      description: 'Rotate objects',
+      shortcut: 'R'
+    },
+    { 
+      id: 'eraser' as DrawingTool, 
+      name: 'Eraser', 
+      icon: Eraser, 
+      description: 'Delete objects',
+      shortcut: 'E'
+    }
   ];
+
+  const unitsOptions: Units[] = ['mm', 'cm', 'm', 'ft', 'in'];
 
   return (
     <div className="space-y-4">
@@ -90,27 +120,31 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Drawing Tools</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            {tools.map(tool => (
+        <CardContent className="space-y-1">
+          {tools.map(tool => {
+            const IconComponent = tool.icon;
+            return (
               <Tooltip key={tool.id}>
                 <TooltipTrigger asChild>
                   <Button
                     variant={currentTool === tool.id ? 'default' : 'outline'}
-                    size="sm"
+                    className="w-full justify-start h-8 text-xs"
                     onClick={() => onToolChange(tool.id)}
-                    className="h-8 text-xs"
                   >
-                    <tool.icon className="w-3 h-3 mr-1" />
-                    {tool.label}
+                    <IconComponent className="w-3 h-3 mr-2" />
+                    {tool.name}
+                    <Badge variant="secondary" className="ml-auto text-xs h-4">
+                      {tool.shortcut}
+                    </Badge>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{tool.label} ({tool.shortcut})</p>
+                  <p>{tool.description}</p>
+                  <p className="text-xs opacity-75">Press {tool.shortcut}</p>
                 </TooltipContent>
               </Tooltip>
-            ))}
-          </div>
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -119,104 +153,133 @@ const CompactToolPanel: React.FC<CompactToolPanelProps> = ({
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">View Controls</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center justify-between">
+        <CardContent className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
             <Button
-              variant={showGrid ? 'default' : 'outline'}
+              variant="outline"
               size="sm"
-              onClick={onToggleGrid}
-              className="h-7"
+              onClick={onZoomIn}
+              className="h-8"
             >
-              <Grid3X3 className="w-3 h-3 mr-1" />
-              Grid
+              <ZoomIn className="w-3 h-3 mr-1" />
+              Zoom In
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onZoomOut}
+              className="h-8"
+            >
+              <ZoomOut className="w-3 h-3 mr-1" />
+              Zoom Out
+            </Button>
+          </div>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onFitToView}
+            className="w-full h-8"
+          >
+            <Fit className="w-3 h-3 mr-1" />
+            Fit to View
+          </Button>
+          
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Zoom:</span>
             <Badge variant="outline" className="text-xs">
               {Math.round(currentZoom * 100)}%
             </Badge>
           </div>
           
-          <div className="flex space-x-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={onZoomOut} className="h-7 flex-1">
-                  <ZoomOut className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Zoom Out (-)</p></TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={onFitToView} className="h-7 flex-1">
-                  <Maximize className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Fit to View (F)</p></TooltipContent>
-            </Tooltip>
-            
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={onZoomIn} className="h-7 flex-1">
-                  <ZoomIn className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent><p>Zoom In (+)</p></TooltipContent>
-            </Tooltip>
-          </div>
+          <Button
+            variant={showGrid ? 'default' : 'outline'}
+            size="sm"
+            onClick={onToggleGrid}
+            className="w-full h-8"
+          >
+            <Grid className="w-3 h-3 mr-1" />
+            {showGrid ? 'Hide Grid' : 'Show Grid'}
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Units */}
+      {/* Units Selection */}
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Units</CardTitle>
         </CardHeader>
         <CardContent>
-          <UnitSelector units={units} onUnitsChange={onUnitsChange} />
+          <div className="grid grid-cols-5 gap-1">
+            {unitsOptions.map(unit => (
+              <Button
+                key={unit}
+                variant={units === unit ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onUnitsChange(unit)}
+                className="h-6 text-xs"
+              >
+                {unit}
+              </Button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
-      {/* Object Library */}
-      <ObjectLibrary
+      {/* Enhanced Product Library */}
+      <EnhancedProductLibrary
         onProductDrag={onProductDrag}
-        currentTool={currentTool as DrawingTool}
+        currentTool={currentTool}
+        onProductUsed={(productId) => {
+          console.log('Product used:', productId);
+        }}
       />
 
-      {/* Product Dimension Editor */}
-      <ProductDimensionEditor
-        selectedProduct={selectedProduct}
-        onUpdateProduct={onUpdateProduct}
-        onDeleteProduct={onDeleteProduct}
-        onDuplicateProduct={onDuplicateProduct}
-        units={units}
-      />
+      {/* Selected Objects Info */}
+      {selectedObjects.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Selected Objects</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-xs text-muted-foreground">
+              {selectedObjects.length} object(s) selected
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDuplicateProduct}
+                className="h-8"
+              >
+                Duplicate
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onDeleteProduct}
+                className="h-8"
+              >
+                Delete
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Object Legend */}
-      <ObjectLegend
-        placedProducts={placedProducts}
-        onObjectSelect={onObjectSelect}
-        selectedObjects={selectedObjects}
-      />
+      <Separator />
 
       {/* Actions */}
       <Card>
-        <CardContent className="pt-4 space-y-2">
-          <HowToUseModal>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-            >
-              <HelpCircle className="w-3 h-3 mr-1" />
-              How to Use
-            </Button>
-          </HowToUseModal>
-          
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Button
             variant="destructive"
             size="sm"
             onClick={onClear}
-            className="w-full"
+            className="w-full h-8"
           >
             <Trash2 className="w-3 h-3 mr-1" />
             Clear All

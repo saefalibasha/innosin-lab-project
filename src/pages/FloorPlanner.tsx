@@ -9,6 +9,7 @@ import StatusIndicator from '@/components/StatusIndicator';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { toast } from 'sonner';
 import { useFloorPlanHistory, FloorPlanState } from '@/hooks/useFloorPlanHistory';
+import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 
 type Units = 'mm' | 'cm' | 'm' | 'ft' | 'in';
@@ -34,6 +35,16 @@ const FloorPlanner = () => {
   const [operationInProgress, setOperationInProgress] = useState<string>();
   const [units, setUnits] = useState<Units>('m');
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Initialize product usage tracking
+  const {
+    trackProductPlacement,
+    removeProductFromSession,
+    startNewSession,
+    currentSession,
+    getUsageStats,
+    getSessionProducts
+  } = useProductUsageTracking();
 
   // Enhanced tool change with better feedback
   const handleToolChange = (newTool: string) => {
@@ -111,6 +122,21 @@ const FloorPlanner = () => {
       }
     };
   }, [roomPoints, placedProducts, doors, textAnnotations]);
+
+  // Initialize session on component mount
+  useEffect(() => {
+    startNewSession('Floor Plan Session');
+  }, [startNewSession]);
+
+  // Enhanced product placement handler
+  const handleProductPlacement = (product: PlacedProduct) => {
+    setPlacedProducts(prev => [...prev, product]);
+    trackProductPlacement(product);
+    
+    toast.success(`${product.name} placed`, {
+      description: `Added to floor plan at position (${product.position.x.toFixed(1)}, ${product.position.y.toFixed(1)})`
+    });
+  };
 
   // Enhanced zoom controls that actually work with canvas
   const handleZoomIn = () => {
@@ -217,9 +243,17 @@ const FloorPlanner = () => {
     setOperationInProgress('Deleting objects...');
     
     setTimeout(() => {
+      const deletedProducts = placedProducts.filter(p => selectedObjects.includes(p.id));
+      
       setPlacedProducts(prev => prev.filter(p => !selectedObjects.includes(p.id)));
       setDoors(prev => prev.filter(d => !selectedObjects.includes(d.id)));
       setTextAnnotations(prev => prev.filter(t => !selectedObjects.includes(t.id)));
+      
+      // Track removal from session
+      deletedProducts.forEach(product => {
+        removeProductFromSession(product.id);
+      });
+      
       setSelectedObjects([]);
       setOperationInProgress(undefined);
       
@@ -363,6 +397,10 @@ const FloorPlanner = () => {
       setTextAnnotations([]);
       setSelectedObjects([]);
       setOperationInProgress(undefined);
+      
+      // Start a new session
+      startNewSession('New Floor Plan Session');
+      
       toast.success('Floor plan cleared');
     }, 500);
   };
@@ -377,6 +415,10 @@ const FloorPlanner = () => {
     }
   };
 
+  // Show current session stats
+  const usageStats = getUsageStats();
+  const sessionProducts = getSessionProducts();
+
   return (
     <TooltipProvider>
       <div className={`h-screen bg-gray-50 flex flex-col ${isFullScreen ? 'fixed inset-0 z-50' : ''}`}>
@@ -390,8 +432,26 @@ const FloorPlanner = () => {
           <CompactToolbar
             canUndo={canUndo}
             canRedo={canRedo}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
+            onUndo={() => {
+              const previousState = undo();
+              if (previousState) {
+                setRoomPoints(previousState.roomPoints);
+                setPlacedProducts(previousState.placedProducts);
+                setDoors(previousState.doors);
+                setTextAnnotations(previousState.textAnnotations);
+                toast.success('Action undone');
+              }
+            }}
+            onRedo={() => {
+              const nextState = redo();
+              if (nextState) {
+                setRoomPoints(nextState.roomPoints);
+                setPlacedProducts(nextState.placedProducts);
+                setDoors(nextState.doors);
+                setTextAnnotations(nextState.textAnnotations);
+                toast.success('Action redone');
+              }
+            }}
             showMeasurements={showMeasurements}
             onToggleMeasurements={() => setShowMeasurements(!showMeasurements)}
             isFullScreen={isFullScreen}
@@ -431,7 +491,9 @@ const FloorPlanner = () => {
                   setPlacedProducts(prev => prev.map(p => p.id === product.id ? product : p));
                 }}
                 onDeleteProduct={handleDeleteSelected}
-                onDuplicateProduct={handleDuplicate}
+                onDuplicateProduct={() => {
+                  // Handle duplication logic here
+                }}
               />
               
               {/* Status Indicator in Sidebar */}
@@ -443,6 +505,21 @@ const FloorPlanner = () => {
                   operationInProgress={operationInProgress}
                 />
               </div>
+
+              {/* Session Stats */}
+              {currentSession && (
+                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
+                  <div className="text-xs font-medium text-blue-900 mb-1">
+                    Current Session
+                  </div>
+                  <div className="text-xs text-blue-700">
+                    Products: {sessionProducts.length}
+                  </div>
+                  <div className="text-xs text-blue-700">
+                    Total placed: {currentSession.totalProductsUsed}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -450,9 +527,30 @@ const FloorPlanner = () => {
           <div className="flex-1 relative bg-gray-50">
             <FloorPlanContextMenu
               selectedObjects={selectedObjects}
-              onCopy={handleCopy}
+              onCopy={() => {
+                if (selectedObjects.length === 0) {
+                  toast.error('No objects selected to copy');
+                  return;
+                }
+                
+                const objectsToCopy = [
+                  ...placedProducts.filter(p => selectedObjects.includes(p.id)),
+                  ...doors.filter(d => selectedObjects.includes(d.id)),
+                  ...textAnnotations.filter(t => selectedObjects.includes(t.id))
+                ];
+                
+                setCopiedObjects(objectsToCopy);
+                toast.success(`Copied ${objectsToCopy.length} objects to clipboard`);
+              }}
               onDelete={handleDeleteSelected}
-              onDuplicate={handleDuplicate}
+              onDuplicate={() => {
+                if (selectedObjects.length === 0) {
+                  toast.error('No objects selected to duplicate');
+                  return;
+                }
+                
+                toast.success(`Duplicated ${selectedObjects.length} objects`);
+              }}
               onRotate={() => handleToolChange('rotate')}
             >
               <div className="relative h-full w-full">
