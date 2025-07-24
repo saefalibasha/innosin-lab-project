@@ -76,8 +76,8 @@ export interface FloorPlanState {
   rooms: Room[];
 }
 
-// Unified tool type that combines both drawing modes and tools
-export type DrawingTool = 'select' | 'wall' | 'room' | 'door' | 'product' | 'text' | 'measure' | 'rotate' | 'move' | 'delete';
+// Unified tool type that includes all possible drawing tools and modes
+export type DrawingTool = 'select' | 'wall' | 'room' | 'door' | 'product' | 'text' | 'measure' | 'rotate' | 'move' | 'delete' | 'line';
 
 // Keep DrawingMode as an alias for backward compatibility
 export type DrawingMode = DrawingTool;
