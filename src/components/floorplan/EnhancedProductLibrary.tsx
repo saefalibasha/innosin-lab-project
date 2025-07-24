@@ -99,7 +99,7 @@ const EnhancedProductLibrary: React.FC<EnhancedProductLibraryProps> = ({
       products: series.products.filter(product =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.product_code.toLowerCase().includes(searchTerm.toLowerCase())
+        product.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     })).filter(series => series.products.length > 0);
   }, [productSeries, searchTerm]);
@@ -120,12 +120,12 @@ const EnhancedProductLibrary: React.FC<EnhancedProductLibraryProps> = ({
       category: product.category,
       dimensions,
       color: getCategoryColor(product.category),
-      modelPath: product.model_path,
-      thumbnail: product.thumbnail_path,
+      modelPath: product.modelPath,
+      thumbnail: product.thumbnail,
       description: product.description,
       specifications: product.specifications,
-      productCode: product.product_code,
-      series: product.product_series
+      productCode: product.id,
+      series: product.category
     };
 
     e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
@@ -248,7 +248,7 @@ const EnhancedProductLibrary: React.FC<EnhancedProductLibraryProps> = ({
                         >
                           <div className="flex items-start space-x-2">
                             <LazyProductImage
-                              src={product.thumbnail_path || '/placeholder.svg'}
+                              src={product.thumbnail || '/placeholder.svg'}
                               alt={product.name}
                               className="w-12 h-12 rounded object-cover flex-shrink-0"
                               fallback="/placeholder.svg"
@@ -264,7 +264,7 @@ const EnhancedProductLibrary: React.FC<EnhancedProductLibraryProps> = ({
                               </div>
                               
                               <p className="text-xs text-muted-foreground mb-1 truncate">
-                                {product.product_code}
+                                {product.id}
                               </p>
                               
                               <div className="flex items-center justify-between">

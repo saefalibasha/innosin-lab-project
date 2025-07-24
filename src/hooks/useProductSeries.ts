@@ -13,6 +13,28 @@ export interface ProductSeries {
   description?: string;
 }
 
+// Transform database product to Product interface
+const transformDatabaseProduct = (dbProduct: any): Product => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    category: dbProduct.category,
+    dimensions: dbProduct.dimensions,
+    modelPath: dbProduct.model_path || '',
+    thumbnail: dbProduct.thumbnail_path || '',
+    overviewImage: dbProduct.overview_image,
+    seriesOverviewImage: dbProduct.series_overview_image,
+    images: dbProduct.additional_images || [],
+    description: dbProduct.description || '',
+    fullDescription: dbProduct.editable_description || dbProduct.description || '',
+    specifications: dbProduct.specifications || [],
+    // Additional fields for compatibility
+    finishes: dbProduct.finishes || [],
+    variants: dbProduct.variants || [],
+    baseProductId: dbProduct.base_product_id
+  };
+};
+
 export const useProductSeries = () => {
   const [productSeries, setProductSeries] = useState<ProductSeries[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,21 +57,22 @@ export const useProductSeries = () => {
       // Group products by series
       const seriesMap = new Map<string, ProductSeries>();
       
-      products?.forEach(product => {
-        const seriesKey = product.product_series || product.category;
+      products?.forEach(dbProduct => {
+        const transformedProduct = transformDatabaseProduct(dbProduct);
+        const seriesKey = dbProduct.product_series || dbProduct.category;
         
         if (!seriesMap.has(seriesKey)) {
           seriesMap.set(seriesKey, {
             id: seriesKey,
             name: seriesKey,
-            category: product.category,
+            category: dbProduct.category,
             products: [],
-            thumbnail: product.series_thumbnail_path || product.thumbnail_path,
-            description: product.editable_description || product.description
+            thumbnail: dbProduct.series_thumbnail_path || dbProduct.thumbnail_path,
+            description: dbProduct.editable_description || dbProduct.description
           });
         }
         
-        seriesMap.get(seriesKey)!.products.push(product);
+        seriesMap.get(seriesKey)!.products.push(transformedProduct);
       });
 
       setProductSeries(Array.from(seriesMap.values()));
