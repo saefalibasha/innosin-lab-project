@@ -1,22 +1,20 @@
-import { Product } from '@/types/product';
-import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
 
-// For backwards compatibility, we'll keep the synchronous export
-// but recommend using the async fetchProductsFromDatabase function directly
-export const products: Product[] = [];
+import { PlacedProduct } from '@/types/floorPlanTypes';
 
-// For new code, use these async functions
-export { fetchProductsFromDatabase as getProductsAsync };
-export { fetchCategoriesFromDatabase as getCategoriesAsync };
-
-// Sync version for backwards compatibility (returns empty array, should be replaced with async calls)
-export const getProductsSync = (): Product[] => {
-  console.warn('getProductsSync is deprecated. Use fetchProductsFromDatabase instead.');
-  return [];
-};
-
-// Sync version for backwards compatibility (returns empty array, should be replaced with async calls)
-export const getCategories = (): string[] => {
-  console.warn('getCategories is deprecated. Use fetchCategoriesFromDatabase instead.');
-  return [];
-};
+export const initialProducts: PlacedProduct[] = [
+  {
+    id: 'mc-pc-755065',
+    productId: 'mc-pc-755065',
+    name: 'MC-PC (755065)',
+    category: 'Mobile Cabinet',
+    dimensions: { length: 750, width: 500, height: 650 },
+    position: { x: 0, y: 0 },
+    rotation: 0,
+    scale: 1,
+    color: 'hsl(var(--muted))',
+    finishes: ['Powder Coat'],
+    variants: ['Standard'],
+    modelPath: '/products/innosin-mc-pc-755065/MC-PC (755065).glb',
+    thumbnail: '/products/innosin-mc-pc-755065/MC-PC (755065).jpg'
+  }
+];

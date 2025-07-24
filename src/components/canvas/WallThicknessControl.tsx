@@ -7,55 +7,49 @@ import { Input } from '@/components/ui/input';
 interface WallThicknessControlProps {
   thickness: number;
   onChange: (thickness: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
+  onThicknessChange?: (thickness: number) => void; // Legacy prop support
 }
 
 const WallThicknessControl: React.FC<WallThicknessControlProps> = ({
   thickness,
   onChange,
-  min = 50,
-  max = 500,
-  step = 5
+  onThicknessChange
 }) => {
-  const handleSliderChange = (value: number[]) => {
-    onChange(value[0]);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value) || min;
-    onChange(Math.max(min, Math.min(max, value)));
+  const handleChange = (value: number) => {
+    onChange(value);
+    onThicknessChange?.(value);
   };
 
   return (
-    <div className="flex items-center gap-4 p-3 bg-background border rounded-lg">
-      <Label htmlFor="wall-thickness" className="text-sm font-medium whitespace-nowrap">
-        Wall Thickness
-      </Label>
-      
-      <div className="flex items-center gap-2 flex-1">
-        <Slider
-          id="wall-thickness"
-          value={[thickness]}
-          onValueChange={handleSliderChange}
-          min={min}
-          max={max}
-          step={step}
-          className="flex-1"
-        />
+    <div className="bg-background border rounded-lg p-4 shadow-sm">
+      <div className="space-y-3">
+        <Label className="text-sm font-medium">Wall Thickness</Label>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center space-x-3">
           <Input
             type="number"
             value={thickness}
-            onChange={handleInputChange}
-            min={min}
-            max={max}
-            step={step}
-            className="w-20 text-center"
+            onChange={(e) => handleChange(parseInt(e.target.value) || 100)}
+            min="50"
+            max="500"
+            step="10"
+            className="w-20"
           />
-          <span className="text-xs text-muted-foreground">mm</span>
+          <span className="text-sm text-muted-foreground">mm</span>
+        </div>
+        
+        <Slider
+          value={[thickness]}
+          onValueChange={(value) => handleChange(value[0])}
+          min={50}
+          max={500}
+          step={10}
+          className="w-full"
+        />
+        
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <span>50mm</span>
+          <span>500mm</span>
         </div>
       </div>
     </div>

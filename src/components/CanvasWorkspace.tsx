@@ -194,7 +194,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     };
     
     setPlacedProducts(prev => [...prev, newProduct]);
-  }, [draggedProduct, setPlacedProducts]);
+  }, [draggedProduct]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -202,7 +202,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
   const handleWallComplete = useCallback((walls: WallSegment[]) => {
     setWallSegments(prev => [...prev, ...walls]);
-  }, [setWallSegments]);
+  }, []);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     if (points.length >= 3) {
@@ -217,7 +217,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setRooms(prev => [...prev, newRoom]);
     }
     setRoomPoints(points);
-  }, [rooms.length, setRooms, setRoomPoints]);
+  }, [rooms.length]);
 
   useEffect(() => {
     render();

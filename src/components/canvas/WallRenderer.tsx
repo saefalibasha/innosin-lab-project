@@ -12,14 +12,18 @@ interface WallRendererProps {
   showThickness?: boolean;
 }
 
-const WallRenderer: React.FC<WallRendererProps> = ({
+interface WallRendererReturn {
+  renderWalls: (ctx: CanvasRenderingContext2D) => void;
+}
+
+export const useWallRenderer = ({
   walls,
   scale,
   zoom,
   selectedWalls,
   onWallSelect,
   showThickness = false
-}) => {
+}: WallRendererProps): WallRendererReturn => {
   const THICKNESS_ZOOM_THRESHOLD = 1.5;
 
   const drawWall = useCallback((
@@ -97,6 +101,10 @@ const WallRenderer: React.FC<WallRendererProps> = ({
   }, [walls, zoom, drawWall]);
 
   return { renderWalls };
+};
+
+const WallRenderer: React.FC<WallRendererProps> = (props) => {
+  return null; // This component doesn't render anything directly
 };
 
 export default WallRenderer;

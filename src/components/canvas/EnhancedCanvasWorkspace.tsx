@@ -6,7 +6,7 @@ import { SnapSystem } from '@/utils/snapSystem';
 import DrawingEngine from './DrawingEngine';
 import GridSystem from './GridSystem';
 import PolylineWallDrawing from './PolylineWallDrawing';
-import WallRenderer from './WallRenderer';
+import { useWallRenderer } from './WallRenderer';
 import WallThicknessControl from './WallThicknessControl';
 
 interface EnhancedCanvasWorkspaceProps {
@@ -27,6 +27,7 @@ interface EnhancedCanvasWorkspaceProps {
   showGrid: boolean;
   showMeasurements: boolean;
   gridSize: number;
+  wallThickness: number;
   onClearAll: () => void;
 }
 
@@ -48,6 +49,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   showGrid,
   showMeasurements,
   gridSize,
+  wallThickness,
   onClearAll
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -56,7 +58,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
-  const [wallThickness, setWallThickness] = useState(100); // Default 100mm
   
   // Enhanced viewport state
   const [viewportSettings, setViewportSettings] = useState<ViewportSettings>({
@@ -91,7 +92,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const snapSystem = new SnapSystem(snapSettings, gridSettings.size, scale);
 
   // Initialize wall renderer
-  const wallRenderer = WallRenderer({
+  const wallRenderer = useWallRenderer({
     walls: wallSegments,
     scale,
     zoom: viewportSettings.zoom,
@@ -303,11 +304,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
-  }, [placedProducts, wallSegments, rooms, isValidProductPlacement, snapSystem, setPlacedProducts]);
+  }, [placedProducts, wallSegments, rooms, isValidProductPlacement, snapSystem]);
 
-  const handleWallComplete = useCallback((walls: WallSegment[]) => {
-    setWallSegments(prev => [...prev, ...walls]);
-  }, [setWallSegments]);
+  const handleWallComplete = useCallback((wall: WallSegment) => {
+    setWallSegments(prev => [...prev, wall]);
+  }, []);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     if (points.length >= 3) {
@@ -340,7 +341,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       setRooms(prev => [...prev, newRoom]);
     }
     setRoomPoints(points);
-  }, [rooms.length, scale, setRooms, setRoomPoints]);
+  }, [rooms.length, scale]);
 
   const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -369,7 +370,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       
       setPlacedProducts(prev => [...prev, newProduct]);
     }
-  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem, setPlacedProducts]);
+  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -413,7 +414,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         <div className="absolute top-4 left-4 z-30">
           <WallThicknessControl
             thickness={wallThickness}
-            onChange={setWallThickness}
+            onChange={() => {}} // Will be handled by parent
           />
         </div>
       )}
