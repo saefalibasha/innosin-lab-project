@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import {
   Square
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingTool } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -33,7 +32,7 @@ import WallEditor from '@/components/canvas/WallEditor';
 const FloorPlanner = () => {
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
+  const [currentMode, setCurrentMode] = useState<DrawingTool>('select');
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
@@ -126,7 +125,7 @@ const FloorPlanner = () => {
   }, []);
 
   // Tool change handler
-  const handleToolChange = useCallback((tool: DrawingMode) => {
+  const handleToolChange = useCallback((tool: DrawingTool) => {
     setCurrentMode(tool);
     
     if (tool === 'wall') {

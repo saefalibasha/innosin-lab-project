@@ -1,4 +1,3 @@
-
 export interface Point {
   x: number;
   y: number;
@@ -77,9 +76,11 @@ export interface FloorPlanState {
   rooms: Room[];
 }
 
-export type DrawingMode = 'select' | 'wall' | 'room' | 'door' | 'product' | 'text' | 'measure';
-
+// Unified tool type that combines both drawing modes and tools
 export type DrawingTool = 'select' | 'wall' | 'room' | 'door' | 'product' | 'text' | 'measure' | 'rotate' | 'move' | 'delete';
+
+// Keep DrawingMode as an alias for backward compatibility
+export type DrawingMode = DrawingTool;
 
 export interface SnapSettings {
   enabled: boolean;
