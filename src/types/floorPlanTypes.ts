@@ -60,7 +60,6 @@ export interface TextAnnotation {
   color: string;
 }
 
-// Changed from type to enum so it can be used as a value
 export enum WallType {
   EXTERIOR = 'exterior',
   INTERIOR = 'interior',
@@ -115,4 +114,4 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
-export type DrawingTool = DrawingMode;
+export type DrawingTool = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';

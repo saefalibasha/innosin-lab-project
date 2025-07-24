@@ -20,6 +20,7 @@ interface CanvasWorkspaceProps {
   showMeasurements: boolean;
   gridSize: number;
   onClearAll: () => void;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
 const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
@@ -40,9 +41,9 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   showGrid,
   showMeasurements,
   gridSize,
-  onClearAll
+  onClearAll,
+  canvasRef
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
