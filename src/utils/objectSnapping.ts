@@ -7,6 +7,13 @@ export interface SnapResult {
   snappedToObject: boolean;
 }
 
+export interface SnapGuide {
+  type: 'grid' | 'object' | 'edge';
+  position: Point;
+  direction: 'horizontal' | 'vertical';
+  color: string;
+}
+
 export const calculateSnapPosition = (
   product: PlacedProduct,
   existingProducts: PlacedProduct[],

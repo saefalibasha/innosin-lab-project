@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { mmToCanvas, canvasToMm, formatMeasurement } from '@/utils/measurements';
@@ -328,7 +327,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
-  }, [placedProducts, scale, gridSize, isValidProductPlacement, setPlacedProducts]);
+  }, [placedProducts, scale, gridSize, setPlacedProducts]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
     setWallSegments((prev: WallSegment[]) => [...prev, wall]);
@@ -385,12 +384,13 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         id: `${draggedProduct.id}-${Date.now()}`,
         position: point,
         rotation: 0,
-        scale: 1
+        scale: 1,
+        category: draggedProduct.category || 'Innosin Lab'
       };
       
       setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
     }
-  }, [draggedProduct, isValidProductPlacement, setPlacedProducts, pan, zoom]);
+  }, [draggedProduct, setPlacedProducts, pan, zoom]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
