@@ -11,17 +11,17 @@ import WallThicknessControl from './WallThicknessControl';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
-  setRoomPoints: (points: Point[]) => void;
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   wallSegments: WallSegment[];
-  setWallSegments: (segments: WallSegment[]) => void;
+  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
   placedProducts: PlacedProduct[];
-  setPlacedProducts: (products: PlacedProduct[]) => void;
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
   doors: Door[];
-  setDoors: (doors: Door[]) => void;
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
   textAnnotations: TextAnnotation[];
-  setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
   rooms: Room[];
-  setRooms: (rooms: Room[]) => void;
+  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
   scale: number;
   currentMode: DrawingMode;
   showGrid: boolean;

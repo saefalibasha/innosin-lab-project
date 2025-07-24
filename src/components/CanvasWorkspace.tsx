@@ -5,15 +5,15 @@ import { mmToCanvas, canvasToMm } from '@/utils/measurements';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
-  setRoomPoints: (points: Point[]) => void;
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   wallSegments: WallSegment[];
-  setWallSegments: (segments: WallSegment[]) => void;
+  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
   placedProducts: PlacedProduct[];
-  setPlacedProducts: (products: PlacedProduct[]) => void;
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
   doors: Door[];
-  setDoors: (doors: Door[]) => void;
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
   rooms: Room[];
-  setRooms: (rooms: Room[]) => void;
+  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
   scale: number;
   showGrid?: boolean;
   showMeasurements?: boolean;
@@ -200,8 +200,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     e.preventDefault();
   }, []);
 
-  const handleWallComplete = useCallback((walls: WallSegment[]) => {
-    setWallSegments(prev => [...prev, ...walls]);
+  const handleWallComplete = useCallback((wall: WallSegment) => {
+    setWallSegments(prev => [...prev, wall]);
   }, []);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
