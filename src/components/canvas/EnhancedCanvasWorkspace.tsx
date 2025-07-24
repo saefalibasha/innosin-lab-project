@@ -65,25 +65,26 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
     // Draw grid
     if (showGrid) {
-      GridSystem({ 
-        gridSize, 
+      const gridSystem = GridSystem({ 
         scale, 
         zoom, 
         showMajorLines: true, 
         showMinorLines: true, 
         opacity: 0.3 
-      }).renderGrid(ctx, canvas.width, canvas.height);
+      });
+      gridSystem.renderGrid(ctx, canvas.width, canvas.height);
     }
 
     // Draw walls using vector-based renderer
-    WallRenderer({ 
+    const wallRenderer = WallRenderer({ 
       walls: wallSegments, 
       scale, 
       zoom, 
       selectedWalls, 
       onWallSelect: setSelectedWalls,
       showThickness: zoom > 1.5
-    }).renderWalls(ctx);
+    });
+    wallRenderer.renderWalls(ctx);
 
     // Draw rooms
     if (rooms.length > 0) {
@@ -173,7 +174,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         scale: 1
       };
       
-      setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
+      setPlacedProducts([...placedProducts, newProduct]);
     } else if (currentMode === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
@@ -184,13 +185,13 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         type: 'single'
       };
       
-      setDoors((prev: Door[]) => [...prev, newDoor]);
+      setDoors([...doors, newDoor]);
     }
-  }, [currentMode, setPlacedProducts, setDoors]);
+  }, [currentMode, placedProducts, doors, setPlacedProducts, setDoors]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
-    setWallSegments((prev: WallSegment[]) => [...prev, wall]);
-  }, [setWallSegments]);
+    setWallSegments([...wallSegments, wall]);
+  }, [wallSegments, setWallSegments]);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     const newRoom: Room = {
@@ -201,10 +202,10 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       perimeter: 0
     };
     
-    setRooms((prev: Room[]) => [...prev, newRoom]);
-  }, [rooms.length, setRooms]);
+    setRooms([...rooms, newRoom]);
+  }, [rooms, setRooms]);
 
-  const handleProductDrop = useCallback((e: React.DragEvent) => {
+  const handleProductDrop = useCallback((e: DragEvent) => {
     e.preventDefault();
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -213,7 +214,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const y = e.clientY - rect.top;
 
     try {
-      const productData = JSON.parse(e.dataTransfer.getData('application/json'));
+      const productData = JSON.parse(e.dataTransfer?.getData('application/json') || '{}');
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: productData.id,
@@ -226,11 +227,15 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         scale: 1
       };
       
-      setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
+      setPlacedProducts([...placedProducts, newProduct]);
     } catch (error) {
       console.error('Error dropping product:', error);
     }
-  }, [setPlacedProducts]);
+  }, [placedProducts, setPlacedProducts]);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -238,14 +243,14 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
     canvas.addEventListener('click', handleCanvasClick);
     canvas.addEventListener('drop', handleProductDrop);
-    canvas.addEventListener('dragover', (e) => e.preventDefault());
+    canvas.addEventListener('dragover', handleDragOver);
 
     return () => {
       canvas.removeEventListener('click', handleCanvasClick);
       canvas.removeEventListener('drop', handleProductDrop);
-      canvas.removeEventListener('dragover', (e) => e.preventDefault());
+      canvas.removeEventListener('dragover', handleDragOver);
     };
-  }, [handleCanvasClick, handleProductDrop]);
+  }, [handleCanvasClick, handleProductDrop, handleDragOver]);
 
   useEffect(() => {
     drawCanvas();
