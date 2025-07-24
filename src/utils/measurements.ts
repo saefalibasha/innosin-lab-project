@@ -1,64 +1,95 @@
 
-export const mmToCanvas = (mm: number, scale: number): number => {
-  return mm * scale;
-};
+// Measurement utilities for mm-based calculations
+export type MeasurementUnit = 'mm' | 'cm' | 'm' | 'in' | 'ft';
 
-export const canvasToMm = (canvas: number, scale: number): number => {
-  return canvas / scale;
-};
-
-export interface MeasurementOptions {
-  unit: 'mm' | 'cm' | 'm';
-  precision: number;
-  showUnit: boolean;
+export interface Dimensions {
+  width: number;  // in mm
+  height: number; // in mm
+  depth: number;  // in mm
 }
 
 export interface MeasurementConfig {
-  unit: 'mm' | 'cm' | 'm';
+  unit: MeasurementUnit;
   precision: number;
   showUnit: boolean;
 }
 
-export const formatMeasurement = (value: number, options: MeasurementOptions): string => {
-  const { unit, precision, showUnit } = options;
-  
-  let convertedValue = value;
-  let unitStr = unit;
-  
+// Convert measurements to mm (base unit)
+export const convertToMm = (value: number, unit: MeasurementUnit): number => {
   switch (unit) {
-    case 'cm':
-      convertedValue = value / 10;
-      unitStr = 'cm';
-      break;
-    case 'm':
-      convertedValue = value / 1000;
-      unitStr = 'm';
-      break;
-    default:
-      convertedValue = value;
-      unitStr = 'mm';
-  }
-  
-  const formatted = convertedValue.toFixed(precision);
-  return showUnit ? `${formatted}${unitStr}` : formatted;
-};
-
-export const convertToMm = (value: number, unit: 'mm' | 'cm' | 'm'): number => {
-  switch (unit) {
-    case 'cm':
-      return value * 10;
-    case 'm':
-      return value * 1000;
-    default:
-      return value;
+    case 'mm': return value;
+    case 'cm': return value * 10;
+    case 'm': return value * 1000;
+    case 'in': return value * 25.4;
+    case 'ft': return value * 304.8;
+    default: return value;
   }
 };
 
-export const GRID_SIZES = [
-  { value: 10, label: '10mm' },
-  { value: 20, label: '20mm' },
-  { value: 50, label: '50mm' },
-  { value: 100, label: '100mm' },
-  { value: 200, label: '200mm' },
-  { value: 500, label: '500mm' }
-];
+// Convert from mm to target unit
+export const convertFromMm = (value: number, unit: MeasurementUnit): number => {
+  switch (unit) {
+    case 'mm': return value;
+    case 'cm': return value / 10;
+    case 'm': return value / 1000;
+    case 'in': return value / 25.4;
+    case 'ft': return value / 304.8;
+    default: return value;
+  }
+};
+
+// Format measurement with unit
+export const formatMeasurement = (value: number, config: MeasurementConfig): string => {
+  const converted = convertFromMm(value, config.unit);
+  const formatted = converted.toFixed(config.precision);
+  return config.showUnit ? `${formatted}${config.unit}` : formatted;
+};
+
+// Parse dimension string from database format "750×550×880 mm"
+export const parseDimensionString = (dimensionStr: string): Dimensions | null => {
+  const match = dimensionStr.match(/(\d+)×(\d+)×(\d+)\s*mm/);
+  if (!match) return null;
+  
+  return {
+    width: parseInt(match[1]),
+    height: parseInt(match[2]),
+    depth: parseInt(match[3])
+  };
+};
+
+// Calculate canvas scale (pixels per mm)
+export const calculateScale = (canvasWidth: number, realWidthMm: number): number => {
+  return canvasWidth / realWidthMm;
+};
+
+// Convert canvas coordinates to real-world mm
+export const canvasToMm = (canvasValue: number, scale: number): number => {
+  return canvasValue / scale;
+};
+
+// Convert real-world mm to canvas coordinates
+export const mmToCanvas = (mmValue: number, scale: number): number => {
+  return mmValue * scale;
+};
+
+// Grid size options in mm
+export const GRID_SIZES = {
+  fine: 1,     // 1mm
+  medium: 5,   // 5mm
+  coarse: 10,  // 10mm
+  standard: 20 // 20mm
+};
+
+// Common architectural dimensions in mm
+export const COMMON_DIMENSIONS = {
+  doorWidth: 800,
+  doorHeight: 2000,
+  windowHeight: 1200,
+  ceilingHeight: 2400,
+  wallThickness: 100,
+  standardRoom: {
+    small: { width: 3000, height: 3000 },
+    medium: { width: 4000, height: 4000 },
+    large: { width: 6000, height: 6000 }
+  }
+};

@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ZoomIn, ZoomOut, Maximize, RotateCcw } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, RotateCcw } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FloorPlannerViewControlsProps {
   onZoomIn: () => void;
@@ -20,45 +20,57 @@ const FloorPlannerViewControls: React.FC<FloorPlannerViewControlsProps> = ({
   currentZoom
 }) => {
   return (
-    <Card className="absolute bottom-4 right-4 z-20">
-      <CardContent className="p-2">
-        <div className="flex flex-col gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onZoomIn}
-            disabled={currentZoom >= 3}
-          >
-            <ZoomIn className="h-4 w-4" />
+    <div className="absolute bottom-4 right-4 flex flex-col gap-2 bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-2 shadow-lg z-30">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="outline" size="sm" onClick={onZoomIn} className="h-8 w-8 p-0">
+            <ZoomIn className="w-4 h-4" />
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onZoomOut}
-            disabled={currentZoom <= 0.1}
-          >
-            <ZoomOut className="h-4 w-4" />
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>Zoom In (Ctrl + Plus)</p>
+        </TooltipContent>
+      </Tooltip>
+
+      <div className="text-xs text-center text-gray-600 px-1">
+        {Math.round(currentZoom * 100)}%
+      </div>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="outline" size="sm" onClick={onZoomOut} className="h-8 w-8 p-0">
+            <ZoomOut className="w-4 h-4" />
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onFitToView}
-          >
-            <Maximize className="h-4 w-4" />
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>Zoom Out (Ctrl + Minus)</p>
+        </TooltipContent>
+      </Tooltip>
+
+      <div className="border-t border-gray-200 my-1" />
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="outline" size="sm" onClick={onFitToView} className="h-8 w-8 p-0">
+            <Maximize2 className="w-4 h-4" />
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onResetView}
-          >
-            <RotateCcw className="h-4 w-4" />
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>Fit to View (F)</p>
+        </TooltipContent>
+      </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="outline" size="sm" onClick={onResetView} className="h-8 w-8 p-0">
+            <RotateCcw className="w-4 h-4" />
           </Button>
-        </div>
-        <div className="text-xs text-muted-foreground text-center mt-2">
-          {Math.round(currentZoom * 100)}%
-        </div>
-      </CardContent>
-    </Card>
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>Reset View (R)</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
   );
 };
 

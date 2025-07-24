@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
 import FloorPlannerViewControls from './FloorPlannerViewControls';
-import { Point, PlacedProduct, Door, WallSegment, Room } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];
@@ -13,8 +13,8 @@ interface FloorPlannerCanvasProps {
   setPlacedProducts: (products: PlacedProduct[]) => void;
   doors: Door[];
   setDoors: (doors: Door[]) => void;
-  rooms: Room[];
-  setRooms: (rooms: Room[]) => void;
+  textAnnotations: TextAnnotation[];
+  setTextAnnotations: (annotations: TextAnnotation[]) => void;
   scale: number;
   currentTool: string;
   showGrid: boolean;
@@ -32,8 +32,8 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   setPlacedProducts,
   doors,
   setDoors,
-  rooms,
-  setRooms,
+  textAnnotations,
+  setTextAnnotations,
   scale,
   currentTool,
   showGrid,
@@ -71,12 +71,14 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         setPlacedProducts={setPlacedProducts}
         doors={doors}
         setDoors={setDoors}
-        rooms={rooms}
-        setRooms={setRooms}
+        textAnnotations={textAnnotations}
+        setTextAnnotations={setTextAnnotations}
         scale={scale}
+        currentTool={currentTool}
         showGrid={showGrid}
-        showMeasurements={showRuler}
+        showRuler={showRuler}
         onClearAll={onClearAll}
+        canvasRef={canvasRef}
       />
       
       <FloorPlannerViewControls
