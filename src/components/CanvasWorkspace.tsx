@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -93,15 +92,16 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
 
     const snappedPosition = snapResult.snapped ? snapResult.position : { x, y };
 
-    const updatedProducts = placedProducts.map(p =>
-      p.id === draggedProduct.id
-        ? { ...p, position: snappedPosition }
-        : p
+    setPlacedProducts(prev =>
+      prev.map(p =>
+        p.id === draggedProduct.id
+          ? { ...p, position: snappedPosition }
+          : p
+      )
     );
-    
-    setPlacedProducts(updatedProducts);
+
     setDraggedProduct(null);
-  }, [dragOffset, placedProducts, scale, draggedProduct, canvasRef, setPlacedProducts]);
+  }, [dragOffset, placedProducts, scale, draggedProduct, canvasRef, calculateSnapPosition, setPlacedProducts]);
 
   // Canvas resize observer
   useEffect(() => {
@@ -140,8 +140,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       type: 'single'
     };
 
-    setDoors([...doors, newDoor]);
-  }, [currentTool, doors, setDoors, canvasRef]);
+    setDoors(prev => [...prev, newDoor]);
+  }, [currentTool, setDoors, canvasRef]);
 
   const handleProductPlacement = useCallback((e: MouseEvent) => {
     if (currentTool !== 'product') return;
@@ -164,8 +164,8 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       scale: 1
     };
 
-    setPlacedProducts([...placedProducts, newProduct]);
-  }, [currentTool, placedProducts, setPlacedProducts, canvasRef]);
+    setPlacedProducts(prev => [...prev, newProduct]);
+  }, [currentTool, setPlacedProducts, canvasRef]);
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;

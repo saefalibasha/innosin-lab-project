@@ -3,7 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Ruler, Move, Square, Eraser, Grid, ZoomIn, ZoomOut, Trash2 } from 'lucide-react';
-import { DrawingTool } from '@/types/floorPlanTypes';
+
+type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select';
 
 interface ToolPanelProps {
   currentTool: DrawingTool;
