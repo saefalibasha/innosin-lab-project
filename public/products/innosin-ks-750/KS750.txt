@@ -7,6 +7,9 @@ Model: KS750
 Dimensions: 750×600×650 mm
 Size: KS750
 
+Description:
+Ergonomic knee space unit providing comfortable leg room for laboratory workstations.
+
 Full Description:
 The KS750 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. This 750mm width unit offers enhanced space for comfortable working positions.
 

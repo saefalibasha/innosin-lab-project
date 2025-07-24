@@ -7,6 +7,9 @@ Model: KS900
 Dimensions: 900×600×650 mm
 Size: KS900
 
+Description:
+Ergonomic knee space unit providing comfortable leg room for laboratory workstations.
+
 Full Description:
 The KS900 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. This 900mm width unit provides spacious comfort for extended working periods.
 

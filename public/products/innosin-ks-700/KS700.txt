@@ -7,6 +7,9 @@ Model: KS700
 Dimensions: 700×600×650 mm
 Size: KS700
 
+Description:
+Ergonomic knee space unit providing comfortable leg room for laboratory workstations.
+
 Full Description:
 The KS700 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. This compact 700mm width unit is perfect for space-constrained laboratories while maintaining essential ergonomic features.
 
