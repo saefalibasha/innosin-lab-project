@@ -1,243 +1,351 @@
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { PlacedProduct } from '@/types/floorPlanTypes';
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  type: string;
-  size: string;
-  price: number;
-  dimensions: string;
-  modelPath?: string;
-  thumbnail?: string;
-}
+import { Product } from '@/types/product';
+import { Ruler, Rotate3D, Palette, Package } from 'lucide-react';
 
 interface ProductDimensionEditorProps {
   selectedProduct: PlacedProduct | null;
   onUpdateProduct: (product: PlacedProduct) => void;
   onDeleteProduct: () => void;
-  availableProducts: Product[];
-  onProductSelect: (product: Product) => void;
+  onDuplicateProduct: () => void;
+  units: 'mm' | 'cm' | 'm' | 'ft' | 'in';
 }
 
 const ProductDimensionEditor: React.FC<ProductDimensionEditorProps> = ({
   selectedProduct,
   onUpdateProduct,
   onDeleteProduct,
-  availableProducts,
-  onProductSelect
+  onDuplicateProduct,
+  units
 }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [localDimensions, setLocalDimensions] = useState({ length: 0, width: 0, height: 0 });
+  const [localRotation, setLocalRotation] = useState(0);
+  const [localScale, setLocalScale] = useState(1);
+  const [selectedFinish, setSelectedFinish] = useState<string>('');
+  const [selectedVariant, setSelectedVariant] = useState<string>('');
 
-  const categories = Array.from(new Set(availableProducts.map(p => p.category)));
+  // Unit conversion factors to meters
+  const unitFactors = {
+    mm: 0.001,
+    cm: 0.01,
+    m: 1,
+    ft: 0.3048,
+    in: 0.0254
+  };
 
-  const filteredProducts = availableProducts.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  const convertFromMeters = (value: number): number => {
+    return value / unitFactors[units];
+  };
 
-  const handleDimensionChange = useCallback((field: 'length' | 'width' | 'height', value: string) => {
-    if (!selectedProduct) return;
-    
-    const numValue = parseInt(value) || 0;
-    onUpdateProduct({
-      ...selectedProduct,
-      dimensions: {
-        ...selectedProduct.dimensions,
-        [field]: numValue
+  const convertToMeters = (value: number): number => {
+    return value * unitFactors[units];
+  };
+
+  // Update local state when selected product changes
+  useEffect(() => {
+    if (selectedProduct) {
+      setLocalDimensions({
+        length: convertFromMeters(selectedProduct.dimensions.length),
+        width: convertFromMeters(selectedProduct.dimensions.width),
+        height: convertFromMeters(selectedProduct.dimensions.height)
+      });
+      setLocalRotation(selectedProduct.rotation);
+      setLocalScale(selectedProduct.scale || 1);
+      
+      // Set default finish and variant if available
+      if (selectedProduct.finishes && selectedProduct.finishes.length > 0) {
+        setSelectedFinish(selectedProduct.finishes[0].type);
       }
-    });
-  }, [selectedProduct, onUpdateProduct]);
-
-  const handlePositionChange = useCallback((field: 'x' | 'y', value: string) => {
-    if (!selectedProduct) return;
-    
-    const numValue = parseInt(value) || 0;
-    onUpdateProduct({
-      ...selectedProduct,
-      position: {
-        ...selectedProduct.position,
-        [field]: numValue
+      if (selectedProduct.variants && selectedProduct.variants.length > 0) {
+        setSelectedVariant(selectedProduct.variants[0].id);
       }
-    });
-  }, [selectedProduct, onUpdateProduct]);
+    }
+  }, [selectedProduct, units]);
 
-  const handleProductClick = useCallback((product: Product) => {
-    onProductSelect(product);
-  }, [onProductSelect]);
+  const handleDimensionChange = (dimension: 'length' | 'width' | 'height', value: string) => {
+    const numValue = parseFloat(value) || 0;
+    const newDimensions = { ...localDimensions, [dimension]: numValue };
+    setLocalDimensions(newDimensions);
+
+    if (selectedProduct) {
+      const updatedProduct = {
+        ...selectedProduct,
+        dimensions: {
+          length: convertToMeters(newDimensions.length),
+          width: convertToMeters(newDimensions.width),
+          height: convertToMeters(newDimensions.height)
+        }
+      };
+      onUpdateProduct(updatedProduct);
+    }
+  };
+
+  const handleRotationChange = (value: string) => {
+    const rotation = parseFloat(value) || 0;
+    setLocalRotation(rotation);
+    
+    if (selectedProduct) {
+      const updatedProduct = { ...selectedProduct, rotation };
+      onUpdateProduct(updatedProduct);
+    }
+  };
+
+  const handleScaleChange = (value: string) => {
+    const scale = parseFloat(value) || 1;
+    setLocalScale(scale);
+    
+    if (selectedProduct) {
+      const updatedProduct = { ...selectedProduct, scale };
+      onUpdateProduct(updatedProduct);
+    }
+  };
+
+  const handleFinishChange = (finishType: string) => {
+    setSelectedFinish(finishType);
+    
+    if (selectedProduct && selectedProduct.finishes) {
+      const finish = selectedProduct.finishes.find(f => f.type === finishType);
+      if (finish) {
+        const updatedProduct = {
+          ...selectedProduct,
+          modelPath: finish.modelPath || selectedProduct.modelPath,
+          thumbnail: finish.thumbnail || selectedProduct.thumbnail
+        };
+        onUpdateProduct(updatedProduct);
+      }
+    }
+  };
+
+  const handleVariantChange = (variantId: string) => {
+    setSelectedVariant(variantId);
+    
+    if (selectedProduct && selectedProduct.variants) {
+      const variant = selectedProduct.variants.find(v => v.id === variantId);
+      if (variant) {
+        const updatedProduct = {
+          ...selectedProduct,
+          modelPath: variant.modelPath,
+          thumbnail: variant.thumbnail,
+          name: `${selectedProduct.name} - ${variant.size}`
+        };
+        onUpdateProduct(updatedProduct);
+      }
+    }
+  };
+
+  const quickRotations = [0, 45, 90, 135, 180, 225, 270, 315];
+
+  if (!selectedProduct) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-4 text-center">
+          <Package className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Select a product to edit dimensions</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <div className="space-y-4">
-      {/* Product Library */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Product Library</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Ruler className="w-4 h-4" />
+          Product Editor
+        </CardTitle>
+        <div className="text-xs text-muted-foreground">
+          {selectedProduct.name}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Dimensions */}
+        <div className="space-y-3">
+          <Label className="text-xs font-medium">Dimensions ({units})</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs text-muted-foreground">Length</Label>
+              <Input
+                type="number"
+                value={localDimensions.length.toFixed(2)}
+                onChange={(e) => handleDimensionChange('length', e.target.value)}
+                className="h-8 text-xs"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Width</Label>
+              <Input
+                type="number"
+                value={localDimensions.width.toFixed(2)}
+                onChange={(e) => handleDimensionChange('width', e.target.value)}
+                className="h-8 text-xs"
+                step="0.01"
+                min="0"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Height</Label>
+              <Input
+                type="number"
+                value={localDimensions.height.toFixed(2)}
+                onChange={(e) => handleDimensionChange('height', e.target.value)}
+                className="h-8 text-xs"
+                step="0.01"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Rotation */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium flex items-center gap-1">
+            <Rotate3D className="w-3 h-3" />
+            Rotation
+          </Label>
           <div className="space-y-2">
             <Input
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              type="number"
+              value={localRotation}
+              onChange={(e) => handleRotationChange(e.target.value)}
+              className="h-8 text-xs"
+              placeholder="Degrees"
+              step="1"
+              min="0"
+              max="360"
             />
-            
-            <div className="flex flex-wrap gap-2">
-              <Badge 
-                variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                className="cursor-pointer"
-                onClick={() => setSelectedCategory('all')}
-              >
-                All
-              </Badge>
-              {categories.map(category => (
-                <Badge
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  className="cursor-pointer"
-                  onClick={() => setSelectedCategory(category)}
+            <div className="grid grid-cols-4 gap-1">
+              {quickRotations.map(angle => (
+                <Button
+                  key={angle}
+                  variant={localRotation === angle ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleRotationChange(angle.toString())}
+                  className="h-6 text-xs"
                 >
-                  {category}
-                </Badge>
+                  {angle}°
+                </Button>
               ))}
             </div>
           </div>
+        </div>
 
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {filteredProducts.map(product => (
-              <div
-                key={product.id}
-                className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                onClick={() => handleProductClick(product)}
+        {/* Scale */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium">Scale</Label>
+          <Input
+            type="number"
+            value={localScale}
+            onChange={(e) => handleScaleChange(e.target.value)}
+            className="h-8 text-xs"
+            step="0.1"
+            min="0.1"
+            max="5"
+          />
+          <div className="flex gap-1">
+            {[0.5, 1, 1.5, 2].map(scale => (
+              <Button
+                key={scale}
+                variant={localScale === scale ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleScaleChange(scale.toString())}
+                className="h-6 text-xs flex-1"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-medium text-sm">{product.name}</h4>
-                    <p className="text-xs text-gray-500">{product.category} • {product.size}</p>
-                    <p className="text-xs text-gray-400">{product.dimensions}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold">${product.price?.toFixed(2) || 'N/A'}</p>
-                  </div>
-                </div>
-              </div>
+                {scale}×
+              </Button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Selected Product Editor */}
-      {selectedProduct && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Edit Product</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        {/* Finishes */}
+        {selectedProduct.finishes && selectedProduct.finishes.length > 1 && (
+          <>
+            <Separator />
             <div className="space-y-2">
-              <Label className="text-sm font-medium">{selectedProduct.name}</Label>
-              <p className="text-xs text-gray-500">{selectedProduct.category}</p>
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <Palette className="w-3 h-3" />
+                Finish
+              </Label>
+              <Select value={selectedFinish} onValueChange={handleFinishChange}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select finish" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProduct.finishes.map(finish => (
+                    <SelectItem key={finish.type} value={finish.type} className="text-xs">
+                      {finish.name}
+                      {finish.price && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {finish.price}
+                        </Badge>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </>
+        )}
 
+        {/* Variants */}
+        {selectedProduct.variants && selectedProduct.variants.length > 1 && (
+          <>
             <Separator />
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Dimensions (mm)</Label>
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <Label className="text-xs">Length</Label>
-                  <Input
-                    type="number"
-                    value={selectedProduct.dimensions.length}
-                    onChange={(e) => handleDimensionChange('length', e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Width</Label>
-                  <Input
-                    type="number"
-                    value={selectedProduct.dimensions.width}
-                    onChange={(e) => handleDimensionChange('width', e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Height</Label>
-                  <Input
-                    type="number"
-                    value={selectedProduct.dimensions.height}
-                    onChange={(e) => handleDimensionChange('height', e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-              </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Size Variant</Label>
+              <Select value={selectedVariant} onValueChange={handleVariantChange}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProduct.variants.map(variant => (
+                    <SelectItem key={variant.id} value={variant.id} className="text-xs">
+                      {variant.size}
+                      <span className="text-muted-foreground ml-2">
+                        {variant.dimensions}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+          </>
+        )}
 
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Position</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label className="text-xs">X</Label>
-                  <Input
-                    type="number"
-                    value={Math.round(selectedProduct.position.x)}
-                    onChange={(e) => handlePositionChange('x', e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-                <div>
-                  <Label className="text-xs">Y</Label>
-                  <Input
-                    type="number"
-                    value={Math.round(selectedProduct.position.y)}
-                    onChange={(e) => handlePositionChange('y', e.target.value)}
-                    className="text-xs"
-                  />
-                </div>
-              </div>
-            </div>
+        <Separator />
 
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Rotation</Label>
-              <Input
-                type="number"
-                value={Math.round(selectedProduct.rotation * 180 / Math.PI)}
-                onChange={(e) => {
-                  const degrees = parseInt(e.target.value) || 0;
-                  onUpdateProduct({
-                    ...selectedProduct,
-                    rotation: degrees * Math.PI / 180
-                  });
-                }}
-                placeholder="Degrees"
-                className="text-xs"
-              />
-            </div>
-
-            <Separator />
-
-            <Button 
-              variant="destructive" 
-              size="sm" 
-              onClick={onDeleteProduct}
-              className="w-full"
-            >
-              Delete Product
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-    </div>
+        {/* Actions */}
+        <div className="space-y-2">
+          <Button
+            onClick={onDuplicateProduct}
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs"
+          >
+            Duplicate Product
+          </Button>
+          <Button
+            onClick={onDeleteProduct}
+            variant="destructive"
+            size="sm"
+            className="w-full h-8 text-xs"
+          >
+            Delete Product
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
