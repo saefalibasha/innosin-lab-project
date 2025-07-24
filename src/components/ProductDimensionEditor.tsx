@@ -1,255 +1,351 @@
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { PlacedProduct } from '@/types/floorPlanTypes';
+import { Product } from '@/types/product';
+import { Ruler, Rotate3D, Palette, Package } from 'lucide-react';
 
 interface ProductDimensionEditorProps {
-  selectedProduct: string | null;
-  allProducts: PlacedProduct[];
-  onProductUpdate: (updatedProduct: PlacedProduct) => void;
-  onProductDelete: (productId: string) => void;
-  onClose: () => void;
+  selectedProduct: PlacedProduct | null;
+  onUpdateProduct: (product: PlacedProduct) => void;
+  onDeleteProduct: () => void;
+  onDuplicateProduct: () => void;
+  units: 'mm' | 'cm' | 'm' | 'ft' | 'in';
 }
 
 const ProductDimensionEditor: React.FC<ProductDimensionEditorProps> = ({
   selectedProduct,
-  allProducts,
-  onProductUpdate,
-  onProductDelete,
-  onClose
+  onUpdateProduct,
+  onDeleteProduct,
+  onDuplicateProduct,
+  units
 }) => {
-  const [name, setName] = useState('');
-  const [length, setLength] = useState(0);
-  const [width, setWidth] = useState(0);
-  const [height, setHeight] = useState(0);
-  const [rotation, setRotation] = useState(0);
-  const [scale, setScale] = useState(1);
-  const [color, setColor] = useState('');
+  const [localDimensions, setLocalDimensions] = useState({ length: 0, width: 0, height: 0 });
+  const [localRotation, setLocalRotation] = useState(0);
+  const [localScale, setLocalScale] = useState(1);
+  const [selectedFinish, setSelectedFinish] = useState<string>('');
+  const [selectedVariant, setSelectedVariant] = useState<string>('');
 
+  // Unit conversion factors to meters
+  const unitFactors = {
+    mm: 0.001,
+    cm: 0.01,
+    m: 1,
+    ft: 0.3048,
+    in: 0.0254
+  };
+
+  const convertFromMeters = (value: number): number => {
+    return value / unitFactors[units];
+  };
+
+  const convertToMeters = (value: number): number => {
+    return value * unitFactors[units];
+  };
+
+  // Update local state when selected product changes
   useEffect(() => {
     if (selectedProduct) {
-      const currentProduct = allProducts.find(p => p.id === selectedProduct);
-
-      if (currentProduct) {
-        setName(currentProduct.name);
-        setLength(currentProduct.dimensions.length);
-        setWidth(currentProduct.dimensions.width);
-        setHeight(currentProduct.dimensions.height);
-        setRotation(currentProduct.rotation);
-        setScale(currentProduct.scale);
-        setColor(currentProduct.color || '');
+      setLocalDimensions({
+        length: convertFromMeters(selectedProduct.dimensions.length),
+        width: convertFromMeters(selectedProduct.dimensions.width),
+        height: convertFromMeters(selectedProduct.dimensions.height)
+      });
+      setLocalRotation(selectedProduct.rotation);
+      setLocalScale(selectedProduct.scale || 1);
+      
+      // Set default finish and variant if available
+      if (selectedProduct.finishes && selectedProduct.finishes.length > 0) {
+        setSelectedFinish(selectedProduct.finishes[0].type);
+      }
+      if (selectedProduct.variants && selectedProduct.variants.length > 0) {
+        setSelectedVariant(selectedProduct.variants[0].id);
       }
     }
-  }, [selectedProduct, allProducts]);
+  }, [selectedProduct, units]);
 
-  const handleSave = () => {
+  const handleDimensionChange = (dimension: 'length' | 'width' | 'height', value: string) => {
+    const numValue = parseFloat(value) || 0;
+    const newDimensions = { ...localDimensions, [dimension]: numValue };
+    setLocalDimensions(newDimensions);
+
     if (selectedProduct) {
-      const updatedProduct: PlacedProduct = {
-        id: selectedProduct,
-        productId: selectedProduct, // Assuming productId is same as id for now
-        name: name,
-        category: 'Innosin Lab', // Default category
+      const updatedProduct = {
+        ...selectedProduct,
         dimensions: {
-          length: length,
-          width: width,
-          height: height
-        },
-        position: { x: 0, y: 0 }, // Position doesn't change here
-        rotation: rotation,
-        scale: scale,
-        color: color
+          length: convertToMeters(newDimensions.length),
+          width: convertToMeters(newDimensions.width),
+          height: convertToMeters(newDimensions.height)
+        }
       };
-      onProductUpdate(updatedProduct);
-      onClose();
+      onUpdateProduct(updatedProduct);
     }
   };
 
-  const handleDelete = () => {
+  const handleRotationChange = (value: string) => {
+    const rotation = parseFloat(value) || 0;
+    setLocalRotation(rotation);
+    
     if (selectedProduct) {
-      onProductDelete(selectedProduct);
-      onClose();
+      const updatedProduct = { ...selectedProduct, rotation };
+      onUpdateProduct(updatedProduct);
     }
   };
 
-  const currentProduct = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'type' in p && (p as any).type === selectedProduct
-  );
-
-  const productById = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'id' in p && (p as any).id === selectedProduct
-  );
-
-  const matchingProduct = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'type' in p && (p as any).type === selectedProduct
-  );
-
-  if (matchingProduct && typeof matchingProduct === 'object') {
-    const modelPath = 'modelPath' in matchingProduct ? (matchingProduct as any).modelPath : undefined;
-    const thumbnail = 'thumbnail' in matchingProduct ? (matchingProduct as any).thumbnail : undefined;
+  const handleScaleChange = (value: string) => {
+    const scale = parseFloat(value) || 1;
+    setLocalScale(scale);
     
-  }
+    if (selectedProduct) {
+      const updatedProduct = { ...selectedProduct, scale };
+      onUpdateProduct(updatedProduct);
+    }
+  };
 
-  const productItem = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'id' in p && (p as any).id === selectedProduct
-  );
-
-  if (productItem && typeof productItem === 'object') {
-    const modelPath = 'modelPath' in productItem ? (productItem as any).modelPath : undefined;
-    const thumbnail = 'thumbnail' in productItem ? (productItem as any).thumbnail : undefined;
-    const size = 'size' in productItem ? (productItem as any).size : undefined;
+  const handleFinishChange = (finishType: string) => {
+    setSelectedFinish(finishType);
     
-  }
+    if (selectedProduct && selectedProduct.finishes) {
+      const finish = selectedProduct.finishes.find(f => f.type === finishType);
+      if (finish) {
+        const updatedProduct = {
+          ...selectedProduct,
+          modelPath: finish.modelPath || selectedProduct.modelPath,
+          thumbnail: finish.thumbnail || selectedProduct.thumbnail
+        };
+        onUpdateProduct(updatedProduct);
+      }
+    }
+  };
 
-  const product1 = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'type' in p && (p as any).type === selectedProduct
-  );
-  const product2 = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'type' in p && (p as any).type === selectedProduct
-  );
+  const handleVariantChange = (variantId: string) => {
+    setSelectedVariant(variantId);
+    
+    if (selectedProduct && selectedProduct.variants) {
+      const variant = selectedProduct.variants.find(v => v.id === variantId);
+      if (variant) {
+        const updatedProduct = {
+          ...selectedProduct,
+          modelPath: variant.modelPath,
+          thumbnail: variant.thumbnail,
+          name: `${selectedProduct.name} - ${variant.size}`
+        };
+        onUpdateProduct(updatedProduct);
+      }
+    }
+  };
 
-  if (product1 && typeof product1 === 'object') {
-    const name = 'name' in product1 ? (product1 as any).name : '';
-    const price = 'price' in product1 ? (product1 as any).price : 0;
-    
-    const formattedPrice = typeof price === 'number' ? price.toFixed(2) : '0.00';
-    
-  }
+  const quickRotations = [0, 45, 90, 135, 180, 225, 270, 315];
 
-  const productA = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'id' in p && (p as any).id === selectedProduct
-  );
-  const productB = allProducts.find(p => 
-    typeof p === 'object' && p !== null && 'id' in p && (p as any).id === selectedProduct
-  );
-
-  if (productA && typeof productA === 'object') {
-    const size = 'size' in productA ? (productA as any).size : '';
-    
-    const dimensions = 'dimensions' in productA ? (productA as any).dimensions : { length: 0, width: 0, height: 0 };
-    
+  if (!selectedProduct) {
+    return (
+      <Card className="w-full">
+        <CardContent className="p-4 text-center">
+          <Package className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Select a product to edit dimensions</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-        <div className="mt-3 text-center">
-          <h3 className="text-lg leading-6 font-medium text-gray-900">
-            Edit Product Dimensions
-          </h3>
-          <div className="mt-2 px-7 py-3">
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
-                Name
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="name"
-                type="text"
-                placeholder="Product Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="length">
-                Length (mm)
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="length"
+    <Card className="w-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Ruler className="w-4 h-4" />
+          Product Editor
+        </CardTitle>
+        <div className="text-xs text-muted-foreground">
+          {selectedProduct.name}
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        {/* Dimensions */}
+        <div className="space-y-3">
+          <Label className="text-xs font-medium">Dimensions ({units})</Label>
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs text-muted-foreground">Length</Label>
+              <Input
                 type="number"
-                placeholder="Length"
-                value={length}
-                onChange={(e) => setLength(Number(e.target.value))}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="width">
-                Width (mm)
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="width"
-                type="number"
-                placeholder="Width"
-                value={width}
-                onChange={(e) => setWidth(Number(e.target.value))}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="height">
-                Height (mm)
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="height"
-                type="number"
-                placeholder="Height"
-                value={height}
-                onChange={(e) => setHeight(Number(e.target.value))}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="rotation">
-                Rotation (degrees)
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="rotation"
-                type="number"
-                placeholder="Rotation"
-                value={rotation}
-                onChange={(e) => setRotation(Number(e.target.value))}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="scale">
-                Scale
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="scale"
-                type="number"
+                value={localDimensions.length.toFixed(2)}
+                onChange={(e) => handleDimensionChange('length', e.target.value)}
+                className="h-8 text-xs"
                 step="0.01"
-                placeholder="Scale"
-                value={scale}
-                onChange={(e) => setScale(Number(e.target.value))}
+                min="0"
               />
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="color">
-                Color
-              </label>
-              <input
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="color"
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
+            <div>
+              <Label className="text-xs text-muted-foreground">Width</Label>
+              <Input
+                type="number"
+                value={localDimensions.width.toFixed(2)}
+                onChange={(e) => handleDimensionChange('width', e.target.value)}
+                className="h-8 text-xs"
+                step="0.01"
+                min="0"
               />
             </div>
-          </div>
-          <div className="items-center px-4 py-3">
-            <button
-              className="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-1/2 shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
-              onClick={handleSave}
-            >
-              Save
-            </button>
-            <button
-              className="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-1/2 shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-300"
-              onClick={handleDelete}
-            >
-              Delete
-            </button>
-            <button
-              className="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-1/2 shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-300"
-              onClick={onClose}
-            >
-              Close
-            </button>
+            <div>
+              <Label className="text-xs text-muted-foreground">Height</Label>
+              <Input
+                type="number"
+                value={localDimensions.height.toFixed(2)}
+                onChange={(e) => handleDimensionChange('height', e.target.value)}
+                className="h-8 text-xs"
+                step="0.01"
+                min="0"
+              />
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+
+        <Separator />
+
+        {/* Rotation */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium flex items-center gap-1">
+            <Rotate3D className="w-3 h-3" />
+            Rotation
+          </Label>
+          <div className="space-y-2">
+            <Input
+              type="number"
+              value={localRotation}
+              onChange={(e) => handleRotationChange(e.target.value)}
+              className="h-8 text-xs"
+              placeholder="Degrees"
+              step="1"
+              min="0"
+              max="360"
+            />
+            <div className="grid grid-cols-4 gap-1">
+              {quickRotations.map(angle => (
+                <Button
+                  key={angle}
+                  variant={localRotation === angle ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleRotationChange(angle.toString())}
+                  className="h-6 text-xs"
+                >
+                  {angle}°
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Scale */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium">Scale</Label>
+          <Input
+            type="number"
+            value={localScale}
+            onChange={(e) => handleScaleChange(e.target.value)}
+            className="h-8 text-xs"
+            step="0.1"
+            min="0.1"
+            max="5"
+          />
+          <div className="flex gap-1">
+            {[0.5, 1, 1.5, 2].map(scale => (
+              <Button
+                key={scale}
+                variant={localScale === scale ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleScaleChange(scale.toString())}
+                className="h-6 text-xs flex-1"
+              >
+                {scale}×
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Finishes */}
+        {selectedProduct.finishes && selectedProduct.finishes.length > 1 && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium flex items-center gap-1">
+                <Palette className="w-3 h-3" />
+                Finish
+              </Label>
+              <Select value={selectedFinish} onValueChange={handleFinishChange}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select finish" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProduct.finishes.map(finish => (
+                    <SelectItem key={finish.type} value={finish.type} className="text-xs">
+                      {finish.name}
+                      {finish.price && (
+                        <Badge variant="outline" className="ml-2 text-xs">
+                          {finish.price}
+                        </Badge>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
+        {/* Variants */}
+        {selectedProduct.variants && selectedProduct.variants.length > 1 && (
+          <>
+            <Separator />
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Size Variant</Label>
+              <Select value={selectedVariant} onValueChange={handleVariantChange}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProduct.variants.map(variant => (
+                    <SelectItem key={variant.id} value={variant.id} className="text-xs">
+                      {variant.size}
+                      <span className="text-muted-foreground ml-2">
+                        {variant.dimensions}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>
+        )}
+
+        <Separator />
+
+        {/* Actions */}
+        <div className="space-y-2">
+          <Button
+            onClick={onDuplicateProduct}
+            variant="outline"
+            size="sm"
+            className="w-full h-8 text-xs"
+          >
+            Duplicate Product
+          </Button>
+          <Button
+            onClick={onDeleteProduct}
+            variant="destructive"
+            size="sm"
+            className="w-full h-8 text-xs"
+          >
+            Delete Product
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,31 +1,35 @@
 
 import React from 'react';
-import { Point } from '@/types/floorPlanTypes';
 import { SnapGuide } from '@/utils/objectSnapping';
 
 interface SnapGuidesProps {
   guides: SnapGuide[];
-  canvas: HTMLCanvasElement | null;
-  zoom: number;
-  pan: Point;
+  canvasRect?: DOMRect;
 }
 
-const SnapGuides: React.FC<SnapGuidesProps> = ({ guides, canvas, zoom, pan }) => {
-  if (!canvas || guides.length === 0) return null;
+const SnapGuides: React.FC<SnapGuidesProps> = ({ guides, canvasRect }) => {
+  if (!guides.length || !canvasRect) return null;
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div className="absolute inset-0 pointer-events-none z-30">
       {guides.map((guide, index) => (
         <div
           key={index}
           className="absolute border-dashed border-blue-400"
           style={{
-            left: guide.position.x * zoom + pan.x,
-            top: guide.position.y * zoom + pan.y,
-            width: guide.direction === 'horizontal' ? '100%' : '1px',
-            height: guide.direction === 'vertical' ? '100%' : '1px',
-            borderWidth: '1px',
-            borderColor: guide.color
+            ...(guide.type === 'vertical' ? {
+              left: guide.position + canvasRect.left,
+              top: 0,
+              width: '1px',
+              height: '100%',
+              borderLeftWidth: '1px',
+            } : {
+              left: 0,
+              top: guide.position + canvasRect.top,
+              width: '100%',
+              height: '1px',
+              borderTopWidth: '1px',
+            })
           }}
         />
       ))}

@@ -27,7 +27,6 @@ export interface WallSegment {
 
 export interface PlacedProduct {
   id: string;
-  productId: string;
   name: string;
   category: string;
   dimensions: Dimensions;
@@ -35,17 +34,11 @@ export interface PlacedProduct {
   rotation: number;
   scale: number;
   color?: string;
-  finishes?: string[];
-  variants?: string[];
-  modelPath?: string;
-  thumbnail?: string;
 }
 
 export interface Door {
   id: string;
-  wallSegmentId: string;
   position: Point;
-  wallPosition: number; // position along the wall (0-1)
   width: number; // in meters
   rotation: number;
   swingDirection: 'inward' | 'outward';
@@ -78,4 +71,3 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
-export type DrawingTool = DrawingMode;
