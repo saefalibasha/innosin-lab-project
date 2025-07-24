@@ -66,6 +66,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     // Draw grid
     if (showGrid) {
       const gridRenderer = GridSystem({ 
+        gridSize,
         scale, 
         zoom, 
         showMajorLines: true, 
