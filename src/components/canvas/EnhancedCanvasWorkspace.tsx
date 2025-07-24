@@ -1,9 +1,6 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, WallType } from '@/types/floorPlanTypes';
-import { DrawingEngine } from './DrawingEngine';
-import { GridSystem } from './GridSystem';
-import { MeasurementSystem } from './MeasurementSystem';
-import { SelectionSystem } from './SelectionSystem';
 import { GRID_SIZES } from '@/utils/measurements';
 
 interface EnhancedCanvasWorkspaceProps {
@@ -92,10 +89,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         id: `door-${Date.now()}`,
         position: point,
         width: 80,
-        height: 20,
-        rotation: 0,
-        type: 'single',
-        isOpen: false
+        wallId: undefined,
+        wallSegmentId: undefined,
+        wallPosition: undefined,
+        isEmbedded: false
       };
       setDoors(prev => [...prev, newDoor]);
     } else if (currentMode === 'text') {
@@ -106,8 +103,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           position: point,
           text,
           fontSize: 14,
-          color: '#000000',
-          rotation: 0
+          color: '#000000'
         };
         setTextAnnotations(prev => [...prev, newAnnotation]);
       }
@@ -148,8 +144,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         points: [...roomPoints],
         area: calculatePolygonArea(roomPoints),
         perimeter: calculatePolygonPerimeter(roomPoints),
-        color: '#e3f2fd',
-        type: 'general'
+        color: '#e3f2fd'
       };
       setRooms(prev => [...prev, newRoom]);
       setRoomPoints([]);
@@ -273,7 +268,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     // Draw doors
     doors.forEach(door => {
       ctx.fillStyle = '#8b4513';
-      ctx.fillRect(door.position.x - door.width/2, door.position.y - door.height/2, door.width, door.height);
+      ctx.fillRect(door.position.x - door.width/2, door.position.y - 10, door.width, 20);
     });
     
     // Draw text annotations
