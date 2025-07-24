@@ -18,8 +18,7 @@ import {
   Grid3X3,
   Maximize2
 } from 'lucide-react';
-
-type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
+import { DrawingTool } from '@/types/floorPlanTypes';
 
 interface HorizontalToolbarProps {
   currentTool: DrawingTool;
