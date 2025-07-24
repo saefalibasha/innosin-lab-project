@@ -90,6 +90,9 @@ export interface GridSettings {
   size: number;
   snap: boolean;
   color: string;
+  showMajorLines: boolean;
+  showMinorLines: boolean;
+  opacity: number;
 }
 
 export interface ViewportSettings {
@@ -103,6 +106,10 @@ export interface SnapSettings {
   gridSnap: boolean;
   objectSnap: boolean;
   snapDistance: number;
+  strength: 'weak' | 'medium' | 'strong';
+  snapToObjects: boolean;
+  snapToAlignment: boolean;
+  snapToGrid: boolean;
 }
 
 export interface FloorPlanState {

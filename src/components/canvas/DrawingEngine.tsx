@@ -1,4 +1,5 @@
-import React, { useRef, useCallback } from 'react';
+
+import React, { useRef, useCallback, useEffect } from 'react';
 import { Point, WallSegment, Room, Door, TextAnnotation, WallType } from '@/types/floorPlanTypes';
 
 interface DrawingEngineProps {
@@ -132,14 +133,14 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     if (currentMode === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
-        position: { x: rect.x, y: rect.y },
+        position: { x, y },
         width: 60,
         wallId: undefined,
         wallSegmentId: undefined,
         wallPosition: undefined,
         isEmbedded: false
       };
-      setDoors(prev => [...prev, newDoor]);
+      setDoors((prev: Door[]) => [...prev, newDoor]);
     }
 
     if (currentMode === 'text') {
@@ -150,9 +151,9 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         fontSize: 12,
         color: 'black'
       };
-      setTextAnnotations(prev => [...prev, newText]);
+      setTextAnnotations((prev: TextAnnotation[]) => [...prev, newText]);
     }
-  }, [currentMode, setDoors, setTextAnnotations]);
+  }, [currentMode, setDoors, setTextAnnotations, canvasRef]);
 
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -179,7 +180,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         type: WallType.INTERIOR
       };
       
-      setWallSegments(prev => [...prev, newWall]);
+      setWallSegments((prev: WallSegment[]) => [...prev, newWall]);
       if (onWallComplete) onWallComplete(newWall);
       
       startPoint.current = null;
@@ -194,7 +195,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     }
   }, [currentMode, finishWallDrawing]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);

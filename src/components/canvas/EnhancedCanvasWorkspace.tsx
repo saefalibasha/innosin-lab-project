@@ -244,7 +244,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
           start: tempWallStart.current,
           end: { x, y },
           thickness: 100,
-          color: 'black'
+          color: 'black',
+          type: WallType.INTERIOR
         };
         setWallSegments(prev => [...prev, newWall]);
         tempWallStart.current = null;
@@ -259,7 +260,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     if (currentMode === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
-        position: { x: rect.x, y: rect.y },
+        position: { x, y },
         width: 60,
         wallId: undefined,
         isEmbedded: false
@@ -320,7 +321,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         start: tempWallStart.current,
         end: { x, y },
         thickness: 100,
-        color: 'rgba(0, 0, 0, 0.5)'
+        color: 'rgba(0, 0, 0, 0.5)',
+        type: WallType.INTERIOR
       };
       tempWallSegments.current.push(newWall);
     }
