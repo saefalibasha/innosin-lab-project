@@ -1,7 +1,6 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
-import { useDrag } from 'react-dnd';
-import { ItemTypes } from '@/utils/constants';
 import { toast } from 'sonner';
 import { formatMeasurement, canvasToMm, mmToCanvas } from '@/utils/measurements';
 
@@ -47,11 +46,10 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   onClearAll
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const tempWallStart = useRef<Point | null>(null);
   const tempRoomPoints = useRef<Point[]>([]);
   const tempWallSegments = useRef<WallSegment[]>([]);
-  const selectedProducts = useRef<string[]>([]);
-  const setSelectedProducts = useRef<React.Dispatch<React.SetStateAction<string[]>>>([].splice(0, 0) as any);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -184,7 +182,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   };
 
   const drawProduct = (ctx: CanvasRenderingContext2D, product: PlacedProduct, scale: number) => {
-    const isSelected = selectedProducts.current.includes(product.id);
+    const isSelected = selectedProducts.includes(product.id);
     const selectionOffset = isSelected ? 5 : 0;
 
     ctx.fillStyle = product.color;
@@ -262,7 +260,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     if (currentMode === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
-        position: { x: rect.x, y: rect.y },
+        position: { x, y },
         width: 60,
         wallId: undefined,
         isEmbedded: false
@@ -329,7 +327,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     }
   };
 
-  const handleCanvasDrop = (e: React.DragEvent<HTMLCanvasElement>) => {
+  const handleCanvasDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const productData = e.dataTransfer.getData('product');
     if (!productData) return;
@@ -367,14 +365,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     }
   };
 
-  const handleWallComplete = (wall: WallSegment) => {
-    setWallSegments((prev: WallSegment[]) => [...prev, wall]);
-  };
-
-  const handleRoomComplete = (room: Room) => {
-    setRooms((prev: Room[]) => [...prev, room]);
-  };
-
   const handleProductSelect = (productId: string, multiSelect: boolean = false) => {
     if (multiSelect) {
       setSelectedProducts((prev: string[]) => 
@@ -395,8 +385,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     >
       <canvas
         ref={canvasRef}
-        width={1200}
-        height={800}
+        width={800}
+        height={600}
         className="w-full h-full bg-white cursor-crosshair"
         onClick={handleCanvasClick}
         onMouseMove={handleCanvasMouseMove}

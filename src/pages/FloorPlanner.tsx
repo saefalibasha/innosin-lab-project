@@ -43,8 +43,8 @@ const FloorPlanner = () => {
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   
-  // Enhanced measurement system
-  const [scale, setScale] = useState(0.2); // pixels per mm
+  // Enhanced measurement system - Fixed scale
+  const [scale] = useState(0.3); // Fixed scale, no zoom
   const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
@@ -69,9 +69,9 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions
-  const CANVAS_WIDTH = 1200;
-  const CANVAS_HEIGHT = 800;
+  // Canvas dimensions - smaller canvas
+  const CANVAS_WIDTH = 800;
+  const CANVAS_HEIGHT = 600;
 
   // Enhanced product management
   const handleProductDrag = useCallback((product: any) => {
@@ -178,7 +178,6 @@ const FloorPlanner = () => {
         setTextAnnotations(data.textAnnotations || []);
         setWallSegments(data.wallSegments || []);
         setRooms(data.rooms || []);
-        setScale(data.scale || 0.2);
         setGridSize(data.gridSize || GRID_SIZES.standard);
         
         if (data.settings) {
@@ -203,7 +202,6 @@ const FloorPlanner = () => {
     setWallSegments([]);
     setRooms([]);
     setSelectedProducts([]);
-    setScale(0.2);
     setGridSize(GRID_SIZES.standard);
     toast.success('Floor plan cleared');
   }, []);
@@ -358,7 +356,7 @@ const FloorPlanner = () => {
             <span>Products: {placedProducts.length}</span>
             <span>Walls: {wallSegments.length}</span>
             <span>Doors: {doors.length}</span>
-            <span>Scale: {scale.toFixed(4)} px/mm</span>
+            <span>Scale: Fixed (No Zoom)</span>
             {roomStatistics && (
               <>
                 <span>Total Area: {formatMeasurement(roomStatistics.totalArea, { unit: 'mm', precision: 0, showUnit: true })}</span>
@@ -369,8 +367,8 @@ const FloorPlanner = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Enhanced Left Sidebar with Tabs */}
-          <div className="lg:col-span-1 space-y-4">
+          {/* Enhanced Left Sidebar - Made bigger (2/5 of screen) */}
+          <div className="lg:col-span-2 space-y-4">
             <TabbedSidebar
               onProductDrag={handleProductDrag}
               currentTool={currentMode}
@@ -380,9 +378,9 @@ const FloorPlanner = () => {
             />
           </div>
 
-          {/* Enhanced Main Content Area */}
-          <div className="lg:col-span-4 space-y-4">
-            {/* Enhanced Horizontal Toolbar */}
+          {/* Enhanced Main Content Area - Made smaller (3/5 of screen) */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Enhanced Horizontal Toolbar - Remove zoom controls */}
             <HorizontalToolbar
               currentTool={currentMode}
               onToolChange={handleToolChange}
@@ -392,9 +390,9 @@ const FloorPlanner = () => {
               onRedo={handleRedo}
               canUndo={canUndo}
               canRedo={canRedo}
-              onZoomIn={() => setScale(prev => Math.min(prev * 1.2, 2))}
-              onZoomOut={() => setScale(prev => Math.max(prev / 1.2, 0.05))}
-              onFitToView={() => setScale(0.2)}
+              onZoomIn={() => {}} // Disabled
+              onZoomOut={() => {}} // Disabled
+              onFitToView={() => {}} // Disabled
               onToggleGrid={handleToggleGrid}
               showGrid={showGrid}
               scale={scale}
@@ -411,7 +409,7 @@ const FloorPlanner = () => {
               </div>
             )}
 
-            {/* Enhanced Canvas */}
+            {/* Enhanced Canvas - Smaller */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -422,7 +420,7 @@ const FloorPlanner = () => {
                       {gridSize}mm grid
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      {(1/scale).toFixed(2)}mm/px
+                      Fixed Scale
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       Mode: {currentMode}

@@ -13,10 +13,7 @@ import {
   DoorOpen, 
   Undo, 
   Redo, 
-  ZoomIn, 
-  ZoomOut, 
-  Grid3X3,
-  Maximize2
+  Grid3X3
 } from 'lucide-react';
 
 type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
@@ -47,12 +44,8 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
   onRedo,
   canUndo,
   canRedo,
-  onZoomIn,
-  onZoomOut,
-  onFitToView,
   onToggleGrid,
-  showGrid,
-  scale
+  showGrid
 }) => {
   const tools = [
     { id: 'select' as DrawingTool, icon: MousePointer, label: 'Select', shortcut: 'S' },
@@ -107,42 +100,6 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
           title="Redo (Ctrl+Y)"
         >
           <Redo className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* View Controls */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onZoomOut}
-          className="h-8 w-8 p-0"
-          title="Zoom Out"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <span className="text-xs text-muted-foreground min-w-[3rem] text-center">
-          {Math.round(scale * 100)}%
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onZoomIn}
-          className="h-8 w-8 p-0"
-          title="Zoom In"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onFitToView}
-          className="h-8 w-8 p-0"
-          title="Fit to View"
-        >
-          <Maximize2 className="h-4 w-4" />
         </Button>
       </div>
 
