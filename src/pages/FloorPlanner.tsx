@@ -2,36 +2,25 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Save, 
   Download, 
   Upload, 
   Trash2, 
-  Undo, 
-  Redo, 
-  Grid3X3, 
-  Ruler,
-  Eye,
-  EyeOff,
-  Settings,
   Info,
-  ZoomIn,
-  ZoomOut,
   RotateCcw,
-  Move,
-  Copy,
-  Layers
+  Copy
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation, WallType } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
-import EnhancedProductLibrary from '@/components/floorplan/EnhancedProductLibrary';
-import CompactToolPanel from '@/components/CompactToolPanel';
+import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
+import SeriesSelector from '@/components/floorplan/SeriesSelector';
+import ProductStatistics from '@/components/floorplan/ProductStatistics';
+import QuickHelp from '@/components/floorplan/QuickHelp';
+import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
 
 type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
 
@@ -58,12 +47,13 @@ const FloorPlanner = () => {
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState(true);
-  const [showMeasurements, setShowMeasurements] = useState(false);
   const [showProducts, setShowProducts] = useState(true);
   
   // UI state
-  const [activeTab, setActiveTab] = useState('tools');
   const [projectName, setProjectName] = useState('Untitled Floor Plan');
+  
+  // Usage tracking
+  const { trackProductPlacement } = useProductUsageTracking();
   
   // History management
   const initialState: FloorPlanState = {
@@ -75,9 +65,9 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions
-  const CANVAS_WIDTH = 800;
-  const CANVAS_HEIGHT = 600;
+  // Larger canvas dimensions
+  const CANVAS_WIDTH = 1200;
+  const CANVAS_HEIGHT = 800;
   const GRID_SIZE = 20;
 
   // Utility functions
@@ -154,8 +144,7 @@ const FloorPlanner = () => {
       ctx.translate(product.position.x, product.position.y);
       ctx.rotate(product.rotation);
       
-      // Draw product rectangle
-      const width = product.dimensions.length * 100; // Convert to pixels
+      const width = product.dimensions.length * 100;
       const height = product.dimensions.width * 100;
       
       ctx.fillStyle = isSelected ? 'rgba(59, 130, 246, 0.3)' : product.color || '#6b7280';
@@ -165,7 +154,6 @@ const FloorPlanner = () => {
       ctx.fillRect(-width/2, -height/2, width, height);
       ctx.strokeRect(-width/2, -height/2, width, height);
       
-      // Draw product name
       ctx.fillStyle = '#000';
       ctx.font = '12px Arial';
       ctx.textAlign = 'center';
@@ -181,7 +169,7 @@ const FloorPlanner = () => {
       ctx.translate(door.position.x, door.position.y);
       ctx.rotate(door.rotation);
       
-      const width = door.width * 100; // Convert to pixels
+      const width = door.width * 100;
       
       ctx.strokeStyle = '#dc2626';
       ctx.lineWidth = 3;
@@ -190,7 +178,6 @@ const FloorPlanner = () => {
       ctx.lineTo(width/2, 0);
       ctx.stroke();
       
-      // Draw door swing arc
       ctx.strokeStyle = '#dc2626';
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -208,15 +195,12 @@ const FloorPlanner = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Clear canvas
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Apply transformations
     ctx.save();
     ctx.scale(scale, scale);
     ctx.translate(offset.x / scale, offset.y / scale);
     
-    // Draw components
     drawGrid(ctx);
     drawRoom(ctx);
     drawProducts(ctx);
@@ -276,21 +260,11 @@ const FloorPlanner = () => {
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing) return;
-    
-    const point = snapToGrid(getCanvasCoordinates(e));
-    
-    // Handle different tools during mouse move
-    switch (currentTool) {
-      case 'pan':
-        // Handle panning
-        break;
-    }
-  }, [isDrawing, currentTool, getCanvasCoordinates, snapToGrid]);
+    // Handle mouse move for different tools
+  }, [isDrawing, currentTool]);
 
   const handleMouseUp = useCallback(() => {
     setIsDrawing(false);
-    
-    // Save state for undo/redo
     saveState({
       roomPoints,
       placedProducts,
@@ -298,10 +272,6 @@ const FloorPlanner = () => {
       textAnnotations
     });
   }, [roomPoints, placedProducts, doors, textAnnotations, saveState]);
-
-  const handleToolChange = (tool: DrawingTool) => {
-    setCurrentTool(tool);
-  };
 
   const handleProductDrag = useCallback((product: any) => {
     setDraggedProduct(product);
@@ -322,9 +292,10 @@ const FloorPlanner = () => {
     };
     
     setPlacedProducts(prev => [...prev, newProduct]);
+    trackProductPlacement(newProduct);
     setDraggedProduct(null);
     toast.success(`Added ${newProduct.name} to floor plan`);
-  }, [draggedProduct, getCanvasCoordinates]);
+  }, [draggedProduct, getCanvasCoordinates, trackProductPlacement]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -498,18 +469,6 @@ const FloorPlanner = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleUndo, handleRedo, handleSave, selectedProducts, placedProducts, handleDeleteSelected, handleRotateSelected]);
 
-  const productStats = useMemo(() => {
-    const categories = placedProducts.reduce((acc, product) => {
-      acc[product.category || 'Other'] = (acc[product.category || 'Other'] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    
-    return {
-      total: placedProducts.length,
-      categories
-    };
-  }, [placedProducts]);
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto p-4">
@@ -537,155 +496,45 @@ const FloorPlanner = () => {
           
           {/* Quick Stats */}
           <div className="flex items-center space-x-4 text-sm text-gray-600">
-            <span>Products: {productStats.total}</span>
+            <span>Products: {placedProducts.length}</span>
             <span>Room Points: {roomPoints.length}</span>
             <span>Doors: {doors.length}</span>
             <span>Scale: {Math.round(scale * 100)}%</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar - Tools and Controls */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Left Sidebar */}
           <div className="lg:col-span-1 space-y-4">
-            {/* Compact Tool Panel */}
-            <CompactToolPanel
+            <ProductStatistics placedProducts={placedProducts} />
+            <SeriesSelector 
+              onProductDrag={handleProductDrag}
               currentTool={currentTool}
-              onToolChange={handleToolChange}
+            />
+            <QuickHelp />
+          </div>
+
+          {/* Main Content Area */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Horizontal Toolbar */}
+            <HorizontalToolbar
+              currentTool={currentTool}
+              onToolChange={setCurrentTool}
               selectedProducts={selectedProducts}
               onClearSelection={handleClearSelection}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
               onFitToView={handleFitToView}
               onToggleGrid={handleToggleGrid}
               showGrid={showGrid}
+              scale={scale}
             />
 
-            {/* Tabbed Content */}
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="products">Products</TabsTrigger>
-                <TabsTrigger value="layers">Layers</TabsTrigger>
-                <TabsTrigger value="settings">Settings</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="products" className="mt-4">
-                <EnhancedProductLibrary
-                  onProductDrag={handleProductDrag}
-                  currentTool={currentTool}
-                />
-              </TabsContent>
-              
-              <TabsContent value="layers" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Layers className="h-4 w-4" />
-                      Layers
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Room Outline</Label>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Products ({placedProducts.length})</Label>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => setShowProducts(!showProducts)}
-                      >
-                        {showProducts ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Doors ({doors.length})</Label>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs">Grid</Label>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={handleToggleGrid}
-                      >
-                        {showGrid ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="settings" className="mt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      Settings
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-xs">View Options</Label>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs">Show Measurements</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setShowMeasurements(!showMeasurements)}
-                          >
-                            {showMeasurements ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-2">
-                      <Label className="text-xs">File Operations</Label>
-                      <div className="space-y-2">
-                        <Button variant="outline" size="sm" className="w-full" onClick={handleSave}>
-                          <Download className="h-3 w-3 mr-2" />
-                          Export
-                        </Button>
-                        <Button variant="outline" size="sm" className="w-full" asChild>
-                          <label>
-                            <Upload className="h-3 w-3 mr-2" />
-                            Import
-                            <input
-                              type="file"
-                              accept=".json"
-                              onChange={handleLoad}
-                              className="hidden"
-                            />
-                          </label>
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm" 
-                          className="w-full"
-                          onClick={handleClear}
-                        >
-                          <Trash2 className="h-3 w-3 mr-2" />
-                          Clear All
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Main Canvas Area */}
-          <div className="lg:col-span-2">
+            {/* Large Canvas */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -693,33 +542,25 @@ const FloorPlanner = () => {
                   
                   {/* Canvas Controls */}
                   <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
+                    <Button variant="outline" size="sm" asChild>
+                      <label>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Load
+                        <input
+                          type="file"
+                          accept=".json"
+                          onChange={handleLoad}
+                          className="hidden"
+                        />
+                      </label>
+                    </Button>
+                    <Button 
+                      variant="destructive" 
                       size="sm"
-                      onClick={handleUndo}
-                      disabled={!canUndo}
+                      onClick={handleClear}
                     >
-                      <Undo className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRedo}
-                      disabled={!canRedo}
-                    >
-                      <Redo className="h-4 w-4" />
-                    </Button>
-                    
-                    <Separator orientation="vertical" className="h-6" />
-                    
-                    <Button variant="outline" size="sm" onClick={handleZoomOut}>
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <span className="text-xs text-gray-500 min-w-[3rem] text-center">
-                      {Math.round(scale * 100)}%
-                    </span>
-                    <Button variant="outline" size="sm" onClick={handleZoomIn}>
-                      <ZoomIn className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear
                     </Button>
                   </div>
                 </div>
@@ -743,16 +584,14 @@ const FloorPlanner = () => {
                 {/* Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
                   <span>Tool: {currentTool}</span>
+                  <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>
                     {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
                   </span>
                 </div>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Right Sidebar - Properties and Info */}
-          <div className="lg:col-span-1 space-y-4">
+            
             {/* Selection Properties */}
             {selectedProducts.length > 0 && (
               <Card>
@@ -795,7 +634,7 @@ const FloorPlanner = () => {
                   
                   {selectedProducts.length === 1 && (
                     <div className="space-y-2 pt-2 border-t">
-                      <Label className="text-xs">Properties</Label>
+                      <span className="text-xs font-medium">Properties:</span>
                       {(() => {
                         const product = placedProducts.find(p => p.id === selectedProducts[0]);
                         if (!product) return null;
@@ -815,62 +654,6 @@ const FloorPlanner = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Project Statistics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Project Statistics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span>Total Products:</span>
-                    <Badge variant="secondary">{productStats.total}</Badge>
-                  </div>
-                  
-                  {Object.entries(productStats.categories).map(([category, count]) => (
-                    <div key={category} className="flex justify-between text-xs">
-                      <span>{category}:</span>
-                      <Badge variant="outline">{count}</Badge>
-                    </div>
-                  ))}
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span>Room Points:</span>
-                    <Badge variant="secondary">{roomPoints.length}</Badge>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span>Doors:</span>
-                    <Badge variant="secondary">{doors.length}</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Help */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Quick Help</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-xs text-gray-600">
-                  <div><strong>Select:</strong> Click products to select</div>
-                  <div><strong>Wall:</strong> Click to add room points</div>
-                  <div><strong>Products:</strong> Drag from library to canvas</div>
-                  <div><strong>Shortcuts:</strong></div>
-                  <div className="ml-2">
-                    <div>Ctrl+Z: Undo</div>
-                    <div>Ctrl+S: Save</div>
-                    <div>Del: Delete selected</div>
-                    <div>R: Rotate selected</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
