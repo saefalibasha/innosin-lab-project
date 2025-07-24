@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -14,6 +15,7 @@ import {
   Move3D,
   Maximize2 // Using Maximize2 instead of Fit
 } from 'lucide-react';
+import { DrawingTool } from '@/types/floorPlanTypes';
 
 interface CompactToolPanelProps {
   currentTool: string;
@@ -24,8 +26,6 @@ interface CompactToolPanelProps {
   onToggleGrid: () => void;
   showGrid: boolean;
 }
-
-type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
 
 const CompactToolPanel: React.FC<CompactToolPanelProps> = ({ 
   currentTool, 
