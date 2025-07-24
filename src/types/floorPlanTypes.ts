@@ -27,6 +27,7 @@ export interface WallSegment {
 
 export interface PlacedProduct {
   id: string;
+  productId: string;
   name: string;
   category: string;
   dimensions: Dimensions;
@@ -34,6 +35,10 @@ export interface PlacedProduct {
   rotation: number;
   scale: number;
   color?: string;
+  finishes?: string[];
+  variants?: string[];
+  modelPath?: string;
+  thumbnail?: string;
 }
 
 export interface Door {
@@ -43,6 +48,8 @@ export interface Door {
   rotation: number;
   swingDirection: 'inward' | 'outward';
   type: 'single' | 'double';
+  wallSegmentId?: string;
+  wallPosition?: number;
 }
 
 export interface TextAnnotation {
@@ -71,3 +78,26 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
+export type DrawingTool = DrawingMode; // Unify the types
+
+export interface SnapSettings {
+  enabled: boolean;
+  strength: 'strong' | 'medium' | 'weak';
+  snapToGrid: boolean;
+  snapToObjects: boolean;
+  snapToAlignment: boolean;
+}
+
+export interface GridSettings {
+  size: number; // in mm
+  showMajorLines: boolean;
+  showMinorLines: boolean;
+  opacity: number;
+}
+
+export interface ViewportSettings {
+  zoom: number;
+  pan: Point;
+  showRulers: boolean;
+  showMeasurements: boolean;
+}

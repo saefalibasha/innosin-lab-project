@@ -1,9 +1,7 @@
-
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { 
   Save, 
@@ -281,10 +279,23 @@ const FloorPlanner = () => {
         case 'Escape':
           setSelectedProducts([]);
           setShowRoomCreator(false);
+          setCurrentMode('select');
           break;
         case 'F11':
           e.preventDefault();
           handleToggleFullscreen();
+          break;
+        case 'v':
+          setCurrentMode('select');
+          break;
+        case 'w':
+          setCurrentMode('wall');
+          break;
+        case 'q':
+          setCurrentMode('room');
+          break;
+        case 'd':
+          setCurrentMode('door');
           break;
       }
     };
@@ -309,8 +320,8 @@ const FloorPlanner = () => {
   }, [rooms]);
 
   const containerClass = isFullscreen 
-    ? "fixed inset-0 z-50 bg-gray-50" 
-    : "min-h-screen bg-gray-50";
+    ? "fixed inset-0 z-50 bg-background" 
+    : "min-h-screen bg-background";
 
   return (
     <div className={containerClass}>
@@ -319,8 +330,8 @@ const FloorPlanner = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Enhanced Floor Planner</h1>
-              <p className="text-gray-600">Design your laboratory layout with room-based precision</p>
+              <h1 className="text-3xl font-bold text-foreground">Enhanced Floor Planner</h1>
+              <p className="text-muted-foreground">Design your laboratory layout with room-based precision</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -341,7 +352,7 @@ const FloorPlanner = () => {
           </div>
           
           {/* Enhanced Stats */}
-          <div className="flex items-center space-x-6 text-sm text-gray-600">
+          <div className="flex items-center space-x-6 text-sm text-muted-foreground">
             <span>Rooms: {rooms.length}</span>
             <span>Products: {placedProducts.length}</span>
             <span>Walls: {wallSegments.length}</span>
@@ -387,16 +398,6 @@ const FloorPlanner = () => {
             </Card>
 
             <ProductStatistics placedProducts={placedProducts} />
-            <MeasurementInput
-              scale={scale}
-              gridSize={gridSize}
-              onScaleChange={setScale}
-              onGridSizeChange={setGridSize}
-              showGrid={showGrid}
-              onToggleGrid={handleToggleGrid}
-              showMeasurements={showMeasurements}
-              onToggleMeasurements={handleToggleMeasurements}
-            />
             <SeriesSelector 
               onProductDrag={handleProductDrag}
               currentTool={currentMode}
@@ -498,7 +499,7 @@ const FloorPlanner = () => {
                 />
                 
                 {/* Enhanced Canvas Status */}
-                <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span>Mode: {currentMode}</span>
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>

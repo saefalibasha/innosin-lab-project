@@ -1,9 +1,10 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, SnapSettings, GridSettings, ViewportSettings } from '@/types/floorPlanTypes';
 import { mmToCanvas, canvasToMm, formatMeasurement } from '@/utils/measurements';
-import { calculateSnapPosition, SnapResult } from '@/utils/objectSnapping';
+import { SnapSystem } from '@/utils/snapSystem';
 import DrawingEngine from './DrawingEngine';
+import GridSystem from './GridSystem';
 import IntelligentMeasurementOverlay from '../IntelligentMeasurementOverlay';
 
 interface EnhancedCanvasWorkspaceProps {
@@ -52,11 +53,37 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState<Point>({ x: 0, y: 0 });
+  
+  // Enhanced viewport state
+  const [viewportSettings, setViewportSettings] = useState<ViewportSettings>({
+    zoom: 1,
+    pan: { x: 0, y: 0 },
+    showRulers: true,
+    showMeasurements: true
+  });
+
+  // Enhanced grid settings
+  const [gridSettings, setGridSettings] = useState<GridSettings>({
+    size: gridSize,
+    showMajorLines: true,
+    showMinorLines: true,
+    opacity: 0.3
+  });
+
+  // Enhanced snap settings
+  const [snapSettings, setSnapSettings] = useState<SnapSettings>({
+    enabled: true,
+    strength: 'medium',
+    snapToGrid: true,
+    snapToObjects: true,
+    snapToAlignment: true
+  });
 
   const CANVAS_WIDTH = 1200;
   const CANVAS_HEIGHT = 800;
+
+  // Initialize snap system
+  const snapSystem = new SnapSystem(snapSettings, gridSettings.size, scale);
 
   // Check if point is inside room boundary
   const isPointInRoom = useCallback((point: Point, room: Room): boolean => {
@@ -110,37 +137,13 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   }, [rooms, placedProducts, scale, isPointInRoom]);
 
   // Enhanced drawing functions
-  const drawGrid = useCallback((ctx: CanvasRenderingContext2D) => {
-    if (!showGrid) return;
-    
-    const gridSizePx = mmToCanvas(gridSize, scale * zoom);
-    
-    // Minor grid lines
-    ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
-    ctx.lineWidth = 0.5;
-    
-    for (let x = (pan.x % gridSizePx); x <= CANVAS_WIDTH; x += gridSizePx) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, CANVAS_HEIGHT);
-      ctx.stroke();
-    }
-    
-    for (let y = (pan.y % gridSizePx); y <= CANVAS_HEIGHT; y += gridSizePx) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(CANVAS_WIDTH, y);
-      ctx.stroke();
-    }
-  }, [showGrid, gridSize, scale, zoom, pan]);
-
   const drawRooms = useCallback((ctx: CanvasRenderingContext2D) => {
     rooms.forEach(room => {
       if (room.points.length < 3) return;
       
-      ctx.strokeStyle = '#374151';
+      ctx.strokeStyle = 'hsl(var(--foreground))';
       ctx.lineWidth = 3;
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.05)';
+      ctx.fillStyle = 'hsl(var(--primary) / 0.05)';
       
       ctx.beginPath();
       ctx.moveTo(room.points[0].x, room.points[0].y);
@@ -172,8 +175,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
             showUnit: true
           });
           
-          ctx.fillStyle = '#1f2937';
-          ctx.font = '12px Arial';
+          ctx.fillStyle = 'hsl(var(--foreground))';
+          ctx.font = '12px system-ui';
           ctx.textAlign = 'center';
           ctx.fillText(measurement, midX, midY - 5);
         }
@@ -183,7 +186,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   const drawWalls = useCallback((ctx: CanvasRenderingContext2D) => {
     wallSegments.forEach(wall => {
-      ctx.strokeStyle = '#6b7280';
+      ctx.strokeStyle = 'hsl(var(--muted-foreground))';
       ctx.lineWidth = mmToCanvas(wall.thickness || 100, scale);
       
       ctx.beginPath();
@@ -206,27 +209,27 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       const height = mmToCanvas(product.dimensions.width, scale);
       
       ctx.fillStyle = isValidPlacement 
-        ? (isSelected ? 'rgba(59, 130, 246, 0.3)' : product.color || '#6b7280')
-        : 'rgba(239, 68, 68, 0.3)';
+        ? (isSelected ? 'hsl(var(--primary) / 0.3)' : product.color || 'hsl(var(--muted))')
+        : 'hsl(var(--destructive) / 0.3)';
       ctx.strokeStyle = isValidPlacement
-        ? (isSelected ? '#3b82f6' : '#374151')
-        : '#ef4444';
+        ? (isSelected ? 'hsl(var(--primary))' : 'hsl(var(--foreground))')
+        : 'hsl(var(--destructive))';
       ctx.lineWidth = isSelected ? 2 : 1;
       
       ctx.fillRect(-width/2, -height/2, width, height);
       ctx.strokeRect(-width/2, -height/2, width, height);
       
       // Product label
-      ctx.fillStyle = '#000';
-      ctx.font = '10px Arial';
+      ctx.fillStyle = 'hsl(var(--foreground))';
+      ctx.font = '10px system-ui';
       ctx.textAlign = 'center';
       ctx.fillText(product.name, 0, height/2 + 12);
       
       // Dimensions label
       if (showMeasurements) {
         const dimText = `${product.dimensions.length}×${product.dimensions.width}mm`;
-        ctx.fillStyle = '#666';
-        ctx.font = '8px Arial';
+        ctx.fillStyle = 'hsl(var(--muted-foreground))';
+        ctx.font = '8px system-ui';
         ctx.fillText(dimText, 0, height/2 + 24);
       }
       
@@ -242,7 +245,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       
       const width = mmToCanvas(door.width * 1000, scale);
       
-      ctx.strokeStyle = '#dc2626';
+      ctx.strokeStyle = 'hsl(var(--destructive))';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(-width/2, 0);
@@ -250,7 +253,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.stroke();
       
       // Door swing arc
-      ctx.strokeStyle = '#dc2626';
+      ctx.strokeStyle = 'hsl(var(--destructive))';
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.arc(door.swingDirection === 'inward' ? -width/2 : width/2, 0, width/2, 0, Math.PI/2);
@@ -270,33 +273,32 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
     ctx.save();
-    ctx.scale(zoom, zoom);
-    ctx.translate(pan.x / zoom, pan.y / zoom);
+    ctx.scale(viewportSettings.zoom, viewportSettings.zoom);
+    ctx.translate(viewportSettings.pan.x / viewportSettings.zoom, viewportSettings.pan.y / viewportSettings.zoom);
     
-    drawGrid(ctx);
     drawRooms(ctx);
     drawWalls(ctx);
     drawProducts(ctx);
     drawDoors(ctx);
     
     ctx.restore();
-  }, [zoom, pan, drawGrid, drawRooms, drawWalls, drawProducts, drawDoors]);
+  }, [viewportSettings, drawRooms, drawWalls, drawProducts, drawDoors]);
 
-  // Enhanced product drag handling
+  // Enhanced product drag handling with snap system
   const handleProductDrag = useCallback((product: PlacedProduct, newPosition: Point) => {
-    const snapResult = calculateSnapPosition(product, placedProducts, newPosition, scale, gridSize);
-    const finalPosition = snapResult.position;
+    const snapResult = snapSystem.snapPoint(newPosition, placedProducts, wallSegments, rooms);
+    const finalPosition = snapResult.point;
     
     if (isValidProductPlacement(product, finalPosition)) {
       setPlacedProducts(prev => prev.map(p => 
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
-  }, [placedProducts, scale, gridSize, isValidProductPlacement, setPlacedProducts]);
+  }, [placedProducts, wallSegments, rooms, isValidProductPlacement, snapSystem]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
     setWallSegments(prev => [...prev, wall]);
-  }, [setWallSegments]);
+  }, []);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     if (points.length >= 3) {
@@ -339,23 +341,26 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
     
-    const point = {
+    const rawPoint = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top
     };
     
-    if (isValidProductPlacement(draggedProduct, point)) {
+    const snapResult = snapSystem.snapPoint(rawPoint, placedProducts, wallSegments, rooms);
+    const finalPoint = snapResult.point;
+    
+    if (isValidProductPlacement(draggedProduct, finalPoint)) {
       const newProduct: PlacedProduct = {
         ...draggedProduct,
         id: `${draggedProduct.id}-${Date.now()}`,
-        position: point,
+        position: finalPoint,
         rotation: 0,
         scale: 1
       };
       
       setPlacedProducts(prev => [...prev, newProduct]);
     }
-  }, [draggedProduct, isValidProductPlacement, setPlacedProducts]);
+  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -364,9 +369,12 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const handleWheel = useCallback((e: WheelEvent) => {
     e.preventDefault();
     const zoomFactor = 1.1;
-    const newZoom = e.deltaY > 0 ? zoom / zoomFactor : zoom * zoomFactor;
-    setZoom(Math.max(0.1, Math.min(3, newZoom)));
-  }, [zoom]);
+    const newZoom = e.deltaY > 0 ? viewportSettings.zoom / zoomFactor : viewportSettings.zoom * zoomFactor;
+    setViewportSettings(prev => ({
+      ...prev,
+      zoom: Math.max(0.1, Math.min(3, newZoom))
+    }));
+  }, [viewportSettings.zoom]);
 
   // Event listeners
   useEffect(() => {
@@ -384,17 +392,39 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     render();
   }, [render]);
 
+  // Update grid settings when props change
+  useEffect(() => {
+    setGridSettings(prev => ({ ...prev, size: gridSize }));
+  }, [gridSize]);
+
   return (
-    <div className="relative border rounded-lg overflow-hidden bg-white shadow-lg">
+    <div className="relative border rounded-lg overflow-hidden bg-background shadow-lg">
+      {/* Canvas background */}
+      <div className="absolute inset-0 bg-background" />
+      
+      {/* Grid system */}
+      {showGrid && (
+        <GridSystem
+          canvasWidth={CANVAS_WIDTH}
+          canvasHeight={CANVAS_HEIGHT}
+          gridSettings={gridSettings}
+          viewportSettings={viewportSettings}
+          showRulers={viewportSettings.showRulers}
+        />
+      )}
+      
+      {/* Main canvas */}
       <canvas
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="block cursor-crosshair"
+        className="block cursor-crosshair relative z-10"
         onDrop={handleCanvasDrop}
         onDragOver={handleCanvasDragOver}
+        style={{ background: 'hsl(var(--background))' }}
       />
       
+      {/* Drawing engine */}
       <DrawingEngine
         canvasRef={canvasRef}
         currentMode={currentMode}
@@ -409,6 +439,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         rooms={rooms}
       />
       
+      {/* Measurement overlay */}
       <IntelligentMeasurementOverlay
         roomPoints={roomPoints}
         wallSegments={wallSegments}
