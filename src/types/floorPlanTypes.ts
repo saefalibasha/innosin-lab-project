@@ -23,6 +23,8 @@ export interface WallSegment {
   end: Point;
   type: WallType;
   thickness: number; // in mm
+  isSelected?: boolean;
+  connectedWalls?: string[]; // IDs of connected walls
 }
 
 export interface PlacedProduct {
@@ -49,7 +51,7 @@ export interface Door {
   swingDirection: 'inward' | 'outward';
   type: 'single' | 'double';
   wallSegmentId?: string;
-  wallPosition?: number;
+  wallPosition?: number; // 0-1 position along wall
 }
 
 export interface TextAnnotation {
@@ -78,7 +80,6 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
-export type DrawingTool = DrawingMode; // Unify the types
 
 export interface SnapSettings {
   enabled: boolean;
@@ -86,6 +87,7 @@ export interface SnapSettings {
   snapToGrid: boolean;
   snapToObjects: boolean;
   snapToAlignment: boolean;
+  snapToEndpoints: boolean;
 }
 
 export interface GridSettings {
@@ -100,4 +102,12 @@ export interface ViewportSettings {
   pan: Point;
   showRulers: boolean;
   showMeasurements: boolean;
+}
+
+export interface WallDrawingState {
+  isDrawing: boolean;
+  points: Point[];
+  currentPoint: Point | null;
+  thickness: number;
+  wallType: WallType;
 }

@@ -5,7 +5,9 @@ import { mmToCanvas, canvasToMm, formatMeasurement } from '@/utils/measurements'
 import { SnapSystem } from '@/utils/snapSystem';
 import DrawingEngine from './DrawingEngine';
 import GridSystem from './GridSystem';
-import IntelligentMeasurementOverlay from '../IntelligentMeasurementOverlay';
+import PolylineWallDrawing from './PolylineWallDrawing';
+import WallRenderer from './WallRenderer';
+import WallThicknessControl from './WallThicknessControl';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
@@ -50,9 +52,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedWalls, setSelectedWalls] = useState<string[]>([]);
   const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
+  const [wallThickness, setWallThickness] = useState(100); // Default 100mm
   
   // Enhanced viewport state
   const [viewportSettings, setViewportSettings] = useState<ViewportSettings>({
@@ -76,7 +80,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     strength: 'medium',
     snapToGrid: true,
     snapToObjects: true,
-    snapToAlignment: true
+    snapToAlignment: true,
+    snapToEndpoints: true
   });
 
   const CANVAS_WIDTH = 1200;
@@ -84,6 +89,22 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   // Initialize snap system
   const snapSystem = new SnapSystem(snapSettings, gridSettings.size, scale);
+
+  // Initialize wall renderer
+  const wallRenderer = WallRenderer({
+    walls: wallSegments,
+    scale,
+    zoom: viewportSettings.zoom,
+    selectedWalls,
+    onWallSelect: (wallId: string) => {
+      setSelectedWalls(prev => 
+        prev.includes(wallId) 
+          ? prev.filter(id => id !== wallId)
+          : [...prev, wallId]
+      );
+    },
+    showThickness: viewportSettings.zoom > 1.5
+  });
 
   // Check if point is inside room boundary
   const isPointInRoom = useCallback((point: Point, room: Room): boolean => {
@@ -184,18 +205,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     });
   }, [rooms, showMeasurements, scale]);
 
-  const drawWalls = useCallback((ctx: CanvasRenderingContext2D) => {
-    wallSegments.forEach(wall => {
-      ctx.strokeStyle = 'hsl(var(--muted-foreground))';
-      ctx.lineWidth = mmToCanvas(wall.thickness || 100, scale);
-      
-      ctx.beginPath();
-      ctx.moveTo(wall.start.x, wall.start.y);
-      ctx.lineTo(wall.end.x, wall.end.y);
-      ctx.stroke();
-    });
-  }, [wallSegments, scale]);
-
   const drawProducts = useCallback((ctx: CanvasRenderingContext2D) => {
     placedProducts.forEach(product => {
       const isSelected = selectedProducts.includes(product.id);
@@ -277,12 +286,12 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     ctx.translate(viewportSettings.pan.x / viewportSettings.zoom, viewportSettings.pan.y / viewportSettings.zoom);
     
     drawRooms(ctx);
-    drawWalls(ctx);
+    wallRenderer.renderWalls(ctx);
     drawProducts(ctx);
     drawDoors(ctx);
     
     ctx.restore();
-  }, [viewportSettings, drawRooms, drawWalls, drawProducts, drawDoors]);
+  }, [viewportSettings, drawRooms, wallRenderer, drawProducts, drawDoors]);
 
   // Enhanced product drag handling with snap system
   const handleProductDrag = useCallback((product: PlacedProduct, newPosition: Point) => {
@@ -294,11 +303,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
-  }, [placedProducts, wallSegments, rooms, isValidProductPlacement, snapSystem]);
+  }, [placedProducts, wallSegments, rooms, isValidProductPlacement, snapSystem, setPlacedProducts]);
 
-  const handleWallComplete = useCallback((wall: WallSegment) => {
-    setWallSegments(prev => [...prev, wall]);
-  }, []);
+  const handleWallComplete = useCallback((walls: WallSegment[]) => {
+    setWallSegments(prev => [...prev, ...walls]);
+  }, [setWallSegments]);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     if (points.length >= 3) {
@@ -360,7 +369,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       
       setPlacedProducts(prev => [...prev, newProduct]);
     }
-  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem]);
+  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem, setPlacedProducts]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -398,56 +407,76 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   }, [gridSize]);
 
   return (
-    <div className="relative border rounded-lg overflow-hidden bg-background shadow-lg">
-      {/* Canvas background */}
-      <div className="absolute inset-0 bg-background" />
-      
-      {/* Grid system */}
-      {showGrid && (
-        <GridSystem
-          canvasWidth={CANVAS_WIDTH}
-          canvasHeight={CANVAS_HEIGHT}
-          gridSettings={gridSettings}
-          viewportSettings={viewportSettings}
-          showRulers={viewportSettings.showRulers}
-        />
+    <div className="relative">
+      {/* Wall thickness control */}
+      {currentMode === 'wall' && (
+        <div className="absolute top-4 left-4 z-30">
+          <WallThicknessControl
+            thickness={wallThickness}
+            onChange={setWallThickness}
+          />
+        </div>
       )}
-      
-      {/* Main canvas */}
-      <canvas
-        ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        className="block cursor-crosshair relative z-10"
-        onDrop={handleCanvasDrop}
-        onDragOver={handleCanvasDragOver}
-        style={{ background: 'hsl(var(--background))' }}
-      />
-      
-      {/* Drawing engine */}
-      <DrawingEngine
-        canvasRef={canvasRef}
-        currentMode={currentMode}
-        scale={scale}
-        gridSize={gridSize}
-        showGrid={showGrid}
-        showMeasurements={showMeasurements}
-        onWallComplete={handleWallComplete}
-        onRoomUpdate={handleRoomUpdate}
-        roomPoints={roomPoints}
-        wallSegments={wallSegments}
-        rooms={rooms}
-      />
-      
-      {/* Measurement overlay */}
-      <IntelligentMeasurementOverlay
-        roomPoints={roomPoints}
-        wallSegments={wallSegments}
-        scale={scale}
-        showMeasurements={showMeasurements}
-        canvas={canvasRef.current}
-        units="mm"
-      />
+
+      {/* Canvas container */}
+      <div className="relative border rounded-lg overflow-hidden bg-background shadow-lg">
+        {/* Canvas background */}
+        <div className="absolute inset-0 bg-background" />
+        
+        {/* Grid system */}
+        {showGrid && (
+          <GridSystem
+            canvasWidth={CANVAS_WIDTH}
+            canvasHeight={CANVAS_HEIGHT}
+            gridSettings={gridSettings}
+            viewportSettings={viewportSettings}
+            showRulers={viewportSettings.showRulers}
+          />
+        )}
+        
+        {/* Main canvas */}
+        <canvas
+          ref={canvasRef}
+          width={CANVAS_WIDTH}
+          height={CANVAS_HEIGHT}
+          className="block cursor-crosshair relative z-10"
+          onDrop={handleCanvasDrop}
+          onDragOver={handleCanvasDragOver}
+          style={{ background: 'hsl(var(--background))' }}
+        />
+        
+        {/* Polyline wall drawing */}
+        {currentMode === 'wall' && (
+          <PolylineWallDrawing
+            canvasRef={canvasRef}
+            isActive={currentMode === 'wall'}
+            scale={scale}
+            gridSize={gridSize}
+            snapSystem={snapSystem}
+            onWallComplete={handleWallComplete}
+            existingWalls={wallSegments}
+            wallThickness={wallThickness}
+            showMeasurements={showMeasurements}
+          />
+        )}
+        
+        {/* Drawing engine for other modes */}
+        {currentMode !== 'wall' && (
+          <DrawingEngine
+            canvasRef={canvasRef}
+            currentMode={currentMode}
+            scale={scale}
+            gridSize={gridSize}
+            showGrid={showGrid}
+            showMeasurements={showMeasurements}
+            onWallComplete={handleWallComplete}
+            onRoomUpdate={handleRoomUpdate}
+            roomPoints={roomPoints}
+            wallSegments={wallSegments}
+            rooms={rooms}
+          />
+        )}
+      </div>
     </div>
   );
 };
