@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -6,17 +5,25 @@ import { Badge } from '@/components/ui/badge';
 import { 
   MousePointer, 
   Square, 
-  Minus, 
-  Hand, 
-  Eraser, 
-  RotateCcw, 
+  Home, 
   DoorOpen, 
-  Undo, 
-  Redo, 
-  ZoomIn, 
-  ZoomOut, 
-  Grid3X3,
-  Maximize2
+  Package, 
+  Type, 
+  Ruler, 
+  RotateCcw, 
+  Move, 
+  Trash2, 
+  Minus, 
+  PenTool, 
+  Hand, 
+  Eraser,
+  Undo,
+  Redo,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+  Grid,
+  X
 } from 'lucide-react';
 import { DrawingTool } from '@/types/floorPlanTypes';
 
@@ -53,130 +60,184 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
   showGrid,
   scale
 }) => {
-  const tools = [
-    { id: 'select' as DrawingTool, icon: MousePointer, label: 'Select', shortcut: 'S' },
-    { id: 'wall' as DrawingTool, icon: Square, label: 'Wall', shortcut: 'W' },
-    { id: 'interior-wall' as DrawingTool, icon: Minus, label: 'Interior', shortcut: 'I' },
-    { id: 'door' as DrawingTool, icon: DoorOpen, label: 'Door', shortcut: 'D' },
-    { id: 'pan' as DrawingTool, icon: Hand, label: 'Pan', shortcut: 'P' },
-    { id: 'eraser' as DrawingTool, icon: Eraser, label: 'Eraser', shortcut: 'E' },
-  ];
-
   return (
-    <div className="flex items-center gap-2 p-2 bg-background border rounded-lg">
-      {/* Drawing Tools */}
-      <div className="flex items-center gap-1">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
-          return (
-            <Button
-              key={tool.id}
-              variant={currentTool === tool.id ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onToolChange(tool.id)}
-              className="h-8 w-8 p-0"
-              title={`${tool.label} (${tool.shortcut})`}
-            >
-              <Icon className="h-4 w-4" />
-            </Button>
-          );
-        })}
-      </div>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* History Controls */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onUndo}
-          disabled={!canUndo}
-          className="h-8 w-8 p-0"
-          title="Undo (Ctrl+Z)"
-        >
-          <Undo className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRedo}
-          disabled={!canRedo}
-          className="h-8 w-8 p-0"
-          title="Redo (Ctrl+Y)"
-        >
-          <Redo className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* View Controls */}
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onZoomOut}
-          className="h-8 w-8 p-0"
-          title="Zoom Out"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </Button>
-        <span className="text-xs text-muted-foreground min-w-[3rem] text-center">
-          {Math.round(scale * 100)}%
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onZoomIn}
-          className="h-8 w-8 p-0"
-          title="Zoom In"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onFitToView}
-          className="h-8 w-8 p-0"
-          title="Fit to View"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <Separator orientation="vertical" className="h-6" />
-
-      {/* Grid Toggle */}
+    <div className="flex items-center space-x-2">
       <Button
-        variant={showGrid ? "default" : "ghost"}
+        variant={currentTool === 'select' ? 'default' : 'outline'}
         size="sm"
-        onClick={onToggleGrid}
-        className="h-8 w-8 p-0"
-        title="Toggle Grid"
+        onClick={() => onToolChange('select')}
       >
-        <Grid3X3 className="h-4 w-4" />
+        <MousePointer className="w-4 h-4 mr-2" />
+        Select
+      </Button>
+      <Button
+        variant={currentTool === 'wall' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('wall')}
+      >
+        <Square className="w-4 h-4 mr-2" />
+        Wall
+      </Button>
+      <Button
+        variant={currentTool === 'interior-wall' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('interior-wall')}
+      >
+        <Home className="w-4 h-4 mr-2" />
+        Int. Wall
+      </Button>
+      <Button
+        variant={currentTool === 'room' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('room')}
+      >
+        <Home className="w-4 h-4 mr-2" />
+        Room
+      </Button>
+      <Button
+        variant={currentTool === 'door' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('door')}
+      >
+        <DoorOpen className="w-4 h-4 mr-2" />
+        Door
+      </Button>
+      <Button
+        variant={currentTool === 'product' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('product')}
+      >
+        <Package className="w-4 h-4 mr-2" />
+        Product
+      </Button>
+      <Button
+        variant={currentTool === 'text' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('text')}
+      >
+        <Type className="w-4 h-4 mr-2" />
+        Text
       </Button>
 
-      {/* Selection Info */}
+      <Separator orientation="vertical" className="h-6" />
+
+      <Button
+        variant={currentTool === 'measure' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('measure')}
+      >
+        <Ruler className="w-4 h-4 mr-2" />
+        Measure
+      </Button>
+      <Button
+        variant={currentTool === 'rotate' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('rotate')}
+      >
+        <RotateCcw className="w-4 h-4 mr-2" />
+        Rotate
+      </Button>
+      <Button
+        variant={currentTool === 'move' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('move')}
+      >
+        <Move className="w-4 h-4 mr-2" />
+        Move
+      </Button>
+      <Button
+        variant={currentTool === 'delete' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('delete')}
+      >
+        <Trash2 className="w-4 h-4 mr-2" />
+        Delete
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
+      <Button
+        variant={currentTool === 'line' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('line')}
+      >
+        <Minus className="w-4 h-4 mr-2" />
+        Line
+      </Button>
+      <Button
+        variant={currentTool === 'freehand' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('freehand')}
+      >
+        <PenTool className="w-4 h-4 mr-2" />
+        Freehand
+      </Button>
+      <Button
+        variant={currentTool === 'pan' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('pan')}
+      >
+        <Hand className="w-4 h-4 mr-2" />
+        Pan
+      </Button>
+      <Button
+        variant={currentTool === 'eraser' ? 'default' : 'outline'}
+        size="sm"
+        onClick={() => onToolChange('eraser')}
+      >
+        <Eraser className="w-4 h-4 mr-2" />
+        Eraser
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
+      <Button variant="outline" size="sm" onClick={onUndo} disabled={!canUndo}>
+        <Undo className="w-4 h-4 mr-2" />
+        Undo
+      </Button>
+      <Button variant="outline" size="sm" onClick={onRedo} disabled={!canRedo}>
+        <Redo className="w-4 h-4 mr-2" />
+        Redo
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
+      <Button variant="outline" size="sm" onClick={onZoomIn}>
+        <ZoomIn className="w-4 h-4 mr-2" />
+        Zoom In
+      </Button>
+      <Button variant="outline" size="sm" onClick={onZoomOut}>
+        <ZoomOut className="w-4 h-4 mr-2" />
+        Zoom Out
+      </Button>
+      <Button variant="outline" size="sm" onClick={onFitToView}>
+        <Maximize2 className="w-4 h-4 mr-2" />
+        Fit to View
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
+      <Button variant={showGrid ? 'default' : 'outline'} size="sm" onClick={onToggleGrid}>
+        <Grid className="w-4 h-4 mr-2" />
+        {showGrid ? 'Hide Grid' : 'Show Grid'}
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
       {selectedProducts.length > 0 && (
-        <>
-          <Separator orientation="vertical" className="h-6" />
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs">
-              {selectedProducts.length} selected
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClearSelection}
-              className="h-6 px-2 text-xs"
-            >
-              Clear
-            </Button>
-          </div>
-        </>
+        <Badge variant="secondary" className="gap-1.5">
+          <Package className="h-2 w-2" />
+          {selectedProducts.length} Selected
+          <Button variant="ghost" size="icon" onClick={onClearSelection}>
+            <X className="h-3 w-3" />
+            <span className="sr-only">Clear selection</span>
+          </Button>
+        </Badge>
       )}
+
+      <div className="ml-2 text-sm text-gray-500">
+        Scale: {Math.round(scale * 100)}%
+      </div>
     </div>
   );
 };
