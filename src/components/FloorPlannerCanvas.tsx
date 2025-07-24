@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import CanvasWorkspace from './CanvasWorkspace';
-import FloorPlannerViewControls from './FloorPlannerViewControls';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
+import DrawingEngine from './canvas/DrawingEngine';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];
@@ -15,78 +15,62 @@ interface FloorPlannerCanvasProps {
   setDoors: (doors: Door[]) => void;
   textAnnotations: TextAnnotation[];
   setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  rooms: Room[];
+  setRooms: (rooms: Room[]) => void;
   scale: number;
-  currentTool: string;
+  currentMode: DrawingMode;
   showGrid: boolean;
-  showRuler: boolean;
+  showMeasurements: boolean;
+  gridSize: number;
   onClearAll: () => void;
-  canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
-const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
-  roomPoints,
-  setRoomPoints,
-  wallSegments,
-  setWallSegments,
-  placedProducts,
-  setPlacedProducts,
-  doors,
-  setDoors,
-  textAnnotations,
-  setTextAnnotations,
-  scale,
-  currentTool,
-  showGrid,
-  showRuler,
-  onClearAll,
-  canvasRef
-}) => {
-  const [currentZoom, setCurrentZoom] = useState(1);
-
-  const handleZoomIn = () => {
-    setCurrentZoom(prev => Math.min(prev * 1.2, 3));
+const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = (props) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  const handleWallComplete = (wall: WallSegment) => {
+    props.setWallSegments([...props.wallSegments, wall]);
   };
 
-  const handleZoomOut = () => {
-    setCurrentZoom(prev => Math.max(prev / 1.2, 0.1));
-  };
-
-  const handleFitToView = () => {
-    // This would calculate optimal zoom based on content
-    setCurrentZoom(1);
-  };
-
-  const handleResetView = () => {
-    setCurrentZoom(1);
+  const handleRoomUpdate = (points: Point[]) => {
+    props.setRoomPoints(points);
   };
 
   return (
-    <div className="h-full w-full relative">
+    <div className="relative w-full h-full">
       <CanvasWorkspace
-        roomPoints={roomPoints}
-        setRoomPoints={setRoomPoints}
-        wallSegments={wallSegments}
-        setWallSegments={setWallSegments}
-        placedProducts={placedProducts}
-        setPlacedProducts={setPlacedProducts}
-        doors={doors}
-        setDoors={setDoors}
-        textAnnotations={textAnnotations}
-        setTextAnnotations={setTextAnnotations}
-        scale={scale}
-        currentTool={currentTool}
-        showGrid={showGrid}
-        showRuler={showRuler}
-        onClearAll={onClearAll}
+        roomPoints={props.roomPoints}
+        setRoomPoints={props.setRoomPoints}
+        wallSegments={props.wallSegments}
+        setWallSegments={props.setWallSegments}
+        placedProducts={props.placedProducts}
+        setPlacedProducts={props.setPlacedProducts}
+        doors={props.doors}
+        setDoors={props.setDoors}
+        textAnnotations={props.textAnnotations}
+        setTextAnnotations={props.setTextAnnotations}
+        rooms={props.rooms}
+        setRooms={props.setRooms}
+        scale={props.scale}
+        currentMode={props.currentMode}
+        showGrid={props.showGrid}
+        showMeasurements={props.showMeasurements}
+        gridSize={props.gridSize}
+        onClearAll={props.onClearAll}
         canvasRef={canvasRef}
       />
-      
-      <FloorPlannerViewControls
-        onZoomIn={handleZoomIn}
-        onZoomOut={handleZoomOut}
-        onFitToView={handleFitToView}
-        onResetView={handleResetView}
-        currentZoom={currentZoom}
+      <DrawingEngine
+        canvasRef={canvasRef}
+        currentMode={props.currentMode}
+        scale={props.scale}
+        gridSize={props.gridSize}
+        showGrid={props.showGrid}
+        showMeasurements={props.showMeasurements}
+        onWallComplete={handleWallComplete}
+        onRoomUpdate={handleRoomUpdate}
+        roomPoints={props.roomPoints}
+        wallSegments={props.wallSegments}
+        rooms={props.rooms}
       />
     </div>
   );

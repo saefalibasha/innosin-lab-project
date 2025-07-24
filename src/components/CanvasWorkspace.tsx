@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
@@ -15,7 +15,7 @@ interface CanvasWorkspaceProps {
   rooms: Room[];
   setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
   scale: number;
-  currentMode: string;
+  currentMode: DrawingMode;
   showGrid: boolean;
   showMeasurements: boolean;
   gridSize: number;
@@ -36,7 +36,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   rooms,
   setRooms,
   scale,
-  currentMode: mode,
+  currentMode,
   showGrid,
   showMeasurements,
   gridSize,
@@ -210,7 +210,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     textAnnotations,
     rooms,
     scale,
-    mode,
+    currentMode,
     showGrid,
     showMeasurements,
     gridSize,
@@ -225,7 +225,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (mode === 'select') {
+    if (currentMode === 'select') {
       // Check if a product is clicked
       for (let i = placedProducts.length - 1; i >= 0; i--) {
         const product = placedProducts[i];
@@ -244,7 +244,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           return;
         }
       }
-    } else if (mode === 'wall') {
+    } else if (currentMode === 'wall') {
       // Start drawing a wall
       const newWall: WallSegment = {
         id: `wall-${Date.now()}`,
@@ -254,7 +254,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         color: '#94a3b8'
       };
       setWallSegments(prev => [...prev, newWall]);
-    } else if (mode === 'room') {
+    } else if (currentMode === 'room') {
       // Start drawing a room
       setRoomPoints(prev => [...prev, { x, y }]);
     }
@@ -285,7 +285,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         })
       );
       setDragStart({ x, y });
-    } else if (mode === 'wall') {
+    } else if (currentMode === 'wall') {
       // Update the wall end point
       setWallSegments(prev =>
         prev.map(wall => {
@@ -298,7 +298,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
           return wall;
         })
       );
-    } else if (mode === 'room') {
+    } else if (currentMode === 'room') {
       // Update the last room point
       setRoomPoints(prev =>
         prev.map((point, index) => {
@@ -322,7 +322,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (mode === 'wall') {
+    if (currentMode === 'wall') {
       // Finish drawing the wall
       setWallSegments(prev => {
         if (prev.length > 0) {
@@ -336,7 +336,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         }
         return prev;
       });
-    } else if (mode === 'room') {
+    } else if (currentMode === 'room') {
       // Finish drawing the room
       if (roomPoints.length > 2) {
         // Calculate area and perimeter
@@ -374,7 +374,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    if (mode === 'door') {
+    if (currentMode === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
         position: { x: rect.x, y: rect.y },
@@ -385,7 +385,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       setDoors(prev => [...prev, newDoor]);
     }
 
-    if (mode === 'text') {
+    if (currentMode === 'text') {
       const newText: TextAnnotation = {
         id: `text-${Date.now()}`,
         position: { x, y },

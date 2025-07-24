@@ -60,7 +60,12 @@ export interface TextAnnotation {
   color: string;
 }
 
-export type WallType = 'exterior' | 'interior' | 'partition';
+// Changed from type to enum so it can be used as a value
+export enum WallType {
+  EXTERIOR = 'exterior',
+  INTERIOR = 'interior',
+  PARTITION = 'partition'
+}
 
 export interface WallSegment {
   id: string;
