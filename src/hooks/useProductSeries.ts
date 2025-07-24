@@ -69,10 +69,15 @@ export const useProductSeries = () => {
 
       if (productsError) throw productsError;
 
-      // Group products by series
+      // Group products by series, filtering out products without thumbnails
       const seriesMap = new Map<string, ProductSeries>();
       
       products?.forEach(dbProduct => {
+        // Only include products that have a thumbnail_path
+        if (!dbProduct.thumbnail_path) {
+          return;
+        }
+
         const transformedProduct = transformDatabaseProduct(dbProduct);
         const seriesKey = dbProduct.product_series || dbProduct.category;
         
@@ -115,7 +120,10 @@ export const useProductSeries = () => {
         }
       });
 
-      setProductSeries(Array.from(seriesMap.values()));
+      // Filter out series that have no products (after filtering out products without photos)
+      const filteredSeries = Array.from(seriesMap.values()).filter(series => series.products.length > 0);
+      
+      setProductSeries(filteredSeries);
     } catch (err) {
       console.error('Error fetching product series:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch product series');
