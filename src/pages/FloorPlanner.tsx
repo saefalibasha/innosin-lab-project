@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { ProductSidebar } from '@/components/ProductSidebar';
 import { SettingsSidebar } from '@/components/SettingsSidebar';
-import { Toolbar } from '@/components/Toolbar';
-import { EnhancedCanvasWorkspace } from '@/components/canvas/EnhancedCanvasWorkspace';
+import Toolbar from '@/components/Toolbar';
+import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 
 const FloorPlanner: React.FC = () => {

@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -5,15 +6,15 @@ import { calculateSnapPosition } from '@/utils/objectSnapping';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
-  setRoomPoints: (points: Point[]) => void;
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   wallSegments: WallSegment[];
-  setWallSegments: (segments: WallSegment[]) => void;
+  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
   placedProducts: PlacedProduct[];
-  setPlacedProducts: (products: PlacedProduct[]) => void;
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
   doors: Door[];
-  setDoors: (doors: Door[]) => void;
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
   textAnnotations: TextAnnotation[];
-  setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
   scale: number;
   currentTool: string;
   showGrid: boolean;
@@ -71,7 +72,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     e.preventDefault();
   }, []);
 
-  const handleCanvasDrop = useCallback((e: React.DragEvent) => {
+  const handleProductDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
@@ -101,7 +102,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
     );
 
     setDraggedProduct(null);
-  }, [dragOffset, placedProducts, scale, draggedProduct, canvasRef, calculateSnapPosition, setPlacedProducts]);
+  }, [dragOffset, placedProducts, scale, draggedProduct, canvasRef, setPlacedProducts]);
 
   // Canvas resize observer
   useEffect(() => {
@@ -268,7 +269,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
         className="border border-gray-300 bg-white cursor-crosshair"
         style={{ cursor: currentTool === 'select' ? 'default' : 'crosshair' }}
         onDrop={handleProductDrop}
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={handleCanvasDragOver}
       />
     </div>
   );
