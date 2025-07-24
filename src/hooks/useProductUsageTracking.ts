@@ -76,7 +76,7 @@ export const useProductUsageTracking = () => {
     });
 
     // Track general usage
-    trackProductUsage(placedProduct.productId, placedProduct.name);
+    trackProductUsage(placedProduct.productId || placedProduct.id, placedProduct.name);
   }, [currentSession, trackProductUsage]);
 
   const removeProductFromSession = useCallback((productId: string) => {
@@ -127,7 +127,7 @@ export const useProductUsageTracking = () => {
     const productCounts = new Map<string, { product: PlacedProduct; count: number }>();
     
     currentSession.placedProducts.forEach(product => {
-      const key = product.productId;
+      const key = product.productId || product.id;
       if (productCounts.has(key)) {
         productCounts.get(key)!.count += 1;
       } else {

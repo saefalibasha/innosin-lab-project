@@ -1,13 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation } from '@/types/floorPlanTypes';
-
-export interface FloorPlanState {
-  roomPoints: Point[];
-  placedProducts: PlacedProduct[];
-  doors: Door[];
-  textAnnotations: TextAnnotation[];
-}
+import { FloorPlanState } from '@/types/floorPlanTypes';
 
 export const useFloorPlanHistory = (initialState: FloorPlanState) => {
   const [history, setHistory] = useState<FloorPlanState[]>([initialState]);

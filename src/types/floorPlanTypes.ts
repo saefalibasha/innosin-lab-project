@@ -25,8 +25,25 @@ export interface WallSegment {
   thickness: number; // in mm
 }
 
+export interface ProductFinish {
+  type: 'powder-coat' | 'stainless-steel';
+  name: string;
+  price?: string;
+  modelPath?: string;
+  thumbnail?: string;
+}
+
+export interface ProductVariant {
+  id: string;
+  size: string;
+  dimensions: string;
+  modelPath: string;
+  thumbnail: string;
+}
+
 export interface PlacedProduct {
   id: string;
+  productId: string;
   name: string;
   category: string;
   dimensions: Dimensions;
@@ -34,6 +51,10 @@ export interface PlacedProduct {
   rotation: number;
   scale: number;
   color?: string;
+  modelPath?: string;
+  thumbnail?: string;
+  finishes?: ProductFinish[];
+  variants?: ProductVariant[];
 }
 
 export interface Door {
@@ -43,6 +64,8 @@ export interface Door {
   rotation: number;
   swingDirection: 'inward' | 'outward';
   type: 'single' | 'double';
+  wallSegmentId?: string;
+  wallPosition?: number;
 }
 
 export interface TextAnnotation {
@@ -71,3 +94,4 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
+export type DrawingTool = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
