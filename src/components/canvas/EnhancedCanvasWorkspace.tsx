@@ -288,14 +288,14 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const finalPosition = snapResult.position;
     
     if (isValidProductPlacement(product, finalPosition)) {
-      setPlacedProducts((prev: PlacedProduct[]) => prev.map(p => 
+      setPlacedProducts(prev => prev.map(p => 
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
   }, [placedProducts, scale, gridSize, isValidProductPlacement, setPlacedProducts]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
-    setWallSegments((prev: WallSegment[]) => [...prev, wall]);
+    setWallSegments(prev => [...prev, wall]);
   }, [setWallSegments]);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
@@ -326,7 +326,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         perimeter
       };
       
-      setRooms((prev: Room[]) => [...prev, newRoom]);
+      setRooms(prev => [...prev, newRoom]);
     }
     setRoomPoints(points);
   }, [rooms.length, scale, setRooms, setRoomPoints]);
@@ -353,7 +353,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         scale: 1
       };
       
-      setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
+      setPlacedProducts(prev => [...prev, newProduct]);
     }
   }, [draggedProduct, isValidProductPlacement, setPlacedProducts]);
 
