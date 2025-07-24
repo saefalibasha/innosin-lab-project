@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Grid, List, Package, Wrench, Beaker } from 'lucide-react';
+import { Search, Grid, List, Package, Wrench, Beaker, X } from 'lucide-react';
 import { DrawingTool } from '@/types/floorPlanTypes';
 
 interface Product {
