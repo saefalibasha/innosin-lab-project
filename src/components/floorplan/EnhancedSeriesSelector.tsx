@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +34,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const { productSeries, loading, error } = useProductSeries();
 
-  // Extract dimensions from product data
   const extractDimensions = (product: Product) => {
     if (product.dimensions) {
       const dimensionMatch = product.dimensions.match(/(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?/i);
@@ -52,7 +50,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     return { length: 1.0, width: 0.6, height: 0.85 };
   };
 
-  // Filter series based on search term
   const filteredSeries = useMemo(() => {
     if (!searchTerm) return productSeries;
     
@@ -67,7 +64,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       ...prev,
       [variantType]: value
     }));
-    setSelectedProduct(null); // Reset product selection when variants change
+    setSelectedProduct(null);
   };
 
   const handleProductSelect = (product: Product) => {
@@ -89,7 +86,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       specifications: product.specifications,
       productCode: product.product_code || product.id,
       series: product.category,
-      // Include variant information
       finish: product.finish_type,
       orientation: product.orientation,
       drawerCount: product.drawer_count,
@@ -157,7 +153,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
 
       <div className="flex-1 flex min-h-0">
         {/* Left column - Series selection */}
-        <div className="w-2/5 border-r flex flex-col min-h-0">
+        <div className="w-1/2 border-r flex flex-col min-h-0">
           <ScrollArea className="flex-1">
             <div className="space-y-2 p-3">
               {filteredSeries.map(series => (
@@ -166,14 +162,14 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     <TooltipTrigger asChild>
                       <Button
                         variant={selectedSeries === series.id ? "default" : "ghost"}
-                        className="w-full p-3 h-auto justify-start"
+                        className="w-full p-4 h-auto justify-start"
                         onClick={() => {
                           setSelectedSeries(series.id);
                           setSelectedVariants({});
                           setSelectedProduct(null);
                         }}
                       >
-                        <div className="flex items-center space-x-3 w-full">
+                        <div className="flex items-center space-x-3 w-full min-w-0">
                           <LazyProductImage
                             src={series.thumbnail || '/placeholder.svg'}
                             alt={series.name}
@@ -181,16 +177,16 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             fallback="/placeholder.svg"
                           />
                           
-                          <div className="flex-1 text-left min-w-0">
+                          <div className="flex-1 text-left min-w-0 mr-2">
                             <h3 className="font-medium text-sm leading-tight mb-1 break-words">
                               {series.name}
                             </h3>
-                            <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
+                            <p className="text-xs text-muted-foreground leading-tight line-clamp-2 break-words">
                               {series.description}
                             </p>
                           </div>
                           
-                          <Badge variant="outline" className="text-xs flex-shrink-0">
+                          <Badge variant="outline" className="text-xs flex-shrink-0 ml-2">
                             {series.products.length}
                           </Badge>
                         </div>
@@ -214,7 +210,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
         </div>
 
         {/* Right column - Variant selection and preview */}
-        <div className="w-3/5 flex flex-col min-h-0">
+        <div className="w-1/2 flex flex-col min-h-0">
           {selectedSeriesData ? (
             <>
               <div className="p-4 border-b">
