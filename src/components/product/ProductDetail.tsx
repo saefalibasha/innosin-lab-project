@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,14 +10,7 @@ import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircl
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { fetchSeriesWithVariants } from '@/services/variantService';
 import { useLoadingState } from '@/hooks/useLoadingState';
-import ProductImageGallery from './ProductImageGallery';
-import ProductOrientationSelector from './ProductOrientationSelector';
-import TechnicalSpecifications from './TechnicalSpecifications';
-import OpenRackConfigurator from './product/OpenRackConfigurator';
-import TallCabinetConfigurator from './product/TallCabinetConfigurator';
-import WallCabinetConfigurator from './product/WallCabinetConfigurator';
-import ModularCabinetConfigurator from './product/ModularCabinetConfigurator';
-import { WallCabinetConfiguration } from '@/types/product';
+import ModularCabinetConfigurator from './ModularCabinetConfigurator';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -106,19 +100,7 @@ const ProductDetail: React.FC = () => {
     fetchVariants();
   }, [product, productLoading]);
 
-  // Handle variant selection - convert between ID and object
-  const handleVariantChange = (variantId: string) => {
-    const variant = seriesVariants.find(v => v.id === variantId);
-    console.log('🎯 Variant selected by ID:', variantId, 'found:', variant);
-    setSelectedVariant(variant || null);
-  };
-
-  const handleVariantSelect = (variant: any) => {
-    console.log('🎯 Variant selected directly:', variant);
-    setSelectedVariant(variant);
-  };
-
-  // Handle configuration selection for wall and mobile cabinets
+  // Handle configuration selection for mobile cabinets
   const handleConfigurationSelect = (configuration: any) => {
     console.log('🎯 Configuration selected:', configuration);
     setSelectedConfiguration(configuration);
@@ -135,42 +117,6 @@ const ProductDetail: React.FC = () => {
     const seriesInfo = getSeriesInfo(product);
     const series = seriesInfo.series.toLowerCase();
     
-    if (series.includes('open rack')) {
-      return (
-        <OpenRackConfigurator
-          variants={seriesVariants}
-          selectedVariantId={selectedVariant?.id || ''}
-          onVariantChange={handleVariantChange}
-          selectedFinish={selectedFinish}
-          onFinishChange={setSelectedFinish}
-        />
-      );
-    }
-    
-    if (series.includes('tall cabinet')) {
-      return (
-        <TallCabinetConfigurator
-          variants={seriesVariants}
-          selectedVariantId={selectedVariant?.id || ''}
-          onVariantChange={handleVariantChange}
-          selectedFinish={selectedFinish}
-          onFinishChange={setSelectedFinish}
-        />
-      );
-    }
-    
-    if (series.includes('wall cabinet')) {
-      console.log('🏗️ Rendering WallCabinetConfigurator with variants:', seriesVariants.length);
-      return (
-        <WallCabinetConfigurator
-          variants={seriesVariants}
-          selectedConfiguration={selectedConfiguration}
-          onConfigurationSelect={handleConfigurationSelect}
-          isLoading={variantsLoading}
-        />
-      );
-    }
-
     if (series.includes('mobile cabinet')) {
       console.log('🏗️ Rendering ModularCabinetConfigurator with variants:', seriesVariants.length);
       return (
@@ -265,11 +211,13 @@ const ProductDetail: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Left Column - Images */}
         <div className="space-y-6">
-          <ProductImageGallery
-            images={getProductImages()}
-            thumbnail={displayProduct.thumbnail || '/placeholder.svg'}
-            productName={displayProduct.name}
-          />
+          <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+            <img
+              src={getProductImages()[0]}
+              alt={displayProduct.name}
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
         </div>
 
         {/* Right Column - Product Information */}
@@ -344,12 +292,6 @@ const ProductDetail: React.FC = () => {
               </p>
             </CardContent>
           </Card>
-
-          {/* Technical Specifications */}
-          <TechnicalSpecifications 
-            product={displayProduct} 
-            selectedVariant={selectedVariant}
-          />
         </div>
       </div>
     </div>
