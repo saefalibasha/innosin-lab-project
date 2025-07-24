@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import CanvasWorkspace from './CanvasWorkspace';
 import FloorPlannerViewControls from './FloorPlannerViewControls';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment } from '@/types/floorPlanTypes';
 
 interface FloorPlannerCanvasProps {
   roomPoints: Point[];
@@ -15,13 +15,10 @@ interface FloorPlannerCanvasProps {
   setDoors: (doors: Door[]) => void;
   textAnnotations: TextAnnotation[];
   setTextAnnotations: (annotations: TextAnnotation[]) => void;
-  rooms: Room[];
-  setRooms: (rooms: Room[]) => void;
   scale: number;
-  currentTool: DrawingMode;
+  currentTool: string;
   showGrid: boolean;
-  showMeasurements: boolean;
-  gridSize: number;
+  showRuler: boolean;
   onClearAll: () => void;
   canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
@@ -37,13 +34,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
   setDoors,
   textAnnotations,
   setTextAnnotations,
-  rooms,
-  setRooms,
   scale,
   currentTool,
   showGrid,
-  showMeasurements,
-  gridSize,
+  showRuler,
   onClearAll,
   canvasRef
 }) => {
@@ -79,13 +73,10 @@ const FloorPlannerCanvas: React.FC<FloorPlannerCanvasProps> = ({
         setDoors={setDoors}
         textAnnotations={textAnnotations}
         setTextAnnotations={setTextAnnotations}
-        rooms={rooms}
-        setRooms={setRooms}
         scale={scale}
         currentTool={currentTool}
         showGrid={showGrid}
-        showMeasurements={showMeasurements}
-        gridSize={gridSize}
+        showRuler={showRuler}
         onClearAll={onClearAll}
         canvasRef={canvasRef}
       />

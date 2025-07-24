@@ -1,168 +1,243 @@
 
-import React, { useState } from 'react';
-import { PlacedProduct } from '@/types/floorPlanTypes';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { PlacedProduct } from '@/types/floorPlanTypes';
 
-interface ProductDimensionEditorProps {
-  product: PlacedProduct;
-  onUpdateProduct: (product: PlacedProduct) => void;
-  onClose: () => void;
-}
-
-interface ProductVariant {
-  id: string;
-  name: string;
-  size: string;
-  dimensions: {
-    length: number;
-    width: number;
-    height: number;
-  };
-  price?: number;
-  modelPath?: string;
-  thumbnail?: string;
-}
-
-interface ProductInfo {
+interface Product {
   id: string;
   name: string;
   category: string;
   type: string;
-  price?: number;
-  variants: ProductVariant[];
+  size: string;
+  price: number;
+  dimensions: string;
+  modelPath?: string;
+  thumbnail?: string;
+}
+
+interface ProductDimensionEditorProps {
+  selectedProduct: PlacedProduct | null;
+  onUpdateProduct: (product: PlacedProduct) => void;
+  onDeleteProduct: () => void;
+  availableProducts: Product[];
+  onProductSelect: (product: Product) => void;
 }
 
 const ProductDimensionEditor: React.FC<ProductDimensionEditorProps> = ({
-  product,
+  selectedProduct,
   onUpdateProduct,
-  onClose
+  onDeleteProduct,
+  availableProducts,
+  onProductSelect
 }) => {
-  const [editedProduct, setEditedProduct] = useState<PlacedProduct>(product);
-  
-  // Mock product data - in a real app, this would come from an API
-  const productInfo: ProductInfo = {
-    id: product.productId,
-    name: product.name,
-    category: product.category,
-    type: 'laboratory-cabinet',
-    price: 1200,
-    variants: [
-      {
-        id: '755065',
-        name: 'Standard Cabinet',
-        size: '750×500×650',
-        dimensions: { length: 750, width: 500, height: 650 },
-        price: 1200
-      },
-      {
-        id: '755080',
-        name: 'Tall Cabinet',
-        size: '750×500×800',
-        dimensions: { length: 750, width: 500, height: 800 },
-        price: 1400
-      }
-    ]
-  };
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  const handleDimensionChange = (dimension: 'length' | 'width' | 'height', value: number) => {
-    setEditedProduct(prev => ({
-      ...prev,
+  const categories = Array.from(new Set(availableProducts.map(p => p.category)));
+
+  const filteredProducts = availableProducts.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const handleDimensionChange = useCallback((field: 'length' | 'width' | 'height', value: string) => {
+    if (!selectedProduct) return;
+    
+    const numValue = parseInt(value) || 0;
+    onUpdateProduct({
+      ...selectedProduct,
       dimensions: {
-        ...prev.dimensions,
-        [dimension]: value
+        ...selectedProduct.dimensions,
+        [field]: numValue
       }
-    }));
-  };
+    });
+  }, [selectedProduct, onUpdateProduct]);
 
-  const handleVariantSelect = (variant: ProductVariant) => {
-    setEditedProduct(prev => ({
-      ...prev,
-      dimensions: variant.dimensions,
-      name: variant.name
-    }));
-  };
+  const handlePositionChange = useCallback((field: 'x' | 'y', value: string) => {
+    if (!selectedProduct) return;
+    
+    const numValue = parseInt(value) || 0;
+    onUpdateProduct({
+      ...selectedProduct,
+      position: {
+        ...selectedProduct.position,
+        [field]: numValue
+      }
+    });
+  }, [selectedProduct, onUpdateProduct]);
 
-  const handleSave = () => {
-    onUpdateProduct(editedProduct);
-    onClose();
-  };
+  const handleProductClick = useCallback((product: Product) => {
+    onProductSelect(product);
+  }, [onProductSelect]);
 
   return (
-    <Card className="w-80">
-      <CardHeader>
-        <CardTitle>Edit Product</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="dimensions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
-            <TabsTrigger value="variants">Variants</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="dimensions" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="length">Length (mm)</Label>
-              <Input
-                id="length"
-                type="number"
-                value={editedProduct.dimensions.length}
-                onChange={(e) => handleDimensionChange('length', parseInt(e.target.value))}
-              />
-            </div>
+    <div className="space-y-4">
+      {/* Product Library */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Product Library</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Input
+              placeholder="Search products..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             
-            <div className="space-y-2">
-              <Label htmlFor="width">Width (mm)</Label>
-              <Input
-                id="width"
-                type="number"
-                value={editedProduct.dimensions.width}
-                onChange={(e) => handleDimensionChange('width', parseInt(e.target.value))}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="height">Height (mm)</Label>
-              <Input
-                id="height"
-                type="number"
-                value={editedProduct.dimensions.height}
-                onChange={(e) => handleDimensionChange('height', parseInt(e.target.value))}
-              />
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="variants" className="space-y-4">
-            <div className="space-y-2">
-              <Label>Available Variants</Label>
-              {productInfo.variants.map((variant) => (
-                <Button
-                  key={variant.id}
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={() => handleVariantSelect(variant)}
+            <div className="flex flex-wrap gap-2">
+              <Badge 
+                variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                className="cursor-pointer"
+                onClick={() => setSelectedCategory('all')}
+              >
+                All
+              </Badge>
+              {categories.map(category => (
+                <Badge
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  className="cursor-pointer"
+                  onClick={() => setSelectedCategory(category)}
                 >
-                  <div className="text-left">
-                    <div className="font-medium">{variant.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {variant.size}
-                    </div>
-                  </div>
-                </Button>
+                  {category}
+                </Badge>
               ))}
             </div>
-          </TabsContent>
-        </Tabs>
-        
-        <div className="flex gap-2 mt-4">
-          <Button onClick={handleSave} className="flex-1">Save</Button>
-          <Button variant="outline" onClick={onClose} className="flex-1">Cancel</Button>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {filteredProducts.map(product => (
+              <div
+                key={product.id}
+                className="p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => handleProductClick(product)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{product.name}</h4>
+                    <p className="text-xs text-gray-500">{product.category} • {product.size}</p>
+                    <p className="text-xs text-gray-400">{product.dimensions}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">${product.price?.toFixed(2) || 'N/A'}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Selected Product Editor */}
+      {selectedProduct && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Edit Product</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">{selectedProduct.name}</Label>
+              <p className="text-xs text-gray-500">{selectedProduct.category}</p>
+            </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Dimensions (mm)</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs">Length</Label>
+                  <Input
+                    type="number"
+                    value={selectedProduct.dimensions.length}
+                    onChange={(e) => handleDimensionChange('length', e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Width</Label>
+                  <Input
+                    type="number"
+                    value={selectedProduct.dimensions.width}
+                    onChange={(e) => handleDimensionChange('width', e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Height</Label>
+                  <Input
+                    type="number"
+                    value={selectedProduct.dimensions.height}
+                    onChange={(e) => handleDimensionChange('height', e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Position</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">X</Label>
+                  <Input
+                    type="number"
+                    value={Math.round(selectedProduct.position.x)}
+                    onChange={(e) => handlePositionChange('x', e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Y</Label>
+                  <Input
+                    type="number"
+                    value={Math.round(selectedProduct.position.y)}
+                    onChange={(e) => handlePositionChange('y', e.target.value)}
+                    className="text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Rotation</Label>
+              <Input
+                type="number"
+                value={Math.round(selectedProduct.rotation * 180 / Math.PI)}
+                onChange={(e) => {
+                  const degrees = parseInt(e.target.value) || 0;
+                  onUpdateProduct({
+                    ...selectedProduct,
+                    rotation: degrees * Math.PI / 180
+                  });
+                }}
+                placeholder="Degrees"
+                className="text-xs"
+              />
+            </div>
+
+            <Separator />
+
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              onClick={onDeleteProduct}
+              className="w-full"
+            >
+              Delete Product
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 };
 

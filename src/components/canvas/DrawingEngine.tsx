@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, WallSegment, WallType, Room, DrawingMode } from '@/types/floorPlanTypes';
-import { formatMeasurement, canvasToMm, mmToCanvas } from '@/utils/measurements';
+import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
 
 interface DrawingEngineProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -23,10 +23,8 @@ interface DrawingState {
   isDrawing: boolean;
   snapPoint: Point | null;
   measurements: { distance: number; angle: number } | null;
-  tempWallPoints: Point[];
-  isCreatingWalls: boolean;
-  selectedWall: WallSegment | null;
-  isDraggingWall: boolean;
+  tempRoomPoints: Point[];
+  isCreatingRoom: boolean;
 }
 
 const DrawingEngine: React.FC<DrawingEngineProps> = ({
@@ -48,15 +46,13 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     isDrawing: false,
     snapPoint: null,
     measurements: null,
-    tempWallPoints: [],
-    isCreatingWalls: false,
-    selectedWall: null,
-    isDraggingWall: false
+    tempRoomPoints: [],
+    isCreatingRoom: false
   });
 
   const overlayRef = useRef<HTMLCanvasElement>(null);
 
-  // Enhanced snap to grid with precise corner snapping
+  // Enhanced snap to grid with fine precision
   const snapToGrid = useCallback((point: Point): Point => {
     const gridSizePx = mmToCanvas(gridSize, scale);
     return {
@@ -67,9 +63,21 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
 
   // Find snap points with enhanced detection
   const findSnapPoints = useCallback((point: Point): Point | null => {
-    const snapThreshold = 20; // pixels
+    const snapThreshold = 15; // pixels
     
-    // Check existing wall endpoints
+    // Check existing room points
+    for (const room of rooms) {
+      for (const roomPoint of room.points) {
+        const distance = Math.sqrt(
+          Math.pow(point.x - roomPoint.x, 2) + Math.pow(point.y - roomPoint.y, 2)
+        );
+        if (distance < snapThreshold) {
+          return roomPoint;
+        }
+      }
+    }
+
+    // Check wall endpoints
     for (const wall of wallSegments) {
       for (const endpoint of [wall.start, wall.end]) {
         const distance = Math.sqrt(
@@ -81,18 +89,18 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
       }
     }
 
-    // Check temp wall points during creation
-    for (const wallPoint of drawingState.tempWallPoints) {
+    // Check temp room points during creation
+    for (const roomPoint of drawingState.tempRoomPoints) {
       const distance = Math.sqrt(
-        Math.pow(point.x - wallPoint.x, 2) + Math.pow(point.y - wallPoint.y, 2)
+        Math.pow(point.x - roomPoint.x, 2) + Math.pow(point.y - roomPoint.y, 2)
       );
       if (distance < snapThreshold) {
-        return wallPoint;
+        return roomPoint;
       }
     }
 
     return null;
-  }, [wallSegments, drawingState.tempWallPoints]);
+  }, [rooms, wallSegments, drawingState.tempRoomPoints]);
 
   // Calculate measurements
   const calculateMeasurements = useCallback((start: Point, end: Point) => {
@@ -107,7 +115,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     };
   }, [scale]);
 
-  // Enhanced overlay drawing with grid snapping visualization
+  // Enhanced overlay drawing
   const drawOverlay = useCallback(() => {
     const canvas = overlayRef.current;
     if (!canvas) return;
@@ -117,7 +125,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw enhanced grid with corner emphasis
+    // Draw enhanced grid
     if (showGrid) {
       const gridSizePx = mmToCanvas(gridSize, scale);
       
@@ -139,83 +147,99 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         ctx.stroke();
       }
 
-      // Draw grid corners as small squares
-      ctx.fillStyle = 'rgba(100, 100, 100, 0.6)';
-      for (let x = 0; x <= canvas.width; x += gridSizePx) {
-        for (let y = 0; y <= canvas.height; y += gridSizePx) {
-          ctx.fillRect(x - 1, y - 1, 2, 2);
-        }
+      // Major grid lines (every 10th line)
+      ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
+      ctx.lineWidth = 1;
+      
+      for (let x = 0; x <= canvas.width; x += gridSizePx * 10) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y <= canvas.height; y += gridSizePx * 10) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
       }
     }
 
-    // Draw temp wall points during creation
-    if (currentMode === 'wall' && drawingState.tempWallPoints.length > 0) {
+    // Draw temp room points during creation
+    if (currentMode === 'room' && drawingState.tempRoomPoints.length > 0) {
       ctx.fillStyle = '#3b82f6';
-      drawingState.tempWallPoints.forEach(point => {
+      drawingState.tempRoomPoints.forEach(point => {
         ctx.beginPath();
         ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
         ctx.fill();
       });
 
-      // Draw temp wall lines
-      if (drawingState.tempWallPoints.length > 1) {
+      // Draw temp room lines
+      if (drawingState.tempRoomPoints.length > 1) {
         ctx.strokeStyle = '#3b82f6';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.setLineDash([5, 5]);
         
-        for (let i = 0; i < drawingState.tempWallPoints.length - 1; i++) {
-          ctx.beginPath();
-          ctx.moveTo(drawingState.tempWallPoints[i].x, drawingState.tempWallPoints[i].y);
-          ctx.lineTo(drawingState.tempWallPoints[i + 1].x, drawingState.tempWallPoints[i + 1].y);
-          ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(drawingState.tempRoomPoints[0].x, drawingState.tempRoomPoints[0].y);
+        
+        for (let i = 1; i < drawingState.tempRoomPoints.length; i++) {
+          ctx.lineTo(drawingState.tempRoomPoints[i].x, drawingState.tempRoomPoints[i].y);
         }
         
         // Draw line to current mouse position
         if (drawingState.currentPoint) {
-          ctx.beginPath();
-          ctx.moveTo(
-            drawingState.tempWallPoints[drawingState.tempWallPoints.length - 1].x,
-            drawingState.tempWallPoints[drawingState.tempWallPoints.length - 1].y
-          );
           ctx.lineTo(drawingState.currentPoint.x, drawingState.currentPoint.y);
-          ctx.stroke();
         }
         
+        ctx.stroke();
         ctx.setLineDash([]);
       }
+    }
+
+    // Draw current drawing line (for walls)
+    if (currentMode === 'wall' && drawingState.isDrawing && drawingState.startPoint && drawingState.currentPoint) {
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      
+      ctx.beginPath();
+      ctx.moveTo(drawingState.startPoint.x, drawingState.startPoint.y);
+      ctx.lineTo(drawingState.currentPoint.x, drawingState.currentPoint.y);
+      ctx.stroke();
+      
+      ctx.setLineDash([]);
     }
 
     // Draw snap indicators
     if (drawingState.snapPoint) {
       ctx.fillStyle = '#3b82f6';
       ctx.beginPath();
-      ctx.arc(drawingState.snapPoint.x, drawingState.snapPoint.y, 10, 0, 2 * Math.PI);
+      ctx.arc(drawingState.snapPoint.x, drawingState.snapPoint.y, 8, 0, 2 * Math.PI);
       ctx.fill();
       
       // Draw snap cross
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(drawingState.snapPoint.x - 8, drawingState.snapPoint.y);
-      ctx.lineTo(drawingState.snapPoint.x + 8, drawingState.snapPoint.y);
-      ctx.moveTo(drawingState.snapPoint.x, drawingState.snapPoint.y - 8);
-      ctx.lineTo(drawingState.snapPoint.x, drawingState.snapPoint.y + 8);
+      ctx.moveTo(drawingState.snapPoint.x - 6, drawingState.snapPoint.y);
+      ctx.lineTo(drawingState.snapPoint.x + 6, drawingState.snapPoint.y);
+      ctx.moveTo(drawingState.snapPoint.x, drawingState.snapPoint.y - 6);
+      ctx.lineTo(drawingState.snapPoint.x, drawingState.snapPoint.y + 6);
       ctx.stroke();
     }
 
-    // Draw measurements for temp walls
-    if (showMeasurements && drawingState.tempWallPoints.length > 0 && drawingState.currentPoint) {
-      const lastPoint = drawingState.tempWallPoints[drawingState.tempWallPoints.length - 1];
-      const measurements = calculateMeasurements(lastPoint, drawingState.currentPoint);
-      
-      const midX = (lastPoint.x + drawingState.currentPoint.x) / 2;
-      const midY = (lastPoint.y + drawingState.currentPoint.y) / 2;
+    // Draw measurements
+    if (showMeasurements && drawingState.measurements && drawingState.startPoint && drawingState.currentPoint) {
+      const midX = (drawingState.startPoint.x + drawingState.currentPoint.x) / 2;
+      const midY = (drawingState.startPoint.y + drawingState.currentPoint.y) / 2;
       
       ctx.fillStyle = '#1f2937';
       ctx.font = '12px Arial';
       ctx.textAlign = 'center';
       
-      const measurement = formatMeasurement(measurements.distance, {
+      const measurement = formatMeasurement(drawingState.measurements.distance, {
         unit: 'mm',
         precision: 0,
         showUnit: true
@@ -228,35 +252,9 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
       
       ctx.fillStyle = '#1f2937';
       ctx.fillText(measurement, midX, midY - 5);
+      ctx.fillText(`${drawingState.measurements.angle.toFixed(1)}°`, midX, midY + 10);
     }
-
-    // Draw measurements for existing walls
-    if (showMeasurements) {
-      wallSegments.forEach(wall => {
-        const measurements = calculateMeasurements(wall.start, wall.end);
-        const midX = (wall.start.x + wall.end.x) / 2;
-        const midY = (wall.start.y + wall.end.y) / 2;
-        
-        ctx.fillStyle = '#1f2937';
-        ctx.font = '10px Arial';
-        ctx.textAlign = 'center';
-        
-        const measurement = formatMeasurement(measurements.distance, {
-          unit: 'mm',
-          precision: 0,
-          showUnit: true
-        });
-        
-        // Background for measurement text
-        const textMetrics = ctx.measureText(measurement);
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.fillRect(midX - textMetrics.width / 2 - 2, midY - 12, textMetrics.width + 4, 16);
-        
-        ctx.fillStyle = '#1f2937';
-        ctx.fillText(measurement, midX, midY - 4);
-      });
-    }
-  }, [drawingState, showGrid, showMeasurements, gridSize, scale, currentMode, wallSegments, calculateMeasurements]);
+  }, [drawingState, showGrid, showMeasurements, gridSize, scale, currentMode]);
 
   // Enhanced mouse event handling
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -271,7 +269,15 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     const snapPoint = findSnapPoints(rawPoint);
     const finalPoint = snapPoint || snapToGrid(rawPoint);
 
-    if (currentMode === 'wall' && drawingState.isCreatingWalls) {
+    if (currentMode === 'wall' && drawingState.isDrawing && drawingState.startPoint) {
+      const measurements = calculateMeasurements(drawingState.startPoint, finalPoint);
+      setDrawingState(prev => ({
+        ...prev,
+        currentPoint: finalPoint,
+        snapPoint,
+        measurements
+      }));
+    } else if (currentMode === 'room' && drawingState.isCreatingRoom) {
       setDrawingState(prev => ({
         ...prev,
         currentPoint: finalPoint,
@@ -284,7 +290,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         snapPoint
       }));
     }
-  }, [currentMode, drawingState.isCreatingWalls, findSnapPoints, snapToGrid]);
+  }, [currentMode, drawingState.isDrawing, drawingState.isCreatingRoom, drawingState.startPoint, findSnapPoints, snapToGrid, calculateMeasurements]);
 
   const handleMouseDown = useCallback((e: MouseEvent) => {
     if (!canvasRef.current) return;
@@ -299,50 +305,67 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     const finalPoint = snapPoint || snapToGrid(rawPoint);
 
     if (currentMode === 'wall') {
-      if (!drawingState.isCreatingWalls) {
-        // Start creating walls
+      if (!drawingState.isDrawing) {
+        // Start drawing wall
         setDrawingState(prev => ({
           ...prev,
-          isCreatingWalls: true,
-          tempWallPoints: [finalPoint]
+          startPoint: finalPoint,
+          currentPoint: finalPoint,
+          isDrawing: true,
+          snapPoint
         }));
       } else {
-        // Add point to wall sequence or close the room
-        const firstPoint = drawingState.tempWallPoints[0];
+        // Complete wall
+        if (drawingState.startPoint) {
+          const newWall: WallSegment = {
+            id: `wall-${Date.now()}`,
+            start: drawingState.startPoint,
+            end: finalPoint,
+            type: WallType.INTERIOR,
+            thickness: 100 // 100mm default
+          };
+          onWallComplete(newWall);
+        }
+        
+        setDrawingState(prev => ({
+          ...prev,
+          startPoint: null,
+          currentPoint: null,
+          isDrawing: false,
+          snapPoint: null,
+          measurements: null
+        }));
+      }
+    } else if (currentMode === 'room') {
+      // Handle room creation
+      if (!drawingState.isCreatingRoom) {
+        // Start creating room
+        setDrawingState(prev => ({
+          ...prev,
+          isCreatingRoom: true,
+          tempRoomPoints: [finalPoint]
+        }));
+      } else {
+        // Add point to room or close room
+        const firstPoint = drawingState.tempRoomPoints[0];
         const distanceToFirst = Math.sqrt(
           Math.pow(finalPoint.x - firstPoint.x, 2) + 
           Math.pow(finalPoint.y - firstPoint.y, 2)
         );
         
-        if (distanceToFirst < 30 && drawingState.tempWallPoints.length > 2) {
-          // Close the room and create all walls
-          const allPoints = [...drawingState.tempWallPoints, firstPoint];
-          
-          // Create wall segments
-          for (let i = 0; i < allPoints.length - 1; i++) {
-            const wall: WallSegment = {
-              id: `wall-${Date.now()}-${i}`,
-              start: allPoints[i],
-              end: allPoints[i + 1],
-              type: WallType.INTERIOR,
-              thickness: 100
-            };
-            onWallComplete(wall);
-          }
-          
-          // Create room
-          onRoomUpdate(drawingState.tempWallPoints);
-          
+        if (distanceToFirst < 20 && drawingState.tempRoomPoints.length > 2) {
+          // Close room
+          onRoomUpdate([...drawingState.tempRoomPoints]);
           setDrawingState(prev => ({
             ...prev,
-            isCreatingWalls: false,
-            tempWallPoints: []
+            isCreatingRoom: false,
+            tempRoomPoints: []
           }));
         } else {
-          // Add point to sequence
+          // Add point
           setDrawingState(prev => ({
             ...prev,
-            tempWallPoints: [...prev.tempWallPoints, finalPoint]
+            tempRoomPoints: [...prev.tempRoomPoints, finalPoint]
           }));
         }
       }
@@ -357,10 +380,8 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
         isDrawing: false,
         snapPoint: null,
         measurements: null,
-        tempWallPoints: [],
-        isCreatingWalls: false,
-        selectedWall: null,
-        isDraggingWall: false
+        tempRoomPoints: [],
+        isCreatingRoom: false
       });
     }
   }, []);

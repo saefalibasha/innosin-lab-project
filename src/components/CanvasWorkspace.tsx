@@ -1,30 +1,25 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingTool, WallType } from '@/types/floorPlanTypes';
-import { mmToCanvas, canvasToMm, formatMeasurement } from '@/utils/measurements';
-import { SnapSystem } from '@/utils/snapSystem';
-import DrawingEngine from './canvas/DrawingEngine';
-import GridSystem from './canvas/GridSystem';
-import IntelligentMeasurementOverlay from './IntelligentMeasurementOverlay';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
+import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
+import { calculateSnapPosition } from '@/utils/objectSnapping';
 
 interface CanvasWorkspaceProps {
   roomPoints: Point[];
-  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
+  setRoomPoints: (points: Point[]) => void;
   wallSegments: WallSegment[];
-  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
+  setWallSegments: (segments: WallSegment[]) => void;
   placedProducts: PlacedProduct[];
-  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
+  setPlacedProducts: (products: PlacedProduct[]) => void;
   doors: Door[];
-  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
+  setDoors: (doors: Door[]) => void;
   textAnnotations: TextAnnotation[];
-  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
-  rooms: Room[];
-  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  setTextAnnotations: (annotations: TextAnnotation[]) => void;
   scale: number;
-  currentTool: DrawingTool;
+  currentTool: string;
   showGrid: boolean;
-  showMeasurements: boolean;
-  gridSize: number;
+  showRuler: boolean;
   onClearAll: () => void;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
 }
 
 const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
@@ -38,402 +33,240 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
   setDoors,
   textAnnotations,
   setTextAnnotations,
-  rooms,
-  setRooms,
   scale,
   currentTool,
   showGrid,
-  showMeasurements,
-  gridSize,
-  onClearAll
+  showRuler,
+  onClearAll,
+  canvasRef: externalCanvasRef
 }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
+  const internalCanvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = externalCanvasRef || internalCanvasRef;
+
+  const [canvasSize, setCanvasSize] = useState({ width: 1200, height: 800 });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
+  const [draggedProduct, setDraggedProduct] = useState<PlacedProduct | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
-  const CANVAS_WIDTH = 1200;
-  const CANVAS_HEIGHT = 800;
+  // Enhanced drag and drop
+  const handleProductDragStart = useCallback((e: React.DragEvent, product: PlacedProduct) => {
+    setIsDragging(true);
+    setDraggedProduct(product);
 
-  // Initialize snap system
-  const snapSystem = new SnapSystem(
-    { enabled: true, strength: 'medium', snapToGrid: true, snapToObjects: true, snapToAlignment: true },
-    gridSize,
-    scale
-  );
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-  // Snap to grid function
-  const snapToGrid = useCallback((point: Point): Point => {
-    const gridSizePx = mmToCanvas(gridSize, scale);
-    return {
-      x: Math.round(point.x / gridSizePx) * gridSizePx,
-      y: Math.round(point.y / gridSizePx) * gridSizePx
-    };
-  }, [gridSize, scale]);
+    setDragOffset({
+      x: e.clientX - rect.left - product.position.x,
+      y: e.clientY - rect.top - product.position.y
+    });
+  }, [canvasRef]);
 
-  // Find snap points
-  const findSnapPoints = useCallback((point: Point): Point | null => {
-    const snapThreshold = 15;
-    
-    // Check existing wall endpoints
-    for (const wall of wallSegments) {
-      for (const endpoint of [wall.start, wall.end]) {
-        const distance = Math.sqrt(
-          Math.pow(point.x - endpoint.x, 2) + Math.pow(point.y - endpoint.y, 2)
-        );
-        if (distance < snapThreshold) {
-          return endpoint;
-        }
-      }
-    }
-
-    // Check room points
-    for (const room of rooms) {
-      for (const roomPoint of room.points) {
-        const distance = Math.sqrt(
-          Math.pow(point.x - roomPoint.x, 2) + Math.pow(point.y - roomPoint.y, 2)
-        );
-        if (distance < snapThreshold) {
-          return roomPoint;
-        }
-      }
-    }
-
-    return null;
-  }, [wallSegments, rooms]);
-
-  // Check if point is inside room boundary
-  const isPointInRoom = useCallback((point: Point, room: Room): boolean => {
-    if (room.points.length < 3) return false;
-    
-    let inside = false;
-    for (let i = 0, j = room.points.length - 1; i < room.points.length; j = i++) {
-      const xi = room.points[i].x;
-      const yi = room.points[i].y;
-      const xj = room.points[j].x;
-      const yj = room.points[j].y;
-      
-      if (((yi > point.y) !== (yj > point.y)) && 
-          (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi)) {
-        inside = !inside;
-      }
-    }
-    return inside;
+  const handleProductDragEnd = useCallback(() => {
+    setIsDragging(false);
+    setDraggedProduct(null);
   }, []);
 
-  // Check if product placement is valid
-  const isValidProductPlacement = useCallback((product: PlacedProduct, position: Point): boolean => {
-    // Check if product is within any room boundary
-    const productInRoom = rooms.some(room => isPointInRoom(position, room));
-    if (!productInRoom && rooms.length > 0) return false;
+  const handleCanvasDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+  }, []);
 
-    // Check collision with other products
-    const productWidth = mmToCanvas(product.dimensions.length, scale);
-    const productHeight = mmToCanvas(product.dimensions.width, scale);
-    
-    for (const existingProduct of placedProducts) {
-      if (existingProduct.id === product.id) continue;
-      
-      const existingWidth = mmToCanvas(existingProduct.dimensions.length, scale);
-      const existingHeight = mmToCanvas(existingProduct.dimensions.width, scale);
-      
-      const distance = Math.sqrt(
-        Math.pow(position.x - existingProduct.position.x, 2) +
-        Math.pow(position.y - existingProduct.position.y, 2)
-      );
-      
-      const minDistance = Math.sqrt(
-        Math.pow((productWidth + existingWidth) / 2, 2) +
-        Math.pow((productHeight + existingHeight) / 2, 2)
-      );
-      
-      if (distance < minDistance) return false;
+  const handleCanvasDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (!draggedProduct) return;
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left - dragOffset.x;
+    const y = e.clientY - rect.top - dragOffset.y;
+
+    const snapResult = calculateSnapPosition(
+      draggedProduct,
+      placedProducts.filter(p => p.id !== draggedProduct.id),
+      { x, y },
+      scale
+    );
+
+    const snappedPosition = snapResult.snapped ? snapResult.position : { x, y };
+
+    setPlacedProducts(prev =>
+      prev.map(p =>
+        p.id === draggedProduct.id
+          ? { ...p, position: snappedPosition }
+          : p
+      )
+    );
+
+    setDraggedProduct(null);
+  }, [dragOffset, placedProducts, scale, draggedProduct, canvasRef, calculateSnapPosition, setPlacedProducts]);
+
+  // Canvas resize observer
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(entries => {
+      if (!canvasRef.current) return;
+      for (let entry of entries) {
+        setCanvasSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height
+        });
+      }
+    });
+
+    if (canvasRef.current?.parentElement) {
+      resizeObserver.observe(canvasRef.current.parentElement);
     }
 
-    return true;
-  }, [rooms, placedProducts, scale, isPointInRoom]);
+    return () => resizeObserver.disconnect();
+  }, [canvasRef]);
 
-  // Drawing functions
-  const drawRooms = useCallback((ctx: CanvasRenderingContext2D) => {
-    rooms.forEach(room => {
-      if (room.points.length < 3) return;
-      
-      ctx.strokeStyle = 'hsl(var(--foreground))';
-      ctx.lineWidth = 3;
-      ctx.fillStyle = 'hsl(var(--primary) / 0.05)';
-      
-      ctx.beginPath();
-      ctx.moveTo(room.points[0].x, room.points[0].y);
-      
-      for (let i = 1; i < room.points.length; i++) {
-        ctx.lineTo(room.points[i].x, room.points[i].y);
-      }
-      
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
+  const handleDoorPlacement = useCallback((e: MouseEvent) => {
+    if (currentTool !== 'door') return;
 
-      // Draw room measurements
-      if (showMeasurements) {
-        for (let i = 0; i < room.points.length; i++) {
-          const current = room.points[i];
-          const next = room.points[(i + 1) % room.points.length];
-          
-          const distance = Math.sqrt(
-            Math.pow(next.x - current.x, 2) + Math.pow(next.y - current.y, 2)
-          );
-          
-          const midX = (current.x + next.x) / 2;
-          const midY = (current.y + next.y) / 2;
-          
-          const measurement = formatMeasurement(canvasToMm(distance, scale), {
-            unit: 'mm',
-            precision: 0,
-            showUnit: true
-          });
-          
-          ctx.fillStyle = 'hsl(var(--foreground))';
-          ctx.font = '12px system-ui';
-          ctx.textAlign = 'center';
-          ctx.fillText(measurement, midX, midY - 5);
-        }
-      }
-    });
-  }, [rooms, showMeasurements, scale]);
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-  const drawWalls = useCallback((ctx: CanvasRenderingContext2D) => {
-    wallSegments.forEach(wall => {
-      ctx.strokeStyle = 'hsl(var(--muted-foreground))';
-      ctx.lineWidth = mmToCanvas(wall.thickness || 100, scale);
-      
-      ctx.beginPath();
-      ctx.moveTo(wall.start.x, wall.start.y);
-      ctx.lineTo(wall.end.x, wall.end.y);
-      ctx.stroke();
-    });
-  }, [wallSegments, scale]);
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-  const drawProducts = useCallback((ctx: CanvasRenderingContext2D) => {
-    placedProducts.forEach(product => {
-      const isSelected = selectedProducts.includes(product.id);
-      const isValidPlacement = isValidProductPlacement(product, product.position);
-      
-      ctx.save();
-      ctx.translate(product.position.x, product.position.y);
-      ctx.rotate(product.rotation);
-      
-      const width = mmToCanvas(product.dimensions.length, scale);
-      const height = mmToCanvas(product.dimensions.width, scale);
-      
-      ctx.fillStyle = isValidPlacement 
-        ? (isSelected ? 'hsl(var(--primary) / 0.3)' : product.color || 'hsl(var(--muted))')
-        : 'hsl(var(--destructive) / 0.3)';
-      ctx.strokeStyle = isValidPlacement
-        ? (isSelected ? 'hsl(var(--primary))' : 'hsl(var(--foreground))')
-        : 'hsl(var(--destructive))';
-      ctx.lineWidth = isSelected ? 2 : 1;
-      
-      ctx.fillRect(-width/2, -height/2, width, height);
-      ctx.strokeRect(-width/2, -height/2, width, height);
-      
-      // Product label
-      ctx.fillStyle = 'hsl(var(--foreground))';
-      ctx.font = '10px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText(product.name, 0, height/2 + 12);
-      
-      // Dimensions label
-      if (showMeasurements) {
-        const dimText = `${product.dimensions.length}×${product.dimensions.width}mm`;
-        ctx.fillStyle = 'hsl(var(--muted-foreground))';
-        ctx.font = '8px system-ui';
-        ctx.fillText(dimText, 0, height/2 + 24);
-      }
-      
-      ctx.restore();
-    });
-  }, [placedProducts, selectedProducts, showMeasurements, scale, isValidProductPlacement]);
+    const newDoor: Door = {
+      id: `door-${Date.now()}`,
+      position: { x, y },
+      width: 0.8,
+      rotation: 0,
+      swingDirection: 'inward',
+      type: 'single'
+    };
 
-  const drawDoors = useCallback((ctx: CanvasRenderingContext2D) => {
-    doors.forEach(door => {
-      ctx.save();
-      ctx.translate(door.position.x, door.position.y);
-      ctx.rotate(door.rotation);
-      
-      const width = mmToCanvas(door.width * 1000, scale);
-      
-      ctx.strokeStyle = 'hsl(var(--destructive))';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-width/2, 0);
-      ctx.lineTo(width/2, 0);
-      ctx.stroke();
-      
-      // Door swing arc
-      ctx.strokeStyle = 'hsl(var(--destructive))';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(door.swingDirection === 'inward' ? -width/2 : width/2, 0, width/2, 0, Math.PI/2);
-      ctx.stroke();
-      
-      ctx.restore();
-    });
-  }, [doors, scale]);
+    setDoors(prev => [...prev, newDoor]);
+  }, [currentTool, setDoors, canvasRef]);
 
-  const render = useCallback(() => {
+  const handleProductPlacement = useCallback((e: MouseEvent) => {
+    if (currentTool !== 'product') return;
+
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    const newProduct: PlacedProduct = {
+      id: `product-${Date.now()}`,
+      productId: 'default',
+      name: 'New Product',
+      category: 'furniture',
+      position: { x, y },
+      rotation: 0,
+      dimensions: { length: 500, width: 300, height: 800 },
+      color: '#8B4513',
+      scale: 1
+    };
+
+    setPlacedProducts(prev => [...prev, newProduct]);
+  }, [currentTool, setPlacedProducts, canvasRef]);
+
+  const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
-    ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-    
-    drawRooms(ctx);
-    drawWalls(ctx);
-    drawProducts(ctx);
-    drawDoors(ctx);
-  }, [drawRooms, drawWalls, drawProducts, drawDoors]);
 
-  // Mouse event handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const point = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
+    // Draw grid
+    if (showGrid) {
+      const gridSizePx = mmToCanvas(20, scale);
+      ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+      ctx.lineWidth = 0.5;
 
-    const snapPoint = findSnapPoints(point);
-    const finalPoint = snapPoint || snapToGrid(point);
-
-    if (currentTool === 'door') {
-      const newDoor: Door = {
-        id: `door-${Date.now()}`,
-        position: finalPoint,
-        width: 0.8,
-        rotation: 0,
-        swingDirection: 'inward',
-        type: 'single'
-      };
-      setDoors(prev => [...prev, newDoor]);
-    }
-  }, [currentTool, findSnapPoints, snapToGrid, setDoors]);
-
-  const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    
-    if (!draggedProduct) return;
-    
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    
-    const rawPoint = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-    
-    const snapResult = snapSystem.snapPoint(rawPoint, placedProducts, wallSegments, rooms);
-    const finalPoint = snapResult.point;
-    
-    if (isValidProductPlacement(draggedProduct, finalPoint)) {
-      const newProduct: PlacedProduct = {
-        id: `${draggedProduct.id}-${Date.now()}`,
-        productId: draggedProduct.productId,
-        name: draggedProduct.name,
-        category: draggedProduct.category || 'general',
-        position: finalPoint,
-        rotation: 0,
-        dimensions: draggedProduct.dimensions,
-        color: draggedProduct.color,
-        scale: 1
-      };
-      
-      setPlacedProducts(prev => [...prev, newProduct]);
-    }
-  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem, setPlacedProducts]);
-
-  const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-  }, []);
-
-  const handleWallComplete = useCallback((wall: WallSegment) => {
-    setWallSegments(prev => [...prev, wall]);
-  }, [setWallSegments]);
-
-  const handleRoomUpdate = useCallback((points: Point[]) => {
-    if (points.length >= 3) {
-      // Calculate area and perimeter
-      let area = 0;
-      let perimeter = 0;
-      
-      for (let i = 0; i < points.length; i++) {
-        const j = (i + 1) % points.length;
-        area += points[i].x * points[j].y;
-        area -= points[j].x * points[i].y;
-        
-        const distance = Math.sqrt(
-          Math.pow(points[j].x - points[i].x, 2) + 
-          Math.pow(points[j].y - points[i].y, 2)
-        );
-        perimeter += canvasToMm(distance, scale);
+      for (let x = 0; x < canvas.width; x += gridSizePx) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
       }
-      area = Math.abs(area) / 2;
-      const realArea = canvasToMm(area, scale);
-      
-      const newRoom: Room = {
-        id: `room-${Date.now()}`,
-        name: `Room ${rooms.length + 1}`,
-        points,
-        area: realArea,
-        perimeter
-      };
-      
-      setRooms(prev => [...prev, newRoom]);
+
+      for (let y = 0; y < canvas.height; y += gridSizePx) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
     }
-    setRoomPoints(points);
-  }, [rooms.length, scale, setRooms, setRoomPoints]);
+
+    // Draw room points
+    ctx.fillStyle = '#3b82f6';
+    roomPoints.forEach(point => {
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+
+    // Draw wall segments
+    wallSegments.forEach(segment => {
+      ctx.strokeStyle = '#6b7280';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(segment.start.x, segment.start.y);
+      ctx.lineTo(segment.end.x, segment.end.y);
+      ctx.stroke();
+    });
+
+    // Draw placed products
+    placedProducts.forEach(product => {
+      const width = mmToCanvas(product.dimensions.length, scale);
+      const height = mmToCanvas(product.dimensions.width, scale);
+
+      ctx.fillStyle = product.color || '#8B4513';
+      ctx.fillRect(product.position.x - width / 2, product.position.y - height / 2, width, height);
+
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(product.position.x - width / 2, product.position.y - height / 2, width, height);
+    });
+
+    // Draw doors
+    doors.forEach(door => {
+      const doorWidth = mmToCanvas(door.width * 1000, scale);
+
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(door.position.x - doorWidth / 2, door.position.y - 5, doorWidth, 10);
+
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(door.position.x - doorWidth / 2, door.position.y - 5, doorWidth, 10);
+    });
+
+    // Draw text annotations
+    textAnnotations.forEach(annotation => {
+      ctx.fillStyle = annotation.color;
+      ctx.font = `${annotation.fontSize}px Arial`;
+      ctx.fillText(annotation.text, annotation.position.x, annotation.position.y);
+    });
+  }, [roomPoints, wallSegments, placedProducts, doors, textAnnotations, scale, showGrid]);
 
   useEffect(() => {
-    render();
-  }, [render]);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    drawCanvas();
+  }, [drawCanvas]);
 
   return (
-    <div className="relative border rounded-lg overflow-hidden bg-background shadow-lg">
+    <div className="relative w-full h-full">
       <canvas
         ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        className="block cursor-crosshair"
-        onMouseDown={handleMouseDown}
-        onDrop={handleCanvasDrop}
-        onDragOver={handleCanvasDragOver}
-        style={{ background: 'hsl(var(--background))' }}
-      />
-      
-      <DrawingEngine
-        canvasRef={canvasRef}
-        currentMode={currentTool}
-        scale={scale}
-        gridSize={gridSize}
-        showGrid={showGrid}
-        showMeasurements={showMeasurements}
-        onWallComplete={handleWallComplete}
-        onRoomUpdate={handleRoomUpdate}
-        roomPoints={roomPoints}
-        wallSegments={wallSegments}
-        rooms={rooms}
-      />
-      
-      <IntelligentMeasurementOverlay
-        roomPoints={roomPoints}
-        wallSegments={wallSegments}
-        scale={scale}
-        showMeasurements={showMeasurements}
-        canvas={canvasRef.current}
-        units="mm"
+        width={1200}
+        height={800}
+        className="border border-gray-300 bg-white cursor-crosshair"
+        style={{ cursor: currentTool === 'select' ? 'default' : 'crosshair' }}
       />
     </div>
   );
