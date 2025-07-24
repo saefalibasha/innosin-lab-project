@@ -3,24 +3,18 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Package, Ruler, Search } from 'lucide-react';
+import { Package, Search } from 'lucide-react';
 import LazyProductImage from '@/components/LazyProductImage';
 import { useProductSeries } from '@/hooks/useProductSeries';
 import { Product } from '@/types/product';
+import { ProductVariantSelector } from './ProductVariantSelector';
 
 interface EnhancedSeriesSelectorProps {
   onProductDrag: (product: any) => void;
   currentTool: string;
   onProductUsed?: (productId: string) => void;
-}
-
-interface SeriesVariant {
-  product: Product;
-  dimensions: string;
-  dimensionsParsed: { length: number; width: number; height: number };
 }
 
 const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ 
@@ -29,7 +23,14 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   onProductUsed 
 }) => {
   const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
-  const [selectedDimensions, setSelectedDimensions] = useState<string>('');
+  const [selectedVariants, setSelectedVariants] = useState<{
+    finish?: string;
+    orientation?: string;
+    drawerCount?: string;
+    doorType?: string;
+    dimensions?: string;
+  }>({});
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { productSeries, loading, error } = useProductSeries();
 
@@ -50,61 +51,55 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     return { length: 1.0, width: 0.6, height: 0.85 };
   };
 
-  // Group products by series and create variants
-  const seriesWithVariants = useMemo(() => {
-    const seriesMap = new Map<string, SeriesVariant[]>();
-    
-    productSeries.forEach(series => {
-      const variants: SeriesVariant[] = [];
-      
-      series.products.forEach(product => {
-        const dimensions = extractDimensions(product);
-        variants.push({
-          product,
-          dimensions: product.dimensions || 'Standard',
-          dimensionsParsed: dimensions
-        });
-      });
-      
-      if (variants.length > 0) {
-        seriesMap.set(series.id, variants);
-      }
-    });
-    
-    return seriesMap;
-  }, [productSeries]);
-
   // Filter series based on search term
   const filteredSeries = useMemo(() => {
     if (!searchTerm) return productSeries;
     
     return productSeries.filter(series =>
       series.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      series.description.toLowerCase().includes(searchTerm.toLowerCase())
+      series.description?.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [productSeries, searchTerm]);
 
-  const handleDragStart = (e: React.DragEvent, variant: SeriesVariant) => {
+  const handleVariantChange = (variantType: string, value: string) => {
+    setSelectedVariants(prev => ({
+      ...prev,
+      [variantType]: value
+    }));
+    setSelectedProduct(null); // Reset product selection when variants change
+  };
+
+  const handleProductSelect = (product: Product) => {
+    setSelectedProduct(product);
+  };
+
+  const handleDragStart = (e: React.DragEvent, product: Product) => {
+    const dimensions = extractDimensions(product);
     const floorPlanProduct = {
-      id: variant.product.id,
-      productId: variant.product.id,
-      name: variant.product.name,
-      category: variant.product.category,
-      dimensions: variant.dimensionsParsed,
-      color: getCategoryColor(variant.product.category),
-      modelPath: variant.product.modelPath,
-      thumbnail: variant.product.thumbnail,
-      description: variant.product.description,
-      specifications: variant.product.specifications,
-      productCode: variant.product.id,
-      series: variant.product.category
+      id: product.id,
+      productId: product.id,
+      name: product.name,
+      category: product.category,
+      dimensions,
+      color: getCategoryColor(product.category),
+      modelPath: product.model_path || product.modelPath,
+      thumbnail: product.thumbnail_path || product.thumbnail,
+      description: product.description,
+      specifications: product.specifications,
+      productCode: product.product_code || product.id,
+      series: product.category,
+      // Include variant information
+      finish: product.finish_type,
+      orientation: product.orientation,
+      drawerCount: product.drawer_count,
+      doorType: product.door_type
     };
 
     e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
     onProductDrag(floorPlanProduct);
     
     if (onProductUsed) {
-      onProductUsed(variant.product.id);
+      onProductUsed(product.id);
     }
   };
 
@@ -138,8 +133,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   }
 
   const selectedSeriesData = productSeries.find(s => s.id === selectedSeries);
-  const selectedVariants = selectedSeries ? seriesWithVariants.get(selectedSeries) || [] : [];
-  const selectedVariant = selectedVariants.find(v => v.dimensions === selectedDimensions) || selectedVariants[0];
 
   return (
     <div className="h-full flex flex-col">
@@ -173,7 +166,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                   className="w-full p-3 h-auto justify-start"
                   onClick={() => {
                     setSelectedSeries(series.id);
-                    setSelectedDimensions('');
+                    setSelectedVariants({});
+                    setSelectedProduct(null);
                   }}
                 >
                   <div className="flex items-center space-x-3 w-full">
@@ -192,7 +186,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                     
                     <Badge variant="outline" className="text-xs">
-                      {seriesWithVariants.get(series.id)?.length || 0}
+                      {series.products.length}
                     </Badge>
                   </div>
                 </Button>
@@ -201,45 +195,32 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
           </ScrollArea>
         </div>
 
-        {/* Right column - Dimension selection and preview */}
+        {/* Right column - Variant selection and preview */}
         <div className="w-1/2 flex flex-col">
           {selectedSeriesData ? (
             <>
               <div className="p-3 border-b">
                 <h4 className="font-medium text-sm mb-2">{selectedSeriesData.name}</h4>
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-muted-foreground">
-                    <Ruler className="inline h-3 w-3 mr-1" />
-                    Select Dimensions:
-                  </label>
-                  <Select
-                    value={selectedDimensions || selectedVariants[0]?.dimensions || ''}
-                    onValueChange={setSelectedDimensions}
-                  >
-                    <SelectTrigger className="w-full h-9 text-xs">
-                      <SelectValue placeholder="Choose size..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selectedVariants.map((variant) => (
-                        <SelectItem key={variant.dimensions} value={variant.dimensions}>
-                          <div className="flex items-center justify-between w-full">
-                            <span>{variant.dimensions}</span>
-                            <span className="text-muted-foreground ml-2">
-                              {variant.dimensionsParsed.length.toFixed(1)} × {variant.dimensionsParsed.width.toFixed(1)}m
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <p className="text-xs text-muted-foreground mb-3">{selectedSeriesData.description}</p>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-3">
+                  <ProductVariantSelector
+                    products={selectedSeriesData.products}
+                    selectedVariants={selectedVariants}
+                    onVariantChange={handleVariantChange}
+                    onProductSelect={handleProductSelect}
+                    selectedProduct={selectedProduct}
+                  />
                 </div>
               </div>
               
-              {selectedVariant && (
-                <div className="flex-1 p-3">
+              {selectedProduct && (
+                <div className="p-3 border-t">
                   <div
                     draggable={!isInteractionDisabled}
-                    onDragStart={(e) => handleDragStart(e, selectedVariant)}
+                    onDragStart={(e) => handleDragStart(e, selectedProduct)}
                     className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
                       isInteractionDisabled 
                         ? 'opacity-50 cursor-not-allowed border-gray-300' 
@@ -247,19 +228,19 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     }`}
                   >
                     <LazyProductImage
-                      src={selectedVariant.product.thumbnail || '/placeholder.svg'}
-                      alt={selectedVariant.product.name}
-                      className="w-20 h-20 mx-auto rounded object-cover mb-3"
+                      src={selectedProduct.thumbnail_path || selectedProduct.thumbnail || '/placeholder.svg'}
+                      alt={selectedProduct.name}
+                      className="w-16 h-16 mx-auto rounded object-cover mb-2"
                       fallback="/placeholder.svg"
                     />
                     
-                    <div className="space-y-2">
-                      <h5 className="font-medium text-sm">{selectedVariant.product.name}</h5>
+                    <div className="space-y-1">
+                      <h5 className="font-medium text-sm">{selectedProduct.name}</h5>
                       <div className="text-xs text-muted-foreground">
-                        <div>Dimensions: {selectedVariant.dimensions}</div>
-                        <div>
-                          Size: {selectedVariant.dimensionsParsed.length.toFixed(1)} × {selectedVariant.dimensionsParsed.width.toFixed(1)} × {selectedVariant.dimensionsParsed.height.toFixed(1)}m
-                        </div>
+                        <div>{selectedProduct.product_code}</div>
+                        {selectedProduct.dimensions && (
+                          <div>Dimensions: {selectedProduct.dimensions}</div>
+                        )}
                       </div>
                       
                       {!isInteractionDisabled && (
@@ -276,7 +257,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
             <div className="flex-1 flex items-center justify-center p-4">
               <div className="text-center">
                 <Package className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Select a series to view dimensions</p>
+                <p className="text-sm text-muted-foreground">Select a series to view variants</p>
               </div>
             </div>
           )}

@@ -36,6 +36,14 @@ export interface Product {
   finishes?: ProductFinish[];
   variants?: ProductVariant[];
   baseProductId?: string;
+  // Database variant fields
+  finish_type?: string;
+  orientation?: string;
+  drawer_count?: number;
+  door_type?: string;
+  product_code?: string;
+  thumbnail_path?: string;
+  model_path?: string;
 }
 
 // New interface for wall cabinet configuration

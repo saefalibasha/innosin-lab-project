@@ -11,6 +11,13 @@ export interface ProductSeries {
   products: Product[];
   thumbnail?: string;
   description?: string;
+  availableVariants: {
+    finishes: string[];
+    orientations: string[];
+    drawerCounts: number[];
+    doorTypes: string[];
+    dimensions: string[];
+  };
 }
 
 // Transform database product to Product interface
@@ -31,7 +38,15 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     // Additional fields for compatibility
     finishes: dbProduct.finishes || [],
     variants: dbProduct.variants || [],
-    baseProductId: dbProduct.base_product_id
+    baseProductId: dbProduct.base_product_id,
+    // Variant-specific fields
+    finish_type: dbProduct.finish_type,
+    orientation: dbProduct.orientation,
+    drawer_count: dbProduct.drawer_count,
+    door_type: dbProduct.door_type,
+    product_code: dbProduct.product_code,
+    thumbnail_path: dbProduct.thumbnail_path,
+    model_path: dbProduct.model_path
   };
 };
 
@@ -68,11 +83,36 @@ export const useProductSeries = () => {
             category: dbProduct.category,
             products: [],
             thumbnail: dbProduct.series_thumbnail_path || dbProduct.thumbnail_path,
-            description: dbProduct.editable_description || dbProduct.description
+            description: dbProduct.editable_description || dbProduct.description,
+            availableVariants: {
+              finishes: [],
+              orientations: [],
+              drawerCounts: [],
+              doorTypes: [],
+              dimensions: []
+            }
           });
         }
         
-        seriesMap.get(seriesKey)!.products.push(transformedProduct);
+        const series = seriesMap.get(seriesKey)!;
+        series.products.push(transformedProduct);
+        
+        // Update available variants
+        if (dbProduct.finish_type && !series.availableVariants.finishes.includes(dbProduct.finish_type)) {
+          series.availableVariants.finishes.push(dbProduct.finish_type);
+        }
+        if (dbProduct.orientation && !series.availableVariants.orientations.includes(dbProduct.orientation)) {
+          series.availableVariants.orientations.push(dbProduct.orientation);
+        }
+        if (dbProduct.drawer_count && !series.availableVariants.drawerCounts.includes(dbProduct.drawer_count)) {
+          series.availableVariants.drawerCounts.push(dbProduct.drawer_count);
+        }
+        if (dbProduct.door_type && !series.availableVariants.doorTypes.includes(dbProduct.door_type)) {
+          series.availableVariants.doorTypes.push(dbProduct.door_type);
+        }
+        if (dbProduct.dimensions && !series.availableVariants.dimensions.includes(dbProduct.dimensions)) {
+          series.availableVariants.dimensions.push(dbProduct.dimensions);
+        }
       });
 
       setProductSeries(Array.from(seriesMap.values()));
