@@ -17,7 +17,7 @@ import {
   Square
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode, DrawingTool } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -33,7 +33,7 @@ import WallEditor from '@/components/canvas/WallEditor';
 const FloorPlanner = () => {
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentMode, setCurrentMode] = useState<DrawingTool>('select');
+  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
@@ -126,7 +126,7 @@ const FloorPlanner = () => {
   }, []);
 
   // Tool change handler
-  const handleToolChange = useCallback((tool: DrawingTool) => {
+  const handleToolChange = useCallback((tool: DrawingMode) => {
     setCurrentMode(tool);
     
     if (tool === 'wall') {
@@ -342,20 +342,6 @@ const FloorPlanner = () => {
     ? "fixed inset-0 z-50 bg-background" 
     : "min-h-screen bg-background";
 
-  // Convert DrawingTool to DrawingMode for components that need it
-  const getDrawingMode = (tool: DrawingTool): DrawingMode => {
-    const modeMap: Partial<Record<DrawingTool, DrawingMode>> = {
-      'select': 'select',
-      'wall': 'wall',
-      'room': 'room',
-      'door': 'door',
-      'product': 'product',
-      'text': 'text',
-      'measure': 'measure'
-    };
-    return modeMap[tool] || 'select';
-  };
-
   return (
     <div className={containerClass}>
       <div className="container mx-auto p-4">
@@ -442,7 +428,7 @@ const FloorPlanner = () => {
             <ProductStatistics placedProducts={placedProducts} />
             <SeriesSelector 
               onProductDrag={handleProductDrag}
-              currentTool={getDrawingMode(currentMode)}
+              currentTool={currentMode}
             />
             <QuickHelp />
           </div>
@@ -533,7 +519,7 @@ const FloorPlanner = () => {
                   rooms={rooms}
                   setRooms={setRooms}
                   scale={scale}
-                  currentMode={getDrawingMode(currentMode)}
+                  currentMode={currentMode}
                   showGrid={showGrid}
                   showMeasurements={showMeasurements}
                   gridSize={gridSize}
