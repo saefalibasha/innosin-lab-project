@@ -1,418 +1,238 @@
-
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Point, WallSegment, WallType, Room, DrawingMode } from '@/types/floorPlanTypes';
-import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
+import React, { useRef, useCallback } from 'react';
+import { Point, WallSegment, Room, Door, TextAnnotation, WallType } from '@/types/floorPlanTypes';
 
 interface DrawingEngineProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  currentMode: DrawingMode;
-  scale: number;
-  gridSize: number;
-  showGrid: boolean;
-  showMeasurements: boolean;
-  onWallComplete: (wall: WallSegment) => void;
-  onRoomUpdate: (points: Point[]) => void;
+  currentMode: string;
   roomPoints: Point[];
+  setRoomPoints: (points: Point[]) => void;
   wallSegments: WallSegment[];
+  setWallSegments: (segments: WallSegment[]) => void;
+  doors: Door[];
+  setDoors: (doors: Door[]) => void;
+  textAnnotations: TextAnnotation[];
+  setTextAnnotations: (annotations: TextAnnotation[]) => void;
   rooms: Room[];
+  setRooms: (rooms: Room[]) => void;
+  onWallComplete?: (wall: WallSegment) => void;
+  onRoomComplete?: (room: Room) => void;
+  scale?: number;
+  gridSize?: number;
+  canvasRef: React.RefObject<HTMLCanvasElement>;
 }
 
-interface DrawingState {
-  startPoint: Point | null;
-  currentPoint: Point | null;
-  isDrawing: boolean;
-  snapPoint: Point | null;
-  measurements: { distance: number; angle: number } | null;
-  tempRoomPoints: Point[];
-  isCreatingRoom: boolean;
-}
-
+// DrawingEngine component
 const DrawingEngine: React.FC<DrawingEngineProps> = ({
-  canvasRef,
   currentMode,
-  scale,
-  gridSize,
-  showGrid,
-  showMeasurements,
-  onWallComplete,
-  onRoomUpdate,
   roomPoints,
+  setRoomPoints,
   wallSegments,
-  rooms
+  setWallSegments,
+  doors,
+  setDoors,
+  textAnnotations,
+  setTextAnnotations,
+  rooms,
+  setRooms,
+  onWallComplete,
+  onRoomComplete,
+  scale = 1,
+  gridSize = 10,
+  canvasRef
 }) => {
-  const [drawingState, setDrawingState] = useState<DrawingState>({
-    startPoint: null,
-    currentPoint: null,
-    isDrawing: false,
-    snapPoint: null,
-    measurements: null,
-    tempRoomPoints: [],
-    isCreatingRoom: false
-  });
+  const isDrawing = useRef(false);
+  const startPoint = useRef<Point | null>(null);
+  const tempPoints = useRef<Point[]>([]);
 
-  const overlayRef = useRef<HTMLCanvasElement>(null);
+  const drawGrid = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+    ctx.lineWidth = 0.5;
 
-  // Enhanced snap to grid with fine precision
-  const snapToGrid = useCallback((point: Point): Point => {
-    const gridSizePx = mmToCanvas(gridSize, scale);
-    return {
-      x: Math.round(point.x / gridSizePx) * gridSizePx,
-      y: Math.round(point.y / gridSizePx) * gridSizePx
-    };
+    const gridSpacing = gridSize * scale!;
+
+    for (let x = 0; x < width; x += gridSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+
+    for (let y = 0; y < height; y += gridSpacing) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
   }, [gridSize, scale]);
 
-  // Find snap points with enhanced detection
-  const findSnapPoints = useCallback((point: Point): Point | null => {
-    const snapThreshold = 15; // pixels
-    
-    // Check existing room points
-    for (const room of rooms) {
-      for (const roomPoint of room.points) {
-        const distance = Math.sqrt(
-          Math.pow(point.x - roomPoint.x, 2) + Math.pow(point.y - roomPoint.y, 2)
-        );
-        if (distance < snapThreshold) {
-          return roomPoint;
-        }
-      }
-    }
-
-    // Check wall endpoints
-    for (const wall of wallSegments) {
-      for (const endpoint of [wall.start, wall.end]) {
-        const distance = Math.sqrt(
-          Math.pow(point.x - endpoint.x, 2) + Math.pow(point.y - endpoint.y, 2)
-        );
-        if (distance < snapThreshold) {
-          return endpoint;
-        }
-      }
-    }
-
-    // Check temp room points during creation
-    for (const roomPoint of drawingState.tempRoomPoints) {
-      const distance = Math.sqrt(
-        Math.pow(point.x - roomPoint.x, 2) + Math.pow(point.y - roomPoint.y, 2)
-      );
-      if (distance < snapThreshold) {
-        return roomPoint;
-      }
-    }
-
-    return null;
-  }, [rooms, wallSegments, drawingState.tempRoomPoints]);
-
-  // Calculate measurements
-  const calculateMeasurements = useCallback((start: Point, end: Point) => {
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-    
-    return {
-      distance: canvasToMm(distance, scale),
-      angle: angle
-    };
+  const drawWall = useCallback((ctx: CanvasRenderingContext2D, wall: WallSegment) => {
+    ctx.strokeStyle = wall.color;
+    ctx.lineWidth = wall.thickness * scale!;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(wall.start.x, wall.start.y);
+    ctx.lineTo(wall.end.x, wall.end.y);
+    ctx.stroke();
   }, [scale]);
 
-  // Enhanced overlay drawing
-  const drawOverlay = useCallback(() => {
-    const canvas = overlayRef.current;
+  const drawRoom = useCallback((ctx: CanvasRenderingContext2D, room: Room) => {
+    ctx.fillStyle = room.color || 'rgba(173, 216, 230, 0.2)';
+    ctx.beginPath();
+    if (room.points.length > 0) {
+      ctx.moveTo(room.points[0].x, room.points[0].y);
+      for (let i = 1; i < room.points.length; i++) {
+        ctx.lineTo(room.points[i].x, room.points[i].y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    // Draw room name
+    ctx.fillStyle = 'black';
+    ctx.font = `${14 * scale!}px sans-serif`;
+    if (room.points.length > 0) {
+      const centroid = room.points.reduce((acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }), { x: 0, y: 0 });
+      const textX = centroid.x / room.points.length;
+      const textY = centroid.y / room.points.length;
+      ctx.fillText(room.name, textX, textY);
+    }
+  }, [scale]);
+
+  const drawDoor = useCallback((ctx: CanvasRenderingContext2D, door: Door) => {
+    ctx.strokeStyle = 'brown';
+    ctx.lineWidth = 3 * scale!;
+    ctx.beginPath();
+    ctx.arc(door.position.x, door.position.y, door.width / 2 * scale!, 0, Math.PI);
+    ctx.stroke();
+  }, [scale]);
+
+  const drawText = useCallback((ctx: CanvasRenderingContext2D, text: TextAnnotation) => {
+    ctx.fillStyle = text.color;
+    ctx.font = `${text.fontSize * scale!}px sans-serif`;
+    ctx.fillText(text.text, text.position.x, text.position.y);
+  }, [scale]);
+
+  const handleCanvasClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (currentMode === 'wall') {
+      if (!isDrawing.current) {
+        startPoint.current = { x, y };
+        isDrawing.current = true;
+        tempPoints.current = [{ x, y }];
+      } else {
+        tempPoints.current.push({ x, y });
+      }
+    }
+
+    if (currentMode === 'door') {
+      const newDoor: Door = {
+        id: `door-${Date.now()}`,
+        position: { x: rect.x, y: rect.y },
+        width: 60,
+        wallId: undefined,
+        wallSegmentId: undefined,
+        wallPosition: undefined,
+        isEmbedded: false
+      };
+      setDoors(prev => [...prev, newDoor]);
+    }
+
+    if (currentMode === 'text') {
+      const newText: TextAnnotation = {
+        id: `text-${Date.now()}`,
+        position: { x, y },
+        text: 'New Text',
+        fontSize: 12,
+        color: 'black'
+      };
+      setTextAnnotations(prev => [...prev, newText]);
+    }
+  }, [currentMode, setDoors, setTextAnnotations]);
+
+  const handleCanvasMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    if (currentMode === 'wall' && isDrawing.current && startPoint.current) {
+      // Optionally update a temporary wall for preview
+    }
+  }, [currentMode]);
+
+  const finishWallDrawing = useCallback(() => {
+    if (startPoint.current && tempPoints.current.length > 0) {
+      const lastPoint = tempPoints.current[tempPoints.current.length - 1];
+      const newWall: WallSegment = {
+        id: `wall-${Date.now()}`,
+        start: startPoint.current,
+        end: lastPoint,
+        thickness: 10,
+        color: '#000000',
+        type: WallType.INTERIOR
+      };
+      
+      setWallSegments(prev => [...prev, newWall]);
+      if (onWallComplete) onWallComplete(newWall);
+      
+      startPoint.current = null;
+      tempPoints.current = [];
+      isDrawing.current = false;
+    }
+  }, [setWallSegments, onWallComplete]);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Enter' && currentMode === 'wall') {
+      finishWallDrawing();
+    }
+  }, [currentMode, finishWallDrawing]);
+
+  React.useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw enhanced grid
-    if (showGrid) {
-      const gridSizePx = mmToCanvas(gridSize, scale);
-      
-      // Minor grid lines
-      ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
-      ctx.lineWidth = 0.5;
-      
-      for (let x = 0; x <= canvas.width; x += gridSizePx) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      
-      for (let y = 0; y <= canvas.height; y += gridSizePx) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
+    // Draw grid
+    drawGrid(ctx, canvas.width, canvas.height);
 
-      // Major grid lines (every 10th line)
-      ctx.strokeStyle = 'rgba(150, 150, 150, 0.5)';
-      ctx.lineWidth = 1;
-      
-      for (let x = 0; x <= canvas.width; x += gridSizePx * 10) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, canvas.height);
-        ctx.stroke();
-      }
-      
-      for (let y = 0; y <= canvas.height; y += gridSizePx * 10) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
-        ctx.stroke();
-      }
-    }
+    // Draw existing walls
+    wallSegments.forEach(wall => drawWall(ctx, wall));
 
-    // Draw temp room points during creation
-    if (currentMode === 'room' && drawingState.tempRoomPoints.length > 0) {
-      ctx.fillStyle = '#3b82f6';
-      drawingState.tempRoomPoints.forEach(point => {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
-        ctx.fill();
-      });
+    // Draw rooms
+    rooms.forEach(room => drawRoom(ctx, room));
 
-      // Draw temp room lines
-      if (drawingState.tempRoomPoints.length > 1) {
-        ctx.strokeStyle = '#3b82f6';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        
-        ctx.beginPath();
-        ctx.moveTo(drawingState.tempRoomPoints[0].x, drawingState.tempRoomPoints[0].y);
-        
-        for (let i = 1; i < drawingState.tempRoomPoints.length; i++) {
-          ctx.lineTo(drawingState.tempRoomPoints[i].x, drawingState.tempRoomPoints[i].y);
-        }
-        
-        // Draw line to current mouse position
-        if (drawingState.currentPoint) {
-          ctx.lineTo(drawingState.currentPoint.x, drawingState.currentPoint.y);
-        }
-        
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-    }
+    // Draw doors
+    doors.forEach(door => drawDoor(ctx, door));
 
-    // Draw current drawing line (for walls)
-    if (currentMode === 'wall' && drawingState.isDrawing && drawingState.startPoint && drawingState.currentPoint) {
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([5, 5]);
-      
-      ctx.beginPath();
-      ctx.moveTo(drawingState.startPoint.x, drawingState.startPoint.y);
-      ctx.lineTo(drawingState.currentPoint.x, drawingState.currentPoint.y);
-      ctx.stroke();
-      
-      ctx.setLineDash([]);
-    }
-
-    // Draw snap indicators
-    if (drawingState.snapPoint) {
-      ctx.fillStyle = '#3b82f6';
-      ctx.beginPath();
-      ctx.arc(drawingState.snapPoint.x, drawingState.snapPoint.y, 8, 0, 2 * Math.PI);
-      ctx.fill();
-      
-      // Draw snap cross
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(drawingState.snapPoint.x - 6, drawingState.snapPoint.y);
-      ctx.lineTo(drawingState.snapPoint.x + 6, drawingState.snapPoint.y);
-      ctx.moveTo(drawingState.snapPoint.x, drawingState.snapPoint.y - 6);
-      ctx.lineTo(drawingState.snapPoint.x, drawingState.snapPoint.y + 6);
-      ctx.stroke();
-    }
-
-    // Draw measurements
-    if (showMeasurements && drawingState.measurements && drawingState.startPoint && drawingState.currentPoint) {
-      const midX = (drawingState.startPoint.x + drawingState.currentPoint.x) / 2;
-      const midY = (drawingState.startPoint.y + drawingState.currentPoint.y) / 2;
-      
-      ctx.fillStyle = '#1f2937';
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'center';
-      
-      const measurement = formatMeasurement(drawingState.measurements.distance, {
-        unit: 'mm',
-        precision: 0,
-        showUnit: true
-      });
-      
-      // Background for measurement text
-      const textMetrics = ctx.measureText(measurement);
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.fillRect(midX - textMetrics.width / 2 - 4, midY - 15, textMetrics.width + 8, 20);
-      
-      ctx.fillStyle = '#1f2937';
-      ctx.fillText(measurement, midX, midY - 5);
-      ctx.fillText(`${drawingState.measurements.angle.toFixed(1)}°`, midX, midY + 10);
-    }
-  }, [drawingState, showGrid, showMeasurements, gridSize, scale, currentMode]);
-
-  // Enhanced mouse event handling
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!canvasRef.current) return;
-    
-    const rect = canvasRef.current.getBoundingClientRect();
-    const rawPoint = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-
-    const snapPoint = findSnapPoints(rawPoint);
-    const finalPoint = snapPoint || snapToGrid(rawPoint);
-
-    if (currentMode === 'wall' && drawingState.isDrawing && drawingState.startPoint) {
-      const measurements = calculateMeasurements(drawingState.startPoint, finalPoint);
-      setDrawingState(prev => ({
-        ...prev,
-        currentPoint: finalPoint,
-        snapPoint,
-        measurements
-      }));
-    } else if (currentMode === 'room' && drawingState.isCreatingRoom) {
-      setDrawingState(prev => ({
-        ...prev,
-        currentPoint: finalPoint,
-        snapPoint
-      }));
-    } else {
-      setDrawingState(prev => ({
-        ...prev,
-        currentPoint: finalPoint,
-        snapPoint
-      }));
-    }
-  }, [currentMode, drawingState.isDrawing, drawingState.isCreatingRoom, drawingState.startPoint, findSnapPoints, snapToGrid, calculateMeasurements]);
-
-  const handleMouseDown = useCallback((e: MouseEvent) => {
-    if (!canvasRef.current) return;
-    
-    const rect = canvasRef.current.getBoundingClientRect();
-    const rawPoint = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
-
-    const snapPoint = findSnapPoints(rawPoint);
-    const finalPoint = snapPoint || snapToGrid(rawPoint);
-
-    if (currentMode === 'wall') {
-      if (!drawingState.isDrawing) {
-        // Start drawing wall
-        setDrawingState(prev => ({
-          ...prev,
-          startPoint: finalPoint,
-          currentPoint: finalPoint,
-          isDrawing: true,
-          snapPoint
-        }));
-      } else {
-        // Complete wall
-        if (drawingState.startPoint) {
-          const newWall: WallSegment = {
-            id: `wall-${Date.now()}`,
-            start: drawingState.startPoint,
-            end: finalPoint,
-            type: WallType.INTERIOR,
-            thickness: 100 // 100mm default
-          };
-          onWallComplete(newWall);
-        }
-        
-        setDrawingState(prev => ({
-          ...prev,
-          startPoint: null,
-          currentPoint: null,
-          isDrawing: false,
-          snapPoint: null,
-          measurements: null
-        }));
-      }
-    } else if (currentMode === 'room') {
-      // Handle room creation
-      if (!drawingState.isCreatingRoom) {
-        // Start creating room
-        setDrawingState(prev => ({
-          ...prev,
-          isCreatingRoom: true,
-          tempRoomPoints: [finalPoint]
-        }));
-      } else {
-        // Add point to room or close room
-        const firstPoint = drawingState.tempRoomPoints[0];
-        const distanceToFirst = Math.sqrt(
-          Math.pow(finalPoint.x - firstPoint.x, 2) + 
-          Math.pow(finalPoint.y - firstPoint.y, 2)
-        );
-        
-        if (distanceToFirst < 20 && drawingState.tempRoomPoints.length > 2) {
-          // Close room
-          onRoomUpdate([...drawingState.tempRoomPoints]);
-          setDrawingState(prev => ({
-            ...prev,
-            isCreatingRoom: false,
-            tempRoomPoints: []
-          }));
-        } else {
-          // Add point
-          setDrawingState(prev => ({
-            ...prev,
-            tempRoomPoints: [...prev.tempRoomPoints, finalPoint]
-          }));
-        }
-      }
-    }
-  }, [currentMode, drawingState, findSnapPoints, snapToGrid, onWallComplete, onRoomUpdate]);
-
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setDrawingState({
-        startPoint: null,
-        currentPoint: null,
-        isDrawing: false,
-        snapPoint: null,
-        measurements: null,
-        tempRoomPoints: [],
-        isCreatingRoom: false
-      });
-    }
-  }, []);
-
-  // Set up event listeners
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      canvas.removeEventListener('mousemove', handleMouseMove);
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleMouseMove, handleMouseDown, handleKeyDown]);
-
-  // Redraw overlay when state changes
-  useEffect(() => {
-    drawOverlay();
-  }, [drawOverlay]);
+    // Draw text annotations
+    textAnnotations.forEach(text => drawText(ctx, text));
+  }, [drawGrid, drawWall, drawRoom, drawDoor, drawText, wallSegments, rooms, doors, textAnnotations, canvasRef]);
 
   return (
     <canvas
-      ref={overlayRef}
-      className="absolute inset-0 pointer-events-none z-10"
-      width={canvasRef.current?.width || 1200}
-      height={canvasRef.current?.height || 800}
+      ref={canvasRef}
+      width={1200}
+      height={800}
+      className="w-full h-full bg-white cursor-crosshair"
+      onClick={handleCanvasClick}
+      onMouseMove={handleCanvasMouseMove}
     />
   );
 };

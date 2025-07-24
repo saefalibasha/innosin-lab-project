@@ -4,6 +4,13 @@ export interface Point {
   y: number;
 }
 
+export enum WallType {
+  INTERIOR = 'interior',
+  EXTERIOR = 'exterior',
+  PARTITION = 'partition',
+  LOAD_BEARING = 'load_bearing'
+}
+
 export interface PlacedProduct {
   id: string;
   productId: string;
@@ -47,6 +54,8 @@ export interface Door {
   position: Point;
   width: number;
   wallId?: string;
+  wallSegmentId?: string;
+  wallPosition?: number;
   isEmbedded?: boolean;
 }
 
@@ -64,6 +73,7 @@ export interface WallSegment {
   end: Point;
   thickness: number;
   color: string;
+  type: WallType;
 }
 
 export interface Room {
@@ -73,6 +83,26 @@ export interface Room {
   area: number;
   perimeter: number;
   color?: string;
+}
+
+export interface GridSettings {
+  show: boolean;
+  size: number;
+  snap: boolean;
+  color: string;
+}
+
+export interface ViewportSettings {
+  zoom: number;
+  pan: Point;
+  center: Point;
+}
+
+export interface SnapSettings {
+  enabled: boolean;
+  gridSnap: boolean;
+  objectSnap: boolean;
+  snapDistance: number;
 }
 
 export interface FloorPlanState {
@@ -85,3 +115,4 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
+export type DrawingTool = DrawingMode;

@@ -27,49 +27,51 @@ const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
   const [activeTab, setActiveTab] = useState('products');
 
   return (
-    <Card className="w-full">
-      <CardContent className="p-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="products" className="flex items-center gap-1">
-              <Package className="h-3 w-3" />
-              <span className="hidden sm:inline">Products</span>
+    <Card className="w-full h-full">
+      <CardContent className="p-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="products" className="flex items-center gap-2 px-4 py-3">
+              <Package className="h-4 w-4" />
+              <span>Products</span>
             </TabsTrigger>
-            <TabsTrigger value="statistics" className="flex items-center gap-1">
-              <BarChart3 className="h-3 w-3" />
-              <span className="hidden sm:inline">Stats</span>
+            <TabsTrigger value="statistics" className="flex items-center gap-2 px-4 py-3">
+              <BarChart3 className="h-4 w-4" />
+              <span>Stats</span>
             </TabsTrigger>
-            <TabsTrigger value="rooms" className="flex items-center gap-1">
-              <Home className="h-3 w-3" />
-              <span className="hidden sm:inline">Rooms</span>
+            <TabsTrigger value="rooms" className="flex items-center gap-2 px-4 py-3">
+              <Home className="h-4 w-4" />
+              <span>Rooms</span>
             </TabsTrigger>
-            <TabsTrigger value="help" className="flex items-center gap-1">
-              <HelpCircle className="h-3 w-3" />
-              <span className="hidden sm:inline">Help</span>
+            <TabsTrigger value="help" className="flex items-center gap-2 px-4 py-3">
+              <HelpCircle className="h-4 w-4" />
+              <span>Help</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="products" className="mt-0">
-            <EnhancedSeriesSelector
-              onProductDrag={onProductDrag}
-              currentTool={currentTool}
-            />
-          </TabsContent>
+          <div className="h-[calc(100%-4rem)]">
+            <TabsContent value="products" className="mt-0 h-full">
+              <EnhancedSeriesSelector
+                onProductDrag={onProductDrag}
+                currentTool={currentTool}
+              />
+            </TabsContent>
 
-          <TabsContent value="statistics" className="mt-0">
-            <ProductStatistics placedProducts={placedProducts} />
-          </TabsContent>
+            <TabsContent value="statistics" className="mt-0 h-full">
+              <ProductStatistics placedProducts={placedProducts} />
+            </TabsContent>
 
-          <TabsContent value="rooms" className="mt-0">
-            <RoomTools
-              onRoomCreate={onRoomCreate}
-              onStartRoomCreation={onStartRoomCreation}
-            />
-          </TabsContent>
+            <TabsContent value="rooms" className="mt-0 h-full">
+              <RoomTools
+                onRoomCreate={onRoomCreate}
+                onStartRoomCreation={onStartRoomCreation}
+              />
+            </TabsContent>
 
-          <TabsContent value="help" className="mt-0">
-            <QuickHelp />
-          </TabsContent>
+            <TabsContent value="help" className="mt-0 h-full">
+              <QuickHelp />
+            </TabsContent>
+          </div>
         </Tabs>
       </CardContent>
     </Card>

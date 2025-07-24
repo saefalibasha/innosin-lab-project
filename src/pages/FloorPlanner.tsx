@@ -369,8 +369,8 @@ const FloorPlanner = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Enhanced Left Sidebar with Tabs */}
-          <div className="lg:col-span-1 space-y-4">
+          {/* Enhanced Left Sidebar with Tabs - Made Wider */}
+          <div className="lg:col-span-2 space-y-4">
             <TabbedSidebar
               onProductDrag={handleProductDrag}
               currentTool={currentMode}
@@ -380,9 +380,9 @@ const FloorPlanner = () => {
             />
           </div>
 
-          {/* Enhanced Main Content Area */}
-          <div className="lg:col-span-4 space-y-4">
-            {/* Enhanced Horizontal Toolbar */}
+          {/* Enhanced Main Content Area - Made Smaller */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Enhanced Horizontal Toolbar - Remove Zoom Controls */}
             <HorizontalToolbar
               currentTool={currentMode}
               onToolChange={handleToolChange}
@@ -392,9 +392,6 @@ const FloorPlanner = () => {
               onRedo={handleRedo}
               canUndo={canUndo}
               canRedo={canRedo}
-              onZoomIn={() => setScale(prev => Math.min(prev * 1.2, 2))}
-              onZoomOut={() => setScale(prev => Math.max(prev / 1.2, 0.05))}
-              onFitToView={() => setScale(0.2)}
               onToggleGrid={handleToggleGrid}
               showGrid={showGrid}
               scale={scale}
@@ -411,7 +408,7 @@ const FloorPlanner = () => {
               </div>
             )}
 
-            {/* Enhanced Canvas */}
+            {/* Enhanced Canvas - Made Smaller */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
@@ -452,31 +449,33 @@ const FloorPlanner = () => {
               </CardHeader>
               
               <CardContent>
-                <EnhancedCanvasWorkspace
-                  roomPoints={roomPoints}
-                  setRoomPoints={setRoomPoints}
-                  wallSegments={wallSegments}
-                  setWallSegments={setWallSegments}
-                  placedProducts={placedProducts}
-                  setPlacedProducts={setPlacedProducts}
-                  doors={doors}
-                  setDoors={setDoors}
-                  textAnnotations={textAnnotations}
-                  setTextAnnotations={setTextAnnotations}
-                  rooms={rooms}
-                  setRooms={setRooms}
-                  scale={scale}
-                  currentMode={currentMode}
-                  showGrid={showGrid}
-                  showMeasurements={showMeasurements}
-                  gridSize={gridSize}
-                  onClearAll={handleClear}
-                />
+                <div className="w-full h-[500px]">
+                  <EnhancedCanvasWorkspace
+                    roomPoints={roomPoints}
+                    setRoomPoints={setRoomPoints}
+                    wallSegments={wallSegments}
+                    setWallSegments={setWallSegments}
+                    placedProducts={placedProducts}
+                    setPlacedProducts={setPlacedProducts}
+                    doors={doors}
+                    setDoors={setDoors}
+                    textAnnotations={textAnnotations}
+                    setTextAnnotations={setTextAnnotations}
+                    rooms={rooms}
+                    setRooms={setRooms}
+                    scale={0.2}
+                    currentMode={currentMode}
+                    showGrid={showGrid}
+                    showMeasurements={showMeasurements}
+                    gridSize={gridSize}
+                    onClearAll={handleClear}
+                  />
+                </div>
                 
                 {/* Enhanced Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span>Mode: {currentMode}</span>
-                  <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
+                  <span>Canvas: 1000 × 600</span>
                   <span>Grid: {gridSize}mm</span>
                   <span>Rooms: {rooms.length}</span>
                   <span>
