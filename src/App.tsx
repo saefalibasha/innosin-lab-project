@@ -32,10 +32,17 @@ import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import SecurityHeader from "./components/SecurityHeader";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 3,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // Production App - Only shows maintenance page with proper headers
-const ProductionApp = () => {
+const ProductionApp: React.FC = () => {
   useEffect(() => {
     // Set maintenance mode indicators for crawlers
     if (typeof document !== 'undefined') {
@@ -78,7 +85,7 @@ const ProductionApp = () => {
 };
 
 // Development App - Full website functionality
-const DevelopmentApp = () => (
+const DevelopmentApp: React.FC = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
@@ -119,7 +126,7 @@ const DevelopmentApp = () => (
 );
 
 // Smart App Router - Chooses between Development and Production
-const App = () => {
+const App: React.FC = () => {
   const isDevelopment = isLovableDevelopment();
   
   console.log('Environment Detection:', {
