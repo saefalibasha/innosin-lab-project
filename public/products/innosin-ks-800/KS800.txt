@@ -7,6 +7,9 @@ Model: KS800
 Dimensions: 800×600×650 mm
 Size: KS800
 
+Description:
+Ergonomic knee space unit providing comfortable leg room for laboratory workstations.
+
 Full Description:
 The KS800 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. This 800mm width unit provides generous space for comfortable working positions.
 

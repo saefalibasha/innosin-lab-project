@@ -7,6 +7,9 @@ Model: KS1000
 Dimensions: 1000×600×650 mm
 Size: KS1000
 
+Description:
+Ergonomic knee space unit providing comfortable leg room for laboratory workstations.
+
 Full Description:
 The KS1000 knee space unit is designed to provide optimal comfort and ergonomics for laboratory personnel during extended work periods. This 1000mm width unit provides maximum comfort for collaborative workspaces.
 
