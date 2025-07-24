@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, SnapSettings, GridSettings, ViewportSettings } from '@/types/floorPlanTypes';
 import { mmToCanvas, canvasToMm, formatMeasurement } from '@/utils/measurements';
@@ -9,17 +8,17 @@ import IntelligentMeasurementOverlay from '../IntelligentMeasurementOverlay';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
-  setRoomPoints: (points: Point[]) => void;
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   wallSegments: WallSegment[];
-  setWallSegments: (segments: WallSegment[]) => void;
+  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
   placedProducts: PlacedProduct[];
-  setPlacedProducts: (products: PlacedProduct[]) => void;
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
   doors: Door[];
-  setDoors: (doors: Door[]) => void;
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
   textAnnotations: TextAnnotation[];
-  setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
   rooms: Room[];
-  setRooms: (rooms: Room[]) => void;
+  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
   scale: number;
   currentMode: DrawingMode;
   showGrid: boolean;
@@ -284,7 +283,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     ctx.restore();
   }, [viewportSettings, drawRooms, drawWalls, drawProducts, drawDoors]);
 
-  // Enhanced product drag handling with snap system
   const handleProductDrag = useCallback((product: PlacedProduct, newPosition: Point) => {
     const snapResult = snapSystem.snapPoint(newPosition, placedProducts, wallSegments, rooms);
     const finalPosition = snapResult.point;
@@ -298,7 +296,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
     setWallSegments(prev => [...prev, wall]);
-  }, []);
+  }, [setWallSegments]);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     if (points.length >= 3) {
@@ -360,7 +358,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       
       setPlacedProducts(prev => [...prev, newProduct]);
     }
-  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem]);
+  }, [draggedProduct, isValidProductPlacement, placedProducts, wallSegments, rooms, snapSystem, setPlacedProducts]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
