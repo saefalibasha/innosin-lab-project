@@ -80,26 +80,26 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Finish Type Selection */}
       {availableFinishes.length > 0 && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Palette className="h-4 w-4" />
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Palette className="h-3 w-3" />
             Finish Type:
           </label>
           <ToggleGroup
             type="single"
             value={selectedVariants.finish || ''}
             onValueChange={(value) => onVariantChange('finish', value)}
-            className="justify-start flex-wrap"
+            className="justify-start"
           >
             {availableFinishes.map((finish) => (
               <ToggleGroupItem
                 key={finish}
                 value={finish}
                 variant="outline"
-                className="text-sm h-10 px-4"
+                className="text-xs h-8 px-3"
               >
                 {getFinishDisplayName(finish)}
               </ToggleGroupItem>
@@ -110,19 +110,19 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
       {/* Orientation Selection */}
       {availableOrientations.length > 0 && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <RotateCcw className="h-4 w-4" />
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <RotateCcw className="h-3 w-3" />
             Orientation:
           </label>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2">
             {availableOrientations.map((orientation) => (
               <Button
                 key={orientation}
                 variant={selectedVariants.orientation === orientation ? "default" : "outline"}
                 size="sm"
                 onClick={() => onVariantChange('orientation', orientation)}
-                className="text-sm h-10 px-4"
+                className="text-xs h-8 px-3"
               >
                 {getOrientationDisplayName(orientation)}
               </Button>
@@ -133,16 +133,16 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
       {/* Drawer Count Selection */}
       {availableDrawerCounts.length > 0 && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Layers className="h-4 w-4" />
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Layers className="h-3 w-3" />
             Drawer Count:
           </label>
           <Select
             value={selectedVariants.drawerCount || ''}
             onValueChange={(value) => onVariantChange('drawerCount', value)}
           >
-            <SelectTrigger className="w-full h-10 text-sm">
+            <SelectTrigger className="w-full h-8 text-xs">
               <SelectValue placeholder="Select drawer count" />
             </SelectTrigger>
             <SelectContent>
@@ -158,16 +158,16 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
       {/* Door Type Selection */}
       {availableDoorTypes.length > 0 && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <DoorOpen className="h-4 w-4" />
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <DoorOpen className="h-3 w-3" />
             Door Type:
           </label>
           <Select
             value={selectedVariants.doorType || ''}
             onValueChange={(value) => onVariantChange('doorType', value)}
           >
-            <SelectTrigger className="w-full h-10 text-sm">
+            <SelectTrigger className="w-full h-8 text-xs">
               <SelectValue placeholder="Select door type" />
             </SelectTrigger>
             <SelectContent>
@@ -183,16 +183,16 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
       {/* Dimensions Selection */}
       {availableDimensions.length > 0 && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            <Ruler className="h-4 w-4" />
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Ruler className="h-3 w-3" />
             Dimensions:
           </label>
           <Select
             value={selectedVariants.dimensions || ''}
             onValueChange={(value) => onVariantChange('dimensions', value)}
           >
-            <SelectTrigger className="w-full h-10 text-sm">
+            <SelectTrigger className="w-full h-8 text-xs">
               <SelectValue placeholder="Select dimensions" />
             </SelectTrigger>
             <SelectContent>
@@ -208,33 +208,30 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
       {/* Product Selection */}
       {filteredProducts.length > 0 && (
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-            Available Products: 
-            <Badge variant="outline" className="text-sm">{filteredProducts.length}</Badge>
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">
+            Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
           </label>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-2">
             {filteredProducts.map((product) => (
               <Button
                 key={product.id}
                 variant={selectedProduct?.id === product.id ? "default" : "outline"}
-                className="w-full p-4 h-auto justify-start text-left"
+                className="w-full p-3 h-auto justify-start text-left"
                 onClick={() => onProductSelect(product)}
               >
                 <div className="flex items-center gap-3 w-full">
                   <img
                     src={product.thumbnail_path || '/placeholder.svg'}
                     alt={product.name}
-                    className="w-10 h-10 rounded object-cover flex-shrink-0"
+                    className="w-8 h-8 rounded object-cover flex-shrink-0"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder.svg';
                     }}
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm break-words leading-tight">
-                      {product.name}
-                    </div>
-                    <div className="text-sm text-muted-foreground break-words">
+                  <div className="flex-1">
+                    <div className="font-medium text-xs">{product.name}</div>
+                    <div className="text-xs text-muted-foreground">
                       {product.product_code}
                     </div>
                   </div>
@@ -246,8 +243,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
       )}
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p className="text-sm">No products match the selected variants</p>
+        <div className="text-center py-4 text-muted-foreground">
+          <p className="text-xs">No products match the selected variants</p>
         </div>
       )}
     </div>

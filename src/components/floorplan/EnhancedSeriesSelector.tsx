@@ -156,8 +156,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       </div>
 
       <div className="flex-1 flex min-h-0">
-        {/* Left column - Series selection (50% width) */}
-        <div className="w-1/2 border-r flex flex-col min-h-0">
+        {/* Left column - Series selection */}
+        <div className="w-2/5 border-r flex flex-col min-h-0">
           <ScrollArea className="flex-1">
             <div className="space-y-2 p-3">
               {filteredSeries.map(series => (
@@ -166,7 +166,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     <TooltipTrigger asChild>
                       <Button
                         variant={selectedSeries === series.id ? "default" : "ghost"}
-                        className="w-full p-4 h-auto justify-start"
+                        className="w-full p-3 h-auto justify-start"
                         onClick={() => {
                           setSelectedSeries(series.id);
                           setSelectedVariants({});
@@ -177,7 +177,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                           <LazyProductImage
                             src={series.thumbnail || '/placeholder.svg'}
                             alt={series.name}
-                            className="w-14 h-14 rounded object-cover flex-shrink-0"
+                            className="w-12 h-12 rounded object-cover flex-shrink-0"
                             fallback="/placeholder.svg"
                           />
                           
@@ -185,7 +185,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             <h3 className="font-medium text-sm leading-tight mb-1 break-words">
                               {series.name}
                             </h3>
-                            <p className="text-xs text-muted-foreground leading-tight line-clamp-2 break-words">
+                            <p className="text-xs text-muted-foreground leading-tight line-clamp-2">
                               {series.description}
                             </p>
                           </div>
@@ -198,9 +198,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
                       <div>
-                        <p className="font-medium break-words">{series.name}</p>
+                        <p className="font-medium">{series.name}</p>
                         {series.description && (
-                          <p className="text-xs text-muted-foreground mt-1 break-words">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {series.description}
                           </p>
                         )}
@@ -213,15 +213,15 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
           </ScrollArea>
         </div>
 
-        {/* Right column - Variant selection and preview (50% width) */}
-        <div className="w-1/2 flex flex-col min-h-0">
+        {/* Right column - Variant selection and preview */}
+        <div className="w-3/5 flex flex-col min-h-0">
           {selectedSeriesData ? (
             <>
               <div className="p-4 border-b">
                 <h4 className="font-medium text-base mb-2 break-words leading-tight">
                   {selectedSeriesData.name}
                 </h4>
-                <p className="text-sm text-muted-foreground leading-relaxed break-words">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {selectedSeriesData.description}
                 </p>
               </div>
