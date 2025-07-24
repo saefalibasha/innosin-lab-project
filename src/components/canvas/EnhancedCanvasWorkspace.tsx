@@ -323,14 +323,14 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const finalPosition = snapResult.position;
     
     if (isValidProductPlacement(product, finalPosition)) {
-      setPlacedProducts((prev: PlacedProduct[]) => prev.map(p => 
+      setPlacedProducts(prev => prev.map(p => 
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
-  }, [placedProducts, scale, gridSize, setPlacedProducts]);
+  }, [placedProducts, scale, gridSize, setPlacedProducts, isValidProductPlacement]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
-    setWallSegments((prev: WallSegment[]) => [...prev, wall]);
+    setWallSegments(prev => [...prev, wall]);
   }, [setWallSegments]);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
@@ -360,7 +360,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         perimeter
       };
       
-      setRooms((prev: Room[]) => [...prev, newRoom]);
+      setRooms(prev => [...prev, newRoom]);
     }
     setRoomPoints(points);
   }, [rooms.length, scale, setRooms, setRoomPoints]);
@@ -388,9 +388,9 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         category: draggedProduct.category || 'Innosin Lab'
       };
       
-      setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
+      setPlacedProducts(prev => [...prev, newProduct]);
     }
-  }, [draggedProduct, setPlacedProducts, pan, zoom]);
+  }, [draggedProduct, setPlacedProducts, pan, zoom, isValidProductPlacement]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
