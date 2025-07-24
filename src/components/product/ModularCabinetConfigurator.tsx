@@ -70,60 +70,29 @@ const getBenchType = (height: number): string => {
   return `${height}mm Bench`;
 };
 
-// Enhanced door type detection to handle all product variations
+// Simplified door type detection
 const getDoorTypeFromVariant = (variant: ModularCabinetVariant): string => {
   const productCode = variant.product_code.toUpperCase();
-  const doorType = variant.door_type?.toUpperCase() || '';
   
-  console.log(`🔍 Analyzing variant: ${productCode}, door_type: "${doorType}", drawer_count: ${variant.drawer_count}`);
+  console.log(`🔍 Analyzing variant: ${productCode}, door_type: "${variant.door_type}", drawer_count: ${variant.drawer_count}`);
   
-  // Handle drawer-only configurations first (products with DWR in code or drawer_count > 0)
+  // Handle drawer-only configurations first
   if (productCode.includes('DWR') || variant.drawer_count > 0) {
-    if (variant.drawer_count) {
-      return `Drawer-Only (${variant.drawer_count})`;
-    }
-    // Extract drawer count from product code if not in drawer_count field
-    if (productCode.includes('DWR8')) return 'Drawer-Only (8)';
-    if (productCode.includes('DWR6')) return 'Drawer-Only (6)';
-    if (productCode.includes('DWR4')) return 'Drawer-Only (4)';
-    if (productCode.includes('DWR3')) return 'Drawer-Only (3)';
-    if (productCode.includes('DWR2')) return 'Drawer-Only (2)';
-    return 'Drawer-Only';
-  }
-  
-  // Handle combination products (MCC prefix or CB in door_type)
-  if (productCode.includes('MCC') || doorType.includes('CB')) {
-    return 'Combination';
-  }
-  
-  // Handle double door configurations
-  if (productCode.includes('DD') || doorType.includes('DOUBLE')) {
-    // Check if it also has drawers in the name
-    if (productCode.includes('DWR')) {
-      return 'Double-Door + Drawer';
-    }
-    return 'Double-Door';
+    return 'Drawer Only';
   }
   
   // Handle triple door configurations
-  if (productCode.includes('TD') || doorType.includes('TRIPLE')) {
-    return 'Triple-Door';
+  if (productCode.includes('TD') || variant.door_type?.toUpperCase().includes('TRIPLE')) {
+    return 'Triple Door';
   }
   
-  // Handle orientation-based single doors
-  if (productCode.includes('-LH') || productCode.includes('-RH')) {
-    const orientation = productCode.includes('-LH') ? 'LH' : 'RH';
-    return `Single-Door (${orientation})`;
+  // Handle double door configurations
+  if (productCode.includes('DD') || variant.door_type?.toUpperCase().includes('DOUBLE')) {
+    return 'Double Door';
   }
   
-  // Handle standard single door (no orientation specified)
-  if (doorType.includes('SINGLE') || doorType === '' || !doorType) {
-    return 'Single-Door';
-  }
-  
-  // Default fallback
-  console.log(`⚠️ Unknown door type for ${productCode}, defaulting to Single-Door`);
-  return 'Single-Door';
+  // Default to single door for all others
+  return 'Single Door';
 };
 
 // Check if orientation is required for the given product
@@ -171,15 +140,8 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
   const [selectedDrawerCount, setSelectedDrawerCount] = useState<string>('');
 
   console.log('🔧 ModularCabinetConfigurator received variants:', variants.length);
-  console.log('📊 Variant details:', variants.map(v => ({
-    code: v.product_code,
-    door_type: v.door_type,
-    drawer_count: v.drawer_count,
-    dimensions: v.dimensions,
-    orientation: v.orientation
-  })));
 
-  // Get available door types with improved detection
+  // Get available door types (simplified)
   const availableDoorTypes = useMemo(() => {
     const doorTypes = new Set<string>();
     variants.forEach(variant => {
@@ -188,23 +150,9 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
     });
     
     const sortedTypes = Array.from(doorTypes).sort((a, b) => {
-      const order = [
-        'Single-Door',
-        'Single-Door (LH)',
-        'Single-Door (RH)', 
-        'Double-Door',
-        'Double-Door + Drawer',
-        'Triple-Door',
-        'Combination',
-        'Drawer-Only',
-        'Drawer-Only (2)',
-        'Drawer-Only (3)',
-        'Drawer-Only (4)',
-        'Drawer-Only (6)',
-        'Drawer-Only (8)'
-      ];
-      const aIndex = order.findIndex(o => a.startsWith(o));
-      const bIndex = order.findIndex(o => b.startsWith(o));
+      const order = ['Single Door', 'Double Door', 'Triple Door', 'Drawer Only'];
+      const aIndex = order.indexOf(a);
+      const bIndex = order.indexOf(b);
       if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
       return a.localeCompare(b);
     });
@@ -276,9 +224,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
     const drawerCounts = new Set<number>();
     filteredVariants.forEach(variant => {
       const count = getDrawerCountFromVariant(variant);
-      if (count > 0) {
-        drawerCounts.add(count);
-      }
+      drawerCounts.add(count); // Include 0 for door-only variants
     });
     
     const sortedCounts = Array.from(drawerCounts).sort((a, b) => a - b);
@@ -288,7 +234,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
   // Get current configuration based on selections
   const currentConfiguration = useMemo(() => {
-    if (!selectedDoorType || !selectedDimension) return null;
+    if (!selectedDoorType || !selectedDimension || selectedDrawerCount === '') return null;
     
     const filteredVariants = variants.filter(variant => {
       const matchesDoorType = getDoorTypeFromVariant(variant) === selectedDoorType;
@@ -296,8 +242,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
       const matchesOrientation = !selectedOrientation || 
         getOrientationFromVariant(variant) === selectedOrientation ||
         getOrientationFromVariant(variant) === 'None';
-      const matchesDrawerCount = !selectedDrawerCount || 
-        getDrawerCountFromVariant(variant).toString() === selectedDrawerCount;
+      const matchesDrawerCount = getDrawerCountFromVariant(variant).toString() === selectedDrawerCount;
       
       return matchesDoorType && matchesDimensions && matchesOrientation && matchesDrawerCount;
     });
@@ -311,7 +256,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
     if (selectedOrientation && selectedOrientation !== 'None') {
       configName += ` (${selectedOrientation})`;
     }
-    if (selectedDrawerCount) {
+    if (selectedDrawerCount && selectedDrawerCount !== '0') {
       configName += ` - ${selectedDrawerCount} Drawer${parseInt(selectedDrawerCount) > 1 ? 's' : ''}`;
     }
     
@@ -319,7 +264,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
     if (selectedOrientation && selectedOrientation !== 'None') {
       description += ` with ${selectedOrientation.toLowerCase()} configuration`;
     }
-    if (selectedDrawerCount) {
+    if (selectedDrawerCount && selectedDrawerCount !== '0') {
       description += ` featuring ${selectedDrawerCount} drawer${parseInt(selectedDrawerCount) > 1 ? 's' : ''}`;
     }
     description += ` for ${benchType}`;
@@ -350,21 +295,17 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
 
   // Auto-select configuration when all required options are selected
   React.useEffect(() => {
-    if (currentConfiguration && selectedDoorType && selectedDimension) {
+    if (currentConfiguration && selectedDoorType && selectedDimension && selectedDrawerCount !== '') {
       // Check if orientation is required
       const requiresOrientation = availableOrientations.length > 0;
       const hasOrientation = !requiresOrientation || selectedOrientation;
       
-      // Check if drawer count is required
-      const requiresDrawerCount = availableDrawerCounts.length > 0;
-      const hasDrawerCount = !requiresDrawerCount || selectedDrawerCount;
-      
-      if (hasOrientation && hasDrawerCount) {
+      if (hasOrientation) {
         console.log('🎯 Auto-selecting configuration:', currentConfiguration.name);
         onConfigurationSelect(currentConfiguration);
       }
     }
-  }, [currentConfiguration, selectedDoorType, selectedDimension, selectedOrientation, selectedDrawerCount, availableOrientations, availableDrawerCounts, onConfigurationSelect]);
+  }, [currentConfiguration, selectedDoorType, selectedDimension, selectedOrientation, selectedDrawerCount, availableOrientations, onConfigurationSelect]);
 
   // Reset dependent selections when parent selection changes
   React.useEffect(() => {
@@ -411,7 +352,7 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
   }
 
   const orientationRequired = availableOrientations.length > 0;
-  const drawerCountAvailable = availableDrawerCounts.length > 0;
+  const drawerCountRequired = availableDrawerCounts.length > 0;
 
   return (
     <div className="space-y-6">
@@ -507,25 +448,25 @@ const ModularCabinetConfigurator: React.FC<ModularCabinetConfiguratorProps> = ({
         </div>
       )}
 
-      {/* Step 4: Drawer Count Selection (if available) */}
-      {selectedDimension && (!orientationRequired || selectedOrientation) && drawerCountAvailable && (
+      {/* Step 4: Drawer Count Selection */}
+      {selectedDimension && (!orientationRequired || selectedOrientation) && drawerCountRequired && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-sm font-semibold">
               {orientationRequired ? '4' : '3'}
             </div>
-            <label className="text-sm font-medium">Drawer Count</label>
+            <label className="text-sm font-medium">Number of Drawers</label>
             <Layers className="w-4 h-4 text-muted-foreground" />
           </div>
           
           <Select value={selectedDrawerCount} onValueChange={setSelectedDrawerCount}>
             <SelectTrigger>
-              <SelectValue placeholder="Select drawer count" />
+              <SelectValue placeholder="Select number of drawers" />
             </SelectTrigger>
             <SelectContent>
               {availableDrawerCounts.map(count => (
                 <SelectItem key={count} value={count.toString()}>
-                  {count} Drawer{count > 1 ? 's' : ''}
+                  {count === 0 ? 'No Drawers (Door Only)' : `${count} Drawer${count > 1 ? 's' : ''}`}
                 </SelectItem>
               ))}
             </SelectContent>
