@@ -78,7 +78,7 @@ export interface FloorPlanState {
 }
 
 export type DrawingMode = 'select' | 'room' | 'wall' | 'door' | 'product' | 'measure';
-export type DrawingTool = DrawingMode; // Unify the types
+export type DrawingTool = 'select' | 'wall' | 'door' | 'product' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser';
 
 export interface SnapSettings {
   enabled: boolean;

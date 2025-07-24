@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,7 +17,7 @@ import {
   Square
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode, DrawingTool } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
 import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
@@ -27,6 +28,7 @@ import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import MeasurementInput from '@/components/canvas/MeasurementInput';
 import RoomCreator from '@/components/canvas/RoomCreator';
+import WallEditor from '@/components/canvas/WallEditor';
 
 const FloorPlanner = () => {
   // Canvas and drawing state
@@ -39,6 +41,7 @@ const FloorPlanner = () => {
   const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedWalls, setSelectedWalls] = useState<string[]>([]);
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   
@@ -123,11 +126,38 @@ const FloorPlanner = () => {
   }, []);
 
   // Tool change handler
-  const handleToolChange = useCallback((tool: string) => {
-    setCurrentMode(tool as DrawingMode);
-    if (tool === 'room') {
-      setShowRoomCreator(true);
+  const handleToolChange = useCallback((tool: DrawingTool) => {
+    // Map DrawingTool to DrawingMode
+    const modeMap: Record<DrawingTool, DrawingMode> = {
+      'select': 'select',
+      'wall': 'wall',
+      'door': 'door',
+      'product': 'product',
+      'measure': 'measure',
+      'pan': 'select',
+      'line': 'wall',
+      'freehand': 'wall',
+      'eraser': 'select'
+    };
+    
+    setCurrentMode(modeMap[tool] || 'select');
+    
+    if (tool === 'wall') {
+      toast.info('Wall Drawing Mode: Click to start, continue clicking to add segments, double-click or ESC to finish');
     }
+  }, []);
+
+  // Wall management
+  const handleWallUpdate = useCallback((wallId: string, updates: Partial<WallSegment>) => {
+    setWallSegments(prev => prev.map(wall => 
+      wall.id === wallId ? { ...wall, ...updates } : wall
+    ));
+  }, []);
+
+  const handleWallDelete = useCallback((wallId: string) => {
+    setWallSegments(prev => prev.filter(wall => wall.id !== wallId));
+    setSelectedWalls(prev => prev.filter(id => id !== wallId));
+    toast.success('Wall deleted');
   }, []);
 
   // File operations with mm precision
@@ -202,6 +232,7 @@ const FloorPlanner = () => {
     setWallSegments([]);
     setRooms([]);
     setSelectedProducts([]);
+    setSelectedWalls([]);
     setScale(0.2);
     setGridSize(GRID_SIZES.standard);
     toast.success('Floor plan cleared');
@@ -278,6 +309,7 @@ const FloorPlanner = () => {
           break;
         case 'Escape':
           setSelectedProducts([]);
+          setSelectedWalls([]);
           setShowRoomCreator(false);
           setCurrentMode('select');
           break;
@@ -331,7 +363,7 @@ const FloorPlanner = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Enhanced Floor Planner</h1>
-              <p className="text-muted-foreground">Design your laboratory layout with room-based precision</p>
+              <p className="text-muted-foreground">Design with professional wall drawing and magnetic snapping</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -397,6 +429,15 @@ const FloorPlanner = () => {
               </CardContent>
             </Card>
 
+            {/* Wall Editor */}
+            <WallEditor
+              selectedWalls={selectedWalls}
+              walls={wallSegments}
+              onWallUpdate={handleWallUpdate}
+              onWallDelete={handleWallDelete}
+              scale={scale}
+            />
+
             <ProductStatistics placedProducts={placedProducts} />
             <SeriesSelector 
               onProductDrag={handleProductDrag}
@@ -440,7 +481,7 @@ const FloorPlanner = () => {
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
+                  <CardTitle className="text-lg">Canvas - Enhanced Wall Drawing</CardTitle>
                   
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline" className="text-xs">
@@ -503,9 +544,11 @@ const FloorPlanner = () => {
                   <span>Mode: {currentMode}</span>
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>
+                  <span>Walls: {wallSegments.length}</span>
                   <span>Rooms: {rooms.length}</span>
                   <span>
                     {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
+                    {selectedWalls.length > 0 && `${selectedWalls.length} walls selected`}
                   </span>
                 </div>
               </CardContent>
