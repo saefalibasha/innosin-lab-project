@@ -59,7 +59,7 @@ const DrawingEngine: React.FC<DrawingEngineProps> = ({
     };
   }, [handleCanvasClick]);
 
-  return null;
+  return null; // This component doesn't render anything, it just handles drawing logic
 };
 
 export default DrawingEngine;

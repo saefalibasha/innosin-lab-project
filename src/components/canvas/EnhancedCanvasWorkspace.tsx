@@ -323,15 +323,15 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     const finalPosition = snapResult.position;
     
     if (isValidProductPlacement(product, finalPosition)) {
-      setPlacedProducts(prev => prev.map(p => 
+      setPlacedProducts((prev: PlacedProduct[]) => prev.map(p => 
         p.id === product.id ? { ...p, position: finalPosition } : p
       ));
     }
-  }, [placedProducts, scale, gridSize, setPlacedProducts, isValidProductPlacement]);
+  }, [placedProducts, scale, gridSize, isValidProductPlacement]);
 
   const handleWallComplete = useCallback((wall: WallSegment) => {
-    setWallSegments(prev => [...prev, wall]);
-  }, [setWallSegments]);
+    setWallSegments((prev: WallSegment[]) => [...prev, wall]);
+  }, []);
 
   const handleRoomUpdate = useCallback((points: Point[]) => {
     if (points.length >= 3) {
@@ -360,10 +360,10 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         perimeter
       };
       
-      setRooms(prev => [...prev, newRoom]);
+      setRooms((prev: Room[]) => [...prev, newRoom]);
     }
     setRoomPoints(points);
-  }, [rooms.length, scale, setRooms, setRoomPoints]);
+  }, [rooms.length, scale]);
 
   const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -388,9 +388,9 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         category: draggedProduct.category || 'Innosin Lab'
       };
       
-      setPlacedProducts(prev => [...prev, newProduct]);
+      setPlacedProducts((prev: PlacedProduct[]) => [...prev, newProduct]);
     }
-  }, [draggedProduct, setPlacedProducts, pan, zoom, isValidProductPlacement]);
+  }, [draggedProduct, pan, zoom, isValidProductPlacement]);
 
   const handleCanvasDragOver = useCallback((e: React.DragEvent<HTMLCanvasElement>) => {
     e.preventDefault();
@@ -487,7 +487,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         units="mm"
       />
 
-      {/* Scale and Grid Controls */}
       <div className="absolute top-4 right-4 bg-white p-2 rounded shadow-lg">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
