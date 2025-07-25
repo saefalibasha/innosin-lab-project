@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,27 +8,20 @@ import {
   Save, 
   Download, 
   Upload, 
-  Trash2, 
-  Info,
-  RotateCcw,
-  Copy,
   Maximize2,
-  Home,
-  Square
+  Info,
+  Copy,
+  RotateCcw,
+  Trash2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
-import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
-import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
-import SeriesSelector from '@/components/floorplan/SeriesSelector';
-import ProductStatistics from '@/components/floorplan/ProductStatistics';
-import QuickHelp from '@/components/floorplan/QuickHelp';
-import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
-import TabbedSidebar from '@/components/floorplan/TabbedSidebar';
-import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
-import MeasurementInput from '@/components/canvas/MeasurementInput';
-import RoomCreator from '@/components/canvas/RoomCreator';
+import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES, parseDimensionString } from '@/utils/measurements';
+import { Product } from '@/types/product';
+import CanvasDrawingEngine from '@/components/canvas/CanvasDrawingEngine';
+import ProductLibrary from '@/components/floorplan/ProductLibrary';
+import DrawingToolbar from '@/components/floorplan/DrawingToolbar';
 
 const FloorPlanner = () => {
   // Canvas and drawing state
@@ -40,22 +34,17 @@ const FloorPlanner = () => {
   const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [draggedProduct, setDraggedProduct] = useState<any>(null);
-  const [showRoomCreator, setShowRoomCreator] = useState(false);
+  const [draggedProduct, setDraggedProduct] = useState<Product | null>(null);
   
-  // Enhanced measurement system
+  // Settings
   const [scale, setScale] = useState(0.2); // pixels per mm
   const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
-  const [showProducts, setShowProducts] = useState(true);
   
   // UI state
-  const [projectName, setProjectName] = useState('Untitled Floor Plan');
+  const [projectName, setProjectName] = useState('New Floor Plan');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  // Usage tracking
-  const { trackProductPlacement } = useProductUsageTracking();
   
   // History management
   const initialState: FloorPlanState = {
@@ -69,34 +58,68 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions
-  const CANVAS_WIDTH = 1200;
-  const CANVAS_HEIGHT = 800;
-
-  // Enhanced product management
-  const handleProductDrag = useCallback((product: any) => {
+  // Product drag handler
+  const handleProductDrag = useCallback((product: Product) => {
     setDraggedProduct(product);
+    console.log('Product dragged:', product.name);
   }, []);
 
-  const handleDeleteSelected = useCallback(() => {
-    setPlacedProducts(prev => prev.filter(product => !selectedProducts.includes(product.id)));
-    setSelectedProducts([]);
-    toast.success('Deleted selected products');
-  }, [selectedProducts]);
+  // Product drop handler
+  const handleProductDrop = useCallback((product: Product, position: Point) => {
+    console.log('Product dropped:', product.name, 'at position:', position);
+    
+    // Parse dimensions from the product
+    const dimensions = parseDimensionString(product.dimensions);
+    if (!dimensions) {
+      toast.error('Invalid product dimensions');
+      return;
+    }
 
-  const handleClearSelection = useCallback(() => {
+    const newProduct: PlacedProduct = {
+      id: `product-${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      category: product.category,
+      position: position,
+      rotation: 0,
+      dimensions: {
+        length: dimensions.width,
+        width: dimensions.depth,
+        height: dimensions.height
+      },
+      color: '#4caf50',
+      scale: 1,
+      modelPath: product.modelPath,
+      thumbnail: product.thumbnail,
+      description: product.description,
+      specifications: product.specifications
+    };
+
+    setPlacedProducts(prev => [...prev, newProduct]);
+    setDraggedProduct(null);
+    
+    // Save state for undo/redo
+    const newState = {
+      roomPoints,
+      placedProducts: [...placedProducts, newProduct],
+      doors,
+      textAnnotations,
+      wallSegments,
+      rooms
+    };
+    saveState(newState);
+    
+    toast.success(`${product.name} placed on canvas`);
+  }, [roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, saveState]);
+
+  // Tool change handler
+  const handleModeChange = useCallback((mode: DrawingMode) => {
+    setCurrentMode(mode);
     setSelectedProducts([]);
+    console.log('Mode changed to:', mode);
   }, []);
 
-  const handleRotateSelected = useCallback(() => {
-    setPlacedProducts(prev => prev.map(product => 
-      selectedProducts.includes(product.id)
-        ? { ...product, rotation: product.rotation + Math.PI / 2 }
-        : product
-    ));
-  }, [selectedProducts]);
-
-  // Enhanced view controls
+  // View controls
   const handleToggleGrid = useCallback(() => {
     setShowGrid(prev => !prev);
   }, []);
@@ -109,29 +132,56 @@ const FloorPlanner = () => {
     setIsFullscreen(prev => !prev);
   }, []);
 
-  // Room creation
-  const handleRoomCreate = useCallback((room: Room) => {
-    setRooms(prev => [...prev, room]);
-    setRoomPoints(room.points);
-    setShowRoomCreator(false);
-    toast.success(`Room "${room.name}" created successfully`);
-  }, []);
+  // Selected product actions
+  const handleDeleteSelected = useCallback(() => {
+    if (selectedProducts.length === 0) return;
+    
+    setPlacedProducts(prev => prev.filter(product => !selectedProducts.includes(product.id)));
+    setSelectedProducts([]);
+    
+    // Save state for undo/redo
+    const newState = {
+      roomPoints,
+      placedProducts: placedProducts.filter(product => !selectedProducts.includes(product.id)),
+      doors,
+      textAnnotations,
+      wallSegments,
+      rooms
+    };
+    saveState(newState);
+    
+    toast.success(`${selectedProducts.length} product(s) deleted`);
+  }, [selectedProducts, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, saveState]);
 
-  const handleStartRoomCreation = useCallback(() => {
-    setCurrentMode('room');
-    setShowRoomCreator(false);
-    toast.info('Click on canvas to start drawing room perimeter');
-  }, []);
+  const handleRotateSelected = useCallback(() => {
+    if (selectedProducts.length === 0) return;
+    
+    setPlacedProducts(prev => prev.map(product => 
+      selectedProducts.includes(product.id)
+        ? { ...product, rotation: product.rotation + Math.PI / 2 }
+        : product
+    ));
+    
+    toast.success(`${selectedProducts.length} product(s) rotated`);
+  }, [selectedProducts]);
 
-  // Tool change handler
-  const handleToolChange = useCallback((tool: string) => {
-    setCurrentMode(tool as DrawingMode);
-    if (tool === 'room') {
-      setShowRoomCreator(true);
-    }
-  }, []);
+  const handleCopySelected = useCallback(() => {
+    if (selectedProducts.length === 0) return;
+    
+    const productsToCopy = placedProducts.filter(product => selectedProducts.includes(product.id));
+    const copiedProducts = productsToCopy.map(product => ({
+      ...product,
+      id: `product-${Date.now()}-${Math.random()}`,
+      position: { x: product.position.x + 50, y: product.position.y + 50 }
+    }));
+    
+    setPlacedProducts(prev => [...prev, ...copiedProducts]);
+    setSelectedProducts(copiedProducts.map(p => p.id));
+    
+    toast.success(`${productsToCopy.length} product(s) copied`);
+  }, [selectedProducts, placedProducts]);
 
-  // File operations with mm precision
+  // File operations
   const handleSave = useCallback(() => {
     const floorPlanData = {
       name: projectName,
@@ -145,8 +195,7 @@ const FloorPlanner = () => {
       gridSize,
       settings: {
         showGrid,
-        showMeasurements,
-        showProducts
+        showMeasurements
       }
     };
     
@@ -161,7 +210,7 @@ const FloorPlanner = () => {
     
     URL.revokeObjectURL(url);
     toast.success('Floor plan saved successfully');
-  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, showGrid, showMeasurements, showProducts]);
+  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, showGrid, showMeasurements]);
 
   const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -184,7 +233,6 @@ const FloorPlanner = () => {
         if (data.settings) {
           setShowGrid(data.settings.showGrid ?? true);
           setShowMeasurements(data.settings.showMeasurements ?? true);
-          setShowProducts(data.settings.showProducts ?? true);
         }
         
         toast.success('Floor plan loaded successfully');
@@ -203,8 +251,6 @@ const FloorPlanner = () => {
     setWallSegments([]);
     setRooms([]);
     setSelectedProducts([]);
-    setScale(0.2);
-    setGridSize(GRID_SIZES.standard);
     toast.success('Floor plan cleared');
   }, []);
 
@@ -218,6 +264,7 @@ const FloorPlanner = () => {
       setTextAnnotations(previousState.textAnnotations);
       setWallSegments(previousState.wallSegments);
       setRooms(previousState.rooms);
+      toast.success('Undo successful');
     }
   }, [undo]);
 
@@ -230,11 +277,12 @@ const FloorPlanner = () => {
       setTextAnnotations(nextState.textAnnotations);
       setWallSegments(nextState.wallSegments);
       setRooms(nextState.rooms);
+      toast.success('Redo successful');
     }
   }, [redo]);
 
-  // Enhanced keyboard shortcuts
-  useEffect(() => {
+  // Keyboard shortcuts
+  React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
@@ -254,14 +302,6 @@ const FloorPlanner = () => {
             e.preventDefault();
             setSelectedProducts(placedProducts.map(p => p.id));
             break;
-          case 'g':
-            e.preventDefault();
-            handleToggleGrid();
-            break;
-          case 'm':
-            e.preventDefault();
-            handleToggleMeasurements();
-            break;
         }
       }
       
@@ -279,12 +319,6 @@ const FloorPlanner = () => {
           break;
         case 'Escape':
           setSelectedProducts([]);
-          setShowRoomCreator(false);
-          setCurrentMode('select');
-          break;
-        case 'F11':
-          e.preventDefault();
-          handleToggleFullscreen();
           break;
         case 'v':
           setCurrentMode('select');
@@ -298,27 +332,15 @@ const FloorPlanner = () => {
         case 'd':
           setCurrentMode('door');
           break;
+        case 't':
+          setCurrentMode('text');
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleSave, selectedProducts, placedProducts, handleDeleteSelected, handleRotateSelected, handleToggleGrid, handleToggleMeasurements, handleToggleFullscreen]);
-
-  // Calculate room area and statistics
-  const roomStatistics = useMemo(() => {
-    if (rooms.length === 0) return null;
-    
-    const totalArea = rooms.reduce((sum, room) => sum + room.area, 0);
-    const totalPerimeter = rooms.reduce((sum, room) => sum + room.perimeter, 0);
-    
-    return {
-      totalArea,
-      totalPerimeter,
-      roomCount: rooms.length,
-      averageRoomSize: totalArea / rooms.length
-    };
-  }, [rooms]);
+  }, [handleUndo, handleRedo, handleSave, selectedProducts, placedProducts, handleDeleteSelected, handleRotateSelected]);
 
   const containerClass = isFullscreen 
     ? "fixed inset-0 z-50 bg-background" 
@@ -331,8 +353,8 @@ const FloorPlanner = () => {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Enhanced Floor Planner</h1>
-              <p className="text-muted-foreground">Design your laboratory layout with room-based precision</p>
+              <h1 className="text-3xl font-bold text-foreground">Floor Planner</h1>
+              <p className="text-muted-foreground">Design your laboratory layout with precision</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -352,67 +374,44 @@ const FloorPlanner = () => {
             </div>
           </div>
           
-          {/* Enhanced Stats */}
+          {/* Stats */}
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-            <span>Rooms: {rooms.length}</span>
+            <span>Mode: {currentMode}</span>
             <span>Products: {placedProducts.length}</span>
+            <span>Rooms: {rooms.length}</span>
             <span>Walls: {wallSegments.length}</span>
             <span>Doors: {doors.length}</span>
             <span>Scale: {scale.toFixed(4)} px/mm</span>
-            {roomStatistics && (
-              <>
-                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, { unit: 'mm', precision: 0, showUnit: true })}</span>
-                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, { unit: 'mm', precision: 0, showUnit: true })}</span>
-              </>
-            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Enhanced Left Sidebar with Tabs - Made Wider */}
-          <div className="lg:col-span-2 space-y-4">
-            <TabbedSidebar
-              onProductDrag={handleProductDrag}
-              currentTool={currentMode}
-              placedProducts={placedProducts}
-              onRoomCreate={handleRoomCreate}
-              onStartRoomCreation={handleStartRoomCreation}
-            />
-          </div>
-
-          {/* Enhanced Main Content Area - Made Smaller */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Enhanced Horizontal Toolbar - Remove Zoom Controls */}
-            <HorizontalToolbar
-              currentTool={currentMode}
-              onToolChange={handleToolChange}
-              selectedProducts={selectedProducts}
-              onClearSelection={handleClearSelection}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Left Sidebar - Tools */}
+          <div className="lg:col-span-1 space-y-4">
+            <DrawingToolbar
+              currentMode={currentMode}
+              onModeChange={handleModeChange}
+              showGrid={showGrid}
+              onToggleGrid={handleToggleGrid}
+              showMeasurements={showMeasurements}
+              onToggleMeasurements={handleToggleMeasurements}
               onUndo={handleUndo}
               onRedo={handleRedo}
               canUndo={canUndo}
               canRedo={canRedo}
-              onToggleGrid={handleToggleGrid}
-              showGrid={showGrid}
-              scale={scale}
+              onClear={handleClear}
             />
+            
+            <ProductLibrary onProductDrag={handleProductDrag} />
+          </div>
 
-            {/* Room Creator Modal */}
-            {showRoomCreator && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <RoomCreator
-                  onRoomCreate={handleRoomCreate}
-                  onCancel={() => setShowRoomCreator(false)}
-                  scale={scale}
-                />
-              </div>
-            )}
-
-            {/* Enhanced Canvas - Made Smaller */}
+          {/* Main Content Area */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Canvas */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
+                  <CardTitle className="text-lg">Canvas</CardTitle>
                   
                   <div className="flex items-center space-x-2">
                     <Badge variant="outline" className="text-xs">
@@ -420,9 +419,6 @@ const FloorPlanner = () => {
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       {(1/scale).toFixed(2)}mm/px
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Mode: {currentMode}
                     </Badge>
                     <Button variant="outline" size="sm" asChild>
                       <label>
@@ -436,21 +432,14 @@ const FloorPlanner = () => {
                         />
                       </label>
                     </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={handleClear}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Clear
-                    </Button>
                   </div>
                 </div>
               </CardHeader>
               
               <CardContent>
-                <div className="w-full h-[500px]">
-                  <EnhancedCanvasWorkspace
+                <div className="w-full h-[600px] border rounded-lg overflow-hidden">
+                  <CanvasDrawingEngine
+                    canvasRef={canvasRef}
                     roomPoints={roomPoints}
                     setRoomPoints={setRoomPoints}
                     wallSegments={wallSegments}
@@ -463,21 +452,21 @@ const FloorPlanner = () => {
                     setTextAnnotations={setTextAnnotations}
                     rooms={rooms}
                     setRooms={setRooms}
-                    scale={0.2}
                     currentMode={currentMode}
+                    scale={scale}
+                    gridSize={gridSize}
                     showGrid={showGrid}
                     showMeasurements={showMeasurements}
-                    gridSize={gridSize}
-                    onClearAll={handleClear}
+                    selectedProducts={selectedProducts}
+                    setSelectedProducts={setSelectedProducts}
+                    onProductDrop={handleProductDrop}
                   />
                 </div>
                 
-                {/* Enhanced Canvas Status */}
+                {/* Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Mode: {currentMode}</span>
-                  <span>Canvas: 1000 × 600</span>
+                  <span>Canvas: 1000 × 600 pixels</span>
                   <span>Grid: {gridSize}mm</span>
-                  <span>Rooms: {rooms.length}</span>
                   <span>
                     {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
                   </span>
@@ -485,33 +474,7 @@ const FloorPlanner = () => {
               </CardContent>
             </Card>
             
-            {/* Room Information Panel */}
-            {rooms.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    Room Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {rooms.map((room, index) => (
-                      <div key={room.id} className="border rounded p-3 space-y-2">
-                        <div className="font-medium">{room.name}</div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div>Area: {formatMeasurement(room.area, { unit: 'mm', precision: 0, showUnit: true })}</div>
-                          <div>Perimeter: {formatMeasurement(room.perimeter, { unit: 'mm', precision: 0, showUnit: true })}</div>
-                          <div>Points: {room.points.length}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {/* Enhanced Selection Properties */}
+            {/* Selection Properties */}
             {selectedProducts.length > 0 && (
               <Card>
                 <CardHeader>
@@ -535,6 +498,7 @@ const FloorPlanner = () => {
                       variant="outline" 
                       size="sm" 
                       className="flex-1"
+                      onClick={handleCopySelected}
                     >
                       <Copy className="h-3 w-3 mr-1" />
                       Copy
@@ -550,26 +514,6 @@ const FloorPlanner = () => {
                     <Trash2 className="h-3 w-3 mr-2" />
                     Delete
                   </Button>
-                  
-                  {selectedProducts.length === 1 && (
-                    <div className="space-y-2 pt-2 border-t">
-                      <span className="text-xs font-medium">Properties:</span>
-                      {(() => {
-                        const product = placedProducts.find(p => p.id === selectedProducts[0]);
-                        if (!product) return null;
-                        
-                        return (
-                          <div className="space-y-1 text-xs">
-                            <div><strong>Name:</strong> {product.name}</div>
-                            <div><strong>Category:</strong> {product.category}</div>
-                            <div><strong>Dimensions:</strong> {product.dimensions.length}×{product.dimensions.width}mm</div>
-                            <div><strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm</div>
-                            <div><strong>Rotation:</strong> {Math.round(product.rotation * 180 / Math.PI)}°</div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             )}
