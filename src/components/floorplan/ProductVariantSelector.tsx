@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Eye, Download } from 'lucide-react';
-import { cleanProductName } from '@/lib/productUtils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Palette, RotateCcw, Layers, DoorOpen, Ruler } from 'lucide-react';
 import { Product } from '@/types/product';
 
 interface ProductVariantSelectorProps {
@@ -18,7 +17,7 @@ interface ProductVariantSelectorProps {
   };
   onVariantChange: (variantType: string, value: string) => void;
   onProductSelect: (product: Product) => void;
-  selectedProduct: Product | null;
+  selectedProduct?: Product;
 }
 
 export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
@@ -28,202 +27,244 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   onProductSelect,
   selectedProduct
 }) => {
+  // Helper function to clean product names by removing part numbers in parentheses
+  const cleanProductName = (name: string): string => {
+    // Remove everything in parentheses and any trailing/leading whitespace
+    return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
+  };
+
   // Helper function to extract first numeric value from dimension string
-  const extractNumericValue = (dimensions: string): number => {
-    const match = dimensions.match(/(\d+)/);
-    return match ? parseInt(match[1]) : 0;
+  const extractFirstNumeric = (dimension: string): number => {
+    const match = dimension.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
   };
 
-  // Sort products by dimensions (length first)
-  const sortedProducts = [...products].sort((a, b) => {
-    if (a.dimensions && b.dimensions) {
-      return extractNumericValue(a.dimensions) - extractNumericValue(b.dimensions);
-    }
-    return 0;
-  });
-
-  // Get unique variants for filtering
-  const getUniqueVariants = (key: keyof typeof selectedVariants) => {
-    const values = products.map(p => {
-      switch (key) {
-        case 'finish':
-          return p.finish_type;
-        case 'orientation':
-          return p.orientation;
-        case 'drawerCount':
-          return p.drawer_count?.toString();
-        case 'doorType':
-          return p.door_type;
-        case 'dimensions':
-          return p.dimensions;
-        default:
-          return null;
-      }
-    }).filter(Boolean);
-    return [...new Set(values)];
+  // Helper function to sort dimensions numerically by first value
+  const sortDimensions = (dimensions: string[]): string[] => {
+    return [...dimensions].sort((a, b) => {
+      const numA = extractFirstNumeric(a);
+      const numB = extractFirstNumeric(b);
+      return numA - numB;
+    });
   };
+
+  // Extract available variant options from products
+  const availableFinishes = Array.from(new Set(
+    products.map(p => p.finish_type).filter(Boolean)
+  ));
+  
+  const availableOrientations = Array.from(new Set(
+    products.map(p => p.orientation).filter(Boolean)
+  ));
+  
+  const availableDrawerCounts = Array.from(new Set(
+    products.map(p => p.drawer_count?.toString()).filter(Boolean)
+  ));
+  
+  const availableDoorTypes = Array.from(new Set(
+    products.map(p => p.door_type).filter(Boolean)
+  ));
+  
+  const availableDimensions = sortDimensions(Array.from(new Set(
+    products.map(p => p.dimensions).filter(Boolean)
+  )));
 
   // Filter products based on selected variants
-  const filteredProducts = sortedProducts.filter(product => {
-    const matchesFinish = !selectedVariants.finish || product.finish_type === selectedVariants.finish;
-    const matchesOrientation = !selectedVariants.orientation || product.orientation === selectedVariants.orientation;
-    const matchesDrawerCount = !selectedVariants.drawerCount || product.drawer_count?.toString() === selectedVariants.drawerCount;
-    const matchesDoorType = !selectedVariants.doorType || product.door_type === selectedVariants.doorType;
-    const matchesDimensions = !selectedVariants.dimensions || product.dimensions === selectedVariants.dimensions;
-    
-    return matchesFinish && matchesOrientation && matchesDrawerCount && matchesDoorType && matchesDimensions;
+  const filteredProducts = products.filter(product => {
+    if (selectedVariants.finish && product.finish_type !== selectedVariants.finish) return false;
+    if (selectedVariants.orientation && product.orientation !== selectedVariants.orientation) return false;
+    if (selectedVariants.drawerCount && product.drawer_count?.toString() !== selectedVariants.drawerCount) return false;
+    if (selectedVariants.doorType && product.door_type !== selectedVariants.doorType) return false;
+    if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
+    return true;
   });
+
+  const getFinishDisplayName = (finish: string) => {
+    const finishMap: Record<string, string> = {
+      'PC': 'Powder Coat',
+      'SS304': 'Stainless Steel',
+      'powder-coat': 'Powder Coat',
+      'stainless-steel': 'Stainless Steel'
+    };
+    return finishMap[finish] || finish;
+  };
+
+  const getOrientationDisplayName = (orientation: string) => {
+    const orientationMap: Record<string, string> = {
+      'LH': 'Left Hand',
+      'RH': 'Right Hand',
+      'Left-Handed': 'Left Hand',
+      'Right-Handed': 'Right Hand'
+    };
+    return orientationMap[orientation] || orientation;
+  };
 
   return (
     <div className="space-y-4">
-      {/* Variant filters */}
-      <div className="space-y-3">
-        {getUniqueVariants('finish').length > 1 && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Finish</label>
-            <div className="flex flex-wrap gap-2">
-              {getUniqueVariants('finish').map(finish => (
-                <Button
-                  key={finish}
-                  variant={selectedVariants.finish === finish ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onVariantChange('finish', finish)}
-                >
-                  {finish}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {getUniqueVariants('orientation').length > 1 && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Orientation</label>
-            <div className="flex flex-wrap gap-2">
-              {getUniqueVariants('orientation').map(orientation => (
-                <Button
-                  key={orientation}
-                  variant={selectedVariants.orientation === orientation ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onVariantChange('orientation', orientation)}
-                >
-                  {orientation}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {getUniqueVariants('drawerCount').length > 1 && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Drawer Count</label>
-            <div className="flex flex-wrap gap-2">
-              {getUniqueVariants('drawerCount').map(count => (
-                <Button
-                  key={count}
-                  variant={selectedVariants.drawerCount === count ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onVariantChange('drawerCount', count)}
-                >
-                  {count} Drawers
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {getUniqueVariants('doorType').length > 1 && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Door Type</label>
-            <div className="flex flex-wrap gap-2">
-              {getUniqueVariants('doorType').map(doorType => (
-                <Button
-                  key={doorType}
-                  variant={selectedVariants.doorType === doorType ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onVariantChange('doorType', doorType)}
-                >
-                  {doorType}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {getUniqueVariants('dimensions').length > 1 && (
-          <div>
-            <label className="text-sm font-medium mb-2 block">Dimensions</label>
-            <div className="flex flex-wrap gap-2">
-              {getUniqueVariants('dimensions').map(dimensions => (
-                <Button
-                  key={dimensions}
-                  variant={selectedVariants.dimensions === dimensions ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onVariantChange('dimensions', dimensions)}
-                >
-                  {dimensions}
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Product grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredProducts.map((product) => (
-          <Card 
-            key={product.id} 
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              selectedProduct?.id === product.id ? 'ring-2 ring-blue-500' : ''
-            }`}
-            onClick={() => onProductSelect(product)}
+      {/* Finish Type Selection */}
+      {availableFinishes.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Palette className="h-3 w-3" />
+            Finish Type:
+          </label>
+          <ToggleGroup
+            type="single"
+            value={selectedVariants.finish || ''}
+            onValueChange={(value) => onVariantChange('finish', value)}
+            className="justify-start"
           >
-            <CardHeader className="pb-3">
-              <div className="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                {product.thumbnail_path || product.thumbnail ? (
-                  <img 
-                    src={product.thumbnail_path || product.thumbnail} 
-                    alt={cleanProductName(product.name)}
-                    className="w-full h-full object-cover"
+            {availableFinishes.map((finish) => (
+              <ToggleGroupItem
+                key={finish}
+                value={finish}
+                variant="outline"
+                className="text-xs h-8 px-3"
+              >
+                {getFinishDisplayName(finish)}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+      )}
+
+      {/* Orientation Selection */}
+      {availableOrientations.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <RotateCcw className="h-3 w-3" />
+            Orientation:
+          </label>
+          <div className="flex gap-2">
+            {availableOrientations.map((orientation) => (
+              <Button
+                key={orientation}
+                variant={selectedVariants.orientation === orientation ? "default" : "outline"}
+                size="sm"
+                onClick={() => onVariantChange('orientation', orientation)}
+                className="text-xs h-8 px-3"
+              >
+                {getOrientationDisplayName(orientation)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Drawer Count Selection */}
+      {availableDrawerCounts.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Layers className="h-3 w-3" />
+            Drawer Count:
+          </label>
+          <Select
+            value={selectedVariants.drawerCount || ''}
+            onValueChange={(value) => onVariantChange('drawerCount', value)}
+          >
+            <SelectTrigger className="w-full h-8 text-xs">
+              <SelectValue placeholder="Select drawer count" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableDrawerCounts.map((count) => (
+                <SelectItem key={count} value={count}>
+                  {count} {count === '1' ? 'Drawer' : 'Drawers'}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Door Type Selection */}
+      {availableDoorTypes.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <DoorOpen className="h-3 w-3" />
+            Door Type:
+          </label>
+          <Select
+            value={selectedVariants.doorType || ''}
+            onValueChange={(value) => onVariantChange('doorType', value)}
+          >
+            <SelectTrigger className="w-full h-8 text-xs">
+              <SelectValue placeholder="Select door type" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableDoorTypes.map((doorType) => (
+                <SelectItem key={doorType} value={doorType}>
+                  {doorType}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Dimensions Selection */}
+      {availableDimensions.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Ruler className="h-3 w-3" />
+            Dimensions:
+          </label>
+          <Select
+            value={selectedVariants.dimensions || ''}
+            onValueChange={(value) => onVariantChange('dimensions', value)}
+          >
+            <SelectTrigger className="w-full h-8 text-xs">
+              <SelectValue placeholder="Select dimensions" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableDimensions.map((dimension) => (
+                <SelectItem key={dimension} value={dimension}>
+                  {dimension}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Product Selection */}
+      {filteredProducts.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">
+            Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
+          </label>
+          <div className="grid grid-cols-1 gap-2">
+            {filteredProducts.map((product) => (
+              <Button
+                key={product.id}
+                variant={selectedProduct?.id === product.id ? "default" : "outline"}
+                className="w-full p-3 h-auto justify-start text-left"
+                onClick={() => onProductSelect(product)}
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <img
+                    src={product.thumbnail_path || '/placeholder.svg'}
+                    alt={product.name}
+                    className="w-8 h-8 rounded object-cover flex-shrink-0"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder.svg';
+                    }}
                   />
-                ) : (
-                  <Package className="w-12 h-12 text-gray-400" />
-                )}
-              </div>
-              <CardTitle className="text-base font-medium line-clamp-2">
-                {cleanProductName(product.name)}
-              </CardTitle>
-            </CardHeader>
-            
-            <CardContent className="pt-0">
-              <div className="space-y-2">
-                {product.category && (
-                  <Badge variant="secondary" className="text-xs">
-                    {product.category}
-                  </Badge>
-                )}
-                
-                {product.dimensions && (
-                  <p className="text-sm text-gray-600">
-                    <strong>Dimensions:</strong> {product.dimensions}
-                  </p>
-                )}
-                
-                {product.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {product.description}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-xs">{cleanProductName(product.name)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {product.product_code}
+                    </div>
+                  </div>
+                </div>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          No products match the selected variants
+        <div className="text-center py-4 text-muted-foreground">
+          <p className="text-xs">No products match the selected variants</p>
         </div>
       )}
     </div>
