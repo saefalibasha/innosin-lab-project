@@ -30,14 +30,6 @@ const AVAILABLE_BRANDS = [
   { value: 'Other', label: 'Other' }
 ];
 
-const CATEGORIES_BY_BRAND = {
-  'Innosin Lab': ['Mobile Cabinets', 'Wall Cabinets', 'Tall Cabinets', 'Open Racks', 'Combination Cabinets'],
-  'Broen-Lab': ['Fume Hoods', 'Safety Cabinets', 'Chemical Storage', 'Ventilation Systems'],
-  'Hamilton Laboratory Solutions': ['Liquid Handling', 'Automation Systems', 'Robotics', 'Consumables'],
-  'Oriental Giken Inc.': ['Precision Instruments', 'Measurement Tools', 'Control Systems', 'Sensors'],
-  'Other': ['General Laboratory Equipment', 'Custom Solutions', 'Specialty Items']
-};
-
 export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = ({
   open,
   onClose,
@@ -93,7 +85,7 @@ export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = (
         .insert([{
           name: formData.name,
           product_series: formData.product_series,
-          category: finalBrand, // Use brand as category for proper grouping
+          category: formData.category,
           description: formData.description,
           is_series_parent: true,
           is_active: true,
@@ -120,6 +112,7 @@ export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = (
             id: seriesData.id, 
             name: formData.product_series,
             brand: finalBrand,
+            category: formData.category,
             created_at: new Date().toISOString()
           }
         }]);
@@ -156,15 +149,12 @@ export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = (
   const handleBrandChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
-      brand: value,
-      category: '' // Reset category when brand changes
+      brand: value
     }));
     if (value !== 'Other') {
       setCustomBrand('');
     }
   };
-
-  const availableCategories = CATEGORIES_BY_BRAND[formData.brand as keyof typeof CATEGORIES_BY_BRAND] || [];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -208,18 +198,12 @@ export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = (
 
             <div className="space-y-2">
               <Label htmlFor="category">Category *</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCategories.map(category => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="Enter category (e.g., Mobile Cabinets, Fume Hoods)"
+              />
             </div>
           </div>
 
