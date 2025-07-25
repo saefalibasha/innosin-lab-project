@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,20 +7,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
-
-// Standardized INNOSIN product series names
-const INNOSIN_SERIES_OPTIONS = [
-  'KNEE SPACE',
-  'MOBILE CABINET FOR 750mm H BENCH',
-  'MOBILE CABINET FOR 900mm H BENCH',
-  'MODULAR CABINET',
-  'OPEN RACK',
-  'SINK CABINET',
-  'TALL CABINET GLASS DOOR',
-  'TALL CABINET SOLID DOOR',
-  'WALL CABINET'
-];
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Save, X } from 'lucide-react';
 
 interface ProductSeriesFormDialogProps {
   open: boolean;
@@ -29,22 +22,43 @@ interface ProductSeriesFormDialogProps {
   onSeriesAdded: () => void;
 }
 
-export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: ProductSeriesFormDialogProps) => {
-  const [loading, setLoading] = useState(false);
+const AVAILABLE_BRANDS = [
+  { value: 'Innosin Lab', label: 'Innosin Lab' },
+  { value: 'Broen-Lab', label: 'Broen-Lab' },
+  { value: 'Hamilton Laboratory Solutions', label: 'Hamilton Laboratory Solutions' },
+  { value: 'Oriental Giken Inc.', label: 'Oriental Giken Inc.' },
+  { value: 'Other', label: 'Other' }
+];
+
+const CATEGORIES_BY_BRAND = {
+  'Innosin Lab': ['Mobile Cabinets', 'Wall Cabinets', 'Tall Cabinets', 'Open Racks', 'Combination Cabinets'],
+  'Broen-Lab': ['Fume Hoods', 'Safety Cabinets', 'Chemical Storage', 'Ventilation Systems'],
+  'Hamilton Laboratory Solutions': ['Liquid Handling', 'Automation Systems', 'Robotics', 'Consumables'],
+  'Oriental Giken Inc.': ['Precision Instruments', 'Measurement Tools', 'Control Systems', 'Sensors'],
+  'Other': ['General Laboratory Equipment', 'Custom Solutions', 'Specialty Items']
+};
+
+export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = ({
+  open,
+  onClose,
+  onSeriesAdded
+}) => {
   const [formData, setFormData] = useState({
     name: '',
     product_series: '',
-    category: 'Innosin Lab',
+    category: '',
+    brand: 'Innosin Lab',
     description: '',
-    product_code: '',
     target_variant_count: 4
   });
+  const [customBrand, setCustomBrand] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.product_series || !formData.product_code) {
+    if (!formData.name || !formData.product_series || !formData.category) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -53,77 +67,80 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
       return;
     }
 
-    if (!INNOSIN_SERIES_OPTIONS.includes(formData.product_series)) {
-      toast({
-        title: "Error",
-        description: "Please select a valid product series from the dropdown",
-        variant: "destructive",
-      });
-      return;
-    }
+    setIsSubmitting(true);
 
     try {
-      setLoading(true);
+      const finalBrand = formData.brand === 'Other' ? customBrand : formData.brand;
       
-      // Check if this series already exists
-      const { data: existingSeries, error: checkError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('product_series', formData.product_series)
-        .eq('is_series_parent', true)
-        .single();
-
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw checkError;
-      }
-
-      if (existingSeries) {
+      if (formData.brand === 'Other' && !customBrand.trim()) {
         toast({
           title: "Error",
-          description: "This product series already exists",
+          description: "Please specify the brand name",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
 
-      // Create series slug from product_series
-      const seriesSlug = formData.product_series.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-      
+      // Generate a slug from the series name
+      const slug = formData.product_series.toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
       // Create the series parent product
-      const { error } = await supabase
+      const { data: seriesData, error: seriesError } = await supabase
         .from('products')
-        .insert({
+        .insert([{
           name: formData.name,
-          product_code: formData.product_code,
           product_series: formData.product_series,
-          category: formData.category,
+          category: finalBrand, // Use brand as category for proper grouping
           description: formData.description,
-          series_slug: seriesSlug,
           is_series_parent: true,
           is_active: true,
-          target_variant_count: formData.target_variant_count
-        });
+          series_slug: slug,
+          target_variant_count: formData.target_variant_count,
+          company_tags: [finalBrand],
+          product_code: `${formData.product_series}-SERIES`,
+          finish_type: 'PC',
+          orientation: 'None',
+          series_order: 0
+        }])
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (seriesError) throw seriesError;
+
+      // Log the activity
+      await supabase
+        .from('product_activity_log')
+        .insert([{
+          action: 'series_created',
+          changed_by: 'admin',
+          new_data: { 
+            id: seriesData.id, 
+            name: formData.product_series,
+            brand: finalBrand,
+            created_at: new Date().toISOString()
+          }
+        }]);
 
       toast({
         title: "Success",
-        description: "Product series created successfully",
+        description: `Product series "${formData.product_series}" created successfully`,
       });
 
       // Reset form
       setFormData({
         name: '',
         product_series: '',
-        category: 'Innosin Lab',
+        category: '',
+        brand: 'Innosin Lab',
         description: '',
-        product_code: '',
         target_variant_count: 4
       });
-
+      setCustomBrand('');
+      
       onSeriesAdded();
-      onClose();
-
     } catch (error) {
       console.error('Error creating series:', error);
       toast({
@@ -132,84 +149,112 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const handleBrandChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      brand: value,
+      category: '' // Reset category when brand changes
+    }));
+    if (value !== 'Other') {
+      setCustomBrand('');
+    }
+  };
+
+  const availableCategories = CATEGORIES_BY_BRAND[formData.brand as keyof typeof CATEGORIES_BY_BRAND] || [];
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New Product Series</DialogTitle>
+          <DialogDescription>
+            Add a new product series to the catalog. You can specify the brand, category, and expected number of variants.
+          </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Series Name *</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Mobile Cabinet Series"
-                required
-              />
+            <div className="space-y-2">
+              <Label htmlFor="brand">Brand *</Label>
+              <Select value={formData.brand} onValueChange={handleBrandChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select brand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {AVAILABLE_BRANDS.map(brand => (
+                    <SelectItem key={brand.value} value={brand.value}>
+                      {brand.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <Label htmlFor="product_code">Product Code *</Label>
-              <Input
-                id="product_code"
-                value={formData.product_code}
-                onChange={(e) => setFormData(prev => ({ ...prev, product_code: e.target.value }))}
-                placeholder="e.g., MC-PC-SERIES"
-                required
-              />
+
+            {formData.brand === 'Other' && (
+              <div className="space-y-2">
+                <Label htmlFor="customBrand">Custom Brand Name *</Label>
+                <Input
+                  id="customBrand"
+                  value={customBrand}
+                  onChange={(e) => setCustomBrand(e.target.value)}
+                  placeholder="Enter brand name"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category *</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCategories.map(category => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="product_series">Product Series *</Label>
-            <Select value={formData.product_series} onValueChange={(value) => setFormData(prev => ({ ...prev, product_series: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a product series" />
-              </SelectTrigger>
-              <SelectContent>
-                {INNOSIN_SERIES_OPTIONS.map((series) => (
-                  <SelectItem key={series} value={series}>
-                    {series}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label htmlFor="product_series">Series Name *</Label>
+            <Input
+              id="product_series"
+              value={formData.product_series}
+              onChange={(e) => setFormData(prev => ({ ...prev, product_series: e.target.value }))}
+              placeholder="e.g., Mobile Cabinet Series"
+            />
           </div>
 
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Innosin Lab">Innosin Lab</SelectItem>
-                <SelectItem value="Storage Solutions">Storage Solutions</SelectItem>
-                <SelectItem value="Laboratory Equipment">Laboratory Equipment</SelectItem>
-                <SelectItem value="Furniture">Furniture</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-2">
+            <Label htmlFor="name">Display Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., MC Series - Mobile Laboratory Cabinets"
+            />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Describe the product series..."
+              placeholder="Brief description of the product series..."
               rows={3}
             />
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="target_variant_count">Expected Number of Variants</Label>
             <Input
               id="target_variant_count"
@@ -218,20 +263,20 @@ export const ProductSeriesFormDialog = ({ open, onClose, onSeriesAdded }: Produc
               max="20"
               value={formData.target_variant_count}
               onChange={(e) => setFormData(prev => ({ ...prev, target_variant_count: parseInt(e.target.value) || 4 }))}
-              placeholder="4"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              How many variants do you plan to create for this series?
+            <p className="text-xs text-muted-foreground">
+              How many product variants do you plan to create for this series?
             </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
+              <X className="h-4 w-4 mr-2" />
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Create Series
+            <Button type="submit" disabled={isSubmitting}>
+              <Save className="h-4 w-4 mr-2" />
+              {isSubmitting ? 'Creating...' : 'Create Series'}
             </Button>
           </div>
         </form>
