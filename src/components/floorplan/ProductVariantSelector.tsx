@@ -5,31 +5,28 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, Eye, Download } from 'lucide-react';
 import { cleanProductName } from '@/lib/productUtils';
+import { Product } from '@/types/product';
 
 interface ProductVariantSelectorProps {
-  variants: Array<{
-    id: string;
-    name: string;
+  products: Product[];
+  selectedVariants: {
+    finish?: string;
+    orientation?: string;
+    drawerCount?: string;
+    doorType?: string;
     dimensions?: string;
-    thumbnail_path?: string;
-    category?: string;
-    description?: string;
-    specifications?: string[] | { [key: string]: any };
-  }>;
-  selectedVariant?: string;
-  onVariantSelect: (variantId: string) => void;
-  onViewDetails?: (variant: any) => void;
-  onDownload?: (variant: any) => void;
-  className?: string;
+  };
+  onVariantChange: (variantType: string, value: string) => void;
+  onProductSelect: (product: Product) => void;
+  selectedProduct: Product | null;
 }
 
 export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
-  variants,
-  selectedVariant,
-  onVariantSelect,
-  onViewDetails,
-  onDownload,
-  className = ""
+  products,
+  selectedVariants,
+  onVariantChange,
+  onProductSelect,
+  selectedProduct
 }) => {
   // Helper function to extract first numeric value from dimension string
   const extractNumericValue = (dimensions: string): number => {
@@ -37,33 +34,157 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     return match ? parseInt(match[1]) : 0;
   };
 
-  // Sort variants by dimensions (length first)
-  const sortedVariants = [...variants].sort((a, b) => {
+  // Sort products by dimensions (length first)
+  const sortedProducts = [...products].sort((a, b) => {
     if (a.dimensions && b.dimensions) {
       return extractNumericValue(a.dimensions) - extractNumericValue(b.dimensions);
     }
     return 0;
   });
 
+  // Get unique variants for filtering
+  const getUniqueVariants = (key: keyof typeof selectedVariants) => {
+    const values = products.map(p => {
+      switch (key) {
+        case 'finish':
+          return p.finish_type;
+        case 'orientation':
+          return p.orientation;
+        case 'drawerCount':
+          return p.drawer_count?.toString();
+        case 'doorType':
+          return p.door_type;
+        case 'dimensions':
+          return p.dimensions;
+        default:
+          return null;
+      }
+    }).filter(Boolean);
+    return [...new Set(values)];
+  };
+
+  // Filter products based on selected variants
+  const filteredProducts = sortedProducts.filter(product => {
+    const matchesFinish = !selectedVariants.finish || product.finish_type === selectedVariants.finish;
+    const matchesOrientation = !selectedVariants.orientation || product.orientation === selectedVariants.orientation;
+    const matchesDrawerCount = !selectedVariants.drawerCount || product.drawer_count?.toString() === selectedVariants.drawerCount;
+    const matchesDoorType = !selectedVariants.doorType || product.door_type === selectedVariants.doorType;
+    const matchesDimensions = !selectedVariants.dimensions || product.dimensions === selectedVariants.dimensions;
+    
+    return matchesFinish && matchesOrientation && matchesDrawerCount && matchesDoorType && matchesDimensions;
+  });
+
   return (
-    <div className={`space-y-4 ${className}`}>
-      <h3 className="text-lg font-semibold">Product Variants</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {sortedVariants.map((variant) => (
+    <div className="space-y-4">
+      {/* Variant filters */}
+      <div className="space-y-3">
+        {getUniqueVariants('finish').length > 1 && (
+          <div>
+            <label className="text-sm font-medium mb-2 block">Finish</label>
+            <div className="flex flex-wrap gap-2">
+              {getUniqueVariants('finish').map(finish => (
+                <Button
+                  key={finish}
+                  variant={selectedVariants.finish === finish ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onVariantChange('finish', finish)}
+                >
+                  {finish}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {getUniqueVariants('orientation').length > 1 && (
+          <div>
+            <label className="text-sm font-medium mb-2 block">Orientation</label>
+            <div className="flex flex-wrap gap-2">
+              {getUniqueVariants('orientation').map(orientation => (
+                <Button
+                  key={orientation}
+                  variant={selectedVariants.orientation === orientation ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onVariantChange('orientation', orientation)}
+                >
+                  {orientation}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {getUniqueVariants('drawerCount').length > 1 && (
+          <div>
+            <label className="text-sm font-medium mb-2 block">Drawer Count</label>
+            <div className="flex flex-wrap gap-2">
+              {getUniqueVariants('drawerCount').map(count => (
+                <Button
+                  key={count}
+                  variant={selectedVariants.drawerCount === count ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onVariantChange('drawerCount', count)}
+                >
+                  {count} Drawers
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {getUniqueVariants('doorType').length > 1 && (
+          <div>
+            <label className="text-sm font-medium mb-2 block">Door Type</label>
+            <div className="flex flex-wrap gap-2">
+              {getUniqueVariants('doorType').map(doorType => (
+                <Button
+                  key={doorType}
+                  variant={selectedVariants.doorType === doorType ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onVariantChange('doorType', doorType)}
+                >
+                  {doorType}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {getUniqueVariants('dimensions').length > 1 && (
+          <div>
+            <label className="text-sm font-medium mb-2 block">Dimensions</label>
+            <div className="flex flex-wrap gap-2">
+              {getUniqueVariants('dimensions').map(dimensions => (
+                <Button
+                  key={dimensions}
+                  variant={selectedVariants.dimensions === dimensions ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => onVariantChange('dimensions', dimensions)}
+                >
+                  {dimensions}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Product grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredProducts.map((product) => (
           <Card 
-            key={variant.id} 
+            key={product.id} 
             className={`cursor-pointer transition-all hover:shadow-md ${
-              selectedVariant === variant.id ? 'ring-2 ring-blue-500' : ''
+              selectedProduct?.id === product.id ? 'ring-2 ring-blue-500' : ''
             }`}
-            onClick={() => onVariantSelect(variant.id)}
+            onClick={() => onProductSelect(product)}
           >
             <CardHeader className="pb-3">
               <div className="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
-                {variant.thumbnail_path ? (
+                {product.thumbnail_path || product.thumbnail ? (
                   <img 
-                    src={variant.thumbnail_path} 
-                    alt={cleanProductName(variant.name)}
+                    src={product.thumbnail_path || product.thumbnail} 
+                    alt={cleanProductName(product.name)}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -71,66 +192,40 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                 )}
               </div>
               <CardTitle className="text-base font-medium line-clamp-2">
-                {cleanProductName(variant.name)}
+                {cleanProductName(product.name)}
               </CardTitle>
             </CardHeader>
             
             <CardContent className="pt-0">
               <div className="space-y-2">
-                {variant.category && (
+                {product.category && (
                   <Badge variant="secondary" className="text-xs">
-                    {variant.category}
+                    {product.category}
                   </Badge>
                 )}
                 
-                {variant.dimensions && (
+                {product.dimensions && (
                   <p className="text-sm text-gray-600">
-                    <strong>Dimensions:</strong> {variant.dimensions}
+                    <strong>Dimensions:</strong> {product.dimensions}
                   </p>
                 )}
                 
-                {variant.description && (
+                {product.description && (
                   <p className="text-sm text-gray-600 line-clamp-2">
-                    {variant.description}
+                    {product.description}
                   </p>
-                )}
-              </div>
-              
-              <div className="flex gap-2 mt-3">
-                {onViewDetails && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onViewDetails(variant);
-                    }}
-                    className="flex-1"
-                  >
-                    <Eye className="w-3 h-3 mr-1" />
-                    View
-                  </Button>
-                )}
-                
-                {onDownload && (
-                  <Button 
-                    variant="default" 
-                    size="sm" 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDownload(variant);
-                    }}
-                    className="flex-1"
-                  >
-                    <Download className="w-3 h-3 mr-1" />
-                    Download
-                  </Button>
                 )}
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {filteredProducts.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          No products match the selected variants
+        </div>
+      )}
     </div>
   );
 };
