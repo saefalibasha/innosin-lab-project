@@ -44,13 +44,6 @@ const RoomCreator: React.FC<RoomCreatorProps> = ({ onRoomCreate, onCancel, scale
     onRoomCreate(room);
   };
 
-  const roomPresets = [
-    { name: 'Small Lab (3x3m)', width: 3000, height: 3000 },
-    { name: 'Medium Lab (4x4m)', width: 4000, height: 4000 },
-    { name: 'Large Lab (5x6m)', width: 5000, height: 6000 },
-    { name: 'Classroom (8x6m)', width: 8000, height: 6000 }
-  ];
-
   return (
     <Card className="w-80">
       <CardHeader>
@@ -81,49 +74,26 @@ const RoomCreator: React.FC<RoomCreatorProps> = ({ onRoomCreate, onCancel, scale
         </div>
 
         {roomType === 'rectangle' && (
-          <>
+          <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label>Quick Presets</Label>
-              <Select onValueChange={(value) => {
-                const preset = roomPresets.find(p => p.name === value);
-                if (preset) {
-                  setDimensions({ width: preset.width, height: preset.height });
-                }
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a preset" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roomPresets.map(preset => (
-                    <SelectItem key={preset.name} value={preset.name}>
-                      {preset.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label htmlFor="width">Width (mm)</Label>
+              <Input
+                id="width"
+                type="number"
+                value={dimensions.width}
+                onChange={(e) => setDimensions(prev => ({ ...prev, width: parseInt(e.target.value) || 0 }))}
+              />
             </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor="width">Width (mm)</Label>
-                <Input
-                  id="width"
-                  type="number"
-                  value={dimensions.width}
-                  onChange={(e) => setDimensions(prev => ({ ...prev, width: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="height">Height (mm)</Label>
-                <Input
-                  id="height"
-                  type="number"
-                  value={dimensions.height}
-                  onChange={(e) => setDimensions(prev => ({ ...prev, height: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
+            <div>
+              <Label htmlFor="height">Height (mm)</Label>
+              <Input
+                id="height"
+                type="number"
+                value={dimensions.height}
+                onChange={(e) => setDimensions(prev => ({ ...prev, height: parseInt(e.target.value) || 0 }))}
+              />
             </div>
-          </>
+          </div>
         )}
 
         {roomType === 'custom' && (
