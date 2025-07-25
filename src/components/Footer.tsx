@@ -22,7 +22,7 @@ const Footer = () => {
         className="flex items-start w-full h-full"
       >
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-white">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Company Info */}
             <div className="space-y-3 animate-fade-in">
               <h3 className="text-xl font-serif font-bold text-white mb-2">{siteContent.company.name}</h3>
@@ -73,24 +73,6 @@ const Footer = () => {
                       {link.name}
                     </span>
                   </Link>
-                ))}
-              </nav>
-            </div>
-
-            {/* Services */}
-            <div className="space-y-3 animate-fade-in animate-delay-300">
-              <h4 className="text-lg font-serif font-semibold text-white">{siteContent.footer.servicesTitle}</h4>
-              <nav className="space-y-1">
-                {siteContent.footer.services.map((service, index) => (
-                  <div 
-                    key={service}
-                    className="text-white/90 hover:text-white transition-colors cursor-pointer group animate-fade-in text-sm"
-                    style={{animationDelay: `${400 + index * 50}ms`}}
-                  >
-                    <span className="border-b border-transparent group-hover:border-white/50 transition-colors">
-                      {service}
-                    </span>
-                  </div>
                 ))}
               </nav>
             </div>
