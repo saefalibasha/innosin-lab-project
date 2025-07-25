@@ -1,272 +1,136 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Palette, RotateCcw, Layers, DoorOpen, Ruler } from 'lucide-react';
-import { Product } from '@/types/product';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, Eye, Download } from 'lucide-react';
+import { cleanProductName } from '@/lib/productUtils';
 
 interface ProductVariantSelectorProps {
-  products: Product[];
-  selectedVariants: {
-    finish?: string;
-    orientation?: string;
-    drawerCount?: string;
-    doorType?: string;
+  variants: Array<{
+    id: string;
+    name: string;
     dimensions?: string;
-  };
-  onVariantChange: (variantType: string, value: string) => void;
-  onProductSelect: (product: Product) => void;
-  selectedProduct?: Product;
+    thumbnail_path?: string;
+    category?: string;
+    description?: string;
+    specifications?: string[] | { [key: string]: any };
+  }>;
+  selectedVariant?: string;
+  onVariantSelect: (variantId: string) => void;
+  onViewDetails?: (variant: any) => void;
+  onDownload?: (variant: any) => void;
+  className?: string;
 }
 
 export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
-  products,
-  selectedVariants,
-  onVariantChange,
-  onProductSelect,
-  selectedProduct
+  variants,
+  selectedVariant,
+  onVariantSelect,
+  onViewDetails,
+  onDownload,
+  className = ""
 }) => {
-  // Helper function to clean product names by removing part numbers in parentheses
-  const cleanProductName = (name: string): string => {
-    // Remove everything in parentheses and any trailing/leading whitespace
-    return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
-  };
-
   // Helper function to extract first numeric value from dimension string
-  const extractFirstNumeric = (dimension: string): number => {
-    const match = dimension.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
+  const extractNumericValue = (dimensions: string): number => {
+    const match = dimensions.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 0;
   };
 
-  // Helper function to sort dimensions numerically by first value
-  const sortDimensions = (dimensions: string[]): string[] => {
-    return [...dimensions].sort((a, b) => {
-      const numA = extractFirstNumeric(a);
-      const numB = extractFirstNumeric(b);
-      return numA - numB;
-    });
-  };
-
-  // Extract available variant options from products
-  const availableFinishes = Array.from(new Set(
-    products.map(p => p.finish_type).filter(Boolean)
-  ));
-  
-  const availableOrientations = Array.from(new Set(
-    products.map(p => p.orientation).filter(Boolean)
-  ));
-  
-  const availableDrawerCounts = Array.from(new Set(
-    products.map(p => p.drawer_count?.toString()).filter(Boolean)
-  ));
-  
-  const availableDoorTypes = Array.from(new Set(
-    products.map(p => p.door_type).filter(Boolean)
-  ));
-  
-  const availableDimensions = sortDimensions(Array.from(new Set(
-    products.map(p => p.dimensions).filter(Boolean)
-  )));
-
-  // Filter products based on selected variants
-  const filteredProducts = products.filter(product => {
-    if (selectedVariants.finish && product.finish_type !== selectedVariants.finish) return false;
-    if (selectedVariants.orientation && product.orientation !== selectedVariants.orientation) return false;
-    if (selectedVariants.drawerCount && product.drawer_count?.toString() !== selectedVariants.drawerCount) return false;
-    if (selectedVariants.doorType && product.door_type !== selectedVariants.doorType) return false;
-    if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
-    return true;
+  // Sort variants by dimensions (length first)
+  const sortedVariants = [...variants].sort((a, b) => {
+    if (a.dimensions && b.dimensions) {
+      return extractNumericValue(a.dimensions) - extractNumericValue(b.dimensions);
+    }
+    return 0;
   });
 
-  const getFinishDisplayName = (finish: string) => {
-    const finishMap: Record<string, string> = {
-      'PC': 'Powder Coat',
-      'SS304': 'Stainless Steel',
-      'powder-coat': 'Powder Coat',
-      'stainless-steel': 'Stainless Steel'
-    };
-    return finishMap[finish] || finish;
-  };
-
-  const getOrientationDisplayName = (orientation: string) => {
-    const orientationMap: Record<string, string> = {
-      'LH': 'Left Hand',
-      'RH': 'Right Hand',
-      'Left-Handed': 'Left Hand',
-      'Right-Handed': 'Right Hand'
-    };
-    return orientationMap[orientation] || orientation;
-  };
-
   return (
-    <div className="space-y-4">
-      {/* Finish Type Selection */}
-      {availableFinishes.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Palette className="h-3 w-3" />
-            Finish Type:
-          </label>
-          <ToggleGroup
-            type="single"
-            value={selectedVariants.finish || ''}
-            onValueChange={(value) => onVariantChange('finish', value)}
-            className="justify-start"
+    <div className={`space-y-4 ${className}`}>
+      <h3 className="text-lg font-semibold">Product Variants</h3>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {sortedVariants.map((variant) => (
+          <Card 
+            key={variant.id} 
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              selectedVariant === variant.id ? 'ring-2 ring-blue-500' : ''
+            }`}
+            onClick={() => onVariantSelect(variant.id)}
           >
-            {availableFinishes.map((finish) => (
-              <ToggleGroupItem
-                key={finish}
-                value={finish}
-                variant="outline"
-                className="text-xs h-8 px-3"
-              >
-                {getFinishDisplayName(finish)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-      )}
-
-      {/* Orientation Selection */}
-      {availableOrientations.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <RotateCcw className="h-3 w-3" />
-            Orientation:
-          </label>
-          <div className="flex gap-2">
-            {availableOrientations.map((orientation) => (
-              <Button
-                key={orientation}
-                variant={selectedVariants.orientation === orientation ? "default" : "outline"}
-                size="sm"
-                onClick={() => onVariantChange('orientation', orientation)}
-                className="text-xs h-8 px-3"
-              >
-                {getOrientationDisplayName(orientation)}
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Drawer Count Selection */}
-      {availableDrawerCounts.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Layers className="h-3 w-3" />
-            Drawer Count:
-          </label>
-          <Select
-            value={selectedVariants.drawerCount || ''}
-            onValueChange={(value) => onVariantChange('drawerCount', value)}
-          >
-            <SelectTrigger className="w-full h-8 text-xs">
-              <SelectValue placeholder="Select drawer count" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableDrawerCounts.map((count) => (
-                <SelectItem key={count} value={count}>
-                  {count} {count === '1' ? 'Drawer' : 'Drawers'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Door Type Selection */}
-      {availableDoorTypes.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <DoorOpen className="h-3 w-3" />
-            Door Type:
-          </label>
-          <Select
-            value={selectedVariants.doorType || ''}
-            onValueChange={(value) => onVariantChange('doorType', value)}
-          >
-            <SelectTrigger className="w-full h-8 text-xs">
-              <SelectValue placeholder="Select door type" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableDoorTypes.map((doorType) => (
-                <SelectItem key={doorType} value={doorType}>
-                  {doorType}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Dimensions Selection */}
-      {availableDimensions.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Ruler className="h-3 w-3" />
-            Dimensions:
-          </label>
-          <Select
-            value={selectedVariants.dimensions || ''}
-            onValueChange={(value) => onVariantChange('dimensions', value)}
-          >
-            <SelectTrigger className="w-full h-8 text-xs">
-              <SelectValue placeholder="Select dimensions" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableDimensions.map((dimension) => (
-                <SelectItem key={dimension} value={dimension}>
-                  {dimension}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Product Selection */}
-      {filteredProducts.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">
-            Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-          </label>
-          <div className="grid grid-cols-1 gap-2">
-            {filteredProducts.map((product) => (
-              <Button
-                key={product.id}
-                variant={selectedProduct?.id === product.id ? "default" : "outline"}
-                className="w-full p-3 h-auto justify-start text-left"
-                onClick={() => onProductSelect(product)}
-              >
-                <div className="flex items-center gap-3 w-full">
-                  <img
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-8 h-8 rounded object-cover flex-shrink-0"
-                    onError={(e) => {
-                      e.currentTarget.src = '/placeholder.svg';
-                    }}
+            <CardHeader className="pb-3">
+              <div className="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center overflow-hidden">
+                {variant.thumbnail_path ? (
+                  <img 
+                    src={variant.thumbnail_path} 
+                    alt={cleanProductName(variant.name)}
+                    className="w-full h-full object-cover"
                   />
-                  <div className="flex-1">
-                    <div className="font-medium text-xs">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {product.product_code}
-                    </div>
-                  </div>
-                </div>
-              </Button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {filteredProducts.length === 0 && (
-        <div className="text-center py-4 text-muted-foreground">
-          <p className="text-xs">No products match the selected variants</p>
-        </div>
-      )}
+                ) : (
+                  <Package className="w-12 h-12 text-gray-400" />
+                )}
+              </div>
+              <CardTitle className="text-base font-medium line-clamp-2">
+                {cleanProductName(variant.name)}
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {variant.category && (
+                  <Badge variant="secondary" className="text-xs">
+                    {variant.category}
+                  </Badge>
+                )}
+                
+                {variant.dimensions && (
+                  <p className="text-sm text-gray-600">
+                    <strong>Dimensions:</strong> {variant.dimensions}
+                  </p>
+                )}
+                
+                {variant.description && (
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {variant.description}
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex gap-2 mt-3">
+                {onViewDetails && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails(variant);
+                    }}
+                    className="flex-1"
+                  >
+                    <Eye className="w-3 h-3 mr-1" />
+                    View
+                  </Button>
+                )}
+                
+                {onDownload && (
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(variant);
+                    }}
+                    className="flex-1"
+                  >
+                    <Download className="w-3 h-3 mr-1" />
+                    Download
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
