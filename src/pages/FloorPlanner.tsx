@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Save, Download, Upload, Undo, Redo } from 'lucide-react';
 import CanvasDrawingEngine from '@/components/canvas/CanvasDrawingEngine';
-import DrawingToolbar, { DrawingTool } from '@/components/floorplan/DrawingToolbar';
+import DrawingToolbar from '@/components/floorplan/DrawingToolbar';
 import ObjectLibrary from '@/components/ObjectLibrary';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
@@ -20,7 +20,7 @@ interface FloorPlannerState {
 
 const FloorPlanner: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentTool, setCurrentTool] = useState<DrawingTool>('select');
+  const [currentTool, setCurrentTool] = useState<'select' | 'wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate'>('select');
   
   // Floor plan state
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
@@ -61,6 +61,7 @@ const FloorPlanner: React.FC = () => {
       id: `product-${Date.now()}`,
       productId: product.id,
       name: product.name,
+      category: product.category || 'Innosin Lab',
       position,
       rotation: 0,
       dimensions: {
@@ -147,7 +148,7 @@ const FloorPlanner: React.FC = () => {
               onToolChange={setCurrentTool}
             />
             <ObjectLibrary
-              onProductDrag={handleProductDrop}
+              onProductDrag={(product: any) => handleProductDrop(product, { x: 100, y: 100 })}
               currentTool={currentTool}
             />
           </div>
