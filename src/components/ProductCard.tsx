@@ -18,6 +18,7 @@ interface ProductCardProps {
   };
   onViewDetails?: (product: any) => void;
   onDownload?: (product: any) => void;
+  onAddToQuote?: (product: any) => void;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   product, 
   onViewDetails, 
   onDownload,
+  onAddToQuote,
   className = ""
 }) => {
   return (
@@ -88,6 +90,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           >
             <Download className="w-4 h-4 mr-2" />
             Download
+          </Button>
+        )}
+        
+        {onAddToQuote && (
+          <Button 
+            variant="secondary" 
+            size="sm" 
+            onClick={() => onAddToQuote(product)}
+            className="flex-1"
+          >
+            Add to Quote
           </Button>
         )}
       </CardFooter>
