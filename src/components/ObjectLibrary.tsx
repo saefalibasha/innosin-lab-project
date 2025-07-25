@@ -36,7 +36,7 @@ export const ObjectLibrary: React.FC<ObjectLibraryProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name');
-  const [viewMode, setViewMode<'grid' | 'list'>>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // Get unique categories
   const categories = useMemo(() => {
