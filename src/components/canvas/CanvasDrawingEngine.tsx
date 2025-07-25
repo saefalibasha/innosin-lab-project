@@ -17,7 +17,7 @@ interface CanvasDrawingEngineProps {
   setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
   rooms: Room[];
   setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
-  currentMode: DrawingMode;
+  currentTool: string;
   scale: number;
   gridSize: number;
   showGrid: boolean;
@@ -29,24 +29,24 @@ interface CanvasDrawingEngineProps {
 
 export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
   canvasRef,
-  roomPoints,
+  roomPoints = [],
   setRoomPoints,
-  wallSegments,
+  wallSegments = [],
   setWallSegments,
-  placedProducts,
+  placedProducts = [],
   setPlacedProducts,
-  doors,
+  doors = [],
   setDoors,
-  textAnnotations,
+  textAnnotations = [],
   setTextAnnotations,
-  rooms,
+  rooms = [],
   setRooms,
-  currentMode,
-  scale,
-  gridSize,
-  showGrid,
-  showMeasurements,
-  selectedProducts,
+  currentTool,
+  scale = 1,
+  gridSize = 20,
+  showGrid = true,
+  showMeasurements = false,
+  selectedProducts = [],
   setSelectedProducts,
   onProductDrop
 }) => {
@@ -130,7 +130,7 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
   }, [scale, showMeasurements]);
 
   const drawRoom = useCallback((ctx: CanvasRenderingContext2D, room: Room) => {
-    if (room.points.length < 3) return;
+    if (!room.points || room.points.length < 3) return;
     
     ctx.fillStyle = room.color || 'rgba(173, 216, 230, 0.3)';
     ctx.strokeStyle = '#333333';
@@ -212,13 +212,17 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
     drawGrid(ctx);
     
     // Draw rooms
-    rooms.forEach(room => drawRoom(ctx, room));
+    if (rooms && rooms.length > 0) {
+      rooms.forEach(room => drawRoom(ctx, room));
+    }
     
     // Draw walls
-    wallSegments.forEach(wall => drawWall(ctx, wall));
+    if (wallSegments && wallSegments.length > 0) {
+      wallSegments.forEach(wall => drawWall(ctx, wall));
+    }
     
     // Draw current room path
-    if (currentMode === 'room' && tempRoomPoints.current.length > 0) {
+    if (currentTool === 'room' && tempRoomPoints.current.length > 0) {
       ctx.strokeStyle = '#2196f3';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -238,7 +242,7 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
     }
     
     // Draw current wall path
-    if (currentMode === 'wall' && currentPath.current.length > 0) {
+    if (currentTool === 'wall' && currentPath.current.length > 0) {
       ctx.strokeStyle = '#ff4444';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -250,32 +254,38 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
     }
     
     // Draw doors
-    doors.forEach(door => drawDoor(ctx, door));
+    if (doors && doors.length > 0) {
+      doors.forEach(door => drawDoor(ctx, door));
+    }
     
     // Draw text annotations
-    textAnnotations.forEach(text => drawText(ctx, text));
+    if (textAnnotations && textAnnotations.length > 0) {
+      textAnnotations.forEach(text => drawText(ctx, text));
+    }
     
     // Draw products
-    placedProducts.forEach(product => drawProduct(ctx, product));
+    if (placedProducts && placedProducts.length > 0) {
+      placedProducts.forEach(product => drawProduct(ctx, product));
+    }
   }, [
     canvasRef, drawGrid, drawRoom, drawWall, drawDoor, drawText, drawProduct,
-    currentMode, rooms, wallSegments, doors, textAnnotations, placedProducts
+    currentTool, rooms, wallSegments, doors, textAnnotations, placedProducts
   ]);
 
   // Mouse event handlers
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = snapToGrid(getCanvasPoint(e));
     
-    if (currentMode === 'wall') {
+    if (currentTool === 'wall') {
       if (!wallStart.current) {
         wallStart.current = point;
         currentPath.current = [point];
       } else {
         currentPath.current.push(point);
       }
-    } else if (currentMode === 'room') {
+    } else if (currentTool === 'room') {
       tempRoomPoints.current.push(point);
-    } else if (currentMode === 'door') {
+    } else if (currentTool === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
         position: point,
@@ -286,7 +296,7 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
         isEmbedded: false
       };
       setDoors(prev => [...prev, newDoor]);
-    } else if (currentMode === 'text') {
+    } else if (currentTool === 'text') {
       const text = prompt('Enter text:');
       if (text) {
         const newAnnotation: TextAnnotation = {
@@ -298,7 +308,7 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
         };
         setTextAnnotations(prev => [...prev, newAnnotation]);
       }
-    } else if (currentMode === 'select') {
+    } else if (currentTool === 'select') {
       // Check if clicking on a product
       let clickedProduct: PlacedProduct | null = null;
       
@@ -329,17 +339,17 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
         setSelectedProducts([]);
       }
     }
-  }, [currentMode, snapToGrid, getCanvasPoint, setDoors, setTextAnnotations, placedProducts, scale, setSelectedProducts]);
+  }, [currentTool, snapToGrid, getCanvasPoint, setDoors, setTextAnnotations, placedProducts, scale, setSelectedProducts]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (currentMode === 'wall' && wallStart.current) {
+    if (currentTool === 'wall' && wallStart.current) {
       const point = snapToGrid(getCanvasPoint(e));
       currentPath.current = [wallStart.current, point];
     }
-  }, [currentMode, snapToGrid, getCanvasPoint]);
+  }, [currentTool, snapToGrid, getCanvasPoint]);
 
   const handleDoubleClick = useCallback(() => {
-    if (currentMode === 'wall' && wallStart.current && currentPath.current.length >= 2) {
+    if (currentTool === 'wall' && wallStart.current && currentPath.current.length >= 2) {
       const newWall: WallSegment = {
         id: `wall-${Date.now()}`,
         start: wallStart.current,
@@ -351,7 +361,7 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
       setWallSegments(prev => [...prev, newWall]);
       wallStart.current = null;
       currentPath.current = [];
-    } else if (currentMode === 'room' && tempRoomPoints.current.length >= 3) {
+    } else if (currentTool === 'room' && tempRoomPoints.current.length >= 3) {
       const newRoom: Room = {
         id: `room-${Date.now()}`,
         name: `Room ${rooms.length + 1}`,
@@ -363,7 +373,7 @@ export const CanvasDrawingEngine: React.FC<CanvasDrawingEngineProps> = ({
       setRooms(prev => [...prev, newRoom]);
       tempRoomPoints.current = [];
     }
-  }, [currentMode, setWallSegments, setRooms, rooms.length]);
+  }, [currentTool, setWallSegments, setRooms, rooms]);
 
   const calculatePolygonArea = (points: Point[]): number => {
     if (points.length < 3) return 0;

@@ -4,34 +4,73 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Save, Download, Upload, Undo, Redo } from 'lucide-react';
 import CanvasDrawingEngine from '@/components/canvas/CanvasDrawingEngine';
-import DrawingToolbar from '@/components/floorplan/DrawingToolbar';
+import DrawingToolbar, { DrawingTool } from '@/components/floorplan/DrawingToolbar';
 import ObjectLibrary from '@/components/ObjectLibrary';
-
-export type DrawingTool = 'wall' | 'line' | 'freehand' | 'pan' | 'eraser' | 'select' | 'interior-wall' | 'door' | 'rotate';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
+import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 
 interface FloorPlannerState {
-  walls: any[];
-  rooms: any[];
-  products: any[];
-  measurements: any[];
-  history: any[];
-  historyIndex: number;
+  roomPoints: Point[];
+  placedProducts: PlacedProduct[];
+  doors: Door[];
+  textAnnotations: TextAnnotation[];
+  wallSegments: WallSegment[];
+  rooms: Room[];
 }
 
 const FloorPlanner: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentTool, setCurrentTool] = useState<DrawingTool>('select');
-  const [floorPlanState, setFloorPlanState] = useState<FloorPlannerState>({
-    walls: [],
-    rooms: [],
-    products: [],
-    measurements: [],
-    history: [],
-    historyIndex: -1
-  });
+  
+  // Floor plan state
+  const [roomPoints, setRoomPoints] = useState<Point[]>([]);
+  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
+  const [doors, setDoors] = useState<Door[]>([]);
+  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
+  const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  const handleProductDrag = (product: any) => {
-    console.log('Product dragged:', product);
+  // History management
+  const initialState: FloorPlannerState = {
+    roomPoints: [],
+    placedProducts: [],
+    doors: [],
+    textAnnotations: [],
+    wallSegments: [],
+    rooms: []
+  };
+
+  const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
+
+  // Save state to history whenever state changes
+  useEffect(() => {
+    const currentState: FloorPlannerState = {
+      roomPoints,
+      placedProducts,
+      doors,
+      textAnnotations,
+      wallSegments,
+      rooms
+    };
+    saveState(currentState);
+  }, [roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, saveState]);
+
+  const handleProductDrop = (product: any, position: Point) => {
+    const newPlacedProduct: PlacedProduct = {
+      id: `product-${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      position,
+      rotation: 0,
+      dimensions: {
+        length: product.dimensions?.length || 500,
+        width: product.dimensions?.width || 500,
+        height: product.dimensions?.height || 750
+      },
+      color: '#4caf50'
+    };
+    setPlacedProducts(prev => [...prev, newPlacedProduct]);
   };
 
   const handleSave = () => {
@@ -47,11 +86,27 @@ const FloorPlanner: React.FC = () => {
   };
 
   const handleUndo = () => {
-    console.log('Undo');
+    const prevState = undo();
+    if (prevState) {
+      setRoomPoints(prevState.roomPoints);
+      setPlacedProducts(prevState.placedProducts);
+      setDoors(prevState.doors);
+      setTextAnnotations(prevState.textAnnotations);
+      setWallSegments(prevState.wallSegments);
+      setRooms(prevState.rooms);
+    }
   };
 
   const handleRedo = () => {
-    console.log('Redo');
+    const nextState = redo();
+    if (nextState) {
+      setRoomPoints(nextState.roomPoints);
+      setPlacedProducts(nextState.placedProducts);
+      setDoors(nextState.doors);
+      setTextAnnotations(nextState.textAnnotations);
+      setWallSegments(nextState.wallSegments);
+      setRooms(nextState.rooms);
+    }
   };
 
   return (
@@ -60,11 +115,11 @@ const FloorPlanner: React.FC = () => {
       <div className="flex items-center justify-between p-4 border-b">
         <h1 className="text-2xl font-bold">Floor Planner</h1>
         <div className="flex items-center space-x-2">
-          <Button onClick={handleUndo} variant="outline" size="sm">
+          <Button onClick={handleUndo} variant="outline" size="sm" disabled={!canUndo}>
             <Undo className="w-4 h-4 mr-2" />
             Undo
           </Button>
-          <Button onClick={handleRedo} variant="outline" size="sm">
+          <Button onClick={handleRedo} variant="outline" size="sm" disabled={!canRedo}>
             <Redo className="w-4 h-4 mr-2" />
             Redo
           </Button>
@@ -92,7 +147,7 @@ const FloorPlanner: React.FC = () => {
               onToolChange={setCurrentTool}
             />
             <ObjectLibrary
-              onProductDrag={handleProductDrag}
+              onProductDrag={handleProductDrop}
               currentTool={currentTool}
             />
           </div>
@@ -101,10 +156,27 @@ const FloorPlanner: React.FC = () => {
         {/* Main Canvas Area */}
         <div className="flex-1 relative bg-white">
           <CanvasDrawingEngine
-            ref={canvasRef}
+            canvasRef={canvasRef}
+            roomPoints={roomPoints}
+            setRoomPoints={setRoomPoints}
+            wallSegments={wallSegments}
+            setWallSegments={setWallSegments}
+            placedProducts={placedProducts}
+            setPlacedProducts={setPlacedProducts}
+            doors={doors}
+            setDoors={setDoors}
+            textAnnotations={textAnnotations}
+            setTextAnnotations={setTextAnnotations}
+            rooms={rooms}
+            setRooms={setRooms}
             currentTool={currentTool}
-            onStateChange={setFloorPlanState}
-            floorPlanState={floorPlanState}
+            scale={1}
+            gridSize={20}
+            showGrid={true}
+            showMeasurements={false}
+            selectedProducts={selectedProducts}
+            setSelectedProducts={setSelectedProducts}
+            onProductDrop={handleProductDrop}
           />
         </div>
 
@@ -115,8 +187,10 @@ const FloorPlanner: React.FC = () => {
               <h3 className="font-semibold mb-2">Properties</h3>
               <div className="space-y-2 text-sm">
                 <div>Tool: {currentTool}</div>
-                <div>Walls: {floorPlanState.walls.length}</div>
-                <div>Products: {floorPlanState.products.length}</div>
+                <div>Walls: {wallSegments.length}</div>
+                <div>Rooms: {rooms.length}</div>
+                <div>Products: {placedProducts.length}</div>
+                <div>Selected: {selectedProducts.length}</div>
               </div>
             </CardContent>
           </Card>
