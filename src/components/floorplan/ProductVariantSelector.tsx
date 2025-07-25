@@ -28,6 +28,26 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   onProductSelect,
   selectedProduct
 }) => {
+  // Helper function to clean product names by removing part numbers in parentheses
+  const cleanProductName = (name: string): string => {
+    return name.replace(/\s*\([^)]+\)/g, '').trim();
+  };
+
+  // Helper function to extract first numeric value from dimension string
+  const extractFirstNumeric = (dimension: string): number => {
+    const match = dimension.match(/(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
+
+  // Helper function to sort dimensions numerically by first value
+  const sortDimensions = (dimensions: string[]): string[] => {
+    return [...dimensions].sort((a, b) => {
+      const numA = extractFirstNumeric(a);
+      const numB = extractFirstNumeric(b);
+      return numA - numB;
+    });
+  };
+
   // Extract available variant options from products
   const availableFinishes = Array.from(new Set(
     products.map(p => p.finish_type).filter(Boolean)
@@ -45,9 +65,9 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     products.map(p => p.door_type).filter(Boolean)
   ));
   
-  const availableDimensions = Array.from(new Set(
+  const availableDimensions = sortDimensions(Array.from(new Set(
     products.map(p => p.dimensions).filter(Boolean)
-  ));
+  )));
 
   // Filter products based on selected variants
   const filteredProducts = products.filter(product => {
@@ -230,7 +250,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                     }}
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-xs">{product.name}</div>
+                    <div className="font-medium text-xs">{cleanProductName(product.name)}</div>
                     <div className="text-xs text-muted-foreground">
                       {product.product_code}
                     </div>
