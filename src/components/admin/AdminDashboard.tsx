@@ -6,11 +6,13 @@ import {
   BarChart3, 
   Package, 
   Settings,
-  Activity
+  Activity,
+  FileText
 } from 'lucide-react';
 import { DynamicOverview } from './DynamicOverview';
 import { EnhancedProductSeriesManager } from './EnhancedProductSeriesManager';
 import { SystemSettings } from './SystemSettings';
+import { BlogManagement } from './BlogManagement';
 
 export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -31,7 +33,7 @@ export const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
@@ -39,6 +41,10 @@ export const AdminDashboard = () => {
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
             Product Series
+          </TabsTrigger>
+          <TabsTrigger value="blog" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Blog Management
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="w-4 h-4" />
@@ -52,6 +58,10 @@ export const AdminDashboard = () => {
 
         <TabsContent value="products">
           <EnhancedProductSeriesManager />
+        </TabsContent>
+
+        <TabsContent value="blog">
+          <BlogManagement />
         </TabsContent>
 
         <TabsContent value="settings">
