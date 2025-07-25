@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 }) => {
   // Helper function to clean product names by removing part numbers in parentheses
   const cleanProductName = (name: string): string => {
-    return name.replace(/\s*\([^)]+\)/g, '').trim();
+    // Remove everything in parentheses and any trailing/leading whitespace
+    return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
   };
 
   // Helper function to extract first numeric value from dimension string
