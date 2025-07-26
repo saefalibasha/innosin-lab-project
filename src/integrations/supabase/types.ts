@@ -923,12 +923,15 @@ export type Database = {
           editable_title: string | null
           finish_type: string | null
           full_description: string | null
+          handle_type: string | null
           id: string
           inherits_series_assets: boolean | null
           is_active: boolean | null
           is_series_parent: boolean | null
           keywords: string[] | null
+          mixing_type: string | null
           model_path: string | null
+          mounting_type: string | null
           name: string
           orientation: string | null
           overview_image_path: string | null
@@ -960,12 +963,15 @@ export type Database = {
           editable_title?: string | null
           finish_type?: string | null
           full_description?: string | null
+          handle_type?: string | null
           id?: string
           inherits_series_assets?: boolean | null
           is_active?: boolean | null
           is_series_parent?: boolean | null
           keywords?: string[] | null
+          mixing_type?: string | null
           model_path?: string | null
+          mounting_type?: string | null
           name: string
           orientation?: string | null
           overview_image_path?: string | null
@@ -997,12 +1003,15 @@ export type Database = {
           editable_title?: string | null
           finish_type?: string | null
           full_description?: string | null
+          handle_type?: string | null
           id?: string
           inherits_series_assets?: boolean | null
           is_active?: boolean | null
           is_series_parent?: boolean | null
           keywords?: string[] | null
+          mixing_type?: string | null
           model_path?: string | null
+          mounting_type?: string | null
           name?: string
           orientation?: string | null
           overview_image_path?: string | null

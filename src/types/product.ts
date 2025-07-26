@@ -44,6 +44,11 @@ export interface Product {
   product_code?: string;
   thumbnail_path?: string;
   model_path?: string;
+  // New variant fields for specific product types
+  mounting_type?: string; // For Safe Aire II (bench-mounted/floor-mounted)
+  mixing_type?: string;   // For UNIFLEX (non-mix/mix)
+  handle_type?: string;   // For UNIFLEX (polypropylene/wrist-action)
+  company_tags?: string[]; // Company/brand tags
 }
 
 // New interface for wall cabinet configuration
