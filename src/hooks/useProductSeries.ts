@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
@@ -46,7 +45,13 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     door_type: dbProduct.door_type,
     product_code: dbProduct.product_code,
     thumbnail_path: dbProduct.thumbnail_path,
-    model_path: dbProduct.model_path
+    model_path: dbProduct.model_path,
+    // New variant fields
+    mounting_type: dbProduct.mounting_type,
+    mixing_type: dbProduct.mixing_type,
+    handle_type: dbProduct.handle_type,
+    company_tags: dbProduct.company_tags,
+    product_series: dbProduct.product_series
   };
 };
 

@@ -49,6 +49,7 @@ export interface Product {
   mixing_type?: string;   // For UNIFLEX (non-mix/mix)
   handle_type?: string;   // For UNIFLEX (polypropylene/wrist-action)
   company_tags?: string[]; // Company/brand tags
+  product_series?: string; // Product series name
 }
 
 // New interface for wall cabinet configuration
