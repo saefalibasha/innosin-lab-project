@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Home, Settings, Hand, Wrench, Building2 } from 'lucide-react';
+import { Home, Settings, Hand, Wrench, Building2, Layers } from 'lucide-react';
 import { Product } from '@/types/product';
 
 interface SpecificProductSelectorProps {
@@ -37,8 +37,11 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     });
   };
 
-  // Safe Aire II Fume Hoods specific selectors
-  if (productSeries.toLowerCase().includes('safe aire')) {
+  // Safe Aire II and other fume hood series
+  if (productSeries.toLowerCase().includes('safe aire') || 
+      productSeries.toLowerCase().includes('noce') ||
+      productSeries.toLowerCase().includes('tangerine')) {
+    
     const availableMountingTypes = Array.from(new Set(
       products.map(p => p.mounting_type).filter(Boolean)
     ));
@@ -90,11 +93,12 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
           </div>
         )}
 
-        {/* Dimensions Selection (smallest to largest) */}
+        {/* Dimensions Selection */}
         {availableDimensions.length > 0 && (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Dimensions (smallest to largest):
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Layers className="h-3 w-3" />
+              Dimensions:
             </label>
             <Select
               value={selectedVariants.dimensions || ''}
@@ -117,7 +121,8 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
         {/* Finish Type Selection */}
         {availableFinishes.length > 0 && (
           <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Wrench className="h-3 w-3" />
               Finish Type:
             </label>
             <Select
@@ -130,7 +135,8 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
               <SelectContent>
                 {availableFinishes.map((finish) => (
                   <SelectItem key={finish} value={finish}>
-                    {finish}
+                    {finish === 'powder-coat' ? 'Powder Coat' : 
+                     finish === 'stainless-steel' ? 'Stainless Steel' : finish}
                   </SelectItem>
                 ))}
               </SelectContent>
