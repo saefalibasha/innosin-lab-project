@@ -1,16 +1,15 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle, Building2 } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { fetchSeriesWithVariants } from '@/services/variantService';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { ProductVariantSelector } from '@/components/floorplan/ProductVariantSelector';
+import ProductImageGallery from '@/components/ProductImageGallery';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,8 +19,7 @@ const ProductDetail: React.FC = () => {
   const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
   const [selectedVariants, setSelectedVariants] = useState<any>({});
   const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
-  
-  // Enhanced loading state management
+
   const {
     isLoading: variantsLoading,
     error: variantError,
@@ -31,15 +29,12 @@ const ProductDetail: React.FC = () => {
     reset
   } = useLoadingState(false);
 
-  // Extract series information from product category or name
   const getSeriesInfo = (product: any) => {
     if (!product) return { series: '', slug: '' };
-    
     const name = product.name.toLowerCase();
     const category = product.category.toLowerCase();
     const productSeries = product.product_series?.toLowerCase() || '';
-    
-    // Check for specific series first
+
     if (productSeries.includes('emergency shower') || name.includes('emergency') || category.includes('emergency')) {
       return { series: 'Emergency Shower', slug: 'emergency-shower' };
     }
@@ -55,8 +50,6 @@ const ProductDetail: React.FC = () => {
     if (productSeries.includes('safe aire') || name.includes('safe aire')) {
       return { series: 'Safe Aire II', slug: 'safe-aire-ii' };
     }
-    
-    // Fallback to category-based detection
     if (name.includes('open rack') || category.includes('open rack')) {
       return { series: 'Open Rack', slug: 'open-rack' };
     }
@@ -66,70 +59,51 @@ const ProductDetail: React.FC = () => {
     if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
       return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
     }
-    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || 
-        name.includes('modular cabinet') || category.includes('modular cabinet') ||
-        name.includes('mc-pc') || name.includes('mcc-pc')) {
+    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || name.includes('mc-pc') || name.includes('mcc-pc')) {
       return { series: 'Mobile Cabinet', slug: 'mobile-cabinet' };
     }
-    
+
     return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
   };
 
-  // Transform database variant to Product interface
-  const transformVariantToProduct = (variant: any): Product => {
-    return {
-      id: variant.id,
-      name: variant.name,
-      category: variant.category,
-      dimensions: variant.dimensions || '',
-      modelPath: variant.model_path || '/placeholder.glb',
-      thumbnail: variant.thumbnail_path || '/placeholder.svg',
-      images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
-      description: variant.description || '',
-      fullDescription: variant.full_description || variant.description || '',
-      specifications: Array.isArray(variant.specifications) 
-        ? variant.specifications 
-        : variant.specifications 
-          ? [variant.specifications] 
-          : [],
-      product_code: variant.product_code,
-      thumbnail_path: variant.thumbnail_path,
-      model_path: variant.model_path,
-      finish_type: variant.finish_type,
-      orientation: variant.orientation,
-      drawer_count: variant.drawer_count,
-      door_type: variant.door_type,
-      mounting_type: variant.mounting_type,
-      mixing_type: variant.mixing_type,
-      handle_type: variant.handle_type,
-      emergency_shower_type: variant.emergency_shower_type,
-      cabinet_class: variant.cabinet_class,
-      company_tags: variant.company_tags || [],
-      product_series: variant.product_series
-    };
-  };
+  const transformVariantToProduct = (variant: any): Product => ({
+    id: variant.id,
+    name: variant.name,
+    category: variant.category,
+    dimensions: variant.dimensions || '',
+    modelPath: variant.model_path || '/placeholder.glb',
+    thumbnail: variant.thumbnail_path || '/placeholder.svg',
+    images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
+    description: variant.description || '',
+    fullDescription: variant.full_description || variant.description || '',
+    specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
+    product_code: variant.product_code,
+    thumbnail_path: variant.thumbnail_path,
+    model_path: variant.model_path,
+    finish_type: variant.finish_type,
+    orientation: variant.orientation,
+    drawer_count: variant.drawer_count,
+    door_type: variant.door_type,
+    mounting_type: variant.mounting_type,
+    mixing_type: variant.mixing_type,
+    handle_type: variant.handle_type,
+    emergency_shower_type: variant.emergency_shower_type,
+    cabinet_class: variant.cabinet_class,
+    company_tags: variant.company_tags || [],
+    product_series: variant.product_series
+  });
 
-  // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
     const fetchVariants = async () => {
       if (!product || productLoading) return;
-
-      console.log('🚀 Starting variant fetch process for product:', product.id);
       startLoading();
       reset();
-      
+
       try {
         const seriesInfo = getSeriesInfo(product);
-        console.log('🔍 Series info determined:', seriesInfo);
-        
-        // For specific series, fetch from the series variants
-        if (seriesInfo.series === 'Emergency Shower' || 
-            seriesInfo.series === 'TANGERINE Series' || 
-            seriesInfo.series === 'NOCE Series' || 
-            seriesInfo.series === 'UNIFLEX Series' || 
-            seriesInfo.series === 'Safe Aire II') {
-          
-          // Fetch variants directly from the database using the product series
+        if ([
+          'Emergency Shower', 'TANGERINE Series', 'NOCE Series', 'UNIFLEX Series', 'Safe Aire II'
+        ].includes(seriesInfo.series)) {
           const { data: variants, error: variantsError } = await supabase
             .from('products')
             .select('*')
@@ -138,43 +112,31 @@ const ProductDetail: React.FC = () => {
             .order('product_code');
 
           if (variantsError) throw variantsError;
-          
+
           const transformedVariants = variants?.map(transformVariantToProduct) || [];
           setSeriesVariants(transformedVariants);
         } else {
-          // Use the existing fetch method for other series
-          const startTime = performance.now();
           const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
-          const endTime = performance.now();
-          
-          console.log(`⏱️ Variant fetch took ${endTime - startTime}ms`);
-          console.log('📦 Raw fetched variants response:', fetchedVariants);
-          
           if (fetchedVariants && fetchedVariants.length > 0) {
             const variants = fetchedVariants[0].variants || [];
-            console.log('🎯 Extracted variants array:', variants);
-            
             const transformedVariants = variants.map((variant: any) => ({
               ...variant,
               thumbnail: variant.thumbnail || '/placeholder.svg',
               modelPath: variant.modelPath || '/placeholder.glb',
               images: variant.images || [variant.thumbnail || '/placeholder.svg'],
               fullDescription: variant.fullDescription || variant.description,
-              specifications: Array.isArray(variant.specifications) 
-                ? variant.specifications 
-                : variant.specifications 
-                  ? [variant.specifications] 
+              specifications: Array.isArray(variant.specifications)
+                ? variant.specifications
+                : variant.specifications
+                  ? [variant.specifications]
                   : []
             }));
-            
             setSeriesVariants(transformedVariants);
           } else {
-            console.log('⚠️ No variants found for series:', seriesInfo.slug);
             setSeriesVariants([]);
           }
         }
       } catch (err) {
-        console.error("❌ Failed to fetch variants:", err);
         setSeriesVariants([]);
         setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
@@ -185,20 +147,14 @@ const ProductDetail: React.FC = () => {
     fetchVariants();
   }, [product, productLoading]);
 
-  // Handle variant selection
   const handleVariantChange = (variantType: string, value: string) => {
-    setSelectedVariants(prev => ({
-      ...prev,
-      [variantType]: value
-    }));
+    setSelectedVariants(prev => ({ ...prev, [variantType]: value }));
   };
 
-  // Handle product selection
   const handleProductSelect = (selectedProduct: Product) => {
     setSelectedVariant(selectedProduct);
   };
 
-  // Enhanced loading state with progressive loading
   if (productLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -217,9 +173,7 @@ const ProductDetail: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
-          <p className="text-muted-foreground mb-6">
-            {error || 'The product you are looking for does not exist.'}
-          </p>
+          <p className="text-muted-foreground mb-6">{error || 'The product you are looking for does not exist.'}</p>
           <Button onClick={() => window.history.back()} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Go Back
@@ -230,8 +184,6 @@ const ProductDetail: React.FC = () => {
   }
 
   const displayProduct = selectedVariant || product;
-
-  // Get product images for the gallery
   const getProductImages = () => {
     const images = [];
     if (displayProduct.thumbnail_path) images.push(displayProduct.thumbnail_path);
@@ -244,48 +196,37 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button
-        onClick={() => window.history.back()}
-        variant="ghost"
-        className="mb-6 gap-2"
-      >
+      <Button onClick={() => window.history.back()} variant="ghost" className="mb-6 gap-2">
         <ArrowLeft className="w-4 h-4" />
         Back to Products
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left Column - Images */}
         <div className="space-y-6">
-          <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-            <img
-              src={getProductImages()[0]}
-              alt={displayProduct.name}
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
+          <ProductImageGallery
+            images={getProductImages()}
+            thumbnail={displayProduct.thumbnail || ''}
+            productName={displayProduct.name}
+            isProductPage={true}
+            className="mx-auto w-full max-w-[600px]"
+          />
         </div>
 
-        {/* Right Column - Product Information */}
         <div className="space-y-6">
           <div>
-            {/* Company Tags Display */}
             {displayProduct.company_tags && displayProduct.company_tags.length > 0 && (
               <div className="flex items-center gap-2 mb-4">
                 <Building2 className="h-4 w-4 text-muted-foreground" />
                 <div className="flex flex-wrap gap-1">
                   {displayProduct.company_tags.map((tag, index) => (
-                    <Badge 
-                      key={index} 
-                      variant="default" 
-                      className="text-sm bg-blue-500 hover:bg-blue-600 text-white"
-                    >
+                    <Badge key={index} variant="default" className="text-sm bg-blue-500 hover:bg-blue-600 text-white">
                       {tag}
                     </Badge>
                   ))}
                 </div>
               </div>
             )}
-            
+
             <Badge variant="secondary" className="mb-2">
               {displayProduct.category}
             </Badge>
@@ -311,7 +252,6 @@ const ProductDetail: React.FC = () => {
 
           <Separator />
 
-          {/* Product Configuration */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -341,7 +281,6 @@ const ProductDetail: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Action Buttons */}
           <div className="flex gap-4">
             <Button className="flex-1 gap-2" disabled={variantsLoading}>
               <ShoppingCart className="w-4 h-4" />
@@ -353,7 +292,6 @@ const ProductDetail: React.FC = () => {
             </Button>
           </div>
 
-          {/* Product Description */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
