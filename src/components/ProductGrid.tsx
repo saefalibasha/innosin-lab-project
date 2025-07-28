@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -18,7 +17,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
   const getProductImages = (product: Product) => {
     const validImages: string[] = [];
     
-    // Priority: seriesOverviewImage > overviewImage > thumbnail > images
     if (product.seriesOverviewImage && !product.seriesOverviewImage.includes('placeholder')) {
       validImages.push(product.seriesOverviewImage);
     } else if (product.overviewImage && !product.overviewImage.includes('placeholder')) {
@@ -27,7 +25,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
       validImages.push(product.thumbnail);
     }
     
-    // Add additional images if available and not placeholders
     if (product.images && product.images.length > 0) {
       const additionalImages = product.images.filter(img => 
         img && 
@@ -41,7 +38,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
   };
 
   const getThumbnail = (product: Product) => {
-    // Return the best available image, avoiding placeholders
     return product.seriesOverviewImage || 
            product.overviewImage || 
            product.thumbnail || 
@@ -54,16 +50,20 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
       {products.map((product, index) => (
         <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
           <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group">
+            {/* IMAGE */}
             <CardHeader className="p-0">
-              <ProductImageGallery
-                images={getProductImages(product)}
-                thumbnail={getThumbnail(product)}
-                productName={product.name}
-                className="w-full h-64"
-              />
+              <div className="w-full h-64 flex items-center justify-center bg-white">
+                <ProductImageGallery
+                  images={getProductImages(product)}
+                  thumbnail={getThumbnail(product)}
+                  productName={product.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
             </CardHeader>
             
-            <CardContent className="p-6">
+            {/* CONTENT */}
+            <CardContent className="p-6 flex flex-col justify-between h-[300px]">
               <div className="mb-4">
                 <Badge variant="outline" className="mb-2 border-sea text-sea">
                   {product.category}
@@ -71,7 +71,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
                   {product.name}
                 </h3>
-                <p className="text-sm text-muted-foreground mb-3">
+                {/* Fixed height description */}
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-4">
                   {product.description}
                 </p>
               </div>
@@ -89,7 +90,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 </div>
               )}
               
-              <div className="flex gap-2">
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-2 mt-auto">
                 <Link to={`/products/${product.id}`} className="flex-1">
                   <Button variant="outline" className="w-full">
                     <Eye className="w-4 h-4 mr-2" />
