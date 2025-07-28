@@ -9,30 +9,29 @@ interface ProductImageGalleryProps {
   thumbnail: string;
   productName: string;
   className?: string;
+  showThumbnails?: boolean;
 }
 
 const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   images = [],
   thumbnail,
   productName,
-  className = ''
+  className = '',
+  showThumbnails = true
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Build display images with better validation
+  // Build the image list (thumbnail first, then others), validate & dedupe
   const displayImages = useMemo(() => {
-    const allImages: string[] = [];
+    const list: string[] = [];
 
-    if (isValidImageUrl(thumbnail)) {
-      allImages.push(thumbnail);
-    }
+    if (isValidImageUrl(thumbnail)) list.push(thumbnail);
 
-    const validImages = images.filter(
-      (img) => isValidImageUrl(img) && img !== thumbnail
-    );
-    allImages.push(...validImages);
+    const rest = images.filter((img) => isValidImageUrl(img) && img !== thumbnail);
+    list.push(...rest);
 
-    return allImages.length > 0 ? allImages : ['/placeholder.svg'];
+    const uniq = Array.from(new Set(list));
+    return uniq.length ? uniq : ['/placeholder.svg'];
   }, [images, thumbnail]);
 
   const currentImage = displayImages[currentImageIndex] || '/placeholder.svg';
@@ -49,18 +48,24 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
     );
   };
 
-  const handleThumbnailClick = (index: number) => {
-    setCurrentImageIndex(index);
-  };
+  const handleThumbnailClick = (index: number) => setCurrentImageIndex(index);
 
   return (
     <div className={`relative ${className}`}>
-      {/* Main image display */}
-      <div className="relative w-full h-64 md:h-72 lg:h-80 overflow-hidden rounded-lg bg-white flex items-center justify-center">
+      {/* Main image area (dynamic height, never crop) */}
+      <div
+        className="
+          relative w-full
+          flex items-center justify-center
+          rounded-lg bg-white overflow-hidden
+          min-h-[240px]
+          max-h-[60vh] md:max-h-[70vh] lg:max-h-[75vh]
+        "
+      >
         <OptimizedImage
           src={currentImage}
           alt={`${productName} - Image ${currentImageIndex + 1}`}
-          className="w-full h-full object-contain"
+          className="w-auto h-auto max-w-full max-h-full object-contain"
           priority={currentImageIndex === 0}
         />
 
@@ -69,7 +74,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
+              className="absolute left-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
               onClick={handlePrevious}
               aria-label="Previous image"
             >
@@ -79,40 +84,37 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             <Button
               variant="outline"
               size="icon"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
               onClick={handleNext}
               aria-label="Next image"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-          </>
-        )}
 
-        {/* Image counter */}
-        {displayImages.length > 1 && (
-          <div className="absolute bottom-4 right-4 bg-background/80 px-3 py-1 rounded-full text-sm font-medium">
-            {currentImageIndex + 1} / {displayImages.length}
-          </div>
+            <div className="absolute bottom-4 right-4 bg-background/80 px-3 py-1 rounded-full text-sm font-medium">
+              {currentImageIndex + 1} / {displayImages.length}
+            </div>
+          </>
         )}
       </div>
 
-      {/* Thumbnail navigation */}
-      {displayImages.length > 1 && (
+      {/* Thumbnails */}
+      {showThumbnails && displayImages.length > 1 && (
         <div className="flex justify-center mt-4 space-x-2 overflow-x-auto pb-2">
-          {displayImages.map((image, index) => (
+          {displayImages.map((img, i) => (
             <button
-              key={index}
-              className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 bg-white ${
-                index === currentImageIndex
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-muted hover:border-muted-foreground/30'
-              }`}
-              onClick={() => handleThumbnailClick(index)}
-              aria-label={`View image ${index + 1}`}
+              key={img + i}
+              type="button"
+              onClick={() => handleThumbnailClick(i)}
+              aria-label={`View image ${i + 1}`}
+              className={`
+                flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 bg-white
+                ${i === currentImageIndex ? 'border-primary ring-2 ring-primary/20' : 'border-muted hover:border-muted-foreground/30'}
+              `}
             >
               <OptimizedImage
-                src={image}
-                alt={`${productName} - Thumbnail ${index + 1}`}
+                src={img}
+                alt={`${productName} - Thumbnail ${i + 1}`}
                 className="w-full h-full object-contain"
               />
             </button>
@@ -120,19 +122,17 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         </div>
       )}
 
-      {/* Dot indicators for mobile */}
+      {/* Dot indicators (mobile) */}
       {displayImages.length > 1 && (
         <div className="flex justify-center mt-2 space-x-1 md:hidden">
-          {displayImages.map((_, index) => (
+          {displayImages.map((_, i) => (
             <button
-              key={index}
+              key={i}
+              aria-label={`Go to image ${i + 1}`}
+              onClick={() => handleThumbnailClick(i)}
               className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentImageIndex
-                  ? 'bg-primary'
-                  : 'bg-muted-foreground/30'
+                i === currentImageIndex ? 'bg-primary' : 'bg-muted-foreground/30'
               }`}
-              onClick={() => handleThumbnailClick(index)}
-              aria-label={`Go to image ${index + 1}`}
             />
           ))}
         </div>
