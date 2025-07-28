@@ -1,342 +1,334 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Download, ShoppingCart, Eye } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ProductImageGallery from '@/components/ProductImageGallery';
-import ModelViewer from '@/components/ModelViewer';
-import AnimatedSection from '@/components/AnimatedSection';
-import { useRFQ } from '@/contexts/RFQContext';
-import { toast } from 'sonner';
-import { Product } from '@/types/product';
-import { productPageContent } from '@/data/productPageContent';
-import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle, Building2 } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
+import { fetchSeriesWithVariants } from '@/services/variantService';
+import { useLoadingState } from '@/hooks/useLoadingState';
+import { ProductVariantSelector } from '@/components/floorplan/ProductVariantSelector';
+import ProductImageGallery from '@/components/ProductImageGallery';
+import { Product } from '@/types/product';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useRFQ } from '@/contexts/RFQContext';
 
-const ProductDetail = () => {
-  usePerformanceLogger('ProductDetail');
+const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { addItem } = useRFQ();
-  const [activeTab, setActiveTab] = useState('overview');
+  const { product, loading: productLoading, error } = useProductById(id);
+  const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
+  const [selectedVariants, setSelectedVariants] = useState<any>({});
+  const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
 
-  // Use the enhanced hook instead of manual fetching
-  const { product, loading, error } = useProductById(id);
+  const {
+    isLoading: variantsLoading,
+    error: variantError,
+    startLoading,
+    stopLoading,
+    setError,
+    reset
+  } = useLoadingState(false);
+
+  const getSeriesInfo = (product: any) => {
+    if (!product) return { series: '', slug: '' };
+    const name = product.name.toLowerCase();
+    const category = product.category.toLowerCase();
+    const productSeries = product.product_series?.toLowerCase() || '';
+
+    if (productSeries.includes('emergency shower') || name.includes('emergency') || category.includes('emergency')) {
+      return { series: 'Emergency Shower', slug: 'emergency-shower' };
+    }
+    if (productSeries.includes('tangerine') || name.includes('tangerine')) {
+      return { series: 'TANGERINE Series', slug: 'tangerine-series' };
+    }
+    if (productSeries.includes('noce') || name.includes('noce')) {
+      return { series: 'NOCE Series', slug: 'noce-series' };
+    }
+    if (productSeries.includes('uniflex') || name.includes('uniflex')) {
+      return { series: 'UNIFLEX Series', slug: 'uniflex-series' };
+    }
+    if (productSeries.includes('safe aire') || name.includes('safe aire')) {
+      return { series: 'Safe Aire II', slug: 'safe-aire-ii' };
+    }
+    if (name.includes('open rack') || category.includes('open rack')) {
+      return { series: 'Open Rack', slug: 'open-rack' };
+    }
+    if (name.includes('tall cabinet') || category.includes('tall cabinet')) {
+      return { series: 'Tall Cabinet', slug: 'tall-cabinet' };
+    }
+    if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
+      return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
+    }
+    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || name.includes('mc-pc') || name.includes('mcc-pc')) {
+      return { series: 'Mobile Cabinet', slug: 'mobile-cabinet' };
+    }
+
+    return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
+  };
+
+  const transformVariantToProduct = (variant: any): Product => ({
+    id: variant.id,
+    name: variant.name,
+    category: variant.category,
+    dimensions: variant.dimensions || '',
+    modelPath: variant.model_path || '/placeholder.glb',
+    thumbnail: variant.thumbnail_path || '/placeholder.svg',
+    images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
+    description: variant.description || '',
+    fullDescription: variant.full_description || variant.description || '',
+    specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
+    product_code: variant.product_code,
+    thumbnail_path: variant.thumbnail_path,
+    model_path: variant.model_path,
+    finish_type: variant.finish_type,
+    orientation: variant.orientation,
+    drawer_count: variant.drawer_count,
+    door_type: variant.door_type,
+    mounting_type: variant.mounting_type,
+    mixing_type: variant.mixing_type,
+    handle_type: variant.handle_type,
+    emergency_shower_type: variant.emergency_shower_type,
+    cabinet_class: variant.cabinet_class,
+    company_tags: variant.company_tags || [],
+    product_series: variant.product_series
+  });
+
+  useEffect(() => {
+    const fetchVariants = async () => {
+      if (!product || productLoading) return;
+      startLoading();
+      reset();
+
+      try {
+        const seriesInfo = getSeriesInfo(product);
+        if ([
+          'Emergency Shower', 'TANGERINE Series', 'NOCE Series', 'UNIFLEX Series', 'Safe Aire II'
+        ].includes(seriesInfo.series)) {
+          const { data: variants, error: variantsError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('product_series', product.product_series)
+            .eq('is_active', true)
+            .order('product_code');
+
+          if (variantsError) throw variantsError;
+
+          const transformedVariants = variants?.map(transformVariantToProduct) || [];
+          setSeriesVariants(transformedVariants);
+        } else {
+          const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
+          if (fetchedVariants && fetchedVariants.length > 0) {
+            const variants = fetchedVariants[0].variants || [];
+            const transformedVariants = variants.map((variant: any) => ({
+              ...variant,
+              thumbnail: variant.thumbnail || '/placeholder.svg',
+              modelPath: variant.modelPath || '/placeholder.glb',
+              images: variant.images || [variant.thumbnail || '/placeholder.svg'],
+              fullDescription: variant.fullDescription || variant.description,
+              specifications: Array.isArray(variant.specifications)
+                ? variant.specifications
+                : variant.specifications
+                  ? [variant.specifications]
+                  : []
+            }));
+            setSeriesVariants(transformedVariants);
+          } else {
+            setSeriesVariants([]);
+          }
+        }
+      } catch (err) {
+        setSeriesVariants([]);
+        setError(err instanceof Error ? err.message : 'Failed to load product variants');
+      } finally {
+        stopLoading();
+      }
+    };
+
+    fetchVariants();
+  }, [product, productLoading]);
+
+  const handleVariantChange = (variantType: string, value: string) => {
+    setSelectedVariants(prev => ({ ...prev, [variantType]: value }));
+  };
+
+  const handleProductSelect = (selectedProduct: Product) => {
+    setSelectedVariant(selectedProduct);
+  };
 
   const handleAddToQuote = () => {
-    if (!product) return;
-    
+    const item = selectedVariant || product;
+    if (!item) return;
     addItem({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      dimensions: product.dimensions,
-      image: product.thumbnail
+      id: item.id,
+      name: item.name,
+      category: item.category,
+      dimensions: item.dimensions,
+      image: item.thumbnail || item.thumbnail_path || '/placeholder.svg'
     });
-    toast.success(`${product.name} ${productPageContent.productDetail.addToQuoteSuccess}`);
+    toast.success(`${item.name} added to quote.`);
   };
 
-  const getProductImages = (product: Product): string[] => {
-    const validImages: string[] = [];
-    
-    // Priority: seriesOverviewImage > overviewImage > thumbnail > images
-    if (product.seriesOverviewImage && !product.seriesOverviewImage.includes('placeholder')) {
-      validImages.push(product.seriesOverviewImage);
-    } else if (product.overviewImage && !product.overviewImage.includes('placeholder')) {
-      validImages.push(product.overviewImage);
-    } else if (product.thumbnail && !product.thumbnail.includes('placeholder')) {
-      validImages.push(product.thumbnail);
+  if (productLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading product details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+          <p className="text-muted-foreground mb-6">{error || 'The product you are looking for does not exist.'}</p>
+          <Button onClick={() => window.history.back()} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const displayProduct = selectedVariant || product;
+  const getProductImages = () => {
+    const images = [];
+    if (displayProduct.seriesOverviewImage && !displayProduct.seriesOverviewImage.includes('placeholder')) {
+      images.push(displayProduct.seriesOverviewImage);
+    } else if (displayProduct.overviewImage && !displayProduct.overviewImage.includes('placeholder')) {
+      images.push(displayProduct.overviewImage);
+    } else if (displayProduct.thumbnail && !displayProduct.thumbnail.includes('placeholder')) {
+      images.push(displayProduct.thumbnail);
     }
-    
-    // Add additional images if available and not placeholders
-    if (product.images && product.images.length > 0) {
-      const additionalImages = product.images.filter(img => 
-        img && 
-        !img.includes('placeholder') && 
-        !validImages.includes(img)
+    if (displayProduct.images && displayProduct.images.length > 0) {
+      const additionalImages = displayProduct.images.filter(img =>
+        img && !img.includes('placeholder') && !images.includes(img)
       );
-      validImages.push(...additionalImages);
+      images.push(...additionalImages);
     }
-    
-    return validImages.length > 0 ? validImages : ['/placeholder.svg'];
+    return images.length > 0 ? images : ['/placeholder.svg'];
   };
-
-  const getThumbnail = (product: Product): string => {
-    // Return the best available image, avoiding placeholders
-    return product.seriesOverviewImage || 
-           product.overviewImage || 
-           product.thumbnail || 
-           (product.images && product.images.length > 0 ? product.images[0] : '') ||
-           '/placeholder.svg';
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="flex items-center justify-center p-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading product details...</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-4">Error Loading Product</h1>
-              <p className="text-muted-foreground mb-8">{error}</p>
-              <Link to="/products">
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Products
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="pt-20">
-          <div className="container-custom py-12">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
-              <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
-              <Link to="/products">
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Products
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const images = getProductImages(product);
-  const thumbnail = getThumbnail(product);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="pt-20">
-        <div className="container-custom py-8">
-          {/* Breadcrumb */}
-          <AnimatedSection animation="fade-in" delay={100}>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
-              <Link to="/products" className="hover:text-foreground transition-colors">
-                Products
-              </Link>
-              <span>/</span>
-              <span className="text-foreground">{product.name}</span>
+    <div className="container mx-auto px-4 py-8">
+      <Button onClick={() => window.history.back()} variant="ghost" className="mb-6 gap-2">
+        <ArrowLeft className="w-4 h-4" />
+        Back to Products
+      </Button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <ProductImageGallery
+            images={getProductImages()}
+            thumbnail={displayProduct.thumbnail || ''}
+            productName={displayProduct.name}
+            isProductPage={true}
+            className="mx-auto w-full max-w-[600px] aspect-[4/3]"
+          />
+        </div>
+
+        <div className="space-y-6">
+          <div>
+            {displayProduct.company_tags && displayProduct.company_tags.length > 0 && (
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-wrap gap-1">
+                  {displayProduct.company_tags.map((tag, index) => (
+                    <Badge key={index} variant="default" className="text-sm bg-blue-500 hover:bg-blue-600 text-white">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <Badge variant="secondary" className="mb-2">
+              {displayProduct.category}
+            </Badge>
+            <h1 className="text-3xl font-bold text-foreground mb-2">
+              {displayProduct.name}
+            </h1>
+            <p className="text-lg text-muted-foreground mb-4">
+              {displayProduct.description}
+            </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Package className="w-4 h-4" />
+                <span>{displayProduct.product_code || displayProduct.id}</span>
+              </div>
+              {displayProduct.dimensions && (
+                <div className="flex items-center gap-1">
+                  <Ruler className="w-4 h-4" />
+                  <span>{displayProduct.dimensions}</span>
+                </div>
+              )}
             </div>
-          </AnimatedSection>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            {/* Product Images */}
-            <AnimatedSection animation="slide-in-left" delay={200}>
-              <div className="space-y-6">
-                <ProductImageGallery
-                  images={images}
-                  thumbnail={thumbnail}
-                  productName={product.name}
-                  className="w-full h-96 lg:h-[500px]"
-                />
-              </div>
-            </AnimatedSection>
-
-            {/* Product Details */}
-            <AnimatedSection animation="slide-in-right" delay={300}>
-              <div className="space-y-6">
-                {/* Header */}
-                <div>
-                  <Badge variant="outline" className="mb-3 border-sea text-sea">
-                    {product.category}
-                  </Badge>
-                  <h1 className="text-3xl font-serif font-bold text-primary mb-2">
-                    {product.name}
-                  </h1>
-                  {product.dimensions && (
-                    <p className="text-lg text-muted-foreground">
-                      {productPageContent.productDetail.dimensions}: {product.dimensions}
-                    </p>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {product.fullDescription || product.description}
-                  </p>
-                </div>
-
-                {/* Specifications */}
-                {product.specifications && product.specifications.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-semibold mb-3">{productPageContent.productDetail.keyFeatures}</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {product.specifications.map((spec, index) => (
-                        <Badge key={index} variant="secondary">
-                          {spec}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                  <Button 
-                    onClick={handleAddToQuote}
-                    className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    {productPageContent.productDetail.addToQuote}
-                  </Button>
-                  {product.modelPath && !product.modelPath.includes('placeholder') && (
-                    <Button variant="outline" className="flex-1">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View 3D Model
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </AnimatedSection>
           </div>
 
-          {/* Detailed Information Tabs */}
-          <AnimatedSection animation="fade-in" delay={400}>
-            <div className="mt-16">
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-                  <TabsTrigger value="overview">{productPageContent.productDetail.tabs.overview}</TabsTrigger>
-                  <TabsTrigger value="specifications">{productPageContent.productDetail.tabs.specifications}</TabsTrigger>
-                  <TabsTrigger value="3d-model">{productPageContent.productDetail.tabs.model3D}</TabsTrigger>
-                  <TabsTrigger value="downloads">{productPageContent.productDetail.tabs.downloads}</TabsTrigger>
-                </TabsList>
+          <Separator />
 
-                <TabsContent value="overview" className="mt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{productPageContent.productDetail.productOverview}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground leading-relaxed">
-                        {product.fullDescription || product.description}
-                      </p>
-                      {product.specifications && product.specifications.length > 0 && (
-                        <div className="mt-6">
-                          <h4 className="font-semibold mb-3">{productPageContent.productDetail.keyFeatures}:</h4>
-                          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                            {product.specifications.map((spec, index) => (
-                              <li key={index}>{spec}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5" />
+                Product Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {variantError ? (
+                <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{variantError}</span>
+                </div>
+              ) : seriesVariants.length > 0 ? (
+                <ProductVariantSelector
+                  products={seriesVariants}
+                  selectedVariants={selectedVariants}
+                  onVariantChange={handleVariantChange}
+                  onProductSelect={handleProductSelect}
+                  selectedProduct={selectedVariant}
+                />
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p className="text-sm">No variants available for this product</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-                <TabsContent value="specifications" className="mt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{productPageContent.productDetail.technicalSpecs}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {product.dimensions && (
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="font-medium">{productPageContent.productDetail.dimensions}</span>
-                            <span className="text-muted-foreground">{product.dimensions}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between py-2 border-b">
-                          <span className="font-medium">{productPageContent.productDetail.category}</span>
-                          <span className="text-muted-foreground">{product.category}</span>
-                        </div>
-                        {product.specifications && product.specifications.map((spec, index) => (
-                          <div key={index} className="flex justify-between py-2 border-b">
-                            <span className="font-medium">Feature {index + 1}</span>
-                            <span className="text-muted-foreground">{spec}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
+          <div className="flex gap-4">
+            <Button className="flex-1 gap-2" onClick={handleAddToQuote} disabled={variantsLoading}>
+              <ShoppingCart className="w-4 h-4" />
+              Add to Quote
+            </Button>
+            <Button variant="outline" className="gap-2" disabled={variantsLoading}>
+              <Download className="w-4 h-4" />
+              Download Specs
+            </Button>
+          </div>
 
-                <TabsContent value="3d-model" className="mt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{productPageContent.productDetail.interactiveModel}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {product.modelPath && !product.modelPath.includes('placeholder') ? (
-                        <div className="h-96 bg-muted rounded-lg">
-                          <ModelViewer modelPath={product.modelPath} />
-                        </div>
-                      ) : (
-                        <div className="h-96 bg-muted rounded-lg flex items-center justify-center">
-                          <p className="text-muted-foreground">3D model not available for this product</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-
-                <TabsContent value="downloads" className="mt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>{productPageContent.productDetail.downloadResources}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                          <div>
-                            <h4 className="font-medium">Product Specification Sheet</h4>
-                            <p className="text-sm text-muted-foreground">Detailed technical specifications</p>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            <Download className="w-4 h-4 mr-2" />
-                            Download PDF
-                          </Button>
-                        </div>
-                        {product.modelPath && !product.modelPath.includes('placeholder') && (
-                          <div className="flex items-center justify-between p-4 border rounded-lg">
-                            <div>
-                              <h4 className="font-medium">3D Model File</h4>
-                              <p className="text-sm text-muted-foreground">GLB format for 3D visualization</p>
-                            </div>
-                            <Button variant="outline" size="sm">
-                              <Download className="w-4 h-4 mr-2" />
-                              Download 3D Model
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </div>
-          </AnimatedSection>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Product Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {displayProduct.fullDescription || displayProduct.description}
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
