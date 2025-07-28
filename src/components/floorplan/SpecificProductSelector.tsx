@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Home, Settings, Hand, Wrench, Building2, Layers, Shield, Droplets, Eye, Shower } from 'lucide-react';
+import { Home, Settings, Hand, Wrench, Building2, Layers, Shield, Droplets, Eye } from 'lucide-react';
 import { Product } from '@/types/product';
 
 interface SpecificProductSelectorProps {
@@ -73,7 +73,7 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
         {availableShowerTypes.length > 0 && (
           <div className="space-y-2">
             <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Shower className="h-3 w-3" />
+              <Eye className="h-3 w-3" />
               Emergency Shower Type:
             </label>
             <ToggleGroup

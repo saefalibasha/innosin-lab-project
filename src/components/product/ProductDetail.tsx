@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,8 +107,10 @@ const ProductDetail: React.FC = () => {
           
           const transformedVariants = variants?.map(variant => ({
             ...variant,
-            thumbnail: variant.thumbnail_path,
-            modelPath: variant.model_path
+            thumbnail: variant.thumbnail_path || '/placeholder.svg',
+            modelPath: variant.model_path || '/placeholder.glb',
+            images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
+            fullDescription: variant.full_description || variant.description
           })) || [];
           
           setSeriesVariants(transformedVariants);
@@ -124,7 +127,15 @@ const ProductDetail: React.FC = () => {
             const variants = fetchedVariants[0].variants || [];
             console.log('🎯 Extracted variants array:', variants);
             
-            setSeriesVariants(variants);
+            const transformedVariants = variants.map((variant: any) => ({
+              ...variant,
+              thumbnail: variant.thumbnail || '/placeholder.svg',
+              modelPath: variant.modelPath || '/placeholder.glb',
+              images: variant.images || [variant.thumbnail || '/placeholder.svg'],
+              fullDescription: variant.fullDescription || variant.description
+            }));
+            
+            setSeriesVariants(transformedVariants);
           } else {
             console.log('⚠️ No variants found for series:', seriesInfo.slug);
             setSeriesVariants([]);
@@ -320,7 +331,7 @@ const ProductDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground leading-relaxed">
-                {displayProduct.fullDescription || displayProduct.full_description || displayProduct.description}
+                {displayProduct.fullDescription || displayProduct.description}
               </p>
             </CardContent>
           </Card>
