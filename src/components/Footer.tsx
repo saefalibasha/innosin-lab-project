@@ -1,16 +1,14 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Phone, Mail, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { MapPin, Phone, Mail, Facebook, Linkedin, Instagram } from 'lucide-react';
 import { WavyBackground } from '@/components/ui/wavy-background';
 import { siteContent } from '@/data/siteContent';
 
 const Footer = () => {
   return (
     <footer className="relative overflow-hidden">
-      {/* Simplified Wavy Background */}
       <WavyBackground
         colors={["hsl(200, 85%, 32%)", "hsl(200, 85%, 28%)", "hsl(200, 85%, 25%)", "hsl(200, 85%, 22%)"]}
         waveWidth={60}
@@ -63,11 +61,11 @@ const Footer = () => {
                   { name: siteContent.navigation.blog, path: '/blog' },
                   { name: siteContent.navigation.contact, path: '/contact' }
                 ].map((link, index) => (
-                  <Link 
+                  <Link
                     key={link.name}
-                    to={link.path} 
+                    to={link.path}
                     className="block text-white/90 hover:text-white transition-all duration-300 hover:translate-x-1 group animate-fade-in text-sm"
-                    style={{animationDelay: `${300 + index * 50}ms`}}
+                    style={{ animationDelay: `${300 + index * 50}ms` }}
                   >
                     <span className="border-b border-transparent group-hover:border-white/50 transition-colors">
                       {link.name}
@@ -94,23 +92,25 @@ const Footer = () => {
                     {siteContent.footer.subscribeButton}
                   </Button>
                 </div>
-                
-                {/* Social Media Icons */}
+
+                {/* Social Media Links */}
                 <div className="flex space-x-3 pt-2">
                   {[
-                    { icon: Facebook, label: 'Facebook' },
-                    { icon: Twitter, label: 'Twitter' },
-                    { icon: Linkedin, label: 'LinkedIn' },
-                    { icon: Instagram, label: 'Instagram' }
-                  ].map(({ icon: Icon, label }, index) => (
-                    <button
+                    { icon: Facebook, label: 'Facebook', href: 'https://www.facebook.com/InnosinTecLab/' },
+                    { icon: Linkedin, label: 'LinkedIn', href: 'https://linkedin.com/company/innosin-lab-pte-ltd' },
+                    { icon: Instagram, label: 'Instagram', href: 'https://www.instagram.com/innosin_techlab/?hl=en' }
+                  ].map(({ icon: Icon, label, href }, index) => (
+                    <a
                       key={label}
-                      className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group animate-bounce-in backdrop-blur-sm border border-white/30 hover:border-white/50"
-                      style={{animationDelay: `${600 + index * 100}ms`}}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       aria-label={label}
+                      className="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group animate-bounce-in backdrop-blur-sm border border-white/30 hover:border-white/50"
+                      style={{ animationDelay: `${600 + index * 100}ms` }}
                     >
-                      <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                    </button>
+                      <Icon className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                    </a>
                   ))}
                 </div>
               </div>
