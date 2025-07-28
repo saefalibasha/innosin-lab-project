@@ -60,6 +60,36 @@ export const contactPageContent = {
     ]
   },
 
+  // Office/Location Information
+  location: {
+    title: "Visit Our Office",
+    description: "Come see our showroom and meet our team in person",
+    address: {
+      street: "123 Laboratory Drive",
+      city: "Singapore",
+      postalCode: "123456",
+      country: "Singapore"
+    },
+    // Office images
+    officeImages: [
+      {
+        url: "/page-images/contact/office-exterior.jpg", // Replace with your image
+        alt: "Office exterior view",
+        caption: "Our modern office facility"
+      },
+      {
+        url: "/page-images/contact/showroom.jpg", // Replace with your image
+        alt: "Laboratory equipment showroom",
+        caption: "Visit our interactive showroom"
+      },
+      {
+        url: "/page-images/contact/team-photo.jpg", // Replace with your image
+        alt: "Our professional team",
+        caption: "Meet our expert team"
+      }
+    ]
+  }
+};
 
 /*
 HOW TO EDIT CONTACT PAGE CONTENT VIA GITHUB:
