@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -41,9 +40,9 @@ const GoogleMapsLocation = () => {
   };
 
   const businessHours = [
-    { day: 'Monday - Friday', hours: '08:15AM - 05:15PM'},
-    { day: 'Saturday', hours: '08:15AM - 12:00PM'},
-    { day: 'Sunday', hours: 'Closed'}
+    { day: 'Monday - Friday', hours: '08:15 AM - 05:15 PM' },
+    { day: 'Saturday', hours: '08:15 AM - 12:00 PM' },
+    { day: 'Sunday', hours: 'Closed' }
   ];
 
   const contactDetails = [
@@ -94,7 +93,7 @@ const GoogleMapsLocation = () => {
                   ? "bg-sea hover:bg-sea-dark" 
                   : "hover:bg-sea/10"
               }`}
-              style={{animationDelay: `${300 + index * 100}ms`}}
+              style={{ animationDelay: `${300 + index * 100}ms` }}
             >
               <span className="font-semibold text-sm">{office.name}</span>
             </Button>
@@ -104,7 +103,7 @@ const GoogleMapsLocation = () => {
 
       {/* Main Content Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6">
-        {/* Map - Takes 7 columns on large screens with increased height */}
+        {/* Map */}
         <div className="lg:col-span-7 animate-fade-in-left animate-delay-500">
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
@@ -119,7 +118,6 @@ const GoogleMapsLocation = () => {
                   referrerPolicy="no-referrer-when-downgrade"
                   title={`${selectedOffice.name} Location`}
                 />
-                
                 {/* Overlay with company info */}
                 <div className="absolute bottom-4 left-4 glass-card p-3 rounded-lg shadow-lg max-w-xs animate-slide-up">
                   <div className="flex items-center space-x-2 mb-2">
@@ -142,7 +140,7 @@ const GoogleMapsLocation = () => {
           </Card>
         </div>
 
-        {/* Contact Details - Takes 3 columns on large screens */}
+        {/* Contact Details */}
         <div className="lg:col-span-3 space-y-4 animate-fade-in-right animate-delay-700">
           <Card className="glass-card hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
@@ -156,7 +154,7 @@ const GoogleMapsLocation = () => {
                 <div
                   key={index}
                   className="flex items-start space-x-2 p-2 rounded-lg hover:bg-sea/10 cursor-pointer transition-colors animate-fade-in"
-                  style={{animationDelay: `${800 + index * 100}ms`}}
+                  style={{ animationDelay: `${800 + index * 100}ms` }}
                   onClick={detail.action}
                 >
                   <div className="text-sea mt-0.5">
@@ -171,6 +169,7 @@ const GoogleMapsLocation = () => {
             </CardContent>
           </Card>
 
+          {/* Business Hours */}
           <Card className="glass-card hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center space-x-2 text-lg font-serif">
@@ -181,21 +180,16 @@ const GoogleMapsLocation = () => {
             <CardContent className="pt-0">
               <div className="space-y-2">
                 {businessHours.map((schedule, index) => (
-                  <div key={index} className="flex justify-between items-center py-1 animate-fade-in" style={{animationDelay: `${1200 + index * 100}ms`}}>
+                  <div 
+                    key={index} 
+                    className="flex justify-between items-center py-1 animate-fade-in" 
+                    style={{ animationDelay: `${1200 + index * 100}ms` }}
+                  >
                     <span className="font-medium text-foreground text-sm w-32">{schedule.day}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-muted-foreground text-xs w-28 text-right">{schedule.hours}</span>
-                      <Badge 
-                        variant={schedule.status === 'Open' ? 'default' : 'outline'}
-                        className="text-xs w-12 text-center"
-                      >
-                        {schedule.status}
-                      </Badge>
-                    </div>
+                    <span className="text-muted-foreground text-xs text-right">{schedule.hours}</span>
                   </div>
                 ))}
               </div>
-              
               <div className="mt-3 p-2 bg-sea/10 rounded-lg animate-bounce-in animate-delay-1000">
                 <p className="text-xs text-sea-dark">
                   <strong>Note:</strong> For project consultations and site visits, 
@@ -211,3 +205,4 @@ const GoogleMapsLocation = () => {
 };
 
 export default GoogleMapsLocation;
+
