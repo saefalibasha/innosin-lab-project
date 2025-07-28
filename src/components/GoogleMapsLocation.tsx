@@ -10,22 +10,22 @@ const GoogleMapsLocation = () => {
     {
       id: 'singapore',
       name: 'SINGAPORE',
-      address: '1 Raffles Place, #20-61 One Raffles Place, Singapore 048616',
-      coordinates: { lat: '1.284', lng: '103.851' },
+      address: '510 Bedok North Street 3, Singapore 460510',
+      coordinates: { lat: '1.3321740824098278', lng: '103.930623716398' },
       type: 'Branch Office'
     },
     {
       id: 'johor',
       name: 'JOHOR BAHRU',
-      address: 'No. 48, Jalan Harmonium 23/13, Taman Desa Tebrau, 81100 Johor Bahru, Johor, Malaysia',
-      coordinates: { lat: '1.558', lng: '103.806' },
+      address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia.',
+      coordinates: { lat: '1.5720704381300796', lng: '103.82033832084565' },
       type: 'Headquarters'
     },
     {
       id: 'kl',
       name: 'KUALA LUMPUR',
-      address: 'Level 10, Menara Landmark, No. 12, Jalan Ngee Heng, 80000 Johor Bahru, Johor, Malaysia',
-      coordinates: { lat: '3.139', lng: '101.687' },
+      address: 'B-05-16, kompleks Perindustrian EMHUB, Persiaran Surian, Seksyen 3, Taman Sains Selangor, Petaling Jaya, Malaysia, 47810, Selangor',
+      coordinates: { lat: '3.1590964699560318', lng: '101.57309386963026' },
       type: 'Branch Office'
     }
   ];
@@ -41,9 +41,9 @@ const GoogleMapsLocation = () => {
   };
 
   const businessHours = [
-    { day: 'Monday - Friday', hours: '08:15 AM - 05:15 PM', status: 'Open' },
-    { day: 'Saturday', hours: '08:15 AM - 12:00 PM', status: 'Open' },
-    { day: 'Sunday', hours: 'Closed', status: 'Closed' }
+    { day: 'Monday - Friday', hours: '08:15 AM - 05:15 PM'},
+    { day: 'Saturday', hours: '08:15 AM - 12:00 PM'},
+    { day: 'Sunday', hours: 'Closed'}
   ];
 
   const contactDetails = [
