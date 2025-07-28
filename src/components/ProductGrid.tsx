@@ -16,7 +16,7 @@ interface ProductGridProps {
 const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => {
   const getProductImages = (product: Product) => {
     const validImages: string[] = [];
-    
+
     if (product.seriesOverviewImage && !product.seriesOverviewImage.includes('placeholder')) {
       validImages.push(product.seriesOverviewImage);
     } else if (product.overviewImage && !product.overviewImage.includes('placeholder')) {
@@ -24,46 +24,49 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
     } else if (product.thumbnail && !product.thumbnail.includes('placeholder')) {
       validImages.push(product.thumbnail);
     }
-    
+
     if (product.images && product.images.length > 0) {
-      const additionalImages = product.images.filter(img => 
-        img && 
-        !img.includes('placeholder') && 
-        !validImages.includes(img)
+      const additionalImages = product.images.filter(
+        (img) =>
+          img &&
+          !img.includes('placeholder') &&
+          !validImages.includes(img)
       );
       validImages.push(...additionalImages);
     }
-    
+
     return validImages;
   };
 
   const getThumbnail = (product: Product) => {
-    return product.seriesOverviewImage || 
-           product.overviewImage || 
-           product.thumbnail || 
-           (product.images && product.images.length > 0 ? product.images[0] : '') ||
-           '/placeholder.svg';
+    return (
+      product.seriesOverviewImage ||
+      product.overviewImage ||
+      product.thumbnail ||
+      (product.images && product.images.length > 0 ? product.images[0] : '') ||
+      '/placeholder.svg'
+    );
   };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {products.map((product, index) => (
         <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
-          <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group">
+          <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group h-full flex flex-col">
             {/* IMAGE */}
             <CardHeader className="p-0">
-              <div className="w-full h-64 flex items-center justify-center bg-white">
-                <ProductImageGallery
-                  images={getProductImages(product)}
-                  thumbnail={getThumbnail(product)}
-                  productName={product.name}
-                  className="w-full h-full object-contain"
-                />
-              </div>
+              <ProductImageGallery
+                images={getProductImages(product)}
+                thumbnail={getThumbnail(product)}
+                productName={product.name}
+                isProductPage={false}
+                showThumbnails={false}
+              />
             </CardHeader>
-            
+
             {/* CONTENT */}
-            <CardContent className="p-6 flex flex-col justify-between h-[300px]">
+            <CardContent className="p-6 flex flex-col flex-grow">
+              {/* Header Info */}
               <div className="mb-4">
                 <Badge variant="outline" className="mb-2 border-sea text-sea">
                   {product.category}
@@ -71,12 +74,12 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
                   {product.name}
                 </h3>
-                {/* Fixed height description */}
                 <p className="text-sm text-muted-foreground mb-3 line-clamp-4">
                   {product.description}
                 </p>
               </div>
-              
+
+              {/* Key Features (only for non-Innosin products) */}
               {!product.category.includes('Innosin') && (
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
@@ -89,9 +92,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                   </div>
                 </div>
               )}
-              
-              {/* ACTION BUTTONS */}
-              <div className="flex gap-2 mt-auto">
+
+              {/* Bottom Action Buttons */}
+              <div className="mt-auto flex gap-2">
                 <Link to={`/products/${product.id}`} className="flex-1">
                   <Button variant="outline" className="w-full">
                     <Eye className="w-4 h-4 mr-2" />
