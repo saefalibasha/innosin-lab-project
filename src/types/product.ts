@@ -48,6 +48,8 @@ export interface Product {
   mounting_type?: string; // For Safe Aire II (bench-mounted/floor-mounted)
   mixing_type?: string;   // For UNIFLEX (non-mix/mix)
   handle_type?: string;   // For UNIFLEX (polypropylene/wrist-action)
+  emergency_shower_type?: string; // For Emergency Shower (eye-wash/body-shower/combination)
+  cabinet_class?: string; // For TANGERINE (A2/B2)
   company_tags?: string[]; // Company/brand tags
   product_series?: string; // Product series name
 }

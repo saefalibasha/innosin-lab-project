@@ -1,60 +1,108 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Eye, Building2 } from 'lucide-react';
+import { Product } from '@/types/product';
 import { OptimizedOverviewImage } from '@/components/common/OptimizedOverviewImage';
-import { ProductSeries } from '@/hooks/useProductSeries';
 
 interface ProductGridProps {
-  productSeries: ProductSeries[];
-  onSeriesSelect: (series: ProductSeries) => void;
+  products: Product[];
+  onProductSelect: (product: Product) => void;
+  loading?: boolean;
 }
 
 export const ProductGrid: React.FC<ProductGridProps> = ({
-  productSeries,
-  onSeriesSelect
+  products,
+  onProductSelect,
+  loading
 }) => {
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader className="pb-3">
+              <div className="aspect-square bg-muted rounded-lg mb-3"></div>
+              <div className="h-4 bg-muted rounded w-3/4"></div>
+              <div className="h-3 bg-muted rounded w-1/2"></div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-8 bg-muted rounded"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (products.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No products found</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {productSeries.map((series) => (
-        <Card 
-          key={series.id}
-          className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden"
-          onClick={() => onSeriesSelect(series)}
-        >
-          <div className="aspect-square relative">
-            <OptimizedOverviewImage
-              src={series.thumbnail || '/placeholder.svg'}
-              alt={series.name}
-              className="w-full h-full"
-              showCompanyTag={true}
-              companyTag={series.products[0]?.company_tags?.[0]}
-            />
-          </div>
-          <CardContent className="p-4">
-            <h3 className="font-semibold text-base mb-2 line-clamp-2 min-h-[3rem]">
-              {series.name}
-            </h3>
-            <div className="space-y-2">
-              <Badge variant="secondary" className="text-xs">
-                {series.category}
-              </Badge>
-              {series.description && (
-                <p className="text-sm text-muted-foreground line-clamp-3 min-h-[4.5rem]">
-                  {series.description}
-                </p>
-              )}
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-xs text-muted-foreground">
-                  {series.products.length} variant{series.products.length !== 1 ? 's' : ''}
-                </span>
-                {series.products[0]?.company_tags?.[0] && (
-                  <Badge variant="outline" className="text-xs">
-                    {series.products[0].company_tags[0]}
-                  </Badge>
-                )}
-              </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {products.map((product) => (
+        <Card key={product.id} className="group hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-3">
+              <OptimizedOverviewImage
+                src={product.seriesOverviewImage || product.overviewImage || product.thumbnail || '/placeholder.svg'}
+                alt={product.name}
+                className="w-full h-full object-cover"
+                showCompanyTag={false}
+              />
             </div>
+            
+            {/* Company Tags - Display prominently in blue */}
+            {product.company_tags && product.company_tags.length > 0 && (
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <div className="flex flex-wrap gap-1">
+                  {product.company_tags.map((tag, index) => (
+                    <Badge 
+                      key={index} 
+                      variant="default" 
+                      className="text-xs bg-blue-500 hover:bg-blue-600 text-white"
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
+            <CardDescription className="text-sm">
+              {product.description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-2">
+              {product.dimensions && (
+                <div className="text-sm text-muted-foreground">
+                  <strong>Dimensions:</strong> {product.dimensions}
+                </div>
+              )}
+              {product.product_code && (
+                <div className="text-sm text-muted-foreground">
+                  <strong>Product Code:</strong> {product.product_code}
+                </div>
+              )}
+            </div>
+            
+            <Button 
+              onClick={() => onProductSelect(product)}
+              className="w-full mt-4 group-hover:shadow-md transition-shadow"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View Details
+            </Button>
           </CardContent>
         </Card>
       ))}

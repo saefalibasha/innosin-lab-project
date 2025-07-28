@@ -912,6 +912,7 @@ export type Database = {
       products: {
         Row: {
           additional_images: string[] | null
+          cabinet_class: string | null
           category: string
           company_tags: string[] | null
           created_at: string
@@ -921,6 +922,7 @@ export type Database = {
           drawer_count: number | null
           editable_description: string | null
           editable_title: string | null
+          emergency_shower_type: string | null
           finish_type: string | null
           full_description: string | null
           handle_type: string | null
@@ -952,6 +954,7 @@ export type Database = {
         }
         Insert: {
           additional_images?: string[] | null
+          cabinet_class?: string | null
           category?: string
           company_tags?: string[] | null
           created_at?: string
@@ -961,6 +964,7 @@ export type Database = {
           drawer_count?: number | null
           editable_description?: string | null
           editable_title?: string | null
+          emergency_shower_type?: string | null
           finish_type?: string | null
           full_description?: string | null
           handle_type?: string | null
@@ -992,6 +996,7 @@ export type Database = {
         }
         Update: {
           additional_images?: string[] | null
+          cabinet_class?: string | null
           category?: string
           company_tags?: string[] | null
           created_at?: string
@@ -1001,6 +1006,7 @@ export type Database = {
           drawer_count?: number | null
           editable_description?: string | null
           editable_title?: string | null
+          emergency_shower_type?: string | null
           finish_type?: string | null
           full_description?: string | null
           handle_type?: string | null

@@ -20,6 +20,9 @@ interface ProductVariantSelectorProps {
     mounting_type?: string;
     mixing_type?: string;
     handle_type?: string;
+    emergency_shower_type?: string;
+    cabinet_class?: string;
+    finish_type?: string;
   };
   onVariantChange: (variantType: string, value: string) => void;
   onProductSelect: (product: Product) => void;
@@ -57,7 +60,10 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   // Check if this is a specific product series that needs custom handling
   const productSeries = products.length > 0 ? products[0].product_series || '' : '';
   const isSpecificSeries = productSeries.toLowerCase().includes('safe aire') || 
-                          productSeries.toLowerCase().includes('uniflex');
+                          productSeries.toLowerCase().includes('uniflex') ||
+                          productSeries.toLowerCase().includes('emergency shower') ||
+                          productSeries.toLowerCase().includes('tangerine') ||
+                          productSeries.toLowerCase().includes('noce');
 
   // Extract available variant options from products
   const availableFinishes = Array.from(new Set(
@@ -83,6 +89,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   // Filter products based on selected variants
   const filteredProducts = products.filter(product => {
     if (selectedVariants.finish && product.finish_type !== selectedVariants.finish) return false;
+    if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
     if (selectedVariants.orientation && product.orientation !== selectedVariants.orientation) return false;
     if (selectedVariants.drawerCount && product.drawer_count?.toString() !== selectedVariants.drawerCount) return false;
     if (selectedVariants.doorType && product.door_type !== selectedVariants.doorType) return false;
@@ -90,6 +97,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     if (selectedVariants.mounting_type && product.mounting_type !== selectedVariants.mounting_type) return false;
     if (selectedVariants.mixing_type && product.mixing_type !== selectedVariants.mixing_type) return false;
     if (selectedVariants.handle_type && product.handle_type !== selectedVariants.handle_type) return false;
+    if (selectedVariants.emergency_shower_type && product.emergency_shower_type !== selectedVariants.emergency_shower_type) return false;
+    if (selectedVariants.cabinet_class && product.cabinet_class !== selectedVariants.cabinet_class) return false;
     return true;
   });
 
@@ -121,7 +130,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <div className="flex flex-wrap gap-1">
             {products[0].company_tags.map((tag, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
+              <Badge key={index} variant="default" className="text-xs bg-blue-500 hover:bg-blue-600">
                 {tag}
               </Badge>
             ))}
@@ -151,8 +160,8 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
               </label>
               <ToggleGroup
                 type="single"
-                value={selectedVariants.finish || ''}
-                onValueChange={(value) => onVariantChange('finish', value)}
+                value={selectedVariants.finish || selectedVariants.finish_type || ''}
+                onValueChange={(value) => onVariantChange('finish_type', value)}
                 className="justify-start"
               >
                 {availableFinishes.map((finish) => (
@@ -296,7 +305,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                       {product.product_code}
                     </div>
                     {product.company_tags && product.company_tags.length > 0 && (
-                      <Badge variant="secondary" className="text-xs mt-1">
+                      <Badge variant="default" className="text-xs mt-1 bg-blue-500 hover:bg-blue-600">
                         {product.company_tags[0]}
                       </Badge>
                     )}
