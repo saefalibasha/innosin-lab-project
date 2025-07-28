@@ -9,6 +9,7 @@ interface ProductImageGalleryProps {
   thumbnail: string;
   productName: string;
   className?: string;
+  isProductPage?: boolean; // Flag to differentiate layout for product pages
   showThumbnails?: boolean;
 }
 
@@ -17,16 +18,16 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   thumbnail,
   productName,
   className = '',
+  isProductPage = false,
   showThumbnails = true
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Build the image list (thumbnail first, then others), validate & dedupe
+  // Build the image list
   const displayImages = useMemo(() => {
     const list: string[] = [];
 
     if (isValidImageUrl(thumbnail)) list.push(thumbnail);
-
     const rest = images.filter((img) => isValidImageUrl(img) && img !== thumbnail);
     list.push(...rest);
 
@@ -52,20 +53,20 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Main image area (dynamic height, never crop) */}
+      {/* Main Image */}
       <div
-        className="
-          relative w-full
-          flex items-center justify-center
-          rounded-lg bg-white overflow-hidden
-          min-h-[240px]
-          max-h-[60vh] md:max-h-[70vh] lg:max-h-[75vh]
-        "
+        className={`relative w-full flex items-center justify-center bg-white rounded-lg overflow-hidden ${
+          isProductPage
+            ? 'p-4 max-h-[70vh]' // Dynamic height for product page
+            : 'h-64 md:h-72 lg:h-80' // Fixed height for grid cards
+        }`}
       >
         <OptimizedImage
           src={currentImage}
           alt={`${productName} - Image ${currentImageIndex + 1}`}
-          className="w-auto h-auto max-w-full max-h-full object-contain"
+          className={`object-contain ${
+            isProductPage ? 'max-h-full max-w-full' : 'w-full h-full'
+          }`}
           priority={currentImageIndex === 0}
         />
 
@@ -80,7 +81,6 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-
             <Button
               variant="outline"
               size="icon"
@@ -90,7 +90,6 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
-
             <div className="absolute bottom-4 right-4 bg-background/80 px-3 py-1 rounded-full text-sm font-medium">
               {currentImageIndex + 1} / {displayImages.length}
             </div>
