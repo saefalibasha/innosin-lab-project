@@ -41,8 +41,8 @@ const GoogleMapsLocation = () => {
   };
 
   const businessHours = [
-    { day: 'Monday - Friday', hours: '08:15 AM - 05:15 PM'},
-    { day: 'Saturday', hours: '08:15 AM - 12:00 PM'},
+    { day: 'Monday - Friday', hours: '08:15AM - 05:15PM'},
+    { day: 'Saturday', hours: '08:15AM - 12:00PM'},
     { day: 'Sunday', hours: 'Closed'}
   ];
 
