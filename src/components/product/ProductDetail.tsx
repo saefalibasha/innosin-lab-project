@@ -75,6 +75,40 @@ const ProductDetail: React.FC = () => {
     return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
   };
 
+  // Transform database variant to Product interface
+  const transformVariantToProduct = (variant: any): Product => {
+    return {
+      id: variant.id,
+      name: variant.name,
+      category: variant.category,
+      dimensions: variant.dimensions || '',
+      modelPath: variant.model_path || '/placeholder.glb',
+      thumbnail: variant.thumbnail_path || '/placeholder.svg',
+      images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
+      description: variant.description || '',
+      fullDescription: variant.full_description || variant.description || '',
+      specifications: Array.isArray(variant.specifications) 
+        ? variant.specifications 
+        : variant.specifications 
+          ? [variant.specifications] 
+          : [],
+      product_code: variant.product_code,
+      thumbnail_path: variant.thumbnail_path,
+      model_path: variant.model_path,
+      finish_type: variant.finish_type,
+      orientation: variant.orientation,
+      drawer_count: variant.drawer_count,
+      door_type: variant.door_type,
+      mounting_type: variant.mounting_type,
+      mixing_type: variant.mixing_type,
+      handle_type: variant.handle_type,
+      emergency_shower_type: variant.emergency_shower_type,
+      cabinet_class: variant.cabinet_class,
+      company_tags: variant.company_tags || [],
+      product_series: variant.product_series
+    };
+  };
+
   // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
     const fetchVariants = async () => {
@@ -105,14 +139,7 @@ const ProductDetail: React.FC = () => {
 
           if (variantsError) throw variantsError;
           
-          const transformedVariants = variants?.map(variant => ({
-            ...variant,
-            thumbnail: variant.thumbnail_path || '/placeholder.svg',
-            modelPath: variant.model_path || '/placeholder.glb',
-            images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
-            fullDescription: variant.full_description || variant.description
-          })) || [];
-          
+          const transformedVariants = variants?.map(transformVariantToProduct) || [];
           setSeriesVariants(transformedVariants);
         } else {
           // Use the existing fetch method for other series
@@ -132,7 +159,12 @@ const ProductDetail: React.FC = () => {
               thumbnail: variant.thumbnail || '/placeholder.svg',
               modelPath: variant.modelPath || '/placeholder.glb',
               images: variant.images || [variant.thumbnail || '/placeholder.svg'],
-              fullDescription: variant.fullDescription || variant.description
+              fullDescription: variant.fullDescription || variant.description,
+              specifications: Array.isArray(variant.specifications) 
+                ? variant.specifications 
+                : variant.specifications 
+                  ? [variant.specifications] 
+                  : []
             }));
             
             setSeriesVariants(transformedVariants);
