@@ -27,7 +27,10 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
 
     if (product.images && product.images.length > 0) {
       const additionalImages = product.images.filter(
-        (img) => img && !img.includes('placeholder') && !validImages.includes(img)
+        (img) =>
+          img &&
+          !img.includes('placeholder') &&
+          !validImages.includes(img)
       );
       validImages.push(...additionalImages);
     }
@@ -47,75 +50,69 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {products.map((product, index) => {
-        const companyTag = Array.isArray(product.series?.company_tags)
-          ? product.series.company_tags[0]
-          : product.series?.company_tags || 'No Company';
+      {products.map((product, index) => (
+        <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
+          <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group h-full flex flex-col">
+            {/* IMAGE */}
+            <CardHeader className="p-0">
+              <ProductImageGallery
+                images={getProductImages(product)}
+                thumbnail={getThumbnail(product)}
+                productName={product.name}
+                isProductPage={false}
+                showThumbnails={false}
+              />
+            </CardHeader>
 
-        return (
-          <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
-            <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group h-full flex flex-col">
-              {/* IMAGE */}
-              <CardHeader className="p-0">
-                <ProductImageGallery
-                  images={getProductImages(product)}
-                  thumbnail={getThumbnail(product)}
-                  productName={product.name}
-                  isProductPage={false}
-                  showThumbnails={false}
-                />
-              </CardHeader>
+            {/* CONTENT */}
+            <CardContent className="p-6 flex flex-col flex-grow">
+              {/* Header Info */}
+              <div className="mb-4">
+                <Badge variant="outline" className="mb-2 border-sea text-sea">
+                  {product.category}
+                </Badge>
+                <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
+                  {product.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-4">
+                  {product.description}
+                </p>
+              </div>
 
-              {/* CONTENT */}
-              <CardContent className="p-6 flex flex-col flex-grow">
-                {/* Company Tag */}
+              {/* Key Features (only for non-Innosin products) */}
+              {!product.category.includes('Innosin') && (
                 <div className="mb-4">
-                  <Badge variant="outline" className="mb-2 border-blue-500 text-blue-500">
-                    {companyTag}
-                  </Badge>
-                  <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
-                    {product.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-3 line-clamp-4">
-                    {product.description}
-                  </p>
-                </div>
-
-                {/* Key Features (skip if Innosin) */}
-                {!companyTag.toLowerCase().includes('innosin') && (
-                  <div className="mb-4">
-                    <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {product.specifications.slice(0, 3).map((spec, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
-                          {spec}
-                        </Badge>
-                      ))}
-                    </div>
+                  <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
+                  <div className="flex flex-wrap gap-1">
+                    {product.specifications.slice(0, 3).map((spec, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {spec}
+                      </Badge>
+                    ))}
                   </div>
-                )}
-
-                {/* Action Buttons */}
-                <div className="mt-auto flex gap-2">
-                  <Link to={`/products/${product.id}`} className="flex-1">
-                    <Button variant="outline" className="w-full">
-                      <Eye className="w-4 h-4 mr-2" />
-                      View Details
-                    </Button>
-                  </Link>
-                  <Button
-                    onClick={() => onAddToQuote(product)}
-                    className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
-                  >
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Quote
-                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </AnimatedSection>
-        );
-      })}
+              )}
+
+              {/* Bottom Action Buttons */}
+              <div className="mt-auto flex gap-2">
+                <Link to={`/products/${product.id}`} className="flex-1">
+                  <Button variant="outline" className="w-full">
+                    <Eye className="w-4 h-4 mr-2" />
+                    View Details
+                  </Button>
+                </Link>
+                <Button
+                  onClick={() => onAddToQuote(product)}
+                  className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Quote
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimatedSection>
+      ))}
     </div>
   );
 };
