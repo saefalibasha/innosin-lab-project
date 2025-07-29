@@ -68,8 +68,8 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
             <CardContent className="p-6 flex flex-col flex-grow">
               {/* Header Info */}
               <div className="mb-4">
-                <Badge variant="outline" className="mb-2 border-sea text-sea">
-                  {product.category}
+                <Badge variant="outline" className="mb-2 border-blue-500 text-blue-500">
+                  {product.company_tags[0]}
                 </Badge>
                 <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
                   {product.name}
@@ -80,7 +80,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
               </div>
 
               {/* Key Features (only for non-Innosin products) */}
-              {!product.category.includes('Innosin') && (
+              {!product.company_tags[0].toLowerCase().includes('innosin') && (
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
                   <div className="flex flex-wrap gap-1">
