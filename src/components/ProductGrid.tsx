@@ -1,3 +1,4 @@
+// ProductGrid.tsx – for company_tags as ARRAY
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -53,7 +54,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
       {products.map((product, index) => (
         <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
           <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group h-full flex flex-col">
-            {/* IMAGE */}
             <CardHeader className="p-0">
               <ProductImageGallery
                 images={getProductImages(product)}
@@ -64,9 +64,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
               />
             </CardHeader>
 
-            {/* CONTENT */}
             <CardContent className="p-6 flex flex-col flex-grow">
-              {/* Header Info */}
               <div className="mb-4">
                 <Badge variant="outline" className="mb-2 border-blue-500 text-blue-500">
                   {product.company_tags[0]}
@@ -79,7 +77,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 </p>
               </div>
 
-              {/* Key Features (only for non-Innosin products) */}
               {!product.company_tags[0].toLowerCase().includes('innosin') && (
                 <div className="mb-4">
                   <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
@@ -93,7 +90,6 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
                 </div>
               )}
 
-              {/* Bottom Action Buttons */}
               <div className="mt-auto flex gap-2">
                 <Link to={`/products/${product.id}`} className="flex-1">
                   <Button variant="outline" className="w-full">
