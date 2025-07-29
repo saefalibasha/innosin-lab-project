@@ -61,9 +61,9 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       <div className="space-y-4">
         {/* Company Tag Display */}
         {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
               {products[0].company_tags[0]}
             </Badge>
           </div>
@@ -200,9 +200,9 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       <div className="space-y-4">
         {/* Company Tag Display */}
         {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
               {products[0].company_tags[0]}
             </Badge>
           </div>
@@ -307,9 +307,9 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       <div className="space-y-4">
         {/* Company Tag Display */}
         {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
               {products[0].company_tags[0]}
             </Badge>
           </div>
@@ -397,10 +397,7 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
   }
 
   // Safe Aire II and other fume hood series
-  if (productSeries.toLowerCase().includes('safe aire') || 
-      productSeries.toLowerCase().includes('noce') ||
-      productSeries.toLowerCase().includes('tangerine')) {
-    
+  if (productSeries.toLowerCase().includes('safe aire')) {
     const availableMountingTypes = Array.from(new Set(
       products.map(p => p.mounting_type).filter(Boolean)
     ));
@@ -417,9 +414,9 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       <div className="space-y-4">
         {/* Company Tag Display */}
         {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
               {products[0].company_tags[0]}
             </Badge>
           </div>
@@ -524,9 +521,9 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       <div className="space-y-4">
         {/* Company Tag Display */}
         {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="outline" className="text-sm">
+            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
               {products[0].company_tags[0]}
             </Badge>
           </div>
@@ -619,9 +616,9 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
   if (products.length > 0 && products[0].company_tags && products[0].company_tags.length > 0) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
           <Building2 className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="outline" className="text-sm">
+          <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
             {products[0].company_tags[0]}
           </Badge>
         </div>
