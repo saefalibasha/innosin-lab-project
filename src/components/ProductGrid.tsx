@@ -27,10 +27,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
 
     if (product.images && product.images.length > 0) {
       const additionalImages = product.images.filter(
-        (img) =>
-          img &&
-          !img.includes('placeholder') &&
-          !validImages.includes(img)
+        (img) => img && !img.includes('placeholder') && !validImages.includes(img)
       );
       validImages.push(...additionalImages);
     }
@@ -51,9 +48,9 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
       {products.map((product, index) => {
-        const companyTag = Array.isArray(product.company_tags)
-          ? product.company_tags[0]
-          : product.company_tags || 'No Company';
+        const companyTag = Array.isArray(product.series?.company_tags)
+          ? product.series.company_tags[0]
+          : product.series?.company_tags || 'No Company';
 
         return (
           <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
@@ -71,6 +68,7 @@ const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => 
 
               {/* CONTENT */}
               <CardContent className="p-6 flex flex-col flex-grow">
+                {/* Company Tag */}
                 <div className="mb-4">
                   <Badge variant="outline" className="mb-2 border-blue-500 text-blue-500">
                     {companyTag}
