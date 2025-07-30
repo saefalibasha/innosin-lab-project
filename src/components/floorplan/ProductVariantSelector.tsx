@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Palette, RotateCcw, Layers, DoorOpen, Ruler, Building2 } from 'lucide-react';
+import { Palette, RotateCcw, Layers, DoorOpen, Ruler, Building2, Droplets, Wrench, Mountain } from 'lucide-react';
 import { Product } from '@/types/product';
 import { SpecificProductSelector } from './SpecificProductSelector';
 import { OptimizedOverviewImage } from '@/components/common/OptimizedOverviewImage';
@@ -64,16 +64,19 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   
   // Updated detection logic based on actual database content
   const isSpecificSeries = 
-    // Emergency Shower detection
+    // Emergency Shower detection - check for exact series name or partial matches
     productSeries.toLowerCase().includes('emergency shower') || 
     productName.includes('emergency shower') ||
     category.includes('emergency shower') ||
-    // UNIFLEX detection
+    productSeries === 'Broen-Lab Emergency Shower Series' ||
+    // UNIFLEX detection - check for exact series name or partial matches
     productSeries.toLowerCase().includes('uniflex') ||
     productName.includes('uniflex') ||
-    // Safe Aire detection
+    productSeries === 'Broen-Lab UNIFLEX Taps Series' ||
+    // Safe Aire detection - check for exact series name or partial matches
     productSeries.toLowerCase().includes('safe aire') || 
     productName.includes('safe aire') ||
+    productSeries === 'Safe Aire II Fume Hoods' ||
     // TANGERINE detection
     productSeries.toLowerCase().includes('tangerine') ||
     productName.includes('tangerine') ||
@@ -101,6 +104,23 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   const availableDimensions = sortDimensions(Array.from(new Set(
     products.map(p => p.dimensions).filter(Boolean)
   )));
+
+  // New variant options for specific series
+  const availableMountingTypes = Array.from(new Set(
+    products.map(p => p.mounting_type).filter(Boolean)
+  ));
+
+  const availableMixingTypes = Array.from(new Set(
+    products.map(p => p.mixing_type).filter(Boolean)
+  ));
+
+  const availableHandleTypes = Array.from(new Set(
+    products.map(p => p.handle_type).filter(Boolean)
+  ));
+
+  const availableEmergencyShowerTypes = Array.from(new Set(
+    products.map(p => p.emergency_shower_type).filter(Boolean)
+  ));
 
   // Filter products based on selected variants
   const filteredProducts = products.filter(product => {
@@ -167,6 +187,106 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
       {/* Standard variant selectors for non-specific series */}
       {!isSpecificSeries && (
         <>
+          {/* Emergency Shower Type Selection - for Emergency Shower Series */}
+          {availableEmergencyShowerTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Droplets className="h-3 w-3" />
+                Emergency Shower Type:
+              </label>
+              <Select
+                value={selectedVariants.emergency_shower_type || ''}
+                onValueChange={(value) => onVariantChange('emergency_shower_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select emergency shower type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEmergencyShowerTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Mounting Type Selection - for Emergency Shower and Safe Aire II */}
+          {availableMountingTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Mountain className="h-3 w-3" />
+                Mounting Type:
+              </label>
+              <Select
+                value={selectedVariants.mounting_type || ''}
+                onValueChange={(value) => onVariantChange('mounting_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select mounting type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMountingTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Mixing Type Selection - for UNIFLEX Series */}
+          {availableMixingTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Droplets className="h-3 w-3" />
+                Mixing Type:
+              </label>
+              <Select
+                value={selectedVariants.mixing_type || ''}
+                onValueChange={(value) => onVariantChange('mixing_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select mixing type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMixingTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Handle Type Selection - for UNIFLEX Series */}
+          {availableHandleTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Wrench className="h-3 w-3" />
+                Handle Type:
+              </label>
+              <Select
+                value={selectedVariants.handle_type || ''}
+                onValueChange={(value) => onVariantChange('handle_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select handle type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableHandleTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Finish Type Selection */}
           {availableFinishes.length > 0 && (
             <div className="space-y-2">

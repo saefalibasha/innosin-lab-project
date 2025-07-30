@@ -1,11 +1,10 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Palette, RotateCcw, Layers, DoorOpen, Ruler, Building2, Droplets, Wrench } from 'lucide-react';
+import { Palette, Ruler, Droplets, Mountain, Wrench } from 'lucide-react';
 import { Product } from '@/types/product';
-import { OptimizedOverviewImage } from '@/components/common/OptimizedOverviewImage';
 
 interface SpecificProductSelectorProps {
   products: Product[];
@@ -32,729 +31,292 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
   selectedVariants,
   onVariantChange
 }) => {
-  // Helper function to clean product names
-  const cleanProductName = (name: string): string => {
-    return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
+  const isEmergencyShowerSeries = productSeries.toLowerCase().includes('emergency shower');
+  const isUniflexSeries = productSeries.toLowerCase().includes('uniflex');
+  const isSafeAireSeries = productSeries.toLowerCase().includes('safe aire');
+  const isTangerineSeries = productSeries.toLowerCase().includes('tangerine');
+  const isNoceSeries = productSeries.toLowerCase().includes('noce');
+
+  // Extract available variant options from products
+  const availableFinishes = Array.from(new Set(
+    products.map(p => p.finish_type).filter(Boolean)
+  ));
+  
+  const availableDimensions = Array.from(new Set(
+    products.map(p => p.dimensions).filter(Boolean)
+  )).sort();
+
+  const availableMountingTypes = Array.from(new Set(
+    products.map(p => p.mounting_type).filter(Boolean)
+  ));
+
+  const availableMixingTypes = Array.from(new Set(
+    products.map(p => p.mixing_type).filter(Boolean)
+  ));
+
+  const availableHandleTypes = Array.from(new Set(
+    products.map(p => p.handle_type).filter(Boolean)
+  ));
+
+  const availableEmergencyShowerTypes = Array.from(new Set(
+    products.map(p => p.emergency_shower_type).filter(Boolean)
+  ));
+
+  const availableCabinetClasses = Array.from(new Set(
+    products.map(p => p.cabinet_class).filter(Boolean)
+  ));
+
+  const getFinishDisplayName = (finish: string) => {
+    const finishMap: Record<string, string> = {
+      'PC': 'Powder Coat',
+      'SS304': 'Stainless Steel',
+      'powder-coat': 'Powder Coat',
+      'stainless-steel': 'Stainless Steel'
+    };
+    return finishMap[finish] || finish;
   };
-
-  // Helper function to extract first numeric value from dimension string
-  const extractFirstNumeric = (dimension: string): number => {
-    const match = dimension.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  };
-
-  // Helper function to sort dimensions numerically by first value
-  const sortDimensions = (dimensions: string[]): string[] => {
-    return [...dimensions].sort((a, b) => {
-      const numA = extractFirstNumeric(a);
-      const numB = extractFirstNumeric(b);
-      return numA - numB;
-    });
-  };
-
-  // Enhanced detection logic based on actual database content
-  const seriesLower = productSeries.toLowerCase();
-  const productName = products.length > 0 ? products[0].name?.toLowerCase() || '' : '';
-  const category = products.length > 0 ? products[0].category?.toLowerCase() || '' : '';
-
-  // Emergency Shower Series configuration - detect by series name, product name, or category
-  if (seriesLower.includes('emergency shower') || 
-      productName.includes('emergency shower') || 
-      category.includes('emergency shower')) {
-    
-    const availableEmergencyTypes = Array.from(new Set(
-      products.map(p => p.emergency_shower_type).filter(Boolean)
-    ));
-
-    const availableMountingTypes = Array.from(new Set(
-      products.map(p => p.mounting_type).filter(Boolean)
-    ));
-
-    const availableDimensions = sortDimensions(Array.from(new Set(
-      products.map(p => p.dimensions).filter(Boolean)
-    )));
-
-    const availableFinishes = Array.from(new Set(
-      products.map(p => p.finish_type).filter(Boolean)
-    ));
-
-    // Filter products based on selected variants
-    const filteredProducts = products.filter(product => {
-      if (selectedVariants.emergency_shower_type && product.emergency_shower_type !== selectedVariants.emergency_shower_type) return false;
-      if (selectedVariants.mounting_type && product.mounting_type !== selectedVariants.mounting_type) return false;
-      if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
-      if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
-      return true;
-    });
-
-    return (
-      <div className="space-y-4">
-        {/* Company Tag Display */}
-        {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
-              {products[0].company_tags[0]}
-            </Badge>
-          </div>
-        )}
-
-        {/* Emergency Shower Type Selection */}
-        {availableEmergencyTypes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Droplets className="h-3 w-3" />
-              Emergency Shower Type:
-            </label>
-            <Select
-              value={selectedVariants.emergency_shower_type || ''}
-              onValueChange={(value) => onVariantChange('emergency_shower_type', value)}
-            >
-              <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue placeholder="Select emergency shower type" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableEmergencyTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Mounting Type Selection */}
-        {availableMountingTypes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Wrench className="h-3 w-3" />
-              Mounting Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.mounting_type || ''}
-              onValueChange={(value) => onVariantChange('mounting_type', value)}
-              className="justify-start"
-            >
-              {availableMountingTypes.map((type) => (
-                <ToggleGroupItem
-                  key={type}
-                  value={type}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {type}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Dimensions Selection */}
-        {availableDimensions.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Ruler className="h-3 w-3" />
-              Dimensions:
-            </label>
-            <Select
-              value={selectedVariants.dimensions || ''}
-              onValueChange={(value) => onVariantChange('dimensions', value)}
-            >
-              <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue placeholder="Select dimensions" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableDimensions.map((dimension) => (
-                  <SelectItem key={dimension} value={dimension}>
-                    {dimension}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Finish Type Selection */}
-        {availableFinishes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Palette className="h-3 w-3" />
-              Finish Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.finish_type || ''}
-              onValueChange={(value) => onVariantChange('finish_type', value)}
-              className="justify-start"
-            >
-              {availableFinishes.map((finish) => (
-                <ToggleGroupItem
-                  key={finish}
-                  value={finish}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {finish === 'PC' ? 'Powder Coat' : finish === 'SS304' ? 'Stainless Steel' : finish}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Filtered Products Display */}
-        {filteredProducts.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <OptimizedOverviewImage
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-12 h-12 flex-shrink-0"
-                    showCompanyTag={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground">{product.product_code}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // UNIFLEX Series configuration - detect by series name or product name
-  if (seriesLower.includes('uniflex') || productName.includes('uniflex')) {
-    const availableMixingTypes = Array.from(new Set(
-      products.map(p => p.mixing_type).filter(Boolean)
-    ));
-
-    const availableHandleTypes = Array.from(new Set(
-      products.map(p => p.handle_type).filter(Boolean)
-    ));
-
-    const availableDimensions = sortDimensions(Array.from(new Set(
-      products.map(p => p.dimensions).filter(Boolean)
-    )));
-
-    const availableFinishes = Array.from(new Set(
-      products.map(p => p.finish_type).filter(Boolean)
-    ));
-
-    // Filter products based on selected variants
-    const filteredProducts = products.filter(product => {
-      if (selectedVariants.mixing_type && product.mixing_type !== selectedVariants.mixing_type) return false;
-      if (selectedVariants.handle_type && product.handle_type !== selectedVariants.handle_type) return false;
-      if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
-      if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
-      return true;
-    });
-
-    return (
-      <div className="space-y-4">
-        {/* Company Tag Display */}
-        {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
-              {products[0].company_tags[0]}
-            </Badge>
-          </div>
-        )}
-
-        {/* Mixing Type Selection */}
-        {availableMixingTypes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Droplets className="h-3 w-3" />
-              Mixing Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.mixing_type || ''}
-              onValueChange={(value) => onVariantChange('mixing_type', value)}
-              className="justify-start"
-            >
-              {availableMixingTypes.map((type) => (
-                <ToggleGroupItem
-                  key={type}
-                  value={type}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {type}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Handle Type Selection */}
-        {availableHandleTypes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Wrench className="h-3 w-3" />
-              Handle Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.handle_type || ''}
-              onValueChange={(value) => onVariantChange('handle_type', value)}
-              className="justify-start"
-            >
-              {availableHandleTypes.map((type) => (
-                <ToggleGroupItem
-                  key={type}
-                  value={type}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {type}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Dimensions Selection */}
-        {availableDimensions.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Ruler className="h-3 w-3" />
-              Dimensions:
-            </label>
-            <Select
-              value={selectedVariants.dimensions || ''}
-              onValueChange={(value) => onVariantChange('dimensions', value)}
-            >
-              <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue placeholder="Select dimensions" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableDimensions.map((dimension) => (
-                  <SelectItem key={dimension} value={dimension}>
-                    {dimension}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Finish Type Selection */}
-        {availableFinishes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Palette className="h-3 w-3" />
-              Finish Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.finish_type || ''}
-              onValueChange={(value) => onVariantChange('finish_type', value)}
-              className="justify-start"
-            >
-              {availableFinishes.map((finish) => (
-                <ToggleGroupItem
-                  key={finish}
-                  value={finish}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {finish === 'PC' ? 'Powder Coat' : finish === 'SS304' ? 'Stainless Steel' : finish}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Filtered Products Display */}
-        {filteredProducts.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <OptimizedOverviewImage
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-12 h-12 flex-shrink-0"
-                    showCompanyTag={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground">{product.product_code}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Safe Aire II Fume Hoods configuration - detect by series name or product name
-  if (seriesLower.includes('safe aire') || productName.includes('safe aire')) {
-    const availableMountingTypes = Array.from(new Set(
-      products.map(p => p.mounting_type).filter(Boolean)
-    ));
-
-    const availableDimensions = sortDimensions(Array.from(new Set(
-      products.map(p => p.dimensions).filter(Boolean)
-    )));
-
-    const availableFinishes = Array.from(new Set(
-      products.map(p => p.finish_type).filter(Boolean)
-    ));
-
-    // Filter products based on selected variants
-    const filteredProducts = products.filter(product => {
-      if (selectedVariants.mounting_type && product.mounting_type !== selectedVariants.mounting_type) return false;
-      if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
-      if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
-      return true;
-    });
-
-    return (
-      <div className="space-y-4">
-        {/* Company Tag Display */}
-        {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
-              {products[0].company_tags[0]}
-            </Badge>
-          </div>
-        )}
-
-        {/* Mounting Type Selection */}
-        {availableMountingTypes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Wrench className="h-3 w-3" />
-              Mounting Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.mounting_type || ''}
-              onValueChange={(value) => onVariantChange('mounting_type', value)}
-              className="justify-start"
-            >
-              {availableMountingTypes.map((type) => (
-                <ToggleGroupItem
-                  key={type}
-                  value={type}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {type}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Dimensions Selection */}
-        {availableDimensions.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Ruler className="h-3 w-3" />
-              Dimensions:
-            </label>
-            <Select
-              value={selectedVariants.dimensions || ''}
-              onValueChange={(value) => onVariantChange('dimensions', value)}
-            >
-              <SelectTrigger className="w-full h-8 text-xs">
-                <SelectValue placeholder="Select dimensions" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableDimensions.map((dimension) => (
-                  <SelectItem key={dimension} value={dimension}>
-                    {dimension}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {/* Finish Type Selection */}
-        {availableFinishes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Palette className="h-3 w-3" />
-              Finish Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.finish_type || ''}
-              onValueChange={(value) => onVariantChange('finish_type', value)}
-              className="justify-start"
-            >
-              {availableFinishes.map((finish) => (
-                <ToggleGroupItem
-                  key={finish}
-                  value={finish}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {finish === 'PC' ? 'Powder Coat' : finish === 'SS304' ? 'Stainless Steel' : finish}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Filtered Products Display */}
-        {filteredProducts.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <OptimizedOverviewImage
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-12 h-12 flex-shrink-0"
-                    showCompanyTag={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground">{product.product_code}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // TANGERINE Series configuration
-  if (productSeries.toLowerCase().includes('tangerine')) {
-    const availableCabinetClasses = Array.from(new Set(
-      products.map(p => p.cabinet_class).filter(Boolean)
-    ));
-
-    const availableFinishes = Array.from(new Set(
-      products.map(p => p.finish_type).filter(Boolean)
-    ));
-
-    // Filter products based on selected variants
-    const filteredProducts = products.filter(product => {
-      if (selectedVariants.cabinet_class && product.cabinet_class !== selectedVariants.cabinet_class) return false;
-      if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
-      return true;
-    });
-
-    return (
-      <div className="space-y-4">
-        {/* Company Tag Display */}
-        {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
-              {products[0].company_tags[0]}
-            </Badge>
-          </div>
-        )}
-
-        {/* Cabinet Class Selection */}
-        {availableCabinetClasses.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Layers className="h-3 w-3" />
-              Cabinet Class:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.cabinet_class || ''}
-              onValueChange={(value) => onVariantChange('cabinet_class', value)}
-              className="justify-start"
-            >
-              {availableCabinetClasses.map((cabinetClass) => (
-                <ToggleGroupItem
-                  key={cabinetClass}
-                  value={cabinetClass}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {cabinetClass}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Finish Type Selection */}
-        {availableFinishes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Palette className="h-3 w-3" />
-              Finish Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.finish_type || ''}
-              onValueChange={(value) => onVariantChange('finish_type', value)}
-              className="justify-start"
-            >
-              {availableFinishes.map((finish) => (
-                <ToggleGroupItem
-                  key={finish}
-                  value={finish}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {finish === 'PC' ? 'Powder Coat' : finish === 'SS304' ? 'Stainless Steel' : finish}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Filtered Products Display */}
-        {filteredProducts.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <OptimizedOverviewImage
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-12 h-12 flex-shrink-0"
-                    showCompanyTag={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground">{product.product_code}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // NOCE Series configuration
-  if (productSeries.toLowerCase().includes('noce')) {
-    const availableFinishes = Array.from(new Set(
-      products.map(p => p.finish_type).filter(Boolean)
-    ));
-
-    // Filter products based on selected variants
-    const filteredProducts = products.filter(product => {
-      if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
-      return true;
-    });
-
-    return (
-      <div className="space-y-4">
-        {/* Company Tag Display */}
-        {products.length > 0 && products[0].company_tags && (
-          <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
-              {products[0].company_tags[0]}
-            </Badge>
-          </div>
-        )}
-
-        {/* Finish Type Selection */}
-        {availableFinishes.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-              <Palette className="h-3 w-3" />
-              Finish Type:
-            </label>
-            <ToggleGroup
-              type="single"
-              value={selectedVariants.finish_type || ''}
-              onValueChange={(value) => onVariantChange('finish_type', value)}
-              className="justify-start"
-            >
-              {availableFinishes.map((finish) => (
-                <ToggleGroupItem
-                  key={finish}
-                  value={finish}
-                  variant="outline"
-                  className="text-xs h-8 px-3"
-                >
-                  {finish === 'PC' ? 'Powder Coat' : finish === 'SS304' ? 'Stainless Steel' : finish}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          </div>
-        )}
-
-        {/* Filtered Products Display */}
-        {filteredProducts.length > 0 && (
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-            </label>
-            <div className="grid grid-cols-1 gap-2">
-              {filteredProducts.map((product) => (
-                <div key={product.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <OptimizedOverviewImage
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-12 h-12 flex-shrink-0"
-                    showCompanyTag={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground">{product.product_code}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Default fallback for other series - show company tag if available
-  if (products.length > 0 && products[0].company_tags && products[0].company_tags.length > 0) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <Badge variant="default" className="text-sm bg-blue-500 hover:bg-blue-600">
-            {products[0].company_tags[0]}
-          </Badge>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Product configuration not available for this series yet.
-        </p>
-      </div>
-    );
-  }
 
   return (
-    <div className="text-center py-4 text-muted-foreground">
-      <p className="text-xs">No specific configuration available for this product series.</p>
+    <div className="space-y-4">
+      {/* Emergency Shower Series - emergency_shower_type and mounting_type */}
+      {isEmergencyShowerSeries && (
+        <>
+          {availableEmergencyShowerTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Droplets className="h-3 w-3" />
+                Emergency Shower Type:
+              </label>
+              <Select
+                value={selectedVariants.emergency_shower_type || ''}
+                onValueChange={(value) => onVariantChange('emergency_shower_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select emergency shower type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableEmergencyShowerTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {availableMountingTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Mountain className="h-3 w-3" />
+                Mounting Type:
+              </label>
+              <Select
+                value={selectedVariants.mounting_type || ''}
+                onValueChange={(value) => onVariantChange('mounting_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select mounting type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMountingTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* UNIFLEX Series - mixing_type and handle_type */}
+      {isUniflexSeries && (
+        <>
+          {availableMixingTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Droplets className="h-3 w-3" />
+                Mixing Type:
+              </label>
+              <Select
+                value={selectedVariants.mixing_type || ''}
+                onValueChange={(value) => onVariantChange('mixing_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select mixing type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMixingTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {availableHandleTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Wrench className="h-3 w-3" />
+                Handle Type:
+              </label>
+              <Select
+                value={selectedVariants.handle_type || ''}
+                onValueChange={(value) => onVariantChange('handle_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select handle type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableHandleTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Safe Aire II Series - mounting_type and dimensions */}
+      {isSafeAireSeries && (
+        <>
+          {availableMountingTypes.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Mountain className="h-3 w-3" />
+                Mounting Type:
+              </label>
+              <Select
+                value={selectedVariants.mounting_type || ''}
+                onValueChange={(value) => onVariantChange('mounting_type', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select mounting type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableMountingTypes.map((type) => (
+                    <SelectItem key={type} value={type}>
+                      {type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {availableDimensions.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Ruler className="h-3 w-3" />
+                Dimensions:
+              </label>
+              <Select
+                value={selectedVariants.dimensions || ''}
+                onValueChange={(value) => onVariantChange('dimensions', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select dimensions" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDimensions.map((dimension) => (
+                    <SelectItem key={dimension} value={dimension}>
+                      {dimension}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* TANGERINE and NOCE Series - cabinet_class and finish_type */}
+      {(isTangerineSeries || isNoceSeries) && (
+        <>
+          {availableCabinetClasses.length > 0 && (
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Badge className="h-3 w-3" />
+                Cabinet Class:
+              </label>
+              <Select
+                value={selectedVariants.cabinet_class || ''}
+                onValueChange={(value) => onVariantChange('cabinet_class', value)}
+              >
+                <SelectTrigger className="w-full h-8 text-xs">
+                  <SelectValue placeholder="Select cabinet class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableCabinetClasses.map((cabinetClass) => (
+                    <SelectItem key={cabinetClass} value={cabinetClass}>
+                      {cabinetClass}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Common finish selection for all specific series */}
+      {availableFinishes.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Palette className="h-3 w-3" />
+            Finish Type:
+          </label>
+          <ToggleGroup
+            type="single"
+            value={selectedVariants.finish_type || ''}
+            onValueChange={(value) => onVariantChange('finish_type', value)}
+            className="justify-start"
+          >
+            {availableFinishes.map((finish) => (
+              <ToggleGroupItem
+                key={finish}
+                value={finish}
+                variant="outline"
+                className="text-xs h-8 px-3"
+              >
+                {getFinishDisplayName(finish)}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
+      )}
+
+      {/* Common dimensions selection for series that need it */}
+      {!isSafeAireSeries && availableDimensions.length > 0 && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Ruler className="h-3 w-3" />
+            Dimensions:
+          </label>
+          <Select
+            value={selectedVariants.dimensions || ''}
+            onValueChange={(value) => onVariantChange('dimensions', value)}
+          >
+            <SelectTrigger className="w-full h-8 text-xs">
+              <SelectValue placeholder="Select dimensions" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableDimensions.map((dimension) => (
+                <SelectItem key={dimension} value={dimension}>
+                  {dimension}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 };
