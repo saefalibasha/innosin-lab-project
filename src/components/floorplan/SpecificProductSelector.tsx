@@ -31,11 +31,41 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
   selectedVariants,
   onVariantChange
 }) => {
-  const isEmergencyShowerSeries = productSeries.toLowerCase().includes('emergency shower');
-  const isUniflexSeries = productSeries.toLowerCase().includes('uniflex');
-  const isSafeAireSeries = productSeries.toLowerCase().includes('safe aire');
+  console.log('SpecificProductSelector - Debug info:', {
+    productSeries,
+    productsCount: products.length,
+    products: products.map(p => ({
+      id: p.id,
+      emergency_shower_type: p.emergency_shower_type,
+      mounting_type: p.mounting_type,
+      mixing_type: p.mixing_type,
+      handle_type: p.handle_type
+    }))
+  });
+
+  const isEmergencyShowerSeries = 
+    productSeries === 'Broen-Lab Emergency Shower Systems' ||
+    productSeries === 'Broen-Lab Emergency Shower Systems ' ||
+    productSeries.toLowerCase().includes('emergency shower');
+  
+  const isUniflexSeries = 
+    productSeries === 'Broen-Lab UNIFLEX Taps Series' ||
+    productSeries.toLowerCase().includes('uniflex');
+  
+  const isSafeAireSeries = 
+    productSeries === 'Safe Aire II Fume Hoods' ||
+    productSeries.toLowerCase().includes('safe aire');
+  
   const isTangerineSeries = productSeries.toLowerCase().includes('tangerine');
   const isNoceSeries = productSeries.toLowerCase().includes('noce');
+
+  console.log('SpecificProductSelector - Series detection:', {
+    isEmergencyShowerSeries,
+    isUniflexSeries,
+    isSafeAireSeries,
+    isTangerineSeries,
+    isNoceSeries
+  });
 
   // Extract available variant options from products
   const availableFinishes = Array.from(new Set(
@@ -66,6 +96,14 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     products.map(p => p.cabinet_class).filter(Boolean)
   ));
 
+  console.log('SpecificProductSelector - Available variants:', {
+    availableEmergencyShowerTypes,
+    availableMountingTypes,
+    availableMixingTypes,
+    availableHandleTypes,
+    availableFinishes
+  });
+
   const getFinishDisplayName = (finish: string) => {
     const finishMap: Record<string, string> = {
       'PC': 'Powder Coat',
@@ -78,6 +116,13 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
 
   return (
     <div className="space-y-4">
+      {/* Debug information - remove this after testing */}
+      <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded">
+        <div>Emergency Shower Series: {isEmergencyShowerSeries ? 'Yes' : 'No'}</div>
+        <div>Emergency Shower Types: {availableEmergencyShowerTypes.join(', ')}</div>
+        <div>Mounting Types: {availableMountingTypes.join(', ')}</div>
+      </div>
+
       {/* Emergency Shower Series - emergency_shower_type and mounting_type */}
       {isEmergencyShowerSeries && (
         <>

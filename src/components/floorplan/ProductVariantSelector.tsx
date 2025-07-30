@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -62,27 +61,37 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   const productName = products.length > 0 ? products[0].name?.toLowerCase() || '' : '';
   const category = products.length > 0 ? products[0].category?.toLowerCase() || '' : '';
   
+  console.log('ProductVariantSelector - Debug info:', {
+    productSeries,
+    productName,
+    category,
+    firstProduct: products[0]
+  });
+  
   // Updated detection logic based on actual database content
   const isSpecificSeries = 
-    // Emergency Shower detection - check for exact series name or partial matches
+    // Emergency Shower detection - check for exact series name matches
+    productSeries === 'Broen-Lab Emergency Shower Systems' ||
+    productSeries === 'Broen-Lab Emergency Shower Systems ' ||
     productSeries.toLowerCase().includes('emergency shower') || 
     productName.includes('emergency shower') ||
     category.includes('emergency shower') ||
-    productSeries === 'Broen-Lab Emergency Shower Series' ||
-    // UNIFLEX detection - check for exact series name or partial matches
+    // UNIFLEX detection - check for exact series name matches
+    productSeries === 'Broen-Lab UNIFLEX Taps Series' ||
     productSeries.toLowerCase().includes('uniflex') ||
     productName.includes('uniflex') ||
-    productSeries === 'Broen-Lab UNIFLEX Taps Series' ||
-    // Safe Aire detection - check for exact series name or partial matches
+    // Safe Aire detection - check for exact series name matches
+    productSeries === 'Safe Aire II Fume Hoods' ||
     productSeries.toLowerCase().includes('safe aire') || 
     productName.includes('safe aire') ||
-    productSeries === 'Safe Aire II Fume Hoods' ||
     // TANGERINE detection
     productSeries.toLowerCase().includes('tangerine') ||
     productName.includes('tangerine') ||
     // NOCE detection
     productSeries.toLowerCase().includes('noce') ||
     productName.includes('noce');
+
+  console.log('ProductVariantSelector - isSpecificSeries:', isSpecificSeries);
 
   // Extract available variant options from products
   const availableFinishes = Array.from(new Set(
@@ -173,6 +182,14 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
           </div>
         </div>
       )}
+
+      {/* Debug information - remove this after testing */}
+      <div className="text-xs text-muted-foreground p-2 bg-yellow-50 rounded">
+        <div>Product Series: {productSeries}</div>
+        <div>Is Specific Series: {isSpecificSeries ? 'Yes' : 'No'}</div>
+        <div>Products Count: {products.length}</div>
+        <div>Emergency Shower Types Available: {Array.from(new Set(products.map(p => p.emergency_shower_type).filter(Boolean))).length}</div>
+      </div>
 
       {/* Specific Product Series Selector */}
       {isSpecificSeries && (
