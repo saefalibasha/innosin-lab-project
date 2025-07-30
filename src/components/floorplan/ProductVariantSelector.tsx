@@ -59,11 +59,27 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 
   // Check if this is a specific product series that needs custom handling
   const productSeries = products.length > 0 ? products[0].product_series || '' : '';
-  const isSpecificSeries = productSeries.toLowerCase().includes('safe aire') || 
-                          productSeries.toLowerCase().includes('uniflex') ||
-                          productSeries.toLowerCase().includes('emergency shower') ||
-                          productSeries.toLowerCase().includes('tangerine') ||
-                          productSeries.toLowerCase().includes('noce');
+  const productName = products.length > 0 ? products[0].name?.toLowerCase() || '' : '';
+  const category = products.length > 0 ? products[0].category?.toLowerCase() || '' : '';
+  
+  // Updated detection logic based on actual database content
+  const isSpecificSeries = 
+    // Emergency Shower detection
+    productSeries.toLowerCase().includes('emergency shower') || 
+    productName.includes('emergency shower') ||
+    category.includes('emergency shower') ||
+    // UNIFLEX detection
+    productSeries.toLowerCase().includes('uniflex') ||
+    productName.includes('uniflex') ||
+    // Safe Aire detection
+    productSeries.toLowerCase().includes('safe aire') || 
+    productName.includes('safe aire') ||
+    // TANGERINE detection
+    productSeries.toLowerCase().includes('tangerine') ||
+    productName.includes('tangerine') ||
+    // NOCE detection
+    productSeries.toLowerCase().includes('noce') ||
+    productName.includes('noce');
 
   // Extract available variant options from products
   const availableFinishes = Array.from(new Set(

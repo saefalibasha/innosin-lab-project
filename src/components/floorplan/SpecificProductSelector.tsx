@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,10 +52,22 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     });
   };
 
-  // Emergency Shower Series configuration
-  if (productSeries.toLowerCase().includes('emergency shower')) {
+  // Enhanced detection logic based on actual database content
+  const seriesLower = productSeries.toLowerCase();
+  const productName = products.length > 0 ? products[0].name?.toLowerCase() || '' : '';
+  const category = products.length > 0 ? products[0].category?.toLowerCase() || '' : '';
+
+  // Emergency Shower Series configuration - detect by series name, product name, or category
+  if (seriesLower.includes('emergency shower') || 
+      productName.includes('emergency shower') || 
+      category.includes('emergency shower')) {
+    
     const availableEmergencyTypes = Array.from(new Set(
       products.map(p => p.emergency_shower_type).filter(Boolean)
+    ));
+
+    const availableMountingTypes = Array.from(new Set(
+      products.map(p => p.mounting_type).filter(Boolean)
     ));
 
     const availableDimensions = sortDimensions(Array.from(new Set(
@@ -70,6 +81,7 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     // Filter products based on selected variants
     const filteredProducts = products.filter(product => {
       if (selectedVariants.emergency_shower_type && product.emergency_shower_type !== selectedVariants.emergency_shower_type) return false;
+      if (selectedVariants.mounting_type && product.mounting_type !== selectedVariants.mounting_type) return false;
       if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
       if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
       return true;
@@ -109,6 +121,33 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
                 ))}
               </SelectContent>
             </Select>
+          </div>
+        )}
+
+        {/* Mounting Type Selection */}
+        {availableMountingTypes.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+              <Wrench className="h-3 w-3" />
+              Mounting Type:
+            </label>
+            <ToggleGroup
+              type="single"
+              value={selectedVariants.mounting_type || ''}
+              onValueChange={(value) => onVariantChange('mounting_type', value)}
+              className="justify-start"
+            >
+              {availableMountingTypes.map((type) => (
+                <ToggleGroupItem
+                  key={type}
+                  value={type}
+                  variant="outline"
+                  className="text-xs h-8 px-3"
+                >
+                  {type}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
         )}
 
@@ -192,8 +231,8 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     );
   }
 
-  // UNIFLEX Series configuration
-  if (productSeries.toLowerCase().includes('uniflex')) {
+  // UNIFLEX Series configuration - detect by series name or product name
+  if (seriesLower.includes('uniflex') || productName.includes('uniflex')) {
     const availableMixingTypes = Array.from(new Set(
       products.map(p => p.mixing_type).filter(Boolean)
     ));
@@ -365,8 +404,8 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     );
   }
 
-  // Safe Aire II Fume Hoods configuration
-  if (productSeries.toLowerCase().includes('safe aire')) {
+  // Safe Aire II Fume Hoods configuration - detect by series name or product name
+  if (seriesLower.includes('safe aire') || productName.includes('safe aire')) {
     const availableMountingTypes = Array.from(new Set(
       products.map(p => p.mounting_type).filter(Boolean)
     ));
