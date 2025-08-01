@@ -16,6 +16,12 @@ interface Variant {
   variant_type: string;
   drawer_count?: number;
   finish_type: string;
+  // Additional fields for special series
+  emergency_shower_type?: string;
+  mounting_type?: string;
+  mixing_type?: string;
+  handle_type?: string;
+  cabinet_class?: string;
 }
 
 interface VariantSelectorProps {
@@ -38,42 +44,30 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   console.log('🔍 VariantSelector rendering with variants:', variants);
 
   if (!variants || variants.length === 0) {
-    return null;
+    return (
+      <div className="text-center p-4 text-muted-foreground">
+        No variants available for this product.
+      </div>
+    );
   }
 
   // Helper function to extract length from dimensions string
   const extractLength = (dimensions: string): number => {
-    const match = dimensions.match(/^(\d+)/);
+    const match = dimensions?.match(/^(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   };
 
-  // Get unique door types from all variants
+  // Get unique values for each selector type
+  const emergencyShowerTypes = [...new Set(variants.map(v => v.emergency_shower_type).filter(Boolean))].sort();
+  const mountingTypes = [...new Set(variants.map(v => v.mounting_type).filter(Boolean))].sort();
+  const mixingTypes = [...new Set(variants.map(v => v.mixing_type).filter(Boolean))].sort();
+  const handleTypes = [...new Set(variants.map(v => v.handle_type).filter(Boolean))].sort();
+  const cabinetClasses = [...new Set(variants.map(v => v.cabinet_class).filter(Boolean))].sort();
+  const dimensions = [...new Set(variants.map(v => v.dimensions).filter(Boolean))].sort((a, b) => extractLength(a) - extractLength(b));
   const doorTypes = [...new Set(variants.map(v => v.door_type).filter(Boolean))].sort();
-
-  // Get unique orientations from all variants (excluding 'None')
   const orientations = [...new Set(variants.map(v => v.orientation).filter(o => o && o !== 'None'))].sort();
-
-  // Get unique drawer counts from all variants
   const drawerCounts = [...new Set(variants.map(v => v.drawer_count).filter(Boolean))].sort((a, b) => a - b);
-
-  // Get unique variant types
   const variantTypes = [...new Set(variants.map(v => v.variant_type).filter(Boolean))];
-
-  // Group variants by dimensions if requested
-  const groupedVariants = groupByDimensions ? 
-    variants.reduce((acc, variant) => {
-      const key = variant.dimensions || 'Unknown';
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(variant);
-      return acc;
-    }, {} as Record<string, Variant[]>) :
-    { 'All': variants };
-
-  // Get unique dimension groups and sort by length (smallest to largest)
-  const dimensionGroups = Object.keys(groupedVariants).sort((a, b) => {
-    if (a === 'Unknown' || b === 'Unknown') return 0;
-    return extractLength(a) - extractLength(b);
-  });
 
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
 
@@ -104,16 +98,22 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
       (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
       (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) &&
       (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
-      (!targetCriteria.door_type || v.door_type === targetCriteria.door_type)
+      (!targetCriteria.door_type || v.door_type === targetCriteria.door_type) &&
+      (!targetCriteria.emergency_shower_type || v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
+      (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
+      (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
+      (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type) &&
+      (!targetCriteria.cabinet_class || v.cabinet_class === targetCriteria.cabinet_class)
     );
 
     // If no exact match, try to preserve as many current attributes as possible
     if (!bestMatch) {
       bestMatch = variants.find(v => 
         (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
-        (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
-        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
-        (!targetCriteria.door_type || v.door_type === targetCriteria.door_type)
+        (!targetCriteria.emergency_shower_type || v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
+        (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
+        (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
+        (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type)
       );
     }
 
@@ -123,15 +123,155 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   return (
     <Card>
       <CardContent className="space-y-6 p-6">
+        {/* Emergency Shower Type Selection */}
+        {emergencyShowerTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Emergency Shower Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {emergencyShowerTypes.map((type) => {
+                const isSelected = selectedVariant?.emergency_shower_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ emergency_shower_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Mounting Type Selection */}
+        {mountingTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Mounting Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {mountingTypes.map((type) => {
+                const isSelected = selectedVariant?.mounting_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ mounting_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Mixing Type Selection */}
+        {mixingTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Mixing Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {mixingTypes.map((type) => {
+                const isSelected = selectedVariant?.mixing_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ mixing_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Handle Type Selection */}
+        {handleTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Handle Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {handleTypes.map((type) => {
+                const isSelected = selectedVariant?.handle_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ handle_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Cabinet Class Selection */}
+        {cabinetClasses.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Cabinet Class</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {cabinetClasses.map((classType) => {
+                const isSelected = selectedVariant?.cabinet_class === classType;
+                return (
+                  <Button
+                    key={classType}
+                    variant={isSelected ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ cabinet_class: classType });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {classType}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Dimension Selection */}
-        {groupByDimensions && dimensionGroups.length > 1 && (
+        {dimensions.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Dimensions</h4>
-            {dimensionGroups.length > 4 ? (
+            {dimensions.length > 4 ? (
               <Select 
                 value={selectedVariant?.dimensions || ''} 
-                onValueChange={(dimensions) => {
-                  const bestMatch = findBestMatchingVariant({ dimensions });
+                onValueChange={(dimension) => {
+                  const bestMatch = findBestMatchingVariant({ dimensions: dimension });
                   if (bestMatch) {
                     onVariantChange(bestMatch.id);
                   }
@@ -141,7 +281,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                   <SelectValue placeholder="Select dimensions" />
                 </SelectTrigger>
                 <SelectContent>
-                  {dimensionGroups.map((dimension) => (
+                  {dimensions.map((dimension) => (
                     <SelectItem key={dimension} value={dimension}>
                       {dimension}
                     </SelectItem>
@@ -150,8 +290,8 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
               </Select>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {dimensionGroups.map((dimension) => {
-                  const isSelected = groupedVariants[dimension].some(v => v.id === selectedVariantId);
+                {dimensions.map((dimension) => {
+                  const isSelected = selectedVariant?.dimensions === dimension;
                   return (
                     <Button
                       key={dimension}
@@ -305,10 +445,42 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 <span className="text-sm text-muted-foreground">Product Code:</span>
                 <Badge variant="outline">{selectedVariant.product_code}</Badge>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Dimensions:</span>
-                <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
-              </div>
+              {selectedVariant.dimensions && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Dimensions:</span>
+                  <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
+                </div>
+              )}
+              {selectedVariant.emergency_shower_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Emergency Shower Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.emergency_shower_type}</span>
+                </div>
+              )}
+              {selectedVariant.mounting_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Mounting Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.mounting_type}</span>
+                </div>
+              )}
+              {selectedVariant.mixing_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Mixing Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.mixing_type}</span>
+                </div>
+              )}
+              {selectedVariant.handle_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Handle Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.handle_type}</span>
+                </div>
+              )}
+              {selectedVariant.cabinet_class && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Cabinet Class:</span>
+                  <span className="text-sm font-medium">{selectedVariant.cabinet_class}</span>
+                </div>
+              )}
               {selectedVariant.door_type && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Door Type:</span>
