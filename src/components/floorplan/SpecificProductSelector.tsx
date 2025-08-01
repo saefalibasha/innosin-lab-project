@@ -36,20 +36,24 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     productsCount: products.length,
     products: products.map(p => ({
       id: p.id,
+      name: p.name,
       emergency_shower_type: p.emergency_shower_type,
       mounting_type: p.mounting_type,
       mixing_type: p.mixing_type,
-      handle_type: p.handle_type
+      handle_type: p.handle_type,
+      dimensions: p.dimensions,
+      finish_type: p.finish_type
     }))
   });
 
+  // Updated series detection logic to match ProductDetail.tsx
   const isEmergencyShowerSeries = 
     productSeries === 'Broen-Lab Emergency Shower Systems' ||
     productSeries === 'Broen-Lab Emergency Shower Systems ' ||
     productSeries.toLowerCase().includes('emergency shower');
   
   const isUniflexSeries = 
-    productSeries === 'Broen-Lab UNIFLEX Taps Series' ||
+    products.some(p => p.name?.toLowerCase().includes('uniflex')) ||
     productSeries.toLowerCase().includes('uniflex');
   
   const isSafeAireSeries = 
@@ -101,7 +105,8 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     availableMountingTypes,
     availableMixingTypes,
     availableHandleTypes,
-    availableFinishes
+    availableFinishes,
+    availableDimensions
   });
 
   const getFinishDisplayName = (finish: string) => {
@@ -116,11 +121,12 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
 
   return (
     <div className="space-y-4">
-      {/* Debug information - remove this after testing */}
+      {/* Debug information */}
       <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded">
         <div>Emergency Shower Series: {isEmergencyShowerSeries ? 'Yes' : 'No'}</div>
-        <div>Emergency Shower Types: {availableEmergencyShowerTypes.join(', ')}</div>
-        <div>Mounting Types: {availableMountingTypes.join(', ')}</div>
+        <div>UNIFLEX Series: {isUniflexSeries ? 'Yes' : 'No'}</div>
+        <div>Safe Aire Series: {isSafeAireSeries ? 'Yes' : 'No'}</div>
+        <div>Available Options: Emergency({availableEmergencyShowerTypes.length}), Mounting({availableMountingTypes.length}), Mixing({availableMixingTypes.length}), Handle({availableHandleTypes.length})</div>
       </div>
 
       {/* Emergency Shower Series - emergency_shower_type and mounting_type */}
@@ -338,7 +344,7 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
         </div>
       )}
 
-      {/* Common dimensions selection for series that need it */}
+      {/* Common dimensions selection for series that need it (not Safe Aire as it's handled above) */}
       {!isSafeAireSeries && availableDimensions.length > 0 && (
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">

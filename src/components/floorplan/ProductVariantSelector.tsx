@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,6 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 }) => {
   // Helper function to clean product names by removing part numbers in parentheses
   const cleanProductName = (name: string): string => {
-    // Remove everything in parentheses and any trailing/leading whitespace
     return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
   };
 
@@ -65,22 +65,22 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
     productSeries,
     productName,
     category,
+    productsCount: products.length,
     firstProduct: products[0]
   });
   
-  // Updated detection logic based on actual database content
+  // Updated detection logic to match ProductDetail.tsx
   const isSpecificSeries = 
-    // Emergency Shower detection - check for exact series name matches
+    // Emergency Shower detection
     productSeries === 'Broen-Lab Emergency Shower Systems' ||
     productSeries === 'Broen-Lab Emergency Shower Systems ' ||
     productSeries.toLowerCase().includes('emergency shower') || 
-    productName.includes('emergency shower') ||
-    category.includes('emergency shower') ||
-    // UNIFLEX detection - check for exact series name matches
-    productSeries === 'Broen-Lab UNIFLEX Taps Series' ||
-    productSeries.toLowerCase().includes('uniflex') ||
+    productName.includes('emergency') ||
+    category.includes('emergency') ||
+    // UNIFLEX detection
     productName.includes('uniflex') ||
-    // Safe Aire detection - check for exact series name matches
+    productSeries.toLowerCase().includes('uniflex') ||
+    // Safe Aire detection
     productSeries === 'Safe Aire II Fume Hoods' ||
     productSeries.toLowerCase().includes('safe aire') || 
     productName.includes('safe aire') ||
@@ -130,6 +130,14 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   const availableEmergencyShowerTypes = Array.from(new Set(
     products.map(p => p.emergency_shower_type).filter(Boolean)
   ));
+
+  console.log('ProductVariantSelector - Available specific variants:', {
+    availableEmergencyShowerTypes,
+    availableMountingTypes,
+    availableMixingTypes,
+    availableHandleTypes,
+    availableDimensions
+  });
 
   // Filter products based on selected variants
   const filteredProducts = products.filter(product => {
@@ -183,12 +191,12 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
         </div>
       )}
 
-      {/* Debug information - remove this after testing */}
+      {/* Debug information */}
       <div className="text-xs text-muted-foreground p-2 bg-yellow-50 rounded">
         <div>Product Series: {productSeries}</div>
         <div>Is Specific Series: {isSpecificSeries ? 'Yes' : 'No'}</div>
         <div>Products Count: {products.length}</div>
-        <div>Emergency Shower Types Available: {Array.from(new Set(products.map(p => p.emergency_shower_type).filter(Boolean))).length}</div>
+        <div>Available Options: Emergency({availableEmergencyShowerTypes.length}), Mounting({availableMountingTypes.length}), Mixing({availableMixingTypes.length}), Handle({availableHandleTypes.length}), Dimensions({availableDimensions.length})</div>
       </div>
 
       {/* Specific Product Series Selector */}
@@ -201,109 +209,14 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
         />
       )}
 
-      {/* Standard variant selectors for non-specific series */}
-      {!isSpecificSeries && (
+      {/* Standard variant selectors for non-specific series or as fallback */}
+      {(!isSpecificSeries || (isSpecificSeries && (
+        availableEmergencyShowerTypes.length === 0 && 
+        availableMountingTypes.length === 0 && 
+        availableMixingTypes.length === 0 && 
+        availableHandleTypes.length === 0
+      ))) && (
         <>
-          {/* Emergency Shower Type Selection - for Emergency Shower Series */}
-          {availableEmergencyShowerTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Droplets className="h-3 w-3" />
-                Emergency Shower Type:
-              </label>
-              <Select
-                value={selectedVariants.emergency_shower_type || ''}
-                onValueChange={(value) => onVariantChange('emergency_shower_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select emergency shower type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableEmergencyShowerTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Mounting Type Selection - for Emergency Shower and Safe Aire II */}
-          {availableMountingTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Mountain className="h-3 w-3" />
-                Mounting Type:
-              </label>
-              <Select
-                value={selectedVariants.mounting_type || ''}
-                onValueChange={(value) => onVariantChange('mounting_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select mounting type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMountingTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Mixing Type Selection - for UNIFLEX Series */}
-          {availableMixingTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Droplets className="h-3 w-3" />
-                Mixing Type:
-              </label>
-              <Select
-                value={selectedVariants.mixing_type || ''}
-                onValueChange={(value) => onVariantChange('mixing_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select mixing type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMixingTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Handle Type Selection - for UNIFLEX Series */}
-          {availableHandleTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Wrench className="h-3 w-3" />
-                Handle Type:
-              </label>
-              <Select
-                value={selectedVariants.handle_type || ''}
-                onValueChange={(value) => onVariantChange('handle_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select handle type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableHandleTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
           {/* Finish Type Selection */}
           {availableFinishes.length > 0 && (
             <div className="space-y-2">
@@ -403,32 +316,32 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
               </Select>
             </div>
           )}
-
-          {/* Dimensions Selection */}
-          {availableDimensions.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Ruler className="h-3 w-3" />
-                Dimensions:
-              </label>
-              <Select
-                value={selectedVariants.dimensions || ''}
-                onValueChange={(value) => onVariantChange('dimensions', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select dimensions" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDimensions.map((dimension) => (
-                    <SelectItem key={dimension} value={dimension}>
-                      {dimension}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
         </>
+      )}
+
+      {/* Common Dimensions Selection - show for all series that have dimensions */}
+      {availableDimensions.length > 0 && !isSpecificSeries && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Ruler className="h-3 w-3" />
+            Dimensions:
+          </label>
+          <Select
+            value={selectedVariants.dimensions || ''}
+            onValueChange={(value) => onVariantChange('dimensions', value)}
+          >
+            <SelectTrigger className="w-full h-8 text-xs">
+              <SelectValue placeholder="Select dimensions" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableDimensions.map((dimension) => (
+                <SelectItem key={dimension} value={dimension}>
+                  {dimension}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       )}
 
       {/* Product Selection */}
@@ -457,6 +370,11 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                     <div className="text-xs text-muted-foreground truncate">
                       {product.product_code}
                     </div>
+                    {product.dimensions && (
+                      <div className="text-xs text-muted-foreground truncate">
+                        {product.dimensions}
+                      </div>
+                    )}
                     {product.company_tags && product.company_tags.length > 0 && (
                       <Badge variant="default" className="text-xs mt-1 bg-blue-500 hover:bg-blue-600">
                         {product.company_tags[0]}

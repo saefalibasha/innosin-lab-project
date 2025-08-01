@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,40 +34,65 @@ const ProductDetail: React.FC = () => {
   } = useLoadingState(false);
 
   const getSeriesInfo = (product: any) => {
-    if (!product) return { series: '', slug: '' };
+    if (!product) return { series: '', slug: '', isSpecific: false };
+    
     const name = product.name.toLowerCase();
     const category = product.category.toLowerCase();
     const productSeries = product.product_series?.toLowerCase() || '';
 
-    if (productSeries.includes('emergency shower') || name.includes('emergency') || category.includes('emergency')) {
-      return { series: 'Emergency Shower', slug: 'emergency-shower' };
+    console.log('ProductDetail - getSeriesInfo Debug:', {
+      name,
+      category,
+      productSeries,
+      originalProductSeries: product.product_series
+    });
+
+    // Emergency Shower detection - check for exact series name with or without trailing space
+    if (product.product_series === 'Broen-Lab Emergency Shower Systems' || 
+        product.product_series === 'Broen-Lab Emergency Shower Systems ' ||
+        productSeries.includes('emergency shower') || 
+        name.includes('emergency') || 
+        category.includes('emergency')) {
+      return { series: 'Emergency Shower', slug: 'emergency-shower', isSpecific: true };
     }
+    
+    // UNIFLEX detection - check product name for UNIFLEX since product_series might be different
+    if (name.includes('uniflex') || productSeries.includes('uniflex')) {
+      return { series: 'UNIFLEX Series', slug: 'uniflex-series', isSpecific: true };
+    }
+    
+    // Safe Aire detection - check for exact series name
+    if (product.product_series === 'Safe Aire II Fume Hoods' || 
+        productSeries.includes('safe aire') || 
+        name.includes('safe aire')) {
+      return { series: 'Safe Aire II', slug: 'safe-aire-ii', isSpecific: true };
+    }
+    
+    // TANGERINE detection
     if (productSeries.includes('tangerine') || name.includes('tangerine')) {
-      return { series: 'TANGERINE Series', slug: 'tangerine-series' };
+      return { series: 'TANGERINE Series', slug: 'tangerine-series', isSpecific: true };
     }
+    
+    // NOCE detection
     if (productSeries.includes('noce') || name.includes('noce')) {
-      return { series: 'NOCE Series', slug: 'noce-series' };
-    }
-    if (productSeries.includes('uniflex') || name.includes('uniflex')) {
-      return { series: 'UNIFLEX Series', slug: 'uniflex-series' };
-    }
-    if (productSeries.includes('safe aire') || name.includes('safe aire')) {
-      return { series: 'Safe Aire II', slug: 'safe-aire-ii' };
-    }
-    if (name.includes('open rack') || category.includes('open rack')) {
-      return { series: 'Open Rack', slug: 'open-rack' };
-    }
-    if (name.includes('tall cabinet') || category.includes('tall cabinet')) {
-      return { series: 'Tall Cabinet', slug: 'tall-cabinet' };
-    }
-    if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
-      return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
-    }
-    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || name.includes('mc-pc') || name.includes('mcc-pc')) {
-      return { series: 'Mobile Cabinet', slug: 'mobile-cabinet' };
+      return { series: 'NOCE Series', slug: 'noce-series', isSpecific: true };
     }
 
-    return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
+    // Standard series detection for non-specific series
+    if (name.includes('open rack') || category.includes('open rack')) {
+      return { series: 'Open Rack', slug: 'open-rack', isSpecific: false };
+    }
+    if (name.includes('tall cabinet') || category.includes('tall cabinet')) {
+      return { series: 'Tall Cabinet', slug: 'tall-cabinet', isSpecific: false };
+    }
+    if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
+      return { series: 'Wall Cabinet', slug: 'wall-cabinet', isSpecific: false };
+    }
+    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || name.includes('mc-pc') || name.includes('mcc-pc')) {
+      return { series: 'Mobile Cabinet', slug: 'mobile-cabinet', isSpecific: false };
+    }
+
+    return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-'), isSpecific: false };
   };
 
   const transformVariantToProduct = (variant: any): Product => ({
@@ -104,21 +130,55 @@ const ProductDetail: React.FC = () => {
 
       try {
         const seriesInfo = getSeriesInfo(product);
-        if ([
-          'Emergency Shower', 'TANGERINE Series', 'NOCE Series', 'UNIFLEX Series', 'Safe Aire II'
-        ].includes(seriesInfo.series)) {
-          const { data: variants, error: variantsError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('product_series', product.product_series)
-            .eq('is_active', true)
-            .order('product_code');
+        console.log('ProductDetail - Series Info:', seriesInfo);
+        
+        if (seriesInfo.isSpecific) {
+          let query;
+          
+          // Handle different querying strategies based on series
+          if (seriesInfo.series === 'UNIFLEX Series') {
+            // For UNIFLEX, query by name since product_series might be different
+            query = supabase
+              .from('products')
+              .select('*')
+              .ilike('name', '%UNIFLEX%')
+              .eq('is_active', true)
+              .order('product_code');
+          } else if (seriesInfo.series === 'Emergency Shower') {
+            // For Emergency Shower, query by exact product_series match (with or without trailing space)
+            query = supabase
+              .from('products')
+              .select('*')
+              .or('product_series.eq.Broen-Lab Emergency Shower Systems,product_series.eq.Broen-Lab Emergency Shower Systems ')
+              .eq('is_active', true)
+              .order('product_code');
+          } else if (seriesInfo.series === 'Safe Aire II') {
+            // For Safe Aire, query by exact product_series match
+            query = supabase
+              .from('products')
+              .select('*')
+              .eq('product_series', 'Safe Aire II Fume Hoods')
+              .eq('is_active', true)
+              .order('product_code');
+          } else {
+            // For other specific series (TANGERINE, NOCE), use product_series
+            query = supabase
+              .from('products')
+              .select('*')
+              .eq('product_series', product.product_series)
+              .eq('is_active', true)
+              .order('product_code');
+          }
+
+          const { data: variants, error: variantsError } = await query;
 
           if (variantsError) throw variantsError;
 
+          console.log('ProductDetail - Fetched variants:', variants?.length, variants);
           const transformedVariants = variants?.map(transformVariantToProduct) || [];
           setSeriesVariants(transformedVariants);
         } else {
+          // For non-specific series, use the old variant fetching method
           const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
           if (fetchedVariants && fetchedVariants.length > 0) {
             const variants = fetchedVariants[0].variants || [];
@@ -140,6 +200,7 @@ const ProductDetail: React.FC = () => {
           }
         }
       } catch (err) {
+        console.error('ProductDetail - Error fetching variants:', err);
         setSeriesVariants([]);
         setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
