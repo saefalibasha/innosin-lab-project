@@ -619,6 +619,47 @@ export type Database = {
           },
         ]
       }
+      pdf_content: {
+        Row: {
+          content: string
+          content_type: string | null
+          created_at: string
+          document_id: string | null
+          extracted_at: string | null
+          id: string
+          page_number: number | null
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          content_type?: string | null
+          created_at?: string
+          document_id?: string | null
+          extracted_at?: string | null
+          id?: string
+          page_number?: number | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          content_type?: string | null
+          created_at?: string
+          document_id?: string | null
+          extracted_at?: string | null
+          id?: string
+          page_number?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdf_content_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "pdf_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdf_documents: {
         Row: {
           brand: string
