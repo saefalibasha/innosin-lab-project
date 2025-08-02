@@ -50,17 +50,42 @@ const ProductDetail: React.FC = () => {
       handle_type: product.handle_type
     });
     
-    // Emergency Shower detection
+    // Bio Safety Cabinet - TANGERINE detection
+    if (series.includes('bio safety cabinet - tangerine') || category.includes('bio safety cabinet - tangerine')) {
+      return { series: 'Bio Safety Cabinet - TANGERINE', slug: 'bio-safety-cabinet-tangerine' };
+    }
+    
+    // Broen-Lab Emergency Shower Systems detection (note: trailing space in DB)
+    if (series.includes('broen-lab emergency shower') || category.includes('broen-lab emergency shower') || series.includes('emergency shower')) {
+      return { series: 'Broen-Lab Emergency Shower Systems', slug: 'broen-lab-emergency-shower' };
+    }
+    
+    // NOCE Series Fume Hood detection
+    if (series.includes('noce series fume hood') || category.includes('noce series fume hood') || series.includes('noce')) {
+      return { series: 'NOCE Series Fume Hood', slug: 'noce-series-fume-hood' };
+    }
+    
+    // Safe Aire II Fume Hoods detection
+    if (series.includes('safe aire ii fume hoods') || category.includes('safe aire ii fume hoods') || series.includes('safe aire')) {
+      return { series: 'Safe Aire II Fume Hoods', slug: 'safe-aire-ii-fume-hoods' };
+    }
+    
+    // Single Way Taps (UNIFLEX) detection
+    if (series.includes('single way taps') || category.includes('single way taps') || series.includes('uniflex')) {
+      return { series: 'Single Way Taps', slug: 'single-way-taps' };
+    }
+    
+    // Emergency Shower detection (legacy)
     if (series.includes('emergency shower') || name.includes('emergency shower') || category.includes('emergency')) {
       return { series: 'Emergency Shower', slug: 'emergency-shower' };
     }
     
-    // UNIFLEX detection
+    // UNIFLEX detection (legacy)
     if (series.includes('uniflex') || name.includes('uniflex') || category.includes('uniflex')) {
       return { series: 'UNIFLEX', slug: 'uniflex' };
     }
     
-    // Safe Aire detection
+    // Safe Aire detection (legacy)
     if (series.includes('safe aire') || name.includes('safe aire') || category.includes('safe aire')) {
       return { series: 'Safe Aire', slug: 'safe-aire' };
     }
@@ -85,7 +110,57 @@ const ProductDetail: React.FC = () => {
         let fetchedVariants = [];
         
         // Fetch variants based on series type
-        if (seriesInfo.series === 'Emergency Shower') {
+        if (seriesInfo.series === 'Bio Safety Cabinet - TANGERINE') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%Bio Safety Cabinet - TANGERINE%,category.ilike.%Bio Safety Cabinet - TANGERINE%')
+            .eq('is_active', true)
+            .order('name');
+          
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Broen-Lab Emergency Shower Systems') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%Broen-Lab Emergency Shower%,category.ilike.%Broen-Lab Emergency Shower%')
+            .eq('is_active', true)
+            .order('name');
+          
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'NOCE Series Fume Hood') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%NOCE Series Fume Hood%,category.ilike.%NOCE Series Fume Hood%')
+            .eq('is_active', true)
+            .order('name');
+          
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Safe Aire II Fume Hoods') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%Safe Aire II Fume Hoods%,category.ilike.%Safe Aire II Fume Hoods%')
+            .eq('is_active', true)
+            .order('name');
+          
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Single Way Taps') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%Single Way Taps%,category.ilike.%Single Way Taps%')
+            .eq('is_active', true)
+            .order('name');
+          
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Emergency Shower') {
           const { data, error } = await supabase
             .from('products')
             .select('*')
@@ -140,6 +215,7 @@ const ProductDetail: React.FC = () => {
           console.log('- Mounting types:', [...new Set(fetchedVariants.map(v => v.mounting_type).filter(Boolean))]);
           console.log('- Mixing types:', [...new Set(fetchedVariants.map(v => v.mixing_type).filter(Boolean))]);
           console.log('- Handle types:', [...new Set(fetchedVariants.map(v => v.handle_type).filter(Boolean))]);
+          console.log('- Cabinet classes:', [...new Set(fetchedVariants.map(v => v.cabinet_class).filter(Boolean))]);
           console.log('- Unique dimensions:', [...new Set(fetchedVariants.map(v => v.dimensions).filter(Boolean))]);
           console.log('- Unique finishes:', [...new Set(fetchedVariants.map(v => v.finish_type).filter(Boolean))]);
           
@@ -245,12 +321,12 @@ const ProductDetail: React.FC = () => {
 
   const displayProduct = selectedVariant || product;
 
-  // Get product images for the gallery
+  // Get product images for the gallery - using 'images' property instead of 'additional_images'
   const getProductImages = () => {
     const images = [];
     if (displayProduct.thumbnail_path) images.push(displayProduct.thumbnail_path);
-    if (displayProduct.additional_images && displayProduct.additional_images.length > 0) {
-      images.push(...displayProduct.additional_images);
+    if (displayProduct.images && displayProduct.images.length > 0) {
+      images.push(...displayProduct.images);
     }
     return images.length > 0 ? images : ['/placeholder.svg'];
   };
@@ -273,6 +349,7 @@ const ProductDetail: React.FC = () => {
             images={getProductImages()}
             thumbnail={displayProduct.thumbnail_path || '/placeholder.svg'}
             productName={displayProduct.name}
+            isProductPage={true}
           />
         </div>
 

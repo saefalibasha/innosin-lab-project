@@ -10,6 +10,7 @@ interface ProductImageGalleryProps {
   productName: string;
   isProductPage?: boolean;
   className?: string;
+  showThumbnails?: boolean;
 }
 
 const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
@@ -17,7 +18,8 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
   thumbnail,
   productName,
   isProductPage = false,
-  className
+  className,
+  showThumbnails = true
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
@@ -48,7 +50,7 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
           <img
             src={displayImages[currentImageIndex]}
             alt={`${productName} - Image ${currentImageIndex + 1}`}
-            className="max-w-full max-h-full object-contain"
+            className="max-w-full max-h-full object-contain mx-auto"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.src = '/placeholder.svg';
@@ -86,8 +88,8 @@ const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
         )}
       </div>
 
-      {/* Thumbnail Navigation - only show if more than one image */}
-      {displayImages.length > 1 && (
+      {/* Thumbnail Navigation - only show if more than one image and showThumbnails is true */}
+      {displayImages.length > 1 && showThumbnails && (
         <div className="flex gap-2 overflow-x-auto pb-2">
           {displayImages.map((image, index) => (
             <button
