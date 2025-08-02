@@ -43,7 +43,10 @@ const ProductDetail: React.FC = () => {
       name,
       category,
       productSeries,
-      originalProductSeries: product.product_series
+      originalName: product.name,
+      originalCategory: product.category,
+      originalProductSeries: product.product_series,
+      productId: product.id
     });
 
     // Bio Safety Cabinet - TANGERINE detection
@@ -57,15 +60,21 @@ const ProductDetail: React.FC = () => {
     if (product.product_series === 'Broen-Lab Emergency Shower Systems' || 
         product.product_series === 'Broen-Lab Emergency Shower Systems ' ||
         productSeries.includes('emergency shower') || 
+        productSeries.includes('broen-lab emergency') ||
         name.includes('emergency')) {
       return { series: 'Broen-Lab Emergency Shower Systems', slug: 'emergency-shower', isSpecific: true };
     }
     
-    // UNIFLEX detection - check for Single Way Taps (UNIFLEX products)
+    // UNIFLEX detection - check for Single Way Taps (UNIFLEX products) - Enhanced detection
     if (product.product_series === 'Single Way Taps' || 
         name.includes('uniflex') || 
         productSeries.includes('uniflex') ||
-        productSeries.includes('single way taps')) {
+        productSeries.includes('single way taps') ||
+        name.includes('single way') ||
+        category.includes('single way') ||
+        name.includes('tap') ||
+        category.includes('tap')) {
+      console.log('UNIFLEX Series detected for product:', product.name);
       return { series: 'Single Way Taps', slug: 'uniflex-series', isSpecific: true };
     }
     
@@ -97,6 +106,7 @@ const ProductDetail: React.FC = () => {
       return { series: 'Mobile Cabinet', slug: 'mobile-cabinet', isSpecific: false };
     }
 
+    console.log('No specific series matched, using category as fallback:', product.category);
     return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-'), isSpecific: false };
   };
 
@@ -136,12 +146,20 @@ const ProductDetail: React.FC = () => {
       try {
         const seriesInfo = getSeriesInfo(product);
         console.log('ProductDetail - Series Info:', seriesInfo);
+        console.log('ProductDetail - Current product details:', {
+          id: product.id,
+          name: product.name,
+          category: product.category,
+          product_series: product.product_series,
+          seriesInfo
+        });
         
         if (seriesInfo.isSpecific) {
           let query;
           
           // Handle different querying strategies based on series
           if (seriesInfo.series === 'Single Way Taps') {
+            console.log('Querying for UNIFLEX (Single Way Taps) products...');
             // For UNIFLEX (Single Way Taps), query by exact product_series match
             query = supabase
               .from('products')
@@ -150,6 +168,7 @@ const ProductDetail: React.FC = () => {
               .eq('is_active', true)
               .order('product_code');
           } else if (seriesInfo.series === 'Broen-Lab Emergency Shower Systems') {
+            console.log('Querying for Emergency Shower products...');
             // For Emergency Shower, query by exact product_series match (with or without trailing space)
             query = supabase
               .from('products')
@@ -158,6 +177,7 @@ const ProductDetail: React.FC = () => {
               .eq('is_active', true)
               .order('product_code');
           } else if (seriesInfo.series === 'Safe Aire II Fume Hoods') {
+            console.log('Querying for Safe Aire products...');
             // For Safe Aire, query by exact product_series match
             query = supabase
               .from('products')
@@ -166,6 +186,7 @@ const ProductDetail: React.FC = () => {
               .eq('is_active', true)
               .order('product_code');
           } else if (seriesInfo.series === 'Bio Safety Cabinet - TANGERINE') {
+            console.log('Querying for TANGERINE products...');
             // For TANGERINE, query by exact product_series match
             query = supabase
               .from('products')
@@ -174,6 +195,7 @@ const ProductDetail: React.FC = () => {
               .eq('is_active', true)
               .order('product_code');
           } else if (seriesInfo.series === 'NOCE Series Fume Hood') {
+            console.log('Querying for NOCE products...');
             // For NOCE, query by exact product_series match
             query = supabase
               .from('products')
@@ -182,6 +204,7 @@ const ProductDetail: React.FC = () => {
               .eq('is_active', true)
               .order('product_code');
           } else {
+            console.log('Querying for other specific series:', product.product_series);
             // For other specific series, use product_series
             query = supabase
               .from('products')
@@ -193,20 +216,30 @@ const ProductDetail: React.FC = () => {
 
           const { data: variants, error: variantsError } = await query;
 
-          if (variantsError) throw variantsError;
+          if (variantsError) {
+            console.error('Error fetching variants:', variantsError);
+            throw variantsError;
+          }
 
-          console.log('ProductDetail - Fetched variants:', variants?.length, variants);
+          console.log('ProductDetail - Raw variants from database:', variants);
+          console.log('ProductDetail - Fetched variants count:', variants?.length);
+          
           const transformedVariants = variants?.map(transformVariantToProduct) || [];
+          console.log('ProductDetail - Transformed variants:', transformedVariants);
+          
           setSeriesVariants(transformedVariants);
           
           // Set the current product as selected variant if it's in the list
           const currentVariant = transformedVariants.find(v => v.id === product.id);
           if (currentVariant) {
+            console.log('Setting current product as selected variant:', currentVariant.name);
             setSelectedVariant(currentVariant);
           } else if (transformedVariants.length > 0) {
+            console.log('Setting first variant as selected:', transformedVariants[0].name);
             setSelectedVariant(transformedVariants[0]);
           }
         } else {
+          console.log('Non-specific series, using fallback method for:', seriesInfo.slug);
           // For non-specific series, use the old variant fetching method
           const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
           if (fetchedVariants && fetchedVariants.length > 0) {
@@ -225,6 +258,7 @@ const ProductDetail: React.FC = () => {
             }));
             setSeriesVariants(transformedVariants);
           } else {
+            console.log('No variants found for non-specific series');
             setSeriesVariants([]);
           }
         }
