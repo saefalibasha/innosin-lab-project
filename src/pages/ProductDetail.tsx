@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,7 +107,7 @@ const ProductDetail: React.FC = () => {
     dimensions: variant.dimensions || '',
     modelPath: variant.model_path || '/placeholder.glb',
     thumbnail: variant.thumbnail_path || '/placeholder.svg',
-    images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
+    images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
     description: variant.description || '',
     fullDescription: variant.full_description || variant.description || '',
     specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
@@ -305,16 +304,10 @@ const ProductDetail: React.FC = () => {
       images.push(displayProduct.thumbnail_path);
     }
     if (displayProduct.images && displayProduct.images.length > 0) {
-      const additionalImages = displayProduct.images.filter(img =>
+      const imagesList = displayProduct.images.filter(img =>
         img && !img.includes('placeholder') && !images.includes(img)
       );
-      images.push(...additionalImages);
-    }
-    if (displayProduct.additional_images && displayProduct.additional_images.length > 0) {
-      const additionalImages = displayProduct.additional_images.filter(img =>
-        img && !img.includes('placeholder') && !images.includes(img)
-      );
-      images.push(...additionalImages);
+      images.push(...imagesList);
     }
     return images.length > 0 ? images : ['/placeholder.svg'];
   };
