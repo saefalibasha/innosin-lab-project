@@ -1,25 +1,27 @@
-import React, { useState, useMemo, useEffect } from 'react';
+ import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle, Building2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
-import { fetchSeriesWithVariants } from '@/services/variantService';
-import { useLoadingState } from '@/hooks/useLoadingState';
-import { ProductVariantSelector } from '@/components/floorplan/ProductVariantSelector';
-import ProductImageGallery from '@/components/ProductImageGallery';
-import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
+import { useLoadingState } from '@/hooks/useLoadingState';
+import ProductImageGallery from './ProductImageGallery';
+import ProductOrientationSelector from './ProductOrientationSelector';
+import TechnicalSpecifications from './TechnicalSpecifications';
+import VariantSelector from './product/VariantSelector';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading: productLoading, error } = useProductById(id);
-  const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
-  const [selectedVariants, setSelectedVariants] = useState<any>({});
-  const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
-
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
+  
+  // Enhanced loading state management
   const {
     isLoading: variantsLoading,
     error: variantError,
@@ -29,115 +31,139 @@ const ProductDetail: React.FC = () => {
     reset
   } = useLoadingState(false);
 
+  // Extract series information from product
   const getSeriesInfo = (product: any) => {
     if (!product) return { series: '', slug: '' };
-    const name = product.name.toLowerCase();
-    const category = product.category.toLowerCase();
-    const productSeries = product.product_series?.toLowerCase() || '';
+    const name = product.name?.toLowerCase() || '';
+    const series = product.product_series?.toLowerCase() || '';
+    const category = product.category?.toLowerCase() || '';
+    // Logging for debugging
+    console.log('🔍 Product data for series detection:', {
+      name: product.name,
+      product_series: product.product_series,
+      category: product.category,
+      emergency_shower_type: product.emergency_shower_type,
+      mounting_type: product.mounting_type,
+      mixing_type: product.mixing_type,
+      handle_type: product.handle_type
+    });
 
-    if (productSeries.includes('emergency shower') || name.includes('emergency') || category.includes('emergency')) {
+    if (series.includes('bio safety cabinet - tangerine') || category.includes('bio safety cabinet - tangerine')) {
+      return { series: 'Bio Safety Cabinet - TANGERINE', slug: 'bio-safety-cabinet-tangerine' };
+    }
+    if (series.includes('broen-lab emergency shower') || category.includes('broen-lab emergency shower') || series.includes('emergency shower')) {
+      return { series: 'Broen-Lab Emergency Shower Systems', slug: 'broen-lab-emergency-shower-series' };
+    }
+    if (series.includes('noce series fume hood') || category.includes('noce series fume hood') || series.includes('noce')) {
+      return { series: 'NOCE Series Fume Hood', slug: 'noce-series-fume-hood' };
+    }
+    if (series.includes('safe aire ii fume hoods') || category.includes('safe aire ii fume hoods') || series.includes('safe aire')) {
+      return { series: 'Safe Aire II Fume Hoods', slug: 'safe-aire-ii-fume-hoods' };
+    }
+    if (series.includes('single way taps') || category.includes('single way taps') || series.includes('uniflex')) {
+      return { series: 'Broen-Lab UNIFLEX Taps Series', slug: 'broen-lab-uniflex-taps-series' };
+    }
+    if (series.includes('emergency shower') || name.includes('emergency shower') || category.includes('emergency')) {
       return { series: 'Emergency Shower', slug: 'emergency-shower' };
     }
-    if (productSeries.includes('tangerine') || name.includes('tangerine')) {
-      return { series: 'TANGERINE Series', slug: 'tangerine-series' };
+    if (series.includes('uniflex') || name.includes('uniflex') || category.includes('uniflex')) {
+      return { series: 'UNIFLEX', slug: 'broen-lab-uniflex-taps-series' };
     }
-    if (productSeries.includes('noce') || name.includes('noce')) {
-      return { series: 'NOCE Series', slug: 'noce-series' };
+    if (series.includes('safe aire') || name.includes('safe aire') || category.includes('safe aire')) {
+      return { series: 'Safe Aire', slug: 'safe-aire-ii-fume-hoods' };
     }
-    if (productSeries.includes('uniflex') || name.includes('uniflex')) {
-      return { series: 'UNIFLEX Series', slug: 'uniflex-series' };
-    }
-    if (productSeries.includes('safe aire') || name.includes('safe aire')) {
-      return { series: 'Safe Aire II', slug: 'safe-aire-ii' };
-    }
-    if (name.includes('open rack') || category.includes('open rack')) {
-      return { series: 'Open Rack', slug: 'open-rack' };
-    }
-    if (name.includes('tall cabinet') || category.includes('tall cabinet')) {
-      return { series: 'Tall Cabinet', slug: 'tall-cabinet' };
-    }
-    if (name.includes('wall cabinet') || category.includes('wall cabinet')) {
-      return { series: 'Wall Cabinet', slug: 'wall-cabinet' };
-    }
-    if (name.includes('mobile cabinet') || category.includes('mobile cabinet') || name.includes('mc-pc') || name.includes('mcc-pc')) {
-      return { series: 'Mobile Cabinet', slug: 'mobile-cabinet' };
-    }
-
-    return { series: product.category, slug: product.category.toLowerCase().replace(/\s+/g, '-') };
+    return { series: product.product_series || product.category, slug: product.product_series?.toLowerCase().replace(/\s+/g, '-') || 'unknown' };
   };
 
-  const transformVariantToProduct = (variant: any): Product => ({
-    id: variant.id,
-    name: variant.name,
-    category: variant.category,
-    dimensions: variant.dimensions || '',
-    modelPath: variant.model_path || '/placeholder.glb',
-    thumbnail: variant.thumbnail_path || '/placeholder.svg',
-    images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
-    description: variant.description || '',
-    fullDescription: variant.full_description || variant.description || '',
-    specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
-    product_code: variant.product_code,
-    thumbnail_path: variant.thumbnail_path,
-    model_path: variant.model_path,
-    finish_type: variant.finish_type,
-    orientation: variant.orientation,
-    drawer_count: variant.drawer_count,
-    door_type: variant.door_type,
-    mounting_type: variant.mounting_type,
-    mixing_type: variant.mixing_type,
-    handle_type: variant.handle_type,
-    emergency_shower_type: variant.emergency_shower_type,
-    cabinet_class: variant.cabinet_class,
-    company_tags: variant.company_tags || [],
-    product_series: variant.product_series
-  });
-
+  // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
     const fetchVariants = async () => {
       if (!product || productLoading) return;
+
       startLoading();
       reset();
-
       try {
         const seriesInfo = getSeriesInfo(product);
-        if ([
-          'Emergency Shower', 'TANGERINE Series', 'NOCE Series', 'UNIFLEX Series', 'Safe Aire II'
-        ].includes(seriesInfo.series)) {
-          const { data: variants, error: variantsError } = await supabase
+        let fetchedVariants = [];
+        // Fetch variants based on series type
+        if (seriesInfo.series === 'Bio Safety Cabinet - TANGERINE') {
+          const { data, error } = await supabase
             .from('products')
             .select('*')
-            .eq('product_series', product.product_series)
+            .or('product_series.ilike.%Bio Safety Cabinet - TANGERINE%,category.ilike.%Bio Safety Cabinet - TANGERINE%')
             .eq('is_active', true)
-            .order('product_code');
-
-          if (variantsError) throw variantsError;
-
-          const transformedVariants = variants?.map(transformVariantToProduct) || [];
-          setSeriesVariants(transformedVariants);
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Broen-Lab Emergency Shower Systems') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%Broen-Lab Emergency Shower%,category.ilike.%Broen-Lab Emergency Shower%')
+            .eq('is_active', true)
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'NOCE Series Fume Hood') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%NOCE Series Fume Hood%,category.ilike.%NOCE Series Fume Hood%')
+            .eq('is_active', true)
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Safe Aire II Fume Hoods') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%Safe Aire II Fume Hoods%,category.ilike.%Safe Aire II Fume Hoods%')
+            .eq('is_active', true)
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Broen-Lab UNIFLEX Taps Series') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%UNIFLEX%,category.ilike.%UNIFLEX%,product_series.ilike.%Single Way Taps%,category.ilike.%Single Way Taps%')
+            .eq('is_active', true)
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
+        } else if (seriesInfo.series === 'Emergency Shower') {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or('product_series.ilike.%emergency shower%,name.ilike.%emergency shower%,category.ilike.%emergency%')
+            .eq('is_active', true)
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
         } else {
-          const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
-          if (fetchedVariants && fetchedVariants.length > 0) {
-            const variants = fetchedVariants[0].variants || [];
-            const transformedVariants = variants.map((variant: any) => ({
-              ...variant,
-              thumbnail: variant.thumbnail || '/placeholder.svg',
-              modelPath: variant.modelPath || '/placeholder.glb',
-              images: variant.images || [variant.thumbnail || '/placeholder.svg'],
-              fullDescription: variant.fullDescription || variant.description,
-              specifications: Array.isArray(variant.specifications)
-                ? variant.specifications
-                : variant.specifications
-                  ? [variant.specifications]
-                  : []
-            }));
-            setSeriesVariants(transformedVariants);
-          } else {
-            setSeriesVariants([]);
-          }
+          // Fallback: try to find products with same series or category
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .or(`product_series.eq.${product.product_series},category.eq.${product.category}`)
+            .eq('is_active', true)
+            .order('name');
+          if (error) throw error;
+          fetchedVariants = data || [];
+        }
+
+        setSeriesVariants(fetchedVariants);
+
+        // Set the current product as selected variant if it's in the list
+        const currentVariant = fetchedVariants.find(v => v.id === product.id);
+        if (currentVariant) {
+          setSelectedVariant(currentVariant);
+        } else if (fetchedVariants.length > 0) {
+          setSelectedVariant(fetchedVariants[0]);
         }
       } catch (err) {
         setSeriesVariants([]);
+        setSelectedVariant(product); // Use the current product as fallback
         setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
         stopLoading();
@@ -147,14 +173,48 @@ const ProductDetail: React.FC = () => {
     fetchVariants();
   }, [product, productLoading]);
 
-  const handleVariantChange = (variantType: string, value: string) => {
-    setSelectedVariants(prev => ({ ...prev, [variantType]: value }));
+  // Handle variant selection - convert between ID and object
+  const handleVariantChange = (variantId: string) => {
+    const variant = seriesVariants.find(v => v.id === variantId);
+    setSelectedVariant(variant || null);
   };
 
-  const handleProductSelect = (selectedProduct: Product) => {
-    setSelectedVariant(selectedProduct);
+  // VariantSelector for all supported series
+  const getConfiguratorComponent = () => {
+    if (!product || seriesVariants.length === 0) return null;
+
+    const seriesInfo = getSeriesInfo(product);
+
+    return (
+      <VariantSelector
+        variants={seriesVariants.map(v => ({
+          id: v.id,
+          name: v.name,
+          product_code: v.product_code,
+          dimensions: v.dimensions,
+          orientation: v.orientation || 'None',
+          door_type: v.door_type,
+          variant_type: v.variant_type || 'standard',
+          drawer_count: v.drawer_count,
+          finish_type: v.finish_type,
+          emergency_shower_type: v.emergency_shower_type,
+          mounting_type: v.mounting_type,
+          mixing_type: v.mixing_type,
+          handle_type: v.handle_type,
+          cabinet_class: v.cabinet_class,
+          series_slug: seriesInfo.slug
+        }))}
+        selectedVariantId={selectedVariant?.id || ''}
+        onVariantChange={handleVariantChange}
+        selectedFinish={selectedFinish}
+        onFinishChange={setSelectedFinish}
+        groupByDimensions={true}
+        seriesSlug={seriesInfo.slug}
+      />
+    );
   };
 
+  // Enhanced loading state with progressive loading
   if (productLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -173,7 +233,9 @@ const ProductDetail: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
-          <p className="text-muted-foreground mb-6">{error || 'The product you are looking for does not exist.'}</p>
+          <p className="text-muted-foreground mb-6">
+            {error || 'The product you are looking for does not exist.'}
+          </p>
           <Button onClick={() => window.history.back()} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Go Back
@@ -184,10 +246,11 @@ const ProductDetail: React.FC = () => {
   }
 
   const displayProduct = selectedVariant || product;
+
+  // Get product images for the gallery
   const getProductImages = () => {
     const images = [];
     if (displayProduct.thumbnail_path) images.push(displayProduct.thumbnail_path);
-    if (displayProduct.thumbnail) images.push(displayProduct.thumbnail);
     if (displayProduct.images && displayProduct.images.length > 0) {
       images.push(...displayProduct.images);
     }
@@ -196,37 +259,29 @@ const ProductDetail: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <Button onClick={() => window.history.back()} variant="ghost" className="mb-6 gap-2">
+      <Button
+        onClick={() => window.history.back()}
+        variant="ghost"
+        className="mb-6 gap-2"
+      >
         <ArrowLeft className="w-4 h-4" />
         Back to Products
       </Button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Column - Images */}
         <div className="space-y-6">
           <ProductImageGallery
             images={getProductImages()}
-            thumbnail={displayProduct.thumbnail || ''}
+            thumbnail={displayProduct.thumbnail_path || '/placeholder.svg'}
             productName={displayProduct.name}
             isProductPage={true}
-            className="mx-auto w-full max-w-[600px]"
           />
         </div>
 
+        {/* Right Column - Product Information */}
         <div className="space-y-6">
           <div>
-            {displayProduct.company_tags && displayProduct.company_tags.length > 0 && (
-              <div className="flex items-center gap-2 mb-4">
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-                <div className="flex flex-wrap gap-1">
-                  {displayProduct.company_tags.map((tag, index) => (
-                    <Badge key={index} variant="default" className="text-sm bg-blue-500 hover:bg-blue-600 text-white">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <Badge variant="secondary" className="mb-2">
               {displayProduct.category}
             </Badge>
@@ -239,7 +294,7 @@ const ProductDetail: React.FC = () => {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Package className="w-4 h-4" />
-                <span>{displayProduct.product_code || displayProduct.id}</span>
+                <span>{displayProduct.product_code}</span>
               </div>
               {displayProduct.dimensions && (
                 <div className="flex items-center gap-1">
@@ -252,6 +307,7 @@ const ProductDetail: React.FC = () => {
 
           <Separator />
 
+          {/* Product Configuration */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -265,22 +321,19 @@ const ProductDetail: React.FC = () => {
                   <AlertCircle className="w-5 h-5" />
                   <span>{variantError}</span>
                 </div>
-              ) : seriesVariants.length > 0 ? (
-                <ProductVariantSelector
-                  products={seriesVariants}
-                  selectedVariants={selectedVariants}
-                  onVariantChange={handleVariantChange}
-                  onProductSelect={handleProductSelect}
-                  selectedProduct={selectedVariant}
-                />
-              ) : (
-                <div className="text-center py-4 text-muted-foreground">
-                  <p className="text-sm">No variants available for this product</p>
+              ) : variantsLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
                 </div>
+              ) : (
+                getConfiguratorComponent()
               )}
             </CardContent>
           </Card>
 
+          {/* Action Buttons */}
           <div className="flex gap-4">
             <Button className="flex-1 gap-2" disabled={variantsLoading}>
               <ShoppingCart className="w-4 h-4" />
@@ -292,6 +345,7 @@ const ProductDetail: React.FC = () => {
             </Button>
           </div>
 
+          {/* Product Description */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -301,10 +355,16 @@ const ProductDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground leading-relaxed">
-                {displayProduct.fullDescription || displayProduct.description}
+                {displayProduct.editable_description || displayProduct.full_description || displayProduct.description}
               </p>
             </CardContent>
           </Card>
+
+          {/* Technical Specifications */}
+          <TechnicalSpecifications 
+            product={displayProduct} 
+            selectedVariant={selectedVariant}
+          />
         </div>
       </div>
     </div>
