@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,12 +15,12 @@ interface Variant {
   variant_type: string;
   drawer_count?: number;
   finish_type: string;
-  // Additional fields for special series
   emergency_shower_type?: string;
   mounting_type?: string;
   mixing_type?: string;
   handle_type?: string;
   cabinet_class?: string;
+  series_slug?: string;
 }
 
 interface VariantSelectorProps {
@@ -31,6 +30,7 @@ interface VariantSelectorProps {
   selectedFinish: string;
   onFinishChange: (finish: string) => void;
   groupByDimensions?: boolean;
+  seriesSlug?: string;
 }
 
 const VariantSelector: React.FC<VariantSelectorProps> = ({
@@ -39,9 +39,11 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
   onVariantChange,
   selectedFinish,
   onFinishChange,
-  groupByDimensions = false
+  groupByDimensions = false,
+  seriesSlug = ""
 }) => {
-  console.log('🔍 VariantSelector rendering with variants:', variants);
+  // Grouping by seriesSlug for custom logic
+  const slug = seriesSlug?.toLowerCase();
 
   if (!variants || variants.length === 0) {
     return (
@@ -57,33 +59,98 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     return match ? parseInt(match[1], 10) : 0;
   };
 
-  // Get unique values for each selector type
-  const emergencyShowerTypes = [...new Set(variants.map(v => v.emergency_shower_type).filter(Boolean))].sort();
-  const mountingTypes = [...new Set(variants.map(v => v.mounting_type).filter(Boolean))].sort();
-  const mixingTypes = [...new Set(variants.map(v => v.mixing_type).filter(Boolean))].sort();
-  const handleTypes = [...new Set(variants.map(v => v.handle_type).filter(Boolean))].sort();
-  const cabinetClasses = [...new Set(variants.map(v => v.cabinet_class).filter(Boolean))].sort();
-  const dimensions = [...new Set(variants.map(v => v.dimensions).filter(Boolean))].sort((a, b) => extractLength(a) - extractLength(b));
-  const doorTypes = [...new Set(variants.map(v => v.door_type).filter(Boolean))].sort();
-  const orientations = [...new Set(variants.map(v => v.orientation).filter(o => o && o !== 'None'))].sort();
-  const drawerCounts = [...new Set(variants.map(v => v.drawer_count).filter(Boolean))].sort((a, b) => a - b);
-  const variantTypes = [...new Set(variants.map(v => v.variant_type).filter(Boolean))];
+  // Custom grouping logic for Safe Aire II Fume Hoods
+  let groupedVariants: Record<string, Variant[]> = {};
+  if (slug === 'safe-aire-ii-fume-hoods') {
+    groupedVariants = variants.reduce((acc, v) => {
+      const key = v.dimensions || v.name || v.product_code;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(v);
+      return acc;
+    }, {} as Record<string, Variant[]>);
+  }
+  // Custom grouping for Broen-Lab UNIFLEX Taps Series
+  if (slug === 'single-way-taps' || slug === 'broen-lab-uniflex-taps-series') {
+    groupedVariants = variants.reduce((acc, v) => {
+      const key =
+        [v.mixing_type, v.handle_type].filter(Boolean).join(' | ') ||
+        v.name ||
+        v.product_code;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(v);
+      return acc;
+    }, {} as Record<string, Variant[]>);
+  }
+  // Custom grouping for Broen-Lab Emergency Shower Series
+  if (
+    slug === 'broen-lab-emergency-shower-systems' ||
+    slug === 'broen-lab-emergency-shower-series' ||
+    slug === 'emergency-shower'
+  ) {
+    groupedVariants = variants.reduce((acc, v) => {
+      const key =
+        [v.emergency_shower_type, v.mounting_type]
+          .filter(Boolean)
+          .join(' | ') || v.name || v.product_code;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(v);
+      return acc;
+    }, {} as Record<string, Variant[]>);
+  }
 
-  const selectedVariant = variants.find(v => v.id === selectedVariantId);
+  // Get unique values for each selector type
+  const emergencyShowerTypes = [
+    ...new Set(variants.map((v) => v.emergency_shower_type).filter(Boolean)),
+  ].sort();
+  const mountingTypes = [
+    ...new Set(variants.map((v) => v.mounting_type).filter(Boolean)),
+  ].sort();
+  const mixingTypes = [
+    ...new Set(variants.map((v) => v.mixing_type).filter(Boolean)),
+  ].sort();
+  const handleTypes = [
+    ...new Set(variants.map((v) => v.handle_type).filter(Boolean)),
+  ].sort();
+  const cabinetClasses = [
+    ...new Set(variants.map((v) => v.cabinet_class).filter(Boolean)),
+  ].sort();
+  const dimensions = [
+    ...new Set(variants.map((v) => v.dimensions).filter(Boolean)),
+  ].sort((a, b) => extractLength(a) - extractLength(b));
+  const doorTypes = [
+    ...new Set(variants.map((v) => v.door_type).filter(Boolean)),
+  ].sort();
+  const orientations = [
+    ...new Set(variants.map((v) => v.orientation).filter((o) => o && o !== 'None')),
+  ].sort();
+  const drawerCounts = [
+    ...new Set(variants.map((v) => v.drawer_count).filter(Boolean)),
+  ].sort((a, b) => a - b);
+  const variantTypes = [
+    ...new Set(variants.map((v) => v.variant_type).filter(Boolean)),
+  ];
+
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   const formatOrientation = (orientation: string) => {
     switch (orientation) {
-      case 'LH': return 'Left Hand';
-      case 'RH': return 'Right Hand';
-      default: return orientation;
+      case 'LH':
+        return 'Left Hand';
+      case 'RH':
+        return 'Right Hand';
+      default:
+        return orientation;
     }
   };
 
   const formatVariantType = (type: string) => {
     switch (type) {
-      case 'standard': return 'Standard';
-      case 'combination': return 'Combination';
-      default: return type.charAt(0).toUpperCase() + type.slice(1);
+      case 'standard':
+        return 'Standard';
+      case 'combination':
+        return 'Combination';
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1);
     }
   };
 
@@ -93,37 +160,169 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
     if (!currentVariant) return variants[0];
 
     // Try to find exact match first
-    let bestMatch = variants.find(v => 
-      (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
-      (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
-      (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) &&
-      (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
-      (!targetCriteria.door_type || v.door_type === targetCriteria.door_type) &&
-      (!targetCriteria.emergency_shower_type || v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
-      (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
-      (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
-      (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type) &&
-      (!targetCriteria.cabinet_class || v.cabinet_class === targetCriteria.cabinet_class)
+    let bestMatch = variants.find(
+      (v) =>
+        (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
+        (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
+        (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) &&
+        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
+        (!targetCriteria.door_type || v.door_type === targetCriteria.door_type) &&
+        (!targetCriteria.emergency_shower_type ||
+          v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
+        (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
+        (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
+        (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type) &&
+        (!targetCriteria.cabinet_class || v.cabinet_class === targetCriteria.cabinet_class)
     );
 
     // If no exact match, try to preserve as many current attributes as possible
     if (!bestMatch) {
-      bestMatch = variants.find(v => 
-        (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
-        (!targetCriteria.emergency_shower_type || v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
-        (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
-        (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
-        (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type)
+      bestMatch = variants.find(
+        (v) =>
+          (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
+          (!targetCriteria.emergency_shower_type ||
+            v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
+          (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
+          (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
+          (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type)
       );
     }
 
     return bestMatch || variants[0];
   };
 
+  // Render grouped variants for custom series
+  if (Object.keys(groupedVariants).length > 0) {
+    return (
+      <Card>
+        <CardContent className="space-y-6 p-6">
+          <h4 className="font-medium mb-3">Select Configuration</h4>
+          {Object.entries(groupedVariants).map(([groupKey, groupVariants]) => (
+            <div key={groupKey} className="mb-4">
+              <div className="font-semibold text-muted-foreground mb-2">
+                {groupKey}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {groupVariants.map((variant) => {
+                  const isSelected = selectedVariantId === variant.id;
+                  return (
+                    <Button
+                      key={variant.id}
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onVariantChange(variant.id)}
+                      className="text-sm"
+                    >
+                      {variant.product_code || variant.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {/* Finish Selection */}
+          <div>
+            <h4 className="font-medium mb-3">Finish</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={selectedFinish === 'PC' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onFinishChange('PC')}
+                className="text-sm"
+              >
+                Powder Coat
+              </Button>
+              <Button
+                variant={selectedFinish === 'SS' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onFinishChange('SS')}
+                className="text-sm"
+              >
+                Stainless Steel
+              </Button>
+            </div>
+          </div>
+          {/* Current Selection Summary */}
+          {selectedVariant && (
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Current Selection</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Product Code:</span>
+                  <Badge variant="outline">{selectedVariant.product_code}</Badge>
+                </div>
+                {selectedVariant.dimensions && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Dimensions:</span>
+                    <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
+                  </div>
+                )}
+                {selectedVariant.emergency_shower_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Emergency Shower Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.emergency_shower_type}</span>
+                  </div>
+                )}
+                {selectedVariant.mounting_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Mounting Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.mounting_type}</span>
+                  </div>
+                )}
+                {selectedVariant.mixing_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Mixing Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.mixing_type}</span>
+                  </div>
+                )}
+                {selectedVariant.handle_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Handle Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.handle_type}</span>
+                  </div>
+                )}
+                {selectedVariant.cabinet_class && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Cabinet Class:</span>
+                    <span className="text-sm font-medium">{selectedVariant.cabinet_class}</span>
+                  </div>
+                )}
+                {selectedVariant.door_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Door Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.door_type}</span>
+                  </div>
+                )}
+                {selectedVariant.drawer_count && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Drawers:</span>
+                    <span className="text-sm font-medium">{selectedVariant.drawer_count}</span>
+                  </div>
+                )}
+                {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Orientation:</span>
+                    <span className="text-sm font-medium">{formatOrientation(selectedVariant.orientation)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Finish:</span>
+                  <span className="text-sm font-medium">
+                    {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Default: legacy rendering for other series
   return (
     <Card>
       <CardContent className="space-y-6 p-6">
-        {/* Emergency Shower Type Selection */}
         {emergencyShowerTypes.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Emergency Shower Type</h4>
@@ -133,7 +332,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 return (
                   <Button
                     key={type}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ emergency_shower_type: type });
@@ -151,7 +350,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Mounting Type Selection */}
         {mountingTypes.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Mounting Type</h4>
@@ -161,7 +359,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 return (
                   <Button
                     key={type}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ mounting_type: type });
@@ -179,7 +377,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Mixing Type Selection */}
         {mixingTypes.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Mixing Type</h4>
@@ -189,7 +386,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 return (
                   <Button
                     key={type}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ mixing_type: type });
@@ -207,7 +404,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Handle Type Selection */}
         {handleTypes.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Handle Type</h4>
@@ -217,7 +413,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 return (
                   <Button
                     key={type}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ handle_type: type });
@@ -235,7 +431,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Cabinet Class Selection */}
         {cabinetClasses.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Cabinet Class</h4>
@@ -245,7 +440,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                 return (
                   <Button
                     key={classType}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ cabinet_class: classType });
@@ -263,13 +458,12 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Dimension Selection */}
         {dimensions.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Dimensions</h4>
             {dimensions.length > 4 ? (
-              <Select 
-                value={selectedVariant?.dimensions || ''} 
+              <Select
+                value={selectedVariant?.dimensions || ''}
                 onValueChange={(dimension) => {
                   const bestMatch = findBestMatchingVariant({ dimensions: dimension });
                   if (bestMatch) {
@@ -295,7 +489,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                   return (
                     <Button
                       key={dimension}
-                      variant={isSelected ? "default" : "outline"}
+                      variant={isSelected ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => {
                         const bestMatch = findBestMatchingVariant({ dimensions: dimension });
@@ -314,7 +508,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Door Type Selection */}
         <DoorTypeSelector
           doorTypes={doorTypes}
           selectedDoorType={selectedVariant?.door_type || ''}
@@ -326,18 +519,17 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           }}
         />
 
-        {/* Variant Type Selection */}
         {variantTypes.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Configuration Type</h4>
             <div className="grid grid-cols-2 gap-2">
               {variantTypes.map((type) => {
                 const isSelected = selectedVariant?.variant_type === type;
-                
+
                 return (
                   <Button
                     key={type}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ variant_type: type });
@@ -355,18 +547,17 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Drawer Count Selection */}
         {drawerCounts.length > 1 && (
           <div>
             <h4 className="font-medium mb-3">Drawer Configuration</h4>
             <div className="grid grid-cols-4 gap-2">
               {drawerCounts.map((count) => {
                 const isSelected = selectedVariant?.drawer_count === count;
-                
+
                 return (
                   <Button
                     key={count}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ drawer_count: count });
@@ -384,18 +575,17 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Orientation Selection */}
         {orientations.length > 0 && (
           <div>
             <h4 className="font-medium mb-3">Orientation</h4>
             <div className="grid grid-cols-2 gap-2">
               {orientations.map((orientation) => {
                 const isSelected = selectedVariant?.orientation === orientation;
-                
+
                 return (
                   <Button
                     key={orientation}
-                    variant={isSelected ? "default" : "outline"}
+                    variant={isSelected ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
                       const bestMatch = findBestMatchingVariant({ orientation });
@@ -413,12 +603,11 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         )}
 
-        {/* Finish Selection */}
         <div>
           <h4 className="font-medium mb-3">Finish</h4>
           <div className="grid grid-cols-2 gap-2">
             <Button
-              variant={selectedFinish === 'PC' ? "default" : "outline"}
+              variant={selectedFinish === 'PC' ? 'default' : 'outline'}
               size="sm"
               onClick={() => onFinishChange('PC')}
               className="text-sm"
@@ -426,7 +615,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
               Powder Coat
             </Button>
             <Button
-              variant={selectedFinish === 'SS' ? "default" : "outline"}
+              variant={selectedFinish === 'SS' ? 'default' : 'outline'}
               size="sm"
               onClick={() => onFinishChange('SS')}
               className="text-sm"
@@ -436,7 +625,6 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
           </div>
         </div>
 
-        {/* Current Selection Summary */}
         {selectedVariant && (
           <div className="border-t pt-4">
             <h4 className="font-medium mb-3">Current Selection</h4>
@@ -493,16 +681,21 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
                   <span className="text-sm font-medium">{selectedVariant.drawer_count}</span>
                 </div>
               )}
-              {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Orientation:</span>
-                  <span className="text-sm font-medium">{formatOrientation(selectedVariant.orientation)}</span>
-                </div>
-              )}
+              {selectedVariant.orientation &&
+                selectedVariant.orientation !== 'None' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Orientation:</span>
+                    <span className="text-sm font-medium">
+                      {formatOrientation(selectedVariant.orientation)}
+                    </span>
+                  </div>
+                )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Finish:</span>
                 <span className="text-sm font-medium">
-                  {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                  {selectedFinish === 'PC'
+                    ? 'Powder Coat'
+                    : 'Stainless Steel'}
                 </span>
               </div>
             </div>
