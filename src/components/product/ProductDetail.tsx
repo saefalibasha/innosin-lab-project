@@ -1,4 +1,4 @@
- import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,216 +6,80 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle } from 'lucide-react';
-import { useProductById } from '@/hooks/useEnhancedProducts';
 import { supabase } from '@/integrations/supabase/client';
-import { useLoadingState } from '@/hooks/useLoadingState';
-import ProductImageGallery from './ProductImageGallery';
-import ProductOrientationSelector from './ProductOrientationSelector';
-import TechnicalSpecifications from './TechnicalSpecifications';
 import VariantSelector from './product/VariantSelector';
+import ProductImageGallery from './ProductImageGallery';
+import TechnicalSpecifications from './TechnicalSpecifications';
+
+// NOTE: This version expects your route to use /product/:seriesId, where seriesId is the parent product's ID.
 
 const ProductDetail: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const { product, loading: productLoading, error } = useProductById(id);
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const { seriesId } = useParams<{ seriesId: string }>();
+  const [seriesParent, setSeriesParent] = useState<any>(null);
+  const [variants, setVariants] = useState<any[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
-  const [seriesVariants, setSeriesVariants] = useState<any[]>([]);
-  
-  // Enhanced loading state management
-  const {
-    isLoading: variantsLoading,
-    error: variantError,
-    startLoading,
-    stopLoading,
-    setError,
-    reset
-  } = useLoadingState(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
 
-  // Extract series information from product
-  const getSeriesInfo = (product: any) => {
-    if (!product) return { series: '', slug: '' };
-    const name = product.name?.toLowerCase() || '';
-    const series = product.product_series?.toLowerCase() || '';
-    const category = product.category?.toLowerCase() || '';
-    // Logging for debugging
-    console.log('🔍 Product data for series detection:', {
-      name: product.name,
-      product_series: product.product_series,
-      category: product.category,
-      emergency_shower_type: product.emergency_shower_type,
-      mounting_type: product.mounting_type,
-      mixing_type: product.mixing_type,
-      handle_type: product.handle_type
-    });
-
-    if (series.includes('bio safety cabinet - tangerine') || category.includes('bio safety cabinet - tangerine')) {
-      return { series: 'Bio Safety Cabinet - TANGERINE', slug: 'bio-safety-cabinet-tangerine' };
-    }
-    if (series.includes('broen-lab emergency shower') || category.includes('broen-lab emergency shower') || series.includes('emergency shower')) {
-      return { series: 'Broen-Lab Emergency Shower Systems', slug: 'broen-lab-emergency-shower-series' };
-    }
-    if (series.includes('noce series fume hood') || category.includes('noce series fume hood') || series.includes('noce')) {
-      return { series: 'NOCE Series Fume Hood', slug: 'noce-series-fume-hood' };
-    }
-    if (series.includes('safe aire ii fume hoods') || category.includes('safe aire ii fume hoods') || series.includes('safe aire')) {
-      return { series: 'Safe Aire II Fume Hoods', slug: 'safe-aire-ii-fume-hoods' };
-    }
-    if (series.includes('single way taps') || category.includes('single way taps') || series.includes('uniflex')) {
-      return { series: 'Broen-Lab UNIFLEX Taps Series', slug: 'broen-lab-uniflex-taps-series' };
-    }
-    if (series.includes('emergency shower') || name.includes('emergency shower') || category.includes('emergency')) {
-      return { series: 'Emergency Shower', slug: 'emergency-shower' };
-    }
-    if (series.includes('uniflex') || name.includes('uniflex') || category.includes('uniflex')) {
-      return { series: 'UNIFLEX', slug: 'broen-lab-uniflex-taps-series' };
-    }
-    if (series.includes('safe aire') || name.includes('safe aire') || category.includes('safe aire')) {
-      return { series: 'Safe Aire', slug: 'safe-aire-ii-fume-hoods' };
-    }
-    return { series: product.product_series || product.category, slug: product.product_series?.toLowerCase().replace(/\s+/g, '-') || 'unknown' };
-  };
-
-  // Progressive loading: fetch variants after product is loaded
   useEffect(() => {
-    const fetchVariants = async () => {
-      if (!product || productLoading) return;
-
-      startLoading();
-      reset();
+    const fetchSeries = async () => {
+      setLoading(true);
+      setError('');
       try {
-        const seriesInfo = getSeriesInfo(product);
-        let fetchedVariants = [];
-        // Fetch variants based on series type
-        if (seriesInfo.series === 'Bio Safety Cabinet - TANGERINE') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%Bio Safety Cabinet - TANGERINE%,category.ilike.%Bio Safety Cabinet - TANGERINE%')
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'Broen-Lab Emergency Shower Systems') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%Broen-Lab Emergency Shower%,category.ilike.%Broen-Lab Emergency Shower%')
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'NOCE Series Fume Hood') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%NOCE Series Fume Hood%,category.ilike.%NOCE Series Fume Hood%')
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'Safe Aire II Fume Hoods') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%Safe Aire II Fume Hoods%,category.ilike.%Safe Aire II Fume Hoods%')
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'Broen-Lab UNIFLEX Taps Series') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%UNIFLEX%,category.ilike.%UNIFLEX%,product_series.ilike.%Single Way Taps%,category.ilike.%Single Way Taps%')
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'Emergency Shower') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%emergency shower%,name.ilike.%emergency shower%,category.ilike.%emergency%')
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else {
-          // Fallback: try to find products with same series or category
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or(`product_series.eq.${product.product_series},category.eq.${product.category}`)
-            .eq('is_active', true)
-            .order('name');
-          if (error) throw error;
-          fetchedVariants = data || [];
-        }
+        // 1. Fetch the series parent product (the main parent)
+        const { data: parent, error: parentError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', seriesId)
+          .eq('is_series_parent', true)
+          .single();
 
-        setSeriesVariants(fetchedVariants);
+        if (parentError || !parent) throw new Error('Series parent not found');
+        setSeriesParent(parent);
 
-        // Set the current product as selected variant if it's in the list
-        const currentVariant = fetchedVariants.find(v => v.id === product.id);
-        if (currentVariant) {
-          setSelectedVariant(currentVariant);
-        } else if (fetchedVariants.length > 0) {
-          setSelectedVariant(fetchedVariants[0]);
-        }
-      } catch (err) {
-        setSeriesVariants([]);
-        setSelectedVariant(product); // Use the current product as fallback
-        setError(err instanceof Error ? err.message : 'Failed to load product variants');
+        // 2. Fetch all variants (children) for this series
+        const { data: children, error: childrenError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('parent_series_id', seriesId)
+          .eq('is_active', true);
+
+        if (childrenError) throw childrenError;
+
+        // Optionally include parent in list
+        const allVariants = [parent, ...(children ?? [])];
+        setVariants(allVariants);
+
+        // Default selection: first variant
+        setSelectedVariantId(allVariants.length > 0 ? allVariants[0].id : '');
+      } catch (err: any) {
+        setError(err.message || 'Failed to load series and variants');
       } finally {
-        stopLoading();
+        setLoading(false);
       }
     };
+    fetchSeries();
+  }, [seriesId]);
 
-    fetchVariants();
-  }, [product, productLoading]);
-
-  // Handle variant selection - convert between ID and object
   const handleVariantChange = (variantId: string) => {
-    const variant = seriesVariants.find(v => v.id === variantId);
-    setSelectedVariant(variant || null);
+    setSelectedVariantId(variantId);
   };
 
-  // VariantSelector for all supported series
-  const getConfiguratorComponent = () => {
-    if (!product || seriesVariants.length === 0) return null;
+  const selectedVariant = variants.find(v => v.id === selectedVariantId);
 
-    const seriesInfo = getSeriesInfo(product);
-
-    return (
-      <VariantSelector
-        variants={seriesVariants.map(v => ({
-          id: v.id,
-          name: v.name,
-          product_code: v.product_code,
-          dimensions: v.dimensions,
-          orientation: v.orientation || 'None',
-          door_type: v.door_type,
-          variant_type: v.variant_type || 'standard',
-          drawer_count: v.drawer_count,
-          finish_type: v.finish_type,
-          emergency_shower_type: v.emergency_shower_type,
-          mounting_type: v.mounting_type,
-          mixing_type: v.mixing_type,
-          handle_type: v.handle_type,
-          cabinet_class: v.cabinet_class,
-          series_slug: seriesInfo.slug
-        }))}
-        selectedVariantId={selectedVariant?.id || ''}
-        onVariantChange={handleVariantChange}
-        selectedFinish={selectedFinish}
-        onFinishChange={setSelectedFinish}
-        groupByDimensions={true}
-        seriesSlug={seriesInfo.slug}
-      />
-    );
+  // Get product images for the gallery
+  const getProductImages = () => {
+    const images = [];
+    if (selectedVariant?.thumbnail_path) images.push(selectedVariant.thumbnail_path);
+    if (selectedVariant?.images && selectedVariant.images.length > 0) {
+      images.push(...selectedVariant.images);
+    }
+    return images.length > 0 ? images : ['/placeholder.svg'];
   };
 
-  // Enhanced loading state with progressive loading
-  if (productLoading) {
+  // UI rendering
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -228,13 +92,13 @@ const ProductDetail: React.FC = () => {
     );
   }
 
-  if (error || !product) {
+  if (error || !seriesParent) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Product Series Not Found</h1>
           <p className="text-muted-foreground mb-6">
-            {error || 'The product you are looking for does not exist.'}
+            {error || 'The series you are looking for does not exist.'}
           </p>
           <Button onClick={() => window.history.back()} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
@@ -244,18 +108,6 @@ const ProductDetail: React.FC = () => {
       </div>
     );
   }
-
-  const displayProduct = selectedVariant || product;
-
-  // Get product images for the gallery
-  const getProductImages = () => {
-    const images = [];
-    if (displayProduct.thumbnail_path) images.push(displayProduct.thumbnail_path);
-    if (displayProduct.images && displayProduct.images.length > 0) {
-      images.push(...displayProduct.images);
-    }
-    return images.length > 0 ? images : ['/placeholder.svg'];
-  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -273,8 +125,8 @@ const ProductDetail: React.FC = () => {
         <div className="space-y-6">
           <ProductImageGallery
             images={getProductImages()}
-            thumbnail={displayProduct.thumbnail_path || '/placeholder.svg'}
-            productName={displayProduct.name}
+            thumbnail={selectedVariant?.thumbnail_path || '/placeholder.svg'}
+            productName={selectedVariant?.name || seriesParent.name}
             isProductPage={true}
           />
         </div>
@@ -283,23 +135,23 @@ const ProductDetail: React.FC = () => {
         <div className="space-y-6">
           <div>
             <Badge variant="secondary" className="mb-2">
-              {displayProduct.category}
+              {selectedVariant?.category || seriesParent.category}
             </Badge>
             <h1 className="text-3xl font-bold text-foreground mb-2">
-              {displayProduct.name}
+              {selectedVariant?.name || seriesParent.name}
             </h1>
             <p className="text-lg text-muted-foreground mb-4">
-              {displayProduct.description}
+              {selectedVariant?.description || seriesParent.description}
             </p>
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <div className="flex items-center gap-1">
                 <Package className="w-4 h-4" />
-                <span>{displayProduct.product_code}</span>
+                <span>{selectedVariant?.product_code || seriesParent.product_code}</span>
               </div>
-              {displayProduct.dimensions && (
+              {selectedVariant?.dimensions && (
                 <div className="flex items-center gap-1">
                   <Ruler className="w-4 h-4" />
-                  <span>{displayProduct.dimensions}</span>
+                  <span>{selectedVariant.dimensions}</span>
                 </div>
               )}
             </div>
@@ -316,30 +168,31 @@ const ProductDetail: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {variantError ? (
-                <div className="flex items-center gap-2 p-4 bg-destructive/10 text-destructive rounded-md">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>{variantError}</span>
-                </div>
-              ) : variantsLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
+              {variants.length === 0 ? (
+                <div className="text-center p-4 text-muted-foreground">
+                  No variants available for this product series.
                 </div>
               ) : (
-                getConfiguratorComponent()
+                <VariantSelector
+                  variants={variants}
+                  selectedVariantId={selectedVariantId}
+                  onVariantChange={handleVariantChange}
+                  selectedFinish={selectedFinish}
+                  onFinishChange={setSelectedFinish}
+                  groupByDimensions={true}
+                  seriesSlug={seriesParent.series_slug}
+                />
               )}
             </CardContent>
           </Card>
 
           {/* Action Buttons */}
           <div className="flex gap-4">
-            <Button className="flex-1 gap-2" disabled={variantsLoading}>
+            <Button className="flex-1 gap-2" disabled={loading}>
               <ShoppingCart className="w-4 h-4" />
               Add to Cart
             </Button>
-            <Button variant="outline" className="gap-2" disabled={variantsLoading}>
+            <Button variant="outline" className="gap-2" disabled={loading}>
               <Download className="w-4 h-4" />
               Download Specs
             </Button>
@@ -355,14 +208,14 @@ const ProductDetail: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground leading-relaxed">
-                {displayProduct.editable_description || displayProduct.full_description || displayProduct.description}
+                {selectedVariant?.editable_description || selectedVariant?.full_description || selectedVariant?.description || seriesParent?.description}
               </p>
             </CardContent>
           </Card>
 
           {/* Technical Specifications */}
           <TechnicalSpecifications 
-            product={displayProduct} 
+            product={selectedVariant || seriesParent} 
             selectedVariant={selectedVariant}
           />
         </div>
