@@ -1,148 +1,117 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import OptimizedImage from './OptimizedImage';
-import { isValidImageUrl } from '@/utils/assetValidator';
+import { cn } from '@/lib/utils';
 
 interface ProductImageGalleryProps {
   images: string[];
   thumbnail: string;
   productName: string;
+  isProductPage?: boolean;
   className?: string;
-  isProductPage?: boolean; // <-- Add this prop to differentiate views
-  showThumbnails?: boolean;
 }
 
 const ProductImageGallery: React.FC<ProductImageGalleryProps> = ({
-  images = [],
+  images,
   thumbnail,
   productName,
-  className = '',
   isProductPage = false,
-  showThumbnails = true,
+  className
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Filter out placeholder images and ensure we have valid images
+  const validImages = images.filter(img => img && img !== '/placeholder.svg' && !img.includes('placeholder'));
+  const displayImages = validImages.length > 0 ? validImages : [thumbnail || '/placeholder.svg'];
 
-  const displayImages = useMemo(() => {
-    const allImages: string[] = [];
-
-    if (isValidImageUrl(thumbnail)) {
-      allImages.push(thumbnail);
-    }
-
-    const validImages = images.filter(
-      (img) => isValidImageUrl(img) && img !== thumbnail
-    );
-    allImages.push(...validImages);
-
-    const uniqueImages = Array.from(new Set(allImages));
-    return uniqueImages.length > 0 ? uniqueImages : ['/placeholder.svg'];
-  }, [images, thumbnail]);
-
-  const currentImage = displayImages[currentImageIndex] || '/placeholder.svg';
-
-  const handlePrevious = () => {
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? displayImages.length - 1 : prev - 1
-    );
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
   };
 
-  const handleNext = () => {
-    setCurrentImageIndex((prev) =>
-      prev === displayImages.length - 1 ? 0 : prev + 1
-    );
+  const previousImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
   };
 
-  const handleThumbnailClick = (index: number) => {
+  const selectImage = (index: number) => {
     setCurrentImageIndex(index);
   };
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Main image display */}
-      <div
-        className={`overflow-hidden rounded-lg bg-white relative flex justify-center items-center ${
-          isProductPage ? 'aspect-[4/3]' : 'w-full h-64 md:h-72 lg:h-80'
-        }`}
-      >
-        <OptimizedImage
-          src={currentImage}
-          alt={`${productName} - Image ${currentImageIndex + 1}`}
-          className={`object-contain ${
-            isProductPage ? 'max-w-full max-h-full' : 'w-full h-full'
-          }`}
-          priority={currentImageIndex === 0}
-        />
-
+    <div className={cn("space-y-4", className)}>
+      {/* Main Image Display */}
+      <div className="relative bg-white rounded-lg border overflow-hidden group">
+        <div className={cn(
+          "flex items-center justify-center",
+          isProductPage ? "aspect-[4/3] min-h-[400px]" : "aspect-square min-h-[300px]"
+        )}>
+          <img
+            src={displayImages[currentImageIndex]}
+            alt={`${productName} - Image ${currentImageIndex + 1}`}
+            className="max-w-full max-h-full object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = '/placeholder.svg';
+            }}
+          />
+        </div>
+        
+        {/* Navigation Arrows - only show if more than one image */}
         {displayImages.length > 1 && (
           <>
             <Button
               variant="outline"
               size="icon"
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
-              onClick={handlePrevious}
-              aria-label="Previous image"
+              className="absolute left-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
+              onClick={previousImage}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-
             <Button
               variant="outline"
               size="icon"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-background/80 hover:bg-background shadow-lg"
-              onClick={handleNext}
-              aria-label="Next image"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white"
+              onClick={nextImage}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </>
         )}
-
+        
+        {/* Image Counter */}
         {displayImages.length > 1 && (
-          <div className="absolute bottom-4 right-4 bg-background/80 px-3 py-1 rounded-full text-sm font-medium">
+          <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
             {currentImageIndex + 1} / {displayImages.length}
           </div>
         )}
       </div>
 
-      {/* Thumbnail navigation */}
-      {showThumbnails && displayImages.length > 1 && (
-        <div className="flex justify-center mt-4 space-x-2 overflow-x-auto pb-2">
+      {/* Thumbnail Navigation - only show if more than one image */}
+      {displayImages.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
           {displayImages.map((image, index) => (
             <button
               key={index}
-              className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+              onClick={() => selectImage(index)}
+              className={cn(
+                "flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all",
                 index === currentImageIndex
-                  ? 'border-primary ring-2 ring-primary/20'
-                  : 'border-muted hover:border-muted-foreground/30'
-              }`}
-              onClick={() => handleThumbnailClick(index)}
-              aria-label={`View image ${index + 1}`}
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-gray-200 hover:border-gray-300"
+              )}
             >
-              <OptimizedImage
-                src={image}
-                alt={`${productName} - Thumbnail ${index + 1}`}
-                className="w-full h-full object-contain"
-              />
+              <div className="w-full h-full flex items-center justify-center bg-white">
+                <img
+                  src={image}
+                  alt={`${productName} thumbnail ${index + 1}`}
+                  className="max-w-full max-h-full object-contain"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.src = '/placeholder.svg';
+                  }}
+                />
+              </div>
             </button>
-          ))}
-        </div>
-      )}
-
-      {/* Dot indicators for mobile */}
-      {displayImages.length > 1 && (
-        <div className="flex justify-center mt-2 space-x-1 md:hidden">
-          {displayImages.map((_, index) => (
-            <button
-              key={index}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentImageIndex
-                  ? 'bg-primary'
-                  : 'bg-muted-foreground/30'
-              }`}
-              onClick={() => handleThumbnailClick(index)}
-              aria-label={`Go to image ${index + 1}`}
-            />
           ))}
         </div>
       )}

@@ -1,373 +1,294 @@
 
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Palette, Ruler, Droplets, Mountain, Wrench } from 'lucide-react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Product } from '@/types/product';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 
 interface SpecificProductSelectorProps {
   products: Product[];
-  productSeries: string;
-  selectedVariants: {
-    finish?: string;
-    orientation?: string;
-    drawerCount?: string;
-    doorType?: string;
-    dimensions?: string;
-    mounting_type?: string;
-    mixing_type?: string;
-    handle_type?: string;
-    emergency_shower_type?: string;
-    cabinet_class?: string;
-    finish_type?: string;
-  };
-  onVariantChange: (variantType: string, value: string) => void;
+  selectedProduct: Product | null;
+  onProductSelect: (product: Product) => void;
 }
 
 export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = ({
   products,
-  productSeries,
-  selectedVariants,
-  onVariantChange
+  selectedProduct,
+  onProductSelect
 }) => {
-  console.log('SpecificProductSelector - Debug info:', {
-    productSeries,
-    productsCount: products.length,
-    products: products.map(p => ({
-      id: p.id,
-      name: p.name,
-      emergency_shower_type: p.emergency_shower_type,
-      mounting_type: p.mounting_type,
-      mixing_type: p.mixing_type,
-      handle_type: p.handle_type,
-      dimensions: p.dimensions,
-      finish_type: p.finish_type
-    }))
-  });
+  const [selectedConfigs, setSelectedConfigs] = useState<Record<string, string>>({});
 
-  // Updated series detection logic to match ProductDetail.tsx
-  const isEmergencyShowerSeries = 
-    productSeries === 'Broen-Lab Emergency Shower Systems' ||
-    productSeries === 'Broen-Lab Emergency Shower Systems ' ||
-    productSeries.toLowerCase().includes('emergency shower');
-  
-  const isUniflexSeries = 
-    products.some(p => p.name?.toLowerCase().includes('uniflex')) ||
-    productSeries.toLowerCase().includes('uniflex');
-  
-  const isSafeAireSeries = 
-    productSeries === 'Safe Aire II Fume Hoods' ||
-    productSeries.toLowerCase().includes('safe aire');
-  
-  const isTangerineSeries = productSeries.toLowerCase().includes('tangerine');
-  const isNoceSeries = productSeries.toLowerCase().includes('noce');
+  // Determine the product series type based on the products
+  const seriesType = useMemo(() => {
+    if (products.length === 0) return 'unknown';
+    
+    const firstProduct = products[0];
+    const productSeries = firstProduct.product_series?.toLowerCase() || '';
+    
+    // Check for specific series types
+    if (productSeries.includes('emergency shower') || firstProduct.emergency_shower_type) {
+      return 'emergency_shower';
+    }
+    if (productSeries.includes('single way taps') || firstProduct.mixing_type || firstProduct.handle_type) {
+      return 'uniflex';
+    }
+    if (productSeries.includes('safe aire') || firstProduct.mounting_type) {
+      return 'safe_aire';
+    }
+    if (productSeries.includes('tangerine') || productSeries.includes('noce')) {
+      return 'fume_hood';
+    }
+    
+    return 'standard';
+  }, [products]);
 
-  console.log('SpecificProductSelector - Series detection:', {
-    isEmergencyShowerSeries,
-    isUniflexSeries,
-    isSafeAireSeries,
-    isTangerineSeries,
-    isNoceSeries
-  });
+  // Get unique configuration options based on series type
+  const configOptions = useMemo(() => {
+    const options: Record<string, Set<string>> = {};
+    
+    products.forEach(product => {
+      // Emergency Shower configurations
+      if (seriesType === 'emergency_shower' && product.emergency_shower_type) {
+        if (!options.emergency_shower_type) options.emergency_shower_type = new Set();
+        options.emergency_shower_type.add(product.emergency_shower_type);
+      }
+      
+      // UNIFLEX configurations
+      if (seriesType === 'uniflex') {
+        if (product.mixing_type) {
+          if (!options.mixing_type) options.mixing_type = new Set();
+          options.mixing_type.add(product.mixing_type);
+        }
+        if (product.handle_type) {
+          if (!options.handle_type) options.handle_type = new Set();
+          options.handle_type.add(product.handle_type);
+        }
+      }
+      
+      // Safe Aire configurations
+      if (seriesType === 'safe_aire' && product.mounting_type) {
+        if (!options.mounting_type) options.mounting_type = new Set();
+        options.mounting_type.add(product.mounting_type);
+      }
+      
+      // Fume Hood configurations
+      if (seriesType === 'fume_hood' && product.cabinet_class) {
+        if (!options.cabinet_class) options.cabinet_class = new Set();
+        options.cabinet_class.add(product.cabinet_class);
+      }
+      
+      // Common configurations
+      if (product.finish_type) {
+        if (!options.finish_type) options.finish_type = new Set();
+        options.finish_type.add(product.finish_type);
+      }
+      
+      if (product.dimensions) {
+        if (!options.dimensions) options.dimensions = new Set();
+        options.dimensions.add(product.dimensions);
+      }
+    });
+    
+    // Convert to sorted arrays
+    const result: Record<string, string[]> = {};
+    Object.entries(options).forEach(([key, valueSet]) => {
+      result[key] = Array.from(valueSet).sort();
+    });
+    
+    return result;
+  }, [products, seriesType]);
 
-  // Extract available variant options from products
-  const availableFinishes = Array.from(new Set(
-    products.map(p => p.finish_type).filter(Boolean)
-  ));
-  
-  const availableDimensions = Array.from(new Set(
-    products.map(p => p.dimensions).filter(Boolean)
-  )).sort();
+  // Filter products based on selected configurations
+  const filteredProducts = useMemo(() => {
+    let filtered = products;
+    
+    Object.entries(selectedConfigs).forEach(([configType, value]) => {
+      if (value && value !== 'all') {
+        filtered = filtered.filter(product => {
+          switch (configType) {
+            case 'emergency_shower_type':
+              return product.emergency_shower_type === value;
+            case 'mixing_type':
+              return product.mixing_type === value;
+            case 'handle_type':
+              return product.handle_type === value;
+            case 'mounting_type':
+              return product.mounting_type === value;
+            case 'cabinet_class':
+              return product.cabinet_class === value;
+            case 'finish_type':
+              return product.finish_type === value;
+            case 'dimensions':
+              return product.dimensions === value;
+            default:
+              return true;
+          }
+        });
+      }
+    });
+    
+    return filtered;
+  }, [products, selectedConfigs]);
 
-  const availableMountingTypes = Array.from(new Set(
-    products.map(p => p.mounting_type).filter(Boolean)
-  ));
+  // Auto-select first product when filters change
+  useEffect(() => {
+    if (filteredProducts.length > 0 && (!selectedProduct || !filteredProducts.find(p => p.id === selectedProduct.id))) {
+      onProductSelect(filteredProducts[0]);
+    }
+  }, [filteredProducts, selectedProduct, onProductSelect]);
 
-  const availableMixingTypes = Array.from(new Set(
-    products.map(p => p.mixing_type).filter(Boolean)
-  ));
+  const handleConfigChange = (configType: string, value: string) => {
+    setSelectedConfigs(prev => ({
+      ...prev,
+      [configType]: value
+    }));
+  };
 
-  const availableHandleTypes = Array.from(new Set(
-    products.map(p => p.handle_type).filter(Boolean)
-  ));
-
-  const availableEmergencyShowerTypes = Array.from(new Set(
-    products.map(p => p.emergency_shower_type).filter(Boolean)
-  ));
-
-  const availableCabinetClasses = Array.from(new Set(
-    products.map(p => p.cabinet_class).filter(Boolean)
-  ));
-
-  console.log('SpecificProductSelector - Available variants:', {
-    availableEmergencyShowerTypes,
-    availableMountingTypes,
-    availableMixingTypes,
-    availableHandleTypes,
-    availableFinishes,
-    availableDimensions
-  });
-
-  const getFinishDisplayName = (finish: string) => {
-    const finishMap: Record<string, string> = {
-      'PC': 'Powder Coat',
-      'SS304': 'Stainless Steel',
-      'powder-coat': 'Powder Coat',
-      'stainless-steel': 'Stainless Steel'
-    };
-    return finishMap[finish] || finish;
+  const getConfigLabel = (configType: string) => {
+    switch (configType) {
+      case 'emergency_shower_type':
+        return 'Emergency Shower Type';
+      case 'mixing_type':
+        return 'Mixing Type';
+      case 'handle_type':
+        return 'Handle Type';
+      case 'mounting_type':
+        return 'Mounting Type';
+      case 'cabinet_class':
+        return 'Cabinet Class';
+      case 'finish_type':
+        return 'Finish';
+      case 'dimensions':
+        return 'Dimensions';
+      default:
+        return configType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Debug information */}
-      <div className="text-xs text-muted-foreground p-2 bg-blue-50 rounded">
-        <div>Emergency Shower Series: {isEmergencyShowerSeries ? 'Yes' : 'No'}</div>
-        <div>UNIFLEX Series: {isUniflexSeries ? 'Yes' : 'No'}</div>
-        <div>Safe Aire Series: {isSafeAireSeries ? 'Yes' : 'No'}</div>
-        <div>Available Options: Emergency({availableEmergencyShowerTypes.length}), Mounting({availableMountingTypes.length}), Mixing({availableMixingTypes.length}), Handle({availableHandleTypes.length})</div>
-      </div>
-
-      {/* Emergency Shower Series - emergency_shower_type and mounting_type */}
-      {isEmergencyShowerSeries && (
-        <>
-          {availableEmergencyShowerTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Droplets className="h-3 w-3" />
-                Emergency Shower Type:
-              </label>
-              <Select
-                value={selectedVariants.emergency_shower_type || ''}
-                onValueChange={(value) => onVariantChange('emergency_shower_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select emergency shower type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableEmergencyShowerTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableMountingTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Mountain className="h-3 w-3" />
-                Mounting Type:
-              </label>
-              <Select
-                value={selectedVariants.mounting_type || ''}
-                onValueChange={(value) => onVariantChange('mounting_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select mounting type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMountingTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* UNIFLEX Series - mixing_type and handle_type */}
-      {isUniflexSeries && (
-        <>
-          {availableMixingTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Droplets className="h-3 w-3" />
-                Mixing Type:
-              </label>
-              <Select
-                value={selectedVariants.mixing_type || ''}
-                onValueChange={(value) => onVariantChange('mixing_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select mixing type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMixingTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableHandleTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Wrench className="h-3 w-3" />
-                Handle Type:
-              </label>
-              <Select
-                value={selectedVariants.handle_type || ''}
-                onValueChange={(value) => onVariantChange('handle_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select handle type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableHandleTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Safe Aire II Series - mounting_type and dimensions */}
-      {isSafeAireSeries && (
-        <>
-          {availableMountingTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Mountain className="h-3 w-3" />
-                Mounting Type:
-              </label>
-              <Select
-                value={selectedVariants.mounting_type || ''}
-                onValueChange={(value) => onVariantChange('mounting_type', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select mounting type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableMountingTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
-                      {type}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableDimensions.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Ruler className="h-3 w-3" />
-                Dimensions:
-              </label>
-              <Select
-                value={selectedVariants.dimensions || ''}
-                onValueChange={(value) => onVariantChange('dimensions', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select dimensions" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDimensions.map((dimension) => (
-                    <SelectItem key={dimension} value={dimension}>
-                      {dimension}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* TANGERINE and NOCE Series - cabinet_class and finish_type */}
-      {(isTangerineSeries || isNoceSeries) && (
-        <>
-          {availableCabinetClasses.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Badge className="h-3 w-3" />
-                Cabinet Class:
-              </label>
-              <Select
-                value={selectedVariants.cabinet_class || ''}
-                onValueChange={(value) => onVariantChange('cabinet_class', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select cabinet class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableCabinetClasses.map((cabinetClass) => (
-                    <SelectItem key={cabinetClass} value={cabinetClass}>
-                      {cabinetClass}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Common finish selection for all specific series */}
-      {availableFinishes.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Palette className="h-3 w-3" />
-            Finish Type:
-          </label>
-          <ToggleGroup
-            type="single"
-            value={selectedVariants.finish_type || ''}
-            onValueChange={(value) => onVariantChange('finish_type', value)}
-            className="justify-start"
-          >
-            {availableFinishes.map((finish) => (
-              <ToggleGroupItem
-                key={finish}
-                value={finish}
-                variant="outline"
-                className="text-xs h-8 px-3"
-              >
-                {getFinishDisplayName(finish)}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </div>
-      )}
-
-      {/* Common dimensions selection for series that need it (not Safe Aire as it's handled above) */}
-      {!isSafeAireSeries && availableDimensions.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Ruler className="h-3 w-3" />
-            Dimensions:
-          </label>
-          <Select
-            value={selectedVariants.dimensions || ''}
-            onValueChange={(value) => onVariantChange('dimensions', value)}
-          >
-            <SelectTrigger className="w-full h-8 text-xs">
-              <SelectValue placeholder="Select dimensions" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableDimensions.map((dimension) => (
-                <SelectItem key={dimension} value={dimension}>
-                  {dimension}
-                </SelectItem>
+    <div className="space-y-6">
+      {/* Configuration Selectors */}
+      {Object.keys(configOptions).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Product Configuration</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(configOptions).map(([configType, options]) => (
+                <div key={configType} className="space-y-2">
+                  <label className="text-sm font-medium">{getConfigLabel(configType)}</label>
+                  <Select
+                    value={selectedConfigs[configType] || 'all'}
+                    onValueChange={(value) => handleConfigChange(configType, value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={`Select ${getConfigLabel(configType)}`} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Options</SelectItem>
+                      {options.map(option => (
+                        <SelectItem key={option} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Product List */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            Available Products ({filteredProducts.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-3 max-h-96 overflow-y-auto">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                className={`p-3 border rounded-lg cursor-pointer transition-all hover:shadow-md ${
+                  selectedProduct?.id === product.id
+                    ? 'ring-2 ring-primary bg-primary/5'
+                    : 'hover:bg-muted/50'
+                }`}
+                onClick={() => onProductSelect(product)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h4 className="font-medium text-sm">{product.name}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Code: {product.product_code}
+                    </p>
+                    {product.dimensions && (
+                      <p className="text-xs text-muted-foreground">
+                        Size: {product.dimensions}
+                      </p>
+                    )}
+                    
+                    {/* Configuration badges */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {product.emergency_shower_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.emergency_shower_type}
+                        </Badge>
+                      )}
+                      {product.mixing_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.mixing_type}
+                        </Badge>
+                      )}
+                      {product.handle_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.handle_type}
+                        </Badge>
+                      )}
+                      {product.mounting_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.mounting_type}
+                        </Badge>
+                      )}
+                      {product.cabinet_class && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.cabinet_class}
+                        </Badge>
+                      )}
+                      {product.finish_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.finish_type}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  {product.thumbnail_path && (
+                    <img
+                      src={product.thumbnail_path}
+                      alt={product.name}
+                      className="w-12 h-12 object-contain ml-3 rounded"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = '/placeholder.svg';
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {filteredProducts.length === 0 && (
+            <div className="text-center py-8 text-muted-foreground">
+              <p className="text-sm">No products match the selected configuration.</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

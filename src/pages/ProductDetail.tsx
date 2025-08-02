@@ -47,35 +47,41 @@ const ProductDetail: React.FC = () => {
       originalProductSeries: product.product_series
     });
 
+    // Bio Safety Cabinet - TANGERINE detection
+    if (product.product_series === 'Bio Safety Cabinet - TANGERINE' || 
+        productSeries.includes('tangerine') || 
+        name.includes('tangerine')) {
+      return { series: 'Bio Safety Cabinet - TANGERINE', slug: 'tangerine-series', isSpecific: true };
+    }
+
     // Emergency Shower detection - check for exact series name with or without trailing space
     if (product.product_series === 'Broen-Lab Emergency Shower Systems' || 
         product.product_series === 'Broen-Lab Emergency Shower Systems ' ||
         productSeries.includes('emergency shower') || 
-        name.includes('emergency') || 
-        category.includes('emergency')) {
-      return { series: 'Emergency Shower', slug: 'emergency-shower', isSpecific: true };
+        name.includes('emergency')) {
+      return { series: 'Broen-Lab Emergency Shower Systems', slug: 'emergency-shower', isSpecific: true };
     }
     
-    // UNIFLEX detection - check product name for UNIFLEX since product_series might be different
-    if (name.includes('uniflex') || productSeries.includes('uniflex')) {
-      return { series: 'UNIFLEX Series', slug: 'uniflex-series', isSpecific: true };
+    // UNIFLEX detection - check for Single Way Taps (UNIFLEX products)
+    if (product.product_series === 'Single Way Taps' || 
+        name.includes('uniflex') || 
+        productSeries.includes('uniflex') ||
+        productSeries.includes('single way taps')) {
+      return { series: 'Single Way Taps', slug: 'uniflex-series', isSpecific: true };
     }
     
-    // Safe Aire detection - check for exact series name
+    // Safe Aire II detection - check for exact series name
     if (product.product_series === 'Safe Aire II Fume Hoods' || 
         productSeries.includes('safe aire') || 
         name.includes('safe aire')) {
-      return { series: 'Safe Aire II', slug: 'safe-aire-ii', isSpecific: true };
+      return { series: 'Safe Aire II Fume Hoods', slug: 'safe-aire-ii', isSpecific: true };
     }
     
-    // TANGERINE detection
-    if (productSeries.includes('tangerine') || name.includes('tangerine')) {
-      return { series: 'TANGERINE Series', slug: 'tangerine-series', isSpecific: true };
-    }
-    
-    // NOCE detection
-    if (productSeries.includes('noce') || name.includes('noce')) {
-      return { series: 'NOCE Series', slug: 'noce-series', isSpecific: true };
+    // NOCE Series detection
+    if (product.product_series === 'NOCE Series Fume Hood' ||
+        productSeries.includes('noce') || 
+        name.includes('noce')) {
+      return { series: 'NOCE Series Fume Hood', slug: 'noce-series', isSpecific: true };
     }
 
     // Standard series detection for non-specific series
@@ -136,15 +142,15 @@ const ProductDetail: React.FC = () => {
           let query;
           
           // Handle different querying strategies based on series
-          if (seriesInfo.series === 'UNIFLEX Series') {
-            // For UNIFLEX, query by name since product_series might be different
+          if (seriesInfo.series === 'Single Way Taps') {
+            // For UNIFLEX (Single Way Taps), query by exact product_series match
             query = supabase
               .from('products')
               .select('*')
-              .ilike('name', '%UNIFLEX%')
+              .eq('product_series', 'Single Way Taps')
               .eq('is_active', true)
               .order('product_code');
-          } else if (seriesInfo.series === 'Emergency Shower') {
+          } else if (seriesInfo.series === 'Broen-Lab Emergency Shower Systems') {
             // For Emergency Shower, query by exact product_series match (with or without trailing space)
             query = supabase
               .from('products')
@@ -152,7 +158,7 @@ const ProductDetail: React.FC = () => {
               .or('product_series.eq.Broen-Lab Emergency Shower Systems,product_series.eq.Broen-Lab Emergency Shower Systems ')
               .eq('is_active', true)
               .order('product_code');
-          } else if (seriesInfo.series === 'Safe Aire II') {
+          } else if (seriesInfo.series === 'Safe Aire II Fume Hoods') {
             // For Safe Aire, query by exact product_series match
             query = supabase
               .from('products')
@@ -160,8 +166,24 @@ const ProductDetail: React.FC = () => {
               .eq('product_series', 'Safe Aire II Fume Hoods')
               .eq('is_active', true)
               .order('product_code');
+          } else if (seriesInfo.series === 'Bio Safety Cabinet - TANGERINE') {
+            // For TANGERINE, query by exact product_series match
+            query = supabase
+              .from('products')
+              .select('*')
+              .eq('product_series', 'Bio Safety Cabinet - TANGERINE')
+              .eq('is_active', true)
+              .order('product_code');
+          } else if (seriesInfo.series === 'NOCE Series Fume Hood') {
+            // For NOCE, query by exact product_series match
+            query = supabase
+              .from('products')
+              .select('*')
+              .eq('product_series', 'NOCE Series Fume Hood')
+              .eq('is_active', true)
+              .order('product_code');
           } else {
-            // For other specific series (TANGERINE, NOCE), use product_series
+            // For other specific series, use product_series
             query = supabase
               .from('products')
               .select('*')
@@ -177,6 +199,14 @@ const ProductDetail: React.FC = () => {
           console.log('ProductDetail - Fetched variants:', variants?.length, variants);
           const transformedVariants = variants?.map(transformVariantToProduct) || [];
           setSeriesVariants(transformedVariants);
+          
+          // Set the current product as selected variant if it's in the list
+          const currentVariant = transformedVariants.find(v => v.id === product.id);
+          if (currentVariant) {
+            setSelectedVariant(currentVariant);
+          } else if (transformedVariants.length > 0) {
+            setSelectedVariant(transformedVariants[0]);
+          }
         } else {
           // For non-specific series, use the old variant fetching method
           const fetchedVariants = await fetchSeriesWithVariants(seriesInfo.slug);
@@ -212,10 +242,12 @@ const ProductDetail: React.FC = () => {
   }, [product, productLoading]);
 
   const handleVariantChange = (variantType: string, value: string) => {
+    console.log('ProductDetail - Variant change:', variantType, value);
     setSelectedVariants(prev => ({ ...prev, [variantType]: value }));
   };
 
   const handleProductSelect = (selectedProduct: Product) => {
+    console.log('ProductDetail - Product selected:', selectedProduct.name);
     setSelectedVariant(selectedProduct);
   };
 
@@ -269,9 +301,17 @@ const ProductDetail: React.FC = () => {
       images.push(displayProduct.overviewImage);
     } else if (displayProduct.thumbnail && !displayProduct.thumbnail.includes('placeholder')) {
       images.push(displayProduct.thumbnail);
+    } else if (displayProduct.thumbnail_path && !displayProduct.thumbnail_path.includes('placeholder')) {
+      images.push(displayProduct.thumbnail_path);
     }
     if (displayProduct.images && displayProduct.images.length > 0) {
       const additionalImages = displayProduct.images.filter(img =>
+        img && !img.includes('placeholder') && !images.includes(img)
+      );
+      images.push(...additionalImages);
+    }
+    if (displayProduct.additional_images && displayProduct.additional_images.length > 0) {
+      const additionalImages = displayProduct.additional_images.filter(img =>
         img && !img.includes('placeholder') && !images.includes(img)
       );
       images.push(...additionalImages);
@@ -290,10 +330,10 @@ const ProductDetail: React.FC = () => {
         <div className="space-y-6">
           <ProductImageGallery
             images={getProductImages()}
-            thumbnail={displayProduct.thumbnail || ''}
+            thumbnail={displayProduct.thumbnail || displayProduct.thumbnail_path || ''}
             productName={displayProduct.name}
             isProductPage={true}
-            className="mx-auto w-full max-w-[600px] aspect-[4/3]"
+            className="mx-auto w-full max-w-[600px] aspect-[4/3] flex items-center justify-center"
           />
         </div>
 

@@ -1,32 +1,16 @@
 
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Palette, RotateCcw, Layers, DoorOpen, Ruler, Building2, Droplets, Wrench, Mountain } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Product } from '@/types/product';
-import { SpecificProductSelector } from './SpecificProductSelector';
-import { OptimizedOverviewImage } from '@/components/common/OptimizedOverviewImage';
 
 interface ProductVariantSelectorProps {
   products: Product[];
-  selectedVariants: {
-    finish?: string;
-    orientation?: string;
-    drawerCount?: string;
-    doorType?: string;
-    dimensions?: string;
-    mounting_type?: string;
-    mixing_type?: string;
-    handle_type?: string;
-    emergency_shower_type?: string;
-    cabinet_class?: string;
-    finish_type?: string;
-  };
+  selectedVariants: Record<string, string>;
   onVariantChange: (variantType: string, value: string) => void;
   onProductSelect: (product: Product) => void;
-  selectedProduct?: Product;
+  selectedProduct?: Product | null;
 }
 
 export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
@@ -36,361 +20,269 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   onProductSelect,
   selectedProduct
 }) => {
-  // Helper function to clean product names by removing part numbers in parentheses
-  const cleanProductName = (name: string): string => {
-    return name.replace(/\s*\([^)]*\)\s*/g, '').trim();
-  };
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
 
-  // Helper function to extract first numeric value from dimension string
-  const extractFirstNumeric = (dimension: string): number => {
-    const match = dimension.match(/(\d+)/);
-    return match ? parseInt(match[1], 10) : 0;
-  };
-
-  // Helper function to sort dimensions numerically by first value
-  const sortDimensions = (dimensions: string[]): string[] => {
-    return [...dimensions].sort((a, b) => {
-      const numA = extractFirstNumeric(a);
-      const numB = extractFirstNumeric(b);
-      return numA - numB;
+  // Get unique values for each configuration field
+  const configOptions = useMemo(() => {
+    const options: Record<string, Set<string>> = {};
+    
+    products.forEach(product => {
+      // Emergency Shower Type
+      if (product.emergency_shower_type) {
+        if (!options.emergency_shower_type) options.emergency_shower_type = new Set();
+        options.emergency_shower_type.add(product.emergency_shower_type);
+      }
+      
+      // Mixing Type (for UNIFLEX)
+      if (product.mixing_type) {
+        if (!options.mixing_type) options.mixing_type = new Set();
+        options.mixing_type.add(product.mixing_type);
+      }
+      
+      // Handle Type (for UNIFLEX)
+      if (product.handle_type) {
+        if (!options.handle_type) options.handle_type = new Set();
+        options.handle_type.add(product.handle_type);
+      }
+      
+      // Mounting Type (for Safe Aire and others)
+      if (product.mounting_type) {
+        if (!options.mounting_type) options.mounting_type = new Set();
+        options.mounting_type.add(product.mounting_type);
+      }
+      
+      // Cabinet Class (for fume hoods)
+      if (product.cabinet_class) {
+        if (!options.cabinet_class) options.cabinet_class = new Set();
+        options.cabinet_class.add(product.cabinet_class);
+      }
+      
+      // Finish Type
+      if (product.finish_type) {
+        if (!options.finish_type) options.finish_type = new Set();
+        options.finish_type.add(product.finish_type);
+      }
+      
+      // Dimensions
+      if (product.dimensions) {
+        if (!options.dimensions) options.dimensions = new Set();
+        options.dimensions.add(product.dimensions);
+      }
+      
+      // Orientation
+      if (product.orientation && product.orientation !== 'None') {
+        if (!options.orientation) options.orientation = new Set();
+        options.orientation.add(product.orientation);
+      }
+      
+      // Door Type
+      if (product.door_type) {
+        if (!options.door_type) options.door_type = new Set();
+        options.door_type.add(product.door_type);
+      }
+      
+      // Drawer Count
+      if (product.drawer_count) {
+        if (!options.drawer_count) options.drawer_count = new Set();
+        options.drawer_count.add(product.drawer_count.toString());
+      }
     });
-  };
-
-  // Check if this is a specific product series that needs custom handling
-  const productSeries = products.length > 0 ? products[0].product_series || '' : '';
-  const productName = products.length > 0 ? products[0].name?.toLowerCase() || '' : '';
-  const category = products.length > 0 ? products[0].category?.toLowerCase() || '' : '';
-  
-  console.log('ProductVariantSelector - Debug info:', {
-    productSeries,
-    productName,
-    category,
-    productsCount: products.length,
-    firstProduct: products[0]
-  });
-  
-  // Updated detection logic to match ProductDetail.tsx
-  const isSpecificSeries = 
-    // Emergency Shower detection
-    productSeries === 'Broen-Lab Emergency Shower Systems' ||
-    productSeries === 'Broen-Lab Emergency Shower Systems ' ||
-    productSeries.toLowerCase().includes('emergency shower') || 
-    productName.includes('emergency') ||
-    category.includes('emergency') ||
-    // UNIFLEX detection
-    productName.includes('uniflex') ||
-    productSeries.toLowerCase().includes('uniflex') ||
-    // Safe Aire detection
-    productSeries === 'Safe Aire II Fume Hoods' ||
-    productSeries.toLowerCase().includes('safe aire') || 
-    productName.includes('safe aire') ||
-    // TANGERINE detection
-    productSeries.toLowerCase().includes('tangerine') ||
-    productName.includes('tangerine') ||
-    // NOCE detection
-    productSeries.toLowerCase().includes('noce') ||
-    productName.includes('noce');
-
-  console.log('ProductVariantSelector - isSpecificSeries:', isSpecificSeries);
-
-  // Extract available variant options from products
-  const availableFinishes = Array.from(new Set(
-    products.map(p => p.finish_type).filter(Boolean)
-  ));
-  
-  const availableOrientations = Array.from(new Set(
-    products.map(p => p.orientation).filter(Boolean)
-  ));
-  
-  const availableDrawerCounts = Array.from(new Set(
-    products.map(p => p.drawer_count?.toString()).filter(Boolean)
-  ));
-  
-  const availableDoorTypes = Array.from(new Set(
-    products.map(p => p.door_type).filter(Boolean)
-  ));
-  
-  const availableDimensions = sortDimensions(Array.from(new Set(
-    products.map(p => p.dimensions).filter(Boolean)
-  )));
-
-  // New variant options for specific series
-  const availableMountingTypes = Array.from(new Set(
-    products.map(p => p.mounting_type).filter(Boolean)
-  ));
-
-  const availableMixingTypes = Array.from(new Set(
-    products.map(p => p.mixing_type).filter(Boolean)
-  ));
-
-  const availableHandleTypes = Array.from(new Set(
-    products.map(p => p.handle_type).filter(Boolean)
-  ));
-
-  const availableEmergencyShowerTypes = Array.from(new Set(
-    products.map(p => p.emergency_shower_type).filter(Boolean)
-  ));
-
-  console.log('ProductVariantSelector - Available specific variants:', {
-    availableEmergencyShowerTypes,
-    availableMountingTypes,
-    availableMixingTypes,
-    availableHandleTypes,
-    availableDimensions
-  });
+    
+    // Convert Sets to sorted arrays
+    const sortedOptions: Record<string, string[]> = {};
+    Object.keys(options).forEach(key => {
+      sortedOptions[key] = Array.from(options[key]).sort();
+    });
+    
+    return sortedOptions;
+  }, [products]);
 
   // Filter products based on selected variants
-  const filteredProducts = products.filter(product => {
-    if (selectedVariants.finish && product.finish_type !== selectedVariants.finish) return false;
-    if (selectedVariants.finish_type && product.finish_type !== selectedVariants.finish_type) return false;
-    if (selectedVariants.orientation && product.orientation !== selectedVariants.orientation) return false;
-    if (selectedVariants.drawerCount && product.drawer_count?.toString() !== selectedVariants.drawerCount) return false;
-    if (selectedVariants.doorType && product.door_type !== selectedVariants.doorType) return false;
-    if (selectedVariants.dimensions && product.dimensions !== selectedVariants.dimensions) return false;
-    if (selectedVariants.mounting_type && product.mounting_type !== selectedVariants.mounting_type) return false;
-    if (selectedVariants.mixing_type && product.mixing_type !== selectedVariants.mixing_type) return false;
-    if (selectedVariants.handle_type && product.handle_type !== selectedVariants.handle_type) return false;
-    if (selectedVariants.emergency_shower_type && product.emergency_shower_type !== selectedVariants.emergency_shower_type) return false;
-    if (selectedVariants.cabinet_class && product.cabinet_class !== selectedVariants.cabinet_class) return false;
-    return true;
-  });
+  useEffect(() => {
+    let filtered = products;
+    
+    Object.entries(selectedVariants).forEach(([variantType, value]) => {
+      if (value && value !== 'all') {
+        filtered = filtered.filter(product => {
+          switch (variantType) {
+            case 'emergency_shower_type':
+              return product.emergency_shower_type === value;
+            case 'mixing_type':
+              return product.mixing_type === value;
+            case 'handle_type':
+              return product.handle_type === value;
+            case 'mounting_type':
+              return product.mounting_type === value;
+            case 'cabinet_class':
+              return product.cabinet_class === value;
+            case 'finish_type':
+              return product.finish_type === value;
+            case 'dimensions':
+              return product.dimensions === value;
+            case 'orientation':
+              return product.orientation === value;
+            case 'door_type':
+              return product.door_type === value;
+            case 'drawer_count':
+              return product.drawer_count?.toString() === value;
+            default:
+              return true;
+          }
+        });
+      }
+    });
+    
+    setFilteredProducts(filtered);
+    
+    // Auto-select the first product if no product is selected or current selection doesn't match filters
+    if (filtered.length > 0) {
+      if (!selectedProduct || !filtered.find(p => p.id === selectedProduct.id)) {
+        onProductSelect(filtered[0]);
+      }
+    }
+  }, [selectedVariants, products, selectedProduct, onProductSelect]);
 
-  const getFinishDisplayName = (finish: string) => {
-    const finishMap: Record<string, string> = {
-      'PC': 'Powder Coat',
-      'SS304': 'Stainless Steel',
-      'powder-coat': 'Powder Coat',
-      'stainless-steel': 'Stainless Steel'
-    };
-    return finishMap[finish] || finish;
-  };
-
-  const getOrientationDisplayName = (orientation: string) => {
-    const orientationMap: Record<string, string> = {
-      'LH': 'Left Hand',
-      'RH': 'Right Hand',
-      'Left-Handed': 'Left Hand',
-      'Right-Handed': 'Right Hand'
-    };
-    return orientationMap[orientation] || orientation;
+  const getFieldLabel = (fieldName: string) => {
+    switch (fieldName) {
+      case 'emergency_shower_type':
+        return 'Emergency Shower Type';
+      case 'mixing_type':
+        return 'Mixing Type';
+      case 'handle_type':
+        return 'Handle Type';
+      case 'mounting_type':
+        return 'Mounting Type';
+      case 'cabinet_class':
+        return 'Cabinet Class';
+      case 'finish_type':
+        return 'Finish';
+      case 'dimensions':
+        return 'Dimensions';
+      case 'orientation':
+        return 'Orientation';
+      case 'door_type':
+        return 'Door Type';
+      case 'drawer_count':
+        return 'Drawer Count';
+      default:
+        return fieldName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
   };
 
   return (
     <div className="space-y-4">
-      {/* Company Tags Display */}
-      {products.length > 0 && products[0].company_tags && products[0].company_tags.length > 0 && (
-        <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-          <Building2 className="h-4 w-4 text-muted-foreground" />
-          <div className="flex flex-wrap gap-1">
-            {products[0].company_tags.map((tag, index) => (
-              <Badge key={index} variant="default" className="text-xs bg-blue-500 hover:bg-blue-600">
-                {tag}
-              </Badge>
-            ))}
+      {/* Configuration Selectors */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Object.entries(configOptions).map(([fieldName, options]) => (
+          <div key={fieldName} className="space-y-2">
+            <label className="text-sm font-medium">{getFieldLabel(fieldName)}</label>
+            <Select
+              value={selectedVariants[fieldName] || 'all'}
+              onValueChange={(value) => onVariantChange(fieldName, value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={`Select ${getFieldLabel(fieldName)}`} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All {getFieldLabel(fieldName)}s</SelectItem>
+                {options.map(option => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-        </div>
-      )}
-
-      {/* Debug information */}
-      <div className="text-xs text-muted-foreground p-2 bg-yellow-50 rounded">
-        <div>Product Series: {productSeries}</div>
-        <div>Is Specific Series: {isSpecificSeries ? 'Yes' : 'No'}</div>
-        <div>Products Count: {products.length}</div>
-        <div>Available Options: Emergency({availableEmergencyShowerTypes.length}), Mounting({availableMountingTypes.length}), Mixing({availableMixingTypes.length}), Handle({availableHandleTypes.length}), Dimensions({availableDimensions.length})</div>
+        ))}
       </div>
 
-      {/* Specific Product Series Selector */}
-      {isSpecificSeries && (
-        <SpecificProductSelector
-          products={products}
-          productSeries={productSeries}
-          selectedVariants={selectedVariants}
-          onVariantChange={onVariantChange}
-        />
-      )}
-
-      {/* Standard variant selectors for non-specific series or as fallback */}
-      {(!isSpecificSeries || (isSpecificSeries && (
-        availableEmergencyShowerTypes.length === 0 && 
-        availableMountingTypes.length === 0 && 
-        availableMixingTypes.length === 0 && 
-        availableHandleTypes.length === 0
-      ))) && (
-        <>
-          {/* Finish Type Selection */}
-          {availableFinishes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Palette className="h-3 w-3" />
-                Finish Type:
-              </label>
-              <ToggleGroup
-                type="single"
-                value={selectedVariants.finish || selectedVariants.finish_type || ''}
-                onValueChange={(value) => onVariantChange('finish_type', value)}
-                className="justify-start"
-              >
-                {availableFinishes.map((finish) => (
-                  <ToggleGroupItem
-                    key={finish}
-                    value={finish}
-                    variant="outline"
-                    className="text-xs h-8 px-3"
-                  >
-                    {getFinishDisplayName(finish)}
-                  </ToggleGroupItem>
-                ))}
-              </ToggleGroup>
-            </div>
-          )}
-
-          {/* Orientation Selection */}
-          {availableOrientations.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <RotateCcw className="h-3 w-3" />
-                Orientation:
-              </label>
-              <div className="flex gap-2">
-                {availableOrientations.map((orientation) => (
-                  <Button
-                    key={orientation}
-                    variant={selectedVariants.orientation === orientation ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => onVariantChange('orientation', orientation)}
-                    className="text-xs h-8 px-3"
-                  >
-                    {getOrientationDisplayName(orientation)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Drawer Count Selection */}
-          {availableDrawerCounts.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <Layers className="h-3 w-3" />
-                Drawer Count:
-              </label>
-              <Select
-                value={selectedVariants.drawerCount || ''}
-                onValueChange={(value) => onVariantChange('drawerCount', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select drawer count" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDrawerCounts.map((count) => (
-                    <SelectItem key={count} value={count}>
-                      {count} {count === '1' ? 'Drawer' : 'Drawers'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Door Type Selection */}
-          {availableDoorTypes.length > 0 && (
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                <DoorOpen className="h-3 w-3" />
-                Door Type:
-              </label>
-              <Select
-                value={selectedVariants.doorType || ''}
-                onValueChange={(value) => onVariantChange('doorType', value)}
-              >
-                <SelectTrigger className="w-full h-8 text-xs">
-                  <SelectValue placeholder="Select door type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableDoorTypes.map((doorType) => (
-                    <SelectItem key={doorType} value={doorType}>
-                      {doorType}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Common Dimensions Selection - show for all series that have dimensions */}
-      {availableDimensions.length > 0 && !isSpecificSeries && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-            <Ruler className="h-3 w-3" />
-            Dimensions:
-          </label>
-          <Select
-            value={selectedVariants.dimensions || ''}
-            onValueChange={(value) => onVariantChange('dimensions', value)}
-          >
-            <SelectTrigger className="w-full h-8 text-xs">
-              <SelectValue placeholder="Select dimensions" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableDimensions.map((dimension) => (
-                <SelectItem key={dimension} value={dimension}>
-                  {dimension}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
-      {/* Product Selection */}
+      {/* Filtered Products */}
       {filteredProducts.length > 0 && (
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-muted-foreground">
-            Available Products: <Badge variant="outline" className="text-xs">{filteredProducts.length}</Badge>
-          </label>
-          <div className="grid grid-cols-1 gap-2">
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium">
+            Available Products ({filteredProducts.length})
+          </h4>
+          <div className="space-y-2 max-h-60 overflow-y-auto">
             {filteredProducts.map((product) => (
-              <Button
+              <Card
                 key={product.id}
-                variant={selectedProduct?.id === product.id ? "default" : "outline"}
-                className="w-full p-3 h-auto justify-start text-left"
+                className={`cursor-pointer transition-all hover:shadow-md ${
+                  selectedProduct?.id === product.id 
+                    ? 'ring-2 ring-primary bg-primary/5' 
+                    : 'hover:bg-muted/50'
+                }`}
                 onClick={() => onProductSelect(product)}
               >
-                <div className="flex items-center gap-3 w-full">
-                  <OptimizedOverviewImage
-                    src={product.thumbnail_path || '/placeholder.svg'}
-                    alt={product.name}
-                    className="w-10 h-10 flex-shrink-0"
-                    showCompanyTag={false}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-xs truncate">{cleanProductName(product.name)}</div>
-                    <div className="text-xs text-muted-foreground truncate">
-                      {product.product_code}
-                    </div>
-                    {product.dimensions && (
-                      <div className="text-xs text-muted-foreground truncate">
-                        {product.dimensions}
+                <CardContent className="p-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h5 className="font-medium text-sm truncate">{product.name}</h5>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Code: {product.product_code}
+                      </p>
+                      {product.dimensions && (
+                        <p className="text-xs text-muted-foreground">
+                          Dimensions: {product.dimensions}
+                        </p>
+                      )}
+                      
+                      {/* Configuration badges */}
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {product.emergency_shower_type && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.emergency_shower_type}
+                          </Badge>
+                        )}
+                        {product.mixing_type && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.mixing_type}
+                          </Badge>
+                        )}
+                        {product.handle_type && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.handle_type}
+                          </Badge>
+                        )}
+                        {product.mounting_type && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.mounting_type}
+                          </Badge>
+                        )}
+                        {product.cabinet_class && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.cabinet_class}
+                          </Badge>
+                        )}
+                        {product.finish_type && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.finish_type}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-                    {product.company_tags && product.company_tags.length > 0 && (
-                      <Badge variant="default" className="text-xs mt-1 bg-blue-500 hover:bg-blue-600">
-                        {product.company_tags[0]}
-                      </Badge>
+                    </div>
+                    {product.thumbnail_path && (
+                      <img
+                        src={product.thumbnail_path}
+                        alt={product.name}
+                        className="w-12 h-12 object-contain ml-3 rounded"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder.svg';
+                        }}
+                      />
                     )}
                   </div>
-                </div>
-              </Button>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
       )}
 
       {filteredProducts.length === 0 && (
-        <div className="text-center py-4 text-muted-foreground">
-          <p className="text-xs">No products match the selected variants</p>
+        <div className="text-center py-6 text-muted-foreground">
+          <p className="text-sm">No products match the selected configuration.</p>
+          <p className="text-xs mt-1">Try adjusting your selections above.</p>
         </div>
       )}
     </div>
