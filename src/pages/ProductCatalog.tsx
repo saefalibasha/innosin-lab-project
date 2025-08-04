@@ -11,7 +11,7 @@ import QuoteCartSummary from '@/components/QuoteCartSummary';
 import CompanyLandingHeader from '@/components/CompanyLandingHeader';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
-import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
+import { fetchProductsFromDatabase, fetchCategoriesFromDatabase, subscribeToProductUpdates, unsubscribeFromProductUpdates } from '@/services/productService';
 import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
 
 const ProductCatalog = () => {
@@ -49,6 +49,7 @@ const ProductCatalog = () => {
         
         setProducts(productsData);
         setCategories(categoriesData);
+        console.log(`Loaded ${productsData.length} products with variants in ${categoriesData.length} categories`);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load products');
@@ -58,6 +59,17 @@ const ProductCatalog = () => {
     };
 
     fetchData();
+
+    // Set up real-time subscription for product updates
+    const subscription = subscribeToProductUpdates((payload) => {
+      console.log('Product update detected in catalog, refreshing data');
+      fetchData();
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribeFromProductUpdates(subscription);
+    };
   }, []);
 
   const filteredProducts = products.filter(product => {

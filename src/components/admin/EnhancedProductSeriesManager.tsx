@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { subscribeToProductUpdates, unsubscribeFromProductUpdates } from '@/services/productService';
 import { 
   Search, 
   Package, 
@@ -19,7 +20,8 @@ import {
   Tag,
   Plus,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import {
   Dialog,
@@ -87,6 +89,20 @@ export const EnhancedProductSeriesManager = () => {
 
   useEffect(() => {
     fetchSeries();
+    
+    // Set up real-time subscription for product updates
+    const subscription = subscribeToProductUpdates((payload) => {
+      // Only refresh if it's a product series or variant change
+      if (payload.new?.is_series_parent !== undefined || payload.new?.parent_series_id) {
+        console.log('Product update detected, refreshing series data');
+        fetchSeries();
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribeFromProductUpdates(subscription);
+    };
   }, []);
 
   useEffect(() => {
@@ -101,6 +117,7 @@ export const EnhancedProductSeriesManager = () => {
         .from('products')
         .select('*')
         .eq('is_series_parent', true)
+        .eq('is_active', true)
         .order('product_series', { ascending: true });
 
       if (error) throw error;
@@ -129,6 +146,7 @@ export const EnhancedProductSeriesManager = () => {
       );
 
       setSeries(seriesWithStats);
+      console.log(`Loaded ${seriesWithStats.length} product series with variants`);
     } catch (error) {
       console.error('Error fetching series:', error);
       toast({
