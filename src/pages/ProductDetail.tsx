@@ -11,7 +11,6 @@ import { ProductVariantSelector } from '@/components/floorplan/ProductVariantSel
 import ProductImageGallery from '@/components/ProductImageGallery';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
-import { subscribeToProductUpdates } from '@/services/productService';
 import { toast } from 'sonner';
 import { useRFQ } from '@/contexts/RFQContext';
 
@@ -66,43 +65,43 @@ const ProductDetail: React.FC = () => {
       reset();
 
       try {
-        console.log("Parent Product ID:", product.id);
-        console.log("Is Series Parent:", product.is_series_parent);
-
+        // Robust: prefer parent_series_id for variants, fallback to old string match.
         if (product.is_series_parent) {
+          // Use parent_series_id to fetch all variants for series
           const { data: variants, error: variantsError } = await supabase
             .from('products')
             .select('*')
             .eq('parent_series_id', product.id)
             .eq('is_active', true);
 
-          console.log("Supabase Query Result:", variants);
-          console.log("Supabase Query Error:", variantsError);
+          if (variantsError) throw variantsError;
 
+          // Optionally include the parent itself as a variant
           const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
-          console.log("Transformed Variants:", allVariants);
-
           setSeriesVariants(allVariants);
+
+          // Set selected variant
+          const currentVariant = allVariants.find(v => v.id === product.id);
+          setSelectedVariant(currentVariant || (allVariants.length > 0 ? allVariants[0] : null));
         } else {
-          console.log("Fallback to legacy query using product_series");
+          // Legacy fallback: try product_series string match
           const { data: variants, error: variantsError } = await supabase
             .from('products')
             .select('*')
-            .eq('product_series', product.product_series.trim())
+            .eq('product_series', product.product_series)
             .eq('is_active', true);
 
-          console.log("Legacy Query Result:", variants);
-          console.log("Legacy Query Error:", variantsError);
+          if (variantsError) throw variantsError;
 
           const transformedVariants = variants?.map(transformVariantToProduct) || [];
-          console.log("Transformed Variants (Legacy):", transformedVariants);
-
           setSeriesVariants(transformedVariants);
+
+          const currentVariant = transformedVariants.find(v => v.id === product.id);
+          setSelectedVariant(currentVariant || (transformedVariants.length > 0 ? transformedVariants[0] : null));
         }
       } catch (err) {
-        console.error("Error Fetching Variants:", err);
         setSeriesVariants([]);
-        setError(err instanceof Error ? err.message : "Failed to load product variants");
+        setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
         stopLoading();
       }
@@ -110,46 +109,6 @@ const ProductDetail: React.FC = () => {
 
     fetchVariants();
   }, [product, productLoading]);
-
-  // Real-time updates subscription
-  useEffect(() => {
-    if (!product) return;
-
-    const subscription = subscribeToProductUpdates((payload) => {
-      console.log('Product detail update received:', payload);
-      
-      // Refetch variants when changes occur for this product or its variants
-      const affectedProductId = payload.new?.id || payload.old?.id;
-      const isCurrentProduct = affectedProductId === product.id;
-      const isVariantOfCurrentProduct = payload.new?.parent_series_id === product.id || payload.old?.parent_series_id === product.id;
-      
-      if (isCurrentProduct || isVariantOfCurrentProduct) {
-        // Refetch variants for this product
-        const fetchUpdatedVariants = async () => {
-          try {
-            if (product.is_series_parent) {
-              const { data: variants } = await supabase
-                .from('products')
-                .select('*')
-                .eq('parent_series_id', product.id)
-                .eq('is_active', true);
-
-              const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
-              setSeriesVariants(allVariants);
-            }
-          } catch (error) {
-            console.error('Error refreshing variants after real-time update:', error);
-          }
-        };
-        
-        fetchUpdatedVariants();
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [product]);
 
   const handleVariantChange = (variantType: string, value: string) => {
     setSelectedVariants(prev => ({ ...prev, [variantType]: value }));

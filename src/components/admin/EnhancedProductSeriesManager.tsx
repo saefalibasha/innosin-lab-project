@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { subscribeToProductUpdates } from '@/services/productService';
 import { 
   Search, 
   Package, 
@@ -88,19 +87,6 @@ export const EnhancedProductSeriesManager = () => {
 
   useEffect(() => {
     fetchSeries();
-  }, []);
-
-  // Real-time updates subscription
-  useEffect(() => {
-    const subscription = subscribeToProductUpdates((payload) => {
-      console.log('Product series update received:', payload);
-      // Refetch series data when changes occur
-      fetchSeries();
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   useEffect(() => {

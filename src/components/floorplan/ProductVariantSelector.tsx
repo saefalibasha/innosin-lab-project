@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -21,103 +22,71 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
 }) => {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
 
-  console.log('🔧 ProductVariantSelector received products:', products.length);
-  console.log('🔧 Sample product data:', products[0]);
-
   // Get unique values for each configuration field
   const configOptions = useMemo(() => {
     const options: Record<string, Set<string>> = {};
     
-    console.log('🔍 Analyzing products for configuration options...');
-    
-    products.forEach((product, index) => {
-      console.log(`🔍 Product ${index + 1}:`, {
-        name: product.name,
-        emergency_shower_type: product.emergency_shower_type,
-        mounting_type: product.mounting_type,
-        mixing_type: product.mixing_type,
-        handle_type: product.handle_type,
-        cabinet_class: product.cabinet_class,
-        finish_type: product.finish_type,
-        dimensions: product.dimensions,
-        orientation: product.orientation,
-        door_type: product.door_type,
-        drawer_count: product.drawer_count
-      });
-
-      // Emergency Shower Type - check for non-empty strings
-      if (product.emergency_shower_type && product.emergency_shower_type.trim()) {
+    products.forEach(product => {
+      // Emergency Shower Type
+      if (product.emergency_shower_type) {
         if (!options.emergency_shower_type) options.emergency_shower_type = new Set();
-        options.emergency_shower_type.add(product.emergency_shower_type.trim());
-        console.log('✅ Added emergency_shower_type:', product.emergency_shower_type.trim());
+        options.emergency_shower_type.add(product.emergency_shower_type);
       }
       
-      // Mixing Type (for UNIFLEX) - check for non-empty strings
-      if (product.mixing_type && product.mixing_type.trim()) {
+      // Mixing Type (for UNIFLEX)
+      if (product.mixing_type) {
         if (!options.mixing_type) options.mixing_type = new Set();
-        options.mixing_type.add(product.mixing_type.trim());
-        console.log('✅ Added mixing_type:', product.mixing_type.trim());
+        options.mixing_type.add(product.mixing_type);
       }
       
-      // Handle Type (for UNIFLEX) - check for non-empty strings
-      if (product.handle_type && product.handle_type.trim()) {
+      // Handle Type (for UNIFLEX)
+      if (product.handle_type) {
         if (!options.handle_type) options.handle_type = new Set();
-        options.handle_type.add(product.handle_type.trim());
-        console.log('✅ Added handle_type:', product.handle_type.trim());
+        options.handle_type.add(product.handle_type);
       }
       
-      // Mounting Type (for Safe Aire and others) - check for non-empty strings
-      if (product.mounting_type && product.mounting_type.trim()) {
+      // Mounting Type (for Safe Aire and others)
+      if (product.mounting_type) {
         if (!options.mounting_type) options.mounting_type = new Set();
-        options.mounting_type.add(product.mounting_type.trim());
-        console.log('✅ Added mounting_type:', product.mounting_type.trim());
+        options.mounting_type.add(product.mounting_type);
       }
       
-      // Cabinet Class (for fume hoods) - check for non-empty strings
-      if (product.cabinet_class && product.cabinet_class.trim()) {
+      // Cabinet Class (for fume hoods)
+      if (product.cabinet_class) {
         if (!options.cabinet_class) options.cabinet_class = new Set();
-        options.cabinet_class.add(product.cabinet_class.trim());
-        console.log('✅ Added cabinet_class:', product.cabinet_class.trim());
+        options.cabinet_class.add(product.cabinet_class);
       }
       
-      // Finish Type - check for non-empty strings
-      if (product.finish_type && product.finish_type.trim()) {
+      // Finish Type
+      if (product.finish_type) {
         if (!options.finish_type) options.finish_type = new Set();
-        options.finish_type.add(product.finish_type.trim());
-        console.log('✅ Added finish_type:', product.finish_type.trim());
+        options.finish_type.add(product.finish_type);
       }
       
-      // Dimensions - check for non-empty strings
-      if (product.dimensions && product.dimensions.trim()) {
+      // Dimensions
+      if (product.dimensions) {
         if (!options.dimensions) options.dimensions = new Set();
-        options.dimensions.add(product.dimensions.trim());
-        console.log('✅ Added dimensions:', product.dimensions.trim());
+        options.dimensions.add(product.dimensions);
       }
       
-      // Orientation - check for non-empty strings and exclude 'None'
-      if (product.orientation && product.orientation.trim() && product.orientation.trim() !== 'None') {
+      // Orientation
+      if (product.orientation && product.orientation !== 'None') {
         if (!options.orientation) options.orientation = new Set();
-        options.orientation.add(product.orientation.trim());
-        console.log('✅ Added orientation:', product.orientation.trim());
+        options.orientation.add(product.orientation);
       }
       
-      // Door Type - check for non-empty strings
-      if (product.door_type && product.door_type.trim()) {
+      // Door Type
+      if (product.door_type) {
         if (!options.door_type) options.door_type = new Set();
-        options.door_type.add(product.door_type.trim());
-        console.log('✅ Added door_type:', product.door_type.trim());
+        options.door_type.add(product.door_type);
       }
       
-      // Drawer Count - check for valid numbers
-      if (product.drawer_count && product.drawer_count > 0) {
+      // Drawer Count
+      if (product.drawer_count) {
         if (!options.drawer_count) options.drawer_count = new Set();
         options.drawer_count.add(product.drawer_count.toString());
-        console.log('✅ Added drawer_count:', product.drawer_count.toString());
       }
     });
-    
-    console.log('📊 Final configuration options detected:', Object.keys(options));
-    console.log('📊 Configuration details:', options);
     
     // Convert Sets to sorted arrays
     const sortedOptions: Record<string, string[]> = {};
@@ -251,7 +220,7 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                       <p className="text-xs text-muted-foreground mt-1">
                         Code: {product.product_code}
                       </p>
-                      {product.dimensions && product.dimensions.trim() && (
+                      {product.dimensions && (
                         <p className="text-xs text-muted-foreground">
                           Dimensions: {product.dimensions}
                         </p>
@@ -259,32 +228,32 @@ export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
                       
                       {/* Configuration badges */}
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {product.emergency_shower_type && product.emergency_shower_type.trim() && (
+                        {product.emergency_shower_type && (
                           <Badge variant="outline" className="text-xs">
                             {product.emergency_shower_type}
                           </Badge>
                         )}
-                        {product.mixing_type && product.mixing_type.trim() && (
+                        {product.mixing_type && (
                           <Badge variant="outline" className="text-xs">
                             {product.mixing_type}
                           </Badge>
                         )}
-                        {product.handle_type && product.handle_type.trim() && (
+                        {product.handle_type && (
                           <Badge variant="outline" className="text-xs">
                             {product.handle_type}
                           </Badge>
                         )}
-                        {product.mounting_type && product.mounting_type.trim() && (
+                        {product.mounting_type && (
                           <Badge variant="outline" className="text-xs">
                             {product.mounting_type}
                           </Badge>
                         )}
-                        {product.cabinet_class && product.cabinet_class.trim() && (
+                        {product.cabinet_class && (
                           <Badge variant="outline" className="text-xs">
                             {product.cabinet_class}
                           </Badge>
                         )}
-                        {product.finish_type && product.finish_type.trim() && (
+                        {product.finish_type && (
                           <Badge variant="outline" className="text-xs">
                             {product.finish_type}
                           </Badge>
