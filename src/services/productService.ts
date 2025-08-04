@@ -27,7 +27,7 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       if (!acc[parentId]) acc[parentId] = [];
       acc[parentId].push(variant);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, unknown[]>);
 
     // Convert database products to frontend Product type with variants populated
     const convertedProducts: Product[] = seriesParents.map(product => ({
@@ -122,7 +122,7 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       if (!acc[parentId]) acc[parentId] = [];
       acc[parentId].push(variant);
       return acc;
-    }, {} as Record<string, any[]>);
+    }, {} as Record<string, unknown[]>);
 
     // Convert to frontend Product type with variants populated
     const convertedProducts: Product[] = seriesParents.map(product => ({
@@ -262,7 +262,7 @@ export const fetchProductWithVariants = async (productId: string) => {
 };
 
 // Real-time data synchronization
-export const subscribeToProductUpdates = (callback: (payload: any) => void) => {
+export const subscribeToProductUpdates = (callback: (payload: unknown) => void) => {
   return supabase
     .channel('products-changes')
     .on('postgres_changes', { 
