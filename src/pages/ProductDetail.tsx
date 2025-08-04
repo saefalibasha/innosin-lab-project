@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Package, ShoppingCart, Download, AlertCircle, Building2 } from 'lucide-react';
+import { ArrowLeft, Package, Ruler, FileText, ShoppingCart, Download, AlertCircle, Building2 } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import { useLoadingState } from '@/hooks/useLoadingState';
 import { ProductVariantSelector } from '@/components/floorplan/ProductVariantSelector';
@@ -41,10 +41,19 @@ const ProductDetail: React.FC = () => {
     images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
     description: variant.description || '',
     fullDescription: variant.full_description || variant.description || '',
-    specifications: Array.isArray(variant.specifications) ? variant.specifications : [],
+    specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
     product_code: variant.product_code,
     thumbnail_path: variant.thumbnail_path,
     model_path: variant.model_path,
+    finish_type: variant.finish_type,
+    orientation: variant.orientation,
+    drawer_count: variant.drawer_count,
+    door_type: variant.door_type,
+    mounting_type: variant.mounting_type,
+    mixing_type: variant.mixing_type,
+    handle_type: variant.handle_type,
+    emergency_shower_type: variant.emergency_shower_type,
+    cabinet_class: variant.cabinet_class,
     company_tags: variant.company_tags || [],
     product_series: variant.product_series
   });
@@ -52,9 +61,10 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     const fetchVariantsFromProductsTable = async (productId: string) => {
       try {
+        // Fetch variants where the parent_series_id matches the current product ID
         const { data: variants, error } = await supabase
           .from('products')
-          .select('*')
+          .select('*') // Fetch only required columns for performance
           .eq('parent_series_id', productId)
           .eq('is_active', true);
 
@@ -78,13 +88,15 @@ const ProductDetail: React.FC = () => {
       reset();
 
       try {
-        console.log("Fetching variants for product:", product.name);
+        console.log("Parent Product ID:", product.id);
+        console.log("Is Series Parent:", product.is_series_parent);
 
+        // Fetch variants using the products table
         const variants = await fetchVariantsFromProductsTable(product.id);
 
-        console.log("Variants fetched:", variants);
+        console.log("Variants fetched from products table:", variants);
 
-        const allVariants = [product, ...(variants || [])].map(transformVariantToProduct);
+        const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
         console.log("Transformed Variants:", allVariants);
 
         setSeriesVariants(allVariants);
@@ -152,11 +164,19 @@ const ProductDetail: React.FC = () => {
   const displayProduct = selectedVariant || product;
   const getProductImages = () => {
     const images = [];
-    if (displayProduct.thumbnail && !displayProduct.thumbnail.includes('placeholder')) {
+    if (displayProduct.seriesOverviewImage && !displayProduct.seriesOverviewImage.includes('placeholder')) {
+      images.push(displayProduct.seriesOverviewImage);
+    } else if (displayProduct.overviewImage && !displayProduct.overviewImage.includes('placeholder')) {
+      images.push(displayProduct.overviewImage);
+    } else if (displayProduct.thumbnail && !displayProduct.thumbnail.includes('placeholder')) {
       images.push(displayProduct.thumbnail);
+    } else if (displayProduct.thumbnail_path && !displayProduct.thumbnail_path.includes('placeholder')) {
+      images.push(displayProduct.thumbnail_path);
     }
     if (displayProduct.images && displayProduct.images.length > 0) {
-      const imagesList = displayProduct.images.filter(img => img && !img.includes('placeholder'));
+      const imagesList = displayProduct.images.filter(img =>
+        img && !img.includes('placeholder') && !images.includes(img)
+      );
       images.push(...imagesList);
     }
     return images.length > 0 ? images : ['/placeholder.svg'];
@@ -173,7 +193,7 @@ const ProductDetail: React.FC = () => {
         <div className="space-y-6">
           <ProductImageGallery
             images={getProductImages()}
-            thumbnail={displayProduct.thumbnail || ''}
+            thumbnail={displayProduct.thumbnail || displayProduct.thumbnail_path || ''}
             productName={displayProduct.name}
             isProductPage={true}
             className="mx-auto w-full max-w-[600px] aspect-[4/3] flex items-center justify-center"
@@ -204,11 +224,22 @@ const ProductDetail: React.FC = () => {
             <p className="text-lg text-muted-foreground mb-4">
               {displayProduct.description}
             </p>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Package className="w-4 h-4" />
+                <span>{displayProduct.product_code || displayProduct.id}</span>
+              </div>
+              {displayProduct.dimensions && (
+                <div className="flex items-center gap-1">
+                  <Ruler className="w-4 h-4" />
+                  <span>{displayProduct.dimensions}</span>
+                </div>
+              )}
+            </div>
           </div>
 
           <Separator />
 
-          {/* Product Configuration Tab */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -222,7 +253,7 @@ const ProductDetail: React.FC = () => {
                   <AlertCircle className="w-5 h-5" />
                   <span>{variantError}</span>
                 </div>
-              ) : (
+              ) : seriesVariants.length > 0 ? (
                 <ProductVariantSelector
                   products={seriesVariants}
                   selectedVariants={selectedVariants}
@@ -230,7 +261,36 @@ const ProductDetail: React.FC = () => {
                   onProductSelect={handleProductSelect}
                   selectedProduct={selectedVariant}
                 />
+              ) : (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p className="text-sm">No variants available for this product</p>
+                </div>
               )}
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-4">
+            <Button className="flex-1 gap-2" onClick={handleAddToQuote} disabled={variantsLoading}>
+              <ShoppingCart className="w-4 h-4" />
+              Add to Quote
+            </Button>
+            <Button variant="outline" className="gap-2" disabled={variantsLoading}>
+              <Download className="w-4 h-4" />
+              Download Specs
+            </Button>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Product Description
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground leading-relaxed">
+                {displayProduct.fullDescription || displayProduct.description}
+              </p>
             </CardContent>
           </Card>
         </div>
