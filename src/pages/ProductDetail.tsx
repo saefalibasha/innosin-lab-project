@@ -61,45 +61,128 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     const fetchVariants = async () => {
       if (!product || productLoading) return;
+      
       startLoading();
       reset();
+      
+      console.log('🔍 Starting variant fetch for product:', {
+        id: product.id,
+        name: product.name,
+        product_series: product.product_series,
+        category: product.category,
+        parent_series_id: product.parent_series_id
+      });
 
       try {
-        // Robust: prefer parent_series_id for variants, fallback to old string match.
-        if (product.is_series_parent) {
-          // Use parent_series_id to fetch all variants for series
-          const { data: variants, error: variantsError } = await supabase
+        let fetchedVariants: any[] = [];
+        
+        // Strategy 1: Use parent_series_id if available (most reliable)
+        if (product.parent_series_id) {
+          console.log('📋 Using parent_series_id strategy:', product.parent_series_id);
+          
+          // Fetch the parent
+          const { data: parentData, error: parentError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('id', product.parent_series_id)
+            .eq('is_active', true)
+            .single();
+
+          if (parentError) {
+            console.error('❌ Error fetching parent:', parentError);
+          }
+
+          // Fetch all siblings (including current product)
+          const { data: siblingsData, error: siblingsError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('parent_series_id', product.parent_series_id)
+            .eq('is_active', true);
+
+          if (siblingsError) {
+            console.error('❌ Error fetching siblings:', siblingsError);
+          }
+
+          // Combine parent and siblings
+          const allVariants = [];
+          if (parentData) allVariants.push(parentData);
+          if (siblingsData) allVariants.push(...siblingsData);
+          
+          fetchedVariants = allVariants;
+          console.log('✅ Found variants using parent_series_id:', fetchedVariants.length);
+        }
+        
+        // Strategy 2: Check if current product is a series parent
+        else if (product.is_series_parent) {
+          console.log('👑 Product is series parent, fetching children');
+          
+          const { data: childrenData, error: childrenError } = await supabase
             .from('products')
             .select('*')
             .eq('parent_series_id', product.id)
             .eq('is_active', true);
 
-          if (variantsError) throw variantsError;
+          if (childrenError) {
+            console.error('❌ Error fetching children:', childrenError);
+          }
 
-          // Optionally include the parent itself as a variant
-          const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
-          setSeriesVariants(allVariants);
-
-          // Set selected variant
-          const currentVariant = allVariants.find(v => v.id === product.id);
-          setSelectedVariant(currentVariant || (allVariants.length > 0 ? allVariants[0] : null));
-        } else {
-          // Legacy fallback: try product_series string match
-          const { data: variants, error: variantsError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('product_series', product.product_series)
-            .eq('is_active', true);
-
-          if (variantsError) throw variantsError;
-
-          const transformedVariants = variants?.map(transformVariantToProduct) || [];
-          setSeriesVariants(transformedVariants);
-
-          const currentVariant = transformedVariants.find(v => v.id === product.id);
-          setSelectedVariant(currentVariant || (transformedVariants.length > 0 ? transformedVariants[0] : null));
+          // Include parent + children
+          fetchedVariants = [product, ...(childrenData || [])];
+          console.log('✅ Found variants as series parent:', fetchedVariants.length);
         }
+        
+        // Strategy 3: Fallback to product_series string matching with exact database names
+        else {
+          console.log('🔧 Using fallback product_series string matching');
+          
+          const seriesName = product.product_series;
+          let query = supabase.from('products').select('*').eq('is_active', true);
+          
+          // Use exact series names from database
+          if (seriesName?.includes('Emergency Shower') || seriesName?.includes('Broen-Lab Emergency')) {
+            console.log('🚿 Detected Emergency Shower series');
+            query = query.eq('product_series', 'Broen-Lab Emergency Shower Systems');
+          } else if (seriesName?.includes('UNIFLEX') || seriesName?.includes('Single Way')) {
+            console.log('🚰 Detected UNIFLEX/Single Way series');
+            query = query.eq('product_series', 'Single Way Taps');
+          } else if (seriesName?.includes('Safe Aire')) {
+            console.log('💨 Detected Safe Aire series');
+            query = query.eq('product_series', 'Safe Aire II Fume Hoods');
+          } else if (seriesName?.includes('NOCE')) {
+            console.log('🏭 Detected NOCE series');
+            query = query.eq('product_series', 'NOCE Series Fume Hood');
+          } else if (seriesName?.includes('TANGERINE') || seriesName?.includes('Bio Safety')) {
+            console.log('🧪 Detected Bio Safety Cabinet series');
+            query = query.eq('product_series', 'Bio Safety Cabinet - TANGERINE');
+          } else {
+            // Generic fallback
+            query = query.eq('product_series', seriesName);
+          }
+          
+          const { data, error } = await query.order('name');
+          
+          if (error) {
+            console.error('❌ Error in fallback query:', error);
+            throw error;
+          }
+          
+          fetchedVariants = data || [];
+          console.log('✅ Found variants using fallback:', fetchedVariants.length);
+        }
+
+        console.log('📊 Final variants found:', fetchedVariants.map(v => ({ id: v.id, name: v.name })));
+
+        const transformedVariants = fetchedVariants.map(transformVariantToProduct);
+        setSeriesVariants(transformedVariants);
+
+        // Set selected variant (prefer current product, fallback to first)
+        const currentVariant = transformedVariants.find(v => v.id === product.id);
+        setSelectedVariant(currentVariant || (transformedVariants.length > 0 ? transformedVariants[0] : null));
+        
+        console.log('✅ Selected variant:', currentVariant?.name || 'First available');
+
       } catch (err) {
+        console.error('❌ Error fetching variants:', err);
         setSeriesVariants([]);
         setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
