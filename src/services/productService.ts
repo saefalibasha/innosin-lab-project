@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
+import { mockProductSeries, mockCategories } from '@/data/mockProducts';
 
 export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
   try {
@@ -12,14 +13,26 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
 
     if (error) {
       console.error('Error fetching products:', error);
-      return [];
+      
+      // Fallback to mock data when database is unavailable
+      console.log('🔄 Falling back to mock product data for development');
+      return mockProductSeries;
     }
 
-    if (!allProducts) return [];
+    if (!allProducts || allProducts.length === 0) {
+      console.log('⚠️ No products found in database, using mock data');
+      return mockProductSeries;
+    }
 
     // Separate series parents and variants
     const seriesParents = allProducts.filter(product => product.is_series_parent === true);
     const variants = allProducts.filter(product => product.parent_series_id !== null);
+
+    // If no series parents found, fall back to mock data
+    if (seriesParents.length === 0) {
+      console.log('⚠️ No series parents found in database, using mock data');
+      return mockProductSeries;
+    }
 
     // Group variants by parent series
     const variantsByParent = variants.reduce((acc, variant) => {
@@ -64,10 +77,14 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       baseProductId: product.parent_series_id || undefined
     }));
 
+    console.log(`✅ Successfully loaded ${convertedProducts.length} product series from database`);
     return convertedProducts;
   } catch (error) {
     console.error('Error in fetchProductsFromDatabase:', error);
-    return [];
+    
+    // Fallback to mock data on any error (including network issues)
+    console.log('🔄 Falling back to mock product data due to error');
+    return mockProductSeries;
   }
 };
 
@@ -81,17 +98,33 @@ export const fetchCategoriesFromDatabase = async (): Promise<string[]> => {
 
     if (error) {
       console.error('Error fetching categories:', error);
-      return [];
+      
+      // Fallback to mock categories when database is unavailable
+      console.log('🔄 Falling back to mock categories for development');
+      return mockCategories;
     }
 
-    if (!products) return [];
+    if (!products || products.length === 0) {
+      console.log('⚠️ No categories found in database, using mock data');
+      return mockCategories;
+    }
 
     // Get unique categories
     const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+    
+    if (categories.length === 0) {
+      console.log('⚠️ No valid categories found, using mock data');
+      return mockCategories;
+    }
+    
+    console.log(`✅ Successfully loaded ${categories.length} categories from database`);
     return categories;
   } catch (error) {
     console.error('Error in fetchCategoriesFromDatabase:', error);
-    return [];
+    
+    // Fallback to mock categories on any error
+    console.log('🔄 Falling back to mock categories due to error');
+    return mockCategories;
   }
 };
 

@@ -43,6 +43,7 @@ import {
 import { VariantManager } from './product-series/VariantManager';
 import { ProductSeriesFormDialog } from './product-series/ProductSeriesFormDialog';
 import { ProductSeriesFilter } from './product-series/ProductSeriesFilter';
+import { mockAdminSeries } from '@/data/mockProducts';
 
 interface ProductSeries {
   id: string;
@@ -74,6 +75,7 @@ export const EnhancedProductSeriesManager = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showVariantManager, setShowVariantManager] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const { toast } = useToast();
 
   const [editForm, setEditForm] = useState({
@@ -110,6 +112,7 @@ export const EnhancedProductSeriesManager = () => {
   const fetchSeries = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching enhanced product series from database...');
       
       const { data: seriesData, error } = await supabase
         .from('products')
@@ -117,7 +120,44 @@ export const EnhancedProductSeriesManager = () => {
         .eq('is_series_parent', true)
         .order('product_series', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      if (!seriesData || seriesData.length === 0) {
+        console.log('⚠️ No enhanced series found in database, using mock data');
+        // Convert mock data to enhanced format
+        const mockEnhancedSeries = mockAdminSeries.map(seriesData => ({
+          id: seriesData.products[0].id,
+          name: seriesData.products[0].name,
+          product_code: seriesData.products[0].product_code,
+          product_series: seriesData.products[0].product_series,
+          category: seriesData.products[0].category,
+          description: seriesData.products[0].description || '',
+          series_slug: seriesData.products[0].product_series.toLowerCase().replace(/\s+/g, '-'),
+          is_active: true,
+          variant_count: seriesData.products.length - 1,
+          completion_rate: seriesData.completionRate,
+          target_variant_count: seriesData.totalProducts,
+          series_thumbnail_path: seriesData.products[0].thumbnail_path,
+          series_model_path: seriesData.products[0].model_path,
+          series_overview_image_path: seriesData.products[0].overview_image_path,
+          company_tags: seriesData.products[0].company_tags || [],
+          created_at: seriesData.products[0].created_at,
+          updated_at: seriesData.products[0].updated_at
+        }));
+        
+        setSeries(mockEnhancedSeries);
+        setIsUsingMockData(true);
+        
+        toast({
+          title: "Development Mode",
+          description: "Using sample data - database connection unavailable",
+          variant: "default",
+        });
+        return;
+      }
 
       const seriesWithStats = await Promise.all(
         (seriesData || []).map(async (s) => {
@@ -143,11 +183,40 @@ export const EnhancedProductSeriesManager = () => {
       );
 
       setSeries(seriesWithStats);
+      setIsUsingMockData(false);
+      console.log(`✅ Successfully loaded ${seriesWithStats.length} enhanced product series from database`);
+      
     } catch (error) {
       console.error('Error fetching series:', error);
+      
+      // Fallback to mock data
+      console.log('🔄 Falling back to mock enhanced series data due to error');
+      const mockEnhancedSeries = mockAdminSeries.map(seriesData => ({
+        id: seriesData.products[0].id,
+        name: seriesData.products[0].name,
+        product_code: seriesData.products[0].product_code,
+        product_series: seriesData.products[0].product_series,
+        category: seriesData.products[0].category,
+        description: seriesData.products[0].description || '',
+        series_slug: seriesData.products[0].product_series.toLowerCase().replace(/\s+/g, '-'),
+        is_active: true,
+        variant_count: seriesData.products.length - 1,
+        completion_rate: seriesData.completionRate,
+        target_variant_count: seriesData.totalProducts,
+        series_thumbnail_path: seriesData.products[0].thumbnail_path,
+        series_model_path: seriesData.products[0].model_path,
+        series_overview_image_path: seriesData.products[0].overview_image_path,
+        company_tags: seriesData.products[0].company_tags || [],
+        created_at: seriesData.products[0].created_at,
+        updated_at: seriesData.products[0].updated_at
+      }));
+      
+      setSeries(mockEnhancedSeries);
+      setIsUsingMockData(true);
+      
       toast({
-        title: "Error",
-        description: "Failed to fetch product series",
+        title: "Connection Issue",
+        description: "Using sample data - please check database connection",
         variant: "destructive",
       });
     } finally {
@@ -366,6 +435,25 @@ export const EnhancedProductSeriesManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Connection Status Indicator */}
+      {isUsingMockData && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <div>
+                <h4 className="font-medium text-amber-800">Development Mode Active</h4>
+                <p className="text-sm text-amber-700">
+                  Currently displaying sample enhanced product series data. Database connection unavailable or no series configured.
+                  <br />
+                  <strong>To resolve:</strong> Run the database-fixes.sql script or ensure Supabase connection is working.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
