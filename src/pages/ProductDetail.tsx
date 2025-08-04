@@ -59,6 +59,29 @@ const ProductDetail: React.FC = () => {
   });
 
   useEffect(() => {
+    const fetchVariantsFromProductsTable = async (productId: string) => {
+      try {
+        // Fetch variants where the parent_series_id matches the current product ID
+        const { data: variants, error } = await supabase
+          .from('products')
+          .select('*') // Fetch only required columns for performance
+          .eq('parent_series_id', productId)
+          .eq('is_active', true);
+
+        if (error) {
+          console.error('Error fetching variants:', error);
+          setError(error.message);
+          return [];
+        }
+
+        return variants || [];
+      } catch (err) {
+        console.error('Unexpected error fetching variants:', err);
+        setError("Unexpected error occurred while loading product variants.");
+        return [];
+      }
+    };
+
     const fetchVariants = async () => {
       if (!product || productLoading) return;
       startLoading();
@@ -68,36 +91,15 @@ const ProductDetail: React.FC = () => {
         console.log("Parent Product ID:", product.id);
         console.log("Is Series Parent:", product.is_series_parent);
 
-        if (product.is_series_parent) {
-          const { data: variants, error: variantsError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('parent_series_id', product.id)
-            .eq('is_active', true);
+        // Fetch variants using the products table
+        const variants = await fetchVariantsFromProductsTable(product.id);
 
-          console.log("Supabase Query Result:", variants);
-          console.log("Supabase Query Error:", variantsError);
+        console.log("Variants fetched from products table:", variants);
 
-          const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
-          console.log("Transformed Variants:", allVariants);
+        const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
+        console.log("Transformed Variants:", allVariants);
 
-          setSeriesVariants(allVariants);
-        } else {
-          console.log("Fallback to legacy query using product_series");
-          const { data: variants, error: variantsError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('product_series', product.product_series.trim())
-            .eq('is_active', true);
-
-          console.log("Legacy Query Result:", variants);
-          console.log("Legacy Query Error:", variantsError);
-
-          const transformedVariants = variants?.map(transformVariantToProduct) || [];
-          console.log("Transformed Variants (Legacy):", transformedVariants);
-
-          setSeriesVariants(transformedVariants);
-        }
+        setSeriesVariants(allVariants);
       } catch (err) {
         console.error("Error Fetching Variants:", err);
         setSeriesVariants([]);
