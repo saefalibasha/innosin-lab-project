@@ -31,231 +31,77 @@ const ProductDetail: React.FC = () => {
     reset
   } = useLoadingState(false);
 
-  const transformVariantToProduct = (variant: any): Product => {
-    console.log('🔄 Transforming variant:', {
-      id: variant.id,
-      name: variant.name,
-      product_series: variant.product_series,
-      category: variant.category,
-      parent_series_id: variant.parent_series_id,
-      is_series_parent: variant.is_series_parent,
-      emergency_shower_type: variant.emergency_shower_type,
-      mounting_type: variant.mounting_type,
-      mixing_type: variant.mixing_type,
-      handle_type: variant.handle_type,
-      cabinet_class: variant.cabinet_class,
-      finish_type: variant.finish_type,
-      dimensions: variant.dimensions
-    });
-
-    const transformed = {
-      id: variant.id,
-      name: variant.name,
-      category: variant.category,
-      dimensions: variant.dimensions && variant.dimensions.trim() ? variant.dimensions.trim() : '',
-      modelPath: variant.model_path || '/placeholder.glb',
-      thumbnail: variant.thumbnail_path || '/placeholder.svg',
-      images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
-      description: variant.description || '',
-      fullDescription: variant.full_description || variant.description || '',
-      specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
-      product_code: variant.product_code,
-      thumbnail_path: variant.thumbnail_path,
-      model_path: variant.model_path,
-      
-      // Configuration fields - convert empty strings to undefined
-      finish_type: variant.finish_type && variant.finish_type.trim() ? variant.finish_type.trim() : undefined,
-      orientation: variant.orientation && variant.orientation.trim() && variant.orientation.trim() !== 'None' ? variant.orientation.trim() : undefined,
-      drawer_count: variant.drawer_count && variant.drawer_count > 0 ? variant.drawer_count : undefined,
-      door_type: variant.door_type && variant.door_type.trim() ? variant.door_type.trim() : undefined,
-      
-      // Enhanced configuration fields - convert empty strings to undefined
-      mounting_type: variant.mounting_type && variant.mounting_type.trim() ? variant.mounting_type.trim() : undefined,
-      mixing_type: variant.mixing_type && variant.mixing_type.trim() ? variant.mixing_type.trim() : undefined,
-      handle_type: variant.handle_type && variant.handle_type.trim() ? variant.handle_type.trim() : undefined,
-      emergency_shower_type: variant.emergency_shower_type && variant.emergency_shower_type.trim() ? variant.emergency_shower_type.trim() : undefined,
-      cabinet_class: variant.cabinet_class && variant.cabinet_class.trim() ? variant.cabinet_class.trim() : undefined,
-      
-      // Additional fields
-      company_tags: variant.company_tags || [],
-      product_series: variant.product_series,
-      
-      // Series relationship fields - THESE WERE MISSING!
-      parent_series_id: variant.parent_series_id,
-      is_series_parent: variant.is_series_parent
-    };
-
-    console.log('✅ Transformed product config fields:', {
-      id: transformed.id,
-      emergency_shower_type: transformed.emergency_shower_type,
-      mounting_type: transformed.mounting_type,
-      mixing_type: transformed.mixing_type,
-      handle_type: transformed.handle_type,
-      cabinet_class: transformed.cabinet_class,
-      finish_type: transformed.finish_type,
-      parent_series_id: transformed.parent_series_id,
-      is_series_parent: transformed.is_series_parent
-    });
-    
-    return transformed;
-  };
+  const transformVariantToProduct = (variant: any): Product => ({
+    id: variant.id,
+    name: variant.name,
+    category: variant.category,
+    dimensions: variant.dimensions || '',
+    modelPath: variant.model_path || '/placeholder.glb',
+    thumbnail: variant.thumbnail_path || '/placeholder.svg',
+    images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
+    description: variant.description || '',
+    fullDescription: variant.full_description || variant.description || '',
+    specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
+    product_code: variant.product_code,
+    thumbnail_path: variant.thumbnail_path,
+    model_path: variant.model_path,
+    finish_type: variant.finish_type,
+    orientation: variant.orientation,
+    drawer_count: variant.drawer_count,
+    door_type: variant.door_type,
+    mounting_type: variant.mounting_type,
+    mixing_type: variant.mixing_type,
+    handle_type: variant.handle_type,
+    emergency_shower_type: variant.emergency_shower_type,
+    cabinet_class: variant.cabinet_class,
+    company_tags: variant.company_tags || [],
+    product_series: variant.product_series
+  });
 
   useEffect(() => {
     const fetchVariants = async () => {
       if (!product || productLoading) return;
-      
       startLoading();
       reset();
-      
-      console.log('🔍 DIAGNOSTIC: Starting variant fetch for product:', {
-        id: product.id,
-        name: product.name,
-        product_series: product.product_series,
-        category: product.category,
-        parent_series_id: product.parent_series_id,
-        is_series_parent: product.is_series_parent
-      });
 
       try {
-        let fetchedVariants: any[] = [];
-        
-        // Strategy 1: Use parent_series_id if available (most reliable)
-        if (product.parent_series_id) {
-          console.log('📋 DIAGNOSTIC: Using parent_series_id strategy:', product.parent_series_id);
-          
-          // Fetch the parent
-          const { data: parentData, error: parentError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', product.parent_series_id)
-            .eq('is_active', true)
-            .single();
+        console.log("Parent Product ID:", product.id);
+        console.log("Is Series Parent:", product.is_series_parent);
 
-          if (parentError) {
-            console.error('❌ DIAGNOSTIC: Error fetching parent:', parentError);
-          } else {
-            console.log('✅ DIAGNOSTIC: Found parent:', parentData?.name);
-          }
-
-          // Fetch all siblings (including current product)
-          const { data: siblingsData, error: siblingsError } = await supabase
-            .from('products')
-            .select('*')
-            .eq('parent_series_id', product.parent_series_id)
-            .eq('is_active', true);
-
-          if (siblingsError) {
-            console.error('❌ DIAGNOSTIC: Error fetching siblings:', siblingsError);
-          } else {
-            console.log('✅ DIAGNOSTIC: Found siblings:', siblingsData?.length);
-          }
-
-          // Combine parent and siblings
-          const allVariants = [];
-          if (parentData) allVariants.push(parentData);
-          if (siblingsData) allVariants.push(...siblingsData);
-          
-          fetchedVariants = allVariants;
-          console.log('✅ DIAGNOSTIC: Total variants from parent_series_id:', fetchedVariants.length);
-        }
-        
-        // Strategy 2: Check if current product is a series parent
-        else if (product.is_series_parent) {
-          console.log('👑 DIAGNOSTIC: Product is series parent, fetching children');
-          
-          const { data: childrenData, error: childrenError } = await supabase
+        if (product.is_series_parent) {
+          const { data: variants, error: variantsError } = await supabase
             .from('products')
             .select('*')
             .eq('parent_series_id', product.id)
             .eq('is_active', true);
 
-          if (childrenError) {
-            console.error('❌ DIAGNOSTIC: Error fetching children:', childrenError);
-          } else {
-            console.log('✅ DIAGNOSTIC: Found children:', childrenData?.length);
-          }
+          console.log("Supabase Query Result:", variants);
+          console.log("Supabase Query Error:", variantsError);
 
-          // Include parent + children
-          fetchedVariants = [product, ...(childrenData || [])];
-          console.log('✅ DIAGNOSTIC: Total variants as series parent:', fetchedVariants.length);
+          const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
+          console.log("Transformed Variants:", allVariants);
+
+          setSeriesVariants(allVariants);
+        } else {
+          console.log("Fallback to legacy query using product_series");
+          const { data: variants, error: variantsError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('product_series', product.product_series.trim())
+            .eq('is_active', true);
+
+          console.log("Legacy Query Result:", variants);
+          console.log("Legacy Query Error:", variantsError);
+
+          const transformedVariants = variants?.map(transformVariantToProduct) || [];
+          console.log("Transformed Variants (Legacy):", transformedVariants);
+
+          setSeriesVariants(transformedVariants);
         }
-        
-        // Strategy 3: Fallback to product_series string matching
-        else {
-          console.log('🔧 DIAGNOSTIC: Using fallback product_series string matching for:', product.product_series);
-          
-          const seriesName = product.product_series;
-          let query = supabase.from('products').select('*').eq('is_active', true);
-          
-          // DIAGNOSTIC: Show what series we're trying to match
-          console.log('🔍 DIAGNOSTIC: Attempting to match series:', seriesName);
-          
-          // Use exact series names from database
-          if (seriesName?.includes('Emergency Shower') || seriesName?.includes('Broen-Lab Emergency')) {
-            console.log('🚿 DIAGNOSTIC: Detected Emergency Shower series');
-            query = query.eq('product_series', 'Broen-Lab Emergency Shower Systems');
-          } else if (seriesName?.includes('UNIFLEX') || seriesName?.includes('Single Way')) {
-            console.log('🚰 DIAGNOSTIC: Detected UNIFLEX/Single Way series');
-            query = query.eq('product_series', 'Single Way Taps');
-          } else if (seriesName?.includes('Safe Aire')) {
-            console.log('💨 DIAGNOSTIC: Detected Safe Aire series');
-            query = query.eq('product_series', 'Safe Aire II Fume Hoods');
-          } else if (seriesName?.includes('NOCE')) {
-            console.log('🏭 DIAGNOSTIC: Detected NOCE series');
-            query = query.eq('product_series', 'NOCE Series Fume Hood');
-          } else if (seriesName?.includes('TANGERINE') || seriesName?.includes('Bio Safety')) {
-            console.log('🧪 DIAGNOSTIC: Detected Bio Safety Cabinet series');
-            query = query.eq('product_series', 'Bio Safety Cabinet - TANGERINE');
-          } else if (seriesName?.includes('Innosin') || product.category?.includes('Innosin')) {
-            console.log('🏢 DIAGNOSTIC: Detected Innosin Lab series');
-            query = query.eq('category', product.category);
-          } else {
-            console.log('❓ DIAGNOSTIC: Generic fallback for series:', seriesName);
-            query = query.eq('product_series', seriesName);
-          }
-          
-          const { data, error } = await query.order('name');
-          
-          if (error) {
-            console.error('❌ DIAGNOSTIC: Error in fallback query:', error);
-            throw error;
-          }
-          
-          fetchedVariants = data || [];
-          console.log('✅ DIAGNOSTIC: Found variants using fallback:', fetchedVariants.length);
-          console.log('🔍 DIAGNOSTIC: Fallback variants:', fetchedVariants.map(v => ({ id: v.id, name: v.name, series: v.product_series })));
-        }
-
-        console.log('📊 DIAGNOSTIC: Final variants found:', fetchedVariants.map(v => ({ 
-          id: v.id, 
-          name: v.name, 
-          series: v.product_series,
-          category: v.category,
-          emergency_shower_type: v.emergency_shower_type,
-          mounting_type: v.mounting_type,
-          finish_type: v.finish_type
-        })));
-
-        const transformedVariants = fetchedVariants.map(transformVariantToProduct);
-        setSeriesVariants(transformedVariants);
-
-        // Set selected variant (prefer current product, fallback to first)
-        const currentVariant = transformedVariants.find(v => v.id === product.id);
-        setSelectedVariant(currentVariant || (transformedVariants.length > 0 ? transformedVariants[0] : null));
-        
-        console.log('✅ DIAGNOSTIC: Selected variant:', currentVariant?.name || 'First available');
-
-        // DIAGNOSTIC: Check if any variants have configuration fields
-        const hasConfigFields = transformedVariants.some(v => 
-          v.emergency_shower_type || v.mounting_type || v.mixing_type || v.handle_type || 
-          v.cabinet_class || v.finish_type || v.orientation || v.door_type || v.drawer_count
-        );
-        console.log('🎯 DIAGNOSTIC: Any variants have config fields?', hasConfigFields);
-
       } catch (err) {
-        console.error('❌ DIAGNOSTIC: Error fetching variants:', err);
+        console.error("Error Fetching Variants:", err);
         setSeriesVariants([]);
-        setError(err instanceof Error ? err.message : 'Failed to load product variants');
+        setError(err instanceof Error ? err.message : "Failed to load product variants");
       } finally {
         stopLoading();
       }
@@ -416,7 +262,6 @@ const ProductDetail: React.FC = () => {
               ) : (
                 <div className="text-center py-4 text-muted-foreground">
                   <p className="text-sm">No variants available for this product</p>
-                  <p className="text-xs mt-1">Check console for diagnostic information</p>
                 </div>
               )}
             </CardContent>
