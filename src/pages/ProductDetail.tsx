@@ -11,6 +11,7 @@ import { ProductVariantSelector } from '@/components/floorplan/ProductVariantSel
 import ProductImageGallery from '@/components/ProductImageGallery';
 import { Product } from '@/types/product';
 import { supabase } from '@/integrations/supabase/client';
+import { subscribeToProductUpdates, unsubscribeFromProductUpdates } from '@/services/productService';
 import { toast } from 'sonner';
 import { useRFQ } from '@/contexts/RFQContext';
 
@@ -108,7 +109,21 @@ const ProductDetail: React.FC = () => {
     };
 
     fetchVariants();
-  }, [product, productLoading]);
+
+    // Set up real-time subscription for product updates
+    const subscription = subscribeToProductUpdates((payload) => {
+      // Only refresh if it's related to the current product or its variants
+      if (payload.new?.id === id || payload.new?.parent_series_id === id) {
+        console.log('Product detail update detected, refreshing variants');
+        fetchVariants();
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribeFromProductUpdates(subscription);
+    };
+  }, [product, productLoading, id]);
 
   const handleVariantChange = (variantType: string, value: string) => {
     setSelectedVariants(prev => ({ ...prev, [variantType]: value }));
