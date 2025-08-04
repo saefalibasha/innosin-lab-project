@@ -16,10 +16,12 @@ import {
   Box,
   Edit,
   Eye,
-  BarChart3
+  BarChart3,
+  AlertTriangle
 } from 'lucide-react';
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
+import { mockAdminSeries } from '@/data/mockProducts';
 
 interface Product {
   id: string;
@@ -71,6 +73,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -80,13 +83,31 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const fetchProductSeries = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Fetching product series from database...');
+      
       const { data: products, error } = await supabase
         .from('products')
         .select('*')
         .order('product_series', { ascending: true })
         .order('name', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
+
+      if (!products || products.length === 0) {
+        console.log('⚠️ No products found in database, using mock data');
+        setSeries(mockAdminSeries);
+        setIsUsingMockData(true);
+        
+        toast({
+          title: "Development Mode",
+          description: "Using sample data - database connection unavailable",
+          variant: "default",
+        });
+        return;
+      }
 
       // Group products by series
       const seriesMap = new Map<string, Product[]>();
@@ -116,11 +137,20 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       });
 
       setSeries(seriesData);
+      setIsUsingMockData(false);
+      console.log(`✅ Successfully loaded ${seriesData.length} product series from database`);
+      
     } catch (error) {
       console.error('Error fetching product series:', error);
+      
+      // Fallback to mock data
+      console.log('🔄 Falling back to mock data due to error');
+      setSeries(mockAdminSeries);
+      setIsUsingMockData(true);
+      
       toast({
-        title: "Error",
-        description: "Failed to fetch product series",
+        title: "Connection Issue",
+        description: "Using sample data - please check database connection",
         variant: "destructive",
       });
     } finally {
@@ -227,6 +257,25 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Connection Status Indicator */}
+      {isUsingMockData && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+              <div>
+                <h4 className="font-medium text-amber-800">Development Mode Active</h4>
+                <p className="text-sm text-amber-700">
+                  Currently displaying sample data. Database connection unavailable or no products configured.
+                  <br />
+                  <strong>To resolve:</strong> Run the database-fixes.sql script or ensure Supabase connection is working.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-4 text-center">
