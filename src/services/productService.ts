@@ -3,12 +3,11 @@ import { Product } from '@/types/product';
 
 export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
   try {
-    // Fetch only series parents (not individual variants)
-    const { data: products, error } = await supabase
+    // Fetch both series parents AND their variants
+    const { data: allProducts, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
-      .eq('is_series_parent', true)
       .order('series_order', { ascending: true });
 
     if (error) {
@@ -16,10 +15,22 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       return [];
     }
 
-    if (!products) return [];
+    if (!allProducts) return [];
 
-    // Convert database products to frontend Product type
-    const convertedProducts: Product[] = products.map(product => ({
+    // Separate series parents and variants
+    const seriesParents = allProducts.filter(product => product.is_series_parent === true);
+    const variants = allProducts.filter(product => product.parent_series_id !== null);
+
+    // Group variants by parent series
+    const variantsByParent = variants.reduce((acc, variant) => {
+      const parentId = variant.parent_series_id;
+      if (!acc[parentId]) acc[parentId] = [];
+      acc[parentId].push(variant);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // Convert database products to frontend Product type with variants populated
+    const convertedProducts: Product[] = seriesParents.map(product => ({
       id: product.id,
       name: product.name,
       category: product.category || 'Uncategorized',
@@ -40,7 +51,16 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
         modelPath: product.series_model_path || product.model_path,
         thumbnail: product.series_thumbnail_path || product.thumbnail_path
       }],
-      variants: [],
+      variants: (variantsByParent[product.id] || []).map(variant => ({
+        id: variant.id,
+        size: variant.dimensions || 'Standard',
+        dimensions: variant.dimensions || '',
+        type: variant.variant_type || 'standard',
+        orientation: variant.orientation || 'None',
+        modelPath: variant.model_path || '',
+        thumbnail: variant.thumbnail_path || '',
+        images: variant.additional_images || []
+      })),
       baseProductId: product.parent_series_id || undefined
     }));
 
@@ -77,11 +97,11 @@ export const fetchCategoriesFromDatabase = async (): Promise<string[]> => {
 
 export const fetchProductsByCategory = async (category: string): Promise<Product[]> => {
   try {
-    const { data: products, error } = await supabase
+    // Fetch both series parents AND their variants for the specific category
+    const { data: allProducts, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
-      .eq('is_series_parent', true)
       .eq('category', category)
       .order('series_order', { ascending: true });
 
@@ -90,10 +110,22 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       return [];
     }
 
-    if (!products) return [];
+    if (!allProducts) return [];
 
-    // Convert to frontend Product type
-    const convertedProducts: Product[] = products.map(product => ({
+    // Separate series parents and variants
+    const seriesParents = allProducts.filter(product => product.is_series_parent === true);
+    const variants = allProducts.filter(product => product.parent_series_id !== null);
+
+    // Group variants by parent series
+    const variantsByParent = variants.reduce((acc, variant) => {
+      const parentId = variant.parent_series_id;
+      if (!acc[parentId]) acc[parentId] = [];
+      acc[parentId].push(variant);
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    // Convert to frontend Product type with variants populated
+    const convertedProducts: Product[] = seriesParents.map(product => ({
       id: product.id,
       name: product.name,
       category: product.category || 'Uncategorized',
@@ -114,7 +146,16 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
         modelPath: product.series_model_path || product.model_path,
         thumbnail: product.series_thumbnail_path || product.thumbnail_path
       }],
-      variants: [],
+      variants: (variantsByParent[product.id] || []).map(variant => ({
+        id: variant.id,
+        size: variant.dimensions || 'Standard',
+        dimensions: variant.dimensions || '',
+        type: variant.variant_type || 'standard',
+        orientation: variant.orientation || 'None',
+        modelPath: variant.model_path || '',
+        thumbnail: variant.thumbnail_path || '',
+        images: variant.additional_images || []
+      })),
       baseProductId: product.parent_series_id || undefined
     }));
 
@@ -218,4 +259,16 @@ export const fetchProductWithVariants = async (productId: string) => {
     console.error('Error in fetchProductWithVariants:', error);
     return null;
   }
+};
+
+// Real-time data synchronization
+export const subscribeToProductUpdates = (callback: (payload: any) => void) => {
+  return supabase
+    .channel('products-changes')
+    .on('postgres_changes', { 
+      event: '*', 
+      schema: 'public', 
+      table: 'products' 
+    }, callback)
+    .subscribe();
 };
