@@ -35,15 +35,17 @@ const ProductDetail: React.FC = () => {
     console.log('🔄 Transforming variant:', {
       id: variant.id,
       name: variant.name,
+      product_series: variant.product_series,
+      category: variant.category,
+      parent_series_id: variant.parent_series_id,
+      is_series_parent: variant.is_series_parent,
       emergency_shower_type: variant.emergency_shower_type,
       mounting_type: variant.mounting_type,
       mixing_type: variant.mixing_type,
       handle_type: variant.handle_type,
       cabinet_class: variant.cabinet_class,
       finish_type: variant.finish_type,
-      dimensions: variant.dimensions,
-      parent_series_id: variant.parent_series_id,
-      is_series_parent: variant.is_series_parent
+      dimensions: variant.dimensions
     });
 
     const transformed = {
@@ -78,12 +80,23 @@ const ProductDetail: React.FC = () => {
       company_tags: variant.company_tags || [],
       product_series: variant.product_series,
       
-      // Series relationship fields
+      // Series relationship fields - THESE WERE MISSING!
       parent_series_id: variant.parent_series_id,
       is_series_parent: variant.is_series_parent
     };
 
-    console.log('✅ Transformed product:', transformed);
+    console.log('✅ Transformed product config fields:', {
+      id: transformed.id,
+      emergency_shower_type: transformed.emergency_shower_type,
+      mounting_type: transformed.mounting_type,
+      mixing_type: transformed.mixing_type,
+      handle_type: transformed.handle_type,
+      cabinet_class: transformed.cabinet_class,
+      finish_type: transformed.finish_type,
+      parent_series_id: transformed.parent_series_id,
+      is_series_parent: transformed.is_series_parent
+    });
+    
     return transformed;
   };
 
@@ -94,12 +107,13 @@ const ProductDetail: React.FC = () => {
       startLoading();
       reset();
       
-      console.log('🔍 Starting variant fetch for product:', {
+      console.log('🔍 DIAGNOSTIC: Starting variant fetch for product:', {
         id: product.id,
         name: product.name,
         product_series: product.product_series,
         category: product.category,
-        parent_series_id: product.parent_series_id
+        parent_series_id: product.parent_series_id,
+        is_series_parent: product.is_series_parent
       });
 
       try {
@@ -107,7 +121,7 @@ const ProductDetail: React.FC = () => {
         
         // Strategy 1: Use parent_series_id if available (most reliable)
         if (product.parent_series_id) {
-          console.log('📋 Using parent_series_id strategy:', product.parent_series_id);
+          console.log('📋 DIAGNOSTIC: Using parent_series_id strategy:', product.parent_series_id);
           
           // Fetch the parent
           const { data: parentData, error: parentError } = await supabase
@@ -118,7 +132,9 @@ const ProductDetail: React.FC = () => {
             .single();
 
           if (parentError) {
-            console.error('❌ Error fetching parent:', parentError);
+            console.error('❌ DIAGNOSTIC: Error fetching parent:', parentError);
+          } else {
+            console.log('✅ DIAGNOSTIC: Found parent:', parentData?.name);
           }
 
           // Fetch all siblings (including current product)
@@ -129,7 +145,9 @@ const ProductDetail: React.FC = () => {
             .eq('is_active', true);
 
           if (siblingsError) {
-            console.error('❌ Error fetching siblings:', siblingsError);
+            console.error('❌ DIAGNOSTIC: Error fetching siblings:', siblingsError);
+          } else {
+            console.log('✅ DIAGNOSTIC: Found siblings:', siblingsData?.length);
           }
 
           // Combine parent and siblings
@@ -138,12 +156,12 @@ const ProductDetail: React.FC = () => {
           if (siblingsData) allVariants.push(...siblingsData);
           
           fetchedVariants = allVariants;
-          console.log('✅ Found variants using parent_series_id:', fetchedVariants.length);
+          console.log('✅ DIAGNOSTIC: Total variants from parent_series_id:', fetchedVariants.length);
         }
         
         // Strategy 2: Check if current product is a series parent
         else if (product.is_series_parent) {
-          console.log('👑 Product is series parent, fetching children');
+          console.log('👑 DIAGNOSTIC: Product is series parent, fetching children');
           
           const { data: childrenData, error: childrenError } = await supabase
             .from('products')
@@ -152,54 +170,71 @@ const ProductDetail: React.FC = () => {
             .eq('is_active', true);
 
           if (childrenError) {
-            console.error('❌ Error fetching children:', childrenError);
+            console.error('❌ DIAGNOSTIC: Error fetching children:', childrenError);
+          } else {
+            console.log('✅ DIAGNOSTIC: Found children:', childrenData?.length);
           }
 
           // Include parent + children
           fetchedVariants = [product, ...(childrenData || [])];
-          console.log('✅ Found variants as series parent:', fetchedVariants.length);
+          console.log('✅ DIAGNOSTIC: Total variants as series parent:', fetchedVariants.length);
         }
         
-        // Strategy 3: Fallback to product_series string matching with exact database names
+        // Strategy 3: Fallback to product_series string matching
         else {
-          console.log('🔧 Using fallback product_series string matching');
+          console.log('🔧 DIAGNOSTIC: Using fallback product_series string matching for:', product.product_series);
           
           const seriesName = product.product_series;
           let query = supabase.from('products').select('*').eq('is_active', true);
           
+          // DIAGNOSTIC: Show what series we're trying to match
+          console.log('🔍 DIAGNOSTIC: Attempting to match series:', seriesName);
+          
           // Use exact series names from database
           if (seriesName?.includes('Emergency Shower') || seriesName?.includes('Broen-Lab Emergency')) {
-            console.log('🚿 Detected Emergency Shower series');
+            console.log('🚿 DIAGNOSTIC: Detected Emergency Shower series');
             query = query.eq('product_series', 'Broen-Lab Emergency Shower Systems');
           } else if (seriesName?.includes('UNIFLEX') || seriesName?.includes('Single Way')) {
-            console.log('🚰 Detected UNIFLEX/Single Way series');
+            console.log('🚰 DIAGNOSTIC: Detected UNIFLEX/Single Way series');
             query = query.eq('product_series', 'Single Way Taps');
           } else if (seriesName?.includes('Safe Aire')) {
-            console.log('💨 Detected Safe Aire series');
+            console.log('💨 DIAGNOSTIC: Detected Safe Aire series');
             query = query.eq('product_series', 'Safe Aire II Fume Hoods');
           } else if (seriesName?.includes('NOCE')) {
-            console.log('🏭 Detected NOCE series');
+            console.log('🏭 DIAGNOSTIC: Detected NOCE series');
             query = query.eq('product_series', 'NOCE Series Fume Hood');
           } else if (seriesName?.includes('TANGERINE') || seriesName?.includes('Bio Safety')) {
-            console.log('🧪 Detected Bio Safety Cabinet series');
+            console.log('🧪 DIAGNOSTIC: Detected Bio Safety Cabinet series');
             query = query.eq('product_series', 'Bio Safety Cabinet - TANGERINE');
+          } else if (seriesName?.includes('Innosin') || product.category?.includes('Innosin')) {
+            console.log('🏢 DIAGNOSTIC: Detected Innosin Lab series');
+            query = query.eq('category', product.category);
           } else {
-            // Generic fallback
+            console.log('❓ DIAGNOSTIC: Generic fallback for series:', seriesName);
             query = query.eq('product_series', seriesName);
           }
           
           const { data, error } = await query.order('name');
           
           if (error) {
-            console.error('❌ Error in fallback query:', error);
+            console.error('❌ DIAGNOSTIC: Error in fallback query:', error);
             throw error;
           }
           
           fetchedVariants = data || [];
-          console.log('✅ Found variants using fallback:', fetchedVariants.length);
+          console.log('✅ DIAGNOSTIC: Found variants using fallback:', fetchedVariants.length);
+          console.log('🔍 DIAGNOSTIC: Fallback variants:', fetchedVariants.map(v => ({ id: v.id, name: v.name, series: v.product_series })));
         }
 
-        console.log('📊 Final variants found:', fetchedVariants.map(v => ({ id: v.id, name: v.name })));
+        console.log('📊 DIAGNOSTIC: Final variants found:', fetchedVariants.map(v => ({ 
+          id: v.id, 
+          name: v.name, 
+          series: v.product_series,
+          category: v.category,
+          emergency_shower_type: v.emergency_shower_type,
+          mounting_type: v.mounting_type,
+          finish_type: v.finish_type
+        })));
 
         const transformedVariants = fetchedVariants.map(transformVariantToProduct);
         setSeriesVariants(transformedVariants);
@@ -208,10 +243,17 @@ const ProductDetail: React.FC = () => {
         const currentVariant = transformedVariants.find(v => v.id === product.id);
         setSelectedVariant(currentVariant || (transformedVariants.length > 0 ? transformedVariants[0] : null));
         
-        console.log('✅ Selected variant:', currentVariant?.name || 'First available');
+        console.log('✅ DIAGNOSTIC: Selected variant:', currentVariant?.name || 'First available');
+
+        // DIAGNOSTIC: Check if any variants have configuration fields
+        const hasConfigFields = transformedVariants.some(v => 
+          v.emergency_shower_type || v.mounting_type || v.mixing_type || v.handle_type || 
+          v.cabinet_class || v.finish_type || v.orientation || v.door_type || v.drawer_count
+        );
+        console.log('🎯 DIAGNOSTIC: Any variants have config fields?', hasConfigFields);
 
       } catch (err) {
-        console.error('❌ Error fetching variants:', err);
+        console.error('❌ DIAGNOSTIC: Error fetching variants:', err);
         setSeriesVariants([]);
         setError(err instanceof Error ? err.message : 'Failed to load product variants');
       } finally {
@@ -374,6 +416,7 @@ const ProductDetail: React.FC = () => {
               ) : (
                 <div className="text-center py-4 text-muted-foreground">
                   <p className="text-sm">No variants available for this product</p>
+                  <p className="text-xs mt-1">Check console for diagnostic information</p>
                 </div>
               )}
             </CardContent>
