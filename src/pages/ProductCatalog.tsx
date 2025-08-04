@@ -11,7 +11,7 @@ import QuoteCartSummary from '@/components/QuoteCartSummary';
 import CompanyLandingHeader from '@/components/CompanyLandingHeader';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
-import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
+import { fetchProductsFromDatabase, fetchCategoriesFromDatabase, subscribeToProductUpdates } from '@/services/productService';
 import { usePerformanceLogger } from '@/hooks/usePerformanceLogger';
 
 const ProductCatalog = () => {
@@ -58,6 +58,32 @@ const ProductCatalog = () => {
     };
 
     fetchData();
+  }, []);
+
+  // Real-time updates subscription
+  useEffect(() => {
+    const subscription = subscribeToProductUpdates((payload) => {
+      console.log('Product update received:', payload);
+      // Refetch products when changes occur
+      const fetchUpdatedData = async () => {
+        try {
+          const [productsData, categoriesData] = await Promise.all([
+            fetchProductsFromDatabase(),
+            fetchCategoriesFromDatabase()
+          ]);
+          setProducts(productsData);
+          setCategories(categoriesData);
+        } catch (error) {
+          console.error('Error refreshing data after real-time update:', error);
+        }
+      };
+      
+      fetchUpdatedData();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const filteredProducts = products.filter(product => {
