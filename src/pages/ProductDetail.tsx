@@ -31,32 +31,61 @@ const ProductDetail: React.FC = () => {
     reset
   } = useLoadingState(false);
 
-  const transformVariantToProduct = (variant: any): Product => ({
-    id: variant.id,
-    name: variant.name,
-    category: variant.category,
-    dimensions: variant.dimensions || '',
-    modelPath: variant.model_path || '/placeholder.glb',
-    thumbnail: variant.thumbnail_path || '/placeholder.svg',
-    images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
-    description: variant.description || '',
-    fullDescription: variant.full_description || variant.description || '',
-    specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
-    product_code: variant.product_code,
-    thumbnail_path: variant.thumbnail_path,
-    model_path: variant.model_path,
-    finish_type: variant.finish_type,
-    orientation: variant.orientation,
-    drawer_count: variant.drawer_count,
-    door_type: variant.door_type,
-    mounting_type: variant.mounting_type,
-    mixing_type: variant.mixing_type,
-    handle_type: variant.handle_type,
-    emergency_shower_type: variant.emergency_shower_type,
-    cabinet_class: variant.cabinet_class,
-    company_tags: variant.company_tags || [],
-    product_series: variant.product_series
-  });
+  const transformVariantToProduct = (variant: any): Product => {
+    console.log('🔄 Transforming variant:', {
+      id: variant.id,
+      name: variant.name,
+      emergency_shower_type: variant.emergency_shower_type,
+      mounting_type: variant.mounting_type,
+      mixing_type: variant.mixing_type,
+      handle_type: variant.handle_type,
+      cabinet_class: variant.cabinet_class,
+      finish_type: variant.finish_type,
+      dimensions: variant.dimensions,
+      parent_series_id: variant.parent_series_id,
+      is_series_parent: variant.is_series_parent
+    });
+
+    const transformed = {
+      id: variant.id,
+      name: variant.name,
+      category: variant.category,
+      dimensions: variant.dimensions && variant.dimensions.trim() ? variant.dimensions.trim() : '',
+      modelPath: variant.model_path || '/placeholder.glb',
+      thumbnail: variant.thumbnail_path || '/placeholder.svg',
+      images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
+      description: variant.description || '',
+      fullDescription: variant.full_description || variant.description || '',
+      specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
+      product_code: variant.product_code,
+      thumbnail_path: variant.thumbnail_path,
+      model_path: variant.model_path,
+      
+      // Configuration fields - convert empty strings to undefined
+      finish_type: variant.finish_type && variant.finish_type.trim() ? variant.finish_type.trim() : undefined,
+      orientation: variant.orientation && variant.orientation.trim() && variant.orientation.trim() !== 'None' ? variant.orientation.trim() : undefined,
+      drawer_count: variant.drawer_count && variant.drawer_count > 0 ? variant.drawer_count : undefined,
+      door_type: variant.door_type && variant.door_type.trim() ? variant.door_type.trim() : undefined,
+      
+      // Enhanced configuration fields - convert empty strings to undefined
+      mounting_type: variant.mounting_type && variant.mounting_type.trim() ? variant.mounting_type.trim() : undefined,
+      mixing_type: variant.mixing_type && variant.mixing_type.trim() ? variant.mixing_type.trim() : undefined,
+      handle_type: variant.handle_type && variant.handle_type.trim() ? variant.handle_type.trim() : undefined,
+      emergency_shower_type: variant.emergency_shower_type && variant.emergency_shower_type.trim() ? variant.emergency_shower_type.trim() : undefined,
+      cabinet_class: variant.cabinet_class && variant.cabinet_class.trim() ? variant.cabinet_class.trim() : undefined,
+      
+      // Additional fields
+      company_tags: variant.company_tags || [],
+      product_series: variant.product_series,
+      
+      // Series relationship fields
+      parent_series_id: variant.parent_series_id,
+      is_series_parent: variant.is_series_parent
+    };
+
+    console.log('✅ Transformed product:', transformed);
+    return transformed;
+  };
 
   useEffect(() => {
     const fetchVariants = async () => {
