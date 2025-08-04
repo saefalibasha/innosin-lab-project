@@ -40,7 +40,25 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No products found</p>
+        <div className="max-w-md mx-auto">
+          <div className="mb-4">
+            <svg className="mx-auto h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2M4 13h2m0 0V9a2 2 0 012-2h2m0 0V6a2 2 0 012-2h2.09M15 13h2m-2 0V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4h4z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-foreground mb-2">No products found</h3>
+          <p className="text-muted-foreground mb-4">
+            We couldn't find any products matching your criteria. This might be due to:
+          </p>
+          <ul className="text-sm text-muted-foreground text-left space-y-1">
+            <li>• Database connectivity issues</li>
+            <li>• No products matching the current filters</li>
+            <li>• Products may need to be activated in the admin panel</li>
+          </ul>
+          <p className="text-xs text-muted-foreground mt-4">
+            Check the browser console for detailed debugging information.
+          </p>
+        </div>
       </div>
     );
   }

@@ -9,6 +9,7 @@ import ProductFilters from '@/components/ProductFilters';
 import ProductGrid from '@/components/ProductGrid';
 import QuoteCartSummary from '@/components/QuoteCartSummary';
 import CompanyLandingHeader from '@/components/CompanyLandingHeader';
+import SupabaseDebugPanel from '@/components/debug/SupabaseDebugPanel';
 import { Product } from '@/types/product';
 import { productPageContent } from '@/data/productPageContent';
 import { fetchProductsFromDatabase, fetchCategoriesFromDatabase } from '@/services/productService';
@@ -41,17 +42,33 @@ const ProductCatalog = () => {
       setLoading(true);
       try {
         console.time('ProductCatalog data fetch');
+        console.log('🚀 ProductCatalog: Starting data fetch...');
+        
         const [productsData, categoriesData] = await Promise.all([
           fetchProductsFromDatabase(),
           fetchCategoriesFromDatabase()
         ]);
         console.timeEnd('ProductCatalog data fetch');
         
+        console.log('📊 ProductCatalog fetch results:', {
+          productsCount: productsData.length,
+          categoriesCount: categoriesData.length,
+          categories: categoriesData
+        });
+        
         setProducts(productsData);
         setCategories(categoriesData);
+        
+        if (productsData.length === 0) {
+          console.warn('⚠️ No products loaded - this may indicate a database connectivity or filter issue');
+          toast.error('No products found. Please check your database connection or contact support.');
+        } else {
+          console.log('✅ Products loaded successfully');
+        }
+        
       } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load products');
+        console.error('💥 Error fetching data:', error);
+        toast.error('Failed to load products. Please check your internet connection and try again.');
       } finally {
         setLoading(false);
       }
@@ -142,6 +159,9 @@ const ProductCatalog = () => {
           <QuoteCartSummary itemCount={itemCount} />
         </div>
       </div>
+      
+      {/* Debug Panel - only shows in development */}
+      <SupabaseDebugPanel />
     </div>
   );
 };

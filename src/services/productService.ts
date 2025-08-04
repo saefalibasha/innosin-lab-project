@@ -3,8 +3,23 @@ import { Product } from '@/types/product';
 
 export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
   try {
-    // Fetch only series parents (not individual variants)
-    const { data: products, error } = await supabase
+    console.log('🔍 Starting product fetch from database...');
+    
+    // First, let's try to get total count to verify connection
+    const { count: totalCount, error: countError } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true });
+    
+    if (countError) {
+      console.error('❌ Error connecting to products table:', countError);
+      return [];
+    }
+    
+    console.log(`📊 Total products in database: ${totalCount}`);
+    
+    // Try the original restrictive query first
+    console.log('🎯 Attempting original restrictive query (is_active=true AND is_series_parent=true)...');
+    let { data: products, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
@@ -12,11 +27,52 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       .order('series_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching products:', error);
+      console.error('❌ Error with restrictive query:', error);
       return [];
     }
 
-    if (!products) return [];
+    console.log(`🎯 Restrictive query returned: ${products?.length || 0} products`);
+
+    // If no products found with restrictive query, try alternative strategies
+    if (!products || products.length === 0) {
+      console.log('🔄 No products found with restrictive filters, trying alternative strategies...');
+      
+      // Strategy 1: Only is_active=true
+      console.log('📋 Strategy 1: Only is_active=true...');
+      const { data: activeProducts, error: activeError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .order('series_order', { ascending: true });
+      
+      if (!activeError && activeProducts && activeProducts.length > 0) {
+        console.log(`✅ Found ${activeProducts.length} products with is_active=true`);
+        products = activeProducts;
+      } else {
+        // Strategy 2: No filters at all
+        console.log('📋 Strategy 2: No filters (get all products)...');
+        const { data: allProducts, error: allError } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50); // Limit to prevent overwhelming results
+        
+        if (!allError && allProducts && allProducts.length > 0) {
+          console.log(`✅ Found ${allProducts.length} products with no filters`);
+          products = allProducts;
+        } else {
+          console.log('❌ No products found even without filters');
+          return [];
+        }
+      }
+    }
+
+    if (!products || products.length === 0) {
+      console.log('⚠️ No products available in database');
+      return [];
+    }
+
+    console.log(`✅ Processing ${products.length} products for frontend...`);
 
     // Convert database products to frontend Product type
     const convertedProducts: Product[] = products.map(product => ({
@@ -53,31 +109,62 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
 
 export const fetchCategoriesFromDatabase = async (): Promise<string[]> => {
   try {
-    const { data: products, error } = await supabase
+    console.log('🏷️ Fetching categories from database...');
+    
+    // Try the restrictive query first
+    let { data: products, error } = await supabase
       .from('products')
       .select('category')
       .eq('is_active', true)
       .eq('is_series_parent', true);
 
     if (error) {
-      console.error('Error fetching categories:', error);
+      console.error('❌ Error fetching categories with restrictive filters:', error);
       return [];
+    }
+
+    // If no products found with restrictive query, try alternatives
+    if (!products || products.length === 0) {
+      console.log('🔄 No categories found with restrictive filters, trying alternatives...');
+      
+      // Try with only is_active=true
+      const { data: activeProducts, error: activeError } = await supabase
+        .from('products')
+        .select('category')
+        .eq('is_active', true);
+      
+      if (!activeError && activeProducts && activeProducts.length > 0) {
+        products = activeProducts;
+      } else {
+        // Try with no filters
+        const { data: allProducts, error: allError } = await supabase
+          .from('products')
+          .select('category');
+        
+        if (!allError && allProducts && allProducts.length > 0) {
+          products = allProducts;
+        }
+      }
     }
 
     if (!products) return [];
 
     // Get unique categories
     const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
+    console.log(`🏷️ Found categories: ${categories.join(', ')}`);
     return categories;
   } catch (error) {
-    console.error('Error in fetchCategoriesFromDatabase:', error);
+    console.error('❌ Error in fetchCategoriesFromDatabase:', error);
     return [];
   }
 };
 
 export const fetchProductsByCategory = async (category: string): Promise<Product[]> => {
   try {
-    const { data: products, error } = await supabase
+    console.log(`🏷️ Fetching products for category: ${category}`);
+    
+    // Try the restrictive query first
+    let { data: products, error } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
@@ -86,11 +173,41 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       .order('series_order', { ascending: true });
 
     if (error) {
-      console.error('Error fetching products by category:', error);
+      console.error('❌ Error fetching products by category with restrictive filters:', error);
       return [];
     }
 
+    // If no products found with restrictive query, try alternatives
+    if (!products || products.length === 0) {
+      console.log('🔄 No products found with restrictive filters, trying alternatives...');
+      
+      // Try with only is_active=true
+      const { data: activeProducts, error: activeError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_active', true)
+        .eq('category', category)
+        .order('series_order', { ascending: true });
+      
+      if (!activeError && activeProducts && activeProducts.length > 0) {
+        products = activeProducts;
+      } else {
+        // Try with no filters except category
+        const { data: categoryProducts, error: categoryError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', category)
+          .order('created_at', { ascending: false });
+        
+        if (!categoryError && categoryProducts && categoryProducts.length > 0) {
+          products = categoryProducts;
+        }
+      }
+    }
+
     if (!products) return [];
+
+    console.log(`✅ Found ${products.length} products for category: ${category}`);
 
     // Convert to frontend Product type
     const convertedProducts: Product[] = products.map(product => ({
