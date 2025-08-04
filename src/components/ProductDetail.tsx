@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,11 +34,10 @@ const ProductDetail: React.FC = () => {
   // Extract series information from product
   const getSeriesInfo = (product: any) => {
     if (!product) return { series: '', slug: '' };
-    
     const name = product.name?.toLowerCase() || '';
     const series = product.product_series?.toLowerCase() || '';
     const category = product.category?.toLowerCase() || '';
-    
+    // Logging for debugging
     console.log('🔍 Product data for series detection:', {
       name: product.name,
       product_series: product.product_series,
@@ -49,47 +47,31 @@ const ProductDetail: React.FC = () => {
       mixing_type: product.mixing_type,
       handle_type: product.handle_type
     });
-    
-    // Bio Safety Cabinet - TANGERINE detection
+
     if (series.includes('bio safety cabinet - tangerine') || category.includes('bio safety cabinet - tangerine')) {
       return { series: 'Bio Safety Cabinet - TANGERINE', slug: 'bio-safety-cabinet-tangerine' };
     }
-    
-    // Broen-Lab Emergency Shower Systems detection (note: trailing space in DB)
     if (series.includes('broen-lab emergency shower') || category.includes('broen-lab emergency shower') || series.includes('emergency shower')) {
-      return { series: 'Broen-Lab Emergency Shower Systems', slug: 'broen-lab-emergency-shower' };
+      return { series: 'Broen-Lab Emergency Shower Systems', slug: 'broen-lab-emergency-shower-series' };
     }
-    
-    // NOCE Series Fume Hood detection
     if (series.includes('noce series fume hood') || category.includes('noce series fume hood') || series.includes('noce')) {
       return { series: 'NOCE Series Fume Hood', slug: 'noce-series-fume-hood' };
     }
-    
-    // Safe Aire II Fume Hoods detection
     if (series.includes('safe aire ii fume hoods') || category.includes('safe aire ii fume hoods') || series.includes('safe aire')) {
       return { series: 'Safe Aire II Fume Hoods', slug: 'safe-aire-ii-fume-hoods' };
     }
-    
-    // Single Way Taps (UNIFLEX) detection
     if (series.includes('single way taps') || category.includes('single way taps') || series.includes('uniflex')) {
-      return { series: 'Single Way Taps', slug: 'single-way-taps' };
+      return { series: 'Broen-Lab UNIFLEX Taps Series', slug: 'broen-lab-uniflex-taps-series' };
     }
-    
-    // Emergency Shower detection (legacy)
     if (series.includes('emergency shower') || name.includes('emergency shower') || category.includes('emergency')) {
       return { series: 'Emergency Shower', slug: 'emergency-shower' };
     }
-    
-    // UNIFLEX detection (legacy)
     if (series.includes('uniflex') || name.includes('uniflex') || category.includes('uniflex')) {
-      return { series: 'UNIFLEX', slug: 'uniflex' };
+      return { series: 'UNIFLEX', slug: 'broen-lab-uniflex-taps-series' };
     }
-    
-    // Safe Aire detection (legacy)
     if (series.includes('safe aire') || name.includes('safe aire') || category.includes('safe aire')) {
-      return { series: 'Safe Aire', slug: 'safe-aire' };
+      return { series: 'Safe Aire', slug: 'safe-aire-ii-fume-hoods' };
     }
-    
     return { series: product.product_series || product.category, slug: product.product_series?.toLowerCase().replace(/\s+/g, '-') || 'unknown' };
   };
 
@@ -98,17 +80,11 @@ const ProductDetail: React.FC = () => {
     const fetchVariants = async () => {
       if (!product || productLoading) return;
 
-      console.log('🚀 Starting variant fetch process for product:', product.id);
       startLoading();
       reset();
-      
       try {
         const seriesInfo = getSeriesInfo(product);
-        console.log('🔍 Series info determined:', seriesInfo);
-        
-        const startTime = performance.now();
         let fetchedVariants = [];
-        
         // Fetch variants based on series type
         if (seriesInfo.series === 'Bio Safety Cabinet - TANGERINE') {
           const { data, error } = await supabase
@@ -117,7 +93,6 @@ const ProductDetail: React.FC = () => {
             .or('product_series.ilike.%Bio Safety Cabinet - TANGERINE%,category.ilike.%Bio Safety Cabinet - TANGERINE%')
             .eq('is_active', true)
             .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
         } else if (seriesInfo.series === 'Broen-Lab Emergency Shower Systems') {
@@ -127,7 +102,6 @@ const ProductDetail: React.FC = () => {
             .or('product_series.ilike.%Broen-Lab Emergency Shower%,category.ilike.%Broen-Lab Emergency Shower%')
             .eq('is_active', true)
             .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
         } else if (seriesInfo.series === 'NOCE Series Fume Hood') {
@@ -137,7 +111,6 @@ const ProductDetail: React.FC = () => {
             .or('product_series.ilike.%NOCE Series Fume Hood%,category.ilike.%NOCE Series Fume Hood%')
             .eq('is_active', true)
             .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
         } else if (seriesInfo.series === 'Safe Aire II Fume Hoods') {
@@ -147,17 +120,15 @@ const ProductDetail: React.FC = () => {
             .or('product_series.ilike.%Safe Aire II Fume Hoods%,category.ilike.%Safe Aire II Fume Hoods%')
             .eq('is_active', true)
             .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'Single Way Taps') {
+        } else if (seriesInfo.series === 'Broen-Lab UNIFLEX Taps Series') {
           const { data, error } = await supabase
             .from('products')
             .select('*')
-            .or('product_series.ilike.%Single Way Taps%,category.ilike.%Single Way Taps%')
+            .or('product_series.ilike.%UNIFLEX%,category.ilike.%UNIFLEX%,product_series.ilike.%Single Way Taps%,category.ilike.%Single Way Taps%')
             .eq('is_active', true)
             .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
         } else if (seriesInfo.series === 'Emergency Shower') {
@@ -167,27 +138,6 @@ const ProductDetail: React.FC = () => {
             .or('product_series.ilike.%emergency shower%,name.ilike.%emergency shower%,category.ilike.%emergency%')
             .eq('is_active', true)
             .order('name');
-          
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'UNIFLEX') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%uniflex%,name.ilike.%uniflex%,category.ilike.%uniflex%')
-            .eq('is_active', true)
-            .order('name');
-          
-          if (error) throw error;
-          fetchedVariants = data || [];
-        } else if (seriesInfo.series === 'Safe Aire') {
-          const { data, error } = await supabase
-            .from('products')
-            .select('*')
-            .or('product_series.ilike.%safe aire%,name.ilike.%safe aire%,category.ilike.%safe aire%')
-            .eq('is_active', true)
-            .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
         } else {
@@ -198,43 +148,20 @@ const ProductDetail: React.FC = () => {
             .or(`product_series.eq.${product.product_series},category.eq.${product.category}`)
             .eq('is_active', true)
             .order('name');
-          
           if (error) throw error;
           fetchedVariants = data || [];
         }
-        
-        const endTime = performance.now();
-        
-        console.log(`⏱️ Variant fetch took ${endTime - startTime}ms`);
-        console.log('📦 Raw fetched variants response:', fetchedVariants);
-        
-        if (fetchedVariants && fetchedVariants.length > 0) {
-          console.log('📊 Comprehensive variant analysis:');
-          console.log('- Total variants:', fetchedVariants.length);
-          console.log('- Emergency shower types:', [...new Set(fetchedVariants.map(v => v.emergency_shower_type).filter(Boolean))]);
-          console.log('- Mounting types:', [...new Set(fetchedVariants.map(v => v.mounting_type).filter(Boolean))]);
-          console.log('- Mixing types:', [...new Set(fetchedVariants.map(v => v.mixing_type).filter(Boolean))]);
-          console.log('- Handle types:', [...new Set(fetchedVariants.map(v => v.handle_type).filter(Boolean))]);
-          console.log('- Cabinet classes:', [...new Set(fetchedVariants.map(v => v.cabinet_class).filter(Boolean))]);
-          console.log('- Unique dimensions:', [...new Set(fetchedVariants.map(v => v.dimensions).filter(Boolean))]);
-          console.log('- Unique finishes:', [...new Set(fetchedVariants.map(v => v.finish_type).filter(Boolean))]);
-          
-          setSeriesVariants(fetchedVariants);
-          
-          // Set the current product as selected variant if it's in the list
-          const currentVariant = fetchedVariants.find(v => v.id === product.id);
-          if (currentVariant) {
-            setSelectedVariant(currentVariant);
-          } else if (fetchedVariants.length > 0) {
-            setSelectedVariant(fetchedVariants[0]);
-          }
-        } else {
-          console.log('⚠️ No variants found for series:', seriesInfo.slug);
-          setSeriesVariants([]);
-          setSelectedVariant(product); // Use the current product as fallback
+
+        setSeriesVariants(fetchedVariants);
+
+        // Set the current product as selected variant if it's in the list
+        const currentVariant = fetchedVariants.find(v => v.id === product.id);
+        if (currentVariant) {
+          setSelectedVariant(currentVariant);
+        } else if (fetchedVariants.length > 0) {
+          setSelectedVariant(fetchedVariants[0]);
         }
       } catch (err) {
-        console.error("❌ Failed to fetch variants:", err);
         setSeriesVariants([]);
         setSelectedVariant(product); // Use the current product as fallback
         setError(err instanceof Error ? err.message : 'Failed to load product variants');
@@ -249,17 +176,15 @@ const ProductDetail: React.FC = () => {
   // Handle variant selection - convert between ID and object
   const handleVariantChange = (variantId: string) => {
     const variant = seriesVariants.find(v => v.id === variantId);
-    console.log('🎯 Variant selected by ID:', variantId, 'found:', variant);
     setSelectedVariant(variant || null);
   };
 
-  // Determine which configurator to use based on product series
+  // VariantSelector for all supported series
   const getConfiguratorComponent = () => {
     if (!product || seriesVariants.length === 0) return null;
 
     const seriesInfo = getSeriesInfo(product);
-    console.log('🏗️ Rendering configurator for series:', seriesInfo.series, 'with variants:', seriesVariants.length);
-    
+
     return (
       <VariantSelector
         variants={seriesVariants.map(v => ({
@@ -272,18 +197,19 @@ const ProductDetail: React.FC = () => {
           variant_type: v.variant_type || 'standard',
           drawer_count: v.drawer_count,
           finish_type: v.finish_type,
-          // Additional fields for special series
           emergency_shower_type: v.emergency_shower_type,
           mounting_type: v.mounting_type,
           mixing_type: v.mixing_type,
           handle_type: v.handle_type,
-          cabinet_class: v.cabinet_class
+          cabinet_class: v.cabinet_class,
+          series_slug: seriesInfo.slug
         }))}
         selectedVariantId={selectedVariant?.id || ''}
         onVariantChange={handleVariantChange}
         selectedFinish={selectedFinish}
         onFinishChange={setSelectedFinish}
         groupByDimensions={true}
+        seriesSlug={seriesInfo.slug}
       />
     );
   };
@@ -321,7 +247,7 @@ const ProductDetail: React.FC = () => {
 
   const displayProduct = selectedVariant || product;
 
-  // Get product images for the gallery - using 'images' property instead of 'additional_images'
+  // Get product images for the gallery
   const getProductImages = () => {
     const images = [];
     if (displayProduct.thumbnail_path) images.push(displayProduct.thumbnail_path);

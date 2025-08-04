@@ -52,6 +52,9 @@ export interface Product {
   cabinet_class?: string; // For TANGERINE (A2/B2)
   company_tags?: string[]; // Company/brand tags
   product_series?: string; // Product series name
+  // Series relationship fields
+  parent_series_id?: string; // Reference to parent series product
+  is_series_parent?: boolean; // Whether this product is a series parent
 }
 
 // New interface for wall cabinet configuration
