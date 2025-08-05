@@ -22,6 +22,26 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+interface DatabaseVariant {
+  id: string;
+  product_code: string;
+  name: string;
+  category: string;
+  dimensions?: string;
+  door_type?: string;
+  orientation?: string;
+  finish_type?: string;
+  mounting_type?: string;
+  mixing_type?: string;
+  handle_type?: string;
+  emergency_shower_type?: string;
+  drawer_count?: number;
+  description?: string;
+  thumbnail_path?: string;
+  model_path?: string;
+  is_active: boolean;
+}
+
 interface ProductSeries {
   id: string;
   name: string;
@@ -35,6 +55,7 @@ interface ProductSeries {
   completion_rate: number;
   series_thumbnail_path?: string;
   series_model_path?: string;
+  variants: DatabaseVariant[];
 }
 
 export const ProductSeriesManager = () => {
@@ -55,65 +76,81 @@ export const ProductSeriesManager = () => {
       setLoading(true);
       setError(null);
       
-      // Fetch series with variant counts
-      const { data: seriesData, error } = await supabase
+      // Fetch all products
+      const { data: products, error } = await supabase
         .from('products')
-        .select(`
-          id,
-          name,
-          product_code,
-          product_series,
-          category,
-          description,
-          series_slug,
-          is_active,
-          series_thumbnail_path,
-          series_model_path
-        `)
-        .eq('is_series_parent', true)
+        .select(`*`)
         .order('product_series', { ascending: true });
 
       if (error) throw error;
 
-      console.log('Series data fetched:', seriesData);
+      console.log('Products data fetched:', products);
 
-      // Get variant counts for each series
-      const seriesWithCounts = await Promise.all(
-        (seriesData || []).map(async (s) => {
-          const { count: variantCount, error: countError } = await supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true })
-            .eq('parent_series_id', s.id)
-            .eq('is_active', true);
+      if (!products || products.length === 0) {
+        setSeries([]);
+        return;
+      }
 
-          if (countError) {
-            console.error('Error counting variants for series:', s.id, countError);
-          }
+      // Group products by product_series
+      const seriesMap = new Map<string, any[]>();
+      
+      products.forEach(product => {
+        const seriesName = product.product_series;
+        if (!seriesName) return;
+        
+        if (!seriesMap.has(seriesName)) {
+          seriesMap.set(seriesName, []);
+        }
+        
+        seriesMap.get(seriesName)!.push(product);
+      });
 
-          // Get completion rate (variants with both thumbnail and model)
-          const { data: variants, error: variantsError } = await supabase
-            .from('products')
-            .select('thumbnail_path, model_path')
-            .eq('parent_series_id', s.id)
-            .eq('is_active', true);
+      // Convert to ProductSeries format with variants
+      const seriesWithCounts = Array.from(seriesMap.entries()).map(([seriesName, variants]) => {
+        const activeVariants = variants.filter(v => v.is_active);
+        const variantsWithAssets = variants.filter(v => v.thumbnail_path && v.model_path);
+        const completionRate = variants.length > 0 ? Math.round((variantsWithAssets.length / variants.length) * 100) : 0;
+        
+        // Get series thumbnail from any variant that has series_thumbnail_path
+        const seriesThumbnail = variants.find(p => p.series_thumbnail_path)?.series_thumbnail_path;
+        
+        // Map variants to DatabaseVariant format
+        const mappedVariants: DatabaseVariant[] = variants.map(variant => ({
+          id: variant.id,
+          product_code: variant.product_code || '',
+          name: variant.name || '',
+          category: variant.category || '',
+          dimensions: variant.dimensions,
+          door_type: variant.door_type,
+          orientation: variant.orientation,
+          finish_type: variant.finish_type,
+          mounting_type: variant.mounting_type,
+          mixing_type: variant.mixing_type,
+          handle_type: variant.handle_type,
+          emergency_shower_type: variant.emergency_shower_type,
+          drawer_count: variant.drawer_count,
+          description: variant.description,
+          thumbnail_path: variant.thumbnail_path,
+          model_path: variant.model_path,
+          is_active: variant.is_active || false
+        }));
 
-          if (variantsError) {
-            console.error('Error fetching variants for completion rate:', s.id, variantsError);
-          }
-
-          const completedVariants = variants?.filter(v => 
-            v.thumbnail_path && v.model_path
-          ).length || 0;
-
-          const completionRate = variantCount ? (completedVariants / variantCount) * 100 : 0;
-
-          return {
-            ...s,
-            variant_count: variantCount || 0,
-            completion_rate: Math.round(completionRate)
-          };
-        })
-      );
+        return {
+          id: variants[0]?.id || '',
+          name: seriesName,
+          product_code: variants[0]?.product_code || '',
+          product_series: seriesName,
+          category: variants[0]?.category || '',
+          description: variants[0]?.description || '',
+          series_slug: seriesName.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').trim(),
+          is_active: activeVariants.length > 0,
+          variant_count: variants.length,
+          completion_rate: completionRate,
+          series_thumbnail_path: seriesThumbnail,
+          series_model_path: variants[0]?.series_model_path,
+          variants: mappedVariants
+        };
+      });
 
       console.log('Series with counts:', seriesWithCounts);
       setSeries(seriesWithCounts);
@@ -193,21 +230,13 @@ export const ProductSeriesManager = () => {
 
   const handleDeleteSeries = async (seriesId: string, seriesName: string) => {
     try {
-      // First, delete all variants in this series
+      // Delete all variants in this series by product_series
       const { error: variantsError } = await supabase
         .from('products')
         .delete()
-        .eq('parent_series_id', seriesId);
+        .eq('product_series', seriesName);
 
       if (variantsError) throw variantsError;
-
-      // Then delete the series itself
-      const { error: seriesError } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', seriesId);
-
-      if (seriesError) throw seriesError;
 
       // Log the activity
       await supabase
