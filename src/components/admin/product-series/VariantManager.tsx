@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +20,7 @@ interface DatabaseVariant {
   mixing_type?: string;
   handle_type?: string;
   emergency_shower_type?: string;
-  number_of_drawers?: number;
+  drawer_count?: number;
   description?: string;
   thumbnail_path?: string;
   model_path?: string;
@@ -88,7 +87,7 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
         mixing_type: item.mixing_type,
         handle_type: item.handle_type,
         emergency_shower_type: item.emergency_shower_type,
-        number_of_drawers: item.number_of_drawers,
+        drawer_count: item.drawer_count,
         description: item.description,
         thumbnail_path: item.thumbnail_path,
         model_path: item.model_path,
@@ -247,10 +246,10 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
                           </div>
                         )}
                         
-                        {variant.number_of_drawers && variant.number_of_drawers > 0 && (
+                        {variant.drawer_count && variant.drawer_count > 0 && (
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Drawers:</span>
-                            <span>{variant.number_of_drawers}</span>
+                            <span>{variant.drawer_count}</span>
                           </div>
                         )}
                         

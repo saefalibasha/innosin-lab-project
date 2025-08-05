@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -70,7 +69,7 @@ interface DatabaseVariant {
   mixing_type?: string;
   handle_type?: string;
   emergency_shower_type?: string;
-  number_of_drawers?: number;
+  drawer_count?: number;
   description?: string;
   thumbnail_path?: string;
   model_path?: string;
@@ -172,7 +171,7 @@ export const EnhancedProductSeriesManager = () => {
           mixing_type: product.mixing_type,
           handle_type: product.handle_type,
           emergency_shower_type: product.emergency_shower_type,
-          number_of_drawers: product.number_of_drawers,
+          drawer_count: product.drawer_count,
           description: product.description,
           thumbnail_path: product.thumbnail_path,
           model_path: product.model_path,
