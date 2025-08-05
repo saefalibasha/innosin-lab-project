@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { mockProductSeries, mockCategories } from '@/data/mockProducts';
+import { DatabaseProduct } from '@/types/supabase';
 
 export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
   try {
@@ -40,7 +41,7 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
       if (!acc[parentId]) acc[parentId] = [];
       acc[parentId].push(variant);
       return acc;
-    }, {} as Record<string, unknown[]>);
+    }, {} as Record<string, DatabaseProduct[]>);
 
     // Convert database products to frontend Product type with variants populated
     const convertedProducts: Product[] = seriesParents.map(product => ({
@@ -155,7 +156,7 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
       if (!acc[parentId]) acc[parentId] = [];
       acc[parentId].push(variant);
       return acc;
-    }, {} as Record<string, unknown[]>);
+    }, {} as Record<string, DatabaseProduct[]>);
 
     // Convert to frontend Product type with variants populated
     const convertedProducts: Product[] = seriesParents.map(product => ({

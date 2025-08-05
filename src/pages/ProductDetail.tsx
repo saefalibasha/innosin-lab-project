@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { subscribeToProductUpdates } from '@/services/productService';
 import { toast } from 'sonner';
 import { useRFQ } from '@/contexts/RFQContext';
+import { DatabaseProduct, RealtimePayload } from '@/types/supabase';
 
 const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,14 +33,14 @@ const ProductDetail: React.FC = () => {
     reset
   } = useLoadingState(false);
 
-  const transformVariantToProduct = (variant: any): Product => ({
+  const transformVariantToProduct = (variant: DatabaseProduct): Product => ({
     id: variant.id,
     name: variant.name,
     category: variant.category,
     dimensions: variant.dimensions || '',
     modelPath: variant.model_path || '/placeholder.glb',
     thumbnail: variant.thumbnail_path || '/placeholder.svg',
-    images: variant.images || [variant.thumbnail_path || '/placeholder.svg'],
+    images: variant.additional_images || [variant.thumbnail_path || '/placeholder.svg'],
     description: variant.description || '',
     fullDescription: variant.full_description || variant.description || '',
     specifications: Array.isArray(variant.specifications) ? variant.specifications : variant.specifications ? [variant.specifications] : [],
@@ -115,7 +116,7 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     if (!product) return;
 
-    const subscription = subscribeToProductUpdates((payload) => {
+    const subscription = subscribeToProductUpdates((payload: RealtimePayload) => {
       console.log('Product detail update received:', payload);
       
       // Refetch variants when changes occur for this product or its variants
