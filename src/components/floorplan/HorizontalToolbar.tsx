@@ -10,7 +10,10 @@ import {
   Type, 
   Undo, 
   Redo,
-  Grid
+  Grid,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw
 } from 'lucide-react';
 import { DrawingMode } from '@/types/floorPlanTypes';
 
@@ -26,6 +29,7 @@ interface HorizontalToolbarProps {
   onToggleGrid: () => void;
   showGrid: boolean;
   scale: number;
+  onScaleChange?: (newScale: number) => void;
 }
 
 const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
@@ -39,7 +43,8 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
   canRedo,
   onToggleGrid,
   showGrid,
-  scale
+  scale,
+  onScaleChange
 }) => {
   return (
     <Card>
@@ -113,6 +118,39 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
             >
               <Grid className="h-4 w-4" />
             </Button>
+
+            {/* Scale Controls */}
+            {onScaleChange && (
+              <div className="flex items-center space-x-1 mr-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onScaleChange(Math.max(0.1, scale - 0.05))}
+                  disabled={scale <= 0.1}
+                >
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Badge variant="outline" className="text-xs px-2">
+                  {(scale * 100).toFixed(0)}%
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onScaleChange(Math.min(1.0, scale + 0.05))}
+                  disabled={scale >= 1.0}
+                >
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onScaleChange(0.2)}
+                  title="Reset scale"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center space-x-2">

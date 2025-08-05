@@ -19,7 +19,7 @@ import { toast } from 'sonner';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
-import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES } from '@/utils/measurements';
+import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES, MeasurementUnit } from '@/utils/measurements';
 import SeriesSelector from '@/components/floorplan/SeriesSelector';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
@@ -28,6 +28,8 @@ import TabbedSidebar from '@/components/floorplan/TabbedSidebar';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import MeasurementInput from '@/components/canvas/MeasurementInput';
 import RoomCreator from '@/components/canvas/RoomCreator';
+import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
+import ExportModal from '@/components/ExportModal';
 
 const FloorPlanner = () => {
   // Canvas and drawing state
@@ -49,6 +51,7 @@ const FloorPlanner = () => {
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
+  const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
   
   // UI state
   const [projectName, setProjectName] = useState('Untitled Floor Plan');
@@ -69,7 +72,7 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions
+  // Canvas dimensions - Fixed at 1200x800
   const CANVAS_WIDTH = 1200;
   const CANVAS_HEIGHT = 800;
 
@@ -103,6 +106,14 @@ const FloorPlanner = () => {
 
   const handleToggleMeasurements = useCallback(() => {
     setShowMeasurements(prev => !prev);
+  }, []);
+
+  const handleUnitChange = useCallback((unit: MeasurementUnit) => {
+    setMeasurementUnit(unit);
+  }, []);
+
+  const handleScaleChange = useCallback((newScale: number) => {
+    setScale(newScale);
   }, []);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -143,6 +154,7 @@ const FloorPlanner = () => {
       rooms,
       scale,
       gridSize,
+      measurementUnit,
       settings: {
         showGrid,
         showMeasurements,
@@ -161,7 +173,7 @@ const FloorPlanner = () => {
     
     URL.revokeObjectURL(url);
     toast.success('Floor plan saved successfully');
-  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, showGrid, showMeasurements, showProducts]);
+  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, measurementUnit, showGrid, showMeasurements, showProducts]);
 
   const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -180,6 +192,7 @@ const FloorPlanner = () => {
         setRooms(data.rooms || []);
         setScale(data.scale || 0.2);
         setGridSize(data.gridSize || GRID_SIZES.standard);
+        setMeasurementUnit(data.measurementUnit || 'mm');
         
         if (data.settings) {
           setShowGrid(data.settings.showGrid ?? true);
@@ -205,6 +218,7 @@ const FloorPlanner = () => {
     setSelectedProducts([]);
     setScale(0.2);
     setGridSize(GRID_SIZES.standard);
+    setMeasurementUnit('mm');
     toast.success('Floor plan cleared');
   }, []);
 
@@ -336,6 +350,10 @@ const FloorPlanner = () => {
             </div>
             
             <div className="flex items-center space-x-2">
+              <SegmentedUnitSelector
+                selectedUnit={measurementUnit}
+                onUnitChange={handleUnitChange}
+              />
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
@@ -346,6 +364,16 @@ const FloorPlanner = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
+              <ExportModal
+                canvasRef={canvasRef}
+                roomPoints={roomPoints}
+                placedProducts={placedProducts}
+              >
+                <Button variant="outline">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export
+                </Button>
+              </ExportModal>
               <Button onClick={handleToggleFullscreen} variant="outline">
                 <Maximize2 className="h-4 w-4" />
               </Button>
@@ -361,8 +389,8 @@ const FloorPlanner = () => {
             <span>Scale: {scale.toFixed(4)} px/mm</span>
             {roomStatistics && (
               <>
-                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, { unit: 'mm', precision: 0, showUnit: true })}</span>
-                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, { unit: 'mm', precision: 0, showUnit: true })}</span>
+                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</span>
+                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</span>
               </>
             )}
           </div>
@@ -395,6 +423,7 @@ const FloorPlanner = () => {
               onToggleGrid={handleToggleGrid}
               showGrid={showGrid}
               scale={scale}
+              onScaleChange={handleScaleChange}
             />
 
             {/* Room Creator Modal */}
@@ -463,11 +492,14 @@ const FloorPlanner = () => {
                     setTextAnnotations={setTextAnnotations}
                     rooms={rooms}
                     setRooms={setRooms}
-                    scale={0.2}
+                    scale={scale}
                     currentMode={currentMode}
                     showGrid={showGrid}
                     showMeasurements={showMeasurements}
                     gridSize={gridSize}
+                    measurementUnit={measurementUnit}
+                    canvasWidth={CANVAS_WIDTH}
+                    canvasHeight={CANVAS_HEIGHT}
                     onClearAll={handleClear}
                   />
                 </div>
@@ -475,7 +507,7 @@ const FloorPlanner = () => {
                 {/* Enhanced Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span>Mode: {currentMode}</span>
-                  <span>Canvas: 1000 × 600</span>
+                  <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>
                   <span>Rooms: {rooms.length}</span>
                   <span>
@@ -500,8 +532,8 @@ const FloorPlanner = () => {
                       <div key={room.id} className="border rounded p-3 space-y-2">
                         <div className="font-medium">{room.name}</div>
                         <div className="text-sm text-gray-600 space-y-1">
-                          <div>Area: {formatMeasurement(room.area, { unit: 'mm', precision: 0, showUnit: true })}</div>
-                          <div>Perimeter: {formatMeasurement(room.perimeter, { unit: 'mm', precision: 0, showUnit: true })}</div>
+                          <div>Area: {formatMeasurement(room.area, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</div>
+                          <div>Perimeter: {formatMeasurement(room.perimeter, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</div>
                           <div>Points: {room.points.length}</div>
                         </div>
                       </div>
