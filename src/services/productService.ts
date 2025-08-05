@@ -1,7 +1,16 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { mockProductSeries, mockCategories } from '@/data/mockProducts';
 import { DatabaseProduct } from '@/types/supabase';
+
+// Helper function to map database orientation to strict union type
+const mapOrientation = (dbOrientation: string | null): 'LH' | 'RH' | 'None' => {
+  if (!dbOrientation || dbOrientation === 'None') return 'None';
+  if (dbOrientation.includes('Left') || dbOrientation === 'LH') return 'LH';
+  if (dbOrientation.includes('Right') || dbOrientation === 'RH') return 'RH';
+  return 'None';
+};
 
 export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
   try {
@@ -70,7 +79,7 @@ export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
         size: variant.dimensions || 'Standard',
         dimensions: variant.dimensions || '',
         type: variant.variant_type || 'standard',
-        orientation: variant.orientation || 'None',
+        orientation: mapOrientation(variant.orientation),
         modelPath: variant.model_path || '',
         thumbnail: variant.thumbnail_path || '',
         images: variant.additional_images || []
@@ -185,7 +194,7 @@ export const fetchProductsByCategory = async (category: string): Promise<Product
         size: variant.dimensions || 'Standard',
         dimensions: variant.dimensions || '',
         type: variant.variant_type || 'standard',
-        orientation: variant.orientation || 'None',
+        orientation: mapOrientation(variant.orientation),
         modelPath: variant.model_path || '',
         thumbnail: variant.thumbnail_path || '',
         images: variant.additional_images || []
@@ -229,14 +238,6 @@ export const fetchProductWithVariants = async (productId: string) => {
     if (variantsError) {
       console.error('Error fetching variants:', variantsError);
     }
-
-    // Map database orientation values to frontend format
-    const mapOrientation = (dbOrientation: string | null) => {
-      if (!dbOrientation || dbOrientation === 'None') return 'None';
-      if (dbOrientation.includes('Left') || dbOrientation === 'LH') return 'LH';
-      if (dbOrientation.includes('Right') || dbOrientation === 'RH') return 'RH';
-      return 'None';
-    };
 
     // Convert variants to the format expected by VariantSelector
     const mappedVariants = (variants || []).map(variant => ({

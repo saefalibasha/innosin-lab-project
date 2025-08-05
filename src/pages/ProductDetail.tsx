@@ -60,6 +60,16 @@ const ProductDetail: React.FC = () => {
     product_series: variant.product_series
   });
 
+  // Helper function to safely transform mixed array items
+  const safeTransformToProduct = (item: Product | DatabaseProduct): Product => {
+    // Check if it's already a Product type (has modelPath property)
+    if ('modelPath' in item) {
+      return item as Product;
+    }
+    // Otherwise, it's a DatabaseProduct, transform it
+    return transformVariantToProduct(item as DatabaseProduct);
+  };
+
   useEffect(() => {
     const fetchVariants = async () => {
       if (!product || productLoading) return;
@@ -80,7 +90,7 @@ const ProductDetail: React.FC = () => {
           console.log("Supabase Query Result:", variants);
           console.log("Supabase Query Error:", variantsError);
 
-          const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
+          const allVariants = [product, ...(variants ?? [])].map(safeTransformToProduct);
           console.log("Transformed Variants:", allVariants);
 
           setSeriesVariants(allVariants);
@@ -95,7 +105,7 @@ const ProductDetail: React.FC = () => {
           console.log("Legacy Query Result:", variants);
           console.log("Legacy Query Error:", variantsError);
 
-          const transformedVariants = variants?.map(transformVariantToProduct) || [];
+          const transformedVariants = variants?.map(v => safeTransformToProduct(v as DatabaseProduct)) || [];
           console.log("Transformed Variants (Legacy):", transformedVariants);
 
           setSeriesVariants(transformedVariants);
@@ -135,7 +145,7 @@ const ProductDetail: React.FC = () => {
                 .eq('parent_series_id', product.id)
                 .eq('is_active', true);
 
-              const allVariants = [product, ...(variants ?? [])].map(transformVariantToProduct);
+              const allVariants = [product, ...(variants ?? [])].map(safeTransformToProduct);
               setSeriesVariants(allVariants);
             }
           } catch (error) {
