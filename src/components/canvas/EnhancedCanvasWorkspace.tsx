@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, WallType } from '@/types/floorPlanTypes';
-import { GRID_SIZES } from '@/utils/measurements';
+import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm } from '@/utils/measurements';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
@@ -21,6 +21,9 @@ interface EnhancedCanvasWorkspaceProps {
   showGrid: boolean;
   showMeasurements: boolean;
   gridSize: number;
+  measurementUnit: MeasurementUnit;
+  canvasWidth: number;
+  canvasHeight: number;
   onClearAll: () => void;
 }
 
@@ -42,6 +45,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   showGrid,
   showMeasurements,
   gridSize,
+  measurementUnit,
+  canvasWidth,
+  canvasHeight,
   onClearAll
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -50,9 +56,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [lastMousePos, setLastMousePos] = useState<Point>({ x: 0, y: 0 });
+  const [currentLineMeasurement, setCurrentLineMeasurement] = useState<string>('');
 
-  const CANVAS_WIDTH = 1000;
-  const CANVAS_HEIGHT = 600;
+  const CANVAS_WIDTH = canvasWidth;
+  const CANVAS_HEIGHT = canvasHeight;
 
   const getCanvasPoint = useCallback((e: React.MouseEvent<HTMLCanvasElement>): Point => {
     const canvas = canvasRef.current;
@@ -114,10 +121,23 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     const point = snapToGrid(getCanvasPoint(e));
     setLastMousePos(point);
     
-    if (isDrawing && currentMode === 'wall') {
+    if (isDrawing && currentMode === 'wall' && currentPath.length > 0) {
+      const startPoint = currentPath[0];
+      const dx = point.x - startPoint.x;
+      const dy = point.y - startPoint.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const distanceInMm = canvasToMm(distance, scale);
+      
+      setCurrentLineMeasurement(formatMeasurement(distanceInMm, { 
+        unit: measurementUnit, 
+        precision: measurementUnit === 'mm' ? 0 : 2, 
+        showUnit: true 
+      }));
       setCurrentPath(prev => [...prev.slice(0, -1), point]);
+    } else if (currentMode === 'wall') {
+      setCurrentLineMeasurement('');
     }
-  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid]);
+  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing && currentMode === 'wall' && currentPath.length >= 2) {
@@ -294,7 +314,25 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.fillText(product.name, product.position.x - 30, product.position.y - 20);
     });
     
-  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts]);
+    // Draw live measurement during wall drawing
+    if (isDrawing && currentMode === 'wall' && currentPath.length > 0 && currentLineMeasurement) {
+      const startPoint = currentPath[0];
+      const endPoint = lastMousePos;
+      const midX = (startPoint.x + endPoint.x) / 2;
+      const midY = (startPoint.y + endPoint.y) / 2;
+      
+      // Draw measurement background
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      const textWidth = ctx.measureText(currentLineMeasurement).width;
+      ctx.fillRect(midX - textWidth/2 - 4, midY - 12, textWidth + 8, 16);
+      
+      // Draw measurement text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '12px Arial';
+      ctx.fillText(currentLineMeasurement, midX - textWidth/2, midY + 3);
+    }
+    
+  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos]);
 
   useEffect(() => {
     drawCanvas();
