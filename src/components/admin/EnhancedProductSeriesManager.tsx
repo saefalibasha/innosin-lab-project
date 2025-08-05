@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,26 +44,37 @@ import {
 import { VariantManager } from './product-series/VariantManager';
 import { ProductSeriesFormDialog } from './product-series/ProductSeriesFormDialog';
 import { ProductSeriesFilter } from './product-series/ProductSeriesFilter';
-import { mockAdminSeries } from '@/data/mockProducts';
 
 interface ProductSeries {
-  id: string;
-  name: string;
-  product_code: string;
   product_series: string;
+  series_slug: string;
   category: string;
   description: string;
-  series_slug: string;
   is_active: boolean;
   variant_count: number;
   completion_rate: number;
-  target_variant_count: number;
   series_thumbnail_path?: string;
-  series_model_path?: string;
-  series_overview_image_path?: string;
-  company_tags: string[];
-  created_at: string;
-  updated_at: string;
+  variants: DatabaseVariant[];
+}
+
+interface DatabaseVariant {
+  id: string;
+  product_code: string;
+  name: string;
+  category: string;
+  dimensions?: string;
+  door_type?: string;
+  orientation?: string;
+  finish_type?: string;
+  mounting_type?: string;
+  mixing_type?: string;
+  handle_type?: string;
+  emergency_shower_type?: string;
+  number_of_drawers?: number;
+  description?: string;
+  thumbnail_path?: string;
+  model_path?: string;
+  is_active: boolean;
 }
 
 export const EnhancedProductSeriesManager = () => {
@@ -75,18 +87,12 @@ export const EnhancedProductSeriesManager = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [showVariantManager, setShowVariantManager] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [isUsingMockData, setIsUsingMockData] = useState(false);
   const { toast } = useToast();
 
   const [editForm, setEditForm] = useState({
-    name: '',
     description: '',
-    company_tags: [] as string[],
-    series_thumbnail_path: '',
-    target_variant_count: 4
+    series_thumbnail_path: ''
   });
-
-  const [newTag, setNewTag] = useState('');
 
   useEffect(() => {
     fetchSeries();
@@ -96,7 +102,6 @@ export const EnhancedProductSeriesManager = () => {
   useEffect(() => {
     const subscription = subscribeToProductUpdates((payload) => {
       console.log('Product series update received:', payload);
-      // Refetch series data when changes occur
       fetchSeries();
     });
 
@@ -109,15 +114,22 @@ export const EnhancedProductSeriesManager = () => {
     filterSeries();
   }, [series, searchTerm, selectedBrand]);
 
+  const generateSlug = (productSeries: string): string => {
+    return productSeries
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .trim();
+  };
+
   const fetchSeries = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching enhanced product series from database...');
+      console.log('🔍 Fetching products grouped by product_series...');
       
-      const { data: seriesData, error } = await supabase
+      const { data: products, error } = await supabase
         .from('products')
         .select('*')
-        .eq('is_series_parent', true)
         .order('product_series', { ascending: true });
 
       if (error) {
@@ -125,98 +137,81 @@ export const EnhancedProductSeriesManager = () => {
         throw error;
       }
 
-      if (!seriesData || seriesData.length === 0) {
-        console.log('⚠️ No enhanced series found in database, using mock data');
-        // Convert mock data to enhanced format
-        const mockEnhancedSeries = mockAdminSeries.map(seriesData => ({
-          id: seriesData.products[0].id,
-          name: seriesData.products[0].name,
-          product_code: seriesData.products[0].product_code,
-          product_series: seriesData.products[0].product_series,
-          category: seriesData.products[0].category,
-          description: seriesData.products[0].description || '',
-          series_slug: seriesData.products[0].product_series.toLowerCase().replace(/\s+/g, '-'),
-          is_active: true,
-          variant_count: seriesData.products.length - 1,
-          completion_rate: seriesData.completionRate,
-          target_variant_count: seriesData.totalProducts,
-          series_thumbnail_path: seriesData.products[0].thumbnail_path,
-          series_model_path: seriesData.products[0].model_path,
-          series_overview_image_path: seriesData.products[0].overview_image_path,
-          company_tags: seriesData.products[0].company_tags || [],
-          created_at: seriesData.products[0].created_at,
-          updated_at: seriesData.products[0].updated_at
-        }));
-        
-        setSeries(mockEnhancedSeries);
-        setIsUsingMockData(true);
-        
+      if (!products || products.length === 0) {
+        console.log('⚠️ No products found in database');
+        setSeries([]);
         toast({
-          title: "Development Mode",
-          description: "Using sample data - database connection unavailable",
+          title: "No Data",
+          description: "No products found in database",
           variant: "default",
         });
         return;
       }
 
-      const seriesWithStats = await Promise.all(
-        (seriesData || []).map(async (s) => {
-          const { count: variantCount } = await supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true })
-            .eq('parent_series_id', s.id)
-            .eq('is_active', true);
+      // Group products by product_series
+      const seriesMap = new Map<string, DatabaseVariant[]>();
+      
+      products.forEach(product => {
+        const seriesName = product.product_series;
+        if (!seriesName) return;
+        
+        if (!seriesMap.has(seriesName)) {
+          seriesMap.set(seriesName, []);
+        }
+        
+        seriesMap.get(seriesName)!.push({
+          id: product.id,
+          product_code: product.product_code || '',
+          name: product.name || '',
+          category: product.category || '',
+          dimensions: product.dimensions,
+          door_type: product.door_type,
+          orientation: product.orientation,
+          finish_type: product.finish_type,
+          mounting_type: product.mounting_type,
+          mixing_type: product.mixing_type,
+          handle_type: product.handle_type,
+          emergency_shower_type: product.emergency_shower_type,
+          number_of_drawers: product.number_of_drawers,
+          description: product.description,
+          thumbnail_path: product.thumbnail_path,
+          model_path: product.model_path,
+          is_active: product.is_active || false
+        });
+      });
 
-          const targetCount = s.target_variant_count || 4;
-          const currentCount = variantCount || 0;
-          
-          const completionRate = targetCount > 0 ? Math.round((currentCount / targetCount) * 100) : 0;
+      // Convert to ProductSeries format
+      const seriesData: ProductSeries[] = Array.from(seriesMap.entries()).map(([seriesName, variants]) => {
+        const activeVariants = variants.filter(v => v.is_active);
+        const variantsWithAssets = variants.filter(v => v.thumbnail_path && v.model_path);
+        const completionRate = variants.length > 0 ? Math.round((variantsWithAssets.length / variants.length) * 100) : 0;
+        
+        // Get series thumbnail from any variant that has series_thumbnail_path
+        const seriesThumbnail = products.find(p => 
+          p.product_series === seriesName && p.series_thumbnail_path
+        )?.series_thumbnail_path;
 
-          return {
-            ...s,
-            variant_count: currentCount,
-            completion_rate: Math.min(completionRate, 100),
-            target_variant_count: targetCount,
-            company_tags: s.company_tags || []
-          };
-        })
-      );
+        return {
+          product_series: seriesName,
+          series_slug: generateSlug(seriesName),
+          category: variants[0]?.category || '',
+          description: variants[0]?.description || '',
+          is_active: activeVariants.length > 0,
+          variant_count: variants.length,
+          completion_rate: completionRate,
+          series_thumbnail_path: seriesThumbnail,
+          variants: variants
+        };
+      });
 
-      setSeries(seriesWithStats);
-      setIsUsingMockData(false);
-      console.log(`✅ Successfully loaded ${seriesWithStats.length} enhanced product series from database`);
+      setSeries(seriesData);
+      console.log(`✅ Successfully loaded ${seriesData.length} product series grouped by product_series`);
       
     } catch (error) {
       console.error('Error fetching series:', error);
-      
-      // Fallback to mock data
-      console.log('🔄 Falling back to mock enhanced series data due to error');
-      const mockEnhancedSeries = mockAdminSeries.map(seriesData => ({
-        id: seriesData.products[0].id,
-        name: seriesData.products[0].name,
-        product_code: seriesData.products[0].product_code,
-        product_series: seriesData.products[0].product_series,
-        category: seriesData.products[0].category,
-        description: seriesData.products[0].description || '',
-        series_slug: seriesData.products[0].product_series.toLowerCase().replace(/\s+/g, '-'),
-        is_active: true,
-        variant_count: seriesData.products.length - 1,
-        completion_rate: seriesData.completionRate,
-        target_variant_count: seriesData.totalProducts,
-        series_thumbnail_path: seriesData.products[0].thumbnail_path,
-        series_model_path: seriesData.products[0].model_path,
-        series_overview_image_path: seriesData.products[0].overview_image_path,
-        company_tags: seriesData.products[0].company_tags || [],
-        created_at: seriesData.products[0].created_at,
-        updated_at: seriesData.products[0].updated_at
-      }));
-      
-      setSeries(mockEnhancedSeries);
-      setIsUsingMockData(true);
-      
       toast({
-        title: "Connection Issue",
-        description: "Using sample data - please check database connection",
+        title: "Error",
+        description: "Failed to fetch product series",
         variant: "destructive",
       });
     } finally {
@@ -229,27 +224,23 @@ export const EnhancedProductSeriesManager = () => {
 
     if (searchTerm) {
       filtered = filtered.filter(s =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.product_series.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.company_tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        s.variants.some(v => 
+          v.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          v.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
     }
 
     if (selectedBrand !== 'all') {
-      filtered = filtered.filter(s => 
-        s.category === selectedBrand || 
-        s.company_tags.includes(selectedBrand)
-      );
+      filtered = filtered.filter(s => s.category === selectedBrand);
     }
 
     setFilteredSeries(filtered);
   };
 
-  const availableBrands = Array.from(new Set([
-    ...series.map(s => s.category),
-    ...series.flatMap(s => s.company_tags || [])
-  ])).filter(Boolean).sort();
+  const availableBrands = Array.from(new Set(series.map(s => s.category))).filter(Boolean).sort();
 
   const handleSeriesAdded = () => {
     console.log('Series added, refreshing list...');
@@ -264,11 +255,8 @@ export const EnhancedProductSeriesManager = () => {
   const handleEditSeries = (series: ProductSeries) => {
     setSelectedSeries(series);
     setEditForm({
-      name: series.name,
       description: series.description || '',
-      company_tags: series.company_tags || [],
-      series_thumbnail_path: series.series_thumbnail_path || '',
-      target_variant_count: series.target_variant_count || 4
+      series_thumbnail_path: series.series_thumbnail_path || ''
     });
     setIsEditDialogOpen(true);
   };
@@ -277,18 +265,15 @@ export const EnhancedProductSeriesManager = () => {
     if (!selectedSeries) return;
 
     try {
+      // Update all products in this series with the new description and thumbnail
       const { error } = await supabase
         .from('products')
         .update({
-          name: editForm.name,
           description: editForm.description,
-          company_tags: editForm.company_tags,
           series_thumbnail_path: editForm.series_thumbnail_path,
-          series_overview_image_path: editForm.series_thumbnail_path,
-          target_variant_count: editForm.target_variant_count,
           updated_at: new Date().toISOString()
         })
-        .eq('id', selectedSeries.id);
+        .eq('product_series', selectedSeries.product_series);
 
       if (error) throw error;
 
@@ -313,19 +298,12 @@ export const EnhancedProductSeriesManager = () => {
     try {
       console.log('Deleting series:', series.product_series);
       
-      const { error: variantsError } = await supabase
+      const { error } = await supabase
         .from('products')
         .delete()
-        .eq('parent_series_id', series.id);
+        .eq('product_series', series.product_series);
 
-      if (variantsError) throw variantsError;
-
-      const { error: seriesError } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', series.id);
-
-      if (seriesError) throw seriesError;
+      if (error) throw error;
 
       await supabase
         .from('product_activity_log')
@@ -333,8 +311,8 @@ export const EnhancedProductSeriesManager = () => {
           action: 'series_deleted',
           changed_by: 'admin',
           old_data: { 
-            id: series.id, 
-            name: series.product_series,
+            product_series: series.product_series,
+            variant_count: series.variant_count,
             deleted_at: new Date().toISOString()
           }
         }]);
@@ -353,23 +331,6 @@ export const EnhancedProductSeriesManager = () => {
         variant: "destructive",
       });
     }
-  };
-
-  const handleAddTag = () => {
-    if (newTag.trim() && !editForm.company_tags.includes(newTag.trim())) {
-      setEditForm(prev => ({
-        ...prev,
-        company_tags: [...prev.company_tags, newTag.trim()]
-      }));
-      setNewTag('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setEditForm(prev => ({
-      ...prev,
-      company_tags: prev.company_tags.filter(tag => tag !== tagToRemove)
-    }));
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -435,31 +396,12 @@ export const EnhancedProductSeriesManager = () => {
 
   return (
     <div className="space-y-6">
-      {/* Connection Status Indicator */}
-      {isUsingMockData && (
-        <Card className="border-amber-200 bg-amber-50">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600" />
-              <div>
-                <h4 className="font-medium text-amber-800">Development Mode Active</h4>
-                <p className="text-sm text-amber-700">
-                  Currently displaying sample enhanced product series data. Database connection unavailable or no series configured.
-                  <br />
-                  <strong>To resolve:</strong> Run the database-fixes.sql script or ensure Supabase connection is working.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Product Series Management</h2>
           <p className="text-muted-foreground">
-            Manage product series from all brands, descriptions, and assets
+            Manage product series grouped by product_series field - {series.length} series found
           </p>
         </div>
         <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
@@ -481,68 +423,77 @@ export const EnhancedProductSeriesManager = () => {
 
       {/* Series Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSeries.map((series) => (
-          <Card key={series.id} className="relative">
+        {filteredSeries.map((seriesData) => (
+          <Card key={seriesData.product_series} className="relative">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-blue-600" />
                   <div>
-                    <CardTitle className="text-lg">{series.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{series.category}</p>
+                    <CardTitle className="text-lg">{seriesData.product_series}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      <Tag className="h-3 w-3 inline mr-1" />
+                      {seriesData.category}
+                    </p>
                   </div>
                 </div>
-                <Badge variant={series.is_active ? "default" : "secondary"}>
-                  {series.is_active ? "Active" : "Inactive"}
+                <Badge variant={seriesData.is_active ? "default" : "secondary"}>
+                  {seriesData.is_active ? "Active" : "Inactive"}
                 </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              {(series.series_overview_image_path || series.series_thumbnail_path) && (
+              {seriesData.series_thumbnail_path && (
                 <div className="w-full h-32 bg-muted rounded-lg overflow-hidden">
                   <img 
-                    src={series.series_overview_image_path || series.series_thumbnail_path} 
-                    alt={series.name}
+                    src={seriesData.series_thumbnail_path} 
+                    alt={seriesData.product_series}
                     className="w-full h-full object-cover"
                   />
                 </div>
               )}
               
               <p className="text-sm text-muted-foreground line-clamp-2">
-                {series.description || 'No description available'}
+                {seriesData.description || 'No description available'}
               </p>
-              
-              {series.company_tags && series.company_tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {series.company_tags.map((tag, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      <Tag className="h-3 w-3 mr-1" />
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
               
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Variants:</span>
-                <Badge variant="outline">{series.variant_count} / {series.target_variant_count}</Badge>
+                <Badge variant="outline">{seriesData.variant_count}</Badge>
               </div>
               
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Completion:</span>
                 <Badge 
-                  variant={series.completion_rate >= 80 ? "default" : 
-                          series.completion_rate >= 50 ? "secondary" : "destructive"}
+                  variant={seriesData.completion_rate >= 80 ? "default" : 
+                          seriesData.completion_rate >= 50 ? "secondary" : "destructive"}
                 >
-                  {series.completion_rate}%
+                  {seriesData.completion_rate}%
                 </Badge>
+              </div>
+
+              {/* Show some variant codes */}
+              <div className="text-xs">
+                <p className="text-muted-foreground mb-1">Variant Codes:</p>
+                <div className="flex flex-wrap gap-1">
+                  {seriesData.variants.slice(0, 3).map((variant) => (
+                    <Badge key={variant.id} variant="outline" className="text-xs">
+                      {variant.product_code}
+                    </Badge>
+                  ))}
+                  {seriesData.variants.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{seriesData.variants.length - 3}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleEditSeries(series)}
+                  onClick={() => handleEditSeries(seriesData)}
                   className="flex items-center gap-1"
                 >
                   <Edit className="h-3 w-3" />
@@ -551,7 +502,7 @@ export const EnhancedProductSeriesManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleManageVariants(series)}
+                  onClick={() => handleManageVariants(seriesData)}
                   className="flex items-center gap-1"
                 >
                   <Settings className="h-3 w-3" />
@@ -560,7 +511,7 @@ export const EnhancedProductSeriesManager = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleViewSeries(series)}
+                  onClick={() => handleViewSeries(seriesData)}
                   className="flex items-center gap-1"
                 >
                   <Eye className="h-3 w-3" />
@@ -584,14 +535,13 @@ export const EnhancedProductSeriesManager = () => {
                         Delete Product Series
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Are you sure you want to delete the series "{series.product_series}" and all its variants? 
+                        Are you sure you want to delete the series "{seriesData.product_series}" and all its variants? 
                         <br /><br />
                         <strong>This action cannot be undone.</strong>
                         <br /><br />
                         This will permanently delete:
                         <ul className="list-disc list-inside mt-2">
-                          <li>The series parent product</li>
-                          <li>All {series.variant_count} variant(s) in this series</li>
+                          <li>All {seriesData.variant_count} variant(s) in this series</li>
                           <li>All associated product data</li>
                         </ul>
                       </AlertDialogDescription>
@@ -599,7 +549,7 @@ export const EnhancedProductSeriesManager = () => {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleDeleteSeries(series)}
+                        onClick={() => handleDeleteSeries(seriesData)}
                         className="bg-red-500 hover:bg-red-600 text-white"
                       >
                         Delete Series
@@ -641,21 +591,12 @@ export const EnhancedProductSeriesManager = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Product Series</DialogTitle>
+            <DialogTitle>Edit Product Series: {selectedSeries?.product_series}</DialogTitle>
             <DialogDescription>
-              Update series information and assets. The uploaded thumbnail will be used as the series overview image.
+              Update series description and thumbnail. Changes will apply to all variants in this series.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Series Name</Label>
-              <Input
-                id="name"
-                value={editForm.name}
-                onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -667,33 +608,7 @@ export const EnhancedProductSeriesManager = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>Company Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Add tag..."
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-                />
-                <Button onClick={handleAddTag} variant="outline">
-                  Add
-                </Button>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-2">
-                {editForm.company_tags.map((tag, index) => (
-                  <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                    {tag}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
-                      onClick={() => handleRemoveTag(tag)}
-                    />
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="image">Series Thumbnail & Overview Image</Label>
+              <Label htmlFor="image">Series Thumbnail</Label>
               <div className="flex items-center gap-4">
                 <Input
                   id="image"
@@ -710,23 +625,7 @@ export const EnhancedProductSeriesManager = () => {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                This image will be used as both the series thumbnail and the overview image on the product catalog.
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="target_variant_count">Expected Number of Variants</Label>
-              <Input
-                id="target_variant_count"
-                type="number"
-                min="1"
-                max="20"
-                value={editForm.target_variant_count}
-                onChange={(e) => setEditForm(prev => ({ ...prev, target_variant_count: parseInt(e.target.value) || 4 }))}
-                placeholder="4"
-              />
-              <p className="text-xs text-muted-foreground">
-                How many variants do you plan to create for this series?
+                This image will be used on the main product catalog page.
               </p>
             </div>
 

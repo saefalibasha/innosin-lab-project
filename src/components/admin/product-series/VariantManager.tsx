@@ -1,54 +1,43 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Edit, Trash2, Package, AlertTriangle } from 'lucide-react';
-import { VariantFormDialog } from './VariantFormDialog';
-import { useProductRealtime } from '@/hooks/useProductRealtime';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Package, Edit, Eye, Plus, Trash2 } from 'lucide-react';
 
-interface Product {
+interface DatabaseVariant {
   id: string;
-  name: string;
   product_code: string;
+  name: string;
   category: string;
-  product_series: string;
-  finish_type: string;
-  is_active: boolean;
+  dimensions?: string;
+  door_type?: string;
+  orientation?: string;
+  finish_type?: string;
+  mounting_type?: string;
+  mixing_type?: string;
+  handle_type?: string;
+  emergency_shower_type?: string;
+  number_of_drawers?: number;
+  description?: string;
   thumbnail_path?: string;
   model_path?: string;
-  dimensions?: string;
-  orientation?: string;
-  door_type?: string;
-  drawer_count?: number;
+  is_active: boolean;
 }
 
 interface ProductSeries {
-  id: string;
-  name: string;
-  product_code: string;
   product_series: string;
+  series_slug: string;
   category: string;
   description: string;
-  series_slug: string;
   is_active: boolean;
   variant_count: number;
   completion_rate: number;
   series_thumbnail_path?: string;
-  series_model_path?: string;
+  variants: DatabaseVariant[];
 }
 
 interface VariantManagerProps {
@@ -58,27 +47,55 @@ interface VariantManagerProps {
   onVariantsUpdated: () => void;
 }
 
-export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: VariantManagerProps) => {
-  const [variants, setVariants] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingVariant, setEditingVariant] = useState<Product | null>(null);
+export const VariantManager: React.FC<VariantManagerProps> = ({
+  open,
+  onClose,
+  series,
+  onVariantsUpdated
+}) => {
+  const [variants, setVariants] = useState<DatabaseVariant[]>([]);
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (open && series) {
+      fetchVariants();
+    }
+  }, [open, series]);
 
   const fetchVariants = async () => {
     try {
       setLoading(true);
       
-      const { data: variantsData, error } = await supabase
+      const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('parent_series_id', series.id)
-        .eq('is_series_parent', false)
-        .order('name');
+        .eq('product_series', series.product_series)
+        .order('product_code');
 
       if (error) throw error;
 
-      setVariants(variantsData || []);
+      const formattedVariants: DatabaseVariant[] = (data || []).map(item => ({
+        id: item.id,
+        product_code: item.product_code || '',
+        name: item.name || '',
+        category: item.category || '',
+        dimensions: item.dimensions,
+        door_type: item.door_type,
+        orientation: item.orientation,
+        finish_type: item.finish_type,
+        mounting_type: item.mounting_type,
+        mixing_type: item.mixing_type,
+        handle_type: item.handle_type,
+        emergency_shower_type: item.emergency_shower_type,
+        number_of_drawers: item.number_of_drawers,
+        description: item.description,
+        thumbnail_path: item.thumbnail_path,
+        model_path: item.model_path,
+        is_active: item.is_active || false
+      }));
+
+      setVariants(formattedVariants);
     } catch (error) {
       console.error('Error fetching variants:', error);
       toast({
@@ -91,29 +108,7 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
     }
   };
 
-  // Set up real-time updates for variants
-  useProductRealtime({
-    onProductChange: () => {
-      fetchVariants();
-      onVariantsUpdated();
-    },
-    enabled: open
-  });
-
-  useEffect(() => {
-    if (open) {
-      fetchVariants();
-    }
-  }, [open, series.id]);
-
-  const handleVariantSaved = () => {
-    fetchVariants();
-    onVariantsUpdated();
-    setShowAddDialog(false);
-    setEditingVariant(null);
-  };
-
-  const handleDeleteVariant = async (variantId: string, variantName: string) => {
+  const handleDeleteVariant = async (variantId: string) => {
     try {
       const { error } = await supabase
         .from('products')
@@ -121,15 +116,6 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
         .eq('id', variantId);
 
       if (error) throw error;
-
-      // Log the activity
-      await supabase
-        .from('product_activity_log')
-        .insert([{
-          action: 'variant_deleted',
-          changed_by: 'admin',
-          old_data: { id: variantId, name: variantName }
-        }]);
 
       toast({
         title: "Success",
@@ -148,144 +134,204 @@ export const VariantManager = ({ open, onClose, series, onVariantsUpdated }: Var
     }
   };
 
+  const handleToggleActive = async (variantId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: !currentStatus })
+        .eq('id', variantId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Variant ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
+      });
+
+      fetchVariants();
+      onVariantsUpdated();
+    } catch (error) {
+      console.error('Error updating variant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update variant",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Manage Variants - {series.product_series}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold">{series.name}</h3>
-                <p className="text-sm text-muted-foreground">{series.description}</p>
-              </div>
-              <Button onClick={() => setShowAddDialog(true)} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Variant
-              </Button>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Manage Variants: {series.product_series}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-
-            {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {variants.length} variants found in this series
+                </p>
+                <Button size="sm" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Variant
+                </Button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {variants.map((variant) => (
-                  <Card key={variant.id}>
+                  <Card key={variant.id} className="hover:shadow-md transition-shadow">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="text-base">{variant.name}</CardTitle>
-                          <p className="text-sm text-muted-foreground">{variant.product_code}</p>
+                          <h4 className="font-semibold text-sm">{variant.product_code}</h4>
+                          <p className="text-xs text-muted-foreground">{variant.name}</p>
                         </div>
                         <Badge variant={variant.is_active ? "default" : "secondary"}>
                           {variant.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </div>
                     </CardHeader>
+                    
                     <CardContent className="space-y-3">
-                      <div className="text-sm">
-                        <p><strong>Finish:</strong> {variant.finish_type}</p>
-                        {variant.dimensions && <p><strong>Dimensions:</strong> {variant.dimensions}</p>}
-                        {variant.orientation && <p><strong>Orientation:</strong> {variant.orientation}</p>}
-                        {variant.door_type && <p><strong>Door Type:</strong> {variant.door_type}</p>}
-                        {variant.drawer_count && <p><strong>Drawers:</strong> {variant.drawer_count}</p>}
-                      </div>
-                      
-                      <div className="flex items-center gap-2 text-xs">
-                        <Badge variant={variant.thumbnail_path ? "default" : "secondary"}>
-                          {variant.thumbnail_path ? "Image ✓" : "No Image"}
-                        </Badge>
-                        <Badge variant={variant.model_path ? "default" : "secondary"}>
-                          {variant.model_path ? "3D Model ✓" : "No Model"}
-                        </Badge>
+                      {variant.thumbnail_path && (
+                        <div className="w-full h-24 bg-muted rounded overflow-hidden">
+                          <img 
+                            src={variant.thumbnail_path} 
+                            alt={variant.product_code}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+
+                      <div className="text-xs space-y-1">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Category:</span>
+                          <span>{variant.category}</span>
+                        </div>
+                        
+                        {variant.dimensions && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Dimensions:</span>
+                            <span>{variant.dimensions}</span>
+                          </div>
+                        )}
+                        
+                        {variant.finish_type && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Finish:</span>
+                            <span>{variant.finish_type}</span>
+                          </div>
+                        )}
+                        
+                        {variant.orientation && variant.orientation !== 'None' && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Orientation:</span>
+                            <span>{variant.orientation}</span>
+                          </div>
+                        )}
+                        
+                        {variant.door_type && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Door Type:</span>
+                            <span>{variant.door_type}</span>
+                          </div>
+                        )}
+                        
+                        {variant.number_of_drawers && variant.number_of_drawers > 0 && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Drawers:</span>
+                            <span>{variant.number_of_drawers}</span>
+                          </div>
+                        )}
+                        
+                        {variant.mounting_type && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Mounting:</span>
+                            <span>{variant.mounting_type}</span>
+                          </div>
+                        )}
+                        
+                        {variant.emergency_shower_type && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Shower Type:</span>
+                            <span>{variant.emergency_shower_type}</span>
+                          </div>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-2 pt-2">
+                      {variant.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {variant.description}
+                        </p>
+                      )}
+                      
+                      <div className="flex items-center gap-1">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setEditingVariant(variant)}
+                          className="flex items-center gap-1"
                         >
-                          <Edit className="h-3 w-3 mr-1" />
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
                           Edit
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-3 w-3 mr-1" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle className="flex items-center gap-2">
-                                <AlertTriangle className="h-5 w-5 text-red-500" />
-                                Delete Variant
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete the variant "{variant.name}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteVariant(variant.id, variant.name)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleToggleActive(variant.id, variant.is_active)}
+                          className={variant.is_active ? "text-orange-600" : "text-green-600"}
+                        >
+                          {variant.is_active ? "Deactivate" : "Activate"}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteVariant(variant.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
 
-            {variants.length === 0 && !loading && (
-              <div className="text-center py-8 text-muted-foreground">
-                <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No variants found for this series.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => setShowAddDialog(true)}
-                >
-                  Add Your First Variant
-                </Button>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <VariantFormDialog
-        open={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        series={series}
-        variant={null}
-        onVariantSaved={handleVariantSaved}
-      />
-
-      {editingVariant && (
-        <VariantFormDialog
-          open={true}
-          onClose={() => setEditingVariant(null)}
-          series={series}
-          variant={editingVariant}
-          onVariantSaved={handleVariantSaved}
-        />
-      )}
-    </>
+              {variants.length === 0 && (
+                <Card>
+                  <CardContent className="py-8">
+                    <div className="text-center text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No variants found in this series.</p>
+                      <Button className="mt-4">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add First Variant
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

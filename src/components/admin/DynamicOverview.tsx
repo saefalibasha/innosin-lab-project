@@ -1,165 +1,81 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  BarChart3, 
-  Package, 
-  TrendingUp,
-  AlertCircle,
-  CheckCircle,
-  Clock
-} from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
+import { BarChart3, Package, TrendingUp, Image, Box, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useProductRealtime } from '@/hooks/useProductRealtime';
 
-interface OverviewStats {
-  totalSeries: number;
-  totalVariants: number;
-  completedAssets: number;
-  totalProducts: number;
-  recentUpdates: number;
-}
-
-interface SeriesData {
-  id: string;
-  name: string;
-  variant_count: number;
+interface SeriesOverviewData {
+  product_series: string;
+  total_variants: number;
+  active_variants: number;
+  variants_with_assets: number;
   completion_rate: number;
-  fill: string;
-  updated_at: string;
+  category: string;
 }
-
-const CustomXAxisTick = (props: any) => {
-  const { x, y, payload } = props;
-  const words = payload.value.split(' ');
-  const lineHeight = 14;
-  const maxWidth = 100;
-  
-  // Group words into lines that fit within maxWidth
-  const lines: string[] = [];
-  let currentLine = '';
-  
-  words.forEach((word: string) => {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (testLine.length * 7 <= maxWidth) { // Rough estimate: 7px per character
-      currentLine = testLine;
-    } else {
-      if (currentLine) lines.push(currentLine);
-      currentLine = word;
-    }
-  });
-  if (currentLine) lines.push(currentLine);
-  
-  return (
-    <g>
-      {lines.map((line, index) => (
-        <text
-          key={index}
-          x={x}
-          y={y + 10 + (index * lineHeight)}
-          textAnchor="middle"
-          fontSize={12}
-          fill="#666"
-        >
-          {line}
-        </text>
-      ))}
-    </g>
-  );
-};
 
 export const DynamicOverview = () => {
-  const [stats, setStats] = useState<OverviewStats>({
-    totalSeries: 0,
-    totalVariants: 0,
-    completedAssets: 0,
-    totalProducts: 0,
-    recentUpdates: 0
-  });
-  const [seriesData, setSeriesData] = useState<SeriesData[]>([]);
+  const [overviewData, setOverviewData] = useState<SeriesOverviewData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchOverviewData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Get all products
-      const { data: allProducts, error } = await supabase
+      console.log('🔍 Fetching overview data grouped by product_series...');
+      
+      const { data: products, error } = await supabase
         .from('products')
-        .select('*')
-        .eq('is_active', true);
+        .select('*');
 
       if (error) throw error;
 
-      const seriesParents = allProducts?.filter(p => p.is_series_parent) || [];
-      const variants = allProducts?.filter(p => !p.is_series_parent) || [];
-
-      // Calculate stats
-      const completedAssets = variants.filter(v => v.thumbnail_path && v.model_path).length;
+      // Group products by product_series
+      const seriesMap = new Map<string, any[]>();
       
-      // Recent updates (last 7 days)
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      const recentUpdates = allProducts?.filter(p => 
-        new Date(p.updated_at) > weekAgo
-      ).length || 0;
-
-      setStats({
-        totalSeries: seriesParents.length,
-        totalVariants: variants.length,
-        completedAssets,
-        totalProducts: allProducts?.length || 0,
-        recentUpdates
+      products?.forEach(product => {
+        const seriesName = product.product_series;
+        if (!seriesName) return;
+        
+        if (!seriesMap.has(seriesName)) {
+          seriesMap.set(seriesName, []);
+        }
+        seriesMap.get(seriesName)!.push(product);
       });
 
-      // Prepare chart data
-      const chartData = await Promise.all(
-        seriesParents.map(async (series) => {
-          const { count: variantCount } = await supabase
-            .from('products')
-            .select('*', { count: 'exact', head: true })
-            .eq('parent_series_id', series.id)
-            .eq('is_active', true);
+      // Calculate stats for each series
+      const overviewStats: SeriesOverviewData[] = Array.from(seriesMap.entries()).map(([seriesName, variants]) => {
+        const activeVariants = variants.filter(v => v.is_active).length;
+        const variantsWithAssets = variants.filter(v => v.thumbnail_path && v.model_path).length;
+        const completionRate = variants.length > 0 ? Math.round((variantsWithAssets / variants.length) * 100) : 0;
 
-          // Calculate completion rate based on current variants vs target variants
-          const targetVariants = series.target_variant_count || 4;
-          const currentVariants = variantCount || 0;
-          const completionRate = targetVariants > 0 ? 
-            Math.min(Math.round((currentVariants / targetVariants) * 100), 100) : 0;
+        return {
+          product_series: seriesName,
+          total_variants: variants.length,
+          active_variants: activeVariants,
+          variants_with_assets: variantsWithAssets,
+          completion_rate: completionRate,
+          category: variants[0]?.category || 'Unknown'
+        };
+      });
 
-          // Get color based on completion rate
-          const getColor = (rate: number) => {
-            if (rate >= 80) return '#22c55e'; // green
-            if (rate >= 50) return '#f59e0b'; // yellow
-            return '#ef4444'; // red
-          };
+      // Sort by completion rate descending
+      overviewStats.sort((a, b) => b.completion_rate - a.completion_rate);
 
-          return {
-            id: series.id,
-            name: series.name,
-            variant_count: currentVariants,
-            completion_rate: completionRate,
-            fill: getColor(completionRate),
-            updated_at: series.updated_at
-          };
-        })
-      );
-
-      setSeriesData(chartData);
+      setOverviewData(overviewStats);
+      console.log(`✅ Successfully loaded overview for ${overviewStats.length} series`);
+      
     } catch (error) {
       console.error('Error fetching overview data:', error);
+      setError('Failed to fetch overview data');
     } finally {
       setLoading(false);
     }
   };
-
-  // Set up real-time updates
-  useProductRealtime({
-    onProductChange: fetchOverviewData,
-    onSeriesChange: fetchOverviewData,
-    enabled: true
-  });
 
   useEffect(() => {
     fetchOverviewData();
@@ -167,114 +83,177 @@ export const DynamicOverview = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <Card className="border-red-200 bg-red-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <div>
+              <h4 className="font-medium text-red-800">Error Loading Overview</h4>
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Calculate summary statistics
+  const totalSeries = overviewData.length;
+  const totalVariants = overviewData.reduce((sum, series) => sum + series.total_variants, 0);
+  const totalActiveVariants = overviewData.reduce((sum, series) => sum + series.active_variants, 0);
+  const totalWithAssets = overviewData.reduce((sum, series) => sum + series.variants_with_assets, 0);
+  const avgCompletionRate = totalVariants > 0 ? Math.round((totalWithAssets / totalVariants) * 100) : 0;
+
+  // Prepare chart data (top 10 series by completion rate)
+  const chartData = overviewData.slice(0, 10).map(series => ({
+    name: series.product_series.length > 20 ? 
+          series.product_series.substring(0, 20) + '...' : 
+          series.product_series,
+    completion: series.completion_rate,
+    variants: series.total_variants,
+    fullName: series.product_series
+  }));
+
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Series</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSeries}</div>
-            <p className="text-xs text-muted-foreground">Active product series</p>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{totalSeries}</div>
+            <div className="text-sm text-muted-foreground">Product Series</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              Grouped by product_series field
+            </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Variants</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalVariants}</div>
-            <p className="text-xs text-muted-foreground">Product variants</p>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">{totalActiveVariants}</div>
+            <div className="text-sm text-muted-foreground">Active Variants</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              of {totalVariants} total variants
+            </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed Assets</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.completedAssets}</div>
-            <p className="text-xs text-muted-foreground">With images & models</p>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">{totalWithAssets}</div>
+            <div className="text-sm text-muted-foreground">With Assets</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              thumbnail + 3D model
+            </div>
           </CardContent>
         </Card>
-
+        
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <p className="text-xs text-muted-foreground">
-              All products including series and variants
-            </p>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">{avgCompletionRate}%</div>
+            <div className="text-sm text-muted-foreground">Avg Completion</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              across all series
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Series Completion Chart with Recent Activity */}
+      {/* Completion Rate Chart */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Variants Completion Status
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Variants completion rates by product series
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Updates in last 7 days</span>
-              <Badge variant="outline">{stats.recentUpdates} updates</Badge>
-            </div>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Series Completion Rates
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="w-full overflow-x-auto">
-            <div style={{ minWidth: Math.max(600, seriesData.length * 120) + 'px' }}>
-              <ResponsiveContainer width="100%" height={600}>
-                <BarChart 
-                  data={seriesData}
-                  margin={{ top: 10, right: 10, left: 10, bottom: 80 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="name" 
-                    interval={0}
-                    textAnchor="middle"
-                    height={120}
-                    tick={<CustomXAxisTick />}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip 
-                    formatter={(value) => [`${value}%`, 'Completion Rate']}
-                    labelFormatter={(label) => `Series: ${label}`}
-                  />
-                  <Bar 
-                    dataKey="completion_rate" 
-                    radius={[4, 4, 0, 0]}
-                    fill="hsl(var(--primary))"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="name" 
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                  fontSize={12}
+                />
+                <YAxis domain={[0, 100]} />
+                <Tooltip 
+                  formatter={(value, name) => [
+                    `${value}%`, 
+                    name === 'completion' ? 'Completion Rate' : 'Variants'
+                  ]}
+                  labelFormatter={(label) => {
+                    const item = chartData.find(d => d.name === label);
+                    return item ? item.fullName : label;
+                  }}
+                />
+                <Bar 
+                  dataKey="completion" 
+                  fill="#3b82f6" 
+                  name="completion"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Series Details Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Series Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {overviewData.map((series, index) => (
+              <div key={series.product_series} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-medium">{series.product_series}</h4>
+                    <Badge variant="outline" className="text-xs">
+                      {series.category}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span>{series.total_variants} variants</span>
+                    <span>{series.active_variants} active</span>
+                    <span>{series.variants_with_assets} with assets</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium mb-1">
+                    {series.completion_rate}% Complete
+                  </div>
+                  <Progress value={series.completion_rate} className="w-24" />
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
