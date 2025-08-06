@@ -21,6 +21,48 @@ export interface ProductSeries {
   };
 }
 
+// Transform any database object to proper DatabaseProduct with defaults
+const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
+  return {
+    id: rawProduct.id || '',
+    name: rawProduct.name || '',
+    category: rawProduct.category || '',
+    dimensions: rawProduct.dimensions || '',
+    model_path: rawProduct.model_path || '',
+    thumbnail_path: rawProduct.thumbnail_path || '',
+    additional_images: rawProduct.additional_images || [],
+    description: rawProduct.description || '',
+    full_description: rawProduct.full_description || '',
+    specifications: rawProduct.specifications || [],
+    finish_type: rawProduct.finish_type || '',
+    orientation: rawProduct.orientation || '',
+    door_type: rawProduct.door_type || '',
+    variant_type: rawProduct.variant_type || '',
+    drawer_count: rawProduct.drawer_count || 0,
+    cabinet_class: rawProduct.cabinet_class || 'standard',
+    product_code: rawProduct.product_code || '',
+    mounting_type: rawProduct.mounting_type || '',
+    mixing_type: rawProduct.mixing_type || '',
+    handle_type: rawProduct.handle_type || '',
+    emergency_shower_type: rawProduct.emergency_shower_type || '',
+    company_tags: rawProduct.company_tags || [],
+    product_series: rawProduct.product_series || '',
+    parent_series_id: rawProduct.parent_series_id || '',
+    is_series_parent: rawProduct.is_series_parent || false,
+    is_active: rawProduct.is_active !== undefined ? rawProduct.is_active : true,
+    series_model_path: rawProduct.series_model_path || '',
+    series_thumbnail_path: rawProduct.series_thumbnail_path || '',
+    series_overview_image_path: rawProduct.series_overview_image_path || '',
+    overview_image_path: rawProduct.overview_image_path || '',
+    series_order: rawProduct.series_order || 0,
+    variant_order: rawProduct.variant_order || 0,
+    created_at: rawProduct.created_at || '',
+    updated_at: rawProduct.updated_at || '',
+    editable_title: rawProduct.editable_title || rawProduct.name || '',
+    editable_description: rawProduct.editable_description || rawProduct.description || ''
+  };
+};
+
 // Transform database product to Product interface
 const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   return {
@@ -88,12 +130,14 @@ export const useProductSeries = () => {
       // Group products by series, filtering out products without thumbnails
       const seriesMap = new Map<string, ProductSeries>();
       
-      products?.forEach((dbProduct: DatabaseProduct) => {
+      (products || []).forEach((rawProduct) => {
         // Only include products that have a thumbnail_path
-        if (!dbProduct.thumbnail_path) {
+        if (!rawProduct.thumbnail_path) {
           return;
         }
 
+        // Transform to proper DatabaseProduct first, then to Product
+        const dbProduct = ensureDatabaseProduct(rawProduct);
         const transformedProduct = transformDatabaseProduct(dbProduct);
         const seriesKey = dbProduct.product_series || dbProduct.category;
         

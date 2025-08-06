@@ -3,737 +3,517 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Search, 
-  RefreshCw, 
-  Upload, 
-  CheckCircle, 
-  AlertCircle, 
-  Clock,
-  ChevronDown,
-  ChevronRight,
-  Edit3,
-  Package,
-  Image,
-  Box,
-  Filter
-} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import ProductEditModal from './ProductEditModal';
-import { VariantFileUploadModal } from './admin/VariantFileUploadModal';
-import { DatabaseProduct } from '@/types/supabase';
+import { Loader2, Search, Filter, Plus, Eye, Edit, Trash2, Package, Upload, Download } from 'lucide-react';
+import ProductFormDialog from './admin/ProductFormDialog';
+import ProductViewDialog from './admin/ProductViewDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Product } from '@/types/product';
-
-interface AssetStatus {
-  productId: string;
-  productCode: string;
-  productName: string;
-  editableTitle: string;
-  productSeries: string;
-  finishType: string;
-  orientation: string;
-  dimensions: string;
-  hasOverviewImage: boolean;
-  hasGLB: boolean;
-  hasJPG: boolean;
-  isMainComplete: boolean;
-  variants: VariantStatus[];
-  completionPercentage: number;
-  status: 'complete' | 'partial' | 'missing';
-}
-
-interface VariantStatus {
-  id: string;
-  size: string;
-  hasGLB: boolean;
-  hasJPG: boolean;
-  status: 'complete' | 'partial' | 'missing';
-  glbPath?: string;
-  jpgPath?: string;
-}
-
-// Transform database product to Product interface
-const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
-  return {
-    id: dbProduct.id,
-    name: dbProduct.name,
-    category: dbProduct.category,
-    dimensions: dbProduct.dimensions || '',
-    modelPath: dbProduct.model_path || '',
-    thumbnail: dbProduct.thumbnail_path || '',
-    images: dbProduct.additional_images || [],
-    description: dbProduct.description || '',
-    fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
-    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
-    finish_type: dbProduct.finish_type,
-    orientation: dbProduct.orientation,
-    drawer_count: dbProduct.drawer_count || 0,
-    door_type: dbProduct.door_type,
-    product_code: dbProduct.product_code,
-    thumbnail_path: dbProduct.thumbnail_path,
-    model_path: dbProduct.model_path,
-    mounting_type: dbProduct.mounting_type,
-    mixing_type: dbProduct.mixing_type,
-    handle_type: dbProduct.handle_type,
-    emergency_shower_type: dbProduct.emergency_shower_type,
-    cabinet_class: dbProduct.cabinet_class || 'standard',
-    company_tags: dbProduct.company_tags || [],
-    product_series: dbProduct.product_series,
-    editable_title: dbProduct.editable_title || dbProduct.name,
-    editable_description: dbProduct.editable_description || dbProduct.description,
-    is_active: dbProduct.is_active || false,
-    created_at: dbProduct.created_at,
-    updated_at: dbProduct.updated_at
-  };
-};
+import { DatabaseProduct } from '@/types/supabase';
 
 const EnhancedAssetManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [assetStatuses, setAssetStatuses] = useState<AssetStatus[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'complete' | 'partial' | 'missing'>('all');
-  const [filterSeries, setFilterSeries] = useState<string>('all');
-  const [showAllProducts, setShowAllProducts] = useState(false);
-  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
-  const [isLoading, setIsLoading] = useState(true);
-  const [checkingAssets, setCheckingAssets] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [finishFilter, setFinishFilter] = useState('all');
+  const [seriesFilter, setSeriesFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [productSeries, setProductSeries] = useState<string[]>([]);
-  const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
-  const [uploadModal, setUploadModal] = useState<{
-    isOpen: boolean;
-    variantCode: string;
-    fileType: 'glb' | 'jpg';
-  }>({ isOpen: false, variantCode: '', fileType: 'glb' });
   const { toast } = useToast();
 
   useEffect(() => {
-    loadProductData();
-  }, [showAllProducts]);
+    fetchProducts();
+  }, []);
 
-  // Auto-refresh functionality
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isLoading && !checkingAssets) {
-        setIsAutoRefreshing(true);
-        loadProductData().finally(() => setIsAutoRefreshing(false));
-      }
-    }, 45000); // Refresh every 45 seconds
+  // Transform any database object to proper DatabaseProduct with defaults
+  const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
+    return {
+      id: rawProduct.id || '',
+      name: rawProduct.name || '',
+      category: rawProduct.category || '',
+      dimensions: rawProduct.dimensions || '',
+      model_path: rawProduct.model_path || '',
+      thumbnail_path: rawProduct.thumbnail_path || '',
+      additional_images: rawProduct.additional_images || [],
+      description: rawProduct.description || '',
+      full_description: rawProduct.full_description || '',
+      specifications: rawProduct.specifications || [],
+      finish_type: rawProduct.finish_type || '',
+      orientation: rawProduct.orientation || '',
+      door_type: rawProduct.door_type || '',
+      variant_type: rawProduct.variant_type || '',
+      drawer_count: rawProduct.drawer_count || 0,
+      cabinet_class: rawProduct.cabinet_class || 'standard',
+      product_code: rawProduct.product_code || '',
+      mounting_type: rawProduct.mounting_type || '',
+      mixing_type: rawProduct.mixing_type || '',
+      handle_type: rawProduct.handle_type || '',
+      emergency_shower_type: rawProduct.emergency_shower_type || '',
+      company_tags: rawProduct.company_tags || [],
+      product_series: rawProduct.product_series || '',
+      parent_series_id: rawProduct.parent_series_id || '',
+      is_series_parent: rawProduct.is_series_parent || false,
+      is_active: rawProduct.is_active !== undefined ? rawProduct.is_active : true,
+      series_model_path: rawProduct.series_model_path || '',
+      series_thumbnail_path: rawProduct.series_thumbnail_path || '',
+      series_overview_image_path: rawProduct.series_overview_image_path || '',
+      overview_image_path: rawProduct.overview_image_path || '',
+      series_order: rawProduct.series_order || 0,
+      variant_order: rawProduct.variant_order || 0,
+      created_at: rawProduct.created_at || '',
+      updated_at: rawProduct.updated_at || '',
+      editable_title: rawProduct.editable_title || rawProduct.name || '',
+      editable_description: rawProduct.editable_description || rawProduct.description || ''
+    };
+  };
 
-    return () => clearInterval(interval);
-  }, [isLoading, checkingAssets, showAllProducts]);
+  const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
+    return {
+      id: dbProduct.id,
+      name: dbProduct.name,
+      category: dbProduct.category,
+      dimensions: dbProduct.dimensions || '',
+      modelPath: dbProduct.model_path || '',
+      thumbnail: dbProduct.thumbnail_path || '',
+      images: dbProduct.additional_images || [],
+      description: dbProduct.description || '',
+      fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
+      specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+      finish_type: dbProduct.finish_type,
+      orientation: dbProduct.orientation,
+      drawer_count: dbProduct.drawer_count || 0,
+      door_type: dbProduct.door_type,
+      product_code: dbProduct.product_code,
+      thumbnail_path: dbProduct.thumbnail_path,
+      model_path: dbProduct.model_path,
+      mounting_type: dbProduct.mounting_type,
+      mixing_type: dbProduct.mixing_type,
+      handle_type: dbProduct.handle_type,
+      emergency_shower_type: dbProduct.emergency_shower_type,
+      cabinet_class: dbProduct.cabinet_class || 'standard',
+      company_tags: dbProduct.company_tags || [],
+      product_series: dbProduct.product_series,
+      editable_title: dbProduct.editable_title,
+      editable_description: dbProduct.editable_description,
+      is_active: dbProduct.is_active || false,
+      created_at: dbProduct.created_at,
+      updated_at: dbProduct.updated_at
+    };
+  };
 
-  const loadProductData = async () => {
-    setIsLoading(true);
+  const fetchProducts = async () => {
     try {
-      const { data: productsData, error } = await supabase
+      setLoading(true);
+      const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('category', 'Innosin Lab')
-        .eq('is_active', true)
-        .order('product_series', { ascending: true })
-        .order('product_code', { ascending: true });
+        .order('name');
+
+      if (error) throw error;
+      
+      // Transform raw database response to proper DatabaseProduct objects, then to Product objects
+      const transformedProducts = (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+      setProducts(transformedProducts);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
 
       if (error) throw error;
 
-      // Transform database products to Product interface
-      const transformedProducts = (productsData || []).map(transformDatabaseProduct);
-      setProducts(transformedProducts);
-      
-      // Extract unique product series for filtering
-      const uniqueSeries = [...new Set(transformedProducts?.map(p => p.product_series).filter(Boolean) || [])];
-      setProductSeries(uniqueSeries);
+      toast({
+        title: "Success",
+        description: "Product deleted successfully",
+      });
 
-      await checkAssets(transformedProducts || []);
+      fetchProducts();
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('Error deleting product:', error);
       toast({
         title: "Error",
-        description: "Failed to load product data",
+        description: "Failed to delete product",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const checkAssets = async (productsToCheck: Product[]) => {
-    setCheckingAssets(true);
-    const assetStatuses: AssetStatus[] = [];
-
+  const toggleProductStatus = async (productId: string, currentStatus: boolean) => {
     try {
-      // Handle KS series specially - group by base product code
-      const productGroups = new Map<string, Product[]>();
-      
-      productsToCheck.forEach(product => {
-        // For KS series, group all variants under the base series
-        if (product.product_series === 'Laboratory Bench Knee Space Series') {
-          const seriesKey = 'Laboratory Bench Knee Space Series';
-          if (!productGroups.has(seriesKey)) {
-            productGroups.set(seriesKey, []);
-          }
-          productGroups.get(seriesKey)!.push(product);
-        } else {
-          // For other products, use the existing grouping logic
-          const baseName = getProductBaseName(product.product_code || '');
-          if (!productGroups.has(baseName)) {
-            productGroups.set(baseName, []);
-          }
-          productGroups.get(baseName)!.push(product);
-        }
+      const { error } = await supabase
+        .from('products')
+        .update({ is_active: !currentStatus })
+        .eq('id', productId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Product ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
       });
 
-      for (const [groupKey, groupProducts] of productGroups) {
-        if (groupKey === 'Laboratory Bench Knee Space Series') {
-          // Handle KS series as a single group with variants
-          const mainProduct = groupProducts[0];
-          
-          // Check overview image for the series
-          const hasOverviewImage = await checkAssetExists(`products/laboratory-bench-knee-space-series/overview.jpg`);
-          
-          // Check each KS variant
-          const variants: VariantStatus[] = [];
-          for (const variant of groupProducts) {
-            const variantCode = variant.product_code || ''; // KS700, KS750, etc.
-            const variantHasGLB = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.glb`);
-            const variantHasJPG = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.jpg`);
-            
-            const variantStatus: 'complete' | 'partial' | 'missing' = 
-              (variantHasGLB && variantHasJPG) ? 'complete' :
-              (variantHasGLB || variantHasJPG) ? 'partial' : 'missing';
+      fetchProducts();
+    } catch (error) {
+      console.error('Error updating product status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product status",
+        variant: "destructive",
+      });
+    }
+  };
 
-            variants.push({
-              id: variant.id,
-              size: variantCode,
-              hasGLB: variantHasGLB,
-              hasJPG: variantHasJPG,
-              status: variantStatus,
-              glbPath: `products/${variantCode.toLowerCase()}/${variantCode}.glb`,
-              jpgPath: `products/${variantCode.toLowerCase()}/${variantCode}.jpg`
-            });
-          }
+  const handleProductSaved = () => {
+    fetchProducts();
+    setIsFormOpen(false);
+    setEditingProduct(null);
+  };
 
-          const completionPercentage = calculateKSSeriesCompletion(hasOverviewImage, variants);
-          const status: 'complete' | 'partial' | 'missing' = 
-            completionPercentage === 100 ? 'complete' :
-            completionPercentage > 0 ? 'partial' : 'missing';
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setIsFormOpen(true);
+  };
 
-          // Only show if not complete or if showing all products
-          if (showAllProducts || status !== 'complete') {
-            assetStatuses.push({
-              productId: mainProduct.id,
-              productCode: 'KS Series',
-              productName: 'Laboratory Bench Knee Space Series',
-              editableTitle: 'Laboratory Bench Knee Space Series',
-              productSeries: mainProduct.product_series || '',
-              finishType: 'PC/SS',
-              orientation: 'None',
-              dimensions: '700-1200mm widths',
-              hasOverviewImage,
-              hasGLB: false, // Not applicable for series
-              hasJPG: false, // Not applicable for series
-              isMainComplete: status === 'complete',
-              variants,
-              completionPercentage,
-              status
-            });
-          }
-        } else {
-          // Handle other products with existing logic
-          const mainProduct = groupProducts[0];
-          
-          // Check main product assets
-          const productCode = mainProduct.product_code || '';
-          const hasOverviewImage = await checkAssetExists(`products/${productCode.toLowerCase()}/overview.jpg`);
-          const hasGLB = await checkAssetExists(`products/${productCode.toLowerCase()}/${productCode}.glb`);
-          const hasJPG = await checkAssetExists(`products/${productCode.toLowerCase()}/${productCode}.jpg`);
-          
-          const isMainComplete = hasGLB && hasJPG && !isPlaceholderAsset(mainProduct.model_path) && !isPlaceholderAsset(mainProduct.thumbnail_path);
+  const handleView = (product: Product) => {
+    setSelectedProduct(product);
+    setIsViewOpen(true);
+  };
 
-          // Check variants
-          const variants: VariantStatus[] = [];
-          for (const variant of groupProducts) {
-            if (variant.id !== mainProduct.id) {
-              const variantCode = variant.product_code || '';
-              const variantHasGLB = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.glb`);
-              const variantHasJPG = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.jpg`);
-              
-              const variantStatus: 'complete' | 'partial' | 'missing' = 
-                (variantHasGLB && variantHasJPG) ? 'complete' :
-                (variantHasGLB || variantHasJPG) ? 'partial' : 'missing';
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (product.product_code?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (product.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                           (product.company_tags?.some(tag => 
+                             tag.toLowerCase().includes(searchTerm.toLowerCase())
+                           ));
 
-              if (showAllProducts || variantStatus !== 'complete') {
-                variants.push({
-                  id: variant.id,
-                  size: variantCode,
-                  hasGLB: variantHasGLB,
-                  hasJPG: variantHasJPG,
-                  status: variantStatus,
-                  glbPath: `products/${variantCode.toLowerCase()}/${variantCode}.glb`,
-                  jpgPath: `products/${variantCode.toLowerCase()}/${variantCode}.jpg`
-                });
-              }
-            }
-          }
+      const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
+      const matchesFinish = finishFilter === 'all' || product.finish_type === finishFilter;
+      const matchesSeries = seriesFilter === 'all' || product.product_series === seriesFilter;
+      const matchesStatus = statusFilter === 'all' || 
+                           (statusFilter === 'active' && product.is_active) ||
+                           (statusFilter === 'inactive' && !product.is_active);
 
-          const needsOverviewImage = !hasOverviewImage;
-          const hasIncompleteVariants = variants.some(v => v.status !== 'complete');
-          
-          if (showAllProducts || needsOverviewImage || !isMainComplete || hasIncompleteVariants) {
-            const completionPercentage = calculateCompletionPercentage(hasOverviewImage, hasGLB, hasJPG, variants);
-            const status: 'complete' | 'partial' | 'missing' = 
-              completionPercentage === 100 ? 'complete' :
-              completionPercentage > 0 ? 'partial' : 'missing';
+      return matchesSearch && matchesCategory && matchesFinish && matchesSeries && matchesStatus;
+    });
 
-            assetStatuses.push({
-              productId: mainProduct.id,
-              productCode: productCode,
-              productName: mainProduct.name,
-              editableTitle: mainProduct.editable_title || mainProduct.name,
-              productSeries: mainProduct.product_series || 'Unknown',
-              finishType: mainProduct.finish_type || 'PC',
-              orientation: mainProduct.orientation || 'None',
-              dimensions: mainProduct.dimensions || 'N/A',
-              hasOverviewImage,
-              hasGLB,
-              hasJPG,
-              isMainComplete,
-              variants,
-              completionPercentage,
-              status
-            });
-          }
-        }
+    filtered.sort((a, b) => {
+      let aValue = a[sortBy as keyof Product] as string;
+      let bValue = b[sortBy as keyof Product] as string;
+
+      if (sortBy === 'created_at' || sortBy === 'updated_at') {
+        aValue = new Date(aValue || '').getTime().toString();
+        bValue = new Date(bValue || '').getTime().toString();
       }
 
-      setAssetStatuses(assetStatuses);
-    } catch (error) {
-      console.error('Error checking assets:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to check asset status",
-        variant: "destructive",
-      });
-    } finally {
-      setCheckingAssets(false);
-    }
-  };
-
-  const getProductBaseName = (productCode: string): string => {
-    return productCode.split('-')[0];
-  };
-
-  const checkAssetExists = async (path: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .list('', { 
-          limit: 1,
-          search: path.split('/').pop() 
-        });
-      
-      return !error && data && data.length > 0;
-    } catch {
-      return false;
-    }
-  };
-
-  const isPlaceholderAsset = (path: string | null): boolean => {
-    return !path || path.includes('PLACEHOLDER') || path.includes('placeholder');
-  };
-
-  const calculateKSSeriesCompletion = (hasOverview: boolean, variants: VariantStatus[]): number => {
-    const totalAssets = 1 + (variants.length * 2); // 1 overview + GLB/JPG per variant
-    let completedAssets = hasOverview ? 1 : 0;
-    
-    variants.forEach(variant => {
-      if (variant.hasGLB) completedAssets++;
-      if (variant.hasJPG) completedAssets++;
+      if (sortOrder === 'asc') {
+        return (aValue || '').localeCompare(bValue || '');
+      } else {
+        return (bValue || '').localeCompare(aValue || '');
+      }
     });
 
-    return Math.round((completedAssets / totalAssets) * 100);
-  };
+    return filtered;
+  }, [products, searchTerm, categoryFilter, finishFilter, seriesFilter, statusFilter, sortBy, sortOrder]);
 
-  const calculateCompletionPercentage = (
-    hasOverview: boolean, 
-    hasMainGLB: boolean, 
-    hasMainJPG: boolean, 
-    variants: VariantStatus[]
-  ): number => {
-    const mainAssets = 3; // overview, GLB, JPG
-    const variantAssets = variants.length * 2; // GLB + JPG per variant
-    const totalAssets = mainAssets + variantAssets;
-    
-    if (totalAssets === 0) return 100;
+  const uniqueCategories = [...new Set(products.map(p => p.category))];
+  const uniqueFinishes = [...new Set(products.map(p => p.finish_type).filter(Boolean))];
+  const uniqueSeries = [...new Set(products.map(p => p.product_series).filter(Boolean))];
 
-    let completedAssets = 0;
-    if (hasOverview) completedAssets++;
-    if (hasMainGLB) completedAssets++;
-    if (hasMainJPG) completedAssets++;
-    
-    variants.forEach(variant => {
-      if (variant.hasGLB) completedAssets++;
-      if (variant.hasJPG) completedAssets++;
-    });
-
-    return Math.round((completedAssets / totalAssets) * 100);
-  };
-
-  const filteredAssetStatuses = assetStatuses.filter(asset => {
-    const matchesSearch = searchTerm === '' || 
-      asset.productCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.editableTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      asset.productSeries.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = filterStatus === 'all' || asset.status === filterStatus;
-    const matchesSeries = filterSeries === 'all' || asset.productSeries === filterSeries;
-
-    return matchesSearch && matchesStatus && matchesSeries;
-  });
-
-  const toggleExpanded = (productId: string) => {
-    const newExpanded = new Set(expandedProducts);
-    if (newExpanded.has(productId)) {
-      newExpanded.delete(productId);
-    } else {
-      newExpanded.add(productId);
-    }
-    setExpandedProducts(newExpanded);
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return <CheckCircle className="w-4 h-4 text-green-600" />;
-      case 'partial':
-        return <AlertCircle className="w-4 h-4 text-yellow-600" />;
-      default:
-        return <Clock className="w-4 h-4 text-red-600" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'complete':
-        return 'bg-green-100 text-green-800';
-      case 'partial':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-red-100 text-red-800';
-    }
-  };
-
-  const handleEditProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (product) {
-      setEditingProduct(product);
-    }
-  };
-
-  const handleSaveEdit = () => {
-    loadProductData(); // Refresh data after edit
-  };
-
-  const handleUploadClick = (variantCode: string, fileType: 'glb' | 'jpg') => {
-    setUploadModal({
-      isOpen: true,
-      variantCode,
-      fileType
-    });
-  };
-
-  const handleUploadComplete = () => {
-    setUploadModal({ isOpen: false, variantCode: '', fileType: 'glb' });
-    // Refresh asset data
-    loadProductData();
-  };
-
-  const totalProducts = filteredAssetStatuses.length;
-  const completeProducts = filteredAssetStatuses.filter(p => p.status === 'complete').length;
-  const partialProducts = filteredAssetStatuses.filter(p => p.status === 'partial').length;
-  const missingProducts = filteredAssetStatuses.filter(p => p.status === 'missing').length;
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <RefreshCw className="w-8 h-8 animate-spin mr-2" />
-        <span>Loading Innosin Lab products...</span>
+      <div className="flex items-center justify-center min-h-96">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading products...</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Filters & Search Card */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Package className="w-5 h-5" />
-                <span>Innosin Lab Asset Manager</span>
-              </div>
-              {(checkingAssets || isAutoRefreshing) && (
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <RefreshCw className="w-4 h-4 animate-spin mr-2" />
-                  {isAutoRefreshing ? 'Auto-refreshing...' : 'Checking assets...'}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={showAllProducts ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowAllProducts(!showAllProducts)}
-              >
-                {showAllProducts ? "Show Incomplete Only" : "Show All Products"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={loadProductData}
-                disabled={isLoading || checkingAssets}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
-              </Button>
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-primary">{totalProducts}</div>
-                <div className="text-sm text-muted-foreground">
-                  {showAllProducts ? 'Total Series' : 'Series Needing Work'}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">{completeProducts}</div>
-                <div className="text-sm text-muted-foreground">Complete</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">{partialProducts}</div>
-                <div className="text-sm text-muted-foreground">Partial</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-red-600">{missingProducts}</div>
-                <div className="text-sm text-muted-foreground">Missing</div>
-              </CardContent>
-            </Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            <CardTitle>Filters & Search</CardTitle>
           </div>
-
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-4 mb-6">
+          <div className="flex items-center gap-2">
+            <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add Product
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              Import
+            </Button>
+            <Button variant="outline" className="flex items-center gap-2">
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by product code, title, or series..."
+                  placeholder="Search products by name, code, description, or keywords..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
             </div>
-            <Select value={filterSeries} onValueChange={setFilterSeries}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by series" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Series</SelectItem>
-                {productSeries.map(series => (
-                  <SelectItem key={series} value={series}>{series}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
-                <SelectItem value="partial">Partial</SelectItem>
-                <SelectItem value="missing">Missing</SelectItem>
-              </SelectContent>
-            </Select>
+            
+            <div className="flex flex-wrap gap-2">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {uniqueCategories.map(category => (
+                    <SelectItem key={category} value={category}>{category}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={finishFilter} onValueChange={setFinishFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Finish" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Finishes</SelectItem>
+                  {uniqueFinishes.map(finish => (
+                    <SelectItem key={finish} value={finish!}>{finish}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={seriesFilter} onValueChange={setSeriesFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Series" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Series</SelectItem>
+                  {uniqueSeries.map(series => (
+                    <SelectItem key={series} value={series!}>{series}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          {/* Products List */}
-          <div className="space-y-4">
-            {filteredAssetStatuses.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <div className="text-muted-foreground">
-                    {searchTerm || filterStatus !== 'all' || filterSeries !== 'all'
-                      ? 'No products match your search criteria.'
-                      : showAllProducts 
-                        ? 'No products found.' 
-                        : 'All Innosin Lab products have complete assets!'
-                    }
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              filteredAssetStatuses.map((asset) => (
-                <Card key={asset.productId} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleExpanded(asset.productId)}
-                          >
-                            {expandedProducts.has(asset.productId) ? 
-                              <ChevronDown className="w-4 h-4" /> : 
-                              <ChevronRight className="w-4 h-4" />
-                            }
-                          </Button>
-                          <div className="flex items-center space-x-2">
-                            {getStatusIcon(asset.status)}
-                            <Badge className={getStatusColor(asset.status)}>
-                              {asset.status}
-                            </Badge>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg">{asset.editableTitle}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {asset.productCode} • {asset.productSeries} • {asset.finishType}
-                              {asset.orientation !== 'None' && ` • ${asset.orientation}`}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="mb-3">
-                          <div className="flex justify-between text-sm mb-1">
-                            <span>Completion</span>
-                            <span>{asset.completionPercentage}%</span>
-                          </div>
-                          <Progress value={asset.completionPercentage} className="w-full" />
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div className="flex items-center space-x-2">
-                            <Image className="w-4 h-4" />
-                            <span className={asset.hasOverviewImage ? 'text-green-600' : 'text-red-600'}>
-                              Overview Image
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Box className="w-4 h-4" />
-                            <span className={asset.hasGLB ? 'text-green-600' : 'text-red-600'}>
-                              3D Model
-                            </span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Image className="w-4 h-4" />
-                            <span className={asset.hasJPG ? 'text-green-600' : 'text-red-600'}>
-                              Thumbnail
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditProduct(asset.productId)}
-                        >
-                          <Edit3 className="w-4 h-4 mr-1" />
-                          Edit
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Expanded Variants */}
-                    {expandedProducts.has(asset.productId) && asset.variants.length > 0 && (
-                      <div className="mt-4 pt-4 border-t">
-                        <h4 className="font-medium mb-3">Product Variants</h4>
-                        <div className="grid gap-2">
-                          {asset.variants.map((variant) => (
-                            <div key={variant.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                              <div className="flex items-center space-x-3">
-                                {getStatusIcon(variant.status)}
-                                <span className="font-medium">{variant.size}</span>
-                                <Badge className={getStatusColor(variant.status)} variant="outline">
-                                  {variant.status}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center space-x-4">
-                                <div className="flex items-center space-x-2 text-sm">
-                                  <span className={variant.hasGLB ? 'text-green-600' : 'text-red-600'}>
-                                    GLB: {variant.hasGLB ? '✓' : '✗'}
-                                  </span>
-                                  {!variant.hasGLB && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleUploadClick(variant.size, 'glb')}
-                                      className="ml-1 h-6 px-2"
-                                    >
-                                      <Upload className="h-3 w-3 mr-1" />
-                                      Upload GLB
-                                    </Button>
-                                  )}
-                                </div>
-                                <div className="flex items-center space-x-2 text-sm">
-                                  <span className={variant.hasJPG ? 'text-green-600' : 'text-red-600'}>
-                                    JPG: {variant.hasJPG ? '✓' : '✗'}
-                                  </span>
-                                  {!variant.hasJPG && (
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => handleUploadClick(variant.size, 'jpg')}
-                                      className="ml-1 h-6 px-2"
-                                    >
-                                      <Upload className="h-3 w-3 mr-1" />
-                                      Upload JPG
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
-            )}
+          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {filteredAndSortedProducts.length} product{filteredAndSortedProducts.length !== 1 ? 's' : ''} found
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Sort by:</span>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="product_code">Product Code</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                  <SelectItem value="created_at">Date Created</SelectItem>
+                  <SelectItem value="updated_at">Last Modified</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+              >
+                {sortOrder === 'asc' ? '↑' : '↓'}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <ProductEditModal
+      {/* Products Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredAndSortedProducts.map((product) => (
+          <Card key={product.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-base truncate">{product.name}</CardTitle>
+                  <p className="text-sm text-muted-foreground">{product.product_code}</p>
+                </div>
+                <div className="flex items-center gap-1 ml-2">
+                  <Badge variant={product.is_active ? "default" : "secondary"} className="text-xs">
+                    {product.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Package className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">{product.category}</span>
+              </div>
+              
+              {product.dimensions && (
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">Dimensions:</span> {product.dimensions}
+                </p>
+              )}
+              
+              {product.description && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {product.description}
+                </p>
+              )}
+              
+              {product.company_tags && product.company_tags.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {product.company_tags.slice(0, 3).map((tag, index) => (
+                    <Badge key={index} variant="outline" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                  {product.company_tags.length > 3 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{product.company_tags.length - 3} more
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleView(product)}
+                  >
+                    <Eye className="h-3 w-3" />
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(product)}
+                  >
+                    <Edit className="h-3 w-3" />
+                  </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+                
+                <Button
+                  variant={product.is_active ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => toggleProductStatus(product.id, product.is_active || false)}
+                >
+                  {product.is_active ? "Deactivate" : "Activate"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredAndSortedProducts.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">No products found</h3>
+            <p className="text-muted-foreground mb-4">
+              Try adjusting your search criteria or filters.
+            </p>
+            <Button onClick={() => setIsFormOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Product
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Dialogs */}
+      <ProductFormDialog
+        isOpen={isFormOpen}
+        onOpenChange={setIsFormOpen}
         product={editingProduct}
-        isOpen={!!editingProduct}
-        onClose={() => setEditingProduct(null)}
-        onSave={handleSaveEdit}
+        onProductSaved={handleProductSaved}
       />
 
-      <VariantFileUploadModal
-        isOpen={uploadModal.isOpen}
-        onClose={() => setUploadModal({ isOpen: false, variantCode: '', fileType: 'glb' })}
-        variantCode={uploadModal.variantCode}
-        fileType={uploadModal.fileType}
-        onUploadComplete={handleUploadComplete}
+      <ProductViewDialog
+        isOpen={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        product={selectedProduct}
+        onEdit={handleEdit}
+        onDelete={handleDeleteProduct}
+        onToggleStatus={toggleProductStatus}
       />
     </div>
   );
