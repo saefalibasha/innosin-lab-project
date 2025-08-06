@@ -105,15 +105,7 @@ export type Database = {
           upload_status?: string | null
           uploaded_by?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "asset_uploads_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       blog_images: {
         Row: {
@@ -736,141 +728,22 @@ export type Database = {
           old_data?: Json | null
           product_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "product_activity_log_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      product_series: {
-        Row: {
-          brand: string | null
-          branding_assets: string[] | null
-          category: string | null
-          created_at: string
-          description: string | null
-          id: string
-          is_active: boolean | null
-          overview_image_path: string | null
-          series_code: string
-          series_name: string
-          updated_at: string
-        }
-        Insert: {
-          brand?: string | null
-          branding_assets?: string[] | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          overview_image_path?: string | null
-          series_code: string
-          series_name: string
-          updated_at?: string
-        }
-        Update: {
-          brand?: string | null
-          branding_assets?: string[] | null
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          overview_image_path?: string | null
-          series_code?: string
-          series_name?: string
-          updated_at?: string
-        }
         Relationships: []
-      }
-      product_variants: {
-        Row: {
-          additional_images: string[] | null
-          additional_specs: Json | null
-          color: string | null
-          created_at: string
-          finish_type: string | null
-          id: string
-          is_active: boolean | null
-          model_path: string | null
-          product_id: string
-          size_dimensions: string | null
-          sort_order: number | null
-          thumbnail_path: string | null
-          updated_at: string
-          variant_code: string
-          variant_name: string
-          variant_type: string | null
-        }
-        Insert: {
-          additional_images?: string[] | null
-          additional_specs?: Json | null
-          color?: string | null
-          created_at?: string
-          finish_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          model_path?: string | null
-          product_id: string
-          size_dimensions?: string | null
-          sort_order?: number | null
-          thumbnail_path?: string | null
-          updated_at?: string
-          variant_code: string
-          variant_name: string
-          variant_type?: string | null
-        }
-        Update: {
-          additional_images?: string[] | null
-          additional_specs?: Json | null
-          color?: string | null
-          created_at?: string
-          finish_type?: string | null
-          id?: string
-          is_active?: boolean | null
-          model_path?: string | null
-          product_id?: string
-          size_dimensions?: string | null
-          sort_order?: number | null
-          thumbnail_path?: string | null
-          updated_at?: string
-          variant_code?: string
-          variant_name?: string
-          variant_type?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "product_variants_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       products: {
         Row: {
           additional_images: string[] | null
-          cabinet_class: string | null
-          category: string
+          category: string | null
           company_tags: string[] | null
-          created_at: string
+          created_at: string | null
           description: string | null
           dimensions: string | null
           door_type: string | null
-          drawer_count: number | null
-          editable_description: string | null
-          editable_title: string | null
           emergency_shower_type: string | null
           finish_type: string | null
           full_description: string | null
           handle_type: string | null
-          id: string
+          id: string | null
           inherits_series_assets: boolean | null
           is_active: boolean | null
           is_series_parent: boolean | null
@@ -878,11 +751,12 @@ export type Database = {
           mixing_type: string | null
           model_path: string | null
           mounting_type: string | null
-          name: string
+          name: string | null
+          number_of_drawers: number | null
           orientation: string | null
           overview_image_path: string | null
           parent_series_id: string | null
-          product_code: string
+          product_code: string | null
           product_series: string | null
           series_model_path: string | null
           series_order: number | null
@@ -892,27 +766,23 @@ export type Database = {
           specifications: Json | null
           target_variant_count: number | null
           thumbnail_path: string | null
-          updated_at: string
+          updated_at: string | null
           variant_order: number | null
           variant_type: string | null
         }
         Insert: {
           additional_images?: string[] | null
-          cabinet_class?: string | null
-          category?: string
+          category?: string | null
           company_tags?: string[] | null
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           dimensions?: string | null
           door_type?: string | null
-          drawer_count?: number | null
-          editable_description?: string | null
-          editable_title?: string | null
           emergency_shower_type?: string | null
           finish_type?: string | null
           full_description?: string | null
           handle_type?: string | null
-          id?: string
+          id?: string | null
           inherits_series_assets?: boolean | null
           is_active?: boolean | null
           is_series_parent?: boolean | null
@@ -920,11 +790,12 @@ export type Database = {
           mixing_type?: string | null
           model_path?: string | null
           mounting_type?: string | null
-          name: string
+          name?: string | null
+          number_of_drawers?: number | null
           orientation?: string | null
           overview_image_path?: string | null
           parent_series_id?: string | null
-          product_code: string
+          product_code?: string | null
           product_series?: string | null
           series_model_path?: string | null
           series_order?: number | null
@@ -934,27 +805,23 @@ export type Database = {
           specifications?: Json | null
           target_variant_count?: number | null
           thumbnail_path?: string | null
-          updated_at?: string
+          updated_at?: string | null
           variant_order?: number | null
           variant_type?: string | null
         }
         Update: {
           additional_images?: string[] | null
-          cabinet_class?: string | null
-          category?: string
+          category?: string | null
           company_tags?: string[] | null
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           dimensions?: string | null
           door_type?: string | null
-          drawer_count?: number | null
-          editable_description?: string | null
-          editable_title?: string | null
           emergency_shower_type?: string | null
           finish_type?: string | null
           full_description?: string | null
           handle_type?: string | null
-          id?: string
+          id?: string | null
           inherits_series_assets?: boolean | null
           is_active?: boolean | null
           is_series_parent?: boolean | null
@@ -962,11 +829,12 @@ export type Database = {
           mixing_type?: string | null
           model_path?: string | null
           mounting_type?: string | null
-          name?: string
+          name?: string | null
+          number_of_drawers?: number | null
           orientation?: string | null
           overview_image_path?: string | null
           parent_series_id?: string | null
-          product_code?: string
+          product_code?: string | null
           product_series?: string | null
           series_model_path?: string | null
           series_order?: number | null
@@ -976,19 +844,11 @@ export type Database = {
           specifications?: Json | null
           target_variant_count?: number | null
           thumbnail_path?: string | null
-          updated_at?: string
+          updated_at?: string | null
           variant_order?: number | null
           variant_type?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "products_parent_series_id_fkey"
-            columns: ["parent_series_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       rate_limit_log: {
         Row: {

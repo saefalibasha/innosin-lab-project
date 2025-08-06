@@ -76,10 +76,25 @@ export const ProductSeriesManager = () => {
       setLoading(true);
       setError(null);
       
+      // First check if we have any data at all
+      const { count } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true });
+
+      console.log('Total products count:', count);
+
+      if (count === 0) {
+        console.log('No products found in database');
+        setSeries([]);
+        setFilteredSeries([]);
+        setLoading(false);
+        return;
+      }
+      
       // Fetch all products
       const { data: products, error } = await supabase
         .from('products')
-        .select(`*`)
+        .select('*')
         .order('product_series', { ascending: true });
 
       if (error) throw error;
@@ -88,6 +103,7 @@ export const ProductSeriesManager = () => {
 
       if (!products || products.length === 0) {
         setSeries([]);
+        setFilteredSeries([]);
         return;
       }
 
@@ -156,10 +172,10 @@ export const ProductSeriesManager = () => {
       setSeries(seriesWithCounts);
     } catch (error) {
       console.error('Error fetching series:', error);
-      setError('Failed to fetch product series');
+      setError('Failed to fetch product series. Please check your database connection.');
       toast({
-        title: "Error",
-        description: "Failed to fetch product series",
+        title: "Database Error",
+        description: "Failed to fetch product series. This might be due to missing data or connectivity issues.",
         variant: "destructive",
       });
     } finally {
@@ -265,23 +281,35 @@ export const ProductSeriesManager = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <Card>
+        <CardContent className="py-8">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+            <span>Loading product series...</span>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <p className="text-red-500 mb-4">{error}</p>
-          <Button onClick={fetchSeries} variant="outline">
-            Try Again
-          </Button>
-        </div>
-      </div>
+      <Card>
+        <CardContent className="py-8">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-500 mb-4">{error}</p>
+            <div className="space-y-2">
+              <Button onClick={fetchSeries} variant="outline">
+                Try Again
+              </Button>
+              <p className="text-sm text-muted-foreground">
+                If this persists, try adding some sample data first.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -300,140 +328,152 @@ export const ProductSeriesManager = () => {
         </Button>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search series..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Badge variant="outline">
-              {filteredSeries.length} series found
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Series Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSeries.map((series) => (
-          <Card key={series.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <CardTitle className="text-lg">{series.product_series}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{series.category}</p>
-                  </div>
-                </div>
-                <Badge variant={series.is_active ? "default" : "secondary"}>
-                  {series.is_active ? "Active" : "Inactive"}
-                </Badge>
-              </div>
+      {series.length > 0 && (
+        <>
+          {/* Search and Filters */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Search & Filter</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {series.description}
-              </p>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Variants:</span>
-                <Badge variant="outline">{series.variant_count}</Badge>
-              </div>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Completion:</span>
-                <Badge 
-                  variant={series.completion_rate >= 80 ? "default" : 
-                          series.completion_rate >= 50 ? "secondary" : "destructive"}
-                >
-                  {series.completion_rate}%
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search series..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Badge variant="outline">
+                  {filteredSeries.length} series found
                 </Badge>
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditingSeries(series)}
-                  className="flex items-center gap-1"
-                >
-                  <Edit className="h-3 w-3" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleManageVariants(series)}
-                  className="flex items-center gap-1"
-                >
-                  <Package className="h-3 w-3" />
-                  Variants
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-1"
-                >
-                  <Upload className="h-3 w-3" />
-                  Assets
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
-                        Delete Series
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete the series "{series.product_series}" and all its variants? This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDeleteSeries(series.id, series.product_series)}
-                        className="bg-red-500 hover:bg-red-600"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
 
-      {filteredSeries.length === 0 && (
+          {/* Series Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredSeries.map((series) => (
+              <Card key={series.id} className="relative">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <CardTitle className="text-lg">{series.product_series}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{series.category}</p>
+                      </div>
+                    </div>
+                    <Badge variant={series.is_active ? "default" : "secondary"}>
+                      {series.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {series.description}
+                  </p>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Variants:</span>
+                    <Badge variant="outline">{series.variant_count}</Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Completion:</span>
+                    <Badge 
+                      variant={series.completion_rate >= 80 ? "default" : 
+                              series.completion_rate >= 50 ? "secondary" : "destructive"}
+                    >
+                      {series.completion_rate}%
+                    </Badge>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingSeries(series)}
+                      className="flex items-center gap-1"
+                    >
+                      <Edit className="h-3 w-3" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleManageVariants(series)}
+                      className="flex items-center gap-1"
+                    >
+                      <Package className="h-3 w-3" />
+                      Variants
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-1"
+                    >
+                      <Upload className="h-3 w-3" />
+                      Assets
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-red-500" />
+                            Delete Series
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete the series "{series.product_series}" and all its variants? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteSeries(series.id, series.product_series)}
+                            className="bg-red-500 hover:bg-red-600"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
+
+      {series.length === 0 && (
         <Card>
-          <CardContent className="py-8">
+          <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
-              <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No product series found matching your criteria.</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => setShowAddDialog(true)}
-              >
-                Create Your First Series
-              </Button>
+              <Package className="h-16 w-16 mx-auto mb-6 opacity-50" />
+              <h3 className="text-xl font-semibold mb-2">No Product Series Found</h3>
+              <p className="mb-6 max-w-md mx-auto">
+                It looks like there's no product data in your database yet. You can either add sample data to test the functionality or create your first product series manually.
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => setShowAddDialog(true)}
+                  className="mx-2"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create First Series
+                </Button>
+                <p className="text-sm">
+                  or use the "Seed Sample Data" button above to populate with test data
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>
