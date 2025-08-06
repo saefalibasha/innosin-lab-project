@@ -15,12 +15,12 @@ export interface DatabaseProduct {
   door_type: string;
   variant_type: string;
   drawer_count: number;
+  cabinet_class: string;
   product_code: string;
   mounting_type: string;
   mixing_type: string;
   handle_type: string;
   emergency_shower_type: string;
-  cabinet_class: string;
   company_tags: string[];
   product_series: string;
   parent_series_id: string;
@@ -34,6 +34,8 @@ export interface DatabaseProduct {
   variant_order: number;
   created_at: string;
   updated_at: string;
+  editable_title: string;
+  editable_description: string;
 }
 
 export interface RealtimePayload {

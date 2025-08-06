@@ -2,33 +2,36 @@
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-interface UseProductRealtimeProps {
+export interface UseProductRealtimeProps {
+  onProductChange?: () => void;
   onSeriesChange?: () => void;
   enabled?: boolean;
 }
 
-export const useProductRealtime = ({ onSeriesChange, enabled = true }: UseProductRealtimeProps) => {
+export const useProductRealtime = ({ onProductChange, onSeriesChange, enabled = true }: UseProductRealtimeProps) => {
   useEffect(() => {
     if (!enabled) return;
 
+    console.log('🔄 Setting up real-time product updates...');
+    
     const channel = supabase
       .channel('products-changes')
       .on(
         'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'products'
-        },
+        { event: '*', schema: 'public', table: 'products' },
         (payload) => {
-          console.log('Product change detected:', payload);
+          console.log('📡 Real-time product update received:', payload);
+          onProductChange?.();
           onSeriesChange?.();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('🔌 Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [onSeriesChange, enabled]);
+  }, [onProductChange, onSeriesChange, enabled]);
+
+  return null;
 };

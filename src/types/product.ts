@@ -55,6 +55,13 @@ export interface Product {
   // Series relationship fields
   parent_series_id?: string; // Reference to parent series product
   is_series_parent?: boolean; // Whether this product is a series parent
+  // Admin editable fields
+  editable_title?: string;
+  editable_description?: string;
+  // Timestamps
+  created_at?: string;
+  updated_at?: string;
+  is_active?: boolean;
 }
 
 // New interface for wall cabinet configuration

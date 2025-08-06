@@ -11,31 +11,7 @@ import { Loader2, Search, Filter, Plus, Eye, Edit, Trash2, Package, Upload, Down
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-
-interface Product {
-  id: string;
-  name: string;
-  product_code: string;
-  category: string;
-  dimensions?: string;
-  description?: string;
-  full_description?: string;
-  product_series?: string;
-  finish_type?: string;
-  orientation?: string;
-  door_type?: string;
-  drawer_count?: number;
-  specifications?: any;
-  keywords?: string[];
-  company_tags?: string[];
-  thumbnail_path?: string;
-  model_path?: string;
-  additional_images?: string[];
-  overview_image_path?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { Product } from '@/types/product';
 
 const EnhancedAssetManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -57,6 +33,40 @@ const EnhancedAssetManager = () => {
     fetchProducts();
   }, []);
 
+  const transformDatabaseProduct = (dbProduct: any): Product => {
+    return {
+      id: dbProduct.id,
+      name: dbProduct.name,
+      category: dbProduct.category,
+      dimensions: dbProduct.dimensions || '',
+      modelPath: dbProduct.model_path || '',
+      thumbnail: dbProduct.thumbnail_path || '',
+      images: dbProduct.additional_images || [],
+      description: dbProduct.description || '',
+      fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
+      specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+      finish_type: dbProduct.finish_type,
+      orientation: dbProduct.orientation,
+      drawer_count: dbProduct.drawer_count || 0,
+      door_type: dbProduct.door_type,
+      product_code: dbProduct.product_code,
+      thumbnail_path: dbProduct.thumbnail_path,
+      model_path: dbProduct.model_path,
+      mounting_type: dbProduct.mounting_type,
+      mixing_type: dbProduct.mixing_type,
+      handle_type: dbProduct.handle_type,
+      emergency_shower_type: dbProduct.emergency_shower_type,
+      cabinet_class: dbProduct.cabinet_class || 'standard',
+      company_tags: dbProduct.company_tags || [],
+      product_series: dbProduct.product_series,
+      editable_title: dbProduct.editable_title,
+      editable_description: dbProduct.editable_description,
+      is_active: dbProduct.is_active || false,
+      created_at: dbProduct.created_at,
+      updated_at: dbProduct.updated_at
+    };
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -66,7 +76,9 @@ const EnhancedAssetManager = () => {
         .order('name');
 
       if (error) throw error;
-      setProducts(data || []);
+      
+      const transformedProducts = (data || []).map(transformDatabaseProduct);
+      setProducts(transformedProducts);
     } catch (error) {
       console.error('Error fetching products:', error);
       toast({
@@ -148,10 +160,10 @@ const EnhancedAssetManager = () => {
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products.filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           product.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           (product.product_code?.toLowerCase().includes(searchTerm.toLowerCase())) ||
                            (product.description?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                           (product.keywords?.some(keyword => 
-                             keyword.toLowerCase().includes(searchTerm.toLowerCase())
+                           (product.company_tags?.some(tag => 
+                             tag.toLowerCase().includes(searchTerm.toLowerCase())
                            ));
 
       const matchesCategory = categoryFilter === 'all' || product.category === categoryFilter;
@@ -169,14 +181,14 @@ const EnhancedAssetManager = () => {
       let bValue = b[sortBy as keyof Product] as string;
 
       if (sortBy === 'created_at' || sortBy === 'updated_at') {
-        aValue = new Date(aValue).getTime().toString();
-        bValue = new Date(bValue).getTime().toString();
+        aValue = new Date(aValue || '').getTime().toString();
+        bValue = new Date(bValue || '').getTime().toString();
       }
 
       if (sortOrder === 'asc') {
-        return aValue.localeCompare(bValue);
+        return (aValue || '').localeCompare(bValue || '');
       } else {
-        return bValue.localeCompare(aValue);
+        return (bValue || '').localeCompare(aValue || '');
       }
     });
 
@@ -354,16 +366,16 @@ const EnhancedAssetManager = () => {
                 </p>
               )}
               
-              {product.keywords && product.keywords.length > 0 && (
+              {product.company_tags && product.company_tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
-                  {product.keywords.slice(0, 3).map((keyword, index) => (
+                  {product.company_tags.slice(0, 3).map((tag, index) => (
                     <Badge key={index} variant="outline" className="text-xs">
-                      {keyword}
+                      {tag}
                     </Badge>
                   ))}
-                  {product.keywords.length > 3 && (
+                  {product.company_tags.length > 3 && (
                     <Badge variant="outline" className="text-xs">
-                      +{product.keywords.length - 3} more
+                      +{product.company_tags.length - 3} more
                     </Badge>
                   )}
                 </div>
@@ -416,7 +428,7 @@ const EnhancedAssetManager = () => {
                 <Button
                   variant={product.is_active ? "outline" : "default"}
                   size="sm"
-                  onClick={() => toggleProductStatus(product.id, product.is_active)}
+                  onClick={() => toggleProductStatus(product.id, product.is_active || false)}
                 >
                   {product.is_active ? "Deactivate" : "Activate"}
                 </Button>

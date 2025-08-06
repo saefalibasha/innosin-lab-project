@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
@@ -32,7 +33,7 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     seriesOverviewImage: dbProduct.series_overview_image,
     images: dbProduct.additional_images || [],
     description: dbProduct.description || '',
-    fullDescription: dbProduct.editable_description || dbProduct.description || '',
+    fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
     specifications: dbProduct.specifications || [],
     // Additional fields for compatibility
     finishes: dbProduct.finishes || [],
@@ -41,7 +42,7 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     // Variant-specific fields
     finish_type: dbProduct.finish_type,
     orientation: dbProduct.orientation,
-    drawer_count: dbProduct.drawer_count,
+    drawer_count: dbProduct.drawer_count || 0,
     door_type: dbProduct.door_type,
     product_code: dbProduct.product_code,
     thumbnail_path: dbProduct.thumbnail_path,
@@ -51,7 +52,16 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     mixing_type: dbProduct.mixing_type,
     handle_type: dbProduct.handle_type,
     company_tags: dbProduct.company_tags,
-    product_series: dbProduct.product_series
+    product_series: dbProduct.product_series,
+    cabinet_class: dbProduct.cabinet_class,
+    emergency_shower_type: dbProduct.emergency_shower_type,
+    // Admin editable fields
+    editable_title: dbProduct.editable_title,
+    editable_description: dbProduct.editable_description,
+    // Timestamps and status
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at,
+    is_active: dbProduct.is_active
   };
 };
 
@@ -144,7 +154,6 @@ export const useProductSeries = () => {
   // Set up real-time updates
   useProductRealtime({
     onProductChange: fetchProductSeries,
-    onSeriesChange: fetchProductSeries,
     enabled: true
   });
 
