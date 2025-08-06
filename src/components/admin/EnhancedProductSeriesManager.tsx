@@ -43,6 +43,7 @@ import {
 import { VariantManager } from './product-series/VariantManager';
 import { ProductSeriesFormDialog } from './product-series/ProductSeriesFormDialog';
 import { ProductSeriesFilter } from './product-series/ProductSeriesFilter';
+import { DatabaseProduct } from '@/types/supabase';
 
 interface ProductSeries {
   product_series: string;
@@ -150,7 +151,7 @@ export const EnhancedProductSeriesManager = () => {
       // Group products by product_series
       const seriesMap = new Map<string, DatabaseVariant[]>();
       
-      products.forEach(product => {
+      products.forEach((product: DatabaseProduct) => {
         const seriesName = product.product_series;
         if (!seriesName) return;
         
@@ -171,7 +172,7 @@ export const EnhancedProductSeriesManager = () => {
           mixing_type: product.mixing_type,
           handle_type: product.handle_type,
           emergency_shower_type: product.emergency_shower_type,
-          drawer_count: product.drawer_count,
+          drawer_count: product.drawer_count || 0,
           description: product.description,
           thumbnail_path: product.thumbnail_path,
           model_path: product.model_path,
@@ -186,7 +187,7 @@ export const EnhancedProductSeriesManager = () => {
         const completionRate = variants.length > 0 ? Math.round((variantsWithAssets.length / variants.length) * 100) : 0;
         
         // Get series thumbnail from any variant that has series_thumbnail_path
-        const seriesThumbnail = products.find(p => 
+        const seriesThumbnail = products.find((p: DatabaseProduct) => 
           p.product_series === seriesName && p.series_thumbnail_path
         )?.series_thumbnail_path;
 

@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
+import { DatabaseProduct } from '@/types/supabase';
 import { useProductRealtime } from './useProductRealtime';
 
 export interface ProductSeries {
@@ -21,24 +22,24 @@ export interface ProductSeries {
 }
 
 // Transform database product to Product interface
-const transformDatabaseProduct = (dbProduct: any): Product => {
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
     category: dbProduct.category,
-    dimensions: dbProduct.dimensions,
+    dimensions: dbProduct.dimensions || '',
     modelPath: dbProduct.model_path || '',
     thumbnail: dbProduct.thumbnail_path || '',
-    overviewImage: dbProduct.overview_image,
-    seriesOverviewImage: dbProduct.series_overview_image,
+    overviewImage: dbProduct.overview_image_path,
+    seriesOverviewImage: dbProduct.series_overview_image_path,
     images: dbProduct.additional_images || [],
     description: dbProduct.description || '',
     fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
     specifications: dbProduct.specifications || [],
     // Additional fields for compatibility
-    finishes: dbProduct.finishes || [],
-    variants: dbProduct.variants || [],
-    baseProductId: dbProduct.base_product_id,
+    finishes: [],
+    variants: [],
+    baseProductId: dbProduct.parent_series_id,
     // Variant-specific fields
     finish_type: dbProduct.finish_type,
     orientation: dbProduct.orientation,
@@ -53,11 +54,11 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     handle_type: dbProduct.handle_type,
     company_tags: dbProduct.company_tags,
     product_series: dbProduct.product_series,
-    cabinet_class: dbProduct.cabinet_class,
+    cabinet_class: dbProduct.cabinet_class || 'standard',
     emergency_shower_type: dbProduct.emergency_shower_type,
     // Admin editable fields
-    editable_title: dbProduct.editable_title,
-    editable_description: dbProduct.editable_description,
+    editable_title: dbProduct.editable_title || dbProduct.name,
+    editable_description: dbProduct.editable_description || dbProduct.description,
     // Timestamps and status
     created_at: dbProduct.created_at,
     updated_at: dbProduct.updated_at,
@@ -87,7 +88,7 @@ export const useProductSeries = () => {
       // Group products by series, filtering out products without thumbnails
       const seriesMap = new Map<string, ProductSeries>();
       
-      products?.forEach(dbProduct => {
+      products?.forEach((dbProduct: DatabaseProduct) => {
         // Only include products that have a thumbnail_path
         if (!dbProduct.thumbnail_path) {
           return;
@@ -153,7 +154,6 @@ export const useProductSeries = () => {
 
   // Set up real-time updates
   useProductRealtime({
-    onProductChange: fetchProductSeries,
     enabled: true
   });
 

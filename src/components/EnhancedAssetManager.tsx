@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,24 +24,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ProductEditModal from './ProductEditModal';
 import { VariantFileUploadModal } from './admin/VariantFileUploadModal';
-
-interface Product {
-  id: string;
-  product_code: string;
-  name: string;
-  editable_title: string;
-  editable_description: string;
-  category: string;
-  product_series: string;
-  finish_type: string;
-  orientation: string;
-  drawer_count: number;
-  door_type: string;
-  dimensions: string;
-  thumbnail_path: string;
-  model_path: string;
-  is_active: boolean;
-}
+import { DatabaseProduct } from '@/types/supabase';
+import { Product } from '@/types/product';
 
 interface AssetStatus {
   productId: string;
@@ -70,6 +54,41 @@ interface VariantStatus {
   glbPath?: string;
   jpgPath?: string;
 }
+
+// Transform database product to Product interface
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    category: dbProduct.category,
+    dimensions: dbProduct.dimensions || '',
+    modelPath: dbProduct.model_path || '',
+    thumbnail: dbProduct.thumbnail_path || '',
+    images: dbProduct.additional_images || [],
+    description: dbProduct.description || '',
+    fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
+    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    finish_type: dbProduct.finish_type,
+    orientation: dbProduct.orientation,
+    drawer_count: dbProduct.drawer_count || 0,
+    door_type: dbProduct.door_type,
+    product_code: dbProduct.product_code,
+    thumbnail_path: dbProduct.thumbnail_path,
+    model_path: dbProduct.model_path,
+    mounting_type: dbProduct.mounting_type,
+    mixing_type: dbProduct.mixing_type,
+    handle_type: dbProduct.handle_type,
+    emergency_shower_type: dbProduct.emergency_shower_type,
+    cabinet_class: dbProduct.cabinet_class || 'standard',
+    company_tags: dbProduct.company_tags || [],
+    product_series: dbProduct.product_series,
+    editable_title: dbProduct.editable_title || dbProduct.name,
+    editable_description: dbProduct.editable_description || dbProduct.description,
+    is_active: dbProduct.is_active || false,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at
+  };
+};
 
 const EnhancedAssetManager = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -120,13 +139,15 @@ const EnhancedAssetManager = () => {
 
       if (error) throw error;
 
-      setProducts(productsData || []);
+      // Transform database products to Product interface
+      const transformedProducts = (productsData || []).map(transformDatabaseProduct);
+      setProducts(transformedProducts);
       
       // Extract unique product series for filtering
-      const uniqueSeries = [...new Set(productsData?.map(p => p.product_series).filter(Boolean) || [])];
+      const uniqueSeries = [...new Set(transformedProducts?.map(p => p.product_series).filter(Boolean) || [])];
       setProductSeries(uniqueSeries);
 
-      await checkAssets(productsData || []);
+      await checkAssets(transformedProducts || []);
     } catch (error) {
       console.error('Error loading products:', error);
       toast({
@@ -157,7 +178,7 @@ const EnhancedAssetManager = () => {
           productGroups.get(seriesKey)!.push(product);
         } else {
           // For other products, use the existing grouping logic
-          const baseName = getProductBaseName(product.product_code);
+          const baseName = getProductBaseName(product.product_code || '');
           if (!productGroups.has(baseName)) {
             productGroups.set(baseName, []);
           }
@@ -176,7 +197,7 @@ const EnhancedAssetManager = () => {
           // Check each KS variant
           const variants: VariantStatus[] = [];
           for (const variant of groupProducts) {
-            const variantCode = variant.product_code; // KS700, KS750, etc.
+            const variantCode = variant.product_code || ''; // KS700, KS750, etc.
             const variantHasGLB = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.glb`);
             const variantHasJPG = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.jpg`);
             
@@ -207,7 +228,7 @@ const EnhancedAssetManager = () => {
               productCode: 'KS Series',
               productName: 'Laboratory Bench Knee Space Series',
               editableTitle: 'Laboratory Bench Knee Space Series',
-              productSeries: mainProduct.product_series,
+              productSeries: mainProduct.product_series || '',
               finishType: 'PC/SS',
               orientation: 'None',
               dimensions: '700-1200mm widths',
@@ -225,9 +246,10 @@ const EnhancedAssetManager = () => {
           const mainProduct = groupProducts[0];
           
           // Check main product assets
-          const hasOverviewImage = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/overview.jpg`);
-          const hasGLB = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.glb`);
-          const hasJPG = await checkAssetExists(`products/${mainProduct.product_code.toLowerCase()}/${mainProduct.product_code}.jpg`);
+          const productCode = mainProduct.product_code || '';
+          const hasOverviewImage = await checkAssetExists(`products/${productCode.toLowerCase()}/overview.jpg`);
+          const hasGLB = await checkAssetExists(`products/${productCode.toLowerCase()}/${productCode}.glb`);
+          const hasJPG = await checkAssetExists(`products/${productCode.toLowerCase()}/${productCode}.jpg`);
           
           const isMainComplete = hasGLB && hasJPG && !isPlaceholderAsset(mainProduct.model_path) && !isPlaceholderAsset(mainProduct.thumbnail_path);
 
@@ -235,8 +257,9 @@ const EnhancedAssetManager = () => {
           const variants: VariantStatus[] = [];
           for (const variant of groupProducts) {
             if (variant.id !== mainProduct.id) {
-              const variantHasGLB = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`);
-              const variantHasJPG = await checkAssetExists(`products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`);
+              const variantCode = variant.product_code || '';
+              const variantHasGLB = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.glb`);
+              const variantHasJPG = await checkAssetExists(`products/${variantCode.toLowerCase()}/${variantCode}.jpg`);
               
               const variantStatus: 'complete' | 'partial' | 'missing' = 
                 (variantHasGLB && variantHasJPG) ? 'complete' :
@@ -245,12 +268,12 @@ const EnhancedAssetManager = () => {
               if (showAllProducts || variantStatus !== 'complete') {
                 variants.push({
                   id: variant.id,
-                  size: variant.product_code,
+                  size: variantCode,
                   hasGLB: variantHasGLB,
                   hasJPG: variantHasJPG,
                   status: variantStatus,
-                  glbPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.glb`,
-                  jpgPath: `products/${variant.product_code.toLowerCase()}/${variant.product_code}.jpg`
+                  glbPath: `products/${variantCode.toLowerCase()}/${variantCode}.glb`,
+                  jpgPath: `products/${variantCode.toLowerCase()}/${variantCode}.jpg`
                 });
               }
             }
@@ -267,7 +290,7 @@ const EnhancedAssetManager = () => {
 
             assetStatuses.push({
               productId: mainProduct.id,
-              productCode: mainProduct.product_code,
+              productCode: productCode,
               productName: mainProduct.name,
               editableTitle: mainProduct.editable_title || mainProduct.name,
               productSeries: mainProduct.product_series || 'Unknown',
