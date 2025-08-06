@@ -10,7 +10,7 @@ import {
   FileText
 } from 'lucide-react';
 import { DynamicOverview } from './DynamicOverview';
-import { EnhancedProductSeriesManager } from './EnhancedProductSeriesManager';
+import EnhancedProductSeriesManager from './EnhancedProductSeriesManager';
 import { SystemSettings } from './SystemSettings';
 import { BlogManagement } from './BlogManagement';
 
