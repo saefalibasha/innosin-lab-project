@@ -21,7 +21,7 @@ import {
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
 import { mockAdminSeries } from '@/data/mockProducts';
-import { Product as ProductType } from '@/types/product';
+import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
 
 // Transform any database object to proper DatabaseProduct with defaults
@@ -66,7 +66,7 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
   };
 };
 
-const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
@@ -109,7 +109,7 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
 
 interface ProductSeries {
   name: string;
-  products: ProductType[];
+  products: Product[];
   totalProducts: number;
   activeProducts: number;
   completionRate: number;
@@ -117,8 +117,8 @@ interface ProductSeries {
 }
 
 interface ProductSeriesManagerProps {
-  onProductSelect?: (product: ProductType) => void;
-  onProductEdit?: (product: ProductType) => void;
+  onProductSelect?: (product: Product) => void;
+  onProductEdit?: (product: Product) => void;
 }
 
 export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
@@ -128,8 +128,8 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [series, setSeries] = useState<ProductSeries[]>([]);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
-  const [editingProduct, setEditingProduct] = useState<ProductType | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
@@ -169,7 +169,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       }
 
       // Group products by series and properly transform them
-      const seriesMap = new Map<string, ProductType[]>();
+      const seriesMap = new Map<string, Product[]>();
       products.forEach(rawProduct => {
         const dbProduct = ensureDatabaseProduct(rawProduct);
         const transformedProduct = transformDatabaseProduct(dbProduct);
@@ -230,14 +230,14 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
     setExpandedSeries(newExpanded);
   };
 
-  const handleView = (product: ProductType) => {
+  const handleView = (product: Product) => {
     console.log('Viewing product:', product);
     setSelectedProduct(product);
     setIsViewOpen(true);
     onProductSelect?.(product);
   };
 
-  const handleEdit = (product: ProductType) => {
+  const handleEdit = (product: Product) => {
     console.log('Editing product:', product);
     setEditingProduct(product);
     setIsEditOpen(true);
@@ -338,6 +338,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         </Card>
       )}
 
+      {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardContent className="p-4 text-center">
@@ -371,6 +372,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         </Card>
       </div>
 
+      {/* Series List */}
       <div className="space-y-4">
         {series.map((seriesData) => (
           <Card key={seriesData.name} className="overflow-hidden">
