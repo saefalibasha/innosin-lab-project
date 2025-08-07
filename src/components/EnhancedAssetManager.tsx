@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,11 @@ import { Loader2, Search, Filter, Plus, Eye, Edit, Trash2, Package, Upload, Down
 import ProductFormDialog from './admin/ProductFormDialog';
 import ProductViewDialog from './admin/ProductViewDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Product } from '@/types/product';
+import { Product as ProductType } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
 
 const EnhancedAssetManager = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -25,8 +26,8 @@ const EnhancedAssetManager = () => {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductType | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -75,7 +76,7 @@ const EnhancedAssetManager = () => {
     };
   };
 
-  const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
+  const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
     return {
       id: dbProduct.id,
       name: dbProduct.name,
@@ -192,12 +193,12 @@ const EnhancedAssetManager = () => {
     setEditingProduct(null);
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: ProductType) => {
     setEditingProduct(product);
     setIsFormOpen(true);
   };
 
-  const handleView = (product: Product) => {
+  const handleView = (product: ProductType) => {
     setSelectedProduct(product);
     setIsViewOpen(true);
   };
@@ -222,8 +223,8 @@ const EnhancedAssetManager = () => {
     });
 
     filtered.sort((a, b) => {
-      let aValue = a[sortBy as keyof Product] as string;
-      let bValue = b[sortBy as keyof Product] as string;
+      let aValue = a[sortBy as keyof ProductType] as string;
+      let bValue = b[sortBy as keyof ProductType] as string;
 
       if (sortBy === 'created_at' || sortBy === 'updated_at') {
         aValue = new Date(aValue || '').getTime().toString();
