@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -170,8 +171,11 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
       // Group products by series and properly transform them
       const seriesMap = new Map<string, Product[]>();
+      
       products.forEach(rawProduct => {
+        // First ensure we have a proper DatabaseProduct
         const dbProduct = ensureDatabaseProduct(rawProduct);
+        // Then transform it to the Product interface
         const transformedProduct = transformDatabaseProduct(dbProduct);
         const seriesName = transformedProduct.product_series || 'Uncategorized';
         
