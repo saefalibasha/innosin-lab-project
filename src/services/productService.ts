@@ -1,309 +1,215 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Product } from '@/types/product';
-import { mockProductSeries, mockCategories } from '@/data/mockProducts';
+import { Product as ProductType } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
 
-// Helper function to map database orientation to strict union type
-const mapOrientation = (dbOrientation: string | null): 'LH' | 'RH' | 'None' => {
-  if (!dbOrientation || dbOrientation === 'None') return 'None';
-  if (dbOrientation.includes('Left') || dbOrientation === 'LH') return 'LH';
-  if (dbOrientation.includes('Right') || dbOrientation === 'RH') return 'RH';
-  return 'None';
+// Transform raw database response to proper DatabaseProduct with defaults
+const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
+  return {
+    id: rawProduct.id || '',
+    name: rawProduct.name || '',
+    category: rawProduct.category || '',
+    dimensions: rawProduct.dimensions || '',
+    model_path: rawProduct.model_path || '',
+    thumbnail_path: rawProduct.thumbnail_path || '',
+    additional_images: rawProduct.additional_images || [],
+    description: rawProduct.description || '',
+    full_description: rawProduct.full_description || '',
+    specifications: rawProduct.specifications || [],
+    finish_type: rawProduct.finish_type || '',
+    orientation: rawProduct.orientation || '',
+    door_type: rawProduct.door_type || '',
+    variant_type: rawProduct.variant_type || '',
+    drawer_count: rawProduct.drawer_count || 0,
+    cabinet_class: rawProduct.cabinet_class || 'standard',
+    product_code: rawProduct.product_code || '',
+    mounting_type: rawProduct.mounting_type || '',
+    mixing_type: rawProduct.mixing_type || '',
+    handle_type: rawProduct.handle_type || '',
+    emergency_shower_type: rawProduct.emergency_shower_type || '',
+    company_tags: rawProduct.company_tags || [],
+    product_series: rawProduct.product_series || '',
+    parent_series_id: rawProduct.parent_series_id || '',
+    is_series_parent: rawProduct.is_series_parent || false,
+    is_active: rawProduct.is_active !== undefined ? rawProduct.is_active : true,
+    series_model_path: rawProduct.series_model_path || '',
+    series_thumbnail_path: rawProduct.series_thumbnail_path || '',
+    series_overview_image_path: rawProduct.series_overview_image_path || '',
+    overview_image_path: rawProduct.overview_image_path || '',
+    series_order: rawProduct.series_order || 0,
+    variant_order: rawProduct.variant_order || 0,
+    created_at: rawProduct.created_at || '',
+    updated_at: rawProduct.updated_at || '',
+    editable_title: rawProduct.editable_title || rawProduct.name || '',
+    editable_description: rawProduct.editable_description || rawProduct.description || ''
+  };
 };
 
-export const fetchProductsFromDatabase = async (): Promise<Product[]> => {
-  try {
-    // Fetch both series parents AND their variants
-    const { data: allProducts, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('series_order', { ascending: true });
+// Transform DatabaseProduct to ProductType
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    category: dbProduct.category,
+    dimensions: dbProduct.dimensions || '',
+    modelPath: dbProduct.model_path || '',
+    thumbnail: dbProduct.thumbnail_path || '',
+    images: dbProduct.additional_images || [],
+    description: dbProduct.description || '',
+    fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
+    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    finish_type: dbProduct.finish_type,
+    orientation: dbProduct.orientation,
+    drawer_count: dbProduct.drawer_count || 0,
+    door_type: dbProduct.door_type,
+    product_code: dbProduct.product_code,
+    thumbnail_path: dbProduct.thumbnail_path,
+    model_path: dbProduct.model_path,
+    mounting_type: dbProduct.mounting_type,
+    mixing_type: dbProduct.mixing_type,
+    handle_type: dbProduct.handle_type,
+    emergency_shower_type: dbProduct.emergency_shower_type,
+    cabinet_class: dbProduct.cabinet_class || 'standard',
+    company_tags: dbProduct.company_tags || [],
+    product_series: dbProduct.product_series,
+    editable_title: dbProduct.editable_title,
+    editable_description: dbProduct.editable_description,
+    is_active: dbProduct.is_active || false,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at
+  };
+};
 
-    if (error) {
+class ProductService {
+  async getAllProducts(): Promise<ProductType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+    } catch (error) {
       console.error('Error fetching products:', error);
-      
-      // Fallback to mock data when database is unavailable
-      console.log('🔄 Falling back to mock product data for development');
-      return mockProductSeries;
+      throw error;
     }
-
-    if (!allProducts || allProducts.length === 0) {
-      console.log('⚠️ No products found in database, using mock data');
-      return mockProductSeries;
-    }
-
-    // Separate series parents and variants
-    const seriesParents = allProducts.filter(product => product.is_series_parent === true);
-    const variants = allProducts.filter(product => product.parent_series_id !== null);
-
-    // If no series parents found, fall back to mock data
-    if (seriesParents.length === 0) {
-      console.log('⚠️ No series parents found in database, using mock data');
-      return mockProductSeries;
-    }
-
-    // Group variants by parent series
-    const variantsByParent = variants.reduce((acc, variant) => {
-      const parentId = variant.parent_series_id;
-      if (!acc[parentId]) acc[parentId] = [];
-      acc[parentId].push(variant);
-      return acc;
-    }, {} as Record<string, DatabaseProduct[]>);
-
-    // Convert database products to frontend Product type with variants populated
-    const convertedProducts: Product[] = seriesParents.map(product => ({
-      id: product.id,
-      name: product.name,
-      category: product.category || 'Uncategorized',
-      dimensions: product.dimensions || '',
-      modelPath: product.series_model_path || product.model_path || '',
-      thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
-      overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
-      // Prioritize series_overview_image_path for series display
-      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || product.series_thumbnail_path || '',
-      images: product.additional_images || [],
-      description: product.description || '',
-      fullDescription: product.full_description || product.description || '',
-      specifications: product.specifications ? 
-        (Array.isArray(product.specifications) ? product.specifications.map(spec => String(spec)) : []) : [],
-      finishes: [{
-        type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
-        name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
-        modelPath: product.series_model_path || product.model_path,
-        thumbnail: product.series_thumbnail_path || product.thumbnail_path
-      }],
-      variants: (variantsByParent[product.id] || []).map(variant => ({
-        id: variant.id,
-        size: variant.dimensions || 'Standard',
-        dimensions: variant.dimensions || '',
-        type: variant.variant_type || 'standard',
-        orientation: mapOrientation(variant.orientation),
-        modelPath: variant.model_path || '',
-        thumbnail: variant.thumbnail_path || '',
-        images: variant.additional_images || []
-      })),
-      baseProductId: product.parent_series_id || undefined
-    }));
-
-    console.log(`✅ Successfully loaded ${convertedProducts.length} product series from database`);
-    return convertedProducts;
-  } catch (error) {
-    console.error('Error in fetchProductsFromDatabase:', error);
-    
-    // Fallback to mock data on any error (including network issues)
-    console.log('🔄 Falling back to mock product data due to error');
-    return mockProductSeries;
   }
-};
 
-export const fetchCategoriesFromDatabase = async (): Promise<string[]> => {
-  try {
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('category')
-      .eq('is_active', true)
-      .eq('is_series_parent', true);
+  async getProductById(id: string): Promise<ProductType | null> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    if (error) {
-      console.error('Error fetching categories:', error);
-      
-      // Fallback to mock categories when database is unavailable
-      console.log('🔄 Falling back to mock categories for development');
-      return mockCategories;
-    }
+      if (error) throw error;
 
-    if (!products || products.length === 0) {
-      console.log('⚠️ No categories found in database, using mock data');
-      return mockCategories;
-    }
+      if (!data) return null;
 
-    // Get unique categories
-    const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
-    
-    if (categories.length === 0) {
-      console.log('⚠️ No valid categories found, using mock data');
-      return mockCategories;
-    }
-    
-    console.log(`✅ Successfully loaded ${categories.length} categories from database`);
-    return categories;
-  } catch (error) {
-    console.error('Error in fetchCategoriesFromDatabase:', error);
-    
-    // Fallback to mock categories on any error
-    console.log('🔄 Falling back to mock categories due to error');
-    return mockCategories;
-  }
-};
-
-export const fetchProductsByCategory = async (category: string): Promise<Product[]> => {
-  try {
-    // Fetch both series parents AND their variants for the specific category
-    const { data: allProducts, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .eq('category', category)
-      .order('series_order', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching products by category:', error);
-      return [];
-    }
-
-    if (!allProducts) return [];
-
-    // Separate series parents and variants
-    const seriesParents = allProducts.filter(product => product.is_series_parent === true);
-    const variants = allProducts.filter(product => product.parent_series_id !== null);
-
-    // Group variants by parent series
-    const variantsByParent = variants.reduce((acc, variant) => {
-      const parentId = variant.parent_series_id;
-      if (!acc[parentId]) acc[parentId] = [];
-      acc[parentId].push(variant);
-      return acc;
-    }, {} as Record<string, DatabaseProduct[]>);
-
-    // Convert to frontend Product type with variants populated
-    const convertedProducts: Product[] = seriesParents.map(product => ({
-      id: product.id,
-      name: product.name,
-      category: product.category || 'Uncategorized',
-      dimensions: product.dimensions || '',
-      modelPath: product.series_model_path || product.model_path || '',
-      thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
-      overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
-      // Prioritize series_overview_image_path for series display
-      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || product.series_thumbnail_path || '',
-      images: product.additional_images || [],
-      description: product.description || '',
-      fullDescription: product.full_description || product.description || '',
-      specifications: product.specifications ? 
-        (Array.isArray(product.specifications) ? product.specifications.map(spec => String(spec)) : []) : [],
-      finishes: [{
-        type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
-        name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
-        modelPath: product.series_model_path || product.model_path,
-        thumbnail: product.series_thumbnail_path || product.thumbnail_path
-      }],
-      variants: (variantsByParent[product.id] || []).map(variant => ({
-        id: variant.id,
-        size: variant.dimensions || 'Standard',
-        dimensions: variant.dimensions || '',
-        type: variant.variant_type || 'standard',
-        orientation: mapOrientation(variant.orientation),
-        modelPath: variant.model_path || '',
-        thumbnail: variant.thumbnail_path || '',
-        images: variant.additional_images || []
-      })),
-      baseProductId: product.parent_series_id || undefined
-    }));
-
-    return convertedProducts;
-  } catch (error) {
-    console.error('Error in fetchProductsByCategory:', error);
-    return [];
-  }
-};
-
-export const fetchProductWithVariants = async (productId: string) => {
-  try {
-    // First fetch the series parent
-    const { data: product, error: productError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .eq('is_series_parent', true)
-      .eq('is_active', true)
-      .single();
-
-    if (productError) {
-      console.error('Error fetching product:', productError);
+      return transformDatabaseProduct(ensureDatabaseProduct(data));
+    } catch (error) {
+      console.error('Error fetching product:', error);
       return null;
     }
-
-    if (!product) return null;
-
-    // Fetch all variants for this series
-    const { data: variants, error: variantsError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('parent_series_id', productId)
-      .eq('is_active', true)
-      .order('variant_order', { ascending: true });
-
-    if (variantsError) {
-      console.error('Error fetching variants:', variantsError);
-    }
-
-    // Convert variants to the format expected by VariantSelector
-    const mappedVariants = (variants || []).map(variant => ({
-      id: variant.id,
-      name: variant.name,
-      product_code: variant.product_code,
-      category: variant.category,
-      dimensions: variant.dimensions || '',
-      description: variant.description || '',
-      full_description: variant.full_description || '',
-      specifications: variant.specifications || {},
-      thumbnail_path: variant.thumbnail_path || '',
-      model_path: variant.model_path || '',
-      additional_images: variant.additional_images || [],
-      finish_type: variant.finish_type || 'PC',
-      orientation: mapOrientation(variant.orientation),
-      door_type: variant.door_type || '',
-      variant_type: variant.variant_type || 'standard',
-      drawer_count: variant.drawer_count || undefined,
-      parent_series_id: variant.parent_series_id
-    }));
-
-    // Convert series parent to Product type
-    const convertedProduct = {
-      id: product.id,
-      name: product.name,
-      category: product.category || 'Uncategorized',
-      dimensions: product.dimensions || '',
-      modelPath: product.series_model_path || product.model_path || '',
-      thumbnail: product.series_thumbnail_path || product.thumbnail_path || '',
-      overviewImage: product.overview_image_path || product.series_thumbnail_path || product.thumbnail_path || '',
-      // Prioritize series_overview_image_path for series display
-      seriesOverviewImage: product.series_overview_image_path || product.overview_image_path || product.series_thumbnail_path || '',
-      images: product.additional_images || [],
-      description: product.description || '',
-      fullDescription: product.full_description || product.description || '',
-      specifications: product.specifications ? 
-        (Array.isArray(product.specifications) ? product.specifications.map(spec => String(spec)) : []) : [],
-      finishes: [{
-        type: product.finish_type === 'SS' ? 'stainless-steel' : 'powder-coat',
-        name: product.finish_type === 'SS' ? 'Stainless Steel' : 'Powder Coat',
-        modelPath: product.series_model_path || product.model_path,
-        thumbnail: product.series_thumbnail_path || product.thumbnail_path
-      }],
-      variants: [],
-      baseProductId: product.parent_series_id || undefined
-    };
-
-    return {
-      product: convertedProduct,
-      variants: mappedVariants
-    };
-  } catch (error) {
-    console.error('Error in fetchProductWithVariants:', error);
-    return null;
   }
-};
 
-// Real-time data synchronization
-export const subscribeToProductUpdates = (callback: (payload: unknown) => void) => {
-  return supabase
-    .channel('products-changes')
-    .on('postgres_changes', { 
-      event: '*', 
-      schema: 'public', 
-      table: 'products' 
-    }, callback)
-    .subscribe();
-};
+  async getProductsByCategory(category: string): Promise<ProductType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('category', category)
+        .order('name');
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+    } catch (error) {
+      console.error('Error fetching products by category:', error);
+      throw error;
+    }
+  }
+
+  async getCategories(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category')
+        .not('category', 'is', null);
+
+      if (error) throw error;
+
+      const categories = [...new Set((data || []).map(item => item.category).filter(Boolean))];
+      return categories;
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      throw error;
+    }
+  }
+
+  async searchProducts(query: string): Promise<ProductType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,product_code.ilike.%${query}%`)
+        .order('name');
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+    } catch (error) {
+      console.error('Error searching products:', error);
+      throw error;
+    }
+  }
+
+  async getProductSeries(): Promise<ProductType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_series_parent', true)
+        .order('series_order');
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+    } catch (error) {
+      console.error('Error fetching product series:', error);
+      throw error;
+    }
+  }
+
+  async getVariantsBySeriesId(seriesId: string): Promise<ProductType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('parent_series_id', seriesId)
+        .order('variant_order');
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+    } catch (error) {
+      console.error('Error fetching variants:', error);
+      throw error;
+    }
+  }
+}
+
+export default new ProductService();
