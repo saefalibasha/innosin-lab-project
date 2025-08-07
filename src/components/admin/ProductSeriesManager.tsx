@@ -168,16 +168,17 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         return;
       }
 
-      // Group products by series
+      // Group products by series and properly transform them
       const seriesMap = new Map<string, ProductType[]>();
-      products?.forEach(rawProduct => {
+      products.forEach(rawProduct => {
         const dbProduct = ensureDatabaseProduct(rawProduct);
-        const product = transformDatabaseProduct(dbProduct);
-        const seriesName = product.product_series || 'Uncategorized';
+        const transformedProduct = transformDatabaseProduct(dbProduct);
+        const seriesName = transformedProduct.product_series || 'Uncategorized';
+        
         if (!seriesMap.has(seriesName)) {
           seriesMap.set(seriesName, []);
         }
-        seriesMap.get(seriesName)!.push(product);
+        seriesMap.get(seriesName)!.push(transformedProduct);
       });
 
       // Calculate series statistics and create ProductSeries objects
@@ -189,7 +190,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
         return {
           name,
-          products, // These are now properly transformed ProductType objects
+          products,
           totalProducts,
           activeProducts,
           completionRate,
