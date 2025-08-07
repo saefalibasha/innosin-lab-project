@@ -1,6 +1,6 @@
 
-export { EnhancedAssetManager } from './EnhancedAssetManager';
-export { ProductSeriesSection } from './ProductSeriesSection';
-export { ProductVariantCard } from './ProductVariantCard';
-export { ProductAssetModal } from './ProductAssetModal';
-export { AssetStatistics } from './AssetStatistics';
+export { default as EnhancedAssetManager } from './EnhancedAssetManager';
+export { default as ProductAssetModal } from './ProductAssetModal';
+
+export type { default as EnhancedAssetManagerProps } from './EnhancedAssetManager';
+export type { default as ProductAssetModalProps } from './ProductAssetModal';

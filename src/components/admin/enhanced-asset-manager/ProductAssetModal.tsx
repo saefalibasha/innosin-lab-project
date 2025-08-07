@@ -1,37 +1,32 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Product as ProductType } from '@/types/product';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface ProductAssetModalProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
-  product: ProductType | null;
+  open: boolean;
+  onClose: () => void;
+  productId?: string;
 }
 
 const ProductAssetModal: React.FC<ProductAssetModalProps> = ({
-  isOpen,
-  onOpenChange,
-  product
+  open,
+  onClose,
+  productId
 }) => {
-  if (!product) return null;
-
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>{product.name}</DialogTitle>
+          <DialogTitle>Product Asset Manager</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <h4 className="font-medium">Product Code</h4>
-            <p className="text-sm text-muted-foreground">{product.product_code}</p>
-          </div>
-          <div>
-            <h4 className="font-medium">Description</h4>
-            <p className="text-sm text-muted-foreground">{product.description}</p>
-          </div>
-        </div>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-muted-foreground">
+              Asset management for product {productId}
+            </p>
+          </CardContent>
+        </Card>
       </DialogContent>
     </Dialog>
   );
