@@ -62,7 +62,7 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
     orientation: dbProduct.orientation,
     drawer_count: dbProduct.drawer_count || 0,
     door_type: dbProduct.door_type,
-    product_code: dbProduct.product_code,
+    product_code: dbProduct.product_code || '',
     thumbnail_path: dbProduct.thumbnail_path,
     model_path: dbProduct.model_path,
     mounting_type: dbProduct.mounting_type,
@@ -212,4 +212,25 @@ class ProductService {
   }
 }
 
-export default new ProductService();
+const productService = new ProductService();
+
+// Named exports for backwards compatibility
+export const fetchProductsFromDatabase = () => productService.getAllProducts();
+export const fetchCategoriesFromDatabase = () => productService.getCategories();
+export const subscribeToProductUpdates = (callback: () => void) => {
+  const subscription = supabase
+    .channel('product-updates')
+    .on('postgres_changes', 
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'products' 
+      }, 
+      callback
+    )
+    .subscribe();
+  
+  return () => subscription.unsubscribe();
+};
+
+export default productService;

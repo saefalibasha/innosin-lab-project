@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,35 +21,95 @@ import {
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
 import { mockAdminSeries } from '@/data/mockProducts';
+import { Product as ProductType } from '@/types/product';
+import { DatabaseProduct } from '@/types/supabase';
 
-interface Product {
-  id: string;
-  name: string;
-  product_code: string;
-  category: string;
-  product_series: string;
-  finish_type: string;
-  is_active: boolean;
-  thumbnail_path?: string;
-  model_path?: string;
-  dimensions?: string;
-  description?: string;
-  full_description?: string;
-  orientation?: string;
-  door_type?: string;
-  drawer_count?: number;
-  specifications?: any;
-  keywords?: string[];
-  company_tags?: string[];
-  additional_images?: string[];
-  overview_image_path?: string;
-  created_at: string;
-  updated_at: string;
-}
+// Transform any database object to proper DatabaseProduct with defaults
+const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
+  return {
+    id: rawProduct.id || '',
+    name: rawProduct.name || '',
+    category: rawProduct.category || '',
+    dimensions: rawProduct.dimensions || '',
+    model_path: rawProduct.model_path || '',
+    thumbnail_path: rawProduct.thumbnail_path || '',
+    additional_images: rawProduct.additional_images || [],
+    description: rawProduct.description || '',
+    full_description: rawProduct.full_description || '',
+    specifications: rawProduct.specifications || [],
+    finish_type: rawProduct.finish_type || '',
+    orientation: rawProduct.orientation || '',
+    door_type: rawProduct.door_type || '',
+    variant_type: rawProduct.variant_type || '',
+    drawer_count: rawProduct.drawer_count || 0,
+    cabinet_class: rawProduct.cabinet_class || 'standard',
+    product_code: rawProduct.product_code || '',
+    mounting_type: rawProduct.mounting_type || '',
+    mixing_type: rawProduct.mixing_type || '',
+    handle_type: rawProduct.handle_type || '',
+    emergency_shower_type: rawProduct.emergency_shower_type || '',
+    company_tags: rawProduct.company_tags || [],
+    product_series: rawProduct.product_series || '',
+    parent_series_id: rawProduct.parent_series_id || '',
+    is_series_parent: rawProduct.is_series_parent || false,
+    is_active: rawProduct.is_active !== undefined ? rawProduct.is_active : true,
+    series_model_path: rawProduct.series_model_path || '',
+    series_thumbnail_path: rawProduct.series_thumbnail_path || '',
+    series_overview_image_path: rawProduct.series_overview_image_path || '',
+    overview_image_path: rawProduct.overview_image_path || '',
+    series_order: rawProduct.series_order || 0,
+    variant_order: rawProduct.variant_order || 0,
+    created_at: rawProduct.created_at || '',
+    updated_at: rawProduct.updated_at || '',
+    editable_title: rawProduct.editable_title || rawProduct.name || '',
+    editable_description: rawProduct.editable_description || rawProduct.description || ''
+  };
+};
+
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    category: dbProduct.category,
+    dimensions: dbProduct.dimensions || '',
+    modelPath: dbProduct.model_path || '',
+    thumbnail: dbProduct.thumbnail_path || '',
+    overviewImage: dbProduct.overview_image_path,
+    seriesOverviewImage: dbProduct.series_overview_image_path,
+    images: dbProduct.additional_images || [],
+    description: dbProduct.description || '',
+    fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
+    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    finishes: [],
+    variants: [],
+    baseProductId: dbProduct.parent_series_id,
+    finish_type: dbProduct.finish_type,
+    orientation: dbProduct.orientation,
+    drawer_count: dbProduct.drawer_count || 0,
+    door_type: dbProduct.door_type,
+    product_code: dbProduct.product_code || '',
+    thumbnail_path: dbProduct.thumbnail_path,
+    model_path: dbProduct.model_path,
+    mounting_type: dbProduct.mounting_type,
+    mixing_type: dbProduct.mixing_type,
+    handle_type: dbProduct.handle_type,
+    emergency_shower_type: dbProduct.emergency_shower_type,
+    cabinet_class: dbProduct.cabinet_class || 'standard',
+    company_tags: dbProduct.company_tags || [],
+    product_series: dbProduct.product_series,
+    parent_series_id: dbProduct.parent_series_id,
+    is_series_parent: dbProduct.is_series_parent,
+    editable_title: dbProduct.editable_title,
+    editable_description: dbProduct.editable_description,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at,
+    is_active: dbProduct.is_active
+  };
+};
 
 interface ProductSeries {
   name: string;
-  products: Product[];
+  products: ProductType[];
   totalProducts: number;
   activeProducts: number;
   completionRate: number;
@@ -58,8 +117,8 @@ interface ProductSeries {
 }
 
 interface ProductSeriesManagerProps {
-  onProductSelect?: (product: Product) => void;
-  onProductEdit?: (product: Product) => void;
+  onProductSelect?: (product: ProductType) => void;
+  onProductEdit?: (product: ProductType) => void;
 }
 
 export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
@@ -69,8 +128,8 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [series, setSeries] = useState<ProductSeries[]>([]);
   const [expandedSeries, setExpandedSeries] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductType | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
@@ -110,8 +169,10 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       }
 
       // Group products by series
-      const seriesMap = new Map<string, Product[]>();
-      products?.forEach(product => {
+      const seriesMap = new Map<string, ProductType[]>();
+      products?.forEach(rawProduct => {
+        const dbProduct = ensureDatabaseProduct(rawProduct);
+        const product = transformDatabaseProduct(dbProduct);
         const seriesName = product.product_series || 'Uncategorized';
         if (!seriesMap.has(seriesName)) {
           seriesMap.set(seriesName, []);
@@ -168,14 +229,14 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
     setExpandedSeries(newExpanded);
   };
 
-  const handleView = (product: Product) => {
+  const handleView = (product: ProductType) => {
     console.log('Viewing product:', product);
     setSelectedProduct(product);
     setIsViewOpen(true);
     onProductSelect?.(product);
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: ProductType) => {
     console.log('Editing product:', product);
     setEditingProduct(product);
     setIsEditOpen(true);

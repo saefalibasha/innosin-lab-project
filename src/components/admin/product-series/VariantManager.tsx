@@ -1,100 +1,119 @@
+
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Package, Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Product as ProductType } from '@/types/product';
+import { DatabaseProduct } from '@/types/supabase';
 
-interface DatabaseVariant {
-  id: string;
-  product_code: string;
-  name: string;
-  category: string;
-  dimensions?: string;
-  door_type?: string;
-  orientation?: string;
-  finish_type?: string;
-  mounting_type?: string;
-  mixing_type?: string;
-  handle_type?: string;
-  emergency_shower_type?: string;
-  drawer_count?: number;
-  description?: string;
-  thumbnail_path?: string;
-  model_path?: string;
-  is_active: boolean;
-}
+// Transform any database object to proper DatabaseProduct with defaults
+const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
+  return {
+    id: rawProduct.id || '',
+    name: rawProduct.name || '',
+    category: rawProduct.category || '',
+    dimensions: rawProduct.dimensions || '',
+    model_path: rawProduct.model_path || '',
+    thumbnail_path: rawProduct.thumbnail_path || '',
+    additional_images: rawProduct.additional_images || [],
+    description: rawProduct.description || '',
+    full_description: rawProduct.full_description || '',
+    specifications: rawProduct.specifications || [],
+    finish_type: rawProduct.finish_type || '',
+    orientation: rawProduct.orientation || '',
+    door_type: rawProduct.door_type || '',
+    variant_type: rawProduct.variant_type || '',
+    drawer_count: rawProduct.drawer_count || 0,
+    cabinet_class: rawProduct.cabinet_class || 'standard',
+    product_code: rawProduct.product_code || '',
+    mounting_type: rawProduct.mounting_type || '',
+    mixing_type: rawProduct.mixing_type || '',
+    handle_type: rawProduct.handle_type || '',
+    emergency_shower_type: rawProduct.emergency_shower_type || '',
+    company_tags: rawProduct.company_tags || [],
+    product_series: rawProduct.product_series || '',
+    parent_series_id: rawProduct.parent_series_id || '',
+    is_series_parent: rawProduct.is_series_parent || false,
+    is_active: rawProduct.is_active !== undefined ? rawProduct.is_active : true,
+    series_model_path: rawProduct.series_model_path || '',
+    series_thumbnail_path: rawProduct.series_thumbnail_path || '',
+    series_overview_image_path: rawProduct.series_overview_image_path || '',
+    overview_image_path: rawProduct.overview_image_path || '',
+    series_order: rawProduct.series_order || 0,
+    variant_order: rawProduct.variant_order || 0,
+    created_at: rawProduct.created_at || '',
+    updated_at: rawProduct.updated_at || '',
+    editable_title: rawProduct.editable_title || rawProduct.name || '',
+    editable_description: rawProduct.editable_description || rawProduct.description || ''
+  };
+};
 
-interface ProductSeries {
-  product_series: string;
-  series_slug: string;
-  category: string;
-  description: string;
-  is_active: boolean;
-  variant_count: number;
-  completion_rate: number;
-  series_thumbnail_path?: string;
-  variants: DatabaseVariant[];
-}
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    category: dbProduct.category,
+    dimensions: dbProduct.dimensions || '',
+    modelPath: dbProduct.model_path || '',
+    thumbnail: dbProduct.thumbnail_path || '',
+    images: dbProduct.additional_images || [],
+    description: dbProduct.description || '',
+    fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
+    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    finish_type: dbProduct.finish_type,
+    orientation: dbProduct.orientation,
+    drawer_count: dbProduct.drawer_count || 0,
+    door_type: dbProduct.door_type,
+    product_code: dbProduct.product_code || '',
+    thumbnail_path: dbProduct.thumbnail_path,
+    model_path: dbProduct.model_path,
+    mounting_type: dbProduct.mounting_type,
+    mixing_type: dbProduct.mixing_type,
+    handle_type: dbProduct.handle_type,
+    emergency_shower_type: dbProduct.emergency_shower_type,
+    cabinet_class: dbProduct.cabinet_class || 'standard',
+    company_tags: dbProduct.company_tags || [],
+    product_series: dbProduct.product_series,
+    editable_title: dbProduct.editable_title,
+    editable_description: dbProduct.editable_description,
+    is_active: dbProduct.is_active || false,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at
+  };
+};
 
 interface VariantManagerProps {
-  open: boolean;
-  onClose: () => void;
-  series: ProductSeries;
-  onVariantsUpdated: () => void;
+  seriesId?: string;
 }
 
-export const VariantManager: React.FC<VariantManagerProps> = ({
-  open,
-  onClose,
-  series,
-  onVariantsUpdated
-}) => {
-  const [variants, setVariants] = useState<DatabaseVariant[]>([]);
-  const [loading, setLoading] = useState(false);
+const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
+  const [variants, setVariants] = useState<ProductType[]>([]);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (open && series) {
+    if (seriesId) {
       fetchVariants();
     }
-  }, [open, series]);
+  }, [seriesId]);
 
   const fetchVariants = async () => {
     try {
       setLoading(true);
-      
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('product_series', series.product_series)
-        .order('product_code');
+        .eq('parent_series_id', seriesId)
+        .order('variant_order');
 
       if (error) throw error;
-
-      const formattedVariants: DatabaseVariant[] = (data || []).map(item => ({
-        id: item.id,
-        product_code: item.product_code || '',
-        name: item.name || '',
-        category: item.category || '',
-        dimensions: item.dimensions,
-        door_type: item.door_type,
-        orientation: item.orientation,
-        finish_type: item.finish_type,
-        mounting_type: item.mounting_type,
-        mixing_type: item.mixing_type,
-        handle_type: item.handle_type,
-        emergency_shower_type: item.emergency_shower_type,
-        drawer_count: item.drawer_count,
-        description: item.description,
-        thumbnail_path: item.thumbnail_path,
-        model_path: item.model_path,
-        is_active: item.is_active || false
-      }));
-
-      setVariants(formattedVariants);
+      
+      const transformedVariants = (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+      setVariants(transformedVariants);
     } catch (error) {
       console.error('Error fetching variants:', error);
       toast({
@@ -107,230 +126,33 @@ export const VariantManager: React.FC<VariantManagerProps> = ({
     }
   };
 
-  const handleDeleteVariant = async (variantId: string) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', variantId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Variant deleted successfully",
-      });
-
-      fetchVariants();
-      onVariantsUpdated();
-    } catch (error) {
-      console.error('Error deleting variant:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete variant",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleToggleActive = async (variantId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: !currentStatus })
-        .eq('id', variantId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: `Variant ${!currentStatus ? 'activated' : 'deactivated'} successfully`,
-      });
-
-      fetchVariants();
-      onVariantsUpdated();
-    } catch (error) {
-      console.error('Error updating variant:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update variant",
-        variant: "destructive",
-      });
-    }
-  };
+  if (loading) {
+    return <div>Loading variants...</div>;
+  }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Manage Variants: {series.product_series}
-          </DialogTitle>
-        </DialogHeader>
-        
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">
-                  {variants.length} variants found in this series
-                </p>
-                <Button size="sm" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Variant
-                </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Product Variants</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          {variants.map((variant) => (
+            <div key={variant.id} className="flex items-center justify-between p-2 border rounded">
+              <div>
+                <h4 className="font-medium">{variant.name}</h4>
+                <p className="text-sm text-muted-foreground">{variant.product_code}</p>
+                <p className="text-xs text-muted-foreground">Drawers: {variant.drawer_count}</p>
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {variants.map((variant) => (
-                  <Card key={variant.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h4 className="font-semibold text-sm">{variant.product_code}</h4>
-                          <p className="text-xs text-muted-foreground">{variant.name}</p>
-                        </div>
-                        <Badge variant={variant.is_active ? "default" : "secondary"}>
-                          {variant.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="space-y-3">
-                      {variant.thumbnail_path && (
-                        <div className="w-full h-24 bg-muted rounded overflow-hidden">
-                          <img 
-                            src={variant.thumbnail_path} 
-                            alt={variant.product_code}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-
-                      <div className="text-xs space-y-1">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Category:</span>
-                          <span>{variant.category}</span>
-                        </div>
-                        
-                        {variant.dimensions && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Dimensions:</span>
-                            <span>{variant.dimensions}</span>
-                          </div>
-                        )}
-                        
-                        {variant.finish_type && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Finish:</span>
-                            <span>{variant.finish_type}</span>
-                          </div>
-                        )}
-                        
-                        {variant.orientation && variant.orientation !== 'None' && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Orientation:</span>
-                            <span>{variant.orientation}</span>
-                          </div>
-                        )}
-                        
-                        {variant.door_type && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Door Type:</span>
-                            <span>{variant.door_type}</span>
-                          </div>
-                        )}
-                        
-                        {variant.drawer_count && variant.drawer_count > 0 && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Drawers:</span>
-                            <span>{variant.drawer_count}</span>
-                          </div>
-                        )}
-                        
-                        {variant.mounting_type && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Mounting:</span>
-                            <span>{variant.mounting_type}</span>
-                          </div>
-                        )}
-                        
-                        {variant.emergency_shower_type && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Shower Type:</span>
-                            <span>{variant.emergency_shower_type}</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {variant.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {variant.description}
-                        </p>
-                      )}
-                      
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Eye className="h-3 w-3" />
-                          View
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Edit className="h-3 w-3" />
-                          Edit
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleToggleActive(variant.id, variant.is_active)}
-                          className={variant.is_active ? "text-orange-600" : "text-green-600"}
-                        >
-                          {variant.is_active ? "Deactivate" : "Activate"}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteVariant(variant.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {variants.length === 0 && (
-                <Card>
-                  <CardContent className="py-8">
-                    <div className="text-center text-muted-foreground">
-                      <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No variants found in this series.</p>
-                      <Button className="mt-4">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add First Variant
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <Badge variant={variant.is_active ? "default" : "secondary"}>
+                {variant.is_active ? "Active" : "Inactive"}
+              </Badge>
             </div>
-          )}
+          ))}
         </div>
-      </DialogContent>
-    </Dialog>
+      </CardContent>
+    </Card>
   );
 };
+
+export default VariantManager;
