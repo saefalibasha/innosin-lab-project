@@ -39,7 +39,7 @@ export const useEnhancedProducts = (options: UseProductsOptions = {}): UseProduc
       const [productsData, categoriesData] = await Promise.all([
         category 
           ? enhancedProductService.getProductsByCategory(category)
-          : enhancedProductService.getProducts(forceRefresh),
+          : enhancedProductService.getAllProducts(forceRefresh),
         enhancedProductService.getCategories(forceRefresh)
       ]);
 

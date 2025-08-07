@@ -1,117 +1,65 @@
+
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ShoppingCart, Eye } from 'lucide-react';
-import ProductImageGallery from '@/components/ProductImageGallery';
-import AnimatedSection from '@/components/AnimatedSection';
 import { Product } from '@/types/product';
 
 interface ProductGridProps {
   products: Product[];
-  onAddToQuote: (product: Product) => void;
 }
 
-const ProductGrid: React.FC<ProductGridProps> = ({ products, onAddToQuote }) => {
-  const getProductImages = (product: Product) => {
-    const validImages: string[] = [];
-
-    if (product.seriesOverviewImage && !product.seriesOverviewImage.includes('placeholder')) {
-      validImages.push(product.seriesOverviewImage);
-    } else if (product.overviewImage && !product.overviewImage.includes('placeholder')) {
-      validImages.push(product.overviewImage);
-    } else if (product.thumbnail && !product.thumbnail.includes('placeholder')) {
-      validImages.push(product.thumbnail);
-    }
-
-    if (product.images && product.images.length > 0) {
-      const additionalImages = product.images.filter(
-        (img) =>
-          img &&
-          !img.includes('placeholder') &&
-          !validImages.includes(img)
-      );
-      validImages.push(...additionalImages);
-    }
-
-    return validImages;
-  };
-
-  const getThumbnail = (product: Product) => {
+const ProductGrid: React.FC<ProductGridProps> = ({ products }) => {
+  if (products.length === 0) {
     return (
-      product.seriesOverviewImage ||
-      product.overviewImage ||
-      product.thumbnail ||
-      (product.images && product.images.length > 0 ? product.images[0] : '') ||
-      '/placeholder.svg'
+      <div className="text-center py-12">
+        <p className="text-muted-foreground">No products found.</p>
+      </div>
     );
-  };
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-      {products.map((product, index) => (
-        <AnimatedSection key={product.id} animation="bounce-in" delay={100 + index * 100}>
-          <Card className="hover:shadow-xl transition-all duration-500 glass-card hover:scale-105 group h-full flex flex-col">
-            {/* IMAGE */}
-            <CardHeader className="p-0">
-              <ProductImageGallery
-                images={getProductImages(product)}
-                thumbnail={getThumbnail(product)}
-                productName={product.name}
-                isProductPage={false}
-                showThumbnails={false}
-              />
-            </CardHeader>
-
-            {/* CONTENT */}
-            <CardContent className="p-6 flex flex-col flex-grow">
-              {/* Header Info */}
-              <div className="mb-4">
-                <Badge variant="outline" className="mb-2 border-sea text-sea">
-                  {product.category}
-                </Badge>
-                <h3 className="text-lg font-serif font-semibold mb-2 group-hover:text-sea transition-colors">
-                  {product.name}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-4">
-                  {product.description}
-                </p>
-              </div>
-
-              {/* Key Features (only for non-Innosin products) */}
-              {!product.category.includes('Innosin') && (
-                <div className="mb-4">
-                  <h4 className="text-sm font-medium text-foreground mb-2">Key Features:</h4>
-                  <div className="flex flex-wrap gap-1">
-                    {product.specifications.slice(0, 3).map((spec, index) => (
-                      <Badge key={index} variant="secondary" className="text-xs">
-                        {spec}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {products.map((product) => (
+        <Card key={product.id} className="hover:shadow-md transition-shadow">
+          <CardHeader className="pb-3">
+            <div className="aspect-square bg-gray-100 rounded-md mb-3 flex items-center justify-center">
+              {product.thumbnail || product.thumbnail_path ? (
+                <img
+                  src={product.thumbnail || product.thumbnail_path}
+                  alt={product.name}
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <div className="text-muted-foreground text-sm">No Image</div>
               )}
-
-              {/* Bottom Action Buttons */}
-              <div className="mt-auto flex gap-2">
-                <Link to={`/products/${product.id}`} className="flex-1">
-                  <Button variant="outline" className="w-full">
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
-                  </Button>
-                </Link>
-                <Button
-                  onClick={() => onAddToQuote(product)}
-                  className="flex-1 bg-sea hover:bg-sea-dark transition-all duration-300"
-                >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Quote
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </AnimatedSection>
+            </div>
+            <CardTitle className="text-lg line-clamp-2">{product.name}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline">{product.category}</Badge>
+              <Badge variant={product.is_active ? "default" : "secondary"}>
+                {product.is_active ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+            
+            {product.product_code && (
+              <p className="text-sm text-muted-foreground">
+                Code: {product.product_code}
+              </p>
+            )}
+            
+            <p className="text-sm text-muted-foreground line-clamp-2">
+              {product.description}
+            </p>
+            
+            {product.dimensions && (
+              <p className="text-sm text-muted-foreground">
+                Dimensions: {product.dimensions}
+              </p>
+            )}
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

@@ -180,7 +180,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         seriesMap.get(seriesName)!.push(product);
       });
 
-      // Calculate series statistics
+      // Calculate series statistics and create ProductSeries objects
       const seriesData: ProductSeries[] = Array.from(seriesMap.entries()).map(([name, products]) => {
         const totalProducts = products.length;
         const activeProducts = products.filter(p => p.is_active).length;
@@ -189,7 +189,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
         return {
           name,
-          products,
+          products, // These are now properly transformed ProductType objects
           totalProducts,
           activeProducts,
           completionRate,

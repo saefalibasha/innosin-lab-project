@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Search, Package, Edit, Eye, Upload, AlertCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { ProductSeriesFormDialog } from './ProductSeriesFormDialog';
-import { VariantManager } from './VariantManager';
+import VariantManager from './VariantManager';
 import { SeriesEditDialog } from './SeriesEditDialog';
 import { useProductRealtime } from '@/hooks/useProductRealtime';
 import {

@@ -6,12 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Grid, List, Filter, SlidersHorizontal } from 'lucide-react';
 import { Product as ProductType } from '@/types/product';
-import { ProductGrid } from '@/components/ProductGrid';
-import { ProductList } from '@/components/ProductList';
+import ProductGrid from '@/components/ProductGrid';
+import ProductList from '@/components/ProductList';
 import { fetchProductsFromDatabase, fetchCategoriesFromDatabase, subscribeToProductUpdates } from '@/services/productService';
 import { useToast } from '@/hooks/use-toast';
 
-export const ProductCatalog = () => {
+const ProductCatalog = () => {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
@@ -188,3 +188,5 @@ export const ProductCatalog = () => {
     </div>
   );
 };
+
+export default ProductCatalog;
