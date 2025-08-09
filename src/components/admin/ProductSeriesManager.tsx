@@ -31,11 +31,11 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
     name: rawProduct.name || '',
     category: rawProduct.category || '',
     dimensions: rawProduct.dimensions || '',
-    model_path: rawProduct.model_path || '',
-    thumbnail_path: rawProduct.thumbnail_path || '',
-    additional_images: rawProduct.additional_images || [],
+    model_path: rawProduct.model_path || rawProduct.modelPath || '',
+    thumbnail_path: rawProduct.thumbnail_path || rawProduct.thumbnail || '',
+    additional_images: rawProduct.additional_images || rawProduct.images || [],
     description: rawProduct.description || '',
-    full_description: rawProduct.full_description || '',
+    full_description: rawProduct.full_description || rawProduct.fullDescription || '',
     specifications: rawProduct.specifications || [],
     finish_type: rawProduct.finish_type || '',
     orientation: rawProduct.orientation || '',
@@ -80,9 +80,11 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     description: dbProduct.description || '',
     fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
     specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    // Enhanced fields for Innosin Lab products
     finishes: [],
     variants: [],
     baseProductId: dbProduct.parent_series_id,
+    // Database variant fields
     finish_type: dbProduct.finish_type,
     orientation: dbProduct.orientation,
     drawer_count: dbProduct.drawer_count || 0,
@@ -90,6 +92,7 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     product_code: dbProduct.product_code || '',
     thumbnail_path: dbProduct.thumbnail_path,
     model_path: dbProduct.model_path,
+    // New variant fields for specific product types
     mounting_type: dbProduct.mounting_type,
     mixing_type: dbProduct.mixing_type,
     handle_type: dbProduct.handle_type,
@@ -97,10 +100,13 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     cabinet_class: dbProduct.cabinet_class || 'standard',
     company_tags: dbProduct.company_tags || [],
     product_series: dbProduct.product_series,
+    // Series relationship fields
     parent_series_id: dbProduct.parent_series_id,
     is_series_parent: dbProduct.is_series_parent,
+    // Admin editable fields
     editable_title: dbProduct.editable_title,
     editable_description: dbProduct.editable_description,
+    // Timestamps
     created_at: dbProduct.created_at,
     updated_at: dbProduct.updated_at,
     is_active: dbProduct.is_active
@@ -160,16 +166,11 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         // Transform mock data to proper Product type
         const transformedMockSeries = mockAdminSeries.map(series => ({
           ...series,
-          products: series.products.map(product => ({
-            ...product,
-            modelPath: product.modelPath || '',
-            thumbnail: product.thumbnail || '',
-            images: product.images || [],
-            fullDescription: product.fullDescription || product.description || '',
-            specifications: product.specifications || [],
-            finishes: product.finishes || [],
-            variants: product.variants || []
-          } as Product))
+          products: series.products.map(product => {
+            // Transform each mock product through the proper transformation pipeline
+            const dbProduct = ensureDatabaseProduct(product);
+            return transformDatabaseProduct(dbProduct);
+          })
         }));
         setSeries(transformedMockSeries);
         setIsUsingMockData(true);
@@ -226,16 +227,11 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       console.log('🔄 Falling back to mock data due to error');
       const transformedMockSeries = mockAdminSeries.map(series => ({
         ...series,
-        products: series.products.map(product => ({
-          ...product,
-          modelPath: product.modelPath || '',
-          thumbnail: product.thumbnail || '',
-          images: product.images || [],
-          fullDescription: product.fullDescription || product.description || '',
-          specifications: product.specifications || [],
-          finishes: product.finishes || [],
-          variants: product.variants || []
-        } as Product))
+        products: series.products.map(product => {
+          // Transform each mock product through the proper transformation pipeline
+          const dbProduct = ensureDatabaseProduct(product);
+          return transformDatabaseProduct(dbProduct);
+        })
       }));
       setSeries(transformedMockSeries);
       setIsUsingMockData(true);
