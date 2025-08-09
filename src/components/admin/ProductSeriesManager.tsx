@@ -41,7 +41,7 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
     orientation: rawProduct.orientation || '',
     door_type: rawProduct.door_type || '',
     variant_type: rawProduct.variant_type || '',
-    drawer_count: rawProduct.drawer_count || 0,
+    drawer_count: rawProduct.number_of_drawers || rawProduct.drawer_count || 0,
     cabinet_class: rawProduct.cabinet_class || 'standard',
     product_code: rawProduct.product_code || '',
     mounting_type: rawProduct.mounting_type || '',
@@ -157,7 +157,21 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
       if (!products || products.length === 0) {
         console.log('⚠️ No products found in database, using mock data');
-        setSeries(mockAdminSeries);
+        // Transform mock data to proper Product type
+        const transformedMockSeries = mockAdminSeries.map(series => ({
+          ...series,
+          products: series.products.map(product => ({
+            ...product,
+            modelPath: product.modelPath || '',
+            thumbnail: product.thumbnail || '',
+            images: product.images || [],
+            fullDescription: product.fullDescription || product.description || '',
+            specifications: product.specifications || [],
+            finishes: product.finishes || [],
+            variants: product.variants || []
+          } as Product))
+        }));
+        setSeries(transformedMockSeries);
         setIsUsingMockData(true);
         
         toast({
@@ -208,9 +222,22 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
     } catch (error) {
       console.error('Error fetching product series:', error);
       
-      // Fallback to mock data
+      // Fallback to mock data - transform it properly to Product type
       console.log('🔄 Falling back to mock data due to error');
-      setSeries(mockAdminSeries);
+      const transformedMockSeries = mockAdminSeries.map(series => ({
+        ...series,
+        products: series.products.map(product => ({
+          ...product,
+          modelPath: product.modelPath || '',
+          thumbnail: product.thumbnail || '',
+          images: product.images || [],
+          fullDescription: product.fullDescription || product.description || '',
+          specifications: product.specifications || [],
+          finishes: product.finishes || [],
+          variants: product.variants || []
+        } as Product))
+      }));
+      setSeries(transformedMockSeries);
       setIsUsingMockData(true);
       
       toast({
