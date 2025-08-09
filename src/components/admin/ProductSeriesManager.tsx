@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -186,15 +185,15 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       });
 
       // Calculate series statistics and create ProductSeries objects
-      const seriesData: ProductSeries[] = Array.from(seriesMap.entries()).map(([name, products]) => {
-        const totalProducts = products.length;
-        const activeProducts = products.filter(p => p.is_active).length;
-        const hasAssets = products.filter(p => p.thumbnail_path || p.model_path).length;
+      const seriesData: ProductSeries[] = Array.from(seriesMap.entries()).map(([name, transformedProducts]) => {
+        const totalProducts = transformedProducts.length;
+        const activeProducts = transformedProducts.filter(p => p.is_active).length;
+        const hasAssets = transformedProducts.filter(p => p.thumbnail_path || p.model_path).length;
         const completionRate = totalProducts > 0 ? (hasAssets / totalProducts) * 100 : 0;
 
         return {
           name,
-          products,
+          products: transformedProducts, // These are now properly transformed Product objects
           totalProducts,
           activeProducts,
           completionRate,
