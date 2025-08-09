@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -141,22 +142,7 @@ export const ProductSeriesManager = () => {
       setLoading(true);
       setError(null);
       
-      // First check if we have any data at all
-      const { count } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
-
-      console.log('Total products count:', count);
-
-      if (count === 0) {
-        console.log('No products found in database');
-        setSeries([]);
-        setFilteredSeries([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Fetch all products
+      // Fetch all products from the database
       const { data: products, error } = await supabase
         .from('products')
         .select('*')
@@ -167,6 +153,7 @@ export const ProductSeriesManager = () => {
       console.log('Products data fetched:', products);
 
       if (!products || products.length === 0) {
+        console.log('No products found in database');
         setSeries([]);
         setFilteredSeries([]);
         return;
