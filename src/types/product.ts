@@ -1,42 +1,20 @@
 
-export interface ProductFinish {
-  type: 'powder-coat' | 'stainless-steel';
-  name: string;
-  price?: string;
-  modelPath?: string;
-  thumbnail?: string;
-  images?: string[];
-}
-
-export interface ProductVariant {
-  id: string;
-  size: string;
-  dimensions: string;
-  type?: string;
-  orientation?: 'LH' | 'RH' | 'None';
-  modelPath: string;
-  thumbnail: string;
-  images: string[];
-}
-
 export interface Product {
   id: string;
   name: string;
   category: string;
   dimensions: string;
-  modelPath: string; // Path to .glb file
-  thumbnail: string; // Main product image
-  overviewImage?: string; // Overview image for catalog display (JPG only)
-  seriesOverviewImage?: string; // Series overview image from admin
-  images: string[]; // Array of additional product images
-  description: string; // Short description for grid view
-  fullDescription: string; // Detailed description for detail page
-  specifications: string[];
-  // Enhanced fields for Innosin Lab products
-  finishes?: ProductFinish[];
-  variants?: ProductVariant[];
+  modelPath: string;
+  thumbnail: string;
+  images: string[];
+  description: string;
+  fullDescription: string;
+  specifications: any[];
+  finishes: string[];
+  variants: ProductVariant[];
   baseProductId?: string;
-  // Database variant fields
+  
+  // Variant-specific fields
   finish_type?: string;
   orientation?: string;
   drawer_count?: number;
@@ -44,44 +22,36 @@ export interface Product {
   product_code?: string;
   thumbnail_path?: string;
   model_path?: string;
-  // New variant fields for specific product types
-  mounting_type?: string; // For Safe Aire II (bench-mounted/floor-mounted)
-  mixing_type?: string;   // For UNIFLEX (non-mix/mix)
-  handle_type?: string;   // For UNIFLEX (polypropylene/wrist-action)
-  emergency_shower_type?: string; // For Emergency Shower (eye-wash/body-shower/combination)
-  cabinet_class?: string; // For TANGERINE (A2/B2)
-  company_tags?: string[]; // Company/brand tags
-  product_series?: string; // Product series name
-  // Series relationship fields
-  parent_series_id?: string; // Reference to parent series product
-  is_series_parent?: boolean; // Whether this product is a series parent
+  
+  // New variant fields
+  mounting_type?: string;
+  mixing_type?: string;
+  handle_type?: string;
+  company_tags?: string[];
+  product_series?: string;
+  cabinet_class?: string;
+  emergency_shower_type?: string;
+  
   // Admin editable fields
   editable_title?: string;
   editable_description?: string;
-  // Timestamps
+  
+  // Image fields
+  overviewImage?: string;
+  seriesOverviewImage?: string;
+  
+  // Timestamps and status
   created_at?: string;
   updated_at?: string;
   is_active?: boolean;
 }
 
-// New interface for wall cabinet configuration
-export interface WallCabinetConfiguration {
-  dimension: string;
-  doorType: string;
-  orientation?: string;
-  availableFinishes: string[];
-  variants: WallCabinetVariant[];
-}
-
-export interface WallCabinetVariant {
+export interface ProductVariant {
   id: string;
-  product_code: string;
   name: string;
-  dimensions: string;
-  finish_type: string;
-  orientation: string;
-  door_type: string;
-  thumbnail_path: string;
-  model_path: string;
-  additional_images: string[];
+  finish: string;
+  price?: number;
+  dimensions?: string;
+  modelPath?: string;
+  thumbnail?: string;
 }

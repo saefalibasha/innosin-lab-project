@@ -1,20 +1,19 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Grid, List, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, Grid, List } from 'lucide-react';
 import { Product as ProductType } from '@/types/product';
-import ProductGrid from '@/components/ProductGrid';
-import ProductList from '@/components/ProductList';
-import { fetchProductsFromDatabase, fetchCategoriesFromDatabase, subscribeToProductUpdates } from '@/services/productService';
+import ProductCard from '@/components/ProductCard';
+import { fetchProductSeriesFromDatabase, fetchCategoriesFromDatabase, searchProductSeries, subscribeToProductUpdates } from '@/services/productService';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductCatalog = () => {
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const [productSeries, setProductSeries] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
+  const [filteredSeries, setFilteredSeries] = useState<ProductType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -27,14 +26,14 @@ const ProductCatalog = () => {
       setLoading(true);
       setError(null);
       
-      const [productsData, categoriesData] = await Promise.all([
-        fetchProductsFromDatabase(),
+      const [seriesData, categoriesData] = await Promise.all([
+        fetchProductSeriesFromDatabase(),
         fetchCategoriesFromDatabase()
       ]);
 
-      setProducts(productsData);
+      setProductSeries(seriesData);
       setCategories(['all', ...categoriesData]);
-      setFilteredProducts(productsData);
+      setFilteredSeries(seriesData);
     } catch (err) {
       console.error('Error loading catalog data:', err);
       setError('Failed to load product catalog');
@@ -67,29 +66,38 @@ const ProductCatalog = () => {
   }, [loadData]);
 
   useEffect(() => {
-    filterProducts();
-  }, [products, searchTerm, selectedCategory]);
+    filterSeries();
+  }, [productSeries, searchTerm, selectedCategory]);
 
-  const filterProducts = () => {
-    let filtered = products;
+  const filterSeries = async () => {
+    let filtered = productSeries;
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => 
-        product.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-
+    // If there's a search term, use the search function
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        product.description.toLowerCase().includes(term) ||
-        product.category.toLowerCase().includes(term) ||
-        (product.product_code && product.product_code.toLowerCase().includes(term))
+      try {
+        filtered = await searchProductSeries(searchTerm);
+      } catch (err) {
+        console.error('Search error:', err);
+        // Fall back to client-side filtering
+        const term = searchTerm.toLowerCase();
+        filtered = productSeries.filter(series =>
+          series.name.toLowerCase().includes(term) ||
+          series.description.toLowerCase().includes(term) ||
+          series.category.toLowerCase().includes(term) ||
+          (series.product_code && series.product_code.toLowerCase().includes(term)) ||
+          (series.product_series && series.product_series.toLowerCase().includes(term))
+        );
+      }
+    }
+
+    // Apply category filter
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(series => 
+        series.category.toLowerCase() === selectedCategory.toLowerCase()
       );
     }
 
-    setFilteredProducts(filtered);
+    setFilteredSeries(filtered);
   };
 
   if (loading) {
@@ -97,7 +105,7 @@ const ProductCatalog = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
-          <span>Loading product catalog...</span>
+          <span>Loading product series...</span>
         </div>
       </div>
     );
@@ -119,9 +127,9 @@ const ProductCatalog = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Product Catalog</h1>
+        <h1 className="text-3xl font-bold mb-2">Product Series</h1>
         <p className="text-muted-foreground">
-          Browse our complete collection of laboratory products
+          Browse our complete collection of laboratory product series
         </p>
       </div>
 
@@ -132,7 +140,7 @@ const ProductCatalog = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search product series..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -173,17 +181,31 @@ const ProductCatalog = () => {
           
           <div className="flex items-center justify-between mt-4">
             <Badge variant="outline">
-              {filteredProducts.length} products found
+              {filteredSeries.length} product series found
             </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Product Display */}
-      {viewMode === 'grid' ? (
-        <ProductGrid products={filteredProducts} />
+      {/* Product Series Display */}
+      {filteredSeries.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No product series found matching your criteria.</p>
+          </CardContent>
+        </Card>
       ) : (
-        <ProductList products={filteredProducts} />
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+          : "space-y-4"
+        }>
+          {filteredSeries.map((series) => (
+            <ProductCard
+              key={series.id}
+              product={series}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

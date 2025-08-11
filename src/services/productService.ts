@@ -45,17 +45,18 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
   };
 };
 
-// Transform DatabaseProduct to ProductType
+// Transform DatabaseProduct to ProductType with preference for series assets
 const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
   return {
     id: dbProduct.id,
-    name: dbProduct.name,
+    name: dbProduct.editable_title || dbProduct.name,
     category: dbProduct.category,
     dimensions: dbProduct.dimensions || '',
-    modelPath: dbProduct.model_path || '',
-    thumbnail: dbProduct.thumbnail_path || '',
+    // Prefer series assets when available
+    modelPath: dbProduct.series_model_path || dbProduct.model_path || '',
+    thumbnail: dbProduct.series_thumbnail_path || dbProduct.thumbnail_path || '',
     images: dbProduct.additional_images || [],
-    description: dbProduct.description || '',
+    description: dbProduct.editable_description || dbProduct.description || '',
     fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
     specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
     finish_type: dbProduct.finish_type,
@@ -63,8 +64,8 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
     drawer_count: dbProduct.drawer_count || 0,
     door_type: dbProduct.door_type,
     product_code: dbProduct.product_code || '',
-    thumbnail_path: dbProduct.thumbnail_path,
-    model_path: dbProduct.model_path,
+    thumbnail_path: dbProduct.series_thumbnail_path || dbProduct.thumbnail_path,
+    model_path: dbProduct.series_model_path || dbProduct.model_path,
     mounting_type: dbProduct.mounting_type,
     mixing_type: dbProduct.mixing_type,
     handle_type: dbProduct.handle_type,
@@ -76,7 +77,14 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
     editable_description: dbProduct.editable_description,
     is_active: dbProduct.is_active || false,
     created_at: dbProduct.created_at,
-    updated_at: dbProduct.updated_at
+    updated_at: dbProduct.updated_at,
+    // Add new image fields
+    overviewImage: dbProduct.overview_image_path,
+    seriesOverviewImage: dbProduct.series_overview_image_path,
+    // Compatibility fields
+    finishes: [],
+    variants: [],
+    baseProductId: dbProduct.parent_series_id
   };
 };
 
@@ -154,6 +162,24 @@ class ProductService {
     }
   }
 
+  async getCategoriesFromSeries(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category')
+        .eq('is_series_parent', true)
+        .not('category', 'is', null);
+
+      if (error) throw error;
+
+      const categories = [...new Set((data || []).map(item => item.category).filter(Boolean))];
+      return categories;
+    } catch (error) {
+      console.error('Error fetching series categories:', error);
+      throw error;
+    }
+  }
+
   async searchProducts(query: string): Promise<ProductType[]> {
     try {
       const { data, error } = await supabase
@@ -169,6 +195,26 @@ class ProductService {
         .map(transformDatabaseProduct);
     } catch (error) {
       console.error('Error searching products:', error);
+      throw error;
+    }
+  }
+
+  async searchProductSeries(query: string): Promise<ProductType[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('is_series_parent', true)
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,product_code.ilike.%${query}%,editable_title.ilike.%${query}%,editable_description.ilike.%${query}%,product_series.ilike.%${query}%`)
+        .order('series_order');
+
+      if (error) throw error;
+
+      return (data || [])
+        .map(ensureDatabaseProduct)
+        .map(transformDatabaseProduct);
+    } catch (error) {
+      console.error('Error searching product series:', error);
       throw error;
     }
   }
@@ -214,9 +260,11 @@ class ProductService {
 
 const productService = new ProductService();
 
-// Named exports for backwards compatibility
+// Named exports for backwards compatibility and new series-focused functions
 export const fetchProductsFromDatabase = () => productService.getAllProducts();
-export const fetchCategoriesFromDatabase = () => productService.getCategories();
+export const fetchCategoriesFromDatabase = () => productService.getCategoriesFromSeries();
+export const fetchProductSeriesFromDatabase = () => productService.getProductSeries();
+export const searchProductSeries = (query: string) => productService.searchProductSeries(query);
 export const subscribeToProductUpdates = (callback: () => void) => {
   const subscription = supabase
     .channel('product-updates')
