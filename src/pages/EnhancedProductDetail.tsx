@@ -193,6 +193,7 @@ const EnhancedProductDetail = () => {
               ) : (
                 <ProductImageGallery
                   images={productImages}
+                  thumbnail={selectedProduct.thumbnail}
                   productName={selectedProduct.name}
                 />
               )}
