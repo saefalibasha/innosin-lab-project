@@ -501,6 +501,8 @@ const FloorPlanner = () => {
                     canvasWidth={CANVAS_WIDTH}
                     canvasHeight={CANVAS_HEIGHT}
                     onClearAll={handleClear}
+                    selectedProducts={selectedProducts}
+                    onSelectionChange={setSelectedProducts}
                   />
                 </div>
                 
