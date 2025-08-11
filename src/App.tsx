@@ -1,38 +1,43 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import Index from '@/pages/Index';
-import About from '@/pages/About';
-import Contact from '@/pages/Contact';
-import AdminDashboard from '@/pages/AdminDashboard';
 import ProductCatalog from '@/pages/ProductCatalog';
 import EnhancedProductDetail from '@/pages/EnhancedProductDetail';
+import RFQCart from '@/pages/RFQCart';
+import { RFQProvider } from '@/contexts/RFQContext';
 
 const queryClient = new QueryClient();
 
-function App() {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
-          <div className="min-h-screen bg-background">
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/products" element={<ProductCatalog />} />
-              <Route path="/products/:seriesName" element={<EnhancedProductDetail />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-            </Routes>
-          </div>
-        </BrowserRouter>
+        <RFQProvider>
+          <Router>
+            <div className="min-h-screen bg-background flex flex-col">
+              <Header />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/products" element={<ProductCatalog />} />
+                  <Route path="/products/:seriesSlug" element={<EnhancedProductDetail />} />
+                  <Route path="/quote" element={<RFQCart />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
+            <Toaster />
+          </Router>
+        </RFQProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;
