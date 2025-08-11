@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import React from 'react';
 
 export interface RFQItem {
   id: string;
@@ -20,10 +20,10 @@ interface RFQContextType {
   itemCount: number;
 }
 
-const RFQContext = createContext<RFQContextType | undefined>(undefined);
+const RFQContext = React.createContext<RFQContextType | undefined>(undefined);
 
-export const RFQProvider = ({ children }: { children: ReactNode }) => {
-  const [items, setItems] = useState<RFQItem[]>([]);
+export const RFQProvider = ({ children }: { children: React.ReactNode }) => {
+  const [items, setItems] = React.useState<RFQItem[]>([]);
 
   const addItem = (item: Omit<RFQItem, 'quantity' | 'notes'>) => {
     setItems(prev => {
@@ -70,7 +70,7 @@ export const RFQProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useRFQ = () => {
-  const context = useContext(RFQContext);
+  const context = React.useContext(RFQContext);
   if (context === undefined) {
     throw new Error('useRFQ must be used within a RFQProvider');
   }
