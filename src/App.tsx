@@ -1,141 +1,45 @@
+import React from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { TooltipProvider } from "@/components/ui/tooltip"
+import Index from '@/pages/Index';
+import About from '@/pages/About';
+import Contact from '@/pages/Contact';
+import BlogList from '@/pages/BlogList';
+import BlogPost from '@/pages/BlogPost';
+import FloorplanDesigner from '@/pages/FloorplanDesigner';
+import AdminDashboard from '@/pages/AdminDashboard';
+import ProductCatalog from '@/pages/ProductCatalog';
+import EnhancedProductDetail from '@/pages/EnhancedProductDetail';
+import ChatInterface from '@/pages/ChatInterface';
 
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import CompanyThemeProvider from "./components/CompanyThemeProvider";
-import { isLovableDevelopment } from "./utils/environmentDetection";
-import { useEffect } from "react";
+const queryClient = new QueryClient();
 
-// Import all pages
-import Index from "./pages/Index";
-import ProductCatalog from "./pages/ProductCatalog";
-import EnhancedProductDetail from "./pages/EnhancedProductDetail";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Blog from "./pages/Blog";
-import FloorPlanner from "./pages/FloorPlanner";
-import RFQCart from "./pages/RFQCart";
-import AdminDashboard from "./pages/AdminDashboard";
-import Auth from "./pages/Auth";
-import Maintenance from "./pages/Maintenance";
-import NotFound from "./pages/NotFound";
-
-// Import layout components
-import { RFQProvider } from "./contexts/RFQContext";
-import HeaderBrand from "./components/HeaderBrand";
-import EnhancedLiveChat from "./components/EnhancedLiveChat";
-import Footer from "./components/Footer";
-import ScrollToTop from "./components/ScrollToTop";
-import SecurityHeader from "./components/SecurityHeader";
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 3,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-// Production App - Only shows maintenance page with proper headers
-const ProductionApp: React.FC = () => {
-  useEffect(() => {
-    // Set maintenance mode indicators for crawlers
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-maintenance-mode', 'true');
-      document.documentElement.setAttribute('data-status', '503');
-      
-      // Force immediate cache invalidation
-      const cacheHeaders = [
-        { name: 'Cache-Control', content: 'no-cache, no-store, must-revalidate, max-age=0' },
-        { name: 'Pragma', content: 'no-cache' },
-        { name: 'Expires', content: '0' }
-      ];
-      
-      cacheHeaders.forEach(header => {
-        const meta = document.createElement('meta');
-        meta.setAttribute('http-equiv', header.name);
-        meta.setAttribute('content', header.content);
-        document.head.appendChild(meta);
-      });
-    }
-  }, []);
-
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <CompanyThemeProvider>
-              <Routes>
-                <Route path="*" element={<Maintenance />} />
-              </Routes>
-            </CompanyThemeProvider>
-          </BrowserRouter>
-        </AuthProvider>
+        <Toaster />
+        <BrowserRouter>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/products" element={<ProductCatalog />} />
+              <Route path="/products/:seriesName" element={<EnhancedProductDetail />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/blog" element={<BlogList />} />
+              <Route path="/blog/:id" element={<BlogPost />} />
+              <Route path="/floorplan" element={<FloorplanDesigner />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/chat" element={<ChatInterface />} />
+            </Routes>
+          </div>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
-
-// Development App - Full website functionality
-const DevelopmentApp: React.FC = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <AuthProvider>
-        <RFQProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <CompanyThemeProvider>
-              <SecurityHeader />
-              <ScrollToTop />
-              <div className="min-h-screen flex flex-col">
-                <HeaderBrand />
-                <main className="flex-1 pt-16">
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/products" element={<ProductCatalog />} />
-                    <Route path="/products/:productId" element={<EnhancedProductDetail />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/blog" element={<Blog />} />
-                    <Route path="/floor-planner" element={<FloorPlanner />} />
-                    <Route path="/rfq-cart" element={<RFQCart />} />
-                    <Route path="/auth" element={<Auth />} />
-                    <Route path="/maintenance" element={<Maintenance />} />
-                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </main>
-                <Footer />
-                <EnhancedLiveChat />
-              </div>
-            </CompanyThemeProvider>
-          </BrowserRouter>
-        </RFQProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-// Smart App Router - Chooses between Development and Production
-const App: React.FC = () => {
-  const isDevelopment = isLovableDevelopment();
-  
-  console.log('Environment Detection:', {
-    isDevelopment,
-    hostname: typeof window !== 'undefined' ? window.location.hostname : 'server',
-    nodeEnv: process.env.NODE_ENV
-  });
-
-  return isDevelopment ? <DevelopmentApp /> : <ProductionApp />;
-};
+}
 
 export default App;

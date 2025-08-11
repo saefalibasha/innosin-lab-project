@@ -1,40 +1,39 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Grid, List, Filter, SlidersHorizontal } from 'lucide-react';
-import { Product as ProductType } from '@/types/product';
-import ProductGrid from '@/components/ProductGrid';
-import ProductList from '@/components/ProductList';
-import { fetchProductsFromDatabase, fetchCategoriesFromDatabase, subscribeToProductUpdates } from '@/services/productService';
+import { Search, Grid, List } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { fetchProductSeries, ProductSeries } from '@/services/productSeriesService';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductCatalog = () => {
-  const [products, setProducts] = useState<ProductType[]>([]);
+  const [productSeries, setProductSeries] = useState<ProductSeries[]>([]);
+  const [filteredSeries, setFilteredSeries] = useState<ProductSeries[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<ProductType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const [productsData, categoriesData] = await Promise.all([
-        fetchProductsFromDatabase(),
-        fetchCategoriesFromDatabase()
-      ]);
-
-      setProducts(productsData);
-      setCategories(['all', ...categoriesData]);
-      setFilteredProducts(productsData);
+      const seriesData = await fetchProductSeries();
+      setProductSeries(seriesData);
+      
+      // Extract unique categories
+      const uniqueCategories = Array.from(new Set(seriesData.map(series => series.category)));
+      setCategories(['all', ...uniqueCategories]);
+      
+      setFilteredSeries(seriesData);
     } catch (err) {
       console.error('Error loading catalog data:', err);
       setError('Failed to load product catalog');
@@ -52,44 +51,34 @@ const ProductCatalog = () => {
     loadData();
   }, [loadData]);
 
-  // Set up real-time updates
   useEffect(() => {
-    const unsubscribe = subscribeToProductUpdates(() => {
-      console.log('Products updated, refreshing...');
-      loadData();
-    });
+    filterSeries();
+  }, [productSeries, searchTerm, selectedCategory]);
 
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
-  }, [loadData]);
-
-  useEffect(() => {
-    filterProducts();
-  }, [products, searchTerm, selectedCategory]);
-
-  const filterProducts = () => {
-    let filtered = products;
+  const filterSeries = () => {
+    let filtered = productSeries;
 
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => 
-        product.category.toLowerCase() === selectedCategory.toLowerCase()
+      filtered = filtered.filter(series => 
+        series.category.toLowerCase() === selectedCategory.toLowerCase()
       );
     }
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        product.description.toLowerCase().includes(term) ||
-        product.category.toLowerCase().includes(term) ||
-        (product.product_code && product.product_code.toLowerCase().includes(term))
+      filtered = filtered.filter(series =>
+        series.name.toLowerCase().includes(term) ||
+        series.description.toLowerCase().includes(term) ||
+        series.category.toLowerCase().includes(term)
       );
     }
 
-    setFilteredProducts(filtered);
+    setFilteredSeries(filtered);
+  };
+
+  const handleSeriesClick = (series: ProductSeries) => {
+    // Navigate to product page with series name
+    navigate(`/products/${encodeURIComponent(series.name)}`);
   };
 
   if (loading) {
@@ -121,7 +110,7 @@ const ProductCatalog = () => {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2">Product Catalog</h1>
         <p className="text-muted-foreground">
-          Browse our complete collection of laboratory products
+          Browse our complete collection of laboratory product series
         </p>
       </div>
 
@@ -132,7 +121,7 @@ const ProductCatalog = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search products..."
+                placeholder="Search product series..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -173,17 +162,105 @@ const ProductCatalog = () => {
           
           <div className="flex items-center justify-between mt-4">
             <Badge variant="outline">
-              {filteredProducts.length} products found
+              {filteredSeries.length} product series found
             </Badge>
           </div>
         </CardContent>
       </Card>
 
-      {/* Product Display */}
+      {/* Product Series Display */}
       {viewMode === 'grid' ? (
-        <ProductGrid products={filteredProducts} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredSeries.map((series) => (
+            <Card 
+              key={series.id} 
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleSeriesClick(series)}
+            >
+              <div className="aspect-square p-4">
+                {series.thumbnail ? (
+                  <img
+                    src={series.thumbnail}
+                    alt={series.name}
+                    className="w-full h-full object-contain rounded-md"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = '/placeholder.svg';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-muted rounded-md flex items-center justify-center">
+                    <span className="text-muted-foreground">No Image</span>
+                  </div>
+                )}
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-2 line-clamp-2">{series.name}</h3>
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {series.description}
+                </p>
+                <div className="flex items-center justify-between">
+                  <Badge variant="secondary">{series.category}</Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {series.productCount} variants
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : (
-        <ProductList products={filteredProducts} />
+        <div className="space-y-4">
+          {filteredSeries.map((series) => (
+            <Card 
+              key={series.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => handleSeriesClick(series)}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-6">
+                  <div className="w-24 h-24 flex-shrink-0">
+                    {series.thumbnail ? (
+                      <img
+                        src={series.thumbnail}
+                        alt={series.name}
+                        className="w-full h-full object-contain rounded-md"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = '/placeholder.svg';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted rounded-md flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground">No Image</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <h3 className="font-semibold text-xl">{series.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">{series.category}</Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {series.productCount} variants
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground mb-3 line-clamp-3">
+                      {series.description}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {filteredSeries.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No product series found matching your criteria.</p>
+        </div>
       )}
     </div>
   );

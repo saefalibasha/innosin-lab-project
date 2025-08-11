@@ -1,482 +1,276 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText, Building2, Settings } from 'lucide-react';
-import { useRFQ } from '@/contexts/RFQContext';
-import { toast } from 'sonner';
-import Enhanced3DViewer from '@/components/Enhanced3DViewer';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, Download, Share2, ShoppingCart, Eye } from 'lucide-react';
+import { Product } from '@/types/product';
 import ProductImageGallery from '@/components/ProductImageGallery';
-import AnimatedSection from '@/components/AnimatedSection';
-import VariantSelector from '@/components/product/VariantSelector';
-import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurator';
-import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
-import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurator';
-import ModularCabinetConfigurator from '@/components/product/ModularCabinetConfigurator';
-import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
+import ProductModel3D from '@/components/ProductModel3D';
+import { SpecificProductSelector } from '@/components/floorplan/SpecificProductSelector';
+import ProductVariantSelector from '@/components/ProductVariantSelector';
+import { fetchProductsBySeriesName } from '@/services/productSeriesService';
+import { useToast } from '@/hooks/use-toast';
 
 const EnhancedProductDetail = () => {
-  const { productId } = useParams<{ productId: string }>();
-  const { addItem } = useRFQ();
-  const [activeTab, setActiveTab] = useState('photos');
-  const [loading, setLoading] = useState(true);
-  const [series, setSeries] = useState<any>(null);
-  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
-  const [selectedModularConfiguration, setSelectedModularConfiguration] = useState<any>(null);
-  const [currentAssets, setCurrentAssets] = useState<any>(null);
+  const { seriesName } = useParams<{ seriesName: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
-  useEffect(() => {
-    if (productId) {
-      fetchProductData();
-    }
-  }, [productId]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showModel, setShowModel] = useState(false);
 
-  const fetchProductData = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch the main product/series
-      const product = await fetchProductById(productId!);
-      setSeries(product);
-      
-      // If it's a series parent, fetch child products as variants
-      if (product.is_series_parent) {
-        const variants = await fetchProductsByParentSeriesId(productId!);
-        setSeries({...product, variants});
-        
-        if (variants.length > 0) {
-          setSelectedVariantId(variants[0].id);
-        }
+  useEffect(() => {
+    const loadProducts = async () => {
+      if (!seriesName) {
+        setError('No series specified');
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching product data:', error);
-      toast.error('Failed to load product details');
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
-  const isInnosinProduct = series?.category === 'Innosin Lab';
-  const isTallCabinetSeries = series?.product_series?.toLowerCase().includes('tall cabinet');
-  const isOpenRackSeries = series?.product_series?.toLowerCase().includes('open rack');
-  const isWallCabinetSeries = series?.product_series?.toLowerCase().includes('wall cabinet');
-  const isModularCabinetSeries = series?.product_series?.toLowerCase().includes('mobile cabinet') || 
-                                series?.product_series?.toLowerCase().includes('modular cabinet') ||
-                                series?.name?.toLowerCase().includes('mobile cabinet') ||
-                                series?.name?.toLowerCase().includes('modular cabinet');
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const decodedSeriesName = decodeURIComponent(seriesName);
+        const seriesProducts = await fetchProductsBySeriesName(decodedSeriesName);
+        
+        if (seriesProducts.length === 0) {
+          setError('No products found for this series');
+          return;
+        }
+        
+        setProducts(seriesProducts);
+        setSelectedProduct(seriesProducts[0]);
+      } catch (err) {
+        console.error('Error loading product series:', err);
+        setError('Failed to load product details');
+        toast({
+          title: "Error",
+          description: "Failed to load product details. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Update assets when variant or finish changes
-  useEffect(() => {
-    if (currentVariant) {
-      setCurrentAssets({
-        thumbnail: currentVariant.thumbnail_path,
-        model: currentVariant.model_path,
-        images: currentVariant.additional_images || []
-      });
-      
-      console.log('Updated assets for variant:', currentVariant.id, 'with finish:', selectedFinish);
-    } else if (series) {
-      setCurrentAssets({
-        thumbnail: series.series_thumbnail_path || series.thumbnail_path,
-        model: series.series_model_path || series.model_path,
-        images: series.additional_images || []
-      });
-    }
-  }, [currentVariant, selectedFinish, series]);
-
-  // Handle modular cabinet configuration selection
-  const handleModularConfigurationSelect = (configuration: any) => {
-    console.log('🎯 Modular configuration selected:', configuration);
-    setSelectedModularConfiguration(configuration);
-    
-    // Set the first variant as the selected variant for display purposes
-    if (configuration.variants && configuration.variants.length > 0) {
-      setSelectedVariantId(configuration.variants[0].id);
-    }
-  };
+    loadProducts();
+  }, [seriesName, toast]);
 
   const handleAddToQuote = () => {
-    if (!series) return;
+    if (!selectedProduct) return;
     
-    // For modular cabinets, use the selected configuration
-    if (isModularCabinetSeries && selectedModularConfiguration) {
-      const finishText = selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
-      
-      const itemToAdd = {
-        id: selectedModularConfiguration.variants[0]?.id || series.id,
-        name: `${series.name} - ${selectedModularConfiguration.name} - ${finishText}`,
-        category: series.category,
-        dimensions: selectedModularConfiguration.dimensions || '',
-        image: selectedModularConfiguration.variants[0]?.thumbnail_path || currentAssets?.thumbnail || series.series_thumbnail_path || series.thumbnail_path
-      };
-      
-      addItem(itemToAdd);
-      toast.success(`${itemToAdd.name} added to quote`);
-      return;
-    }
-    
-    // Use SS304 for Open Rack series, Stainless Steel for others
-    const finishText = isOpenRackSeries ? 
-      (selectedFinish === 'PC' ? 'Powder Coat' : 'SS304') :
-      (selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel');
-    
-    const itemToAdd = {
-      id: currentVariant ? currentVariant.id : series.id,
-      name: currentVariant ? 
-        `${series.name} - ${currentVariant.dimensions || 'Standard'} - ${finishText}` : 
-        series.name,
-      category: series.category,
-      dimensions: currentVariant ? currentVariant.dimensions : series.dimensions || '',
-      image: currentAssets?.thumbnail || series.series_thumbnail_path || series.thumbnail_path
-    };
-    
-    addItem(itemToAdd);
-    toast.success(`${itemToAdd.name} added to quote`);
+    toast({
+      title: "Added to Quote",
+      description: `${selectedProduct.name} has been added to your quote.`,
+    });
   };
 
-  const getDisplayImages = () => {
-    if (currentAssets?.images && currentAssets.images.length > 0) {
-      return currentAssets.images;
-    }
-    if (currentAssets?.thumbnail) {
-      return [currentAssets.thumbnail];
-    }
-    return [];
+  const handleDownloadSpec = () => {
+    if (!selectedProduct) return;
+    
+    toast({
+      title: "Download Started",
+      description: "Product specification sheet is being downloaded.",
+    });
   };
 
-  const getProductDescription = () => {
-    if (currentVariant && currentVariant.description) {
-      return currentVariant.description;
+  const handleShare = () => {
+    if (navigator.share && selectedProduct) {
+      navigator.share({
+        title: selectedProduct.name,
+        text: selectedProduct.description,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link Copied",
+        description: "Product link has been copied to clipboard.",
+      });
     }
-    if (series?.description) {
-      return series.description;
-    }
-    return 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.';
   };
+
+  // Determine if this is a specialized series that needs SpecificProductSelector
+  const isSpecializedSeries = products.length > 0 && (
+    products.some(p => p.emergency_shower_type) ||
+    products.some(p => p.mixing_type) ||
+    products.some(p => p.mounting_type) ||
+    products.some(p => p.cabinet_class)
+  );
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (!series) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <Link to="/products">
-            <Button>Back to Catalog</Button>
-          </Link>
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+          <span>Loading product details...</span>
         </div>
       </div>
     );
   }
+
+  if (error || !selectedProduct) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-500 mb-4">{error || 'Product not found'}</p>
+            <Button onClick={() => navigate('/products')}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Catalog
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const productImages = [
+    selectedProduct.thumbnail,
+    ...(selectedProduct.images || [])
+  ].filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container-custom py-8 pt-20">
-        {/* Breadcrumb */}
-        <AnimatedSection animation="fade-in" delay={100}>
-          <div className="flex items-center gap-2 mb-8">
-            <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Catalog
-            </Link>
-          </div>
-        </AnimatedSection>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column - Photos/3D Model Toggle */}
-          <div className="space-y-6">
-            <AnimatedSection animation="slide-in-left" delay={200}>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
-                  <TabsTrigger value="photos" className="flex items-center gap-2 text-sm font-medium">
-                    <Camera className="w-4 h-4" />
-                    Photos
-                  </TabsTrigger>
-                  <TabsTrigger value="3d" className="flex items-center gap-2 text-sm font-medium">
-                    <Box className="w-4 h-4" />
-                    3D Model
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="photos" className="mt-0">
-                  <div className="rounded-xl overflow-hidden border shadow-sm">
-                    <ProductImageGallery
-                      images={getDisplayImages()}
-                      thumbnail={currentAssets?.thumbnail || ''}
-                      productName={series.name}
-                      className="w-full h-96 lg:h-[500px]"
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="3d" className="mt-0">
-                  <div className="rounded-xl overflow-hidden border shadow-sm">
-                    <Enhanced3DViewer
-                      modelPath={currentAssets?.model || ''}
-                      className="w-full h-96 lg:h-[500px]"
-                    />
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </AnimatedSection>
-          </div>
-
-          {/* Right Column - Product Info */}
-          <div className="space-y-6">
-            {/* Product Header */}
-            <AnimatedSection animation="slide-in-right" delay={300}>
-              <div className="space-y-4">
-                <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-                  {series.name}
-                </h1>
-                <Badge variant="outline" className="border-sea text-sea text-base px-4 py-2 font-medium">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  {series.category}
-                </Badge>
-              </div>
-            </AnimatedSection>
-
-            {/* Product Overview */}
-            <AnimatedSection animation="slide-in-right" delay={350}>
-              <Card className="shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Package className="w-5 h-5 text-primary" />
-                    Product Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed text-base">
-                    {getProductDescription()}
-                  </p>
-                </CardContent>
-              </Card>
-            </AnimatedSection>
-
-            {/* Product Configuration */}
-            {isInnosinProduct && series.variants && series.variants.length > 0 && (
-              <AnimatedSection animation="slide-in-right" delay={400}>
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Settings className="w-5 h-5 text-primary" />
-                      Product Configuration
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {isModularCabinetSeries ? (
-                      <ModularCabinetConfigurator
-                        variants={series.variants.map(v => ({
-                          id: v.id,
-                          name: v.name,
-                          product_code: v.product_code,
-                          dimensions: v.dimensions,
-                          finish_type: v.finish_type,
-                          orientation: v.orientation || 'None',
-                          door_type: v.door_type || '',
-                          drawer_count: v.drawer_count || 0,
-                          thumbnail_path: v.thumbnail_path,
-                          model_path: v.model_path,
-                          additional_images: v.additional_images || []
-                        }))}
-                        selectedConfiguration={selectedModularConfiguration}
-                        onConfigurationSelect={handleModularConfigurationSelect}
-                      />
-                    ) : isTallCabinetSeries ? (
-                      <TallCabinetConfigurator
-                        variants={series.variants}
-                        selectedVariantId={selectedVariantId}
-                        onVariantChange={setSelectedVariantId}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                      />
-                    ) : isOpenRackSeries ? (
-                      <OpenRackConfigurator
-                        variants={series.variants}
-                        selectedVariantId={selectedVariantId}
-                        onVariantChange={setSelectedVariantId}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                      />
-                    ) : isWallCabinetSeries ? (
-                      <WallCabinetConfigurator
-                        variants={series.variants.map(v => ({
-                          id: v.id,
-                          product_code: v.product_code,
-                          name: v.name,
-                          dimensions: v.dimensions,
-                          finish_type: v.finish_type,
-                          orientation: v.orientation || 'None',
-                          door_type: v.door_type,
-                          thumbnail_path: v.thumbnail_path,
-                          model_path: v.model_path,
-                          additional_images: v.additional_images || []
-                        }))}
-                        onConfigurationSelect={(config) => {
-                          if (config.variants && config.variants.length > 0) {
-                            setSelectedVariantId(config.variants[0].id);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <VariantSelector
-                        variants={series.variants}
-                        selectedVariantId={selectedVariantId}
-                        onVariantChange={setSelectedVariantId}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                        groupByDimensions={true}
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              </AnimatedSection>
-            )}
-
-            {/* Technical Specifications */}
-            <AnimatedSection animation="slide-in-right" delay={450}>
-              <Card className="shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Technical Specifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-3 text-base">Key Features</h4>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Chemical-resistant construction for laboratory environments
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Professional laboratory grade materials and finishes
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Ergonomic design optimized for laboratory workflow
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Available in multiple configurations and sizes
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Meets stringent laboratory safety standards
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-3 text-base">Construction Details</h4>
-                    <ul className="text-muted-foreground space-y-2 text-sm">
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        {isOpenRackSeries ? 
-                          'Finish Options: Powder Coat (PC) or SS304' :
-                          'Finish Options: Powder Coat (PC) or Stainless Steel (SS)'
-                        }
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Heavy-duty steel frame with reinforced joints
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Heavy-duty casters with locking mechanism
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        Comprehensive manufacturer warranty included
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Current Selection - Show for modular cabinets too */}
-                  {(currentVariant || selectedModularConfiguration) && !isOpenRackSeries && (
-                    <div className="bg-muted/30 p-4 rounded-lg border">
-                      <h4 className="font-semibold text-foreground mb-3 text-base">Current Selection</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        {isModularCabinetSeries && selectedModularConfiguration ? (
-                          <>
-                            <div>
-                              <span className="font-medium text-foreground">Configuration:</span>
-                              <p className="text-muted-foreground">{selectedModularConfiguration.name}</p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">Dimensions:</span>
-                              <p className="text-muted-foreground">{selectedModularConfiguration.dimensions}</p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">Finish:</span>
-                              <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">Variants:</span>
-                              <p className="text-muted-foreground">{selectedModularConfiguration.variants.length} option(s)</p>
-                            </div>
-                          </>
-                        ) : currentVariant ? (
-                          <>
-                            <div>
-                              <span className="font-medium text-foreground">Product Code:</span>
-                              <p className="text-muted-foreground">{currentVariant.product_code}</p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">Dimensions:</span>
-                              <p className="text-muted-foreground">{currentVariant.dimensions}</p>
-                            </div>
-                            <div>
-                              <span className="font-medium text-foreground">Finish:</span>
-                              <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}</p>
-                            </div>
-                            {currentVariant.door_type && (
-                              <div>
-                                <span className="font-medium text-foreground">Door Type:</span>
-                                <p className="text-muted-foreground">{currentVariant.door_type}</p>
-                              </div>
-                            )}
-                            {currentVariant.orientation && currentVariant.orientation !== 'None' && (
-                              <div>
-                                <span className="font-medium text-foreground">Orientation:</span>
-                                <p className="text-muted-foreground">{currentVariant.orientation}</p>
-                              </div>
-                            )}
-                          </>
-                        ) : null}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </AnimatedSection>
-
-            {/* Add to Quote Button */}
-            <AnimatedSection animation="slide-in-right" delay={500}>
-              <Button
-                onClick={handleAddToQuote}
-                size="lg"
-                className="w-full h-12 bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-[1.02] text-white font-semibold shadow-lg hover:shadow-xl"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Quote
-              </Button>
-            </AnimatedSection>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={() => navigate('/products')}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Catalog
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-3xl font-bold">{selectedProduct.name}</h1>
+          <p className="text-muted-foreground">{selectedProduct.category}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleShare}>
+            <Share2 className="w-4 h-4 mr-2" />
+            Share
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadSpec}>
+            <Download className="w-4 h-4 mr-2" />
+            Download Spec
+          </Button>
         </div>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Left Column - Images and 3D Model */}
+        <div className="space-y-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Product Images</h3>
+                {selectedProduct.modelPath && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowModel(!showModel)}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {showModel ? 'Show Images' : 'View 3D Model'}
+                  </Button>
+                )}
+              </div>
+              
+              {showModel && selectedProduct.modelPath ? (
+                <div className="aspect-square">
+                  <ProductModel3D 
+                    modelUrl={selectedProduct.modelPath}
+                    productName={selectedProduct.name}
+                  />
+                </div>
+              ) : (
+                <ProductImageGallery
+                  images={productImages}
+                  productName={selectedProduct.name}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Product Details */}
+        <div className="space-y-6">
+          {/* Product Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <h4 className="font-medium mb-2">Description</h4>
+                <p className="text-muted-foreground">{selectedProduct.fullDescription}</p>
+              </div>
+
+              {selectedProduct.product_code && (
+                <div>
+                  <h4 className="font-medium mb-2">Product Code</h4>
+                  <Badge variant="outline">{selectedProduct.product_code}</Badge>
+                </div>
+              )}
+
+              {selectedProduct.dimensions && (
+                <div>
+                  <h4 className="font-medium mb-2">Dimensions</h4>
+                  <p className="text-muted-foreground">{selectedProduct.dimensions}</p>
+                </div>
+              )}
+
+              {selectedProduct.specifications && selectedProduct.specifications.length > 0 && (
+                <div>
+                  <h4 className="font-medium mb-2">Specifications</h4>
+                  <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                    {selectedProduct.specifications.map((spec, index) => (
+                      <li key={index}>{spec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="pt-4">
+                <Button 
+                  onClick={handleAddToQuote}
+                  className="w-full"
+                  size="lg"
+                >
+                  <ShoppingCart className="w-4 h-4 mr-2" />
+                  Add to Quote
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Variant Selection */}
+      {products.length > 1 && (
+        <div className="mb-8">
+          {isSpecializedSeries ? (
+            <SpecificProductSelector
+              products={products}
+              selectedProduct={selectedProduct}
+              onProductSelect={setSelectedProduct}
+            />
+          ) : (
+            <ProductVariantSelector
+              products={products}
+              selectedProduct={selectedProduct}
+              onProductSelect={setSelectedProduct}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
