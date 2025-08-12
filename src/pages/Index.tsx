@@ -1,99 +1,77 @@
-
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router-dom";
-import VideoHero from "@/components/VideoHero";
-import { brandCollections } from "@/data/brandCollections";
-import { homePageContent } from "@/data/homePageContent";
-import BeforeAfterComparison from "@/components/BeforeAfterComparison";
-import ShopTheLook from "@/components/ShopTheLook";
-import LabTransformCTA from "@/components/LabTransformCTA";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from '@/components/ui/badge';
 
 const Index = () => {
+  const navigate = useNavigate();
+
+  const companyData = [
+    {
+      name: 'Broen-Lab',
+      description: 'Advanced fume hoods and ventilation systems designed for chemical safety and efficiency',
+      logo: '/brand-logos/broen-lab-logo.png',
+      link: '/products?company=Broen-Lab'
+    },
+    {
+      name: 'Hamilton Laboratory Solutions',
+      description: 'Premium laboratory furniture and benches with chemical-resistant surfaces',
+      logo: '/brand-logos/hamilton-laboratory-logo.png',
+      link: '/products?company=Hamilton Laboratory Solutions'
+    },
+    {
+      name: 'Oriental Giken Inc.',
+      description: 'Emergency safety equipment including eye wash stations and safety showers',
+      logo: '/brand-logos/oriental-giken-logo.png',
+      link: '/products?company=Oriental Giken Inc.'
+    },
+    {
+      name: 'Innosin Lab',
+      description: 'Comprehensive storage solutions and laboratory equipment for modern research facilities',
+      logo: '/brand-logos/innosin-lab-logo.png',
+      link: '/products?company=Innosin Lab'
+    }
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Video Hero Section */}
-      <VideoHero />
+    <div className="container mx-auto py-10">
+      <section className="space-y-6">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold">
+            Welcome to Lab Ordering Platform
+          </h1>
+          <p className="text-muted-foreground">
+            Explore our featured laboratory equipment and solutions.
+          </p>
+        </div>
 
-      {/* Product Collections Section */}
-      <section className="section bg-background relative">
-        <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
-              {homePageContent.productCollections.title} <span className="text-sea">{homePageContent.productCollections.titleHighlight}</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light animate-fade-in animate-delay-200">
-              {homePageContent.productCollections.description}
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {brandCollections.map((collection, index) => (
-              <Link key={index} to={`/products?category=${encodeURIComponent(collection.category)}`}>
-                <Card className={`group hover:shadow-xl transition-all duration-500 border-2 border-transparent hover:border-sea/20 h-full glass-card hover:scale-105 animate-bounce-in`} style={{animationDelay: `${100 + index * 100}ms`}}>
-                  <CardContent className="p-6 text-center flex flex-col items-center justify-center h-full">
-                    {/* Brand Logo */}
-                    <div className="flex justify-center mb-2 animate-float" style={{animationDelay: `${index * 0.5}s`}}>
-                      <img 
-                        src={collection.logoPath}
-                        alt={`${collection.title} Logo`}
-                        className="w-36 h-36 object-contain object-center transition-transform duration-300 group-hover:scale-110"
-                        style={{ filter: 'contrast(1.1) brightness(1.05)' }}
-                        loading={index < 2 ? "eager" : "lazy"}
-                        decoding="async"
-                      />
-                    </div>
-                    <p className="text-muted-foreground text-base leading-relaxed mb-4 font-light text-center">
-                      {collection.description}
-                    </p>
-                    <div className="flex justify-center mt-auto">
-                      <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-sea group-hover:translate-x-1 transition-all duration-300" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-          
-          <div className="text-center mt-12">
-            <Button asChild variant="outline" size="lg" className="animate-pulse-subtle">
-              <Link to="/products">
-                {homePageContent.productCollections.viewAllButton}
-              </Link>
-            </Button>
-          </div>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {companyData.map((company, index) => (
+            <Card
+              key={index}
+              className="bg-card text-card-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
+              onClick={() => navigate(company.link)}
+              style={{ cursor: 'pointer' }}
+            >
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold leading-tight tracking-tight">
+                  {company.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 flex flex-col items-center">
+                <img
+                  src={company.logo}
+                  alt={`${company.name} Logo`}
+                  className="mb-4 w-32 h-32 object-contain rounded-md"
+                />
+                <CardDescription className="text-sm text-muted-foreground text-center">
+                  {company.description}
+                </CardDescription>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </section>
-
-      {/* Before/After Comparison Section */}
-      <section className="section bg-gradient-to-b from-secondary/30 to-background">
-        <div className="container-custom">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-6 tracking-tight animate-fade-in">
-              {homePageContent.transformingLabs.title} <span className="text-sea">{homePageContent.transformingLabs.titleHighlight}</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light animate-fade-in animate-delay-200">
-              {homePageContent.transformingLabs.description}
-            </p>
-          </div>
-          <div className="animate-scale-in animate-delay-300">
-            <BeforeAfterComparison />
-          </div>
-        </div>
-      </section>
-
-      {/* Build This Lab Section */}
-      <section className="section bg-background">
-        <div className="container-custom">
-          <div className="animate-fade-in-right animate-delay-300">
-            <ShopTheLook />
-          </div>
-        </div>
-      </section>
-
-      {/* Ready to Transform Your Laboratory CTA Section */}
-      <LabTransformCTA />
     </div>
   );
 };

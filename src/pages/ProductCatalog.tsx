@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,18 +8,19 @@ import { Badge } from '@/components/ui/badge';
 import { Search, Grid, List } from 'lucide-react';
 import { Product as ProductType } from '@/types/product';
 import ProductCard from '@/components/ProductCard';
-import { fetchProductSeriesFromDatabase, fetchCategoriesFromDatabase, searchProductSeries, subscribeToProductUpdates } from '@/services/productService';
+import { fetchProductSeriesFromDatabase, fetchCompanyTagsFromDatabase, searchProductSeries, subscribeToProductUpdates } from '@/services/productService';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductCatalog = () => {
   const [productSeries, setProductSeries] = useState<ProductType[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [companyTags, setCompanyTags] = useState<string[]>([]);
   const [filteredSeries, setFilteredSeries] = useState<ProductType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCompany, setSelectedCompany] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
   const loadData = useCallback(async () => {
@@ -26,13 +28,13 @@ const ProductCatalog = () => {
       setLoading(true);
       setError(null);
       
-      const [seriesData, categoriesData] = await Promise.all([
+      const [seriesData, companyTagsData] = await Promise.all([
         fetchProductSeriesFromDatabase(),
-        fetchCategoriesFromDatabase()
+        fetchCompanyTagsFromDatabase()
       ]);
 
       setProductSeries(seriesData);
-      setCategories(['all', ...categoriesData]);
+      setCompanyTags(['all', ...companyTagsData]);
       setFilteredSeries(seriesData);
     } catch (err) {
       console.error('Error loading catalog data:', err);
@@ -51,6 +53,14 @@ const ProductCatalog = () => {
     loadData();
   }, [loadData]);
 
+  // Handle URL parameters for company filtering
+  useEffect(() => {
+    const companyFromUrl = searchParams.get('company');
+    if (companyFromUrl && companyTags.includes(companyFromUrl)) {
+      setSelectedCompany(companyFromUrl);
+    }
+  }, [searchParams, companyTags]);
+
   // Set up real-time updates
   useEffect(() => {
     const unsubscribe = subscribeToProductUpdates(() => {
@@ -67,7 +77,7 @@ const ProductCatalog = () => {
 
   useEffect(() => {
     filterSeries();
-  }, [productSeries, searchTerm, selectedCategory]);
+  }, [productSeries, searchTerm, selectedCompany]);
 
   const filterSeries = async () => {
     let filtered = productSeries;
@@ -90,10 +100,10 @@ const ProductCatalog = () => {
       }
     }
 
-    // Apply category filter
-    if (selectedCategory !== 'all') {
+    // Apply company filter
+    if (selectedCompany !== 'all') {
       filtered = filtered.filter(series => 
-        series.category.toLowerCase() === selectedCategory.toLowerCase()
+        series.company_tags && series.company_tags.includes(selectedCompany)
       );
     }
 
@@ -149,13 +159,13 @@ const ProductCatalog = () => {
             
             <div className="flex items-center gap-2">
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                value={selectedCompany}
+                onChange={(e) => setSelectedCompany(e.target.value)}
                 className="px-3 py-2 border border-input rounded-md"
               >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
+                {companyTags.map(tag => (
+                  <option key={tag} value={tag}>
+                    {tag === 'all' ? 'All Companies' : tag}
                   </option>
                 ))}
               </select>

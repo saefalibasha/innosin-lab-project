@@ -256,6 +256,29 @@ class ProductService {
       throw error;
     }
   }
+
+  async getCompanyTagsFromSeries(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('company_tags')
+        .eq('is_series_parent', true)
+        .not('company_tags', 'is', null);
+
+      if (error) throw error;
+
+      // Flatten and deduplicate company tags
+      const allTags = (data || [])
+        .flatMap(item => item.company_tags || [])
+        .filter(Boolean);
+      
+      const uniqueTags = [...new Set(allTags)];
+      return uniqueTags;
+    } catch (error) {
+      console.error('Error fetching company tags from series:', error);
+      throw error;
+    }
+  }
 }
 
 const productService = new ProductService();
@@ -263,6 +286,7 @@ const productService = new ProductService();
 // Named exports for backwards compatibility and new series-focused functions
 export const fetchProductsFromDatabase = () => productService.getAllProducts();
 export const fetchCategoriesFromDatabase = () => productService.getCategoriesFromSeries();
+export const fetchCompanyTagsFromDatabase = () => productService.getCompanyTagsFromSeries();
 export const fetchProductSeriesFromDatabase = () => productService.getProductSeries();
 export const searchProductSeries = (query: string) => productService.searchProductSeries(query);
 export const subscribeToProductUpdates = (callback: () => void) => {

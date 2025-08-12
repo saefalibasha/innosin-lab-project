@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -87,9 +88,14 @@ export const CompanyThemeProvider: React.FC<CompanyThemeProviderProps> = ({ chil
 
   // Auto-detect company from URL parameters
   useEffect(() => {
+    const companyFromUrl = searchParams.get('company');
     const categoryFromUrl = searchParams.get('category');
-    if (categoryFromUrl && companyThemes[categoryFromUrl]) {
-      setActiveCompany(categoryFromUrl);
+    
+    // Try company parameter first, then category as fallback
+    const themeKey = companyFromUrl || categoryFromUrl;
+    
+    if (themeKey && companyThemes[themeKey]) {
+      setActiveCompany(themeKey);
     } else {
       resetTheme();
     }
