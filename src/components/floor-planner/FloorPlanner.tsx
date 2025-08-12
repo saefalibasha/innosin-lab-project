@@ -2,8 +2,9 @@
 import React, { useState, useCallback } from 'react';
 import TabbedSidebar from './TabbedSidebar';
 import { EnhancedCanvasWorkspace } from '../canvas/EnhancedCanvasWorkspace';
-import { PlacedProduct, Point, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
+import { PlacedProduct, Point, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
+import { MeasurementUnit } from '@/utils/measurements';
 
 export const FloorPlanner = () => {
   const initialFloorPlanState = {
@@ -31,18 +32,26 @@ export const FloorPlanner = () => {
   const [wallSegments, setWallSegments] = useState<WallSegment[]>(currentState.wallSegments);
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
 
+  // Canvas settings
+  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
+  const [showGrid, setShowGrid] = useState(true);
+  const [showMeasurements, setShowMeasurements] = useState(true);
+  const [gridSize, setGridSize] = useState(100); // in mm
+  const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
+  const [canvasWidth] = useState(1200);
+  const [canvasHeight] = useState(800);
+
   const handleProductSelect = useCallback((product: PlacedProduct) => {
     setPlacedProducts(prevProducts => [...prevProducts, product]);
   }, []);
 
-  const handleProductUpdate = useCallback((updatedProduct: PlacedProduct) => {
-    setPlacedProducts(prevProducts =>
-      prevProducts.map(p => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
-  }, []);
-
-  const handleProductDelete = useCallback((productId: string) => {
-    setPlacedProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
+  const handleClearAll = useCallback(() => {
+    setRoomPoints([]);
+    setPlacedProducts([]);
+    setDoors([]);
+    setTextAnnotations([]);
+    setWallSegments([]);
+    setRooms([]);
   }, []);
 
   // Define scale: 1mm = 0.1 pixels (adjust as needed for your canvas)
@@ -57,8 +66,7 @@ export const FloorPlanner = () => {
       <div className="flex-1 relative">
         <EnhancedCanvasWorkspace
           placedProducts={placedProducts}
-          onProductUpdate={handleProductUpdate}
-          onProductDelete={handleProductDelete}
+          setPlacedProducts={setPlacedProducts}
           roomPoints={roomPoints}
           setRoomPoints={setRoomPoints}
           doors={doors}
@@ -69,11 +77,15 @@ export const FloorPlanner = () => {
           setWallSegments={setWallSegments}
           rooms={rooms}
           setRooms={setRooms}
-          onSaveState={saveState}
-          canUndo={canUndo}
-          canRedo={canRedo}
-          onUndo={undo}
-          onRedo={redo}
+          scale={scale}
+          currentMode={currentMode}
+          showGrid={showGrid}
+          showMeasurements={showMeasurements}
+          gridSize={gridSize}
+          measurementUnit={measurementUnit}
+          canvasWidth={canvasWidth}
+          canvasHeight={canvasHeight}
+          onClearAll={handleClearAll}
         />
       </div>
     </div>
