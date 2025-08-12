@@ -1,6 +1,7 @@
+
 import React, { useState, useCallback } from 'react';
-import { TabbedSidebar } from './TabbedSidebar';
-import { EnhancedCanvasWorkspace } from './EnhancedCanvasWorkspace';
+import TabbedSidebar from './TabbedSidebar';
+import { EnhancedCanvasWorkspace } from '../canvas/EnhancedCanvasWorkspace';
 import { PlacedProduct, Point, Door, TextAnnotation, WallSegment, Room } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 

@@ -69,28 +69,33 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
     // Parse dimensions and convert to canvas pixels
     const parsedDimensions = parseDimensionString(product.dimensions || '');
     
-    let width = 100; // default fallback
-    let height = 50; // default fallback
+    let length = 100; // default fallback
+    let width = 50; // default fallback
+    let height = 30; // default fallback
     
     if (parsedDimensions) {
       // Convert mm to canvas pixels using the scale
+      length = mmToCanvas(parsedDimensions.length, scale);
       width = mmToCanvas(parsedDimensions.width, scale);
-      height = mmToCanvas(parsedDimensions.depth, scale); // Use depth for 2D floor plan
+      height = mmToCanvas(parsedDimensions.height, scale);
     }
 
     const placedProduct: PlacedProduct = {
       id: `placed-${product.id}-${Date.now()}`,
       productId: product.id,
       name: product.name,
-      x: 100,
-      y: 100,
-      width,
-      height,
-      rotation: 0,
       category: product.category,
+      position: { x: 100, y: 100 },
+      rotation: 0,
+      dimensions: {
+        length,
+        width,
+        height
+      },
+      color: '#3B82F6',
       thumbnail: product.thumbnail,
       modelPath: product.modelPath,
-      originalDimensions: product.dimensions || '',
+      description: product.description,
       specifications: product.specifications || []
     };
 
