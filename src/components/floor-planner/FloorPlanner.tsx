@@ -35,13 +35,13 @@ export const FloorPlanner = () => {
     setPlacedProducts(prevProducts => [...prevProducts, product]);
   }, []);
 
-  const handleUpdateProduct = useCallback((updatedProduct: PlacedProduct) => {
+  const handleProductUpdate = useCallback((updatedProduct: PlacedProduct) => {
     setPlacedProducts(prevProducts =>
       prevProducts.map(p => (p.id === updatedProduct.id ? updatedProduct : p))
     );
   }, []);
 
-  const handleDeleteProduct = useCallback((productId: string) => {
+  const handleProductDelete = useCallback((productId: string) => {
     setPlacedProducts(prevProducts => prevProducts.filter(p => p.id !== productId));
   }, []);
 
@@ -57,8 +57,8 @@ export const FloorPlanner = () => {
       <div className="flex-1 relative">
         <EnhancedCanvasWorkspace
           placedProducts={placedProducts}
-          onUpdateProduct={handleUpdateProduct}
-          onDeleteProduct={handleDeleteProduct}
+          onProductUpdate={handleProductUpdate}
+          onProductDelete={handleProductDelete}
           roomPoints={roomPoints}
           setRoomPoints={setRoomPoints}
           doors={doors}

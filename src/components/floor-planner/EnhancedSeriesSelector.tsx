@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -75,8 +74,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
     
     if (parsedDimensions) {
       // Convert mm to canvas pixels using the scale
-      length = mmToCanvas(parsedDimensions.length, scale);
-      width = mmToCanvas(parsedDimensions.width, scale);
+      // Use width as length, depth as width for floor plan layout
+      length = mmToCanvas(parsedDimensions.width, scale);
+      width = mmToCanvas(parsedDimensions.depth, scale);
       height = mmToCanvas(parsedDimensions.height, scale);
     }
 
