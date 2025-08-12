@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,25 +35,25 @@ const WallCabinetConfigurator: React.FC<WallCabinetConfiguratorProps> = ({
 
       // Generate configurations based on variants
       const generatedConfigurations = variants.flatMap(variant => {
-        // Create configuration objects
+        // Create configuration objects - use fallback values for missing properties
         const rightHingeDoor = {
           id: `${variant.id}-right`,
           name: `${variant.name} - Right Hinged Door`,
-          dimensions: variant.dimensions, // Fixed: was 'dimension'
-          type: variant.door_type || 'Right Hinged',
-          finish: variant.finish_type || 'PC',
+          dimensions: variant.dimensions || 'Standard',
+          type: variant.type || 'Right Hinged',
+          finish: variant.finish || 'PC',
           variants: [variant],
-          availableFinishes: ['PC', 'SS'] // Added missing property
+          availableFinishes: ['PC', 'SS']
         };
 
         const leftHingeDoor = {
           id: `${variant.id}-left`,
           name: `${variant.name} - Left Hinged Door`,
-          dimensions: variant.dimensions, // Fixed: was 'dimension'
-          type: variant.door_type || 'Left Hinged',
-          finish: variant.finish_type || 'PC',
+          dimensions: variant.dimensions || 'Standard',
+          type: variant.type || 'Left Hinged',
+          finish: variant.finish || 'PC',
           variants: [variant],
-          availableFinishes: ['PC', 'SS'] // Added missing property
+          availableFinishes: ['PC', 'SS']
         };
 
         return [rightHingeDoor, leftHingeDoor];
