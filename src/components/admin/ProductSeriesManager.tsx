@@ -73,11 +73,11 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     category: dbProduct.category,
     dimensions: dbProduct.dimensions || '',
     modelPath: dbProduct.model_path || '',
-    thumbnail: dbProduct.thumbnail_path || '',
+    thumbnail: dbProduct.series_thumbnail_path || dbProduct.thumbnail_path || '',
     overviewImage: dbProduct.overview_image_path,
     seriesOverviewImage: dbProduct.series_overview_image_path,
     images: dbProduct.additional_images || [],
-    description: dbProduct.description || '',
+    description: dbProduct.editable_description || dbProduct.description || '',
     fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
     specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
     // Enhanced fields for Innosin Lab products
@@ -100,9 +100,8 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     cabinet_class: dbProduct.cabinet_class || 'standard',
     company_tags: dbProduct.company_tags || [],
     product_series: dbProduct.product_series,
-    // Series relationship fields
+    // Series relationship fields - note: these are not part of Product interface
     parent_series_id: dbProduct.parent_series_id,
-    is_series_parent: dbProduct.is_series_parent,
     // Admin editable fields
     editable_title: dbProduct.editable_title,
     editable_description: dbProduct.editable_description,

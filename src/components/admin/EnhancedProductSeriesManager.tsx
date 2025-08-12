@@ -74,11 +74,15 @@ const EnhancedProductSeriesManager = () => {
       category: dbProduct.category,
       dimensions: dbProduct.dimensions || '',
       modelPath: dbProduct.model_path || '',
-      thumbnail: dbProduct.thumbnail_path || '',
+      thumbnail: dbProduct.series_thumbnail_path || dbProduct.thumbnail_path || '',
+      overviewImage: dbProduct.overview_image_path,
+      seriesOverviewImage: dbProduct.series_overview_image_path,
       images: dbProduct.additional_images || [],
-      description: dbProduct.description || '',
+      description: dbProduct.editable_description || dbProduct.description || '',
       fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
       specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+      finishes: [], // Initialize empty array
+      variants: [], // Initialize empty array
       finish_type: dbProduct.finish_type,
       orientation: dbProduct.orientation,
       drawer_count: dbProduct.drawer_count || 0,

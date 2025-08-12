@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -76,4 +75,6 @@ export interface WallCabinetConfiguration {
   type: string;
   finish: string;
   price?: number;
+  variants: ProductVariant[];
+  availableFinishes: string[];
 }
