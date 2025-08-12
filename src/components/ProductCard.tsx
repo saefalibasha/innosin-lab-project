@@ -8,9 +8,10 @@ import { useNavigate } from 'react-router-dom';
 
 interface ProductCardProps {
   product: Product;
+  variant?: 'default' | 'series';
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'default' }) => {
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
@@ -21,6 +22,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const displayTag = product.company_tags && product.company_tags.length > 0 
     ? product.company_tags[0] 
     : product.category;
+
+  // Determine image container class based on variant
+  const imageContainerClass = variant === 'series' 
+    ? "aspect-[4/3] bg-gray-100 rounded-lg mb-4 overflow-hidden"
+    : "aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden";
 
   return (
     <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
@@ -34,7 +40,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </CardHeader>
       
       <CardContent className="flex-1 flex flex-col">
-        <div className="aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden">
+        <div className={imageContainerClass}>
           {product.thumbnail ? (
             <img
               src={product.thumbnail}
