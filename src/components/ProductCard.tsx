@@ -1,99 +1,75 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Package } from 'lucide-react';
 import { Product } from '@/types/product';
+import { useNavigate } from 'react-router-dom';
 
 interface ProductCardProps {
   product: Product;
-  onViewDetails?: () => void;
-  className?: string;
   variant?: 'default' | 'series';
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ 
-  product, 
-  onViewDetails, 
-  className = '',
-  variant = 'default'
-}) => {
-  const isSeriesVariant = variant === 'series';
-  
-  // Truncate description for series variant
-  const getDescription = () => {
-    if (!product.description) return '';
-    if (isSeriesVariant) {
-      return product.description.length > 80 
-        ? product.description.substring(0, 80) + '...'
-        : product.description;
-    }
-    return product.description;
+const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'default' }) => {
+  const navigate = useNavigate();
+
+  const handleViewDetails = () => {
+    navigate(`/products/${product.id}`);
   };
 
+  // Use company tag (first one) or fallback to category
+  const displayTag = product.company_tags && product.company_tags.length > 0 
+    ? product.company_tags[0] 
+    : product.category;
+
+  // Determine image container class based on variant
+  const imageContainerClass = variant === 'series' 
+    ? "aspect-[4/3] bg-gray-100 rounded-lg mb-4 overflow-hidden"
+    : "aspect-video bg-gray-100 rounded-lg mb-4 overflow-hidden";
+
   return (
-    <Card className={`group hover:shadow-lg transition-all duration-300 ${className}`}>
-      <CardContent className="p-0">
-        {/* Image Container */}
-        <div className={`relative overflow-hidden ${
-          isSeriesVariant ? 'h-48' : 'h-64'
-        } bg-gray-50 rounded-t-lg`}>
-          {product.thumbnail || product.seriesOverviewImage ? (
-            <img 
-              src={product.thumbnail || product.seriesOverviewImage || '/placeholder-image.jpg'}
+    <Card className="h-full flex flex-col hover:shadow-lg transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <Badge variant="outline">{displayTag}</Badge>
+        </div>
+        <CardTitle className="text-lg leading-tight">
+          {product.editable_title || product.name}
+        </CardTitle>
+      </CardHeader>
+      
+      <CardContent className="flex-1 flex flex-col">
+        <div className={imageContainerClass}>
+          {product.thumbnail ? (
+            <img
+              src={product.thumbnail}
               alt={product.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder-image.jpg';
-              }}
+              className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-100">
-              <Package className="h-16 w-16 text-gray-400" />
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              No image available
             </div>
           )}
-          
-          {/* Category Badge */}
-          <div className="absolute top-3 left-3">
-            <Badge variant="secondary" className="bg-white/90 text-gray-700">
-              {product.category}
-            </Badge>
-          </div>
         </div>
-
-        {/* Content */}
-        <div className={isSeriesVariant ? 'p-4' : 'p-6'}>
-          <h3 className={`font-semibold text-gray-900 mb-2 line-clamp-2 ${
-            isSeriesVariant ? 'text-lg' : 'text-xl'
-          }`}>
-            {product.name}
-          </h3>
-          
-          <p className={`text-gray-600 mb-4 line-clamp-2 ${
-            isSeriesVariant ? 'text-sm' : 'text-base'
-          }`}>
-            {getDescription()}
-          </p>
-
-          {/* Specifications */}
+        
+        <p className="text-sm text-muted-foreground mb-4 flex-1">
+          {product.editable_description || product.description || 'No description available'}
+        </p>
+        
+        <div className="space-y-2">
           {product.dimensions && (
-            <div className="mb-4">
-              <span className="text-sm text-gray-500">Dimensions: </span>
-              <span className="text-sm font-medium text-gray-700">{product.dimensions}</span>
-            </div>
+            <p className="text-xs text-muted-foreground">
+              <span className="font-medium">Dimensions:</span> {product.dimensions}
+            </p>
           )}
-
-          {/* Action Button */}
+          
           <Button 
-            variant="outline" 
-            className="w-full group-hover:bg-blue-50 group-hover:border-blue-200"
-            onClick={onViewDetails}
-            size={isSeriesVariant ? 'sm' : 'default'}
+            onClick={handleViewDetails}
+            className="w-full"
           >
             View Details
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </CardContent>

@@ -16,12 +16,10 @@ import {
   Edit,
   Eye,
   BarChart3,
-  AlertTriangle,
-  Search
+  AlertTriangle
 } from 'lucide-react';
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
-import VariantManager from './product-series/VariantManager';
 import { mockAdminSeries } from '@/data/mockProducts';
 import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
@@ -139,8 +137,6 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isVariantManagerOpen, setIsVariantManagerOpen] = useState(false);
-  const [selectedSeries, setSelectedSeries] = useState<any>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const { toast } = useToast();
 
@@ -273,35 +269,6 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
     onProductEdit?.(product);
   };
 
-  const handleViewVariants = (seriesData: ProductSeries) => {
-    console.log('Viewing variants for series:', seriesData.name);
-    const formattedSeries = {
-      id: seriesData.name,
-      name: seriesData.name,
-      variants: seriesData.products.map(product => ({
-        id: product.id,
-        product_code: product.product_code || '',
-        name: product.name,
-        category: product.category,
-        dimensions: product.dimensions,
-        door_type: product.door_type,
-        orientation: product.orientation,
-        finish_type: product.finish_type,
-        mounting_type: product.mounting_type,
-        mixing_type: product.mixing_type,
-        handle_type: product.handle_type,
-        emergency_shower_type: product.emergency_shower_type,
-        number_of_drawers: product.drawer_count,
-        description: product.description,
-        thumbnail_path: product.thumbnail_path,
-        model_path: product.model_path,
-        is_active: product.is_active ?? true
-      }))
-    };
-    setSelectedSeries(formattedSeries);
-    setIsVariantManagerOpen(true);
-  };
-
   const handleDeleteProduct = async (productId: string) => {
     try {
       const { error } = await supabase
@@ -387,6 +354,8 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                 <h4 className="font-medium text-amber-800">Development Mode Active</h4>
                 <p className="text-sm text-amber-700">
                   Currently displaying sample data. Database connection unavailable or no products configured.
+                  <br />
+                  <strong>To resolve:</strong> Run the database-fixes.sql script or ensure Supabase connection is working.
                 </p>
               </div>
             </div>
@@ -453,17 +422,6 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewVariants(seriesData);
-                        }}
-                      >
-                        <Search className="h-4 w-4 mr-1" />
-                        View Variants
-                      </Button>
                       <div className="text-right">
                         <div className="text-sm font-medium">
                           {Math.round(seriesData.completionRate)}% Complete
@@ -557,19 +515,6 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         product={editingProduct}
         onProductSaved={handleProductSaved}
       />
-
-      {/* Variant Manager Dialog */}
-      {selectedSeries && (
-        <VariantManager
-          open={isVariantManagerOpen}
-          onClose={() => {
-            setIsVariantManagerOpen(false);
-            setSelectedSeries(null);
-          }}
-          series={selectedSeries}
-          onVariantsUpdated={fetchProductSeries}
-        />
-      )}
     </div>
   );
 };
