@@ -10,7 +10,7 @@ export interface Product {
   description: string;
   fullDescription: string;
   specifications: any[];
-  finishes: string[];
+  finishes: ProductFinish[];
   variants: ProductVariant[];
   baseProductId?: string;
   
@@ -44,6 +44,9 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
   is_active?: boolean;
+  
+  // Series parent relationship
+  parent_series_id?: string;
 }
 
 export interface ProductVariant {
@@ -54,4 +57,23 @@ export interface ProductVariant {
   dimensions?: string;
   modelPath?: string;
   thumbnail?: string;
+  images?: string[];
+  size?: string;
+  type?: string;
+  orientation?: string;
+}
+
+export interface ProductFinish {
+  type: string;
+  name: string;
+  price?: string;
+}
+
+export interface WallCabinetConfiguration {
+  id: string;
+  name: string;
+  dimensions: string;
+  type: string;
+  finish: string;
+  price?: number;
 }

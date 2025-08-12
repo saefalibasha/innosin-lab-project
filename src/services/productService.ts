@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Product as ProductType } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
@@ -59,6 +58,8 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
     description: dbProduct.editable_description || dbProduct.description || '',
     fullDescription: dbProduct.editable_description || dbProduct.full_description || dbProduct.description || '',
     specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    finishes: [], // Initialize with empty array
+    variants: [], // Initialize with empty array
     finish_type: dbProduct.finish_type,
     orientation: dbProduct.orientation,
     drawer_count: dbProduct.drawer_count || 0,
@@ -81,9 +82,8 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
     // Add new image fields
     overviewImage: dbProduct.overview_image_path,
     seriesOverviewImage: dbProduct.series_overview_image_path,
-    // Compatibility fields
-    finishes: [],
-    variants: [],
+    // Series parent relationship
+    parent_series_id: dbProduct.parent_series_id,
     baseProductId: dbProduct.parent_series_id
   };
 };
