@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Card,
@@ -48,13 +49,8 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Switch } from "@/components/ui/switch"
-import { cn } from "@/lib/utils";
 
-interface DatabaseVariant extends Omit<DatabaseProduct, 'product_series'> {
-  product_series?: string;
-}
-
-const transformDatabaseVariant = (dbVariant: DatabaseVariant): Product => {
+const transformDatabaseVariant = (dbVariant: any): Product => {
   return {
     id: dbVariant.id,
     name: dbVariant.name,
@@ -81,7 +77,7 @@ const transformDatabaseVariant = (dbVariant: DatabaseVariant): Product => {
     handle_type: dbVariant.handle_type,
     emergency_shower_type: dbVariant.emergency_shower_type,
     company_tags: dbVariant.company_tags || [],
-    product_series: dbVariant.product_series || '', // Provide default empty string
+    product_series: dbVariant.product_series || '',
     parent_series_id: dbVariant.parent_series_id,
     created_at: dbVariant.created_at,
     updated_at: dbVariant.updated_at,
@@ -161,8 +157,7 @@ const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
     if (!selectedVariant) return;
 
     try {
-      const updatedVariantData: DatabaseProduct = {
-        ...selectedVariant,
+      const updatedVariantData: Partial<DatabaseProduct> = {
         name: values.name,
         product_code: values.product_code,
         dimensions: values.dimensions || null,
@@ -171,13 +166,13 @@ const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
         is_active: values.is_active,
       };
 
-      await updateProduct(selectedVariant.id, updatedVariantData);
+      const updatedProduct = await updateProduct(selectedVariant.id, updatedVariantData);
       
       // Optimistically update the local state
       setVariants(prevVariants =>
         prevVariants.map(v =>
           v.id === selectedVariant.id
-            ? transformDatabaseVariant(updatedVariantData)
+            ? transformDatabaseVariant(updatedProduct)
             : v
         )
       );

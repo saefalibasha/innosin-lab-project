@@ -1,4 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
+import { DatabaseProduct } from '@/types/supabase';
 
 export const fetchProductById = async (productId: string) => {
   const { data, error } = await supabase
@@ -28,4 +30,19 @@ export const fetchProductsByParentSeriesId = async (parentSeriesId: string) => {
   }
 
   return data || [];
+};
+
+export const updateProduct = async (productId: string, updates: Partial<DatabaseProduct>) => {
+  const { data, error } = await supabase
+    .from('products')
+    .update(updates)
+    .eq('id', productId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to update product: ${error.message}`);
+  }
+
+  return data;
 };

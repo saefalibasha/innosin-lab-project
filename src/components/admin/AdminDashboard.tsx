@@ -6,16 +6,9 @@ import {
   Users, 
   Settings, 
   BarChart3, 
-  FileText, 
-  Database,
-  Package,
-  MessageSquare,
-  BookOpen,
-  Upload,
-  Brain
+  Package
 } from 'lucide-react';
-import UserManagement from './UserManagement';
-import ProductSeriesManager from './product-series/ProductSeriesManager';
+import { ProductSeriesManager } from './product-series/ProductSeriesManager';
 
 export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -27,14 +20,10 @@ export const AdminDashboard = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
-          </TabsTrigger>
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            User Management
           </TabsTrigger>
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
@@ -52,17 +41,6 @@ export const AdminDashboard = () => {
               <CardContent>
                 <div className="text-2xl font-bold">1,234</div>
                 <p className="text-xs text-muted-foreground">+12% from last month</p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-                <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">89</div>
-                <p className="text-xs text-muted-foreground">+5% from last hour</p>
               </CardContent>
             </Card>
 
@@ -88,10 +66,6 @@ export const AdminDashboard = () => {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="users">
-          <UserManagement />
         </TabsContent>
 
         <TabsContent value="products">
