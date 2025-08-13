@@ -1,291 +1,366 @@
-
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Edit, Search, Package, Image, Box, Eye, Plus } from 'lucide-react';
-import { VariantFormDialog } from './VariantFormDialog';
+import { Label } from '@/components/ui/label';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { toast } from 'sonner';
+import { DatabaseProduct } from '@/types/supabase';
+import { Product } from '@/types/product';
+import { fetchProductsByParentSeriesId, updateProduct } from '@/api/products';
+import { useParams } from 'react-router-dom';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { z } from "zod"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import { Switch } from "@/components/ui/switch"
+import { cn } from "@/lib/utils";
 
-interface DatabaseVariant {
-  id: string;
-  product_code: string;
-  name: string;
-  category: string;
-  dimensions?: string;
-  door_type?: string;
-  orientation?: string;
-  finish_type?: string;
-  mounting_type?: string;
-  mixing_type?: string;
-  handle_type?: string;
-  emergency_shower_type?: string;
-  number_of_drawers?: number;
-  description?: string;
-  thumbnail_path?: string;
-  model_path?: string;
-  is_active: boolean;
+interface DatabaseVariant extends Omit<DatabaseProduct, 'product_series'> {
+  product_series?: string;
 }
 
-interface ProductSeries {
-  id: string;
-  name: string;
-  product_code: string;
-  product_series: string;
-  category: string;
-  description: string;
-  series_slug: string;
-  is_active: boolean;
-  variant_count: number;
-  completion_rate: number;
-  series_thumbnail_path?: string;
-  series_model_path?: string;
-  variants: DatabaseVariant[];
-}
+const transformDatabaseVariant = (dbVariant: DatabaseVariant): Product => {
+  return {
+    id: dbVariant.id,
+    name: dbVariant.name,
+    category: dbVariant.category,
+    dimensions: dbVariant.dimensions || '',
+    modelPath: dbVariant.model_path || '',
+    thumbnail: dbVariant.thumbnail_path || '',
+    images: dbVariant.additional_images || [],
+    description: dbVariant.description || '',
+    fullDescription: dbVariant.full_description || dbVariant.description || '',
+    specifications: Array.isArray(dbVariant.specifications) ? dbVariant.specifications : [],
+    finishes: [],
+    variants: [],
+    baseProductId: dbVariant.parent_series_id,
+    finish_type: dbVariant.finish_type,
+    orientation: dbVariant.orientation,
+    drawer_count: dbVariant.drawer_count || 0,
+    door_type: dbVariant.door_type,
+    product_code: dbVariant.product_code || '',
+    thumbnail_path: dbVariant.thumbnail_path,
+    model_path: dbVariant.model_path,
+    mounting_type: dbVariant.mounting_type,
+    mixing_type: dbVariant.mixing_type,
+    handle_type: dbVariant.handle_type,
+    emergency_shower_type: dbVariant.emergency_shower_type,
+    company_tags: dbVariant.company_tags || [],
+    product_series: dbVariant.product_series || '', // Provide default empty string
+    parent_series_id: dbVariant.parent_series_id,
+    created_at: dbVariant.created_at,
+    updated_at: dbVariant.updated_at,
+    is_active: dbVariant.is_active
+  };
+};
+
+const formSchema = z.object({
+  name: z.string().min(2, {
+    message: "Product name must be at least 2 characters.",
+  }),
+  product_code: z.string().min(2, {
+    message: "Product code must be at least 2 characters.",
+  }),
+  dimensions: z.string().optional(),
+  thumbnail_path: z.string().optional(),
+  model_path: z.string().optional(),
+  is_active: z.boolean().default(false),
+});
 
 interface VariantManagerProps {
-  open: boolean;
-  onClose: () => void;
-  series: ProductSeries;
-  onVariantsUpdated: () => void;
+  seriesId: string;
 }
 
-const VariantManager: React.FC<VariantManagerProps> = ({
-  open,
-  onClose,
-  series,
-  onVariantsUpdated
-}) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedVariant, setSelectedVariant] = useState<DatabaseVariant | null>(null);
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
+const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
+  const [variants, setVariants] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const filteredVariants = series.variants.filter(variant =>
-    variant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    variant.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    variant.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    variant.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      product_code: "",
+      dimensions: "",
+      thumbnail_path: "",
+      model_path: "",
+      is_active: false,
+    },
+  })
 
-  const formatValue = (value: any) => {
-    if (value === null || value === undefined || value === '') {
-      return '-';
+  useEffect(() => {
+    if (seriesId) {
+      fetchVariants(seriesId);
     }
-    return value.toString();
+  }, [seriesId]);
+
+  const fetchVariants = async (seriesId: string) => {
+    setLoading(true);
+    try {
+      const data = await fetchProductsByParentSeriesId(seriesId);
+      const transformedVariants = data.map(transformDatabaseVariant);
+      setVariants(transformedVariants);
+    } catch (error) {
+      console.error("Error fetching variants:", error);
+      toast.error("Failed to load variants.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleAddVariant = () => {
-    setSelectedVariant(null);
-    setIsCreating(true);
-    setIsFormDialogOpen(true);
-  };
-
-  const handleEditVariant = (variant: DatabaseVariant) => {
-    // Transform DatabaseVariant to match VariantFormDialog's Product interface
-    const transformedVariant = {
-      id: variant.id,
+  const handleEditClick = (variant: Product) => {
+    setSelectedVariant(variant);
+    form.reset({
       name: variant.name,
       product_code: variant.product_code,
-      category: variant.category,
-      product_series: series.product_series,
-      finish_type: variant.finish_type || 'PC',
-      is_active: variant.is_active,
-      thumbnail_path: variant.thumbnail_path,
-      model_path: variant.model_path,
       dimensions: variant.dimensions,
-      orientation: variant.orientation,
-      door_type: variant.door_type,
-      drawer_count: variant.number_of_drawers,
-      description: variant.description
-    };
-    
-    setSelectedVariant(transformedVariant as any);
-    setIsCreating(false);
-    setIsFormDialogOpen(true);
+      thumbnail_path: variant.thumbnail,
+      model_path: variant.modelPath,
+      is_active: variant.is_active || false,
+    });
+    setIsEditDialogOpen(true);
   };
 
-  const handleFormClose = () => {
-    setIsFormDialogOpen(false);
-    setSelectedVariant(null);
-    setIsCreating(false);
+  const handleUpdateVariant = async (values: z.infer<typeof formSchema>) => {
+    if (!selectedVariant) return;
+
+    try {
+      const updatedVariantData: DatabaseProduct = {
+        ...selectedVariant,
+        name: values.name,
+        product_code: values.product_code,
+        dimensions: values.dimensions || null,
+        thumbnail_path: values.thumbnail_path || null,
+        model_path: values.model_path || null,
+        is_active: values.is_active,
+      };
+
+      await updateProduct(selectedVariant.id, updatedVariantData);
+      
+      // Optimistically update the local state
+      setVariants(prevVariants =>
+        prevVariants.map(v =>
+          v.id === selectedVariant.id
+            ? transformDatabaseVariant(updatedVariantData)
+            : v
+        )
+      );
+
+      toast.success("Variant updated successfully!");
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating variant:", error);
+      toast.error("Failed to update variant.");
+    }
   };
 
-  const handleVariantSaved = () => {
-    onVariantsUpdated();
-    handleFormClose();
+  const handleDeleteVariant = async (variantId: string) => {
+    // Implement delete logic here
+    console.log(`Deleting variant with ID: ${variantId}`);
   };
+
+  if (loading) {
+    return <div>Loading variants...</div>;
+  }
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Manage Variants - {series.name}
-              </div>
-              <Button onClick={handleAddVariant} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Variant
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-hidden space-y-4">
-            {/* Summary Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Series Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">{series.variants.length}</div>
-                    <div className="text-sm text-muted-foreground">Total Variants</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {series.variants.filter(v => v.is_active).length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Active Variants</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {series.variants.filter(v => v.thumbnail_path && v.model_path).length}
-                    </div>
-                    <div className="text-sm text-muted-foreground">With Assets</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+    <Card>
+      <CardHeader>
+        <CardTitle>Manage Variants</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[200px]">Name</TableHead>
+                <TableHead>Code</TableHead>
+                <TableHead>Dimensions</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {variants.map((variant) => (
+                <TableRow key={variant.id}>
+                  <TableCell className="font-medium">{variant.name}</TableCell>
+                  <TableCell>{variant.product_code}</TableCell>
+                  <TableCell>{variant.dimensions}</TableCell>
+                  <TableCell>{variant.is_active ? 'Yes' : 'No'}</TableCell>
+                  <TableCell className="text-right">
+                    <Button variant="ghost" size="sm" onClick={() => handleEditClick(variant)}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-red-500">
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete this variant from our servers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDeleteVariant(variant.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </ScrollArea>
 
-            {/* Search */}
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Search variants..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+        {/* Edit Variant Dialog */}
+        <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Edit Variant</AlertDialogTitle>
+              <AlertDialogDescription>
+                Make changes to the variant details here. Click save when you're done.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleUpdateVariant)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Variant Name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <Badge variant="outline">
-                {filteredVariants.length} variants
-              </Badge>
-            </div>
-
-            {/* Variants Table */}
-            <Card className="flex-1 overflow-hidden">
-              <CardContent className="p-0 h-full">
-                <div className="overflow-auto h-full">
-                  <Table>
-                    <TableHeader className="sticky top-0 bg-background z-10">
-                      <TableRow>
-                        <TableHead>Product Code</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Dimensions</TableHead>
-                        <TableHead>Door Type</TableHead>
-                        <TableHead>Orientation</TableHead>
-                        <TableHead>Finish Type</TableHead>
-                        <TableHead>Mounting Type</TableHead>
-                        <TableHead>Mixing Type</TableHead>
-                        <TableHead>Handle Type</TableHead>
-                        <TableHead>Emergency Shower Type</TableHead>
-                        <TableHead>Drawers</TableHead>
-                        <TableHead>Assets</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredVariants.map((variant) => (
-                        <TableRow key={variant.id} className="hover:bg-muted/50">
-                          <TableCell className="font-mono text-sm">
-                            {variant.product_code}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            <div>
-                              <div>{variant.name}</div>
-                              {variant.description && (
-                                <div className="text-xs text-muted-foreground line-clamp-2">
-                                  {variant.description}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatValue(variant.category)}</TableCell>
-                          <TableCell>{formatValue(variant.dimensions)}</TableCell>
-                          <TableCell>{formatValue(variant.door_type)}</TableCell>
-                          <TableCell>{formatValue(variant.orientation)}</TableCell>
-                          <TableCell>{formatValue(variant.finish_type)}</TableCell>
-                          <TableCell>{formatValue(variant.mounting_type)}</TableCell>
-                          <TableCell>{formatValue(variant.mixing_type)}</TableCell>
-                          <TableCell>{formatValue(variant.handle_type)}</TableCell>
-                          <TableCell>{formatValue(variant.emergency_shower_type)}</TableCell>
-                          <TableCell>
-                            {variant.number_of_drawers ? `${variant.number_of_drawers}` : '-'}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className={`flex items-center gap-1 ${variant.thumbnail_path ? 'text-green-600' : 'text-red-600'}`}>
-                                <Image className="h-3 w-3" />
-                                <span className="text-xs">
-                                  {variant.thumbnail_path ? 'Yes' : 'No'}
-                                </span>
-                              </div>
-                              <div className={`flex items-center gap-1 ${variant.model_path ? 'text-green-600' : 'text-red-600'}`}>
-                                <Box className="h-3 w-3" />
-                                <span className="text-xs">
-                                  {variant.model_path ? 'Yes' : 'No'}
-                                </span>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={variant.is_active ? "default" : "secondary"}>
-                              {variant.is_active ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="sm">
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditVariant(variant)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Variant Form Dialog */}
-      <VariantFormDialog
-        open={isFormDialogOpen}
-        onClose={handleFormClose}
-        series={series}
-        variant={selectedVariant}
-        onVariantSaved={handleVariantSaved}
-      />
-    </>
+                <FormField
+                  control={form.control}
+                  name="product_code"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Product Code" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="dimensions"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dimensions</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Dimensions" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="thumbnail_path"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Thumbnail Path</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Thumbnail Path" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="model_path"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Model Path</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Model Path" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="is_active"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel>Active</FormLabel>
+                        <FormDescription>
+                          Set the variant as active or inactive.
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <AlertDialogFooter>
+                  <AlertDialogCancel onClick={() => setIsEditDialogOpen(false)}>Cancel</AlertDialogCancel>
+                  <Button type="submit">Save Changes</Button>
+                </AlertDialogFooter>
+              </form>
+            </Form>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
   );
 };
 

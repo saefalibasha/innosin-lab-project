@@ -8,15 +8,12 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ProductImageGallery from './ProductImageGallery';
-import ProductSpecifications from './ProductSpecifications';
-import ProductConfigurator from './ProductConfigurator';
-import ThreeDModelViewer from './3d/ThreeDModelViewer';
 import { ArrowLeft, Package, Info, FileText, Download } from 'lucide-react';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
 import { DatabaseProduct } from '@/types/supabase';
 import { Product } from '@/types/product';
 
-const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
+const transformDatabaseProduct = (dbProduct: any): Product => {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
@@ -33,7 +30,7 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
     baseProductId: dbProduct.parent_series_id,
     finish_type: dbProduct.finish_type,
     orientation: dbProduct.orientation,
-    drawer_count: dbProduct.number_of_drawers || 0,
+    drawer_count: dbProduct.drawer_count || 0,
     door_type: dbProduct.door_type,
     product_code: dbProduct.product_code || '',
     thumbnail_path: dbProduct.thumbnail_path,
@@ -57,7 +54,6 @@ const ProductDetail = () => {
   const [variants, setVariants] = useState<Product[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [modelViewerOpen, setModelViewerOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -151,26 +147,6 @@ const ProductDetail = () => {
               images={displayProduct.images}
               productName={displayProduct.name}
             />
-            
-            {/* 3D Model Viewer */}
-            {displayProduct.modelPath && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    3D Model
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Button 
-                    onClick={() => setModelViewerOpen(true)}
-                    className="w-full"
-                  >
-                    View 3D Model
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Right Column - Details */}
@@ -238,11 +214,34 @@ const ProductDetail = () => {
                   <CardTitle>Product Configuration</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ProductConfigurator
-                    variants={variants}
-                    selectedVariant={selectedVariant}
-                    onVariantSelect={handleVariantSelect}
-                  />
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="font-medium mb-2">Available Variants</h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        {variants.map((variant) => (
+                          <div
+                            key={variant.id}
+                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                              selectedVariant?.id === variant.id
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border hover:border-primary/50'
+                            }`}
+                            onClick={() => handleVariantSelect(variant)}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-medium">{variant.product_code}</p>
+                                <p className="text-sm text-muted-foreground">{variant.dimensions}</p>
+                              </div>
+                              {variant.finish_type && (
+                                <Badge variant="secondary">{variant.finish_type}</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             ) : (
@@ -266,7 +265,14 @@ const ProductDetail = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ProductSpecifications specifications={displayProduct.specifications} />
+                  <div className="space-y-2">
+                    {displayProduct.specifications.map((spec: any, index: number) => (
+                      <div key={index} className="flex justify-between">
+                        <span className="font-medium">{spec.name || spec.key}:</span>
+                        <span className="text-muted-foreground">{spec.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -288,14 +294,6 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
-
-      {/* 3D Model Viewer Modal */}
-      <ThreeDModelViewer
-        isOpen={modelViewerOpen}
-        onClose={() => setModelViewerOpen(false)}
-        modelPath={displayProduct.modelPath}
-        productName={displayProduct.name}
-      />
     </div>
   );
 };
