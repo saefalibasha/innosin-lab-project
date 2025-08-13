@@ -46,3 +46,30 @@ export const updateProduct = async (productId: string, updates: Partial<Database
 
   return data;
 };
+
+export const createProduct = async (productData: Partial<DatabaseProduct>) => {
+  const { data, error } = await supabase
+    .from('products')
+    .insert([productData])
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to create product: ${error.message}`);
+  }
+
+  return data;
+};
+
+export const deleteProduct = async (productId: string) => {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', productId);
+
+  if (error) {
+    throw new Error(`Failed to delete product: ${error.message}`);
+  }
+
+  return true;
+};

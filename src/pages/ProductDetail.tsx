@@ -61,14 +61,18 @@ const EnhancedProductDetail = () => {
   };
 
   const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
-  const isInnosinProduct = series?.category === 'Innosin Lab';
-  const isTallCabinetSeries = series?.product_series?.toLowerCase().includes('tall cabinet');
-  const isOpenRackSeries = series?.product_series?.toLowerCase().includes('open rack');
-  const isWallCabinetSeries = series?.product_series?.toLowerCase().includes('wall cabinet');
-  const isModularCabinetSeries = series?.product_series?.toLowerCase().includes('mobile cabinet') || 
-                                series?.product_series?.toLowerCase().includes('modular cabinet') ||
+  
+  // Determine configurator type based on product series
+  const seriesSlug = series?.series_slug || series?.product_series?.toLowerCase() || '';
+  const isTallCabinetSeries = seriesSlug.includes('tall cabinet');
+  const isOpenRackSeries = seriesSlug.includes('open rack');
+  const isWallCabinetSeries = seriesSlug.includes('wall cabinet');
+  const isModularCabinetSeries = seriesSlug.includes('mobile cabinet') || 
+                                seriesSlug.includes('modular cabinet') ||
                                 series?.name?.toLowerCase().includes('mobile cabinet') ||
                                 series?.name?.toLowerCase().includes('modular cabinet');
+  const isBroenLabSeries = seriesSlug.includes('broen-lab') || series?.category?.includes('Broen-Lab');
+  const isFumeHoodSeries = seriesSlug.includes('fume hood') || series?.name?.toLowerCase().includes('fume hood');
 
   const transformProduct = (dbProduct: any): Product => {
     return {
@@ -302,8 +306,8 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {/* Product Configuration */}
-            {isInnosinProduct && series.variants && series.variants.length > 0 && (
+            {/* Product Configuration - Show for ALL products with variants */}
+            {series.variants && series.variants.length > 0 && (
               <AnimatedSection animation="slide-in-right" delay={400}>
                 <Card className="shadow-sm">
                   <CardHeader className="pb-4">
@@ -375,6 +379,8 @@ const EnhancedProductDetail = () => {
                         selectedFinish={selectedFinish}
                         onFinishChange={setSelectedFinish}
                         groupByDimensions={true}
+                        seriesSlug={seriesSlug}
+                        showAllFields={isBroenLabSeries || isFumeHoodSeries}
                       />
                     )}
                   </CardContent>
@@ -443,8 +449,8 @@ const EnhancedProductDetail = () => {
                     </ul>
                   </div>
 
-                  {/* Current Selection - Show for modular cabinets too */}
-                  {(currentVariant || selectedModularConfiguration) && !isOpenRackSeries && (
+                  {/* Current Selection - Show for all variants */}
+                  {(currentVariant || selectedModularConfiguration) && (
                     <div className="bg-muted/30 p-4 rounded-lg border">
                       <h4 className="font-semibold text-foreground mb-3 text-base">Current Selection</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
@@ -491,6 +497,36 @@ const EnhancedProductDetail = () => {
                               <div>
                                 <span className="font-medium text-foreground">Orientation:</span>
                                 <p className="text-muted-foreground">{currentVariant.orientation}</p>
+                              </div>
+                            )}
+                            {currentVariant.mounting_type && (
+                              <div>
+                                <span className="font-medium text-foreground">Mounting Type:</span>
+                                <p className="text-muted-foreground">{currentVariant.mounting_type}</p>
+                              </div>
+                            )}
+                            {currentVariant.mixing_type && (
+                              <div>
+                                <span className="font-medium text-foreground">Mixing Type:</span>
+                                <p className="text-muted-foreground">{currentVariant.mixing_type}</p>
+                              </div>
+                            )}
+                            {currentVariant.handle_type && (
+                              <div>
+                                <span className="font-medium">Handle Type:</span>
+                                <p className="text-muted-foreground">{currentVariant.handle_type}</p>
+                              </div>
+                            )}
+                            {currentVariant.emergency_shower_type && (
+                              <div>
+                                <span className="font-medium text-foreground">Emergency Shower Type:</span>
+                                <p className="text-muted-foreground">{currentVariant.emergency_shower_type}</p>
+                              </div>
+                            )}
+                            {currentVariant.drawer_count && currentVariant.drawer_count > 0 && (
+                              <div>
+                                <span className="font-medium text-foreground">Number of Drawers:</span>
+                                <p className="text-muted-foreground">{currentVariant.drawer_count}</p>
                               </div>
                             )}
                           </>
