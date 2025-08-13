@@ -10,7 +10,7 @@ import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products'
 import { DatabaseProduct } from '@/types/supabase';
 import { Product } from '@/types/product';
 import ProductImageGallery from '@/components/ProductImageGallery';
-import VariantSelector from '@/components/product/VariantSelector';
+import { VariantSelector } from '@/components/product/VariantSelector';
 import { Model3DViewer } from '@/components/Model3DViewer';
 import { motion } from 'framer-motion';
 
