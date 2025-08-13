@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
-import VariantSelector from '@/components/product/VariantSelector';
+import { VariantSelector } from '@/components/product/VariantSelector';
 import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurator';
 import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
 import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurator';

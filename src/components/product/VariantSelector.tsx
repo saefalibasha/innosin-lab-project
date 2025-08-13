@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Ruler, Package, Eye, ShoppingCart } from 'lucide-react';
 import { Product } from '@/types/product';
+import { DatabaseProduct } from '@/types/supabase';
 import { supabase } from '@/integrations/supabase/client';
 
 interface VariantSelectorProps {
@@ -28,6 +29,44 @@ interface VariantFilters {
   emergency_shower_type?: string;
   number_of_drawers?: number;
 }
+
+// Helper function to convert DatabaseProduct to Product
+const convertDatabaseProductToProduct = (dbProduct: DatabaseProduct): Product => ({
+  id: dbProduct.id,
+  name: dbProduct.name,
+  category: dbProduct.category,
+  dimensions: dbProduct.dimensions || '',
+  modelPath: dbProduct.model_path || '',
+  thumbnail: dbProduct.thumbnail_path || '',
+  images: dbProduct.additional_images || [],
+  description: dbProduct.description || '',
+  fullDescription: dbProduct.full_description || '',
+  specifications: dbProduct.specifications || [],
+  finishes: [],
+  variants: [],
+  finish_type: dbProduct.finish_type,
+  orientation: dbProduct.orientation,
+  drawer_count: dbProduct.drawer_count,
+  door_type: dbProduct.door_type,
+  product_code: dbProduct.product_code,
+  thumbnail_path: dbProduct.thumbnail_path,
+  model_path: dbProduct.model_path,
+  mounting_type: dbProduct.mounting_type,
+  mixing_type: dbProduct.mixing_type,
+  handle_type: dbProduct.handle_type,
+  company_tags: dbProduct.company_tags,
+  product_series: dbProduct.product_series,
+  cabinet_class: dbProduct.cabinet_class,
+  emergency_shower_type: dbProduct.emergency_shower_type,
+  editable_title: dbProduct.editable_title,
+  editable_description: dbProduct.editable_description,
+  overviewImage: dbProduct.overview_image_path,
+  seriesOverviewImage: dbProduct.series_overview_image_path,
+  created_at: dbProduct.created_at,
+  updated_at: dbProduct.updated_at,
+  is_active: dbProduct.is_active,
+  parent_series_id: dbProduct.parent_series_id
+});
 
 export const VariantSelector: React.FC<VariantSelectorProps> = ({
   baseProduct,
@@ -97,10 +136,10 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       if (error) throw error;
 
-      const variantData = data || [];
+      const variantData = (data || []).map(convertDatabaseProductToProduct);
       setVariants(variantData);
       
-      // Extract available options
+      // Extract available options using correct property names
       const options = {
         dimensions: [...new Set(variantData.map(v => v.dimensions).filter(Boolean))],
         door_types: [...new Set(variantData.map(v => v.door_type).filter(Boolean))],
