@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Ruler, Package, Eye, ShoppingCart } from 'lucide-react';
 import { Product } from '@/types/product';
-import { DatabaseProduct } from '@/types/supabase';
 import { supabase } from '@/integrations/supabase/client';
 
 interface VariantSelectorProps {
@@ -30,42 +28,42 @@ interface VariantFilters {
   number_of_drawers?: number;
 }
 
-// Helper function to convert DatabaseProduct to Product
-const convertDatabaseProductToProduct = (dbProduct: DatabaseProduct): Product => ({
-  id: dbProduct.id,
-  name: dbProduct.name,
-  category: dbProduct.category,
-  dimensions: dbProduct.dimensions || '',
-  modelPath: dbProduct.model_path || '',
-  thumbnail: dbProduct.thumbnail_path || '',
-  images: dbProduct.additional_images || [],
-  description: dbProduct.description || '',
-  fullDescription: dbProduct.full_description || '',
-  specifications: dbProduct.specifications || [],
+// Helper function to convert database result to Product
+const convertDatabaseResultToProduct = (dbResult: any): Product => ({
+  id: dbResult.id,
+  name: dbResult.name,
+  category: dbResult.category,
+  dimensions: dbResult.dimensions || '',
+  modelPath: dbResult.model_path || '',
+  thumbnail: dbResult.thumbnail_path || '',
+  images: dbResult.additional_images || [],
+  description: dbResult.description || '',
+  fullDescription: dbResult.full_description || '',
+  specifications: dbResult.specifications || [],
   finishes: [],
   variants: [],
-  finish_type: dbProduct.finish_type,
-  orientation: dbProduct.orientation,
-  drawer_count: dbProduct.drawer_count,
-  door_type: dbProduct.door_type,
-  product_code: dbProduct.product_code,
-  thumbnail_path: dbProduct.thumbnail_path,
-  model_path: dbProduct.model_path,
-  mounting_type: dbProduct.mounting_type,
-  mixing_type: dbProduct.mixing_type,
-  handle_type: dbProduct.handle_type,
-  company_tags: dbProduct.company_tags,
-  product_series: dbProduct.product_series,
-  cabinet_class: dbProduct.cabinet_class,
-  emergency_shower_type: dbProduct.emergency_shower_type,
-  editable_title: dbProduct.editable_title,
-  editable_description: dbProduct.editable_description,
-  overviewImage: dbProduct.overview_image_path,
-  seriesOverviewImage: dbProduct.series_overview_image_path,
-  created_at: dbProduct.created_at,
-  updated_at: dbProduct.updated_at,
-  is_active: dbProduct.is_active,
-  parent_series_id: dbProduct.parent_series_id
+  finish_type: dbResult.finish_type,
+  orientation: dbResult.orientation,
+  drawer_count: dbResult.drawer_count || 0,
+  door_type: dbResult.door_type,
+  product_code: dbResult.product_code,
+  thumbnail_path: dbResult.thumbnail_path,
+  model_path: dbResult.model_path,
+  mounting_type: dbResult.mounting_type,
+  mixing_type: dbResult.mixing_type,
+  handle_type: dbResult.handle_type,
+  company_tags: dbResult.company_tags || [],
+  product_series: dbResult.product_series,
+  cabinet_class: dbResult.cabinet_class,
+  emergency_shower_type: dbResult.emergency_shower_type,
+  editable_title: dbResult.editable_title,
+  editable_description: dbResult.editable_description,
+  overviewImage: dbResult.overview_image_path,
+  seriesOverviewImage: dbResult.series_overview_image_path,
+  created_at: dbResult.created_at,
+  updated_at: dbResult.updated_at,
+  is_active: dbResult.is_active,
+  parent_series_id: dbResult.parent_series_id
 });
 
 export const VariantSelector: React.FC<VariantSelectorProps> = ({
@@ -136,7 +134,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
 
       if (error) throw error;
 
-      const variantData = (data || []).map(convertDatabaseProductToProduct);
+      const variantData = (data || []).map(convertDatabaseResultToProduct);
       setVariants(variantData);
       
       // Extract available options using correct property names
@@ -149,7 +147,7 @@ export const VariantSelector: React.FC<VariantSelectorProps> = ({
         mixing_types: [...new Set(variantData.map(v => v.mixing_type).filter(Boolean))],
         handle_types: [...new Set(variantData.map(v => v.handle_type).filter(Boolean))],
         emergency_shower_types: [...new Set(variantData.map(v => v.emergency_shower_type).filter(Boolean))],
-        drawer_counts: [...new Set(variantData.map(v => v.drawer_count).filter(d => d !== undefined && d !== null))]
+        drawer_counts: [...new Set(variantData.map(v => v.drawer_count).filter(d => d !== undefined && d !== null && d > 0))]
       };
       
       setAvailableOptions(options);
