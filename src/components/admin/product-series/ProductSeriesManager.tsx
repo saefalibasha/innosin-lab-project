@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { VariantManager } from './VariantManager';
-import ProductFormDialog from '../ProductFormDialog';
+import ProductSeriesFormDialog from '../ProductSeriesFormDialog';
 import ProductViewDialog from '../ProductViewDialog';
 
 interface ProductSeries {
@@ -224,18 +224,6 @@ export const ProductSeriesManager = () => {
     fetchProductSeries();
   };
 
-  // Convert ProductSeries to Product format for dialogs
-  const convertToProduct = (seriesItem: ProductSeries) => {
-    return {
-      id: seriesItem.id,
-      name: seriesItem.name,
-      category: seriesItem.category,
-      description: seriesItem.description,
-      thumbnail_path: seriesItem.thumbnail_path,
-      is_active: seriesItem.is_active
-    };
-  };
-
   if (loading) {
     return (
       <Card>
@@ -416,8 +404,8 @@ export const ProductSeriesManager = () => {
           onToggleStatus={handleToggleStatus}
         />
 
-        {/* Product Edit Dialog */}
-        <ProductFormDialog
+        {/* Product Edit Dialog - Now using ProductSeriesFormDialog */}
+        <ProductSeriesFormDialog
           isOpen={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
           product={selectedProduct}
@@ -425,7 +413,7 @@ export const ProductSeriesManager = () => {
         />
 
         {/* Add Series Dialog */}
-        <ProductFormDialog
+        <ProductSeriesFormDialog
           isOpen={isAddSeriesDialogOpen}
           onOpenChange={setIsAddSeriesDialogOpen}
           product={null}

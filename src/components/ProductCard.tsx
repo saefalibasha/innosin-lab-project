@@ -1,117 +1,105 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { memo } from 'react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Building2 } from 'lucide-react';
+import { Eye, Package, Info } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Product } from '@/types/product';
 import { LazyImage } from '@/components/LazyImage';
 
 interface ProductCardProps {
   product: Product;
-  variant?: 'product' | 'series';
-  className?: string;
+  variant?: 'series' | 'product';
+  onView?: (product: Product) => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ 
-  product, 
-  variant = 'product',
-  className = ''
-}) => {
+const ProductCard = memo(({ product, variant = 'product', onView }: ProductCardProps) => {
   const navigate = useNavigate();
 
-  const handleViewDetails = () => {
-    if (variant === 'series') {
-      navigate(`/products/${product.id}`);
+  const handleView = () => {
+    if (onView) {
+      onView(product);
+    } else if (variant === 'series') {
+      navigate(`/series/${product.id}`);
     } else {
       navigate(`/product/${product.id}`);
     }
   };
 
-  // Get the best available image
-  const getImageSrc = () => {
-    if (variant === 'series') {
-      return product.seriesOverviewImage || 
-             product.thumbnail || 
-             product.overviewImage || 
-             '/placeholder.svg';
-    }
-    return product.overviewImage || 
-           product.thumbnail || 
-           product.seriesOverviewImage || 
-           '/placeholder.svg';
-  };
+  const imageUrl = variant === 'series' 
+    ? (product.seriesOverviewImage || product.overviewImage || product.thumbnail)
+    : product.thumbnail;
+
+  const displayName = product.editable_title || product.name;
+  const displayDescription = product.editable_description || product.description;
 
   return (
-    <Card className={`group hover:shadow-lg transition-shadow duration-200 ${className}`}>
-      <CardHeader className="pb-3">
-        <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-3">
+    <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm hover:shadow-xl hover:-translate-y-1">
+      <CardHeader className="p-0">
+        <div className="aspect-square relative overflow-hidden rounded-t-lg bg-gradient-to-br from-muted/50 to-muted">
           <LazyImage
-            src={getImageSrc()}
-            alt={product.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            src={imageUrl || '/placeholder.svg'}
+            alt={displayName}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             fallback="/placeholder.svg"
-            placeholder="/placeholder.svg"
           />
-        </div>
-        
-        {/* Company Tags */}
-        {product.company_tags && product.company_tags.length > 0 && (
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <div className="flex flex-wrap gap-1">
-              {product.company_tags.map((tag, index) => (
-                <Badge 
-                  key={index} 
-                  variant="default" 
-                  className="text-xs bg-blue-500 hover:bg-blue-600 text-white"
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+          <div className="absolute top-4 left-4">
+            <Badge variant={variant === 'series' ? 'default' : 'secondary'} className="text-xs">
+              {variant === 'series' ? (
+                <>
+                  <Package className="w-3 h-3 mr-1" />
+                  Series
+                </>
+              ) : 'Product'}
+            </Badge>
           </div>
-        )}
-        
-        <CardTitle className="text-lg leading-tight line-clamp-2">
-          {product.name}
-        </CardTitle>
-        <CardDescription className="text-sm line-clamp-2">
-          {product.description}
-        </CardDescription>
+          {product.company_tags && product.company_tags.length > 0 && (
+            <div className="absolute top-4 right-4">
+              <Badge variant="outline" className="text-xs bg-background/80 backdrop-blur-sm">
+                {product.company_tags[0]}
+              </Badge>
+            </div>
+          )}
+        </div>
       </CardHeader>
       
-      <CardContent className="pt-0">
-        <div className="space-y-2 mb-4">
-          {product.dimensions && (
-            <div className="text-sm text-muted-foreground">
-              <strong>Dimensions:</strong> {product.dimensions}
-            </div>
-          )}
-          {product.product_code && (
-            <div className="text-sm text-muted-foreground">
-              <strong>Product Code:</strong> {product.product_code}
-            </div>
-          )}
-          {variant === 'series' && product.category && (
-            <Badge variant="outline" className="text-xs">
+      <CardContent className="p-6">
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-semibold text-lg leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+              {displayName}
+            </h3>
+            <p className="text-sm text-muted-foreground mt-1">
               {product.category}
-            </Badge>
-          )}
+            </p>
+          </div>
+          
+          <p className="text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+            {displayDescription || 'No description available'}
+          </p>
+          
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Info className="w-3 h-3" />
+              <span>{product.dimensions || 'Dimensions TBD'}</span>
+            </div>
+            
+            <Button 
+              size="sm" 
+              onClick={handleView}
+              className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+            >
+              <Eye className="w-4 h-4 mr-2" />
+              View {variant === 'series' ? 'Series' : 'Details'}
+            </Button>
+          </div>
         </div>
-        
-        <Button 
-          onClick={handleViewDetails}
-          className="w-full group-hover:shadow-md transition-shadow duration-200"
-          size="sm"
-        >
-          <Eye className="w-4 h-4 mr-2" />
-          View Details
-        </Button>
       </CardContent>
     </Card>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
 
 export default ProductCard;

@@ -1,50 +1,27 @@
 
-// Site Content Data
-// This file contains all the main text content for the website
-// To modify any text content, simply edit the values below
-
 export const siteContent = {
-  // Company Information
-  company: {
-    name: "Innosin Lab",
-    tagline: "Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.",
-    phone: "(+607) 863 3535",
+  companyName: "Innosin Lab",
+  tagline: "Laboratory Furniture Solutions",
+  description: "Professional laboratory furniture and equipment solutions for research and scientific environments.",
+  contact: {
     email: "info@innosinlab.com",
-    location: "Johor Bahru"
+    phone: "+1 (555) 123-4567",
+    address: "123 Innovation Drive, Science Park, CA 90210"
   },
-
-  // Navigation
-  navigation: {
-    home: "Home",
-    products: "Products",
-    floorPlanner: "Floor Planner",
-    about: "About Us",
-    blog: "Blog",
-    contact: "Contact",
-    rfqCart: "RFQ Cart"
-  },
-
-  // Footer
   footer: {
-    companyDescription: "Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.",
-    quickLinksTitle: "Quick Links",
-    stayConnectedTitle: "Stay Connected",
-    newsletterDescription: "Stay updated with our latest products and industry insights.",
-    subscribeButton: "Subscribe",
-    emailPlaceholder: "Enter your email",
-    copyrightText: "© 2024 Innosin Lab. All rights reserved.",
-    privacyPolicy: "Privacy Policy",
-    termsOfService: "Terms of Service"
+    copyright: "© 2025 Innosin Lab. All rights reserved.",
+    links: [
+      { name: "Privacy Policy", href: "/privacy" },
+      { name: "Terms of Service", href: "/terms" },
+      { name: "Contact", href: "/contact" }
+    ]
+  },
+  navigation: {
+    main: [
+      { name: "Products", href: "/products" },
+      { name: "Solutions", href: "/solutions" },
+      { name: "About", href: "/about" },
+      { name: "Contact", href: "/contact" }
+    ]
   }
 };
-
-/*
-HOW TO EDIT SITE CONTENT:
-1. To change company information: Edit the "company" section
-2. To change navigation labels: Edit the "navigation" section  
-3. To change footer content: Edit the "footer" section
-
-Example:
-To change the company name from "Innosin Lab" to "Your Company Name":
-- Change company.name: "Your Company Name"
-*/
