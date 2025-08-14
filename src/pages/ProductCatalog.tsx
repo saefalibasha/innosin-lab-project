@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,15 +9,14 @@ import { Search, Grid, List, AlertTriangle } from 'lucide-react';
 import { Product as ProductType } from '@/types/product';
 import ProductCard from '@/components/ProductCard';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { fetchProductSeriesFromDatabase, fetchCompanyTagsFromDatabase, searchProductSeries, subscribeToProductUpdates } from '@/services/productService';
+import { optimizedProductService } from '@/services/optimizedProductService';
+import { useOptimizedRealtime } from '@/hooks/useOptimizedRealtime';
 import { useToast } from '@/hooks/use-toast';
-import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useDebounce } from '@/hooks/usePerformanceOptimization';
 
 const ITEMS_PER_PAGE = 12;
 
 const ProductCatalog = () => {
-  const { trackMetric } = usePerformanceMonitor('ProductCatalog');
   const [productSeries, setProductSeries] = useState<ProductType[]>([]);
   const [companyTags, setCompanyTags] = useState<string[]>([]);
   const [filteredSeries, setFilteredSeries] = useState<ProductType[]>([]);
@@ -33,18 +32,17 @@ const ProductCatalog = () => {
   // Debounce search term to avoid excessive API calls
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  const loadData = useCallback(async () => {
-    const endTrack = trackMetric('loadData');
+  const loadData = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔄 Starting to load product catalog data...');
+      console.log('🔄 Loading product catalog data...');
       
       const startTime = performance.now();
       
       const [seriesData, companyTagsData] = await Promise.all([
-        fetchProductSeriesFromDatabase(),
-        fetchCompanyTagsFromDatabase()
+        optimizedProductService.getProductSeries(forceRefresh),
+        optimizedProductService.getCompanyTags(forceRefresh)
       ]);
 
       const loadTime = performance.now() - startTime;
@@ -72,9 +70,8 @@ const ProductCatalog = () => {
       });
     } finally {
       setLoading(false);
-      endTrack();
     }
-  }, [toast, trackMetric]);
+  }, [toast]);
 
   useEffect(() => {
     loadData();
@@ -88,43 +85,34 @@ const ProductCatalog = () => {
     }
   }, [searchParams, companyTags]);
 
-  // Set up real-time updates with cleanup
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    
-    try {
-      unsubscribe = subscribeToProductUpdates(() => {
-        console.log('🔄 Products updated, refreshing...');
-        loadData();
-      });
-    } catch (err) {
-      console.error('Failed to set up real-time updates:', err);
-    }
-
-    return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
+  // Set up optimized real-time updates
+  const handleRealtimeUpdate = useCallback(() => {
+    console.log('🔄 Real-time update received, refreshing data...');
+    loadData(true);
   }, [loadData]);
 
-  // Optimized filtering with debounced search
+  useOptimizedRealtime({
+    onUpdate: handleRealtimeUpdate,
+    enabled: true,
+    debounceMs: 2000
+  });
+
+  // Optimized filtering with memoization
   useEffect(() => {
     const filterSeries = async () => {
-      const endTrack = trackMetric('filterSeries');
       try {
         let filtered = productSeries;
         console.log(`🔍 Filtering ${productSeries.length} series - search: "${debouncedSearchTerm}", company: "${selectedCompany}"`);
 
-        // If there's a search term, use the search function
+        // If there's a search term, use the optimized search
         if (debouncedSearchTerm) {
           try {
             const searchStart = performance.now();
-            filtered = await searchProductSeries(debouncedSearchTerm);
+            filtered = await optimizedProductService.searchProductSeries(debouncedSearchTerm);
             const searchTime = performance.now() - searchStart;
             console.log(`🔍 Search completed in ${searchTime.toFixed(2)}ms - found ${filtered.length} results`);
           } catch (err) {
-            console.warn('Search API failed, falling back to client-side filtering:', err);
+            console.warn('Search failed, using client-side filtering:', err);
             // Fall back to client-side filtering
             const term = debouncedSearchTerm.toLowerCase();
             filtered = productSeries.filter(series =>
@@ -147,20 +135,18 @@ const ProductCatalog = () => {
         }
 
         setFilteredSeries(filtered);
-        setCurrentPage(1); // Reset to first page when filters change
+        setCurrentPage(1);
         console.log(`✅ Filtering complete - showing ${filtered.length} series`);
       } catch (err) {
         console.error('❌ Error during filtering:', err);
         setError('Failed to filter products');
-      } finally {
-        endTrack();
       }
     };
 
     filterSeries();
-  }, [productSeries, debouncedSearchTerm, selectedCompany, trackMetric]);
+  }, [productSeries, debouncedSearchTerm, selectedCompany]);
 
-  // Paginated results
+  // Memoized paginated results
   const paginatedSeries = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
@@ -170,6 +156,9 @@ const ProductCatalog = () => {
   }, [filteredSeries, currentPage]);
 
   const totalPages = Math.ceil(filteredSeries.length / ITEMS_PER_PAGE);
+
+  // Memoized cache stats for debugging
+  const cacheStats = useMemo(() => optimizedProductService.getCacheStats(), [filteredSeries]);
 
   if (loading) {
     return (
@@ -193,7 +182,7 @@ const ProductCatalog = () => {
               <AlertTriangle className="w-12 h-12 mx-auto text-destructive mb-4" />
               <h3 className="text-lg font-semibold mb-2">Unable to Load Products</h3>
               <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={loadData}>Try Again</Button>
+              <Button onClick={() => loadData(true)}>Try Again</Button>
             </CardContent>
           </Card>
         </div>
@@ -209,6 +198,11 @@ const ProductCatalog = () => {
           <p className="text-muted-foreground">
             Browse our complete collection of laboratory product series
           </p>
+          {process.env.NODE_ENV === 'development' && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Cache: {cacheStats.size} items, {cacheStats.pendingRequests} pending
+            </p>
+          )}
         </div>
 
         {/* Search and Filter Controls */}
@@ -284,11 +278,12 @@ const ProductCatalog = () => {
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
               : "space-y-4"
             }>
-              {paginatedSeries.map((series) => (
+              {paginatedSeries.map((series, index) => (
                 <ProductCard
                   key={series.id}
                   product={series}
                   variant="series"
+                  priority={index < 6} // Prioritize first 6 images
                 />
               ))}
             </div>

@@ -6,15 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Eye, Package, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Product } from '@/types/product';
-import { LazyImage } from '@/components/LazyImage';
+import OptimizedImage from '@/components/OptimizedImage';
 
 interface ProductCardProps {
   product: Product;
   variant?: 'series' | 'product';
   onView?: (product: Product) => void;
+  priority?: boolean;
 }
 
-const ProductCard = memo(({ product, variant = 'product', onView }: ProductCardProps) => {
+const ProductCard = memo(({ 
+  product, 
+  variant = 'product', 
+  onView, 
+  priority = false 
+}: ProductCardProps) => {
   const navigate = useNavigate();
 
   const handleView = () => {
@@ -38,11 +44,12 @@ const ProductCard = memo(({ product, variant = 'product', onView }: ProductCardP
     <Card className="group hover:shadow-lg transition-all duration-300 border-0 shadow-sm hover:shadow-xl hover:-translate-y-1">
       <CardHeader className="p-0">
         <div className="aspect-square relative overflow-hidden rounded-t-lg bg-gradient-to-br from-muted/50 to-muted">
-          <LazyImage
+          <OptimizedImage
             src={imageUrl || '/placeholder.svg'}
             alt={displayName}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full group-hover:scale-105 transition-transform duration-300"
             fallback="/placeholder.svg"
+            priority={priority}
           />
           <div className="absolute top-4 left-4">
             <Badge variant={variant === 'series' ? 'default' : 'secondary'} className="text-xs">
