@@ -121,8 +121,6 @@ class OptimizedProductService {
           series_overview_image_path,
           overview_image_path,
           thumbnail_path,
-          editable_title,
-          editable_description,
           created_at,
           updated_at,
           is_active,
@@ -146,8 +144,8 @@ class OptimizedProductService {
           series_overview_image_path: item.series_overview_image_path,
           overview_image_path: item.overview_image_path,
           thumbnail_path: item.thumbnail_path,
-          editable_title: item.editable_title,
-          editable_description: item.editable_description,
+          editable_title: item.name, // Use name as fallback
+          editable_description: item.description, // Use description as fallback
           created_at: item.created_at,
           updated_at: item.updated_at,
           is_active: item.is_active,
@@ -233,8 +231,6 @@ class OptimizedProductService {
           series_overview_image_path,
           overview_image_path,
           thumbnail_path,
-          editable_title,
-          editable_description,
           product_code,
           created_at,
           updated_at,
@@ -243,7 +239,7 @@ class OptimizedProductService {
         `)
         .eq('is_series_parent', true)
         .eq('is_active', true)
-        .or(`name.ilike.%${query}%,description.ilike.%${query}%,product_code.ilike.%${query}%,editable_title.ilike.%${query}%,editable_description.ilike.%${query}%,product_series.ilike.%${query}%`)
+        .or(`name.ilike.%${query}%,description.ilike.%${query}%,product_code.ilike.%${query}%,product_series.ilike.%${query}%`)
         .order('series_order');
 
       if (error) throw error;
@@ -260,8 +256,8 @@ class OptimizedProductService {
           series_overview_image_path: item.series_overview_image_path,
           overview_image_path: item.overview_image_path,
           thumbnail_path: item.thumbnail_path,
-          editable_title: item.editable_title,
-          editable_description: item.editable_description,
+          editable_title: item.name, // Use name as fallback
+          editable_description: item.description, // Use description as fallback
           product_code: item.product_code,
           created_at: item.created_at,
           updated_at: item.updated_at,
