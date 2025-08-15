@@ -134,28 +134,52 @@ class OptimizedProductService {
 
       if (error) throw error;
 
-      const transformed = (data || []).map(item => transformDatabaseProduct({
-        ...item,
-        dimensions: '',
-        door_type: null,
-        orientation: '',
-        finish_type: '',
-        mounting_type: null,
-        mixing_type: null,
-        handle_type: null,
-        emergency_shower_type: null,
-        drawer_count: 0,
-        cabinet_class: 'standard',
-        product_code: '',
-        model_path: '',
-        additional_images: [],
-        full_description: '',
-        specifications: [],
-        variant_type: 'standard',
-        variant_order: 0,
-        parent_series_id: null,
-        series_model_path: null
-      } as DatabaseProduct));
+      const transformed = (data || []).map(item => {
+        const dbProduct: DatabaseProduct = {
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          description: item.description,
+          product_series: item.product_series,
+          company_tags: item.company_tags,
+          series_thumbnail_path: item.series_thumbnail_path,
+          series_overview_image_path: item.series_overview_image_path,
+          overview_image_path: item.overview_image_path,
+          thumbnail_path: item.thumbnail_path,
+          editable_title: item.editable_title,
+          editable_description: item.editable_description,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          is_active: item.is_active,
+          series_order: item.series_order,
+          // Default values for required fields
+          dimensions: '',
+          door_type: null,
+          orientation: '',
+          finish_type: '',
+          mounting_type: null,
+          mixing_type: null,
+          handle_type: null,
+          emergency_shower_type: null,
+          drawer_count: 0,
+          cabinet_class: 'standard',
+          product_code: '',
+          model_path: '',
+          additional_images: [],
+          full_description: '',
+          specifications: [],
+          variant_type: 'standard',
+          variant_order: 0,
+          parent_series_id: null,
+          series_model_path: null,
+          is_series_parent: true,
+          inherits_series_assets: false,
+          target_variant_count: null,
+          keywords: []
+        };
+        
+        return transformDatabaseProduct(dbProduct);
+      });
 
       cache.set(cacheKey, transformed, 5 * 60 * 1000); // 5 minutes
       return transformed;
@@ -224,27 +248,52 @@ class OptimizedProductService {
 
       if (error) throw error;
 
-      const transformed = (data || []).map(item => transformDatabaseProduct({
-        ...item,
-        dimensions: '',
-        door_type: null,
-        orientation: '',
-        finish_type: '',
-        mounting_type: null,
-        mixing_type: null,
-        handle_type: null,
-        emergency_shower_type: null,
-        drawer_count: 0,
-        cabinet_class: 'standard',
-        model_path: '',
-        additional_images: [],
-        full_description: '',
-        specifications: [],
-        variant_type: 'standard',
-        variant_order: 0,
-        parent_series_id: null,
-        series_model_path: null
-      } as DatabaseProduct));
+      const transformed = (data || []).map(item => {
+        const dbProduct: DatabaseProduct = {
+          id: item.id,
+          name: item.name,
+          category: item.category,
+          description: item.description,
+          product_series: item.product_series,
+          company_tags: item.company_tags,
+          series_thumbnail_path: item.series_thumbnail_path,
+          series_overview_image_path: item.series_overview_image_path,
+          overview_image_path: item.overview_image_path,
+          thumbnail_path: item.thumbnail_path,
+          editable_title: item.editable_title,
+          editable_description: item.editable_description,
+          product_code: item.product_code,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          is_active: item.is_active,
+          series_order: item.series_order,
+          // Default values for required fields
+          dimensions: '',
+          door_type: null,
+          orientation: '',
+          finish_type: '',
+          mounting_type: null,
+          mixing_type: null,
+          handle_type: null,
+          emergency_shower_type: null,
+          drawer_count: 0,
+          cabinet_class: 'standard',
+          model_path: '',
+          additional_images: [],
+          full_description: '',
+          specifications: [],
+          variant_type: 'standard',
+          variant_order: 0,
+          parent_series_id: null,
+          series_model_path: null,
+          is_series_parent: true,
+          inherits_series_assets: false,
+          target_variant_count: null,
+          keywords: []
+        };
+        
+        return transformDatabaseProduct(dbProduct);
+      });
 
       cache.set(cacheKey, transformed, 2 * 60 * 1000); // 2 minutes for search
       return transformed;
