@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Eye, Building2 } from 'lucide-react';
 import { Product } from '@/types/product';
-import { LazyImage } from '@/components/LazyImage';
+import { OptimizedOverviewImage } from '@/components/common/OptimizedOverviewImage';
 
 interface ProductGridProps {
   products: Product[];
@@ -51,10 +51,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({
         <Card key={product.id} className="group hover:shadow-lg transition-shadow">
           <CardHeader className="pb-3">
             <div className="aspect-square bg-muted rounded-lg overflow-hidden mb-3">
-              <LazyImage
+              <OptimizedOverviewImage
                 src={product.seriesOverviewImage || product.overviewImage || product.thumbnail || '/placeholder.svg'}
                 alt={product.name}
                 className="w-full h-full object-cover"
+                showCompanyTag={false}
               />
             </div>
             

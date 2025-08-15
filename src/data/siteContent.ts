@@ -1,48 +1,50 @@
 
+// Site Content Data
+// This file contains all the main text content for the website
+// To modify any text content, simply edit the values below
+
 export const siteContent = {
-  companyName: "Innosin Lab",
-  tagline: "Laboratory Furniture Solutions",
-  description: "Professional laboratory furniture and equipment solutions for research and scientific environments.",
-  contact: {
-    email: "info@innosinlab.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Innovation Drive, Science Park, CA 90210"
-  },
+  // Company Information
   company: {
     name: "Innosin Lab",
-    location: "123 Innovation Drive, Science Park, CA 90210",
-    phone: "+1 (555) 123-4567",
-    email: "info@innosinlab.com"
+    tagline: "Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.",
+    phone: "(+607) 863 3535",
+    email: "info@innosinlab.com",
+    location: "Johor Bahru"
   },
-  footer: {
-    copyright: "© 2025 Innosin Lab. All rights reserved.",
-    copyrightText: "© 2025 Innosin Lab. All rights reserved.",
-    companyDescription: "Professional laboratory furniture and equipment solutions for research and scientific environments.",
-    quickLinksTitle: "Quick Links",
-    stayConnectedTitle: "Stay Connected",
-    newsletterDescription: "Subscribe to our newsletter for the latest updates on laboratory furniture solutions and innovations.",
-    emailPlaceholder: "Enter your email",
-    subscribeButton: "Subscribe",
-    privacyPolicy: "Privacy Policy",
-    termsOfService: "Terms of Service",
-    links: [
-      { name: "Privacy Policy", href: "/privacy" },
-      { name: "Terms of Service", href: "/terms" },
-      { name: "Contact", href: "/contact" }
-    ]
-  },
+
+  // Navigation
   navigation: {
-    main: [
-      { name: "Products", href: "/products" },
-      { name: "Solutions", href: "/solutions" },
-      { name: "About", href: "/about" },
-      { name: "Contact", href: "/contact" }
-    ],
     home: "Home",
     products: "Products",
     floorPlanner: "Floor Planner",
-    about: "About",
+    about: "About Us",
     blog: "Blog",
-    contact: "Contact"
+    contact: "Contact",
+    rfqCart: "RFQ Cart"
+  },
+
+  // Footer
+  footer: {
+    companyDescription: "Leading provider of laboratory furniture, equipment, and design solutions in Singapore and beyond.",
+    quickLinksTitle: "Quick Links",
+    stayConnectedTitle: "Stay Connected",
+    newsletterDescription: "Stay updated with our latest products and industry insights.",
+    subscribeButton: "Subscribe",
+    emailPlaceholder: "Enter your email",
+    copyrightText: "© 2024 Innosin Lab. All rights reserved.",
+    privacyPolicy: "Privacy Policy",
+    termsOfService: "Terms of Service"
   }
 };
+
+/*
+HOW TO EDIT SITE CONTENT:
+1. To change company information: Edit the "company" section
+2. To change navigation labels: Edit the "navigation" section  
+3. To change footer content: Edit the "footer" section
+
+Example:
+To change the company name from "Innosin Lab" to "Your Company Name":
+- Change company.name: "Your Company Name"
+*/

@@ -1,475 +1,709 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Ruler, Package, Eye, ShoppingCart } from 'lucide-react';
-import { Product } from '@/types/product';
-import { supabase } from '@/integrations/supabase/client';
+import DoorTypeSelector from './DoorTypeSelector';
 
-interface VariantSelectorProps {
-  baseProduct: Product;
-  seriesSlug?: string;
-  onVariantSelect: (variant: Product) => void;
-  onAddToRFQ: (product: Product) => void;
-}
-
-interface VariantFilters {
-  dimensions?: string;
+interface Variant {
+  id: string;
+  name: string;
+  product_code: string;
+  dimensions: string;
+  orientation: string;
   door_type?: string;
-  orientation?: string;
-  finish_type?: string;
+  variant_type: string;
+  drawer_count?: number;
+  finish_type: string;
+  emergency_shower_type?: string;
   mounting_type?: string;
   mixing_type?: string;
   handle_type?: string;
-  emergency_shower_type?: string;
-  number_of_drawers?: number;
+  cabinet_class?: string;
+  series_slug?: string;
 }
 
-// Helper function to convert database result to Product
-const convertDatabaseResultToProduct = (dbResult: any): Product => ({
-  id: dbResult.id,
-  name: dbResult.name,
-  category: dbResult.category,
-  dimensions: dbResult.dimensions || '',
-  modelPath: dbResult.model_path || '',
-  thumbnail: dbResult.thumbnail_path || '',
-  images: dbResult.additional_images || [],
-  description: dbResult.description || '',
-  fullDescription: dbResult.full_description || '',
-  specifications: dbResult.specifications || [],
-  finishes: [],
-  variants: [],
-  finish_type: dbResult.finish_type,
-  orientation: dbResult.orientation,
-  drawer_count: dbResult.drawer_count || 0,
-  door_type: dbResult.door_type,
-  product_code: dbResult.product_code,
-  thumbnail_path: dbResult.thumbnail_path,
-  model_path: dbResult.model_path,
-  mounting_type: dbResult.mounting_type,
-  mixing_type: dbResult.mixing_type,
-  handle_type: dbResult.handle_type,
-  company_tags: dbResult.company_tags || [],
-  product_series: dbResult.product_series,
-  cabinet_class: dbResult.cabinet_class,
-  emergency_shower_type: dbResult.emergency_shower_type,
-  editable_title: dbResult.editable_title,
-  editable_description: dbResult.editable_description,
-  overviewImage: dbResult.overview_image_path,
-  seriesOverviewImage: dbResult.series_overview_image_path,
-  created_at: dbResult.created_at,
-  updated_at: dbResult.updated_at,
-  is_active: dbResult.is_active,
-  parent_series_id: dbResult.parent_series_id
-});
+interface VariantSelectorProps {
+  variants: Variant[];
+  selectedVariantId: string;
+  onVariantChange: (variantId: string) => void;
+  selectedFinish: string;
+  onFinishChange: (finish: string) => void;
+  groupByDimensions?: boolean;
+  seriesSlug?: string;
+}
 
-export const VariantSelector: React.FC<VariantSelectorProps> = ({
-  baseProduct,
-  seriesSlug,
-  onVariantSelect,
-  onAddToRFQ
+const VariantSelector: React.FC<VariantSelectorProps> = ({
+  variants,
+  selectedVariantId,
+  onVariantChange,
+  selectedFinish,
+  onFinishChange,
+  groupByDimensions = false,
+  seriesSlug = ""
 }) => {
-  const [variants, setVariants] = useState<Product[]>([]);
-  const [filteredVariants, setFilteredVariants] = useState<Product[]>([]);
-  const [filters, setFilters] = useState<VariantFilters>({});
-  const [availableOptions, setAvailableOptions] = useState<{
-    dimensions: string[];
-    door_types: string[];
-    orientations: string[];
-    finish_types: string[];
-    mounting_types: string[];
-    mixing_types: string[];
-    handle_types: string[];
-    emergency_shower_types: string[];
-    drawer_counts: number[];
-  }>({
-    dimensions: [],
-    door_types: [],
-    orientations: [],
-    finish_types: [],
-    mounting_types: [],
-    mixing_types: [],
-    handle_types: [],
-    emergency_shower_types: [],
-    drawer_counts: []
-  });
-  const [loading, setLoading] = useState(true);
+  // Grouping by seriesSlug for custom logic
+  const slug = seriesSlug?.toLowerCase();
 
-  useEffect(() => {
-    fetchVariants();
-  }, [baseProduct.id, seriesSlug]);
+  if (!variants || variants.length === 0) {
+    return (
+      <div className="text-center p-4 text-muted-foreground">
+        No variants available for this product.
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    applyFilters();
-  }, [filters, variants]);
+  // Helper function to extract length from dimensions string
+  const extractLength = (dimensions: string): number => {
+    const match = dimensions?.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  };
 
-  const fetchVariants = async () => {
-    try {
-      setLoading(true);
-      
-      let query = supabase
-        .from('products')
-        .select('*')
-        .eq('is_series_parent', false);
+  // Custom grouping logic for Safe Aire II Fume Hoods
+  let groupedVariants: Record<string, Variant[]> = {};
+  if (slug === 'safe-aire-ii-fume-hoods') {
+    groupedVariants = variants.reduce((acc, v) => {
+      const key = v.dimensions || v.name || v.product_code;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(v);
+      return acc;
+    }, {} as Record<string, Variant[]>);
+  }
+  // Custom grouping for Broen-Lab UNIFLEX Taps Series
+  if (slug === 'single-way-taps' || slug === 'broen-lab-uniflex-taps-series') {
+    groupedVariants = variants.reduce((acc, v) => {
+      const key =
+        [v.mixing_type, v.handle_type].filter(Boolean).join(' | ') ||
+        v.name ||
+        v.product_code;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(v);
+      return acc;
+    }, {} as Record<string, Variant[]>);
+  }
+  // Custom grouping for Broen-Lab Emergency Shower Series
+  if (
+    slug === 'broen-lab-emergency-shower-systems' ||
+    slug === 'broen-lab-emergency-shower-series' ||
+    slug === 'emergency-shower'
+  ) {
+    groupedVariants = variants.reduce((acc, v) => {
+      const key =
+        [v.emergency_shower_type, v.mounting_type]
+          .filter(Boolean)
+          .join(' | ') || v.name || v.product_code;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(v);
+      return acc;
+    }, {} as Record<string, Variant[]>);
+  }
 
-      // Use seriesSlug for special grouping logic
-      if (seriesSlug) {
-        if (seriesSlug.includes('broen-lab-emergency-shower')) {
-          query = query.eq('category', 'Broen-Lab Emergency Shower');
-        } else if (seriesSlug.includes('broen-lab-uniflex')) {
-          query = query.eq('category', 'Broen-Lab UNIFLEX Taps');
-        } else if (seriesSlug.includes('fume-hood')) {
-          query = query.or('category.eq.Safe Aire II Fume Hoods,category.eq.Fume Hood - NOCE Series');
-        } else {
-          query = query.eq('parent_series_id', baseProduct.id);
-        }
-      } else {
-        query = query.eq('parent_series_id', baseProduct.id);
-      }
+  // Get unique values for each selector type
+  const emergencyShowerTypes = [
+    ...new Set(variants.map((v) => v.emergency_shower_type).filter(Boolean)),
+  ].sort();
+  const mountingTypes = [
+    ...new Set(variants.map((v) => v.mounting_type).filter(Boolean)),
+  ].sort();
+  const mixingTypes = [
+    ...new Set(variants.map((v) => v.mixing_type).filter(Boolean)),
+  ].sort();
+  const handleTypes = [
+    ...new Set(variants.map((v) => v.handle_type).filter(Boolean)),
+  ].sort();
+  const cabinetClasses = [
+    ...new Set(variants.map((v) => v.cabinet_class).filter(Boolean)),
+  ].sort();
+  const dimensions = [
+    ...new Set(variants.map((v) => v.dimensions).filter(Boolean)),
+  ].sort((a, b) => extractLength(a) - extractLength(b));
+  const doorTypes = [
+    ...new Set(variants.map((v) => v.door_type).filter(Boolean)),
+  ].sort();
+  const orientations = [
+    ...new Set(variants.map((v) => v.orientation).filter((o) => o && o !== 'None')),
+  ].sort();
+  const drawerCounts = [
+    ...new Set(variants.map((v) => v.drawer_count).filter(Boolean)),
+  ].sort((a, b) => a - b);
+  const variantTypes = [
+    ...new Set(variants.map((v) => v.variant_type).filter(Boolean)),
+  ];
 
-      const { data, error } = await query.order('name');
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
-      if (error) throw error;
-
-      const variantData = (data || []).map(convertDatabaseResultToProduct);
-      setVariants(variantData);
-      
-      // Extract available options using correct property names
-      const options = {
-        dimensions: [...new Set(variantData.map(v => v.dimensions).filter(Boolean))],
-        door_types: [...new Set(variantData.map(v => v.door_type).filter(Boolean))],
-        orientations: [...new Set(variantData.map(v => v.orientation).filter(Boolean))],
-        finish_types: [...new Set(variantData.map(v => v.finish_type).filter(Boolean))],
-        mounting_types: [...new Set(variantData.map(v => v.mounting_type).filter(Boolean))],
-        mixing_types: [...new Set(variantData.map(v => v.mixing_type).filter(Boolean))],
-        handle_types: [...new Set(variantData.map(v => v.handle_type).filter(Boolean))],
-        emergency_shower_types: [...new Set(variantData.map(v => v.emergency_shower_type).filter(Boolean))],
-        drawer_counts: [...new Set(variantData.map(v => v.drawer_count).filter(d => d !== undefined && d !== null && d > 0))]
-      };
-      
-      setAvailableOptions(options);
-      
-    } catch (error) {
-      console.error('Error fetching variants:', error);
-    } finally {
-      setLoading(false);
+  const formatOrientation = (orientation: string) => {
+    switch (orientation) {
+      case 'LH':
+        return 'Left Hand';
+      case 'RH':
+        return 'Right Hand';
+      default:
+        return orientation;
     }
   };
 
-  const applyFilters = () => {
-    let filtered = variants;
-
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        filtered = filtered.filter(variant => {
-          if (key === 'number_of_drawers') {
-            return variant.drawer_count === value;
-          }
-          return variant[key as keyof Product] === value;
-        });
-      }
-    });
-
-    setFilteredVariants(filtered);
+  const formatVariantType = (type: string) => {
+    switch (type) {
+      case 'standard':
+        return 'Standard';
+      case 'combination':
+        return 'Combination';
+      default:
+        return type.charAt(0).toUpperCase() + type.slice(1);
+    }
   };
 
-  const handleFilterChange = (filterKey: string, value: string | number) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterKey]: value === 'all' ? undefined : value
-    }));
+  // Helper function to find the best matching variant when switching between options
+  const findBestMatchingVariant = (targetCriteria: Partial<Variant>) => {
+    const currentVariant = selectedVariant;
+    if (!currentVariant) return variants[0];
+
+    // Try to find exact match first
+    let bestMatch = variants.find(
+      (v) =>
+        (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
+        (!targetCriteria.drawer_count || v.drawer_count === targetCriteria.drawer_count) &&
+        (!targetCriteria.orientation || v.orientation === targetCriteria.orientation) &&
+        (!targetCriteria.variant_type || v.variant_type === targetCriteria.variant_type) &&
+        (!targetCriteria.door_type || v.door_type === targetCriteria.door_type) &&
+        (!targetCriteria.emergency_shower_type ||
+          v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
+        (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
+        (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
+        (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type) &&
+        (!targetCriteria.cabinet_class || v.cabinet_class === targetCriteria.cabinet_class)
+    );
+
+    // If no exact match, try to preserve as many current attributes as possible
+    if (!bestMatch) {
+      bestMatch = variants.find(
+        (v) =>
+          (!targetCriteria.dimensions || v.dimensions === targetCriteria.dimensions) &&
+          (!targetCriteria.emergency_shower_type ||
+            v.emergency_shower_type === targetCriteria.emergency_shower_type) &&
+          (!targetCriteria.mounting_type || v.mounting_type === targetCriteria.mounting_type) &&
+          (!targetCriteria.mixing_type || v.mixing_type === targetCriteria.mixing_type) &&
+          (!targetCriteria.handle_type || v.handle_type === targetCriteria.handle_type)
+      );
+    }
+
+    return bestMatch || variants[0];
   };
 
-  const clearFilters = () => {
-    setFilters({});
-  };
-
-  if (loading) {
+  // Render grouped variants for custom series
+  if (Object.keys(groupedVariants).length > 0) {
     return (
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-muted-foreground">Loading variants...</div>
+        <CardContent className="space-y-6 p-6">
+          <h4 className="font-medium mb-3">Select Configuration</h4>
+          {Object.entries(groupedVariants).map(([groupKey, groupVariants]) => (
+            <div key={groupKey} className="mb-4">
+              <div className="font-semibold text-muted-foreground mb-2">
+                {groupKey}
+              </div>
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {groupVariants.map((variant) => {
+                  const isSelected = selectedVariantId === variant.id;
+                  return (
+                    <Button
+                      key={variant.id}
+                      variant={isSelected ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onVariantChange(variant.id)}
+                      className="text-sm"
+                    >
+                      {variant.product_code || variant.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          {/* Finish Selection */}
+          <div>
+            <h4 className="font-medium mb-3">Finish</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant={selectedFinish === 'PC' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onFinishChange('PC')}
+                className="text-sm"
+              >
+                Powder Coat
+              </Button>
+              <Button
+                variant={selectedFinish === 'SS' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onFinishChange('SS')}
+                className="text-sm"
+              >
+                Stainless Steel
+              </Button>
+            </div>
           </div>
+          {/* Current Selection Summary */}
+          {selectedVariant && (
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-3">Current Selection</h4>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Product Code:</span>
+                  <Badge variant="outline">{selectedVariant.product_code}</Badge>
+                </div>
+                {selectedVariant.dimensions && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Dimensions:</span>
+                    <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
+                  </div>
+                )}
+                {selectedVariant.emergency_shower_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Emergency Shower Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.emergency_shower_type}</span>
+                  </div>
+                )}
+                {selectedVariant.mounting_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Mounting Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.mounting_type}</span>
+                  </div>
+                )}
+                {selectedVariant.mixing_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Mixing Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.mixing_type}</span>
+                  </div>
+                )}
+                {selectedVariant.handle_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Handle Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.handle_type}</span>
+                  </div>
+                )}
+                {selectedVariant.cabinet_class && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Cabinet Class:</span>
+                    <span className="text-sm font-medium">{selectedVariant.cabinet_class}</span>
+                  </div>
+                )}
+                {selectedVariant.door_type && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Door Type:</span>
+                    <span className="text-sm font-medium">{selectedVariant.door_type}</span>
+                  </div>
+                )}
+                {selectedVariant.drawer_count && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Drawers:</span>
+                    <span className="text-sm font-medium">{selectedVariant.drawer_count}</span>
+                  </div>
+                )}
+                {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Orientation:</span>
+                    <span className="text-sm font-medium">{formatOrientation(selectedVariant.orientation)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Finish:</span>
+                  <span className="text-sm font-medium">
+                    {selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     );
   }
 
-  if (variants.length === 0) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-muted-foreground">
-            No variants available for this product.
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
+  // Default: legacy rendering for other series
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Product Configurator
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Configure your product by selecting from available options below.
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {availableOptions.dimensions.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="dimensions">Dimensions</Label>
-              <Select onValueChange={(value) => handleFilterChange('dimensions', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select dimensions" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Dimensions</SelectItem>
-                  {availableOptions.dimensions.map(dim => (
-                    <SelectItem key={dim} value={dim}>{dim}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <CardContent className="space-y-6 p-6">
+        {emergencyShowerTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Emergency Shower Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {emergencyShowerTypes.map((type) => {
+                const isSelected = selectedVariant?.emergency_shower_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ emergency_shower_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
             </div>
-          )}
-
-          {availableOptions.door_types.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="door_type">Door Type</Label>
-              <Select onValueChange={(value) => handleFilterChange('door_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select door type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Door Types</SelectItem>
-                  {availableOptions.door_types.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.orientations.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="orientation">Orientation</Label>
-              <Select onValueChange={(value) => handleFilterChange('orientation', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select orientation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Orientations</SelectItem>
-                  {availableOptions.orientations.map(orientation => (
-                    <SelectItem key={orientation} value={orientation}>{orientation}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.finish_types.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="finish_type">Finish Type</Label>
-              <Select onValueChange={(value) => handleFilterChange('finish_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select finish" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Finishes</SelectItem>
-                  {availableOptions.finish_types.map(finish => (
-                    <SelectItem key={finish} value={finish}>{finish}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.mounting_types.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="mounting_type">Mounting Type</Label>
-              <Select onValueChange={(value) => handleFilterChange('mounting_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mounting" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Mounting Types</SelectItem>
-                  {availableOptions.mounting_types.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.mixing_types.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="mixing_type">Mixing Type</Label>
-              <Select onValueChange={(value) => handleFilterChange('mixing_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select mixing type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Mixing Types</SelectItem>
-                  {availableOptions.mixing_types.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.handle_types.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="handle_type">Handle Type</Label>
-              <Select onValueChange={(value) => handleFilterChange('handle_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select handle type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Handle Types</SelectItem>
-                  {availableOptions.handle_types.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.emergency_shower_types.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="emergency_shower_type">Emergency Shower Type</Label>
-              <Select onValueChange={(value) => handleFilterChange('emergency_shower_type', value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select shower type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Shower Types</SelectItem>
-                  {availableOptions.emergency_shower_types.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {availableOptions.drawer_counts.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="number_of_drawers">Number of Drawers</Label>
-              <Select onValueChange={(value) => handleFilterChange('number_of_drawers', parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select drawer count" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Drawer Counts</SelectItem>
-                  {availableOptions.drawer_counts.map(count => (
-                    <SelectItem key={count} value={count.toString()}>{count} Drawers</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </div>
-
-        {Object.keys(filters).some(key => filters[key as keyof VariantFilters] !== undefined) && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={clearFilters}>
-              Clear Filters
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {filteredVariants.length} of {variants.length} variants shown
-            </span>
           </div>
         )}
 
-        <Separator />
+        {mountingTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Mounting Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {mountingTypes.map((type) => {
+                const isSelected = selectedVariant?.mounting_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ mounting_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-        {/* Variant Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredVariants.map((variant) => (
-            <Card key={variant.id} className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div>
-                    <h4 className="font-medium text-sm">{variant.name}</h4>
-                    {variant.product_code && (
-                      <p className="text-xs text-muted-foreground">{variant.product_code}</p>
-                    )}
-                  </div>
+        {mixingTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Mixing Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {mixingTypes.map((type) => {
+                const isSelected = selectedVariant?.mixing_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ mixing_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-                  {variant.dimensions && (
-                    <div className="flex items-center gap-2 text-xs">
-                      <Ruler className="h-3 w-3" />
-                      <span>{variant.dimensions}</span>
-                    </div>
-                  )}
+        {handleTypes.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Handle Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {handleTypes.map((type) => {
+                const isSelected = selectedVariant?.handle_type === type;
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ handle_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-                  <div className="flex flex-wrap gap-1">
-                    {variant.finish_type && (
-                      <Badge variant="secondary" className="text-xs">{variant.finish_type}</Badge>
-                    )}
-                    {variant.door_type && (
-                      <Badge variant="secondary" className="text-xs">{variant.door_type}</Badge>
-                    )}
-                    {variant.orientation && (
-                      <Badge variant="secondary" className="text-xs">{variant.orientation}</Badge>
-                    )}
-                    {variant.mounting_type && (
-                      <Badge variant="secondary" className="text-xs">{variant.mounting_type}</Badge>
-                    )}
-                    {variant.mixing_type && (
-                      <Badge variant="secondary" className="text-xs">{variant.mixing_type}</Badge>
-                    )}
-                    {variant.handle_type && (
-                      <Badge variant="secondary" className="text-xs">{variant.handle_type}</Badge>
-                    )}
-                    {variant.emergency_shower_type && (
-                      <Badge variant="secondary" className="text-xs">{variant.emergency_shower_type}</Badge>
-                    )}
-                    {variant.drawer_count !== undefined && variant.drawer_count > 0 && (
-                      <Badge variant="secondary" className="text-xs">{variant.drawer_count} Drawers</Badge>
-                    )}
-                  </div>
+        {cabinetClasses.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Cabinet Class</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {cabinetClasses.map((classType) => {
+                const isSelected = selectedVariant?.cabinet_class === classType;
+                return (
+                  <Button
+                    key={classType}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ cabinet_class: classType });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {classType}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-                  <div className="flex gap-2 pt-2">
+        {dimensions.length > 1 && (
+          <div>
+            <h4 className="font-medium mb-3">Dimensions</h4>
+            {dimensions.length > 4 ? (
+              <Select
+                value={selectedVariant?.dimensions || ''}
+                onValueChange={(dimension) => {
+                  const bestMatch = findBestMatchingVariant({ dimensions: dimension });
+                  if (bestMatch) {
+                    onVariantChange(bestMatch.id);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select dimensions" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dimensions.map((dimension) => (
+                    <SelectItem key={dimension} value={dimension}>
+                      {dimension}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {dimensions.map((dimension) => {
+                  const isSelected = selectedVariant?.dimensions === dimension;
+                  return (
                     <Button
-                      variant="outline"
+                      key={dimension}
+                      variant={isSelected ? 'default' : 'outline'}
                       size="sm"
-                      className="flex-1"
-                      onClick={() => onVariantSelect(variant)}
+                      onClick={() => {
+                        const bestMatch = findBestMatchingVariant({ dimensions: dimension });
+                        if (bestMatch) {
+                          onVariantChange(bestMatch.id);
+                        }
+                      }}
+                      className="text-sm"
                     >
-                      <Eye className="h-3 w-3 mr-1" />
-                      View
+                      {dimension}
                     </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => onAddToRFQ(variant)}
-                    >
-                      <ShoppingCart className="h-3 w-3 mr-1" />
-                      Add to RFQ
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        <DoorTypeSelector
+          doorTypes={doorTypes}
+          selectedDoorType={selectedVariant?.door_type || ''}
+          onDoorTypeChange={(doorType) => {
+            const bestMatch = findBestMatchingVariant({ door_type: doorType });
+            if (bestMatch) {
+              onVariantChange(bestMatch.id);
+            }
+          }}
+        />
+
+        {variantTypes.length > 1 && (
+          <div>
+            <h4 className="font-medium mb-3">Configuration Type</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {variantTypes.map((type) => {
+                const isSelected = selectedVariant?.variant_type === type;
+
+                return (
+                  <Button
+                    key={type}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ variant_type: type });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {formatVariantType(type)}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {drawerCounts.length > 1 && (
+          <div>
+            <h4 className="font-medium mb-3">Drawer Configuration</h4>
+            <div className="grid grid-cols-4 gap-2">
+              {drawerCounts.map((count) => {
+                const isSelected = selectedVariant?.drawer_count === count;
+
+                return (
+                  <Button
+                    key={count}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ drawer_count: count });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {count} {count === 1 ? 'Drawer' : 'Drawers'}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {orientations.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-3">Orientation</h4>
+            <div className="grid grid-cols-2 gap-2">
+              {orientations.map((orientation) => {
+                const isSelected = selectedVariant?.orientation === orientation;
+
+                return (
+                  <Button
+                    key={orientation}
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      const bestMatch = findBestMatchingVariant({ orientation });
+                      if (bestMatch) {
+                        onVariantChange(bestMatch.id);
+                      }
+                    }}
+                    className="text-sm"
+                  >
+                    {formatOrientation(orientation)}
+                  </Button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div>
+          <h4 className="font-medium mb-3">Finish</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant={selectedFinish === 'PC' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onFinishChange('PC')}
+              className="text-sm"
+            >
+              Powder Coat
+            </Button>
+            <Button
+              variant={selectedFinish === 'SS' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => onFinishChange('SS')}
+              className="text-sm"
+            >
+              Stainless Steel
+            </Button>
+          </div>
         </div>
 
-        {filteredVariants.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            No variants match your current filter selection.
+        {selectedVariant && (
+          <div className="border-t pt-4">
+            <h4 className="font-medium mb-3">Current Selection</h4>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Product Code:</span>
+                <Badge variant="outline">{selectedVariant.product_code}</Badge>
+              </div>
+              {selectedVariant.dimensions && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Dimensions:</span>
+                  <span className="text-sm font-medium">{selectedVariant.dimensions}</span>
+                </div>
+              )}
+              {selectedVariant.emergency_shower_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Emergency Shower Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.emergency_shower_type}</span>
+                </div>
+              )}
+              {selectedVariant.mounting_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Mounting Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.mounting_type}</span>
+                </div>
+              )}
+              {selectedVariant.mixing_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Mixing Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.mixing_type}</span>
+                </div>
+              )}
+              {selectedVariant.handle_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Handle Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.handle_type}</span>
+                </div>
+              )}
+              {selectedVariant.cabinet_class && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Cabinet Class:</span>
+                  <span className="text-sm font-medium">{selectedVariant.cabinet_class}</span>
+                </div>
+              )}
+              {selectedVariant.door_type && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Door Type:</span>
+                  <span className="text-sm font-medium">{selectedVariant.door_type}</span>
+                </div>
+              )}
+              {selectedVariant.drawer_count && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Drawers:</span>
+                  <span className="text-sm font-medium">{selectedVariant.drawer_count}</span>
+                </div>
+              )}
+              {selectedVariant.orientation &&
+                selectedVariant.orientation !== 'None' && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Orientation:</span>
+                    <span className="text-sm font-medium">
+                      {formatOrientation(selectedVariant.orientation)}
+                    </span>
+                  </div>
+                )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Finish:</span>
+                <span className="text-sm font-medium">
+                  {selectedFinish === 'PC'
+                    ? 'Powder Coat'
+                    : 'Stainless Steel'}
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
     </Card>
   );
 };
+
+export default VariantSelector;

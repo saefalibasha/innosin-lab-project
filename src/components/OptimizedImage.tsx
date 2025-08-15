@@ -1,89 +1,62 @@
 
-import React, { useState, useRef, useEffect, memo } from 'react';
+import React, { useState, useCallback } from 'react';
 
-interface OptimizedImageProps {
+interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
   alt: string;
   className?: string;
   fallback?: string;
   priority?: boolean;
+  onLoad?: () => void;
+  onError?: () => void;
 }
 
-const OptimizedImage = memo(({ 
-  src, 
-  alt, 
-  className = '', 
+const OptimizedImage: React.FC<OptimizedImageProps> = ({
+  src,
+  alt,
+  className = '',
   fallback = '/placeholder.svg',
-  priority = false 
-}: OptimizedImageProps) => {
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [isInView, setIsInView] = useState(priority);
-  const [hasError, setHasError] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-  const observerRef = useRef<IntersectionObserver>();
+  priority = false,
+  onLoad,
+  onError,
+  ...props
+}) => {
+  const [isError, setIsError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (priority) return;
+  const handleError = useCallback(() => {
+    console.log(`Image failed to load: ${src}`);
+    setIsError(true);
+    setIsLoading(false);
+    onError?.();
+  }, [src, onError]);
 
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsInView(true);
-            observerRef.current?.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px',
-        threshold: 0.1
-      }
-    );
+  const handleLoad = useCallback(() => {
+    setIsLoading(false);
+    onLoad?.();
+  }, [onLoad]);
 
-    if (imgRef.current) {
-      observerRef.current.observe(imgRef.current);
-    }
-
-    return () => {
-      observerRef.current?.disconnect();
-    };
-  }, [priority]);
-
-  const handleLoad = () => {
-    setIsLoaded(true);
-  };
-
-  const handleError = () => {
-    setHasError(true);
-    setIsLoaded(true);
-  };
-
-  const imageSrc = hasError ? fallback : src;
+  const imageSrc = isError ? fallback : src;
 
   return (
-    <div className={`relative overflow-hidden ${className}`} ref={imgRef}>
-      {/* Placeholder/Loading state */}
-      {!isLoaded && (
-        <div className="absolute inset-0 bg-gradient-to-br from-muted/30 to-muted/60 animate-pulse" />
+    <div className={`relative ${className}`}>
+      {isLoading && !isError && (
+        <div className="absolute inset-0 bg-muted animate-pulse rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
       )}
-      
-      {/* Actual image */}
-      {isInView && (
-        <img
-          src={imageSrc}
-          alt={alt}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={handleLoad}
-          onError={handleError}
-          loading={priority ? 'eager' : 'lazy'}
-        />
-      )}
+      <img
+        src={imageSrc}
+        alt={alt}
+        className={`${className} ${isLoading ? 'opacity-0' : 'opacity-100'} transition-opacity duration-300`}
+        onError={handleError}
+        onLoad={handleLoad}
+        loading={priority ? "eager" : "lazy"}
+        decoding="async"
+        {...props}
+      />
     </div>
   );
-});
-
-OptimizedImage.displayName = 'OptimizedImage';
+};
 
 export default OptimizedImage;

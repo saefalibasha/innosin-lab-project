@@ -36,9 +36,6 @@ export interface DatabaseProduct {
   updated_at: string;
   editable_title: string;
   editable_description: string;
-  inherits_series_assets: boolean;
-  target_variant_count: number;
-  keywords: string[];
 }
 
 export interface RealtimePayload {
