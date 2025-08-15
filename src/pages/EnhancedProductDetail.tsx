@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,7 @@ import TallCabinetConfigurator from '@/components/product/TallCabinetConfigurato
 import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
 import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurator';
 import ModularCabinetConfigurator from '@/components/product/ModularCabinetConfigurator';
+import { SpecificProductSelector } from '@/components/floorplan/SpecificProductSelector';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
 
 const EnhancedProductDetail = () => {
@@ -50,6 +52,18 @@ const EnhancedProductDetail = () => {
         if (variants.length > 0) {
           setSelectedVariantId(variants[0].id);
         }
+      } else if (product.parent_series_id) {
+        // If this is a variant, fetch the parent and all siblings
+        try {
+          const parentProduct = await fetchProductById(product.parent_series_id);
+          const variants = await fetchProductsByParentSeriesId(product.parent_series_id);
+          setSeries({...parentProduct, variants, is_series_parent: true});
+          setSelectedVariantId(product.id);
+        } catch (error) {
+          // If parent doesn't exist, treat as standalone product
+          console.log('Parent product not found, treating as standalone');
+          setSeries(product);
+        }
       }
     } catch (error) {
       console.error('Error fetching product data:', error);
@@ -60,14 +74,86 @@ const EnhancedProductDetail = () => {
   };
 
   const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
-  const isInnosinProduct = series?.category === 'Innosin Lab';
-  const isTallCabinetSeries = series?.product_series?.toLowerCase().includes('tall cabinet');
-  const isOpenRackSeries = series?.product_series?.toLowerCase().includes('open rack');
-  const isWallCabinetSeries = series?.product_series?.toLowerCase().includes('wall cabinet');
-  const isModularCabinetSeries = series?.product_series?.toLowerCase().includes('mobile cabinet') || 
-                                series?.product_series?.toLowerCase().includes('modular cabinet') ||
-                                series?.name?.toLowerCase().includes('mobile cabinet') ||
-                                series?.name?.toLowerCase().includes('modular cabinet');
+  const displayProduct = currentVariant || series;
+
+  // Enhanced product type detection
+  const getProductType = () => {
+    if (!series && !displayProduct) return 'standard';
+    
+    const product = displayProduct || series;
+    const productSeries = product?.product_series?.toLowerCase() || '';
+    const category = product?.category?.toLowerCase() || '';
+    const name = product?.name?.toLowerCase() || '';
+    
+    console.log('Product detection:', { productSeries, category, name, product });
+    
+    // UNIFLEX Taps detection
+    if (productSeries.includes('uniflex') || 
+        productSeries.includes('single way taps') || 
+        name.includes('uniflex') ||
+        product?.mixing_type || 
+        product?.handle_type) {
+      return 'uniflex';
+    }
+    
+    // Emergency Shower detection
+    if (productSeries.includes('emergency shower') || 
+        name.includes('emergency shower') ||
+        product?.emergency_shower_type) {
+      return 'emergency_shower';
+    }
+    
+    // Safe Aire II / Fume Hoods detection
+    if (productSeries.includes('safe aire') || 
+        productSeries.includes('fume hood') ||
+        category.includes('fume') ||
+        name.includes('fume hood') ||
+        name.includes('safe aire') ||
+        product?.mounting_type) {
+      return 'fume_hood';
+    }
+    
+    // Tall Cabinet detection
+    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
+      return 'tall_cabinet';
+    }
+    
+    // Open Rack detection
+    if (productSeries.includes('open rack') || name.includes('open rack')) {
+      return 'open_rack';
+    }
+    
+    // Wall Cabinet detection
+    if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) {
+      return 'wall_cabinet';
+    }
+    
+    // Modular Cabinet detection
+    if (productSeries.includes('mobile cabinet') || 
+        productSeries.includes('modular cabinet') ||
+        name.includes('mobile cabinet') ||
+        name.includes('modular cabinet')) {
+      return 'modular_cabinet';
+    }
+    
+    // Innosin Lab detection
+    if (category.includes('innosin') || productSeries.includes('innosin')) {
+      return 'innosin_lab';
+    }
+    
+    return 'standard';
+  };
+
+  const productType = getProductType();
+  const hasVariants = series?.variants && series.variants.length > 0;
+  const shouldShowConfigurator = hasVariants || productType !== 'standard';
+
+  console.log('Configurator logic:', { 
+    productType, 
+    hasVariants, 
+    shouldShowConfigurator, 
+    variantCount: series?.variants?.length || 0 
+  });
 
   // Update assets when variant or finish changes
   useEffect(() => {
@@ -99,11 +185,16 @@ const EnhancedProductDetail = () => {
     }
   };
 
+  const handleVariantSelect = (variant: any) => {
+    console.log('Variant selected:', variant);
+    setSelectedVariantId(variant.id);
+  };
+
   const handleAddToQuote = () => {
     if (!series) return;
     
     // For modular cabinets, use the selected configuration
-    if (isModularCabinetSeries && selectedModularConfiguration) {
+    if (productType === 'modular_cabinet' && selectedModularConfiguration) {
       const finishText = selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
       
       const itemToAdd = {
@@ -120,7 +211,7 @@ const EnhancedProductDetail = () => {
     }
     
     // Use SS304 for Open Rack series, Stainless Steel for others
-    const finishText = isOpenRackSeries ? 
+    const finishText = productType === 'open_rack' ? 
       (selectedFinish === 'PC' ? 'Powder Coat' : 'SS304') :
       (selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel');
     
@@ -156,6 +247,115 @@ const EnhancedProductDetail = () => {
       return series.description;
     }
     return 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.';
+  };
+
+  // Render the appropriate configurator
+  const renderConfigurator = () => {
+    if (!shouldShowConfigurator) return null;
+
+    console.log('Rendering configurator for product type:', productType);
+
+    // For UNIFLEX, Emergency Shower, and Fume Hood products, use SpecificProductSelector
+    if (['uniflex', 'emergency_shower', 'fume_hood'].includes(productType)) {
+      const variants = hasVariants ? series.variants : [displayProduct];
+      return (
+        <SpecificProductSelector
+          products={variants}
+          selectedProduct={currentVariant || displayProduct}
+          onProductSelect={handleVariantSelect}
+        />
+      );
+    }
+    
+    // For modular cabinets
+    if (productType === 'modular_cabinet') {
+      return (
+        <ModularCabinetConfigurator
+          variants={series.variants.map(v => ({
+            id: v.id,
+            name: v.name,
+            product_code: v.product_code,
+            dimensions: v.dimensions,
+            finish_type: v.finish_type,
+            orientation: v.orientation || 'None',
+            door_type: v.door_type || '',
+            drawer_count: v.drawer_count || 0,
+            thumbnail_path: v.thumbnail_path,
+            model_path: v.model_path,
+            additional_images: v.additional_images || []
+          }))}
+          selectedConfiguration={selectedModularConfiguration}
+          onConfigurationSelect={handleModularConfigurationSelect}
+        />
+      );
+    }
+    
+    // For tall cabinets
+    if (productType === 'tall_cabinet') {
+      return (
+        <TallCabinetConfigurator
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+        />
+      );
+    }
+    
+    // For open racks
+    if (productType === 'open_rack') {
+      return (
+        <OpenRackConfigurator
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+        />
+      );
+    }
+    
+    // For wall cabinets
+    if (productType === 'wall_cabinet') {
+      return (
+        <WallCabinetConfigurator
+          variants={series.variants.map(v => ({
+            id: v.id,
+            product_code: v.product_code,
+            name: v.name,
+            dimensions: v.dimensions,
+            finish_type: v.finish_type,
+            orientation: v.orientation || 'None',
+            door_type: v.door_type,
+            thumbnail_path: v.thumbnail_path,
+            model_path: v.model_path,
+            additional_images: v.additional_images || []
+          }))}
+          onConfigurationSelect={(config) => {
+            if (config.variants && config.variants.length > 0) {
+              setSelectedVariantId(config.variants[0].id);
+            }
+          }}
+        />
+      );
+    }
+    
+    // Default fallback - use generic VariantSelector
+    if (hasVariants) {
+      return (
+        <VariantSelector
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+          groupByDimensions={true}
+        />
+      );
+    }
+    
+    return null;
   };
 
   if (loading) {
@@ -243,6 +443,12 @@ const EnhancedProductDetail = () => {
                   <Building2 className="w-4 h-4 mr-2" />
                   {series.category}
                 </Badge>
+                {/* Debug info */}
+                <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
+                  <p>Product Type: {productType}</p>
+                  <p>Has Variants: {hasVariants ? 'Yes' : 'No'} ({series?.variants?.length || 0})</p>
+                  <p>Should Show Configurator: {shouldShowConfigurator ? 'Yes' : 'No'}</p>
+                </div>
               </div>
             </AnimatedSection>
 
@@ -264,7 +470,7 @@ const EnhancedProductDetail = () => {
             </AnimatedSection>
 
             {/* Product Configuration */}
-            {isInnosinProduct && series.variants && series.variants.length > 0 && (
+            {shouldShowConfigurator && (
               <AnimatedSection animation="slide-in-right" delay={400}>
                 <Card className="shadow-sm">
                   <CardHeader className="pb-4">
@@ -274,70 +480,7 @@ const EnhancedProductDetail = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isModularCabinetSeries ? (
-                      <ModularCabinetConfigurator
-                        variants={series.variants.map(v => ({
-                          id: v.id,
-                          name: v.name,
-                          product_code: v.product_code,
-                          dimensions: v.dimensions,
-                          finish_type: v.finish_type,
-                          orientation: v.orientation || 'None',
-                          door_type: v.door_type || '',
-                          drawer_count: v.drawer_count || 0,
-                          thumbnail_path: v.thumbnail_path,
-                          model_path: v.model_path,
-                          additional_images: v.additional_images || []
-                        }))}
-                        selectedConfiguration={selectedModularConfiguration}
-                        onConfigurationSelect={handleModularConfigurationSelect}
-                      />
-                    ) : isTallCabinetSeries ? (
-                      <TallCabinetConfigurator
-                        variants={series.variants}
-                        selectedVariantId={selectedVariantId}
-                        onVariantChange={setSelectedVariantId}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                      />
-                    ) : isOpenRackSeries ? (
-                      <OpenRackConfigurator
-                        variants={series.variants}
-                        selectedVariantId={selectedVariantId}
-                        onVariantChange={setSelectedVariantId}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                      />
-                    ) : isWallCabinetSeries ? (
-                      <WallCabinetConfigurator
-                        variants={series.variants.map(v => ({
-                          id: v.id,
-                          product_code: v.product_code,
-                          name: v.name,
-                          dimensions: v.dimensions,
-                          finish_type: v.finish_type,
-                          orientation: v.orientation || 'None',
-                          door_type: v.door_type,
-                          thumbnail_path: v.thumbnail_path,
-                          model_path: v.model_path,
-                          additional_images: v.additional_images || []
-                        }))}
-                        onConfigurationSelect={(config) => {
-                          if (config.variants && config.variants.length > 0) {
-                            setSelectedVariantId(config.variants[0].id);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <VariantSelector
-                        variants={series.variants}
-                        selectedVariantId={selectedVariantId}
-                        onVariantChange={setSelectedVariantId}
-                        selectedFinish={selectedFinish}
-                        onFinishChange={setSelectedFinish}
-                        groupByDimensions={true}
-                      />
-                    )}
+                    {renderConfigurator()}
                   </CardContent>
                 </Card>
               </AnimatedSection>
@@ -384,7 +527,7 @@ const EnhancedProductDetail = () => {
                     <ul className="text-muted-foreground space-y-2 text-sm">
                       <li className="flex items-start gap-2">
                         <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        {isOpenRackSeries ? 
+                        {productType === 'open_rack' ? 
                           'Finish Options: Powder Coat (PC) or SS304' :
                           'Finish Options: Powder Coat (PC) or Stainless Steel (SS)'
                         }
@@ -405,11 +548,11 @@ const EnhancedProductDetail = () => {
                   </div>
 
                   {/* Current Selection - Show for modular cabinets too */}
-                  {(currentVariant || selectedModularConfiguration) && !isOpenRackSeries && (
+                  {(currentVariant || selectedModularConfiguration) && productType !== 'open_rack' && (
                     <div className="bg-muted/30 p-4 rounded-lg border">
                       <h4 className="font-semibold text-foreground mb-3 text-base">Current Selection</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                        {isModularCabinetSeries && selectedModularConfiguration ? (
+                        {productType === 'modular_cabinet' && selectedModularConfiguration ? (
                           <>
                             <div>
                               <span className="font-medium text-foreground">Configuration:</span>
