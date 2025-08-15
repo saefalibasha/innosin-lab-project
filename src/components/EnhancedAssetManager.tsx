@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -72,7 +71,10 @@ const EnhancedAssetManager = () => {
       created_at: rawProduct.created_at || '',
       updated_at: rawProduct.updated_at || '',
       editable_title: rawProduct.editable_title || rawProduct.name || '',
-      editable_description: rawProduct.editable_description || rawProduct.description || ''
+      editable_description: rawProduct.editable_description || rawProduct.description || '',
+      inherits_series_assets: rawProduct.inherits_series_assets || false,
+      target_variant_count: rawProduct.target_variant_count || 0,
+      keywords: rawProduct.keywords || []
     };
   };
 
