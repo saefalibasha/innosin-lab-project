@@ -18,41 +18,56 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
 }) => {
   const [selectedConfigs, setSelectedConfigs] = useState<Record<string, string>>({});
 
-  // Determine the product series type based on the products
+  // Enhanced series type detection
   const seriesType = useMemo(() => {
     if (products.length === 0) return 'unknown';
     
     const firstProduct = products[0];
     const productSeries = firstProduct.product_series?.toLowerCase() || '';
+    const category = firstProduct.category?.toLowerCase() || '';
     
-    // Check for specific series types
-    if (productSeries.includes('emergency shower') || firstProduct.emergency_shower_type) {
-      return 'emergency_shower';
-    }
-    if (productSeries.includes('single way taps') || firstProduct.mixing_type || firstProduct.handle_type) {
+    // Check for UNIFLEX series (Broen-Lab)
+    if (productSeries.includes('uniflex') || 
+        productSeries.includes('single way taps') || 
+        firstProduct.mixing_type || 
+        firstProduct.handle_type) {
       return 'uniflex';
     }
-    if (productSeries.includes('safe aire') || firstProduct.mounting_type) {
+    
+    // Check for Emergency Shower series (Broen-Lab)
+    if (productSeries.includes('emergency shower') || 
+        firstProduct.emergency_shower_type) {
+      return 'emergency_shower';
+    }
+    
+    // Check for Safe Aire II / Fume Hoods
+    if (productSeries.includes('safe aire') || 
+        productSeries.includes('fume hood') ||
+        category.includes('fume') ||
+        firstProduct.mounting_type) {
       return 'safe_aire';
     }
-    if (productSeries.includes('tangerine') || productSeries.includes('noce')) {
+    
+    // Check for Innosin Lab series
+    if (category.includes('innosin') || productSeries.includes('innosin')) {
+      return 'innosin_lab';
+    }
+    
+    // Check for specific fume hood series
+    if (productSeries.includes('tangerine') || 
+        productSeries.includes('noce') ||
+        firstProduct.cabinet_class) {
       return 'fume_hood';
     }
     
     return 'standard';
   }, [products]);
 
-  // Get unique configuration options based on series type
+  // Get unique configuration options based on series type and available data
   const configOptions = useMemo(() => {
     const options: Record<string, Set<string>> = {};
     
     products.forEach(product => {
-      // Emergency Shower configurations
-      if (seriesType === 'emergency_shower' && product.emergency_shower_type) {
-        if (!options.emergency_shower_type) options.emergency_shower_type = new Set();
-        options.emergency_shower_type.add(product.emergency_shower_type);
-      }
-      
       // UNIFLEX configurations
       if (seriesType === 'uniflex') {
         if (product.mixing_type) {
@@ -65,27 +80,49 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
         }
       }
       
-      // Safe Aire configurations
-      if (seriesType === 'safe_aire' && product.mounting_type) {
+      // Emergency Shower configurations
+      if (seriesType === 'emergency_shower' && product.emergency_shower_type) {
+        if (!options.emergency_shower_type) options.emergency_shower_type = new Set();
+        options.emergency_shower_type.add(product.emergency_shower_type);
+      }
+      
+      // Safe Aire / Fume Hood configurations
+      if ((seriesType === 'safe_aire' || seriesType === 'fume_hood') && product.mounting_type) {
         if (!options.mounting_type) options.mounting_type = new Set();
         options.mounting_type.add(product.mounting_type);
       }
       
-      // Fume Hood configurations
+      // Innosin Lab configurations
+      if (seriesType === 'innosin_lab') {
+        if (product.finish_type) {
+          if (!options.finish_type) options.finish_type = new Set();
+          options.finish_type.add(product.finish_type);
+        }
+        if (product.orientation) {
+          if (!options.orientation) options.orientation = new Set();
+          options.orientation.add(product.orientation);
+        }
+        if (product.door_type) {
+          if (!options.door_type) options.door_type = new Set();
+          options.door_type.add(product.door_type);
+        }
+      }
+      
+      // Fume Hood specific configurations
       if (seriesType === 'fume_hood' && product.cabinet_class) {
         if (!options.cabinet_class) options.cabinet_class = new Set();
         options.cabinet_class.add(product.cabinet_class);
       }
       
-      // Common configurations
-      if (product.finish_type) {
-        if (!options.finish_type) options.finish_type = new Set();
-        options.finish_type.add(product.finish_type);
-      }
-      
+      // Common configurations for all types
       if (product.dimensions) {
         if (!options.dimensions) options.dimensions = new Set();
         options.dimensions.add(product.dimensions);
+      }
+      
+      if (product.finish_type && seriesType !== 'innosin_lab') {
+        if (!options.finish_type) options.finish_type = new Set();
+        options.finish_type.add(product.finish_type);
       }
     });
     
@@ -106,18 +143,22 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       if (value && value !== 'all') {
         filtered = filtered.filter(product => {
           switch (configType) {
-            case 'emergency_shower_type':
-              return product.emergency_shower_type === value;
             case 'mixing_type':
               return product.mixing_type === value;
             case 'handle_type':
               return product.handle_type === value;
+            case 'emergency_shower_type':
+              return product.emergency_shower_type === value;
             case 'mounting_type':
               return product.mounting_type === value;
             case 'cabinet_class':
               return product.cabinet_class === value;
             case 'finish_type':
               return product.finish_type === value;
+            case 'orientation':
+              return product.orientation === value;
+            case 'door_type':
+              return product.door_type === value;
             case 'dimensions':
               return product.dimensions === value;
             default:
@@ -146,22 +187,43 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
 
   const getConfigLabel = (configType: string) => {
     switch (configType) {
-      case 'emergency_shower_type':
-        return 'Emergency Shower Type';
       case 'mixing_type':
         return 'Mixing Type';
       case 'handle_type':
         return 'Handle Type';
+      case 'emergency_shower_type':
+        return 'Emergency Shower Type';
       case 'mounting_type':
         return 'Mounting Type';
       case 'cabinet_class':
         return 'Cabinet Class';
       case 'finish_type':
-        return 'Finish';
+        return 'Finish Type';
+      case 'orientation':
+        return 'Orientation';
+      case 'door_type':
+        return 'Door Type';
       case 'dimensions':
         return 'Dimensions';
       default:
         return configType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+  };
+
+  const getSeriesDisplayName = () => {
+    switch (seriesType) {
+      case 'uniflex':
+        return 'UNIFLEX Taps';
+      case 'emergency_shower':
+        return 'Emergency Shower';
+      case 'safe_aire':
+        return 'Safe Aire II';
+      case 'fume_hood':
+        return 'Fume Hood';
+      case 'innosin_lab':
+        return 'Innosin Lab';
+      default:
+        return 'Product';
     }
   };
 
@@ -171,7 +233,7 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       {Object.keys(configOptions).length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Product Configuration</CardTitle>
+            <CardTitle className="text-lg">{getSeriesDisplayName()} Configuration</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -205,7 +267,7 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
-            Available Products ({filteredProducts.length})
+            Available {getSeriesDisplayName()} Products ({filteredProducts.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -234,11 +296,6 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
                     
                     {/* Configuration badges */}
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {product.emergency_shower_type && (
-                        <Badge variant="outline" className="text-xs">
-                          {product.emergency_shower_type}
-                        </Badge>
-                      )}
                       {product.mixing_type && (
                         <Badge variant="outline" className="text-xs">
                           {product.mixing_type}
@@ -247,6 +304,11 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
                       {product.handle_type && (
                         <Badge variant="outline" className="text-xs">
                           {product.handle_type}
+                        </Badge>
+                      )}
+                      {product.emergency_shower_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.emergency_shower_type}
                         </Badge>
                       )}
                       {product.mounting_type && (
@@ -262,6 +324,16 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
                       {product.finish_type && (
                         <Badge variant="outline" className="text-xs">
                           {product.finish_type}
+                        </Badge>
+                      )}
+                      {product.orientation && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.orientation}
+                        </Badge>
+                      )}
+                      {product.door_type && (
+                        <Badge variant="outline" className="text-xs">
+                          {product.door_type}
                         </Badge>
                       )}
                     </div>
