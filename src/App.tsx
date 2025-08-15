@@ -28,7 +28,7 @@ import NotFound from "./pages/NotFound";
 import { RFQProvider } from "./contexts/RFQContext";
 import HeaderBrand from "./components/HeaderBrand";
 import EnhancedLiveChat from "./components/EnhancedLiveChat";
-import Footer from "./components/Footer";
+import { Footer } from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import SecurityHeader from "./components/SecurityHeader";
 
