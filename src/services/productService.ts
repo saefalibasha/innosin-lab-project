@@ -1,8 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
-import { Product as ProductType } from '@/types/product';
+import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
 
-// Transform raw database response to proper DatabaseProduct with defaults
 const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
   return {
     id: rawProduct.id || '',
@@ -40,12 +39,15 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
     created_at: rawProduct.created_at || '',
     updated_at: rawProduct.updated_at || '',
     editable_title: rawProduct.editable_title || rawProduct.name || '',
-    editable_description: rawProduct.editable_description || rawProduct.description || ''
+    editable_description: rawProduct.editable_description || rawProduct.description || '',
+    inherits_series_assets: rawProduct.inherits_series_assets || false,
+    target_variant_count: rawProduct.target_variant_count || 0,
+    keywords: rawProduct.keywords || []
   };
 };
 
 // Transform DatabaseProduct to ProductType with preference for series assets
-const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
+const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   return {
     id: dbProduct.id,
     name: dbProduct.editable_title || dbProduct.name,
@@ -89,7 +91,7 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): ProductType => {
 };
 
 class ProductService {
-  async getAllProducts(): Promise<ProductType[]> {
+  async getAllProducts(): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -107,7 +109,7 @@ class ProductService {
     }
   }
 
-  async getProductById(id: string): Promise<ProductType | null> {
+  async getProductById(id: string): Promise<Product | null> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -126,7 +128,7 @@ class ProductService {
     }
   }
 
-  async getProductsByCategory(category: string): Promise<ProductType[]> {
+  async getProductsByCategory(category: string): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -180,7 +182,7 @@ class ProductService {
     }
   }
 
-  async searchProducts(query: string): Promise<ProductType[]> {
+  async searchProducts(query: string): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -199,7 +201,7 @@ class ProductService {
     }
   }
 
-  async searchProductSeries(query: string): Promise<ProductType[]> {
+  async searchProductSeries(query: string): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -219,7 +221,7 @@ class ProductService {
     }
   }
 
-  async getProductSeries(): Promise<ProductType[]> {
+  async getProductSeries(): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -238,7 +240,7 @@ class ProductService {
     }
   }
 
-  async getVariantsBySeriesId(seriesId: string): Promise<ProductType[]> {
+  async getVariantsBySeriesId(seriesId: string): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
