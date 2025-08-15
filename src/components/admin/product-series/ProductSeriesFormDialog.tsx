@@ -1,204 +1,148 @@
 
-import React, { useState } from 'react';
+import React from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
-import { Save, X } from 'lucide-react';
+import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 interface ProductSeriesFormDialogProps {
-  open: boolean;
-  onClose: () => void;
-  onSeriesAdded: () => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSeriesCreated: () => void;
 }
 
 export const ProductSeriesFormDialog: React.FC<ProductSeriesFormDialogProps> = ({
-  open,
-  onClose,
-  onSeriesAdded
+  isOpen,
+  onOpenChange,
+  onSeriesCreated
 }) => {
   const [formData, setFormData] = useState({
-    product_series: '',
+    name: '',
     category: '',
     description: '',
-    series_thumbnail_path: ''
+    product_series: '',
+    is_active: true
   });
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (!formData.product_series || !formData.category) {
-        toast({
-          title: "Validation Error",
-          description: "Please fill in all required fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Create a basic product entry for the new series
       const { error } = await supabase
         .from('products')
         .insert([{
-          product_series: formData.product_series,
-          product_code: `${formData.product_series}-001`,
-          name: formData.product_series,
+          name: formData.name,
           category: formData.category,
           description: formData.description,
-          series_thumbnail_path: formData.series_thumbnail_path,
-          is_active: true,
+          product_series: formData.product_series || formData.name,
+          is_series_parent: true,
+          is_active: formData.is_active,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }]);
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Product series created successfully",
-      });
-
-      // Reset form
+      toast.success('Product series created successfully!');
+      onSeriesCreated();
+      onOpenChange(false);
       setFormData({
-        product_series: '',
+        name: '',
         category: '',
         description: '',
-        series_thumbnail_path: ''
+        product_series: '',
+        is_active: true
       });
-
-      onSeriesAdded();
     } catch (error) {
-      console.error('Error creating series:', error);
-      toast({
-        title: "Error",
-        description: "Failed to create product series",
-        variant: "destructive",
-      });
+      console.error('Error creating product series:', error);
+      toast.error('Failed to create product series');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `series-thumbnails/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('documents')
-        .getPublicUrl(filePath);
-
-      setFormData(prev => ({
-        ...prev,
-        series_thumbnail_path: publicUrl
-      }));
-
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
-        variant: "destructive",
-      });
-    }
-  };
-
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Create New Product Series</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Plus className="w-5 h-5" />
+            Add New Product Series
+          </DialogTitle>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="product_series">Series Name *</Label>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Series Name</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter series name"
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <Input
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                placeholder="Enter category"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="product_series">Series Code</Label>
             <Input
               id="product_series"
               value={formData.product_series}
               onChange={(e) => setFormData(prev => ({ ...prev, product_series: e.target.value }))}
-              placeholder="Enter series name"
-              required
+              placeholder="Leave empty to auto-generate from name"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="category">Category *</Label>
-            <Select 
-              value={formData.category} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Innosin Lab">Innosin Lab</SelectItem>
-                <SelectItem value="Broen-Lab">Broen-Lab</SelectItem>
-                <SelectItem value="Laboratory Equipment">Laboratory Equipment</SelectItem>
-                <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
+          <div>
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              rows={3}
               placeholder="Enter series description"
+              rows={3}
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="image">Series Thumbnail</Label>
-            <div className="flex items-center gap-4">
-              <Input
-                id="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-              />
-              {formData.series_thumbnail_path && (
-                <img 
-                  src={formData.series_thumbnail_path} 
-                  alt="Preview"
-                  className="w-16 h-16 object-cover rounded"
-                />
-              )}
-            </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_active: checked }))}
+            />
+            <Label htmlFor="is_active">Active Series</Label>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              <X className="h-4 w-4 mr-2" />
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
-              <Save className="h-4 w-4 mr-2" />
               {loading ? 'Creating...' : 'Create Series'}
             </Button>
           </div>
