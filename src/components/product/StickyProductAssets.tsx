@@ -45,7 +45,7 @@ export const StickyProductAssets: React.FC<StickyProductAssetsProps> = ({
           {hasImage ? (
             <ProductImageGallery
               thumbnail={product.thumbnail || product.thumbnail_path || ''}
-              images={product.images || product.additional_images || []}
+              images={product.images || []}
               productName={product.name}
             />
           ) : (

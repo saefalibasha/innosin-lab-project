@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +7,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Download, FileText } from 'lucide-react';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
+import { supabase } from '@/integrations/supabase/client';
 import { Product } from '@/types/product';
 import { UniversalProductConfigurator } from '@/components/product/UniversalProductConfigurator';
 import { StickyProductAssets } from '@/components/product/StickyProductAssets';
