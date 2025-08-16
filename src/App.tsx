@@ -1,5 +1,5 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import CompanyThemeProvider from "./components/CompanyThemeProvider";
 import { isLovableDevelopment } from "./utils/environmentDetection";
+import { useEffect } from "react";
 
 // Import all pages
 import Index from "./pages/Index";
@@ -40,6 +41,91 @@ const queryClient = new QueryClient({
   },
 });
 
+// Production App - Only shows maintenance page with proper headers
+const ProductionApp: React.FC = () => {
+  useEffect(() => {
+    // Set maintenance mode indicators for crawlers
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-maintenance-mode', 'true');
+      document.documentElement.setAttribute('data-status', '503');
+      
+      // Force immediate cache invalidation
+      const cacheHeaders = [
+        { name: 'Cache-Control', content: 'no-cache, no-store, must-revalidate, max-age=0' },
+        { name: 'Pragma', content: 'no-cache' },
+        { name: 'Expires', content: '0' }
+      ];
+      
+      cacheHeaders.forEach(header => {
+        const meta = document.createElement('meta');
+        meta.setAttribute('http-equiv', header.name);
+        meta.setAttribute('content', header.content);
+        document.head.appendChild(meta);
+      });
+    }
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <CompanyThemeProvider>
+              <Routes>
+                <Route path="*" element={<Maintenance />} />
+              </Routes>
+            </CompanyThemeProvider>
+          </BrowserRouter>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
+
+// Development App - Full website functionality
+const DevelopmentApp: React.FC = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <RFQProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <CompanyThemeProvider>
+              <SecurityHeader />
+              <ScrollToTop />
+              <div className="min-h-screen flex flex-col">
+                <HeaderBrand />
+                <main className="flex-1 pt-16">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/products" element={<ProductCatalog />} />
+                    <Route path="/products/:productId" element={<EnhancedProductDetail />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/blog" element={<Blog />} />
+                    <Route path="/floor-planner" element={<FloorPlanner />} />
+                    <Route path="/rfq-cart" element={<RFQCart />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/maintenance" element={<Maintenance />} />
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </main>
+                <Footer />
+                <EnhancedLiveChat />
+              </div>
+            </CompanyThemeProvider>
+          </BrowserRouter>
+        </RFQProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+// Smart App Router - Chooses between Development and Production
 const App: React.FC = () => {
   const isDevelopment = isLovableDevelopment();
   
@@ -49,92 +135,7 @@ const App: React.FC = () => {
     nodeEnv: process.env.NODE_ENV
   });
 
-  // Production maintenance mode effect
-  useEffect(() => {
-    if (!isDevelopment) {
-      // Set maintenance mode indicators for crawlers
-      if (typeof document !== 'undefined') {
-        document.documentElement.setAttribute('data-maintenance-mode', 'true');
-        document.documentElement.setAttribute('data-status', '503');
-        
-        // Force immediate cache invalidation
-        const cacheHeaders = [
-          { name: 'Cache-Control', content: 'no-cache, no-store, must-revalidate, max-age=0' },
-          { name: 'Pragma', content: 'no-cache' },
-          { name: 'Expires', content: '0' }
-        ];
-        
-        cacheHeaders.forEach(header => {
-          const meta = document.createElement('meta');
-          meta.setAttribute('http-equiv', header.name);
-          meta.setAttribute('content', header.content);
-          document.head.appendChild(meta);
-        });
-      }
-    }
-  }, [isDevelopment]);
-
-  if (!isDevelopment) {
-    // Production - maintenance mode only
-    return (
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <CompanyThemeProvider>
-                <Routes>
-                  <Route path="*" element={<Maintenance />} />
-                </Routes>
-              </CompanyThemeProvider>
-            </BrowserRouter>
-          </AuthProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
-    );
-  }
-
-  // Development - full functionality
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <RFQProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <CompanyThemeProvider>
-                <SecurityHeader />
-                <ScrollToTop />
-                <div className="min-h-screen flex flex-col">
-                  <HeaderBrand />
-                  <main className="flex-1 pt-16">
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/products" element={<ProductCatalog />} />
-                      <Route path="/products/:productId" element={<EnhancedProductDetail />} />
-                      <Route path="/about" element={<About />} />
-                      <Route path="/contact" element={<Contact />} />
-                      <Route path="/blog" element={<Blog />} />
-                      <Route path="/floor-planner" element={<FloorPlanner />} />
-                      <Route path="/rfq-cart" element={<RFQCart />} />
-                      <Route path="/auth" element={<Auth />} />
-                      <Route path="/maintenance" element={<Maintenance />} />
-                      <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                  </main>
-                  <Footer />
-                  <EnhancedLiveChat />
-                </div>
-              </CompanyThemeProvider>
-            </BrowserRouter>
-          </RFQProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
+  return isDevelopment ? <DevelopmentApp /> : <ProductionApp />;
 };
 
 export default App;

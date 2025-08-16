@@ -4,23 +4,22 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   Package, 
   ChevronDown, 
   ChevronRight, 
+  TrendingUp, 
   Image, 
   Box,
   Edit,
   Eye,
-  AlertTriangle,
-  Upload
+  BarChart3,
+  AlertTriangle
 } from 'lucide-react';
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
-import { MissingModelsTracker } from './MissingModelsTracker';
 import { mockAdminSeries } from '@/data/mockProducts';
 import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
@@ -142,7 +141,6 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
-  const [activeTab, setActiveTab] = useState('series');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -330,21 +328,6 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
     setEditingProduct(null);
   };
 
-  const handleUploadRequest = (productId: string, assetType: 'image' | 'model') => {
-    // Find the product and open it for editing
-    const allProducts = series.flatMap(s => s.products);
-    const product = allProducts.find(p => p.id === productId);
-    
-    if (product) {
-      setEditingProduct(product);
-      setIsEditOpen(true);
-      toast({
-        title: "Upload Request",
-        description: `Opening ${product.name} for ${assetType} upload`,
-      });
-    }
-  };
-
   const getSeriesStatusColor = (completionRate: number) => {
     if (completionRate >= 80) return 'bg-green-500';
     if (completionRate >= 50) return 'bg-yellow-500';
@@ -374,6 +357,8 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                 <h4 className="font-medium text-amber-800">Development Mode Active</h4>
                 <p className="text-sm text-amber-700">
                   Currently displaying sample data. Database connection unavailable or no products configured.
+                  <br />
+                  <strong>To resolve:</strong> Run the database-fixes.sql script or ensure Supabase connection is working.
                 </p>
               </div>
             </div>
@@ -381,170 +366,140 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         </Card>
       )}
 
-      {/* Tabbed Interface */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="series">Product Series</TabsTrigger>
-          <TabsTrigger value="assets" className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" />
-            Asset Tracking
-          </TabsTrigger>
-        </TabsList>
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{series.length}</div>
+            <div className="text-sm text-muted-foreground">Product Series</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-green-600">
+              {series.reduce((acc, s) => acc + s.activeProducts, 0)}
+            </div>
+            <div className="text-sm text-muted-foreground">Active Products</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-blue-600">
+              {series.reduce((acc, s) => acc + s.hasAssets, 0)}
+            </div>
+            <div className="text-sm text-muted-foreground">With Assets</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-purple-600">
+              {Math.round(series.reduce((acc, s) => acc + s.completionRate, 0) / series.length || 0)}%
+            </div>
+            <div className="text-sm text-muted-foreground">Avg Completion</div>
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Product Series Tab */}
-        <TabsContent value="series" className="space-y-6">
-          {/* Statistics Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-primary">{series.length}</div>
-                <div className="text-sm text-muted-foreground">Product Series</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {series.reduce((acc, s) => acc + s.activeProducts, 0)}
-                </div>
-                <div className="text-sm text-muted-foreground">Active Products</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {series.reduce((acc, s) => acc + s.hasAssets, 0)}
-                </div>
-                <div className="text-sm text-muted-foreground">With Assets</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {Math.round(series.reduce((acc, s) => acc + s.completionRate, 0) / series.length || 0)}%
-                </div>
-                <div className="text-sm text-muted-foreground">Avg Completion</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Series List */}
-          <div className="space-y-4">
-            {series.map((seriesData) => (
-              <Card key={seriesData.name} className="overflow-hidden">
-                <Collapsible
-                  open={expandedSeries.has(seriesData.name)}
-                  onOpenChange={() => toggleSeries(seriesData.name)}
-                >
-                  <CollapsibleTrigger asChild>
-                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {expandedSeries.has(seriesData.name) ? 
-                            <ChevronDown className="h-5 w-5" /> : 
-                            <ChevronRight className="h-5 w-5" />
-                          }
-                          <Package className="h-5 w-5 text-primary" />
-                          <div>
-                            <CardTitle className="text-lg">{seriesData.name}</CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                              {seriesData.totalProducts} products • {seriesData.activeProducts} active
-                            </p>
-                          </div>
+      {/* Series List */}
+      <div className="space-y-4">
+        {series.map((seriesData) => (
+          <Card key={seriesData.name} className="overflow-hidden">
+            <Collapsible
+              open={expandedSeries.has(seriesData.name)}
+              onOpenChange={() => toggleSeries(seriesData.name)}
+            >
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {expandedSeries.has(seriesData.name) ? 
+                        <ChevronDown className="h-5 w-5" /> : 
+                        <ChevronRight className="h-5 w-5" />
+                      }
+                      <Package className="h-5 w-5 text-primary" />
+                      <div>
+                        <CardTitle className="text-lg">{seriesData.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {seriesData.totalProducts} products • {seriesData.activeProducts} active
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-sm font-medium">
+                          {Math.round(seriesData.completionRate)}% Complete
                         </div>
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <div className="text-sm font-medium">
-                              {Math.round(seriesData.completionRate)}% Complete
+                        <Progress value={seriesData.completionRate} className="w-20" />
+                      </div>
+                      <Badge 
+                        className={`${getSeriesStatusColor(seriesData.completionRate)} text-white`}
+                      >
+                        {seriesData.hasAssets}/{seriesData.totalProducts}
+                      </Badge>
+                    </div>
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              
+              <CollapsibleContent>
+                <CardContent className="pt-0">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {seriesData.products.map((product) => (
+                      <Card key={product.id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium truncate">{product.name}</h4>
+                              <p className="text-sm text-muted-foreground">{product.product_code}</p>
                             </div>
-                            <Progress value={seriesData.completionRate} className="w-20" />
+                            <Badge variant={product.is_active ? "default" : "secondary"}>
+                              {product.is_active ? "Active" : "Inactive"}
+                            </Badge>
                           </div>
-                          <Badge 
-                            className={`${getSeriesStatusColor(seriesData.completionRate)} text-white`}
-                          >
-                            {seriesData.hasAssets}/{seriesData.totalProducts}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                  </CollapsibleTrigger>
-                  
-                  <CollapsibleContent>
-                    <CardContent className="pt-0">
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {seriesData.products.map((product) => (
-                          <Card key={product.id} className="hover:shadow-md transition-shadow">
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-medium truncate">{product.name}</h4>
-                                  <p className="text-sm text-muted-foreground">{product.product_code}</p>
-                                </div>
-                                <Badge variant={product.is_active ? "default" : "secondary"}>
-                                  {product.is_active ? "Active" : "Inactive"}
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                                <div className="flex items-center gap-1">
-                                  <Image className="h-3 w-3" />
-                                  <span className={product.thumbnail_path ? 'text-green-600' : 'text-red-600'}>
-                                    {product.thumbnail_path ? 'Image' : 'No Image'}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Box className="h-3 w-3" />
-                                  <span className={product.model_path ? 'text-green-600' : 'text-red-600'}>
-                                    {product.model_path ? '3D Model' : 'No Model'}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleView(product)}
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  View
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEdit(product)}
-                                >
-                                  <Edit className="h-3 w-3 mr-1" />
-                                  Edit
-                                </Button>
-                                {(!product.thumbnail_path || !product.model_path) && (
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="text-amber-600 border-amber-200"
-                                    onClick={() => handleEdit(product)}
-                                  >
-                                    <Upload className="h-3 w-3 mr-1" />
-                                    Upload
-                                  </Button>
-                                )}
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </CollapsibleContent>
-                </Collapsible>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Asset Tracking Tab */}
-        <TabsContent value="assets">
-          <MissingModelsTracker onUploadRequest={handleUploadRequest} />
-        </TabsContent>
-      </Tabs>
+                          
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
+                            <div className="flex items-center gap-1">
+                              <Image className="h-3 w-3" />
+                              <span className={product.thumbnail_path ? 'text-green-600' : 'text-red-600'}>
+                                {product.thumbnail_path ? 'Image' : 'No Image'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Box className="h-3 w-3" />
+                              <span className={product.model_path ? 'text-green-600' : 'text-red-600'}>
+                                {product.model_path ? '3D Model' : 'No Model'}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleView(product)}
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(product)}
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Edit
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </Card>
+        ))}
+      </div>
 
       {/* Product View Dialog */}
       <ProductViewDialog
