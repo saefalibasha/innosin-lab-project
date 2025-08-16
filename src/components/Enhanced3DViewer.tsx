@@ -2,7 +2,7 @@
 import React, { Suspense, useRef, useEffect, useState } from 'react';
 import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Box3, Vector3 } from 'three';
 import { AlertCircle, Box } from 'lucide-react';
 
@@ -10,9 +10,16 @@ interface Enhanced3DViewerProps {
   modelPath: string;
   className?: string;
   onError?: () => void;
+  onMissingModel?: (modelPath: string, productId?: string) => void;
+  productId?: string;
 }
 
-const Model = ({ url, onError }: { url: string; onError?: () => void }) => {
+const Model = ({ url, onError, onMissingModel, productId }: { 
+  url: string; 
+  onError?: () => void; 
+  onMissingModel?: (modelPath: string, productId?: string) => void;
+  productId?: string;
+}) => {
   const meshRef = useRef<any>();
   const [modelLoaded, setModelLoaded] = useState(false);
   
@@ -50,16 +57,28 @@ const Model = ({ url, onError }: { url: string; onError?: () => void }) => {
     return <primitive ref={meshRef} object={gltf.scene} />;
   } catch (error) {
     console.error('Failed to load 3D model:', url, error);
+    if (onMissingModel) {
+      onMissingModel(url, productId);
+    }
     if (onError) onError();
     return null;
   }
 };
 
-const Enhanced3DViewer = ({ modelPath, className = '', onError }: Enhanced3DViewerProps) => {
+const Enhanced3DViewer = ({ 
+  modelPath, 
+  className = '', 
+  onError, 
+  onMissingModel, 
+  productId 
+}: Enhanced3DViewerProps) => {
   const [loadError, setLoadError] = useState(false);
 
   const handleError = () => {
     setLoadError(true);
+    if (onMissingModel) {
+      onMissingModel(modelPath, productId);
+    }
     if (onError) onError();
   };
 
@@ -69,6 +88,9 @@ const Enhanced3DViewer = ({ modelPath, className = '', onError }: Enhanced3DView
         <div className="text-center">
           <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
           <p className="text-muted-foreground">Unable to load 3D model</p>
+          {onMissingModel && (
+            <p className="text-xs text-muted-foreground mt-2">Model will be tracked for upload</p>
+          )}
         </div>
       </div>
     );
@@ -99,7 +121,12 @@ const Enhanced3DViewer = ({ modelPath, className = '', onError }: Enhanced3DView
             </mesh>
           }
         >
-          <Model url={modelPath} onError={handleError} />
+          <Model 
+            url={modelPath} 
+            onError={handleError} 
+            onMissingModel={onMissingModel}
+            productId={productId}
+          />
         </Suspense>
       </Canvas>
       
