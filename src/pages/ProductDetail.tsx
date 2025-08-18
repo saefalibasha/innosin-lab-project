@@ -1,17 +1,19 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, ShoppingCart, Package, FileText, Building2, Settings } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Package, FileText, Building2 } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import AnimatedSection from '@/components/AnimatedSection';
-import StickyProductAssets from '@/components/product/StickyProductAssets';
-import UniversalProductConfigurator from '@/components/product/UniversalProductConfigurator';
+import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
+import ProductAssetViewer from '@/components/product/ProductAssetViewer';
 import { useMissingModelsTracker } from '@/hooks/useMissingModelsTracker';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
 import { Product } from '@/types/product';
+import { detectSeriesType } from '@/utils/seriesUtils';
 
 const ProductDetail = () => {
   const { productId } = useParams<{ productId: string }>();
@@ -68,68 +70,8 @@ const ProductDetail = () => {
 
   const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
   const displayProduct = currentVariant || series;
-
-  // Enhanced product type detection
-  const getProductType = () => {
-    if (!series && !displayProduct) return 'standard';
-    
-    const product = displayProduct || series;
-    const productSeries = product?.product_series?.toLowerCase() || '';
-    const category = product?.category?.toLowerCase() || '';
-    const name = product?.name?.toLowerCase() || '';
-    
-    // UNIFLEX Taps detection
-    if (productSeries.includes('uniflex') || 
-        productSeries.includes('single way taps') || 
-        name.includes('uniflex') ||
-        product?.mixing_type || 
-        product?.handle_type) {
-      return 'uniflex';
-    }
-    
-    // Emergency Shower detection
-    if (productSeries.includes('emergency shower') || 
-        name.includes('emergency shower') ||
-        product?.emergency_shower_type) {
-      return 'emergency_shower';
-    }
-    
-    // Safe Aire II / Fume Hoods detection
-    if (productSeries.includes('safe aire') || 
-        productSeries.includes('fume hood') ||
-        category.includes('fume') ||
-        name.includes('fume hood') ||
-        name.includes('safe aire') ||
-        product?.mounting_type) {
-      return 'fume_hood';
-    }
-    
-    // Other product type detections
-    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
-      return 'tall_cabinet';
-    }
-    
-    if (productSeries.includes('open rack') || name.includes('open rack')) {
-      return 'open_rack';
-    }
-    
-    if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) {
-      return 'wall_cabinet';
-    }
-    
-    if (productSeries.includes('mobile cabinet') || 
-        productSeries.includes('modular cabinet') ||
-        name.includes('mobile cabinet') ||
-        name.includes('modular cabinet')) {
-      return 'modular_cabinet';
-    }
-    
-    return 'standard';
-  };
-
-  const productType = getProductType();
   const hasVariants = series?.variants && series.variants.length > 0;
-  const shouldShowConfigurator = hasVariants;
+  const seriesType = detectSeriesType(series, series?.variants || []);
 
   // Update assets when variant or finish changes
   useEffect(() => {
@@ -151,8 +93,8 @@ const ProductDetail = () => {
   const handleAddToQuote = () => {
     if (!series) return;
     
-    // Use SS304 for Open Rack series, Stainless Steel for others
-    const finishText = productType === 'open_rack' ? 
+    // Use appropriate finish label based on series type
+    const finishText = seriesType === 'open_rack' ? 
       (selectedFinish === 'PC' ? 'Powder Coat' : 'SS304') :
       (selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel');
     
@@ -215,10 +157,11 @@ const ProductDetail = () => {
         </AnimatedSection>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column - Sticky Product Assets */}
+          {/* Left Column - Product Assets & Configuration */}
           <div className="space-y-6">
+            {/* Product Asset Viewer */}
             <AnimatedSection animation="slide-in-left" delay={200}>
-              <StickyProductAssets
+              <ProductAssetViewer
                 currentAssets={currentAssets}
                 productName={series.name}
                 className="w-full"
@@ -226,6 +169,21 @@ const ProductDetail = () => {
                 productId={currentVariant?.id || series.id}
               />
             </AnimatedSection>
+
+            {/* Universal Product Configuration */}
+            {hasVariants && (
+              <AnimatedSection animation="slide-in-left" delay={300}>
+                <SeriesProductConfigurator
+                  series={series}
+                  variants={series.variants}
+                  selectedVariantId={selectedVariantId}
+                  onVariantChange={setSelectedVariantId}
+                  selectedFinish={selectedFinish}
+                  onFinishChange={setSelectedFinish}
+                  className="w-full"
+                />
+              </AnimatedSection>
+            )}
           </div>
 
           {/* Right Column - Product Info */}
@@ -260,32 +218,8 @@ const ProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {/* Universal Product Configuration */}
-            {shouldShowConfigurator && (
-              <AnimatedSection animation="slide-in-right" delay={400}>
-                <Card className="shadow-sm">
-                  <CardHeader className="pb-4">
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Settings className="w-5 h-5 text-primary" />
-                      Product Configuration
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <UniversalProductConfigurator
-                      variants={series.variants}
-                      selectedVariantId={selectedVariantId}
-                      onVariantChange={setSelectedVariantId}
-                      selectedFinish={selectedFinish}
-                      onFinishChange={setSelectedFinish}
-                      productType={productType}
-                    />
-                  </CardContent>
-                </Card>
-              </AnimatedSection>
-            )}
-
             {/* Technical Specifications */}
-            <AnimatedSection animation="slide-in-right" delay={450}>
+            <AnimatedSection animation="slide-in-right" delay={400}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
                   <CardTitle className="flex items-center gap-2 text-xl">
@@ -325,7 +259,7 @@ const ProductDetail = () => {
                     <ul className="text-muted-foreground space-y-2 text-sm">
                       <li className="flex items-start gap-2">
                         <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
-                        {productType === 'open_rack' ? 
+                        {seriesType === 'open_rack' ? 
                           'Finish Options: Powder Coat (PC) or SS304' :
                           'Finish Options: Powder Coat (PC) or Stainless Steel (SS)'
                         }
@@ -360,7 +294,7 @@ const ProductDetail = () => {
                         </div>
                         <div>
                           <span className="font-medium text-foreground">Finish:</span>
-                          <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : productType === 'open_rack' ? 'SS304' : 'Stainless Steel'}</p>
+                          <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : seriesType === 'open_rack' ? 'SS304' : 'Stainless Steel'}</p>
                         </div>
                         {currentVariant.door_type && (
                           <div>
@@ -376,7 +310,7 @@ const ProductDetail = () => {
             </AnimatedSection>
 
             {/* Add to Quote Button */}
-            <AnimatedSection animation="slide-in-right" delay={500}>
+            <AnimatedSection animation="slide-in-right" delay={450}>
               <Button
                 onClick={handleAddToQuote}
                 size="lg"

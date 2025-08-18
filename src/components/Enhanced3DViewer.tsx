@@ -92,11 +92,11 @@ const Enhanced3DViewer = ({
     if (onError) onError();
   };
 
-  // Enhanced model path resolution
+  // Enhanced model path resolution with better Supabase support
   const getModelPath = (path: string): string => {
     if (!path) return '';
     
-    // If it's already a full URL, return as is
+    // If it's already a full URL (Supabase storage or other CDN), return as is
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
@@ -106,12 +106,17 @@ const Enhanced3DViewer = ({
       return path;
     }
     
-    // If it's a relative path, ensure it starts from public folder
-    if (!path.startsWith('/products/') && !path.startsWith('products/')) {
-      return `/products/${path}`;
+    // Check if it's a Supabase storage path
+    if (path.includes('supabase') || path.includes('storage')) {
+      return path.startsWith('/') ? path : `/${path}`;
     }
     
-    return path.startsWith('/') ? path : `/${path}`;
+    // Default: treat as relative path from public/products/
+    if (path.startsWith('products/')) {
+      return `/${path}`;
+    }
+    
+    return `/products/${path}`;
   };
 
   const resolvedModelPath = getModelPath(modelPath);
@@ -121,18 +126,26 @@ const Enhanced3DViewer = ({
       setIsLoading(true);
       setLoadError(false);
       
-      // Test if the model file exists
-      fetch(resolvedModelPath, { method: 'HEAD' })
+      // Test if the model file exists (with timeout for Supabase)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      fetch(resolvedModelPath, { 
+        method: 'HEAD',
+        signal: controller.signal
+      })
         .then(response => {
-          if (!response.ok) {
+          clearTimeout(timeoutId);
+          if (!response.ok && response.status !== 0) { // status 0 for CORS-restricted HEAD requests
             throw new Error(`Model not found: ${response.status}`);
           }
           setIsLoading(false);
         })
         .catch(error => {
+          clearTimeout(timeoutId);
           console.warn('Model file check failed:', resolvedModelPath, error);
           setIsLoading(false);
-          // Don't set error here, let the actual loader handle it
+          // Don't set error here immediately - let the actual loader handle it
         });
     }
   }, [resolvedModelPath]);
