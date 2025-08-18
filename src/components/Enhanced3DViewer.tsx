@@ -5,7 +5,7 @@ import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Cube, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
+import { AlertCircle, Box, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
 import { GLTFModel } from './3d/GLTFModel';
 import { useMissingModelsTracker } from '@/hooks/useMissingModelsTracker';
 
@@ -16,6 +16,7 @@ interface Enhanced3DViewerProps {
   className?: string;
   showControls?: boolean;
   autoRotate?: boolean;
+  onError?: () => void;
 }
 
 const Enhanced3DViewer = ({ 
@@ -24,7 +25,8 @@ const Enhanced3DViewer = ({
   productId,
   className = "", 
   showControls = true,
-  autoRotate = false 
+  autoRotate = false,
+  onError 
 }: Enhanced3DViewerProps) => {
   const [modelError, setModelError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,6 +82,9 @@ const Enhanced3DViewer = ({
     setModelError(true);
     setIsLoading(false);
     trackMissingModel(productId, productName);
+    if (onError) {
+      onError();
+    }
   };
 
   const handleReset = () => {
@@ -216,7 +221,7 @@ const Enhanced3DViewer = ({
       {/* Model Info Badge */}
       <div className="absolute bottom-4 left-4">
         <Badge variant="secondary" className="bg-white/90">
-          <Cube className="h-3 w-3 mr-1" />
+          <Box className="h-3 w-3 mr-1" />
           3D Model
         </Badge>
       </div>

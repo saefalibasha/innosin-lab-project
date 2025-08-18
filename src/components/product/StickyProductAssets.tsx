@@ -23,7 +23,7 @@ const StickyProductAssets = ({
   productName,
   className = '',
   onMissingModel,
-  productId
+  productId = 'unknown'
 }: StickyProductAssetsProps) => {
   const [activeTab, setActiveTab] = useState('photos');
   const [modelError, setModelError] = useState(false);
@@ -107,6 +107,8 @@ const StickyProductAssets = ({
               {hasModel ? (
                 <Enhanced3DViewer
                   modelPath={currentAssets.model}
+                  productName={productName}
+                  productId={productId}
                   className="w-full h-96 lg:h-[500px]"
                   onError={handleModelError}
                 />

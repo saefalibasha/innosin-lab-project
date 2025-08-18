@@ -1,310 +1,210 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, ShoppingCart, Download, Share2, Heart, Eye, Box } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { productService } from '@/services/productService';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
-import { ArrowLeft, Package, Info, FileText, Download, Cube } from 'lucide-react';
-import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
-import { DatabaseProduct } from '@/types/supabase';
-import { Product } from '@/types/product';
-import { SpecificProductSelector } from '@/components/floorplan/SpecificProductSelector';
-import { ProductTypeDetector } from '@/utils/productTypeDetector';
-
-const transformDatabaseProduct = (dbProduct: any): Product => {
-  return {
-    id: dbProduct.id,
-    name: dbProduct.name,
-    category: dbProduct.category,
-    dimensions: dbProduct.dimensions || '',
-    modelPath: dbProduct.model_path || '',
-    thumbnail: dbProduct.thumbnail_path || '',
-    images: dbProduct.additional_images || [],
-    description: dbProduct.description || '',
-    fullDescription: dbProduct.full_description || dbProduct.description || '',
-    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
-    finishes: [],
-    variants: [],
-    baseProductId: dbProduct.parent_series_id,
-    finish_type: dbProduct.finish_type,
-    orientation: dbProduct.orientation,
-    drawer_count: dbProduct.drawer_count || 0,
-    door_type: dbProduct.door_type,
-    product_code: dbProduct.product_code || '',
-    thumbnail_path: dbProduct.thumbnail_path,
-    model_path: dbProduct.model_path,
-    mounting_type: dbProduct.mounting_type,
-    mixing_type: dbProduct.mixing_type,
-    handle_type: dbProduct.handle_type,
-    emergency_shower_type: dbProduct.emergency_shower_type,
-    company_tags: dbProduct.company_tags || [],
-    product_series: dbProduct.product_series,
-    parent_series_id: dbProduct.parent_series_id,
-    created_at: dbProduct.created_at,
-    updated_at: dbProduct.updated_at,
-    is_active: dbProduct.is_active
-  };
-};
+import UniversalProductConfigurator from '@/components/product/UniversalProductConfigurator';
+import { useProductConfigurator } from '@/hooks/useProductConfigurator';
+import { useShoppingCart } from '@/hooks/useShoppingCart';
+import { toast } from 'sonner';
+import { useMissingModelsTracker } from '@/hooks/useMissingModelsTracker';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { Skeleton } from "@/components/ui/skeleton"
+import StickyProductAssets from '@/components/product/StickyProductAssets';
+import { useToast } from '@/components/ui/use-toast';
 
 const ProductDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [variants, setVariants] = useState<Product[]>([]);
-  const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { productNumber } = useParams<{ productNumber: string }>();
+  const navigate = useNavigate();
+  const { addItemToCart } = useShoppingCart();
+  const { trackMissingModel } = useMissingModelsTracker();
   const { toast } = useToast();
 
+  const {
+    selectedConfig,
+    updateConfig,
+    resetConfig,
+    getConfiguratorOptions,
+    currentAssets,
+    isLoading: isConfigLoading,
+    error: configError,
+  } = useProductConfigurator(productNumber || '');
+
+  const {
+    data: product,
+    isLoading: isProductLoading,
+    error: productError,
+  } = useQuery({
+    queryKey: ['product', productNumber],
+    queryFn: () => productService.getProductDetails(productNumber || ''),
+    enabled: !!productNumber,
+  });
+
   useEffect(() => {
-    if (id) {
-      fetchProductData(id);
+    if (product) {
+      resetConfig(product);
     }
-  }, [id]);
+  }, [product, resetConfig]);
 
-  const fetchProductData = async (productId: string) => {
-    try {
-      setLoading(true);
-      
-      // Fetch the main product
-      const productData = await fetchProductById(productId);
-      const transformedProduct = transformDatabaseProduct(productData);
-      setProduct(transformedProduct);
-      setSelectedVariant(transformedProduct);
-
-      // If this is a series parent, fetch its variants
-      if (productData.is_series_parent && productData.id) {
-        const variantData = await fetchProductsByParentSeriesId(productData.id);
-        const transformedVariants = variantData.map(transformDatabaseProduct);
-        setVariants(transformedVariants);
-        
-        // If we have variants, set the first active one as selected
-        const firstActiveVariant = transformedVariants.find(v => v.is_active);
-        if (firstActiveVariant) {
-          setSelectedVariant(firstActiveVariant);
-        }
-      } else if (productData.parent_series_id) {
-        // This is a variant, fetch all variants in the same series
-        const variantData = await fetchProductsByParentSeriesId(productData.parent_series_id);
-        const transformedVariants = variantData.map(transformDatabaseProduct);
-        setVariants(transformedVariants);
-      }
-      
-    } catch (error) {
-      console.error('Error fetching product:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load product details",
-        variant: "destructive",
+  const handleAddToCart = () => {
+    if (product) {
+      addItemToCart({
+        ...product,
+        assets: currentAssets,
+        selectedConfig: selectedConfig,
       });
-    } finally {
-      setLoading(false);
+      toast({
+        title: "Added to cart",
+        description: "Your product has been added to the cart.",
+      })
     }
   };
 
-  const handleVariantSelect = (variant: Product) => {
-    setSelectedVariant(variant);
+  const handleMissingModel = (productId: string, productName: string) => {
+    trackMissingModel(productId, productName);
   };
 
-  // Use the new product type detector
-  const shouldShowConfigurator = (product: Product, variants: Product[]) => {
-    return ProductTypeDetector.shouldShowConfigurator(product, variants);
-  };
+  if (isProductLoading) {
+    return <p>Loading product details...</p>;
+  }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
+  if (productError) {
+    return <p>Error loading product details.</p>;
   }
 
   if (!product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Product not found</p>
-      </div>
-    );
+    return <p>Product not found.</p>;
   }
 
-  const displayProduct = selectedVariant || product;
-  const hasVariants = variants.length > 0;
-  const showConfigurator = shouldShowConfigurator(displayProduct, hasVariants ? variants : [displayProduct]);
+  const {
+    name,
+    description,
+    price,
+    // assets,
+    details,
+    category,
+    id: productId,
+  } = product;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => window.history.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{displayProduct.name}</h1>
-              <p className="text-gray-600">{displayProduct.product_code}</p>
-            </div>
-          </div>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Breadcrumbs or Navigation */}
+      <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Product Image Gallery / 3D Viewer */}
+        <div className="lg:col-span-1">
+          <StickyProductAssets
+            currentAssets={currentAssets}
+            productName={name}
+            productId={productId}
+            onMissingModel={handleMissingModel}
+            className="sticky top-20"
+          />
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Images */}
-          <div className="space-y-6">
-            <ProductImageGallery
-              thumbnail={displayProduct.thumbnail}
-              images={displayProduct.images}
-              productName={displayProduct.name}
-            />
-            
-            <Enhanced3DViewer
-              modelPath={displayProduct.modelPath}
-              productName={displayProduct.name}
-              productId={displayProduct.id}
-            />
-          </div>
+        {/* Product Details */}
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-2xl font-semibold">{name}</CardTitle>
+                <div className="flex items-center space-x-2">
+                  <Button variant="outline" size="icon">
+                    <Heart className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="icon">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2 mt-2">
+                <Badge>{category}</Badge>
+                <Badge variant="secondary">
+                  <Eye className="mr-1 h-3 w-3" />
+                  {/* {views} */}
+                  Views
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-gray-600">{description}</p>
 
-          {/* Right Column - Details */}
-          <div className="space-y-6">
-            {/* Product Info */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle>{displayProduct.name}</CardTitle>
-                    <p className="text-muted-foreground mt-1">{displayProduct.category}</p>
-                  </div>
-                  <Badge variant="outline">{displayProduct.product_code}</Badge>
+                {/* Price and Add to Cart */}
+                <div className="flex items-center justify-between">
+                  <div className="text-xl font-bold">${price}</div>
+                  <Button size="lg" onClick={handleAddToCart}>
+                    Add to Cart
+                    <ShoppingCart className="ml-2 h-5 w-5" />
+                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Description</h4>
-                  <p className="text-muted-foreground">{displayProduct.description}</p>
-                </div>
-                
-                {displayProduct.dimensions && (
-                  <div>
-                    <h4 className="font-medium mb-2">Dimensions</h4>
-                    <p className="text-muted-foreground">{displayProduct.dimensions}</p>
-                  </div>
-                )}
 
                 <Separator />
 
-                {/* Product Details */}
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  {displayProduct.finish_type && (
-                    <div>
-                      <span className="font-medium">Finish:</span>
-                      <p className="text-muted-foreground">{displayProduct.finish_type}</p>
+                {/* Product Configuration - UniversalProductConfigurator */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-2">Configure Product</h3>
+                  {isConfigLoading ? (
+                    <div className="flex flex-col space-y-4">
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </div>
-                  )}
-                  {displayProduct.orientation && (
-                    <div>
-                      <span className="font-medium">Orientation:</span>
-                      <p className="text-muted-foreground">{displayProduct.orientation}</p>
-                    </div>
-                  )}
-                  {displayProduct.door_type && (
-                    <div>
-                      <span className="font-medium">Door Type:</span>
-                      <p className="text-muted-foreground">{displayProduct.door_type}</p>
-                    </div>
-                  )}
-                  {displayProduct.drawer_count && displayProduct.drawer_count > 0 && (
-                    <div>
-                      <span className="font-medium">Drawers:</span>
-                      <p className="text-muted-foreground">{displayProduct.drawer_count}</p>
-                    </div>
-                  )}
-                  {displayProduct.mixing_type && (
-                    <div>
-                      <span className="font-medium">Mixing Type:</span>
-                      <p className="text-muted-foreground">{displayProduct.mixing_type}</p>
-                    </div>
-                  )}
-                  {displayProduct.handle_type && (
-                    <div>
-                      <span className="font-medium">Handle Type:</span>
-                      <p className="text-muted-foreground">{displayProduct.handle_type}</p>
-                    </div>
-                  )}
-                  {displayProduct.emergency_shower_type && (
-                    <div>
-                      <span className="font-medium">Emergency Type:</span>
-                      <p className="text-muted-foreground">{displayProduct.emergency_shower_type}</p>
-                    </div>
-                  )}
-                  {displayProduct.mounting_type && (
-                    <div>
-                      <span className="font-medium">Mounting:</span>
-                      <p className="text-muted-foreground">{displayProduct.mounting_type}</p>
-                    </div>
+                  ) : configError ? (
+                    <p className="text-red-500">Error loading configurator options.</p>
+                  ) : (
+                    <UniversalProductConfigurator
+                      options={getConfiguratorOptions()}
+                      selectedConfig={selectedConfig}
+                      onConfigChange={updateConfig}
+                    />
                   )}
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Product Configuration - Show for all applicable series */}
-            {showConfigurator ? (
-              <SpecificProductSelector
-                products={hasVariants ? variants : [displayProduct]}
-                selectedProduct={selectedVariant}
-                onProductSelect={handleVariantSelect}
-              />
-            ) : (
-              <Card>
-                <CardContent className="py-6">
-                  <div className="flex items-center gap-3 text-muted-foreground">
-                    <Info className="h-5 w-5" />
-                    <p>This product has no configurable variants.</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                <Separator />
 
-            {/* Specifications */}
-            {displayProduct.specifications && displayProduct.specifications.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Specifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {displayProduct.specifications.map((spec: any, index: number) => (
-                      <div key={index} className="flex justify-between">
-                        <span className="font-medium">{spec.name || spec.key}:</span>
-                        <span className="text-muted-foreground">{spec.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                {/* Product Details Accordion */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-2">Product Details</h3>
+                  <Accordion type="single" collapsible>
+                    {details &&
+                      Object.entries(details).map(([key, value]) => (
+                        <AccordionItem value={key} key={key}>
+                          <AccordionTrigger>{key}</AccordionTrigger>
+                          <AccordionContent>{value}</AccordionContent>
+                        </AccordionItem>
+                      ))}
+                  </Accordion>
+                </div>
 
-            {/* Actions */}
-            <Card>
-              <CardContent className="py-6">
-                <div className="flex gap-3">
-                  <Button className="flex-1">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download Datasheet
-                  </Button>
-                  <Button variant="outline" className="flex-1">
-                    Request Quote
+                <Separator />
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-2">
+                  <Button variant="secondary">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Specs
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
