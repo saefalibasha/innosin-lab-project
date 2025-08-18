@@ -1,333 +1,391 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { AlertCircle } from 'lucide-react';
-import { Product } from '@/types/product';
-import { fetchProductWithVariants } from '@/services/enhancedProductService';
-import UniversalProductConfigurator from '@/components/product/UniversalProductConfigurator';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, ShoppingCart, Package, FileText, Building2, Settings } from 'lucide-react';
+import { useRFQ } from '@/contexts/RFQContext';
+import { toast } from 'sonner';
+import AnimatedSection from '@/components/AnimatedSection';
 import StickyProductAssets from '@/components/product/StickyProductAssets';
+import UniversalProductConfigurator from '@/components/product/UniversalProductConfigurator';
 import { useMissingModelsTracker } from '@/hooks/useMissingModelsTracker';
+import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
+import { Product } from '@/types/product';
 
 const ProductDetail = () => {
-  const { id } = useParams<{ id: string }>();
-  const [product, setProduct] = useState<Product | null>(null);
-  const [variants, setVariants] = useState<Product[]>([]);
-  const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
-  const [selectedFinish, setSelectedFinish] = useState('PC');
+  const { productId } = useParams<{ productId: string }>();
+  const { addItem } = useRFQ();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const missingModelsTracker = useMissingModelsTracker();
-
-  // Enhanced product type detection for all series
-  const getProductType = useCallback((product: Product) => {
-    if (!product) return 'unknown';
-    
-    const name = product.name?.toLowerCase() || '';
-    const category = product.category?.toLowerCase() || '';
-    const series = product.product_series?.toLowerCase() || '';
-    const companyTags = product.company_tags || [];
-    
-    // Broen-Lab series
-    if (name.includes('emergency') && name.includes('shower')) return 'emergency_shower';
-    if (name.includes('uniflex') || name.includes('tap')) return 'uniflex_tap';
-    
-    // Safe Aire II
-    if (name.includes('fume') && name.includes('hood')) return 'fume_hood';
-    
-    // Oriental Giken and Innosin Lab series
-    if (companyTags.includes('Oriental Giken') || companyTags.includes('Innosin') || 
-        category.includes('oriental') || category.includes('innosin')) {
-      
-      if (name.includes('modular') || series.includes('modular')) return 'modular_cabinet';
-      if ((name.includes('mc-') || name.includes('mcc-') || name.includes('mobile')) && name.includes('cabinet')) return 'mobile_cabinet';
-      if ((name.includes('wcg-') || name.includes('wall')) && name.includes('cabinet')) return 'wall_cabinet';
-      if ((name.includes('tcg-') || name.includes('tall')) && name.includes('cabinet')) return 'tall_cabinet';
-      if (name.includes('or-') && (name.includes('open') || name.includes('rack'))) return 'open_rack';
-      if (name.includes('sink')) return 'sink_cabinet';
-    }
-    
-    // Fallback patterns
-    if (name.includes('cabinet')) {
-      if (name.includes('mobile')) return 'mobile_cabinet';
-      if (name.includes('wall')) return 'wall_cabinet';
-      if (name.includes('tall')) return 'tall_cabinet';
-      return 'modular_cabinet';
-    }
-    
-    return 'unknown';
-  }, []);
-
+  const [series, setSeries] = useState<any>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string>('');
+  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
+  const [currentAssets, setCurrentAssets] = useState<any>(null);
+  const { trackMissingModel } = useMissingModelsTracker();
+  
   useEffect(() => {
-    if (id) {
-      fetchProduct(id);
+    if (productId) {
+      fetchProductData();
     }
-  }, [id]);
+  }, [productId]);
 
-  const fetchProduct = async (productId: string) => {
+  const fetchProductData = async () => {
     try {
       setLoading(true);
-      setError(null);
       
-      console.log(`🔍 Fetching product details for ID: ${productId}`);
+      // Fetch the main product/series
+      const product = await fetchProductById(productId!);
+      setSeries(product);
       
-      const { product: fetchedProduct, variants: fetchedVariants } = await fetchProductWithVariants(productId);
-      
-      if (!fetchedProduct) {
-        setError('Product not found');
-        return;
+      // If it's a series parent, fetch child products as variants
+      if (product.is_series_parent) {
+        const variants = await fetchProductsByParentSeriesId(productId!);
+        setSeries({...product, variants});
+        
+        if (variants.length > 0) {
+          setSelectedVariantId(variants[0].id);
+        }
+      } else if (product.parent_series_id) {
+        // If this is a variant, fetch the parent and all siblings
+        try {
+          const parentProduct = await fetchProductById(product.parent_series_id);
+          const variants = await fetchProductsByParentSeriesId(product.parent_series_id);
+          setSeries({...parentProduct, variants, is_series_parent: true});
+          setSelectedVariantId(product.id);
+        } catch (error) {
+          // If parent doesn't exist, treat as standalone product
+          console.log('Parent product not found, treating as standalone');
+          setSeries(product);
+        }
       }
-      
-      setProduct(fetchedProduct);
-      setVariants(fetchedVariants);
-      setSelectedVariant(fetchedVariants[0] || fetchedProduct);
-      
-      console.log(`✅ Successfully loaded product: ${fetchedProduct.name}`);
-      console.log(`✅ Found ${fetchedVariants.length} variants`);
-      
-    } catch (err) {
-      console.error('Error fetching product:', err);
-      setError('Failed to load product details');
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+      toast.error('Failed to load product details');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVariantChange = useCallback((variantId: string) => {
-    const variant = variants.find(v => v.id === variantId);
-    if (variant) {
-      setSelectedVariant(variant);
-      console.log(`🔄 Switched to variant: ${variant.name}`);
+  const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
+  const displayProduct = currentVariant || series;
+
+  // Enhanced product type detection
+  const getProductType = () => {
+    if (!series && !displayProduct) return 'standard';
+    
+    const product = displayProduct || series;
+    const productSeries = product?.product_series?.toLowerCase() || '';
+    const category = product?.category?.toLowerCase() || '';
+    const name = product?.name?.toLowerCase() || '';
+    
+    // UNIFLEX Taps detection
+    if (productSeries.includes('uniflex') || 
+        productSeries.includes('single way taps') || 
+        name.includes('uniflex') ||
+        product?.mixing_type || 
+        product?.handle_type) {
+      return 'uniflex';
     }
-  }, [variants]);
-
-  const handleFinishChange = useCallback((finish: string) => {
-    setSelectedFinish(finish);
-    console.log(`🎨 Changed finish to: ${finish}`);
-  }, []);
-
-  // Enhanced configurator eligibility check
-  const isConfiguratorEligible = useCallback((product: Product, variants: Product[]) => {
-    if (!product || !variants || variants.length <= 1) return false;
     
-    // Check if variants have meaningful differences
-    const hasVariantDifferences = variants.some(variant => 
-      variant.dimensions !== variants[0].dimensions ||
-      variant.door_type !== variants[0].door_type ||
-      variant.orientation !== variants[0].orientation ||
-      variant.drawer_count !== variants[0].drawer_count ||
-      variant.mounting_type !== variants[0].mounting_type ||
-      variant.mixing_type !== variants[0].mixing_type ||
-      variant.handle_type !== variants[0].handle_type ||
-      variant.emergency_shower_type !== variants[0].emergency_shower_type ||
-      variant.product_code !== variants[0].product_code
-    );
+    // Emergency Shower detection
+    if (productSeries.includes('emergency shower') || 
+        name.includes('emergency shower') ||
+        product?.emergency_shower_type) {
+      return 'emergency_shower';
+    }
     
-    return hasVariantDifferences;
-  }, []);
+    // Safe Aire II / Fume Hoods detection
+    if (productSeries.includes('safe aire') || 
+        productSeries.includes('fume hood') ||
+        category.includes('fume') ||
+        name.includes('fume hood') ||
+        name.includes('safe aire') ||
+        product?.mounting_type) {
+      return 'fume_hood';
+    }
+    
+    // Other product type detections
+    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
+      return 'tall_cabinet';
+    }
+    
+    if (productSeries.includes('open rack') || name.includes('open rack')) {
+      return 'open_rack';
+    }
+    
+    if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) {
+      return 'wall_cabinet';
+    }
+    
+    if (productSeries.includes('mobile cabinet') || 
+        productSeries.includes('modular cabinet') ||
+        name.includes('mobile cabinet') ||
+        name.includes('modular cabinet')) {
+      return 'modular_cabinet';
+    }
+    
+    return 'standard';
+  };
 
-  const getCurrentAssets = useCallback(() => {
-    const currentVariant = selectedVariant || product;
-    if (!currentVariant) return null;
+  const productType = getProductType();
+  const hasVariants = series?.variants && series.variants.length > 0;
+  const shouldShowConfigurator = hasVariants;
+
+  // Update assets when variant or finish changes
+  useEffect(() => {
+    if (currentVariant) {
+      setCurrentAssets({
+        thumbnail: currentVariant.thumbnail_path,
+        model: currentVariant.model_path,
+        images: currentVariant.additional_images || []
+      });
+    } else if (series) {
+      setCurrentAssets({
+        thumbnail: series.series_thumbnail_path || series.thumbnail_path,
+        model: series.series_model_path || series.model_path,
+        images: series.additional_images || []
+      });
+    }
+  }, [currentVariant, selectedFinish, series]);
+
+  const handleAddToQuote = () => {
+    if (!series) return;
     
-    return {
-      thumbnail: currentVariant.thumbnail_path || currentVariant.thumbnail || '',
-      model: currentVariant.model_path || currentVariant.modelPath || '',
-      images: currentVariant.images || []
+    // Use SS304 for Open Rack series, Stainless Steel for others
+    const finishText = productType === 'open_rack' ? 
+      (selectedFinish === 'PC' ? 'Powder Coat' : 'SS304') :
+      (selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel');
+    
+    const itemToAdd = {
+      id: currentVariant ? currentVariant.id : series.id,
+      name: currentVariant ? 
+        `${series.name} - ${currentVariant.dimensions || 'Standard'} - ${finishText}` : 
+        series.name,
+      category: series.category,
+      dimensions: currentVariant ? currentVariant.dimensions : series.dimensions || '',
+      image: currentAssets?.thumbnail || series.series_thumbnail_path || series.thumbnail_path
     };
-  }, [selectedVariant, product]);
+    
+    addItem(itemToAdd);
+    toast.success(`${itemToAdd.name} added to quote`);
+  };
+
+  const getProductDescription = () => {
+    if (currentVariant && currentVariant.description) {
+      return currentVariant.description;
+    }
+    if (series?.description) {
+      return series.description;
+    }
+    return 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.';
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading product details...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  if (error || !product) {
+  if (!series) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-destructive" />
-          <h2 className="text-2xl font-bold mb-2">Product Not Found</h2>
-          <p className="text-muted-foreground mb-4">{error || 'The requested product could not be found.'}</p>
+          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+          <Link to="/products">
+            <Button>Back to Catalog</Button>
+          </Link>
         </div>
       </div>
     );
   }
 
-  const currentProductType = getProductType(product);
-  const showConfigurator = isConfiguratorEligible(product, variants);
-
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="container-custom py-8 pt-20">
+        {/* Breadcrumb */}
+        <AnimatedSection animation="fade-in" delay={100}>
+          <div className="flex items-center gap-2 mb-8">
+            <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Catalog
+            </Link>
+          </div>
+        </AnimatedSection>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Left Column - Sticky Product Assets */}
-          <div className="lg:sticky lg:top-8 lg:self-start">
-            <StickyProductAssets
-              currentAssets={getCurrentAssets()}
-              productName={selectedVariant?.name || product.name}
-              className="w-full"
-              onMissingModel={missingModelsTracker.trackMissingModel}
-              productId={selectedVariant?.id || product.id}
-            />
+          <div className="space-y-6">
+            <AnimatedSection animation="slide-in-left" delay={200}>
+              <StickyProductAssets
+                currentAssets={currentAssets}
+                productName={series.name}
+                className="w-full"
+                onMissingModel={trackMissingModel}
+                productId={currentVariant?.id || series.id}
+              />
+            </AnimatedSection>
           </div>
 
-          {/* Right Column - Product Information */}
-          <div className="space-y-8">
+          {/* Right Column - Product Info */}
+          <div className="space-y-6">
             {/* Product Header */}
-            <div className="space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-bold text-foreground">
-                    {selectedVariant?.editable_title || selectedVariant?.name || product.name}
-                  </h1>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <Badge variant="secondary">{product.category}</Badge>
-                    {product.company_tags?.map(tag => (
-                      <Badge key={tag} variant="outline">{tag}</Badge>
-                    ))}
-                    {selectedVariant?.product_code && (
-                      <Badge variant="outline">Code: {selectedVariant.product_code}</Badge>
-                    )}
-                    {currentProductType !== 'unknown' && (
-                      <Badge variant="outline">
-                        {currentProductType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+            <AnimatedSection animation="slide-in-right" delay={300}>
+              <div className="space-y-4">
+                <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                  {series.name}
+                </h1>
+                <Badge variant="outline" className="border-sea text-sea text-base px-4 py-2 font-medium">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  {series.category}
+                </Badge>
               </div>
+            </AnimatedSection>
 
-              <p className="text-lg text-muted-foreground">
-                {selectedVariant?.editable_description || selectedVariant?.description || product.description}
-              </p>
-            </div>
-
-            {/* Universal Product Configurator */}
-            {showConfigurator && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configure Your Product</CardTitle>
-                  <CardDescription>
-                    Customize this {currentProductType.replace('_', ' ')} to meet your specific requirements
-                  </CardDescription>
+            {/* Product Overview */}
+            <AnimatedSection animation="slide-in-right" delay={350}>
+              <Card className="shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Package className="w-5 h-5 text-primary" />
+                    Product Overview
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <UniversalProductConfigurator
-                    variants={variants}
-                    selectedVariantId={selectedVariant?.id || ''}
-                    onVariantChange={handleVariantChange}
-                    selectedFinish={selectedFinish}
-                    onFinishChange={handleFinishChange}
-                    productType={currentProductType}
-                  />
+                  <p className="text-muted-foreground leading-relaxed text-base">
+                    {getProductDescription()}
+                  </p>
                 </CardContent>
               </Card>
-            )}
+            </AnimatedSection>
 
-            {/* Product Information Tabs */}
-            <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="specifications">Specifications</TabsTrigger>
-                <TabsTrigger value="details">Details</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="overview" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Product Overview</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Description</h4>
-                      <p className="text-muted-foreground">
-                        {selectedVariant?.fullDescription || product.fullDescription || 
-                         selectedVariant?.description || product.description ||
-                         'No detailed description available.'}
-                      </p>
-                    </div>
-                    
-                    {selectedVariant?.dimensions && (
-                      <div>
-                        <h4 className="font-medium mb-2">Dimensions</h4>
-                        <p className="text-muted-foreground">{selectedVariant.dimensions}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="specifications" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Technical Specifications</CardTitle>
+            {/* Universal Product Configuration */}
+            {shouldShowConfigurator && (
+              <AnimatedSection animation="slide-in-right" delay={400}>
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Settings className="w-5 h-5 text-primary" />
+                      Product Configuration
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {product.specifications && product.specifications.length > 0 ? (
-                      <div className="space-y-2">
-                        {product.specifications.map((spec, index) => (
-                          <div key={index} className="flex justify-between py-2 border-b last:border-b-0">
-                            <span className="font-medium">{spec.name || `Specification ${index + 1}`}</span>
-                            <span className="text-muted-foreground">{spec.value || spec}</span>
+                    <UniversalProductConfigurator
+                      variants={series.variants}
+                      selectedVariantId={selectedVariantId}
+                      onVariantChange={setSelectedVariantId}
+                      selectedFinish={selectedFinish}
+                      onFinishChange={setSelectedFinish}
+                      productType={productType}
+                    />
+                  </CardContent>
+                </Card>
+              </AnimatedSection>
+            )}
+
+            {/* Technical Specifications */}
+            <AnimatedSection animation="slide-in-right" delay={450}>
+              <Card className="shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <FileText className="w-5 h-5 text-primary" />
+                    Technical Specifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">Key Features</h4>
+                    <ul className="text-muted-foreground space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Chemical-resistant construction for laboratory environments
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Professional laboratory grade materials and finishes
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Ergonomic design optimized for laboratory workflow
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Available in multiple configurations and sizes
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Meets stringent laboratory safety standards
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h4 className="font-semibold text-foreground mb-3 text-base">Construction Details</h4>
+                    <ul className="text-muted-foreground space-y-2 text-sm">
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        {productType === 'open_rack' ? 
+                          'Finish Options: Powder Coat (PC) or SS304' :
+                          'Finish Options: Powder Coat (PC) or Stainless Steel (SS)'
+                        }
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Heavy-duty steel frame with reinforced joints
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Heavy-duty casters with locking mechanism
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="w-1.5 h-1.5 bg-sea rounded-full mt-2 flex-shrink-0"></span>
+                        Comprehensive manufacturer warranty included
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Current Selection */}
+                  {currentVariant && (
+                    <div className="bg-muted/30 p-4 rounded-lg border">
+                      <h4 className="font-semibold text-foreground mb-3 text-base">Current Selection</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <span className="font-medium text-foreground">Product Code:</span>
+                          <p className="text-muted-foreground">{currentVariant.product_code}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Dimensions:</span>
+                          <p className="text-muted-foreground">{currentVariant.dimensions}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">Finish:</span>
+                          <p className="text-muted-foreground">{selectedFinish === 'PC' ? 'Powder Coat' : productType === 'open_rack' ? 'SS304' : 'Stainless Steel'}</p>
+                        </div>
+                        {currentVariant.door_type && (
+                          <div>
+                            <span className="font-medium text-foreground">Door Type:</span>
+                            <p className="text-muted-foreground">{currentVariant.door_type}</p>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-muted-foreground">No specifications available for this product.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="details" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Product Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      {selectedVariant?.product_code && (
-                        <div>
-                          <h4 className="font-medium">Product Code</h4>
-                          <p className="text-muted-foreground">{selectedVariant.product_code}</p>
-                        </div>
-                      )}
-                      
-                      {selectedVariant?.finish_type && (
-                        <div>
-                          <h4 className="font-medium">Finish Type</h4>
-                          <p className="text-muted-foreground">{selectedVariant.finish_type}</p>
-                        </div>
-                      )}
-                      
-                      {selectedVariant?.cabinet_class && (
-                        <div>
-                          <h4 className="font-medium">Cabinet Class</h4>
-                          <p className="text-muted-foreground">{selectedVariant.cabinet_class}</p>
-                        </div>
-                      )}
-                      
-                      {selectedVariant?.drawer_count && selectedVariant.drawer_count > 0 && (
-                        <div>
-                          <h4 className="font-medium">Drawer Count</h4>
-                          <p className="text-muted-foreground">{selectedVariant.drawer_count}</p>
-                        </div>
-                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                  )}
+                </CardContent>
+              </Card>
+            </AnimatedSection>
+
+            {/* Add to Quote Button */}
+            <AnimatedSection animation="slide-in-right" delay={500}>
+              <Button
+                onClick={handleAddToQuote}
+                size="lg"
+                className="w-full h-12 bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-[1.02] text-white font-semibold shadow-lg hover:shadow-xl"
+              >
+                <ShoppingCart className="w-5 h-5 mr-2" />
+                Add to Quote
+              </Button>
+            </AnimatedSection>
           </div>
         </div>
       </div>

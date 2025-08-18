@@ -25,210 +25,107 @@ const UniversalProductConfigurator = ({
 }: UniversalProductConfiguratorProps) => {
   if (!variants || variants.length === 0) return null;
 
-  // Enhanced product type detection for all series
-  const getProductTypeConfig = () => {
-    const lowerType = productType.toLowerCase();
-    
-    // Broen-Lab series
-    if (lowerType.includes('emergency_shower')) {
-      return {
-        primaryAttributes: ['emergency_shower_type'],
-        secondaryAttributes: ['mounting_type'],
-        finishOptions: [
-          { value: 'SS', label: 'Stainless Steel' },
-          { value: 'PC', label: 'Powder Coat' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('uniflex') || lowerType.includes('tap')) {
-      return {
-        primaryAttributes: ['mixing_type', 'handle_type'],
-        secondaryAttributes: ['mounting_type'],
-        finishOptions: [
-          { value: 'SS', label: 'Stainless Steel' },
-          { value: 'Chrome', label: 'Chrome Finish' }
-        ]
-      };
-    }
-    
-    // Safe Aire II Fume Hoods
-    if (lowerType.includes('fume_hood')) {
-      return {
-        primaryAttributes: ['dimensions'],
-        secondaryAttributes: ['door_type'],
-        finishOptions: [
-          { value: 'Epoxy', label: 'Epoxy Resin' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    // Oriental Giken series
-    if (lowerType.includes('modular_cabinet') || lowerType.includes('mobile_cabinet')) {
-      return {
-        primaryAttributes: ['dimensions', 'drawer_count'],
-        secondaryAttributes: ['orientation', 'door_type'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('wall_cabinet')) {
-      return {
-        primaryAttributes: ['dimensions'],
-        secondaryAttributes: ['door_type', 'mounting_type'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('tall_cabinet')) {
-      return {
-        primaryAttributes: ['dimensions'],
-        secondaryAttributes: ['door_type', 'drawer_count'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('open_rack')) {
-      return {
-        primaryAttributes: ['dimensions'],
-        secondaryAttributes: [],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS304', label: 'SS304' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('sink_cabinet')) {
-      return {
-        primaryAttributes: ['dimensions'],
-        secondaryAttributes: ['door_type', 'orientation'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    // Innosin Lab series
-    if (lowerType.includes('innosin') || variants.some(v => v.company_tags?.includes('Innosin'))) {
-      return {
-        primaryAttributes: ['dimensions', 'drawer_count'],
-        secondaryAttributes: ['orientation', 'door_type'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    // Default configuration
-    return {
-      primaryAttributes: ['dimensions'],
-      secondaryAttributes: ['orientation', 'door_type', 'drawer_count'],
-      finishOptions: [
-        { value: 'PC', label: 'Powder Coat' },
-        { value: 'SS', label: 'Stainless Steel' }
-      ]
-    };
+  // Group variants by relevant attributes based on product type
+  const getGroupingAttributes = () => {
+    const sampleVariant = variants[0];
+    const attributes = [];
+
+    // Check which attributes are available and relevant
+    if (sampleVariant.dimensions) attributes.push('dimensions');
+    if (sampleVariant.door_type && sampleVariant.door_type !== 'None') attributes.push('door_type');
+    if (sampleVariant.orientation && sampleVariant.orientation !== 'None') attributes.push('orientation');
+    if (sampleVariant.drawer_count && sampleVariant.drawer_count > 0) attributes.push('drawer_count');
+    if (sampleVariant.mounting_type) attributes.push('mounting_type');
+    if (sampleVariant.mixing_type) attributes.push('mixing_type');
+    if (sampleVariant.handle_type) attributes.push('handle_type');
+    if (sampleVariant.emergency_shower_type) attributes.push('emergency_shower_type');
+
+    return attributes;
   };
 
-  const config = getProductTypeConfig();
+  const groupingAttributes = getGroupingAttributes();
   const selectedVariant = variants.find(v => v.id === selectedVariantId) || variants[0];
 
-  // Get available values for each attribute
-  const getAttributeOptions = (attr: string) => {
-    const values = [...new Set(variants.map(v => v[attr]).filter(Boolean))];
-    return values.map(value => ({
-      value: value.toString(),
-      label: formatAttributeValue(attr, value)
-    }));
+  // Create configuration groups
+  const createConfigurationGroups = () => {
+    const groups: { [key: string]: any[] } = {};
+    
+    groupingAttributes.forEach(attr => {
+      const uniqueValues = [...new Set(variants.map(v => v[attr]).filter(Boolean))];
+      groups[attr] = uniqueValues.map(value => ({
+        value,
+        variants: variants.filter(v => v[attr] === value)
+      }));
+    });
+
+    return groups;
   };
 
-  const formatAttributeValue = (attr: string, value: any) => {
-    if (attr === 'drawer_count') {
-      return `${value} Drawer${value !== 1 ? 's' : ''}`;
-    }
-    if (attr === 'emergency_shower_type') {
-      return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    }
-    if (attr === 'mixing_type') {
-      return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    }
-    return value.toString();
-  };
+  const configGroups = createConfigurationGroups();
 
   const getAttributeLabel = (attr: string) => {
     const labels = {
       dimensions: 'Dimensions',
       door_type: 'Door Type',
       orientation: 'Orientation',
-      drawer_count: 'Drawer Configuration',
+      drawer_count: 'Drawer Count',
       mounting_type: 'Mounting Type',
       mixing_type: 'Mixing Type',
       handle_type: 'Handle Type',
-      emergency_shower_type: 'Shower Type'
+      emergency_shower_type: 'Emergency Shower Type'
     };
     return labels[attr] || attr.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // Get all relevant attributes that have variations
-  const allAttributes = [...config.primaryAttributes, ...config.secondaryAttributes];
-  const availableAttributes = allAttributes.filter(attr => 
-    variants.some(v => v[attr] !== undefined && v[attr] !== null && v[attr] !== '')
-  );
+  const getFinishOptions = () => {
+    if (productType === 'open_rack') {
+      return [
+        { value: 'PC', label: 'Powder Coat' },
+        { value: 'SS304', label: 'SS304' }
+      ];
+    }
+    return [
+      { value: 'PC', label: 'Powder Coat' },
+      { value: 'SS', label: 'Stainless Steel' }
+    ];
+  };
 
   return (
     <div className="space-y-6">
-      {/* Configuration Options */}
-      {availableAttributes.length > 0 && (
+      {/* Variant Selection */}
+      {groupingAttributes.length > 0 && (
         <div className="space-y-4">
           <h4 className="font-semibold text-foreground">Configuration Options</h4>
           
-          {availableAttributes.map(attr => {
-            const options = getAttributeOptions(attr);
-            if (options.length <= 1) return null;
-            
-            return (
-              <div key={attr} className="space-y-2">
-                <label className="text-sm font-medium text-foreground">
-                  {getAttributeLabel(attr)}
-                </label>
-                <Select
-                  value={selectedVariant[attr]?.toString() || ''}
-                  onValueChange={(value) => {
-                    const matchingVariant = variants.find(v => 
-                      v[attr]?.toString() === value
-                    );
-                    if (matchingVariant) {
-                      onVariantChange(matchingVariant.id);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Select ${getAttributeLabel(attr).toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {options.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            );
-          })}
+          {groupingAttributes.map(attr => (
+            <div key={attr} className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                {getAttributeLabel(attr)}
+              </label>
+              <Select
+                value={selectedVariant[attr]?.toString() || ''}
+                onValueChange={(value) => {
+                  const matchingVariant = variants.find(v => 
+                    v[attr]?.toString() === value
+                  );
+                  if (matchingVariant) {
+                    onVariantChange(matchingVariant.id);
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={`Select ${getAttributeLabel(attr).toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {configGroups[attr]?.map(group => (
+                    <SelectItem key={group.value} value={group.value.toString()}>
+                      {group.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ))}
         </div>
       )}
 
@@ -238,7 +135,7 @@ const UniversalProductConfigurator = ({
       <div className="space-y-2">
         <label className="text-sm font-medium text-foreground">Finish</label>
         <div className="flex flex-wrap gap-2">
-          {config.finishOptions.map(finish => (
+          {getFinishOptions().map(finish => (
             <Button
               key={finish.value}
               variant={selectedFinish === finish.value ? 'default' : 'outline'}
@@ -252,28 +149,18 @@ const UniversalProductConfigurator = ({
         </div>
       </div>
 
-      {/* Variant Information */}
-      {selectedVariant && (
+      {/* Available Variants Summary */}
+      {variants.length > 1 && (
         <Card className="bg-muted/30">
-          <CardContent className="p-4 space-y-2">
+          <CardContent className="p-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Selected Configuration</span>
+              <span className="text-sm text-muted-foreground">
+                Available Configurations
+              </span>
               <Badge variant="secondary">
-                {variants.length} option{variants.length !== 1 ? 's' : ''} available
+                {variants.length} option{variants.length !== 1 ? 's' : ''}
               </Badge>
             </div>
-            
-            {selectedVariant.product_code && (
-              <div className="text-sm text-muted-foreground">
-                <strong>Product Code:</strong> {selectedVariant.product_code}
-              </div>
-            )}
-            
-            {selectedVariant.dimensions && (
-              <div className="text-sm text-muted-foreground">
-                <strong>Dimensions:</strong> {selectedVariant.dimensions}
-              </div>
-            )}
           </CardContent>
         </Card>
       )}
