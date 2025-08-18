@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1042,8 +1042,8 @@ export type Database = {
     Functions: {
       check_rate_limit: {
         Args: {
-          operation_name: string
           max_attempts?: number
+          operation_name: string
           time_window_minutes?: number
         }
         Returns: boolean
@@ -1057,6 +1057,10 @@ export type Database = {
         Returns: string
       }
       is_admin: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
+      is_super_admin: {
         Args: { user_email: string }
         Returns: boolean
       }

@@ -22,12 +22,36 @@ const SecurityHeader = () => {
         base-uri 'self';
         form-action 'self';
         upgrade-insecure-requests;
+        block-all-mixed-content;
       `.replace(/\s+/g, ' ').trim();
       
       document.head.appendChild(meta);
       
+      // Add additional security headers via meta tags
+      const headers = [
+        { name: 'X-Content-Type-Options', content: 'nosniff' },
+        { name: 'X-Frame-Options', content: 'DENY' },
+        { name: 'X-XSS-Protection', content: '1; mode=block' },
+        { name: 'Referrer-Policy', content: 'strict-origin-when-cross-origin' },
+        { name: 'Permissions-Policy', content: 'camera=(), microphone=(), geolocation=(), payment=()' }
+      ];
+      
+      headers.forEach(header => {
+        const metaTag = document.createElement('meta');
+        metaTag.httpEquiv = header.name;
+        metaTag.content = header.content;
+        document.head.appendChild(metaTag);
+      });
+      
       return () => {
-        document.head.removeChild(meta);
+        // Cleanup function to remove meta tags
+        const metaTags = document.querySelectorAll('meta[http-equiv]');
+        metaTags.forEach(tag => {
+          if (tag.getAttribute('http-equiv')?.includes('Content-Security-Policy') ||
+              tag.getAttribute('http-equiv')?.includes('X-')) {
+            document.head.removeChild(tag);
+          }
+        });
       };
     } else {
       // More lenient CSP for development
