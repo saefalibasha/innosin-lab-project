@@ -23,8 +23,28 @@ const Model = ({ url, onError, onMissingModel, productId }: {
   const meshRef = useRef<any>();
   const [modelLoaded, setModelLoaded] = useState(false);
   
+  // Resolve model path - handle both relative and absolute URLs
+  const resolveModelPath = (path: string) => {
+    if (!path) return '';
+    
+    // If it's already a full URL, return as is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+    
+    // If it starts with /, it's absolute from public root
+    if (path.startsWith('/')) {
+      return path;
+    }
+    
+    // If it doesn't start with /, assume it's relative to public/
+    return `/${path}`;
+  };
+
+  const resolvedUrl = resolveModelPath(url);
+  
   try {
-    const gltf = useLoader(GLTFLoader, url);
+    const gltf = useLoader(GLTFLoader, resolvedUrl);
     
     useEffect(() => {
       if (gltf && meshRef.current) {
@@ -56,7 +76,7 @@ const Model = ({ url, onError, onMissingModel, productId }: {
 
     return <primitive ref={meshRef} object={gltf.scene} />;
   } catch (error) {
-    console.error('Failed to load 3D model:', url, error);
+    console.error('Failed to load 3D model:', resolvedUrl, error);
     if (onMissingModel) {
       onMissingModel(url, productId);
     }
