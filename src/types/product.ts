@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -17,6 +18,7 @@ export interface Product {
   finish_type?: string;
   orientation?: string;
   drawer_count?: number;
+  number_of_drawers?: number; // Added for Innosin Lab products
   door_type?: string;
   product_code?: string;
   thumbnail_path?: string;

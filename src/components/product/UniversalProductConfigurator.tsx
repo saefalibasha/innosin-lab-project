@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -114,10 +115,10 @@ const UniversalProductConfigurator = ({
     // If we have specific finishes from variants, use those
     if (availableFinishes.size > 0) {
       return Array.from(availableFinishes).map(finish => ({
-        value: finish,
+        value: String(finish),
         label: finish === 'PC' ? 'Powder Coat' : 
                finish === 'SS' ? 'Stainless Steel' :
-               finish === 'SS304' ? 'SS304' : finish
+               finish === 'SS304' ? 'SS304' : String(finish)
       }));
     }
 
@@ -179,11 +180,11 @@ const UniversalProductConfigurator = ({
                 </SelectTrigger>
                 <SelectContent>
                   {configGroups[attr]?.map(group => (
-                    <SelectItem key={group.value} value={group.value.toString()}>
+                    <SelectItem key={String(group.value)} value={String(group.value)}>
                       {/* Enhanced display for different attribute types */}
-                      {attr === 'dimensions' ? group.value :
+                      {attr === 'dimensions' ? String(group.value) :
                        attr === 'number_of_drawers' || attr === 'drawer_count' ? `${group.value} Drawers` :
-                       group.value}
+                       String(group.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
