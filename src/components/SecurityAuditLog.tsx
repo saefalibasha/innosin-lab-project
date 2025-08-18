@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,7 +30,14 @@ const SecurityAuditLog = () => {
         .limit(50);
 
       if (error) throw error;
-      setEvents(data || []);
+      
+      // Transform the data to ensure ip_address is properly typed
+      const transformedData = (data || []).map(event => ({
+        ...event,
+        ip_address: event.ip_address ? String(event.ip_address) : undefined
+      }));
+      
+      setEvents(transformedData);
     } catch (error) {
       console.error('Error fetching security events:', error);
     } finally {
