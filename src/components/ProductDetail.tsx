@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import ProductImageGallery from './ProductImageGallery';
+import Enhanced3DViewer from './Enhanced3DViewer';
+import UniversalProductConfigurator from './product/UniversalProductConfigurator';
 import { ArrowLeft, Package, Info, FileText, Download } from 'lucide-react';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
 import { DatabaseProduct } from '@/types/supabase';
@@ -30,7 +32,7 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     baseProductId: dbProduct.parent_series_id,
     finish_type: dbProduct.finish_type,
     orientation: dbProduct.orientation,
-    drawer_count: dbProduct.drawer_count || 0,
+    drawer_count: dbProduct.drawer_count || dbProduct.number_of_drawers || 0,
     door_type: dbProduct.door_type,
     product_code: dbProduct.product_code || '',
     thumbnail_path: dbProduct.thumbnail_path,
@@ -44,8 +46,43 @@ const transformDatabaseProduct = (dbProduct: any): Product => {
     parent_series_id: dbProduct.parent_series_id,
     created_at: dbProduct.created_at,
     updated_at: dbProduct.updated_at,
-    is_active: dbProduct.is_active
+    is_active: dbProduct.is_active,
+    number_of_drawers: dbProduct.number_of_drawers
   };
+};
+
+// Enhanced product type detection for Innosin Lab
+const getProductType = (product: Product): string => {
+  const name = product.name?.toLowerCase() || '';
+  const category = product.category?.toLowerCase() || '';
+  const productCode = product.product_code?.toLowerCase() || '';
+  
+  // Mobile Cabinet detection
+  if (name.includes('mobile cabinet') || productCode.includes('mc-') || productCode.includes('mcc-')) {
+    return 'mobile_cabinet';
+  }
+  
+  // Wall Cabinet detection
+  if (name.includes('wall cabinet') || productCode.includes('wc-') || productCode.includes('wcg-')) {
+    return 'wall_cabinet';
+  }
+  
+  // Tall Cabinet detection
+  if (name.includes('tall cabinet') || productCode.includes('tc-') || productCode.includes('tcg-') || productCode.includes('tcs-')) {
+    return 'tall_cabinet';
+  }
+  
+  // Open Rack detection
+  if (name.includes('open rack') || productCode.includes('or-')) {
+    return 'open_rack';
+  }
+  
+  // Laboratory specific categories
+  if (category.includes('innosin lab') || category.includes('laboratory')) {
+    return 'laboratory_equipment';
+  }
+  
+  return 'standard';
 };
 
 const ProductDetail = () => {
@@ -53,7 +90,9 @@ const ProductDetail = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<Product[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
+  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
   const [loading, setLoading] = useState(true);
+  const [missingModels, setMissingModels] = useState<string[]>([]);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -71,6 +110,11 @@ const ProductDetail = () => {
       const transformedProduct = transformDatabaseProduct(productData);
       setProduct(transformedProduct);
       setSelectedVariant(transformedProduct);
+
+      // Set initial finish based on product data
+      if (transformedProduct.finish_type) {
+        setSelectedFinish(transformedProduct.finish_type);
+      }
 
       // If this is a series parent, fetch its variants
       if (productData.is_series_parent && productData.id) {
@@ -97,8 +141,22 @@ const ProductDetail = () => {
     }
   };
 
-  const handleVariantSelect = (variant: Product) => {
-    setSelectedVariant(variant);
+  const handleVariantSelect = (variantId: string) => {
+    const variant = variants.find(v => v.id === variantId);
+    if (variant) {
+      setSelectedVariant(variant);
+    }
+  };
+
+  const handleFinishChange = (finish: string) => {
+    setSelectedFinish(finish);
+  };
+
+  const handleMissingModel = (modelPath: string, productId?: string) => {
+    if (!missingModels.includes(modelPath)) {
+      setMissingModels(prev => [...prev, modelPath]);
+      console.log('Missing 3D model tracked:', modelPath, productId);
+    }
   };
 
   if (loading) {
@@ -119,6 +177,8 @@ const ProductDetail = () => {
 
   const displayProduct = selectedVariant || product;
   const hasVariants = variants.length > 0;
+  const productType = getProductType(displayProduct);
+  const shouldShowConfigurator = hasVariants || productType !== 'standard';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -140,17 +200,53 @@ const ProductDetail = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Images */}
+          {/* Left Column - Images and 3D Viewer */}
           <div className="space-y-6">
             <ProductImageGallery
               thumbnail={displayProduct.thumbnail}
               images={displayProduct.images}
               productName={displayProduct.name}
             />
+            
+            {/* 3D Model Viewer */}
+            {displayProduct.model_path && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">3D Model Viewer</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Enhanced3DViewer
+                    modelPath={displayProduct.model_path}
+                    className="h-64 w-full rounded-b-lg"
+                    onMissingModel={handleMissingModel}
+                    productId={displayProduct.id}
+                  />
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Right Column - Details */}
           <div className="space-y-6">
+            {/* Product Configuration - Moved above overview */}
+            {shouldShowConfigurator && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Product Configuration</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <UniversalProductConfigurator
+                    variants={variants.length > 0 ? variants : [displayProduct]}
+                    selectedVariantId={selectedVariant?.id || displayProduct.id}
+                    onVariantChange={handleVariantSelect}
+                    selectedFinish={selectedFinish}
+                    onFinishChange={handleFinishChange}
+                    productType={productType}
+                  />
+                </CardContent>
+              </Card>
+            )}
+
             {/* Product Info */}
             <Card>
               <CardHeader>
@@ -197,54 +293,18 @@ const ProductDetail = () => {
                       <p className="text-muted-foreground">{displayProduct.door_type}</p>
                     </div>
                   )}
-                  {displayProduct.drawer_count && displayProduct.drawer_count > 0 && (
+                  {(displayProduct.drawer_count || displayProduct.number_of_drawers) && (displayProduct.drawer_count > 0 || displayProduct.number_of_drawers > 0) && (
                     <div>
                       <span className="font-medium">Drawers:</span>
-                      <p className="text-muted-foreground">{displayProduct.drawer_count}</p>
+                      <p className="text-muted-foreground">{displayProduct.drawer_count || displayProduct.number_of_drawers}</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Product Configuration - Only show if variants exist */}
-            {hasVariants ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Product Configuration</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-medium mb-2">Available Variants</h4>
-                      <div className="grid grid-cols-1 gap-2">
-                        {variants.map((variant) => (
-                          <div
-                            key={variant.id}
-                            className={`p-3 border rounded-lg cursor-pointer transition-colors ${
-                              selectedVariant?.id === variant.id
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/50'
-                            }`}
-                            onClick={() => handleVariantSelect(variant)}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <p className="font-medium">{variant.product_code}</p>
-                                <p className="text-sm text-muted-foreground">{variant.dimensions}</p>
-                              </div>
-                              {variant.finish_type && (
-                                <Badge variant="secondary">{variant.finish_type}</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
+            {/* No configuration message for standard products */}
+            {!shouldShowConfigurator && (
               <Card>
                 <CardContent className="py-6">
                   <div className="flex items-center gap-3 text-muted-foreground">
