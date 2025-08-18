@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Download, Share2, Heart, Eye, Box } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Download, Share2, Heart, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { productService } from '@/services/productService';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
@@ -54,14 +54,16 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (product) {
-      resetConfig(product);
+      resetConfig(product as any);
     }
   }, [product, resetConfig]);
 
   const handleAddToCart = () => {
     if (product) {
       addItemToCart({
-        ...product,
+        id: product.id,
+        name: product.name,
+        price: product.price,
         assets: currentAssets,
         selectedConfig: selectedConfig,
       });
@@ -92,7 +94,6 @@ const ProductDetail = () => {
     name,
     description,
     price,
-    // assets,
     details,
     category,
     id: productId,
@@ -137,7 +138,6 @@ const ProductDetail = () => {
                 <Badge>{category}</Badge>
                 <Badge variant="secondary">
                   <Eye className="mr-1 h-3 w-3" />
-                  {/* {views} */}
                   Views
                 </Badge>
               </div>
@@ -170,9 +170,12 @@ const ProductDetail = () => {
                     <p className="text-red-500">Error loading configurator options.</p>
                   ) : (
                     <UniversalProductConfigurator
-                      options={getConfiguratorOptions()}
-                      selectedConfig={selectedConfig}
-                      onConfigChange={updateConfig}
+                      variants={[]}
+                      selectedVariantId=""
+                      onVariantChange={() => {}}
+                      selectedFinish="PC"
+                      onFinishChange={() => {}}
+                      productType="standard"
                     />
                   )}
                 </div>
@@ -187,7 +190,7 @@ const ProductDetail = () => {
                       Object.entries(details).map(([key, value]) => (
                         <AccordionItem value={key} key={key}>
                           <AccordionTrigger>{key}</AccordionTrigger>
-                          <AccordionContent>{value}</AccordionContent>
+                          <AccordionContent>{String(value)}</AccordionContent>
                         </AccordionItem>
                       ))}
                   </Accordion>

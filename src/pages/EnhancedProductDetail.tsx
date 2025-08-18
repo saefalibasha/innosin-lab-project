@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -423,6 +422,8 @@ const EnhancedProductDetail = () => {
                   <div className="rounded-xl overflow-hidden border shadow-sm">
                     <Enhanced3DViewer
                       modelPath={currentAssets?.model || ''}
+                      productName={series.name}
+                      productId={productId!}
                       className="w-full h-96 lg:h-[500px]"
                     />
                   </div>
