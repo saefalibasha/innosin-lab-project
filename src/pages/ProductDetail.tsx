@@ -6,8 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Building2, Package, Ruler, Tag } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
-import { SeriesProductConfigurator } from '@/components/product/SeriesProductConfigurator';
-import { ProductAssetViewer } from '@/components/product/ProductAssetViewer';
+import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
+import ProductAssetViewer from '@/components/product/ProductAssetViewer';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductDetail = () => {
@@ -86,7 +86,15 @@ const ProductDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Product Assets (Images & 3D Model) */}
         <div className="lg:col-span-2">
-          <ProductAssetViewer product={product} />
+          <ProductAssetViewer 
+            currentAssets={{
+              thumbnail: product.thumbnail,
+              model: product.modelPath,
+              images: product.images
+            }}
+            productName={product.name}
+            productId={product.id}
+          />
         </div>
 
         {/* Right Column - Series Configurator */}
@@ -150,8 +158,8 @@ const ProductDetail = () => {
           </Card>
         )}
 
-        {/* Additional Details */}
-        {(product.size || product.material || product.finish) && (
+        {/* Additional Details - Only show if we have finish_type */}
+        {product.finish_type && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -160,24 +168,22 @@ const ProductDetail = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {product.size && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Finish</dt>
+                <dd className="text-sm">{product.finish_type}</dd>
+              </div>
+              
+              {product.orientation && (
                 <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Size</dt>
-                  <dd className="text-sm">{product.size}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">Orientation</dt>
+                  <dd className="text-sm">{product.orientation}</dd>
                 </div>
               )}
               
-              {product.material && (
+              {product.door_type && (
                 <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Material</dt>
-                  <dd className="text-sm">{product.material}</dd>
-                </div>
-              )}
-              
-              {product.finish && (
-                <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Finish</dt>
-                  <dd className="text-sm">{product.finish}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">Door Type</dt>
+                  <dd className="text-sm">{product.door_type}</dd>
                 </div>
               )}
             </CardContent>
@@ -186,14 +192,14 @@ const ProductDetail = () => {
       </div>
 
       {/* Full Description */}
-      {product.full_description && (
+      {product.fullDescription && (
         <Card className="mt-8">
           <CardHeader>
             <CardTitle>Full Description</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm max-w-none">
-              {product.full_description.split('\n').map((paragraph, index) => (
+              {product.fullDescription.split('\n').map((paragraph, index) => (
                 <p key={index} className="mb-4 last:mb-0">
                   {paragraph}
                 </p>
