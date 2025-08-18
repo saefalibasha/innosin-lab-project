@@ -8,6 +8,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -27,7 +28,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { validateAndSanitize, schemas, checkRateLimit } = useSecurityValidation();
+
+  const checkAdminStatus = async (userEmail: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_roles')
+        .select('role, is_active')
+        .eq('user_email', userEmail)
+        .eq('is_active', true)
+        .single();
+      
+      if (error) {
+        console.log('No admin role found for user:', userEmail);
+        setIsAdmin(false);
+        return;
+      }
+      
+      setIsAdmin(!!data);
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      setIsAdmin(false);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -36,6 +60,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Check admin status when user changes
+        if (session?.user?.email) {
+          checkAdminStatus(session.user.email);
+        } else {
+          setIsAdmin(false);
+        }
       }
     );
 
@@ -44,6 +75,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Check admin status for existing session
+      if (session?.user?.email) {
+        checkAdminStatus(session.user.email);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -127,12 +163,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setIsAdmin(false);
   };
 
   const value = {
     user,
     session,
     loading,
+    isAdmin,
     signUp,
     signIn,
     signOut,
