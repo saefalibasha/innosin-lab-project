@@ -100,10 +100,17 @@ const ProductDetail = () => {
         {/* Right Column - Series Configurator */}
         <div className="space-y-6">
           <SeriesProductConfigurator 
-            currentProduct={product}
-            onProductSelect={(selectedProduct) => {
-              // Navigate to the selected product
-              window.location.href = `/products/${selectedProduct.id}`;
+            series={product}
+            variants={[product]}
+            selectedVariantId={product.id}
+            onVariantChange={(variantId) => {
+              // Navigate to the selected variant
+              window.location.href = `/products/${variantId}`;
+            }}
+            selectedFinish={product.finish_type || 'PC'}
+            onFinishChange={(finish) => {
+              // Handle finish change
+              console.log('Finish changed to:', finish);
             }}
           />
         </div>
