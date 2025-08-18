@@ -1,231 +1,160 @@
 
-import React, { Suspense, useRef, useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Box, RotateCcw, ZoomIn, ZoomOut } from 'lucide-react';
-import { GLTFModel } from './3d/GLTFModel';
-import { useMissingModelsTracker } from '@/hooks/useMissingModelsTracker';
+import React, { Suspense, useRef, useEffect, useState } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { Box3, Vector3 } from 'three';
+import { AlertCircle, Box } from 'lucide-react';
 
 interface Enhanced3DViewerProps {
-  modelPath?: string;
-  productName: string;
-  productId: string;
+  modelPath: string;
   className?: string;
-  showControls?: boolean;
-  autoRotate?: boolean;
   onError?: () => void;
+  onMissingModel?: (modelPath: string, productId?: string) => void;
+  productId?: string;
 }
 
-const Enhanced3DViewer = ({ 
-  modelPath, 
-  productName, 
-  productId,
-  className = "", 
-  showControls = true,
-  autoRotate = false,
-  onError 
-}: Enhanced3DViewerProps) => {
-  const [modelError, setModelError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [zoom, setZoom] = useState(1);
-  const controlsRef = useRef<any>();
-  const { trackMissingModel } = useMissingModelsTracker();
-
-  // Enhanced model path resolution
-  const getResolvedModelPath = (path?: string): string | null => {
-    if (!path) return null;
-
-    // Handle absolute URLs (Supabase storage)
+const Model = ({ url, onError, onMissingModel, productId }: { 
+  url: string; 
+  onError?: () => void; 
+  onMissingModel?: (modelPath: string, productId?: string) => void;
+  productId?: string;
+}) => {
+  const meshRef = useRef<any>();
+  const [modelLoaded, setModelLoaded] = useState(false);
+  
+  // Resolve model path - handle both relative and absolute URLs
+  const resolveModelPath = (path: string) => {
+    if (!path) return '';
+    
+    // If it's already a full URL, return as is
     if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
-
-    // Handle relative paths starting with /
+    
+    // If it starts with /, it's absolute from public root
     if (path.startsWith('/')) {
       return path;
     }
+    
+    // If it doesn't start with /, assume it's relative to public/
+    return `/${path}`;
+  };
 
-    // Handle paths without leading slash
-    if (!path.startsWith('/')) {
-      return `/${path}`;
+  const resolvedUrl = resolveModelPath(url);
+  
+  try {
+    const gltf = useLoader(GLTFLoader, resolvedUrl);
+    
+    useEffect(() => {
+      if (gltf && meshRef.current) {
+        // Auto-center and scale the model
+        const box = new Box3().setFromObject(gltf.scene);
+        const center = box.getCenter(new Vector3());
+        const size = box.getSize(new Vector3());
+        
+        // Center the model
+        gltf.scene.position.sub(center);
+        
+        // Scale the model to fit in a reasonable size
+        const maxDim = Math.max(size.x, size.y, size.z);
+        if (maxDim > 0) {
+          const scale = 2 / maxDim;
+          gltf.scene.scale.setScalar(scale);
+        }
+        
+        setModelLoaded(true);
+      }
+    }, [gltf]);
+
+    useFrame((state) => {
+      if (meshRef.current && modelLoaded) {
+        // Subtle rotation animation
+        meshRef.current.rotation.y += 0.005;
+      }
+    });
+
+    return <primitive ref={meshRef} object={gltf.scene} />;
+  } catch (error) {
+    console.error('Failed to load 3D model:', resolvedUrl, error);
+    if (onMissingModel) {
+      onMissingModel(url, productId);
     }
-
-    return path;
-  };
-
-  const resolvedModelPath = getResolvedModelPath(modelPath);
-
-  // Track missing models when path is not available
-  useEffect(() => {
-    if (!resolvedModelPath) {
-      console.warn(`❌ No model path available for product: ${productName} (${productId})`);
-      trackMissingModel(productId, productName);
-      setModelError(true);
-      setIsLoading(false);
-    } else {
-      console.log(`✅ Model path resolved: ${resolvedModelPath}`);
-      setModelError(false);
-    }
-  }, [resolvedModelPath, productId, productName, trackMissingModel]);
-
-  const handleModelLoad = () => {
-    console.log(`✅ 3D Model loaded successfully: ${productName}`);
-    setIsLoading(false);
-    setModelError(false);
-  };
-
-  const handleModelError = (error: any) => {
-    console.error(`❌ Failed to load 3D model for ${productName}:`, error);
-    setModelError(true);
-    setIsLoading(false);
-    trackMissingModel(productId, productName);
-    if (onError) {
-      onError();
-    }
-  };
-
-  const handleReset = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset();
-    }
-    setZoom(1);
-  };
-
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev * 1.2, 3));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev / 1.2, 0.5));
-  };
-
-  // Loading state
-  if (isLoading && resolvedModelPath) {
-    return (
-      <Card className={`aspect-square bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-200 ${className}`}>
-        <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-          <h3 className="font-semibold text-slate-700 mb-2">Loading 3D Model</h3>
-          <p className="text-sm text-slate-500">{productName}</p>
-          <Badge variant="outline" className="mt-2">
-            {modelPath?.split('/').pop() || 'model.glb'}
-          </Badge>
-        </div>
-      </Card>
-    );
+    if (onError) onError();
+    return null;
   }
+};
 
-  // Error state or no model path
-  if (modelError || !resolvedModelPath) {
+const Enhanced3DViewer = ({ 
+  modelPath, 
+  className = '', 
+  onError, 
+  onMissingModel, 
+  productId 
+}: Enhanced3DViewerProps) => {
+  const [loadError, setLoadError] = useState(false);
+
+  const handleError = () => {
+    setLoadError(true);
+    if (onMissingModel) {
+      onMissingModel(modelPath, productId);
+    }
+    if (onError) onError();
+  };
+
+  if (!modelPath || loadError) {
     return (
-      <Card className={`aspect-square bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-200 ${className}`}>
-        <div className="h-full flex flex-col items-center justify-center p-6 text-center">
-          <div className="bg-slate-100 rounded-full p-4 mb-4">
-            <AlertCircle className="h-8 w-8 text-slate-400" />
-          </div>
-          <h3 className="font-semibold text-slate-700 mb-2">3D Model Unavailable</h3>
-          <p className="text-sm text-slate-500 mb-4">
-            {!resolvedModelPath 
-              ? 'No 3D model configured for this product'
-              : 'Failed to load 3D model'
-            }
-          </p>
-          <Badge variant="secondary" className="mb-2">
-            {productName}
-          </Badge>
-          {resolvedModelPath && (
-            <p className="text-xs text-slate-400 font-mono break-all">
-              Path: {resolvedModelPath}
-            </p>
+      <div className={`bg-muted flex items-center justify-center ${className}`}>
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-muted-foreground">Unable to load 3D model</p>
+          {onMissingModel && (
+            <p className="text-xs text-muted-foreground mt-2">Model will be tracked for upload</p>
           )}
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card className={`aspect-square relative overflow-hidden ${className}`}>
-      {/* 3D Canvas */}
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 50 }}
-        className="w-full h-full"
-        dpr={[1, 2]}
-      >
+    <div className={`relative ${className}`}>
+      <Canvas>
+        <PerspectiveCamera makeDefault position={[0, 0, 5]} />
+        <OrbitControls 
+          enableZoom={true}
+          enablePan={true}
+          enableRotate={true}
+          maxDistance={10}
+          minDistance={1}
+        />
+        
+        {/* Lighting */}
         <ambientLight intensity={0.4} />
         <directionalLight position={[10, 10, 5]} intensity={1} />
         <directionalLight position={[-10, -10, -5]} intensity={0.5} />
         
-        <Suspense fallback={null}>
-          <GLTFModel 
-            url={resolvedModelPath}
-            onLoad={handleModelLoad}
-            onError={handleModelError}
-            scale={zoom}
-          />
-          <Environment preset="studio" />
-          <ContactShadows 
-            position={[0, -1.4, 0]} 
-            opacity={0.4} 
-            scale={10} 
-            blur={1.5} 
-            far={4.5} 
+        <Suspense 
+          fallback={
+            <mesh>
+              <boxGeometry args={[1, 1, 1]} />
+              <meshStandardMaterial color="gray" wireframe />
+            </mesh>
+          }
+        >
+          <Model 
+            url={modelPath} 
+            onError={handleError} 
+            onMissingModel={onMissingModel}
+            productId={productId}
           />
         </Suspense>
-
-        <OrbitControls
-          ref={controlsRef}
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          autoRotate={autoRotate}
-          autoRotateSpeed={2}
-          maxPolarAngle={Math.PI}
-          minDistance={2}
-          maxDistance={10}
-        />
       </Canvas>
-
-      {/* Controls Overlay */}
-      {showControls && (
-        <div className="absolute top-4 right-4 flex flex-col gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleReset}
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-          >
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleZoomIn}
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-          >
-            <ZoomIn className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleZoomOut}
-            className="h-8 w-8 p-0 bg-white/90 hover:bg-white"
-          >
-            <ZoomOut className="h-3 w-3" />
-          </Button>
-        </div>
-      )}
-
-      {/* Model Info Badge */}
-      <div className="absolute bottom-4 left-4">
-        <Badge variant="secondary" className="bg-white/90">
-          <Box className="h-3 w-3 mr-1" />
-          3D Model
-        </Badge>
+      
+      {/* Loading indicator */}
+      <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
+        Drag to rotate • Scroll to zoom
       </div>
-    </Card>
+    </div>
   );
 };
 

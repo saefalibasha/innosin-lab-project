@@ -25,102 +25,50 @@ const UniversalProductConfigurator = ({
 }: UniversalProductConfiguratorProps) => {
   if (!variants || variants.length === 0) return null;
 
-  // Enhanced product type detection with fallback handling
+  // Enhanced product type detection for all series
   const getProductTypeConfig = () => {
     const lowerType = productType.toLowerCase();
-    const category = variants[0]?.category?.toLowerCase() || '';
-    const seriesName = variants[0]?.product_series?.toLowerCase() || '';
     
     // Broen-Lab series
-    if (lowerType.includes('emergency_shower') || seriesName.includes('emergency')) {
+    if (lowerType.includes('emergency_shower')) {
       return {
-        primaryAttributes: ['emergency_shower_type', 'dimensions'],
-        secondaryAttributes: ['mounting_type', 'finish_type'],
+        primaryAttributes: ['emergency_shower_type'],
+        secondaryAttributes: ['mounting_type'],
         finishOptions: [
           { value: 'SS', label: 'Stainless Steel' },
-          { value: 'PC', label: 'Powder Coat' },
+          { value: 'PC', label: 'Powder Coat' }
+        ]
+      };
+    }
+    
+    if (lowerType.includes('uniflex') || lowerType.includes('tap')) {
+      return {
+        primaryAttributes: ['mixing_type', 'handle_type'],
+        secondaryAttributes: ['mounting_type'],
+        finishOptions: [
+          { value: 'SS', label: 'Stainless Steel' },
           { value: 'Chrome', label: 'Chrome Finish' }
         ]
       };
     }
     
-    if (lowerType.includes('uniflex') || lowerType.includes('tap') || seriesName.includes('uniflex')) {
-      return {
-        primaryAttributes: ['mixing_type', 'handle_type', 'dimensions'],
-        secondaryAttributes: ['mounting_type', 'finish_type'],
-        finishOptions: [
-          { value: 'SS', label: 'Stainless Steel' },
-          { value: 'Chrome', label: 'Chrome Finish' },
-          { value: 'PC', label: 'Powder Coat' }
-        ]
-      };
-    }
-    
     // Safe Aire II Fume Hoods
-    if (lowerType.includes('fume_hood') || category.includes('fume') || seriesName.includes('safe aire')) {
-      return {
-        primaryAttributes: ['dimensions', 'mounting_type'],
-        secondaryAttributes: ['door_type', 'finish_type'],
-        finishOptions: [
-          { value: 'Epoxy', label: 'Epoxy Resin' },
-          { value: 'SS', label: 'Stainless Steel' },
-          { value: 'PC', label: 'Powder Coat' }
-        ]
-      };
-    }
-    
-    // Oriental Giken series - enhanced detection
-    if (category.includes('oriental') || seriesName.includes('oriental') || 
-        lowerType.includes('modular_cabinet') || lowerType.includes('mobile_cabinet')) {
-      return {
-        primaryAttributes: ['dimensions', 'drawer_count', 'number_of_drawers'],
-        secondaryAttributes: ['orientation', 'door_type', 'mounting_type'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' },
-          { value: 'Epoxy', label: 'Epoxy Resin' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('wall_cabinet') || seriesName.includes('wall')) {
-      return {
-        primaryAttributes: ['dimensions', 'door_type'],
-        secondaryAttributes: ['mounting_type', 'finish_type'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('tall_cabinet') || seriesName.includes('tall')) {
-      return {
-        primaryAttributes: ['dimensions', 'door_type'],
-        secondaryAttributes: ['drawer_count', 'number_of_drawers', 'finish_type'],
-        finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS', label: 'Stainless Steel' }
-        ]
-      };
-    }
-    
-    if (lowerType.includes('open_rack') || seriesName.includes('open rack')) {
+    if (lowerType.includes('fume_hood')) {
       return {
         primaryAttributes: ['dimensions'],
-        secondaryAttributes: ['mounting_type', 'finish_type'],
+        secondaryAttributes: ['door_type'],
         finishOptions: [
-          { value: 'PC', label: 'Powder Coat' },
-          { value: 'SS304', label: 'SS304' },
+          { value: 'Epoxy', label: 'Epoxy Resin' },
           { value: 'SS', label: 'Stainless Steel' }
         ]
       };
     }
     
-    if (lowerType.includes('sink_cabinet') || seriesName.includes('sink')) {
+    // Oriental Giken series
+    if (lowerType.includes('modular_cabinet') || lowerType.includes('mobile_cabinet')) {
       return {
-        primaryAttributes: ['dimensions', 'orientation'],
-        secondaryAttributes: ['door_type', 'finish_type'],
+        primaryAttributes: ['dimensions', 'drawer_count'],
+        secondaryAttributes: ['orientation', 'door_type'],
         finishOptions: [
           { value: 'PC', label: 'Powder Coat' },
           { value: 'SS', label: 'Stainless Steel' }
@@ -128,12 +76,10 @@ const UniversalProductConfigurator = ({
       };
     }
     
-    // Innosin Lab series - enhanced detection with both field names
-    if (category.includes('innosin') || seriesName.includes('innosin') || 
-        variants.some(v => v.company_tags?.includes('Innosin'))) {
+    if (lowerType.includes('wall_cabinet')) {
       return {
-        primaryAttributes: ['dimensions', 'drawer_count', 'number_of_drawers'],
-        secondaryAttributes: ['orientation', 'door_type', 'finish_type'],
+        primaryAttributes: ['dimensions'],
+        secondaryAttributes: ['door_type', 'mounting_type'],
         finishOptions: [
           { value: 'PC', label: 'Powder Coat' },
           { value: 'SS', label: 'Stainless Steel' }
@@ -141,15 +87,58 @@ const UniversalProductConfigurator = ({
       };
     }
     
-    // Default configuration with intelligent fallbacks
+    if (lowerType.includes('tall_cabinet')) {
+      return {
+        primaryAttributes: ['dimensions'],
+        secondaryAttributes: ['door_type', 'drawer_count'],
+        finishOptions: [
+          { value: 'PC', label: 'Powder Coat' },
+          { value: 'SS', label: 'Stainless Steel' }
+        ]
+      };
+    }
+    
+    if (lowerType.includes('open_rack')) {
+      return {
+        primaryAttributes: ['dimensions'],
+        secondaryAttributes: [],
+        finishOptions: [
+          { value: 'PC', label: 'Powder Coat' },
+          { value: 'SS304', label: 'SS304' }
+        ]
+      };
+    }
+    
+    if (lowerType.includes('sink_cabinet')) {
+      return {
+        primaryAttributes: ['dimensions'],
+        secondaryAttributes: ['door_type', 'orientation'],
+        finishOptions: [
+          { value: 'PC', label: 'Powder Coat' },
+          { value: 'SS', label: 'Stainless Steel' }
+        ]
+      };
+    }
+    
+    // Innosin Lab series
+    if (lowerType.includes('innosin') || variants.some(v => v.company_tags?.includes('Innosin'))) {
+      return {
+        primaryAttributes: ['dimensions', 'drawer_count'],
+        secondaryAttributes: ['orientation', 'door_type'],
+        finishOptions: [
+          { value: 'PC', label: 'Powder Coat' },
+          { value: 'SS', label: 'Stainless Steel' }
+        ]
+      };
+    }
+    
+    // Default configuration
     return {
       primaryAttributes: ['dimensions'],
-      secondaryAttributes: ['orientation', 'door_type', 'drawer_count', 'number_of_drawers', 'finish_type'],
+      secondaryAttributes: ['orientation', 'door_type', 'drawer_count'],
       finishOptions: [
         { value: 'PC', label: 'Powder Coat' },
-        { value: 'SS', label: 'Stainless Steel' },
-        { value: 'Epoxy', label: 'Epoxy Resin' },
-        { value: 'Chrome', label: 'Chrome Finish' }
+        { value: 'SS', label: 'Stainless Steel' }
       ]
     };
   };
@@ -157,22 +146,9 @@ const UniversalProductConfigurator = ({
   const config = getProductTypeConfig();
   const selectedVariant = variants.find(v => v.id === selectedVariantId) || variants[0];
 
-  // Enhanced attribute value retrieval with fallbacks
-  const getAttributeValue = (variant: any, attr: string) => {
-    // Handle drawer count with both field names
-    if (attr === 'drawer_count' || attr === 'number_of_drawers') {
-      return variant.drawer_count || variant.number_of_drawers || 0;
-    }
-    return variant[attr];
-  };
-
-  // Get available values for each attribute with better filtering
+  // Get available values for each attribute
   const getAttributeOptions = (attr: string) => {
-    const values = variants
-      .map(v => getAttributeValue(v, attr))
-      .filter(value => value !== undefined && value !== null && value !== '')
-      .filter((value, index, arr) => arr.indexOf(value) === index); // Remove duplicates
-    
+    const values = [...new Set(variants.map(v => v[attr]).filter(Boolean))];
     return values.map(value => ({
       value: value.toString(),
       label: formatAttributeValue(attr, value)
@@ -180,22 +156,14 @@ const UniversalProductConfigurator = ({
   };
 
   const formatAttributeValue = (attr: string, value: any) => {
-    if (attr === 'drawer_count' || attr === 'number_of_drawers') {
-      const num = parseInt(value.toString()) || 0;
-      if (num === 0) return 'No Drawers';
-      return `${num} Drawer${num !== 1 ? 's' : ''}`;
+    if (attr === 'drawer_count') {
+      return `${value} Drawer${value !== 1 ? 's' : ''}`;
     }
     if (attr === 'emergency_shower_type') {
-      return value.toString().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
     if (attr === 'mixing_type') {
-      return value.toString().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    }
-    if (attr === 'mounting_type') {
-      return value.toString().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-    }
-    if (attr === 'door_type') {
-      return value.toString().replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return value.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
     return value.toString();
   };
@@ -206,30 +174,19 @@ const UniversalProductConfigurator = ({
       door_type: 'Door Type',
       orientation: 'Orientation',
       drawer_count: 'Drawer Configuration',
-      number_of_drawers: 'Drawer Configuration',
       mounting_type: 'Mounting Type',
       mixing_type: 'Mixing Type',
       handle_type: 'Handle Type',
-      emergency_shower_type: 'Shower Type',
-      finish_type: 'Finish Type'
+      emergency_shower_type: 'Shower Type'
     };
-    return labels[attr] || attr.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return labels[attr] || attr.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   // Get all relevant attributes that have variations
   const allAttributes = [...config.primaryAttributes, ...config.secondaryAttributes];
-  const availableAttributes = allAttributes.filter(attr => {
-    const options = getAttributeOptions(attr);
-    return options.length > 1; // Only show attributes with multiple options
-  });
-
-  // Find matching variant based on attribute value
-  const findMatchingVariant = (attr: string, value: string) => {
-    return variants.find(v => {
-      const attrValue = getAttributeValue(v, attr);
-      return attrValue?.toString() === value;
-    });
-  };
+  const availableAttributes = allAttributes.filter(attr => 
+    variants.some(v => v[attr] !== undefined && v[attr] !== null && v[attr] !== '')
+  );
 
   return (
     <div className="space-y-6">
@@ -248,9 +205,11 @@ const UniversalProductConfigurator = ({
                   {getAttributeLabel(attr)}
                 </label>
                 <Select
-                  value={getAttributeValue(selectedVariant, attr)?.toString() || ''}
+                  value={selectedVariant[attr]?.toString() || ''}
                   onValueChange={(value) => {
-                    const matchingVariant = findMatchingVariant(attr, value);
+                    const matchingVariant = variants.find(v => 
+                      v[attr]?.toString() === value
+                    );
                     if (matchingVariant) {
                       onVariantChange(matchingVariant.id);
                     }
@@ -315,18 +274,6 @@ const UniversalProductConfigurator = ({
                 <strong>Dimensions:</strong> {selectedVariant.dimensions}
               </div>
             )}
-
-            {/* Show key attributes */}
-            {availableAttributes.slice(0, 3).map(attr => {
-              const value = getAttributeValue(selectedVariant, attr);
-              if (!value) return null;
-              
-              return (
-                <div key={attr} className="text-sm text-muted-foreground">
-                  <strong>{getAttributeLabel(attr)}:</strong> {formatAttributeValue(attr, value)}
-                </div>
-              );
-            })}
           </CardContent>
         </Card>
       )}

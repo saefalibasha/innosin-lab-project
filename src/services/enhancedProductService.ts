@@ -97,133 +97,6 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
 };
 
 class EnhancedProductService {
-  private productCache = new Map<string, Product[]>();
-  private categoryCache = new Map<string, string[]>();
-  private cacheTimestamps = new Map<string, number>();
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
-  private isCacheValid(key: string): boolean {
-    const timestamp = this.cacheTimestamps.get(key);
-    if (!timestamp) return false;
-    return Date.now() - timestamp < this.CACHE_DURATION;
-  }
-
-  private setCacheWithTimestamp(key: string, data: any): void {
-    if (key.startsWith('products')) {
-      this.productCache.set(key, data);
-    } else if (key.startsWith('categories')) {
-      this.categoryCache.set(key, data);
-    }
-    this.cacheTimestamps.set(key, Date.now());
-  }
-
-  async getAllProducts(forceRefresh = false): Promise<Product[]> {
-    const cacheKey = 'products_all';
-    
-    if (!forceRefresh && this.isCacheValid(cacheKey)) {
-      const cached = this.productCache.get(cacheKey);
-      if (cached) return cached;
-    }
-
-    try {
-      console.log('🔍 Fetching all products...');
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
-
-      if (error) throw error;
-
-      const products = (data || [])
-        .map(ensureDatabaseProduct)
-        .map(transformDatabaseProduct);
-
-      this.setCacheWithTimestamp(cacheKey, products);
-      console.log(`✅ Found ${products.length} products`);
-      return products;
-
-    } catch (error) {
-      console.error('Error fetching all products:', error);
-      throw error;
-    }
-  }
-
-  async getCategories(forceRefresh = false): Promise<string[]> {
-    const cacheKey = 'categories_all';
-    
-    if (!forceRefresh && this.isCacheValid(cacheKey)) {
-      const cached = this.categoryCache.get(cacheKey);
-      if (cached) return cached;
-    }
-
-    try {
-      console.log('🔍 Fetching categories...');
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('category')
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      const categories = [...new Set((data || []).map(p => p.category).filter(Boolean))];
-      
-      this.setCacheWithTimestamp(cacheKey, categories);
-      console.log(`✅ Found ${categories.length} categories`);
-      return categories;
-
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-      throw error;
-    }
-  }
-
-  async getProductById(id: string): Promise<Product | null> {
-    try {
-      console.log(`🔍 Fetching product ${id}...`);
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching product by ID:', error);
-        return null;
-      }
-
-      if (!data) {
-        console.log('Product not found');
-        return null;
-      }
-
-      const product = transformDatabaseProduct(ensureDatabaseProduct(data));
-      console.log(`✅ Found product: ${product.name}`);
-      return product;
-
-    } catch (error) {
-      console.error('Error in getProductById:', error);
-      return null;
-    }
-  }
-
-  clearCache(): void {
-    this.productCache.clear();
-    this.categoryCache.clear();
-    this.cacheTimestamps.clear();
-    console.log('✅ Cache cleared');
-  }
-
-  getCacheStats(): { products: number; categories: number } {
-    return {
-      products: this.productCache.size,
-      categories: this.categoryCache.size
-    };
-  }
-
   async getProductWithVariants(productId: string): Promise<{ product: Product | null; variants: Product[] }> {
     try {
       console.log(`🔍 Fetching product ${productId} with variants...`);
@@ -322,13 +195,6 @@ class EnhancedProductService {
   }
 
   async getProductsByCategory(category: string): Promise<Product[]> {
-    const cacheKey = `products_category_${category}`;
-    
-    if (this.isCacheValid(cacheKey)) {
-      const cached = this.productCache.get(cacheKey);
-      if (cached) return cached;
-    }
-
     try {
       const { data, error } = await supabase
         .from('products')
@@ -339,12 +205,9 @@ class EnhancedProductService {
 
       if (error) throw error;
 
-      const products = (data || [])
+      return (data || [])
         .map(ensureDatabaseProduct)
         .map(transformDatabaseProduct);
-
-      this.setCacheWithTimestamp(cacheKey, products);
-      return products;
     } catch (error) {
       console.error('Error fetching products by category:', error);
       throw error;
