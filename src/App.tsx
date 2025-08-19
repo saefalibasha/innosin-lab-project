@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,7 +13,7 @@ import { useEffect } from "react";
 // Import all pages
 import Index from "./pages/Index";
 import ProductCatalog from "./pages/ProductCatalog";
-import OptimizedProductDetail from '@/pages/OptimizedProductDetail';
+import EnhancedProductDetail from "./pages/EnhancedProductDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
@@ -101,7 +102,7 @@ const DevelopmentApp: React.FC = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/products" element={<ProductCatalog />} />
-                    <Route path="/products/:id" element={<OptimizedProductDetail />} />
+                    <Route path="/products/:productId" element={<EnhancedProductDetail />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/blog" element={<Blog />} />

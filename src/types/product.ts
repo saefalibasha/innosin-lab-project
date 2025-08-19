@@ -48,7 +48,6 @@ export interface Product {
   
   // Series parent relationship
   parent_series_id?: string;
-  is_series_parent?: boolean;
 }
 
 export interface ProductVariant {
