@@ -1,12 +1,10 @@
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Package, Search } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import LazyProductImage from '@/components/LazyProductImage';
 import { useProductSeries } from '@/hooks/useProductSeries';
 import { Product } from '@/types/product';
@@ -23,14 +21,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   currentTool, 
   onProductUsed 
 }) => {
-  const [selectedSeries, setSelectedSeries] = useState<string | null>(null);
-  const [selectedVariants, setSelectedVariants] = useState<{
-    finish?: string;
-    orientation?: string;
-    drawerCount?: string;
-    doorType?: string;
-    dimensions?: string;
-  }>({});
+  const [expandedSeries, setExpandedSeries] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const { productSeries, loading, error } = useProductSeries();
@@ -60,11 +51,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     );
   }, [productSeries, searchTerm]);
 
-  const handleVariantChange = (variantType: string, value: string) => {
-    setSelectedVariants(prev => ({
-      ...prev,
-      [variantType]: value
-    }));
+  const handleSeriesToggle = (seriesId: string) => {
+    setExpandedSeries(expandedSeries === seriesId ? null : seriesId);
     setSelectedProduct(null);
   };
 
@@ -130,8 +118,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     );
   }
 
-  const selectedSeriesData = productSeries.find(s => s.id === selectedSeries);
-
   return (
     <div className="h-full flex flex-col">
       {isInteractionDisabled && (
@@ -152,150 +138,105 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 flex min-h-0">
-        {/* Left column - Series selection */}
-        <div className="w-1/2 border-r flex flex-col min-h-0">
-          <ScrollArea className="flex-1">
-            <div className="space-y-2 p-3">
-              {filteredSeries.map(series => (
-                <TooltipProvider key={series.id}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                       <Button
-                        variant={selectedSeries === series.id ? "default" : "ghost"}
-                        className="w-full p-3 h-auto text-left flex-col items-start space-y-1"
-                        onClick={() => {
-                          setSelectedSeries(series.id);
-                          setSelectedVariants({});
-                          setSelectedProduct(null);
-                        }}
-                      >
-                        <div className="font-medium text-sm leading-tight break-words">
-                          {series.name}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {series.products.length} variants
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {series.description?.slice(0, 50)}...
-                        </div>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="max-w-xs">
-                      <div>
-                        <p className="font-medium">{series.name}</p>
-                        {series.description && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {series.description}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {series.products.length} products
-                        </p>
-                      </div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-            </div>
-          </ScrollArea>
-        </div>
-
-        {/* Right column - Variant selection and preview */}
-        <div className="w-1/2 flex flex-col min-h-0">
-          {selectedSeriesData ? (
-            <>
-              <div className="p-4 border-b">
-                <h4 className="font-medium text-base mb-2 break-words leading-tight">
-                  {selectedSeriesData.name}
-                </h4>
-              </div>
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-2">
+          {filteredSeries.map(series => (
+            <Collapsible 
+              key={series.id}
+              open={expandedSeries === series.id}
+              onOpenChange={() => handleSeriesToggle(series.id)}
+            >
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full p-3 h-auto text-left justify-between items-center"
+                >
+                  <div className="flex flex-col items-start space-y-1">
+                    <div className="font-medium text-sm leading-tight">
+                      {series.name}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {series.products.length} variants
+                    </div>
+                  </div>
+                  {expandedSeries === series.id ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </Button>
+              </CollapsibleTrigger>
               
-              <div className="flex-1 overflow-y-auto">
-                <div className="p-4">
-                  <ProductVariantSelector
-                    products={selectedSeriesData.products}
-                    selectedVariants={selectedVariants}
-                    onVariantChange={handleVariantChange}
-                    onProductSelect={handleProductSelect}
-                    selectedProduct={selectedProduct}
-                  />
-                </div>
-              </div>
-              
-              {selectedProduct && (
-                <div className="p-4 border-t">
+              <CollapsibleContent className="space-y-1 pl-4 mt-2">
+                {series.products.map(product => (
                   <div
+                    key={product.id}
                     draggable={!isInteractionDisabled}
-                    onDragStart={(e) => handleDragStart(e, selectedProduct)}
-                    className={`border-2 border-dashed rounded-lg p-4 transition-all ${
+                    onDragStart={(e) => handleDragStart(e, product)}
+                    onClick={() => handleProductSelect(product)}
+                    className={`border rounded-lg p-3 transition-all cursor-pointer ${
+                      selectedProduct?.id === product.id
+                        ? 'border-primary bg-accent'
+                        : 'border-border hover:border-primary/50 hover:bg-accent/50'
+                    } ${
                       isInteractionDisabled 
-                        ? 'opacity-50 cursor-not-allowed border-gray-300' 
-                        : 'cursor-move hover:border-primary hover:bg-accent/50 border-primary/30'
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : 'cursor-move'
                     }`}
                   >
-                    <div className="space-y-3">
-                      <h5 className="font-medium text-sm leading-tight break-words">
-                        {selectedProduct.name}
-                      </h5>
+                    <div className="space-y-2">
+                      <div className="font-medium text-sm">
+                        {product.name}
+                      </div>
                       
-                      <div className="text-xs text-muted-foreground space-y-2">
-                        <div className="bg-muted p-2 rounded">
-                          <div className="font-medium text-foreground">Product Code:</div>
-                          <div className="break-words">{selectedProduct.product_code}</div>
+                      <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                        <div>
+                          <span className="font-medium">Code:</span>
+                          <div className="truncate">{product.product_code}</div>
                         </div>
                         
-                        {selectedProduct.dimensions && (
-                          <div className="bg-muted p-2 rounded">
-                            <div className="font-medium text-foreground">Dimensions:</div>
-                            <div className="break-words">{selectedProduct.dimensions}</div>
+                        {product.dimensions && (
+                          <div>
+                            <span className="font-medium">Size:</span>
+                            <div className="truncate">{product.dimensions}</div>
                           </div>
                         )}
                         
-                        {selectedProduct.finish_type && (
-                          <div className="bg-muted p-2 rounded">
-                            <div className="font-medium text-foreground">Finish:</div>
-                            <div className="break-words">{selectedProduct.finish_type}</div>
+                        {product.finish_type && (
+                          <div>
+                            <span className="font-medium">Finish:</span>
+                            <div className="truncate">{product.finish_type}</div>
                           </div>
                         )}
                         
-                        {selectedProduct.orientation && (
-                          <div className="bg-muted p-2 rounded">
-                            <div className="font-medium text-foreground">Orientation:</div>
-                            <div className="break-words">{selectedProduct.orientation}</div>
+                        {product.orientation && (
+                          <div>
+                            <span className="font-medium">Orient:</span>
+                            <div className="truncate">{product.orientation}</div>
                           </div>
                         )}
                         
-                        {selectedProduct.drawer_count && (
-                          <div className="bg-muted p-2 rounded">
-                            <div className="font-medium text-foreground">Drawers:</div>
-                            <div className="break-words">{selectedProduct.drawer_count}</div>
+                        {product.drawer_count && (
+                          <div>
+                            <span className="font-medium">Drawers:</span>
+                            <div className="truncate">{product.drawer_count}</div>
                           </div>
                         )}
                       </div>
                       
-                      {!isInteractionDisabled && (
-                        <div className="text-xs text-primary font-medium mt-3 p-2 bg-primary/10 rounded text-center">
+                      {!isInteractionDisabled && selectedProduct?.id === product.id && (
+                        <div className="text-xs text-primary font-medium p-2 bg-primary/10 rounded text-center">
                           Drag to place on canvas
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center p-6">
-              <div className="text-center">
-                <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  Select a series to view variants
-                </p>
-              </div>
-            </div>
-          )}
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          ))}
         </div>
-      </div>
+      </ScrollArea>
     </div>
   );
 };
