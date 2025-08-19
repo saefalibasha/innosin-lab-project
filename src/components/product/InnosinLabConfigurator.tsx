@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Product } from '@/types/product';
-import { Package, Settings2, Filter } from 'lucide-react';
+import { Package, Settings2, Filter, RotateCcw } from 'lucide-react';
 
 interface InnosinLabConfiguratorProps {
   variants: Product[];
@@ -156,7 +157,16 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
       selectedOrientation
     );
     
+    console.log('🔧 Configuration changed:', {
+      cabinetType: selectedCabinetType,
+      drawerCount: selectedDrawerCount,
+      dimensions: selectedDimensions,
+      orientation: selectedOrientation,
+      filteredVariants: filteredVariants.length
+    });
+    
     if (filteredVariants.length > 0 && !filteredVariants.find(v => v.id === selectedVariantId)) {
+      console.log('🎯 Auto-selecting variant:', filteredVariants[0].product_code);
       onVariantChange(filteredVariants[0].id);
     }
   }, [selectedCabinetType, selectedDrawerCount, selectedDimensions, selectedOrientation]);
@@ -180,6 +190,14 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
     setSelectedOrientation('');
   };
 
+  // Clear all selections
+  const handleClearOptions = () => {
+    setSelectedCabinetType('');
+    setSelectedDrawerCount('');
+    setSelectedDimensions('');
+    setSelectedOrientation('');
+  };
+
   if (!variants || variants.length === 0) {
     return (
       <Card>
@@ -195,9 +213,20 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
       <CardContent className="space-y-6 pt-6">
         {/* Configuration Dropdowns */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-4">
-            <Settings2 className="w-4 h-4 text-primary" />
-            <h4 className="font-semibold">Configuration Options</h4>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-primary" />
+              <h4 className="font-semibold">Configuration Options</h4>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearOptions}
+              className="flex items-center gap-2"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Clear Options
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -312,7 +341,10 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
                 .map(variant => (
                   <button
                     key={variant.id}
-                    onClick={() => onVariantChange(variant.id)}
+                    onClick={() => {
+                      console.log('🎯 Manual variant selection:', variant.product_code, variant.id);
+                      onVariantChange(variant.id);
+                    }}
                     className={`p-2 text-xs rounded border transition-colors ${
                       variant.id === selectedVariantId 
                         ? 'bg-primary text-primary-foreground border-primary' 
