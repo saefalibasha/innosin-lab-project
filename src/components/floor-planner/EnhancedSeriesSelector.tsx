@@ -157,11 +157,49 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                     {product.editable_description || product.description}
                   </p>
                   
-                  {product.dimensions && (
-                    <p className="text-xs text-muted-foreground mb-3">
-                      <span className="font-medium">Size:</span> {product.dimensions}
-                    </p>
-                  )}
+                  <div className="space-y-1 mb-3">
+                    {product.dimensions && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Size:</span> {product.dimensions}
+                      </p>
+                    )}
+                    
+                    {(product.number_of_drawers || product.drawer_count) && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Drawers:</span> {product.number_of_drawers || product.drawer_count}
+                      </p>
+                    )}
+                    
+                    {product.finish_type && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Finish:</span> {product.finish_type}
+                      </p>
+                    )}
+                    
+                    {product.orientation && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Orientation:</span> {product.orientation}
+                      </p>
+                    )}
+                    
+                    {product.door_type && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Door:</span> {product.door_type}
+                      </p>
+                    )}
+                    
+                    {product.mounting_type && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Mounting:</span> {product.mounting_type}
+                      </p>
+                    )}
+                    
+                    {product.handle_type && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Handle:</span> {product.handle_type}
+                      </p>
+                    )}
+                  </div>
                   
                   <Button
                     onClick={() => handleProductSelect(product)}
