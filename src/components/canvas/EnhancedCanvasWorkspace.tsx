@@ -59,6 +59,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [currentLineMeasurement, setCurrentLineMeasurement] = useState<string>('');
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
   const [hoveredWall, setHoveredWall] = useState<string | null>(null);
+  const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
 
   const CANVAS_WIDTH = canvasWidth;
   const CANVAS_HEIGHT = canvasHeight;
@@ -68,9 +69,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     if (!canvas) return { x: 0, y: 0 };
     
     const rect = canvas.getBoundingClientRect();
+    // Get the actual canvas size vs display size ratio
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
     return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY
     };
   }, []);
 
@@ -78,10 +83,12 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     if (!showGrid) return point;
     
     const gridPixels = gridSize * scale;
-    return {
+    const snappedPoint = {
       x: Math.round(point.x / gridPixels) * gridPixels,
       y: Math.round(point.y / gridPixels) * gridPixels
     };
+    
+    return snappedPoint;
   }, [showGrid, gridSize, scale]);
 
   const findWallAtPoint = useCallback((point: Point): WallSegment | null => {
@@ -127,12 +134,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   };
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const point = snapToGrid(getCanvasPoint(e));
-    setLastMousePos(point);
+    const point = getCanvasPoint(e);
+    const snappedPoint = snapToGrid(point);
+    setLastMousePos(snappedPoint);
     
     if (currentMode === 'select') {
       // Check if clicking on a wall for selection
-      const clickedWall = findWallAtPoint(point);
+      const clickedWall = findWallAtPoint(snappedPoint);
       if (clickedWall) {
         setSelectedWall(clickedWall);
         return;
@@ -143,13 +151,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     
     if (currentMode === 'wall') {
       setIsDrawing(true);
-      setCurrentPath([point]);
+      setCurrentPath([snappedPoint]);
     } else if (currentMode === 'room') {
-      setRoomPoints(prev => [...prev, point]);
+      setRoomPoints(prev => [...prev, snappedPoint]);
     } else if (currentMode === 'door') {
       const newDoor: Door = {
         id: `door-${Date.now()}`,
-        position: point,
+        position: snappedPoint,
         width: 80,
         wallId: undefined,
         wallSegmentId: undefined,
@@ -162,7 +170,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       if (text) {
         const newAnnotation: TextAnnotation = {
           id: `text-${Date.now()}`,
-          position: point,
+          position: snappedPoint,
           text,
           fontSize: 14,
           color: '#000000'
@@ -173,19 +181,41 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const point = snapToGrid(getCanvasPoint(e));
-    setLastMousePos(point);
+    const point = getCanvasPoint(e);
+    const snappedPoint = snapToGrid(point);
+    setLastMousePos(snappedPoint);
+    
+    // Generate snap lines when near grid lines
+    if (showGrid) {
+      const gridPixels = gridSize * scale;
+      const snapThreshold = 8; // pixels
+      
+      // Check for vertical snap line
+      const nearestVerticalGrid = Math.round(point.x / gridPixels) * gridPixels;
+      const verticalDistance = Math.abs(point.x - nearestVerticalGrid);
+      
+      // Check for horizontal snap line
+      const nearestHorizontalGrid = Math.round(point.y / gridPixels) * gridPixels;
+      const horizontalDistance = Math.abs(point.y - nearestHorizontalGrid);
+      
+      setSnapLines({
+        x: verticalDistance <= snapThreshold ? nearestVerticalGrid : null,
+        y: horizontalDistance <= snapThreshold ? nearestHorizontalGrid : null
+      });
+    } else {
+      setSnapLines({ x: null, y: null });
+    }
     
     // Handle wall hover for better UX
     if (currentMode === 'select') {
-      const hoveredWallFound = findWallAtPoint(point);
+      const hoveredWallFound = findWallAtPoint(snappedPoint);
       setHoveredWall(hoveredWallFound?.id || null);
     }
     
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0) {
       const startPoint = currentPath[0];
-      const dx = point.x - startPoint.x;
-      const dy = point.y - startPoint.y;
+      const dx = snappedPoint.x - startPoint.x;
+      const dy = snappedPoint.y - startPoint.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       const distanceInMm = canvasToMm(distance, scale);
       
@@ -194,11 +224,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         precision: measurementUnit === 'mm' ? 0 : 2, 
         showUnit: true 
       }));
-      // Don't modify currentPath during mouse move - just track the end point
     } else if (currentMode === 'wall') {
       setCurrentLineMeasurement('');
     }
-  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit, findWallAtPoint]);
+  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit, findWallAtPoint, showGrid, gridSize]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing && currentMode === 'wall' && currentPath.length >= 1) {
@@ -477,6 +506,31 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
     });
     
+    // Draw snap lines when near grid lines
+    if (snapLines.x !== null || snapLines.y !== null) {
+      ctx.strokeStyle = '#0066ff';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 5]);
+      
+      // Draw vertical snap line
+      if (snapLines.x !== null) {
+        ctx.beginPath();
+        ctx.moveTo(snapLines.x, 0);
+        ctx.lineTo(snapLines.x, CANVAS_HEIGHT);
+        ctx.stroke();
+      }
+      
+      // Draw horizontal snap line
+      if (snapLines.y !== null) {
+        ctx.beginPath();
+        ctx.moveTo(0, snapLines.y);
+        ctx.lineTo(CANVAS_WIDTH, snapLines.y);
+        ctx.stroke();
+      }
+      
+      ctx.setLineDash([]); // Reset dash
+    }
+
     // Draw live measurement during wall drawing with better visibility
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0 && currentLineMeasurement) {
       const startPoint = currentPath[0];
@@ -488,6 +542,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1;
+      ctx.setLineDash([]);
       const textWidth = ctx.measureText(currentLineMeasurement).width;
       const padding = 6;
       const rectX = midX - textWidth/2 - padding;
@@ -506,7 +561,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.textAlign = 'start';
     }
     
-  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements]);
+  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements, snapLines]);
 
   useEffect(() => {
     drawCanvas();
@@ -518,6 +573,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
+        style={{ width: '100%', height: '100%', maxWidth: `${CANVAS_WIDTH}px`, maxHeight: `${CANVAS_HEIGHT}px` }}
         className="w-full h-full cursor-crosshair bg-white border"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
