@@ -305,6 +305,7 @@ const EnhancedProductDetail = () => {
                 onVariantChange={handleVariantChange}
                 selectedFinish={selectedFinish}
                 onFinishChange={handleFinishChange}
+                groupByDimensions={false}
               />
             )}
 
