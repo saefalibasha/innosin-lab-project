@@ -32,7 +32,11 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     doorType?: string;
     dimensions?: string;
     category?: string;
-    specifications?: string;
+    mountingType?: string;
+    mixingType?: string;
+    handleType?: string;
+    cabinetClass?: string;
+    emergencyShowerType?: string;
   }>>({});
   const { productSeries, loading, error } = useProductSeries();
 
@@ -87,17 +91,26 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     return products.filter(product => {
       if (filters.finish && product.finish_type !== filters.finish) return false;
       if (filters.orientation && product.orientation !== filters.orientation) return false;
-      if (filters.drawerCount && String(product.drawer_count) !== filters.drawerCount) return false;
+      if (filters.drawerCount && String(product.drawer_count || product.number_of_drawers) !== filters.drawerCount) return false;
       if (filters.doorType && product.door_type !== filters.doorType) return false;
       if (filters.dimensions && product.dimensions !== filters.dimensions) return false;
       if (filters.category && product.category !== filters.category) return false;
+      if (filters.mountingType && product.mounting_type !== filters.mountingType) return false;
+      if (filters.mixingType && product.mixing_type !== filters.mixingType) return false;
+      if (filters.handleType && product.handle_type !== filters.handleType) return false;
+      if (filters.cabinetClass && product.cabinet_class !== filters.cabinetClass) return false;
+      if (filters.emergencyShowerType && product.emergency_shower_type !== filters.emergencyShowerType) return false;
       return true;
     });
   };
 
   const getUniqueValues = (products: Product[], field: keyof Product): string[] => {
     const values = products.map(p => {
-      const value = p[field];
+      let value = p[field];
+      // Handle both drawer_count and number_of_drawers fields
+      if (field === 'drawer_count' && !value && p.number_of_drawers) {
+        value = p.number_of_drawers;
+      }
       return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     }).filter(Boolean);
     
@@ -300,6 +313,106 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                   )}
                   
+                  {getUniqueValues(series.products, 'mounting_type').length > 1 && (
+                    <div>
+                      <label className="text-xs font-medium">Mounting:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.mountingType || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'mountingType', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Mounting Types</SelectItem>
+                          {getUniqueValues(series.products, 'mounting_type').map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {getUniqueValues(series.products, 'handle_type').length > 1 && (
+                    <div>
+                      <label className="text-xs font-medium">Handle:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.handleType || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'handleType', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Handle Types</SelectItem>
+                          {getUniqueValues(series.products, 'handle_type').map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {getUniqueValues(series.products, 'cabinet_class').length > 1 && (
+                    <div>
+                      <label className="text-xs font-medium">Class:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.cabinetClass || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'cabinetClass', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Classes</SelectItem>
+                          {getUniqueValues(series.products, 'cabinet_class').map(cls => (
+                            <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {getUniqueValues(series.products, 'emergency_shower_type').length > 1 && (
+                    <div>
+                      <label className="text-xs font-medium">Emergency Shower:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.emergencyShowerType || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'emergencyShowerType', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          {getUniqueValues(series.products, 'emergency_shower_type').map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
+                  {getUniqueValues(series.products, 'mixing_type').length > 1 && (
+                    <div>
+                      <label className="text-xs font-medium">Mixing:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.mixingType || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'mixingType', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Mixing Types</SelectItem>
+                          {getUniqueValues(series.products, 'mixing_type').map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
                   {getUniqueValues(series.products, 'orientation').length > 1 && (
                     <div>
                       <label className="text-xs font-medium">Orientation:</label>
@@ -431,17 +544,38 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             </div>
                           )}
                           
-                          {product.drawer_count && (
+                          {product.drawer_count || product.number_of_drawers ? (
                             <div>
                               <span className="font-medium">Drawers:</span>
-                              <div className="truncate">{product.drawer_count}</div>
+                              <div className="truncate">{product.drawer_count || product.number_of_drawers}</div>
                             </div>
-                          )}
+                          ) : null}
                           
                           {product.door_type && (
                             <div>
                               <span className="font-medium">Door:</span>
                               <div className="truncate">{product.door_type}</div>
+                            </div>
+                          )}
+                          
+                          {product.mounting_type && (
+                            <div>
+                              <span className="font-medium">Mount:</span>
+                              <div className="truncate">{product.mounting_type}</div>
+                            </div>
+                          )}
+                          
+                          {product.handle_type && (
+                            <div>
+                              <span className="font-medium">Handle:</span>
+                              <div className="truncate">{product.handle_type}</div>
+                            </div>
+                          )}
+                          
+                          {product.cabinet_class && (
+                            <div>
+                              <span className="font-medium">Class:</span>
+                              <div className="truncate">{product.cabinet_class}</div>
                             </div>
                           )}
                         </div>
