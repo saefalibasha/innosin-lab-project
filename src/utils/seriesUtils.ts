@@ -50,13 +50,13 @@ export const getSeriesConfigurationAttributes = (seriesType: string, variants: P
   // Common attributes for all series
   if (sampleVariant.dimensions) attributes.push('dimensions');
   
-  // Series-specific attributes
+  // Series-specific attributes based on unified grouping
   switch (seriesType) {
     case 'mobile_cabinet':
     case 'wall_cabinet':
     case 'tall_cabinet':
       if (sampleVariant.number_of_drawers || sampleVariant.drawer_count) {
-        attributes.push(sampleVariant.number_of_drawers ? 'number_of_drawers' : 'drawer_count');
+        attributes.push('drawer_count');
       }
       if (sampleVariant.door_type && sampleVariant.door_type !== 'None') {
         attributes.push('door_type');
@@ -73,11 +73,16 @@ export const getSeriesConfigurationAttributes = (seriesType: string, variants: P
       
     case 'emergency_shower':
       if (sampleVariant.emergency_shower_type) attributes.push('emergency_shower_type');
+      if (sampleVariant.mounting_type) attributes.push('mounting_type');
       break;
       
     case 'fume_hood':
     case 'noce_fume_hood':
       if (sampleVariant.mounting_type) attributes.push('mounting_type');
+      break;
+
+    case 'bio_safety':
+      if (sampleVariant.cabinet_class) attributes.push('cabinet_class');
       break;
       
     case 'open_rack':
@@ -96,6 +101,7 @@ export const getSeriesFinishOptions = (seriesType: string) => {
         { value: 'SS304', label: 'SS304' }
       ];
     case 'uniflex':
+    case 'emergency_shower':
       return [
         { value: 'brass', label: 'Brass' },
         { value: 'stainless', label: 'Stainless Steel' }
@@ -127,6 +133,8 @@ export const formatAttributeDisplay = (attribute: string, value: any): string =>
       return String(value);
     case 'mounting_type':
       return `${value} Mount`;
+    case 'cabinet_class':
+      return String(value);
     default:
       return String(value || '');
   }
