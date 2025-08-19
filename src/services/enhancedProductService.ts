@@ -1,6 +1,7 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Product as ProductType } from '@/types/product';
-import { productService } from './productService';
+import productService from './productService';
 
 export class EnhancedProductService {
   private cache = new Map<string, any>();
