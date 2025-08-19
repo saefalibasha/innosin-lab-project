@@ -17,7 +17,6 @@ interface InnosinLabConfiguratorProps {
 }
 
 interface ConfigurationOptions {
-  cabinetTypes: string[];
   drawerCounts: number[];
   dimensions: string[];
   orientations: string[];
@@ -35,26 +34,17 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
   
   // Configuration state
-  const [selectedCabinetType, setSelectedCabinetType] = useState<string>('');
   const [selectedDrawerCount, setSelectedDrawerCount] = useState<string>('');
   const [selectedDimensions, setSelectedDimensions] = useState<string>('');
   const [selectedOrientation, setSelectedOrientation] = useState<string>('');
 
   // Extract all available configuration options
   const configurationOptions = useMemo((): ConfigurationOptions => {
-    const cabinetTypes = new Set<string>();
     const drawerCounts = new Set<number>();
     const dimensions = new Set<string>();
     const orientations = new Set<string>();
 
     variants.forEach(variant => {
-      // Cabinet type
-      if (variant.product_code?.includes('MCC')) {
-        cabinetTypes.add('MCC');
-      } else if (variant.product_code?.includes('MC')) {
-        cabinetTypes.add('MC');
-      }
-
       // Drawer count - prioritize number_of_drawers from database
       const drawers = variant.number_of_drawers || variant.drawer_count || 
         (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
@@ -72,7 +62,6 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
     });
 
     return {
-      cabinetTypes: Array.from(cabinetTypes).sort(),
       drawerCounts: Array.from(drawerCounts).sort((a, b) => a - b),
       dimensions: Array.from(dimensions).sort(),
       orientations: Array.from(orientations).sort(),
@@ -85,18 +74,11 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
 
   // Filter variants based on current selections
   const getFilteredVariants = (
-    cabinetType?: string,
     drawerCount?: string,
     dimensions?: string,
     orientation?: string
   ) => {
     return variants.filter(variant => {
-      // Cabinet type filter
-      if (cabinetType) {
-        const variantCabinetType = variant.product_code?.includes('MCC') ? 'MCC' : 'MC';
-        if (variantCabinetType !== cabinetType) return false;
-      }
-
       // Drawer count filter
       if (drawerCount) {
         const variantDrawers = variant.number_of_drawers || variant.drawer_count || 
@@ -120,7 +102,6 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   // Get available options for each dropdown based on current selections
   const getAvailableOptions = (optionType: string) => {
     const filtered = getFilteredVariants(
-      optionType !== 'cabinetType' ? selectedCabinetType : undefined,
       optionType !== 'drawerCount' ? selectedDrawerCount : undefined,
       optionType !== 'dimensions' ? selectedDimensions : undefined,
       optionType !== 'orientation' ? selectedOrientation : undefined
@@ -151,14 +132,12 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   // Auto-select first variant when configuration changes
   useEffect(() => {
     const filteredVariants = getFilteredVariants(
-      selectedCabinetType,
       selectedDrawerCount,
       selectedDimensions,
       selectedOrientation
     );
     
     console.log('🔧 Configuration changed:', {
-      cabinetType: selectedCabinetType,
       drawerCount: selectedDrawerCount,
       dimensions: selectedDimensions,
       orientation: selectedOrientation,
@@ -169,16 +148,9 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
       console.log('🎯 Auto-selecting variant:', filteredVariants[0].product_code);
       onVariantChange(filteredVariants[0].id);
     }
-  }, [selectedCabinetType, selectedDrawerCount, selectedDimensions, selectedOrientation]);
+  }, [selectedDrawerCount, selectedDimensions, selectedOrientation]);
 
   // Reset dependent selections when parent selection changes
-  const handleCabinetTypeChange = (value: string) => {
-    setSelectedCabinetType(value);
-    setSelectedDrawerCount('');
-    setSelectedDimensions('');
-    setSelectedOrientation('');
-  };
-
   const handleDrawerCountChange = (value: string) => {
     setSelectedDrawerCount(value);
     setSelectedDimensions('');
@@ -192,7 +164,6 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
 
   // Clear all selections
   const handleClearOptions = () => {
-    setSelectedCabinetType('');
     setSelectedDrawerCount('');
     setSelectedDimensions('');
     setSelectedOrientation('');
@@ -229,42 +200,23 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Cabinet Type */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Drawer Count */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Cabinet Type</label>
-              <Select value={selectedCabinetType} onValueChange={handleCabinetTypeChange}>
+              <label className="text-sm font-medium text-muted-foreground">Number of Drawers</label>
+              <Select value={selectedDrawerCount} onValueChange={handleDrawerCountChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select cabinet type" />
+                  <SelectValue placeholder="Select drawer count" />
                 </SelectTrigger>
                 <SelectContent>
-                  {configurationOptions.cabinetTypes.map(type => (
-                    <SelectItem key={type} value={type}>
-                      {type === 'MC' ? 'Mobile Cabinet' : 'Mobile Combination Cabinet'}
+                  {configurationOptions.drawerCounts.map(count => (
+                    <SelectItem key={count} value={count.toString()}>
+                      {count} {count === 1 ? 'Drawer' : 'Drawers'}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Drawer Count */}
-            {selectedCabinetType && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Number of Drawers</label>
-                <Select value={selectedDrawerCount} onValueChange={handleDrawerCountChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select drawer count" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getAvailableOptions('drawerCount').map(count => (
-                      <SelectItem key={count} value={count.toString()}>
-                        {count} {count === 1 ? 'Drawer' : 'Drawers'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
 
             {/* Dimensions */}
             {selectedDrawerCount && (
@@ -330,14 +282,14 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
         </div>
 
         {/* Available Variants */}
-        {selectedCabinetType && selectedDrawerCount && selectedDimensions && selectedOrientation && (
+        {selectedDrawerCount && selectedDimensions && selectedOrientation && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
               <h4 className="font-medium">Available Variants</h4>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {getFilteredVariants(selectedCabinetType, selectedDrawerCount, selectedDimensions, selectedOrientation)
+              {getFilteredVariants(selectedDrawerCount, selectedDimensions, selectedOrientation)
                 .map(variant => (
                   <button
                     key={variant.id}
