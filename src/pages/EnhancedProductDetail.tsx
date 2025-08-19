@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/router';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -12,35 +13,22 @@ import {
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Separator } from "@/components/ui/separator"
-import { Calendar } from "@/components/ui/calendar"
-import { CalendarIcon } from "lucide-react"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { cn } from "@/lib/utils"
-import { format } from "date-fns"
-
-import { Product, ProductVariant } from '@/types/product';
-import { Variant } from '@/types/variant';
-import { useShoppingCart } from '@/hooks/use-shopping-cart'
-import { getProduct, getProducts } from '@/lib/shopify';
-import ProductCarousel from '@/components/product/ProductCarousel';
-import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
-import { detectSeriesType } from '@/utils/seriesUtils';
-import { formatCurrency } from '@/utils/format-currency';
-import { toast } from 'react-hot-toast';
+import { ArrowLeft } from "lucide-react"
 import { useToast } from '@/components/ui/use-toast';
 
+import { Product } from '@/types/product';
+import ProductCarousel from '@/components/product/ProductCarousel';
+import InnosinLabConfigurator from '@/components/product/InnosinLabConfigurator';
+import { productService } from '@/services/productService';
+
 const EnhancedProductDetail = () => {
-  const router = useRouter();
-  const { id } = router.query;
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [product, setProduct] = useState<Product | null>(null);
   const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [selectedFinish, setSelectedFinish] = useState<string>('PC');
-  const [quantity, setQuantity] = useState(1);
-  const [seriesType, setSeriesType] = useState<string>('standard');
-  const { addItem } = useShoppingCart()
-	const { toast } = useToast()
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -48,73 +36,47 @@ const EnhancedProductDetail = () => {
 
       try {
         setLoading(true);
-        const productData = await getProduct(id as string);
+        const productData = await productService.getProductById(id);
+        
         if (productData) {
           setProduct(productData);
 
           // Fetch all products to find variants of the same series
-          const allProducts = await getProducts();
-          const relatedVariants = allProducts.filter(p => p.product_series === productData.product_series);
+          const allProducts = await productService.getAllProducts();
+          const relatedVariants = allProducts.filter(p => 
+            p.product_series === productData.product_series && p.is_active
+          );
           setSeriesVariants(relatedVariants);
 
-          // Set initial selected variant to the first one found
-          if (relatedVariants.length > 0) {
-            setSelectedVariantId(relatedVariants[0].id);
-          }
-
-          setSeriesType(detectSeriesType(productData, relatedVariants));
-        } else {
-          // Handle product not found
-          console.error("Product not found");
+          // Set initial selected variant to the current product
+          setSelectedVariantId(productData.id);
         }
       } catch (error) {
         console.error("Error fetching product:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load product details",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchProduct();
-  }, [id]);
+  }, [id, toast]);
 
-  const handleAddToCart = useCallback(async () => {
-    if (!selectedVariantId) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please select a product variant."
-      })
-      return;
-    }
+  const handleVariantChange = useCallback((variantId: string) => {
+    setSelectedVariantId(variantId);
+    // Navigate to the new product variant
+    navigate(`/products/${variantId}`);
+  }, [navigate]);
 
-    const selectedVariant = seriesVariants.find(v => v.id === selectedVariantId);
-    if (!selectedVariant) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Selected variant not found."
-      })
-      return;
-    }
-
-    try {
-      const id = selectedVariant.id;
-      addItem({
-        id,
-        quantity: quantity
-      })
-      toast({
-        title: "Success",
-        description: "Item added to cart."
-      })
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to add item to cart."
-      })
-    }
-  }, [addItem, quantity, seriesVariants, selectedVariantId, toast]);
+  const isInnosinLab = (product: Product) => {
+    return product?.category?.toLowerCase().includes('innosin') || 
+           product?.product_series?.toLowerCase().includes('innosin') ||
+           product?.product_series?.toLowerCase().includes('mobile cabinet');
+  };
 
   if (loading) {
     return (
@@ -135,64 +97,137 @@ const EnhancedProductDetail = () => {
   }
 
   if (!product) {
-    return <div className="text-center py-10">Product not found</div>;
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Product not found</h2>
+          <Button onClick={() => navigate('/products')}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Products
+          </Button>
+        </div>
+      </div>
+    );
   }
+
+  const selectedVariant = seriesVariants.find(v => v.id === selectedVariantId) || product;
 
   return (
     <div className="container mx-auto px-4 py-10">
+      <div className="mb-6">
+        <Button variant="ghost" onClick={() => navigate('/products')}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Products
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Images */}
         <div>
-          <ProductCarousel product={product} />
+          <ProductCarousel product={selectedVariant} />
         </div>
 
         {/* Product Details */}
-        <div>
-          <h1 className="text-2xl font-semibold mb-2">{product.name}</h1>
-          <p className="text-gray-500 mb-4">{product.description}</p>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">{selectedVariant.name}</h1>
+            <p className="text-muted-foreground mb-4">{selectedVariant.description}</p>
+            {selectedVariant.product_code && (
+              <Badge variant="outline" className="mb-4">
+                {selectedVariant.product_code}
+              </Badge>
+            )}
+          </div>
 
-          {/* Series Configuration */}
-          {seriesVariants.length > 0 && (
-            <SeriesProductConfigurator
-              series={product}
+          {/* Innosin Lab Configuration */}
+          {isInnosinLab(product) && seriesVariants.length > 0 && (
+            <InnosinLabConfigurator
               variants={seriesVariants}
               selectedVariantId={selectedVariantId}
-              onVariantChange={setSelectedVariantId}
-              selectedFinish={selectedFinish}
-              onFinishChange={setSelectedFinish}
+              onVariantChange={handleVariantChange}
             />
           )}
 
-          {/* Price and Add to Cart */}
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold">
-              Price: {formatCurrency({ amount: 100, currencyCode: 'USD' })} {/* Replace 100 with actual price if available */}
-            </h2>
-            <Button className="w-full mt-4" onClick={handleAddToCart}>
-              Add to Cart
+          {/* Product Specifications */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Details</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {selectedVariant.dimensions && (
+                <div>
+                  <span className="font-medium">Dimensions:</span>
+                  <p className="text-muted-foreground">{selectedVariant.dimensions}</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                {selectedVariant.finish_type && (
+                  <div>
+                    <span className="font-medium">Finish:</span>
+                    <p className="text-muted-foreground">{selectedVariant.finish_type}</p>
+                  </div>
+                )}
+                {selectedVariant.orientation && (
+                  <div>
+                    <span className="font-medium">Orientation:</span>
+                    <p className="text-muted-foreground">{selectedVariant.orientation}</p>
+                  </div>
+                )}
+                {selectedVariant.door_type && (
+                  <div>
+                    <span className="font-medium">Door Type:</span>
+                    <p className="text-muted-foreground">{selectedVariant.door_type}</p>
+                  </div>
+                )}
+                {selectedVariant.drawer_count && selectedVariant.drawer_count > 0 && (
+                  <div>
+                    <span className="font-medium">Drawers:</span>
+                    <p className="text-muted-foreground">{selectedVariant.drawer_count}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="space-y-4">
+            <Button className="w-full" size="lg">
+              Request Quote
+            </Button>
+            <Button variant="outline" className="w-full">
+              Download Specifications
             </Button>
           </div>
         </div>
       </div>
 
       {/* Full Description and Specifications */}
-      <div className="mt-12">
-        <Separator className="mb-6" />
-        <h3 className="text-xl font-semibold mb-4">Full Description</h3>
-        <p className="text-gray-700">{product.fullDescription}</p>
+      {selectedVariant.fullDescription && (
+        <div className="mt-12">
+          <Separator className="mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4">Full Description</h3>
+              <p className="text-muted-foreground">{selectedVariant.fullDescription}</p>
+            </div>
 
-        <div className="mt-8">
-          <h3 className="text-xl font-semibold mb-4">Specifications</h3>
-          <ul>
-            {product.specifications &&
-              Object.entries(product.specifications).map(([key, value]) => (
-                <li key={key} className="mb-2">
-                  <strong>{key}:</strong> {value}
-                </li>
-              ))}
-          </ul>
+            {selectedVariant.specifications && selectedVariant.specifications.length > 0 && (
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Specifications</h3>
+                <div className="space-y-2">
+                  {selectedVariant.specifications.map((spec: any, index: number) => (
+                    <div key={index} className="flex justify-between">
+                      <span className="font-medium">{spec.name || spec.key}:</span>
+                      <span className="text-muted-foreground">{spec.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
