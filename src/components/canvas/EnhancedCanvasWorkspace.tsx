@@ -57,6 +57,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [lastMousePos, setLastMousePos] = useState<Point>({ x: 0, y: 0 });
   const [currentLineMeasurement, setCurrentLineMeasurement] = useState<string>('');
+  const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
+  const [hoveredWall, setHoveredWall] = useState<string | null>(null);
 
   const CANVAS_WIDTH = canvasWidth;
   const CANVAS_HEIGHT = canvasHeight;
@@ -82,9 +84,62 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     };
   }, [showGrid, gridSize, scale]);
 
+  const findWallAtPoint = useCallback((point: Point): WallSegment | null => {
+    const tolerance = 10; // pixels
+    
+    for (const wall of wallSegments) {
+      const distance = distanceFromPointToLine(point, wall.start, wall.end);
+      if (distance <= tolerance) {
+        return wall;
+      }
+    }
+    return null;
+  }, [wallSegments]);
+
+  const distanceFromPointToLine = (point: Point, lineStart: Point, lineEnd: Point): number => {
+    const A = point.x - lineStart.x;
+    const B = point.y - lineStart.y;
+    const C = lineEnd.x - lineStart.x;
+    const D = lineEnd.y - lineStart.y;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    
+    if (lenSq === 0) return Math.sqrt(A * A + B * B);
+    
+    const param = dot / lenSq;
+    let xx, yy;
+
+    if (param < 0) {
+      xx = lineStart.x;
+      yy = lineStart.y;
+    } else if (param > 1) {
+      xx = lineEnd.x;
+      yy = lineEnd.y;
+    } else {
+      xx = lineStart.x + param * C;
+      yy = lineStart.y + param * D;
+    }
+
+    const dx = point.x - xx;
+    const dy = point.y - yy;
+    return Math.sqrt(dx * dx + dy * dy);
+  };
+
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = snapToGrid(getCanvasPoint(e));
     setLastMousePos(point);
+    
+    if (currentMode === 'select') {
+      // Check if clicking on a wall for selection
+      const clickedWall = findWallAtPoint(point);
+      if (clickedWall) {
+        setSelectedWall(clickedWall);
+        return;
+      } else {
+        setSelectedWall(null);
+      }
+    }
     
     if (currentMode === 'wall') {
       setIsDrawing(true);
@@ -115,11 +170,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setTextAnnotations(prev => [...prev, newAnnotation]);
       }
     }
-  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations]);
+  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = snapToGrid(getCanvasPoint(e));
     setLastMousePos(point);
+    
+    // Handle wall hover for better UX
+    if (currentMode === 'select') {
+      const hoveredWallFound = findWallAtPoint(point);
+      setHoveredWall(hoveredWallFound?.id || null);
+    }
     
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0) {
       const startPoint = currentPath[0];
@@ -137,7 +198,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     } else if (currentMode === 'wall') {
       setCurrentLineMeasurement('');
     }
-  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit]);
+  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit, findWallAtPoint]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing && currentMode === 'wall' && currentPath.length >= 2) {
@@ -243,14 +304,43 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
     });
     
-    // Draw wall segments
+    // Draw wall segments with enhanced selection feedback
     wallSegments.forEach(wall => {
-      ctx.strokeStyle = wall.color;
-      ctx.lineWidth = wall.thickness;
+      const isSelected = selectedWall?.id === wall.id;
+      const isHovered = hoveredWall === wall.id;
+      
+      ctx.strokeStyle = isSelected ? '#ff4444' : isHovered ? '#ffaa00' : wall.color;
+      ctx.lineWidth = wall.thickness + (isSelected ? 4 : isHovered ? 2 : 0);
       ctx.beginPath();
       ctx.moveTo(wall.start.x, wall.start.y);
       ctx.lineTo(wall.end.x, wall.end.y);
       ctx.stroke();
+      
+      // Draw wall measurements if selected
+      if ((isSelected || showMeasurements) && measurementUnit) {
+        const dx = wall.end.x - wall.start.x;
+        const dy = wall.end.y - wall.start.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const distanceInMm = canvasToMm(distance, scale);
+        const midX = (wall.start.x + wall.end.x) / 2;
+        const midY = (wall.start.y + wall.end.y) / 2;
+        
+        const measurement = formatMeasurement(distanceInMm, { 
+          unit: measurementUnit, 
+          precision: measurementUnit === 'mm' ? 0 : 2, 
+          showUnit: true 
+        });
+        
+        // Draw measurement background
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        const textWidth = ctx.measureText(measurement).width;
+        ctx.fillRect(midX - textWidth/2 - 4, midY - 12, textWidth + 8, 16);
+        
+        // Draw measurement text
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px Arial';
+        ctx.fillText(measurement, midX - textWidth/2, midY + 3);
+      }
     });
     
     // Draw current room path
@@ -298,20 +388,59 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.fillText(annotation.text, annotation.position.x, annotation.position.y);
     });
     
-    // Draw placed products
+    // Draw placed products with enhanced 2D representation
     placedProducts.forEach(product => {
-      ctx.fillStyle = '#4caf50';
-      ctx.fillRect(
-        product.position.x - product.dimensions.length/2,
-        product.position.y - product.dimensions.width/2,
-        product.dimensions.length,
-        product.dimensions.width
-      );
+      ctx.save();
+      ctx.translate(product.position.x, product.position.y);
+      ctx.rotate(product.rotation || 0);
       
-      // Draw product name
+      // Scale dimensions from mm to canvas pixels
+      const lengthPx = (product.dimensions.length * scale) || 40;
+      const widthPx = (product.dimensions.width * scale) || 30;
+      const heightPx = (product.dimensions.height * scale) || 20;
+      
+      // Draw main product body
+      ctx.fillStyle = product.color || '#4caf50';
+      ctx.strokeStyle = '#2e7d32';
+      ctx.lineWidth = 2;
+      ctx.fillRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
+      ctx.strokeRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
+      
+      // Draw depth indicator (3D effect)
+      const depthOffset = Math.min(heightPx * 0.3, 8);
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fillRect(-lengthPx/2 + depthOffset, -widthPx/2 + depthOffset, lengthPx, widthPx);
+      
+      // Draw rotation handle
+      if (selectedItems.includes(product.id)) {
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-lengthPx/2 - 3, -widthPx/2 - 3, lengthPx + 6, widthPx + 6);
+        
+        // Rotation handle
+        ctx.fillStyle = '#ff4444';
+        ctx.beginPath();
+        ctx.arc(lengthPx/2 + 15, 0, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+      
+      ctx.restore();
+      
+      // Draw product name and dimensions
       ctx.fillStyle = '#000000';
-      ctx.font = '12px Arial';
-      ctx.fillText(product.name, product.position.x - 30, product.position.y - 20);
+      ctx.font = '10px Arial';
+      const shortName = product.name.length > 15 ? product.name.substring(0, 12) + '...' : product.name;
+      const textWidth = ctx.measureText(shortName).width;
+      ctx.fillText(shortName, product.position.x - textWidth/2, product.position.y - (widthPx/2) - 8);
+      
+      // Show dimensions when selected
+      if (selectedItems.includes(product.id)) {
+        ctx.font = '9px Arial';
+        ctx.fillStyle = '#666666';
+        const dimensionText = `${Math.round(product.dimensions.length)}×${Math.round(product.dimensions.width)}mm`;
+        const dimWidth = ctx.measureText(dimensionText).width;
+        ctx.fillText(dimensionText, product.position.x - dimWidth/2, product.position.y + (widthPx/2) + 15);
+      }
     });
     
     // Draw live measurement during wall drawing
@@ -332,7 +461,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.fillText(currentLineMeasurement, midX - textWidth/2, midY + 3);
     }
     
-  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos]);
+  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements]);
 
   useEffect(() => {
     drawCanvas();
@@ -349,6 +478,44 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onDoubleClick={handleDoubleClick}
+        onDrop={(e) => {
+          e.preventDefault();
+          const productData = e.dataTransfer.getData('product');
+          if (!productData) return;
+          
+          try {
+            const product = JSON.parse(productData);
+            const point = getCanvasPoint(e);
+            const snappedPoint = snapToGrid(point);
+            
+            const newProduct: PlacedProduct = {
+              id: `product-${Date.now()}`,
+              productId: product.id,
+              name: product.name,
+              category: product.category || 'Unknown',
+              position: snappedPoint,
+              rotation: 0,
+              dimensions: {
+                length: product.dimensions?.length || 500,
+                width: product.dimensions?.width || 400,
+                height: product.dimensions?.height || 800
+              },
+              color: product.color || '#4caf50',
+              scale: 1,
+              modelPath: product.modelPath,
+              thumbnail: product.thumbnail,
+              description: product.description,
+              specifications: product.specifications,
+              finishes: product.finishes,
+              variants: product.variants
+            };
+            
+            setPlacedProducts(prev => [...prev, newProduct]);
+          } catch (error) {
+            console.error('Error placing product:', error);
+          }
+        }}
+        onDragOver={(e) => e.preventDefault()}
       />
     </div>
   );

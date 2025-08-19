@@ -30,6 +30,7 @@ import MeasurementInput from '@/components/canvas/MeasurementInput';
 import RoomCreator from '@/components/canvas/RoomCreator';
 import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
 import ExportModal from '@/components/ExportModal';
+import WallEditor from '@/components/floorplan/WallEditor';
 
 const FloorPlanner = () => {
   // Canvas and drawing state
@@ -44,6 +45,7 @@ const FloorPlanner = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
   const [showRoomCreator, setShowRoomCreator] = useState(false);
+  const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
   
   // Enhanced measurement system
   const [scale, setScale] = useState(0.2); // pixels per mm
@@ -72,9 +74,9 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions - Fixed at 1200x800
-  const CANVAS_WIDTH = 1200;
-  const CANVAS_HEIGHT = 800;
+  // Canvas dimensions - Enhanced size for better workspace
+  const CANVAS_WIDTH = 1600;
+  const CANVAS_HEIGHT = 1000;
 
   // Enhanced product management
   const handleProductDrag = useCallback((product: any) => {
@@ -94,10 +96,23 @@ const FloorPlanner = () => {
   const handleRotateSelected = useCallback(() => {
     setPlacedProducts(prev => prev.map(product => 
       selectedProducts.includes(product.id)
-        ? { ...product, rotation: product.rotation + Math.PI / 2 }
+        ? { ...product, rotation: (product.rotation || 0) + Math.PI / 2 }
         : product
     ));
   }, [selectedProducts]);
+
+  // Wall management handlers
+  const handleWallUpdate = useCallback((updatedWall: WallSegment) => {
+    setWallSegments(prev => prev.map(wall => 
+      wall.id === updatedWall.id ? updatedWall : wall
+    ));
+    setSelectedWall(updatedWall);
+  }, []);
+
+  const handleWallDelete = useCallback((wallId: string) => {
+    setWallSegments(prev => prev.filter(wall => wall.id !== wallId));
+    setSelectedWall(null);
+  }, []);
 
   // Enhanced view controls
   const handleToggleGrid = useCallback(() => {
@@ -478,7 +493,7 @@ const FloorPlanner = () => {
               </CardHeader>
               
               <CardContent>
-                <div className="w-full h-[500px]">
+                <div className="w-full h-[700px]">
                   <EnhancedCanvasWorkspace
                     roomPoints={roomPoints}
                     setRoomPoints={setRoomPoints}
@@ -502,6 +517,18 @@ const FloorPlanner = () => {
                     canvasHeight={CANVAS_HEIGHT}
                     onClearAll={handleClear}
                   />
+                  
+                  {/* Wall Editor Panel */}
+                  {selectedWall && (
+                    <WallEditor
+                      selectedWall={selectedWall}
+                      onWallUpdate={handleWallUpdate}
+                      onWallDelete={handleWallDelete}
+                      onClose={() => setSelectedWall(null)}
+                      scale={scale}
+                      measurementUnit={measurementUnit}
+                    />
+                  )}
                 </div>
                 
                 {/* Enhanced Canvas Status */}
