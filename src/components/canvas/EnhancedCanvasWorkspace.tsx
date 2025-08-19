@@ -194,18 +194,18 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         precision: measurementUnit === 'mm' ? 0 : 2, 
         showUnit: true 
       }));
-      setCurrentPath(prev => [...prev.slice(0, -1), point]);
+      // Don't modify currentPath during mouse move - just track the end point
     } else if (currentMode === 'wall') {
       setCurrentLineMeasurement('');
     }
   }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit, findWallAtPoint]);
 
   const handleMouseUp = useCallback(() => {
-    if (isDrawing && currentMode === 'wall' && currentPath.length >= 2) {
+    if (isDrawing && currentMode === 'wall' && currentPath.length >= 1) {
       const newWallSegment: WallSegment = {
         id: `wall-${Date.now()}`,
         start: currentPath[0],
-        end: currentPath[currentPath.length - 1],
+        end: lastMousePos, // Use the actual mouse position
         thickness: 10,
         color: '#666666',
         type: WallType.INTERIOR
@@ -215,7 +215,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     
     setIsDrawing(false);
     setCurrentPath([]);
-  }, [isDrawing, currentMode, currentPath, setWallSegments]);
+    setCurrentLineMeasurement('');
+  }, [isDrawing, currentMode, currentPath, setWallSegments, lastMousePos]);
 
   const handleDoubleClick = useCallback(() => {
     if (currentMode === 'room' && roomPoints.length >= 3) {
@@ -265,11 +266,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     // Clear canvas
     ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
     
-    // Draw grid if enabled
+    // Draw grid if enabled with better visibility
     if (showGrid) {
       const gridPixels = gridSize * scale;
-      ctx.strokeStyle = '#e0e0e0';
-      ctx.lineWidth = 1;
+      
+      // Draw minor grid lines
+      ctx.strokeStyle = '#e5e5e5';
+      ctx.lineWidth = 0.5;
       
       for (let x = 0; x <= CANVAS_WIDTH; x += gridPixels) {
         ctx.beginPath();
@@ -279,6 +282,25 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
       
       for (let y = 0; y <= CANVAS_HEIGHT; y += gridPixels) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(CANVAS_WIDTH, y);
+        ctx.stroke();
+      }
+      
+      // Draw major grid lines every 5 units
+      const majorGridPixels = gridPixels * 5;
+      ctx.strokeStyle = '#d1d1d1';
+      ctx.lineWidth = 1;
+      
+      for (let x = 0; x <= CANVAS_WIDTH; x += majorGridPixels) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, CANVAS_HEIGHT);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y <= CANVAS_HEIGHT; y += majorGridPixels) {
         ctx.beginPath();
         ctx.moveTo(0, y);
         ctx.lineTo(CANVAS_WIDTH, y);
@@ -363,16 +385,28 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       });
     }
     
-    // Draw current drawing path
+    // Draw current drawing path with enhanced visibility
     if (currentPath.length > 0) {
+      // Draw the line from start to current mouse position
       ctx.strokeStyle = '#ff4444';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([]);
       ctx.beginPath();
       ctx.moveTo(currentPath[0].x, currentPath[0].y);
-      currentPath.slice(1).forEach(point => {
-        ctx.lineTo(point.x, point.y);
-      });
+      ctx.lineTo(lastMousePos.x, lastMousePos.y);
       ctx.stroke();
+      
+      // Draw start point
+      ctx.fillStyle = '#ff4444';
+      ctx.beginPath();
+      ctx.arc(currentPath[0].x, currentPath[0].y, 4, 0, 2 * Math.PI);
+      ctx.fill();
+      
+      // Draw current mouse position
+      ctx.fillStyle = '#ff4444';
+      ctx.beginPath();
+      ctx.arc(lastMousePos.x, lastMousePos.y, 4, 0, 2 * Math.PI);
+      ctx.fill();
     }
     
     // Draw doors
@@ -443,22 +477,33 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
     });
     
-    // Draw live measurement during wall drawing
+    // Draw live measurement during wall drawing with better visibility
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0 && currentLineMeasurement) {
       const startPoint = currentPath[0];
       const endPoint = lastMousePos;
       const midX = (startPoint.x + endPoint.x) / 2;
       const midY = (startPoint.y + endPoint.y) / 2;
       
-      // Draw measurement background
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+      // Draw measurement background with border
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1;
       const textWidth = ctx.measureText(currentLineMeasurement).width;
-      ctx.fillRect(midX - textWidth/2 - 4, midY - 12, textWidth + 8, 16);
+      const padding = 6;
+      const rectX = midX - textWidth/2 - padding;
+      const rectY = midY - 14;
+      const rectWidth = textWidth + (padding * 2);
+      const rectHeight = 20;
+      
+      ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+      ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
       
       // Draw measurement text
       ctx.fillStyle = '#ffffff';
-      ctx.font = '12px Arial';
-      ctx.fillText(currentLineMeasurement, midX - textWidth/2, midY + 3);
+      ctx.font = 'bold 12px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(currentLineMeasurement, midX, midY + 4);
+      ctx.textAlign = 'start';
     }
     
   }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements]);
@@ -473,7 +518,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         ref={canvasRef}
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
-        className="w-full h-full cursor-crosshair"
+        className="w-full h-full cursor-crosshair bg-white border"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}

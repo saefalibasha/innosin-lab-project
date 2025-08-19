@@ -48,8 +48,8 @@ const FloorPlanner = () => {
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
   
-  // Enhanced measurement system
-  const [scale, setScale] = useState(0.2); // pixels per mm
+  // Enhanced measurement system with better default scale
+  const [scale, setScale] = useState(1.0); // increased from 0.2 for better visibility
   const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
