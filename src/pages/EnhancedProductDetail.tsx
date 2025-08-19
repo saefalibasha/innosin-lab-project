@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/router';
+import { useParams } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -20,18 +20,16 @@ import { format } from "date-fns"
 
 import { Product, ProductVariant } from '@/types/product';
 import { Variant } from '@/types/variant';
-import { useShoppingCart } from '@/hooks/use-shopping-cart'
+import { useShoppingCart } from '@/hooks/useShoppingCart'
 import { getProduct, getProducts } from '@/lib/shopify';
 import ProductCarousel from '@/components/product/ProductCarousel';
 import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
 import { detectSeriesType } from '@/utils/seriesUtils';
-import { formatCurrency } from '@/utils/format-currency';
-import { toast } from 'react-hot-toast';
-import { useToast } from '@/components/ui/use-toast';
+import { formatCurrency } from '@/utils/formatCurrency';
+import { useToast } from '@/hooks/use-toast';
 
 const EnhancedProductDetail = () => {
-  const router = useRouter();
-  const { id } = router.query;
+  const { id } = useParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
