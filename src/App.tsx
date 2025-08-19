@@ -13,7 +13,7 @@ import { useEffect } from "react";
 // Import all pages
 import Index from "./pages/Index";
 import ProductCatalog from "./pages/ProductCatalog";
-import EnhancedProductDetail from "./pages/EnhancedProductDetail";
+import ProductDetail from "./pages/ProductDetail";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
@@ -102,7 +102,7 @@ const DevelopmentApp: React.FC = () => (
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/products" element={<ProductCatalog />} />
-                    <Route path="/products/:productId" element={<EnhancedProductDetail />} />
+                    <Route path="/products/:id" element={<ProductDetail />} />
                     <Route path="/about" element={<About />} />
                     <Route path="/contact" element={<Contact />} />
                     <Route path="/blog" element={<Blog />} />
