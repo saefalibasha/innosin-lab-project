@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectEditor } from './ProjectEditor';
 import { HotspotEditor } from './HotspotEditor';
-import { ShopLookContentEditor } from './ShopLookContentEditor';
 
 const ContentManagement = () => {
   return (
@@ -18,10 +17,9 @@ const ContentManagement = () => {
       </div>
 
       <Tabs defaultValue="projects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="projects">Before/After Projects</TabsTrigger>
-          <TabsTrigger value="shop-content">Shop The Look Content</TabsTrigger>
-          <TabsTrigger value="hotspots">Hotspot Management</TabsTrigger>
+          <TabsTrigger value="hotspots">Shop The Look Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="space-y-6">
@@ -35,21 +33,10 @@ const ContentManagement = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="shop-content" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Shop The Look Content</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ShopLookContentEditor />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="hotspots" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Hotspot Management</CardTitle>
+              <CardTitle>Shop The Look Management</CardTitle>
             </CardHeader>
             <CardContent>
               <HotspotEditor />

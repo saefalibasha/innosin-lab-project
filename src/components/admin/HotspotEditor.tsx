@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Edit, Trash2, Target, MousePointer, Move, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, Target, MousePointer, Move, Eye, EyeOff, Upload, Image } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -34,7 +34,10 @@ export const HotspotEditor = () => {
   const [isPositioning, setIsPositioning] = useState(false);
   const [draggedHotspot, setDraggedHotspot] = useState<string | null>(null);
   const [showHotspots, setShowHotspots] = useState(true);
+  const [backgroundImage, setBackgroundImage] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
   // Fetch hotspots
@@ -57,9 +60,9 @@ export const HotspotEditor = () => {
     }
   });
 
-  // Fetch background image
+  // Fetch shop look content for background image
   const { data: content } = useQuery({
-    queryKey: ['admin-shop-look-content'],
+    queryKey: ['shop-look-content'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shop_look_content')
@@ -71,6 +74,15 @@ export const HotspotEditor = () => {
       return data;
     }
   });
+
+  // Set background image when content changes
+  React.useEffect(() => {
+    if (content?.background_image) {
+      setBackgroundImage(content.background_image);
+    } else {
+      setBackgroundImage('https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80');
+    }
+  }, [content]);
 
   // Save hotspot mutation
   const saveHotspotMutation = useMutation({
@@ -99,6 +111,61 @@ export const HotspotEditor = () => {
       toast.error('Failed to save hotspot: ' + error.message);
     }
   });
+
+  // Delete hotspot mutation
+  const handleImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    setIsUploading(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `shop-look-background-${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('shop-look-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('shop-look-images')
+        .getPublicUrl(fileName);
+
+      // Update the shop look content with new background image
+      const { error: updateError } = await supabase
+        .from('shop_look_content')
+        .upsert({
+          id: content?.id || crypto.randomUUID(),
+          background_image: publicUrl,
+          background_alt: 'Shop The Look Background',
+          title: content?.title || 'Shop',
+          title_highlight: content?.title_highlight || 'The Look',
+          description: content?.description || 'Explore our featured laboratory setup.',
+          is_active: true
+        });
+
+      if (updateError) throw updateError;
+
+      setBackgroundImage(publicUrl);
+      queryClient.invalidateQueries({ queryKey: ['shop-look-content'] });
+      toast.success('Background image updated successfully');
+    } catch (error: any) {
+      toast.error('Failed to upload image: ' + error.message);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageUpload(file);
+    }
+  };
 
   // Delete hotspot mutation
   const deleteHotspotMutation = useMutation({
@@ -226,8 +293,28 @@ export const HotspotEditor = () => {
     <div className="space-y-6">
       {/* Controls */}
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Manage Hotspots</h3>
+        <h3 className="text-lg font-semibold">Shop The Look Management</h3>
         <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <Upload className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Image className="w-4 h-4 mr-2" />
+            )}
+            {isUploading ? 'Uploading...' : 'Change Background'}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileInputChange}
+            className="hidden"
+          />
           <Button
             variant="outline"
             size="sm"
@@ -269,7 +356,7 @@ export const HotspotEditor = () => {
                   <div className="relative border rounded-lg overflow-hidden">
                     <img
                       ref={imageRef}
-                      src={content?.background_image || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80'}
+                      src={backgroundImage}
                       alt="Background"
                       className={`w-full h-64 object-cover ${isPositioning ? 'cursor-crosshair' : ''}`}
                       onClick={handleImageClick}
@@ -430,7 +517,7 @@ export const HotspotEditor = () => {
           >
             <img
               ref={imageRef}
-              src={content?.background_image || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80'}
+              src={backgroundImage}
               alt="Shop The Look Background"
               className={`w-full h-[600px] object-cover ${isPositioning ? 'cursor-crosshair' : ''}`}
               onClick={handleImageClick}
