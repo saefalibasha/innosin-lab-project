@@ -95,7 +95,32 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       const value = p[field];
       return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     }).filter(Boolean);
-    return [...new Set(values)].sort();
+    
+    const uniqueValues = [...new Set(values)];
+    
+    // Special sorting for dimensions - sort by volume (length × width × height)
+    if (field === 'dimensions') {
+      return uniqueValues.sort((a, b) => {
+        const parseVolume = (dimStr: string) => {
+          const match = dimStr.match(/(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)/i);
+          if (match) {
+            const [, length, width, height] = match;
+            return parseFloat(length) * parseFloat(width) * parseFloat(height);
+          }
+          return 0;
+        };
+        
+        return parseVolume(a) - parseVolume(b);
+      });
+    }
+    
+    // For drawer count, sort numerically
+    if (field === 'drawer_count') {
+      return uniqueValues.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+    
+    // Default alphabetical sort for other fields
+    return uniqueValues.sort();
   };
 
   const handleProductSelect = (product: Product) => {
