@@ -1,7 +1,7 @@
 export const siteContent = {
-  companyName: "INNOSIN",
+  companyName: "Innosin Lab Pte. Ltd.",
   tagline: "Innovation in Laboratory Solutions",
-  copyright: "© 2025 Innosin Lab. All rights reserved.",
+  copyright: "© 2025 Innosin Lab Pte. Ltd. All rights reserved.",
   navLinks: [
     { label: "Products", href: "/products" },
     { label: "Solutions", href: "/solutions" },
