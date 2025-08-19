@@ -7,12 +7,15 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Building2, Package, Ruler, Tag } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import ProductAssetViewer from '@/components/product/ProductAssetViewer';
-import { useToast } from '@/hooks/use-toast';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading, error } = useProductById(id);
-  const { toast } = useToast();
+
+  console.log('ProductDetail - ID:', id);
+  console.log('ProductDetail - Product:', product);
+  console.log('ProductDetail - Loading:', loading);
+  console.log('ProductDetail - Error:', error);
 
   const handleBack = () => {
     window.history.back();
@@ -83,7 +86,7 @@ const ProductDetail = () => {
 
       {/* Main Content - Side by Side Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - Product Assets (Images & 3D Model) */}
+        {/* Left Column - Product Assets */}
         <div className="lg:col-span-2">
           <ProductAssetViewer 
             currentAssets={{

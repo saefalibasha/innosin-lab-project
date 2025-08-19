@@ -19,6 +19,8 @@ const ProductAssetViewer: React.FC<ProductAssetViewerProps> = ({
 }) => {
   const { thumbnail, model, images } = currentAssets;
 
+  console.log('ProductAssetViewer - Assets:', currentAssets);
+
   return (
     <div className="space-y-4">
       {/* Main Image */}
@@ -29,6 +31,10 @@ const ProductAssetViewer: React.FC<ProductAssetViewerProps> = ({
               src={thumbnail} 
               alt={productName}
               className="w-full h-96 object-contain rounded-lg"
+              onError={(e) => {
+                console.error('Failed to load image:', thumbnail);
+                e.currentTarget.style.display = 'none';
+              }}
             />
           ) : (
             <div className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -48,6 +54,10 @@ const ProductAssetViewer: React.FC<ProductAssetViewerProps> = ({
                   src={image} 
                   alt={`${productName} ${index + 1}`}
                   className="w-full h-32 object-contain rounded"
+                  onError={(e) => {
+                    console.error('Failed to load additional image:', image);
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               </CardContent>
             </Card>

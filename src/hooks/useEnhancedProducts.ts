@@ -19,7 +19,9 @@ export const useProductById = (id: string | undefined) => {
       try {
         setLoading(true);
         setError(null);
+        console.log('Fetching product with ID:', id);
         const productData = await productService.getProductById(id);
+        console.log('Fetched product data:', productData);
         setProduct(productData);
       } catch (err) {
         console.error('Error fetching product:', err);
