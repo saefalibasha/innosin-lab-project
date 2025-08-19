@@ -86,10 +86,26 @@ const Index = () => {
       </div>
 
       {/* Shop The Look Section */}
-      <ShopTheLook />
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+        <div className="container mx-auto px-4">
+          <ShopTheLook />
+        </div>
+      </section>
 
       {/* Before/After Comparison Section */}
-      <BeforeAfterComparison />
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
+              Laboratory <span className="text-sea">Transformations</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+              See how we've transformed laboratories across Singapore with cutting-edge equipment and professional design.
+            </p>
+          </div>
+          <BeforeAfterComparison />
+        </div>
+      </section>
 
       {/* Lab Transform CTA Section */}
       <LabTransformCTA />
