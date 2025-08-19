@@ -31,6 +31,7 @@ import RoomCreator from '@/components/canvas/RoomCreator';
 import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
 import ExportModal from '@/components/ExportModal';
 import WallEditor from '@/components/floorplan/WallEditor';
+import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
 
 const FloorPlanner = () => {
   // Canvas and drawing state
@@ -411,9 +412,9 @@ const FloorPlanner = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Enhanced Left Sidebar with Tabs - Made Wider */}
-          <div className="lg:col-span-2 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Enhanced Left Sidebar with Tabs - Made Narrower */}
+          <div className="lg:col-span-1 space-y-4">
             <TabbedSidebar
               onProductDrag={handleProductDrag}
               currentTool={currentMode}
@@ -423,8 +424,27 @@ const FloorPlanner = () => {
             />
           </div>
 
-          {/* Enhanced Main Content Area - Made Smaller */}
+          {/* Enhanced Main Content Area - Extended to the left */}
           <div className="lg:col-span-3 space-y-4">
+            {/* Placed Products Horizontal Bar */}
+            <PlacedProductsBar
+              placedProducts={placedProducts}
+              selectedProducts={selectedProducts}
+              onProductSelect={(productId, multiSelect) => {
+                if (multiSelect) {
+                  setSelectedProducts(prev => 
+                    prev.includes(productId) 
+                      ? prev.filter(id => id !== productId)
+                      : [...prev, productId]
+                  );
+                } else {
+                  setSelectedProducts([productId]);
+                }
+              }}
+              onDeleteSelected={handleDeleteSelected}
+              onRotateSelected={handleRotateSelected}
+              onClearSelection={handleClearSelection}
+            />
             {/* Enhanced Horizontal Toolbar - Remove Zoom Controls */}
             <HorizontalToolbar
               currentTool={currentMode}

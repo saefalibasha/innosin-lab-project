@@ -30,14 +30,10 @@ const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
     <Card className="w-full h-full">
       <CardContent className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="products" className="flex items-center gap-2 px-4 py-3">
               <Package className="h-4 w-4" />
               <span>Products</span>
-            </TabsTrigger>
-            <TabsTrigger value="statistics" className="flex items-center gap-2 px-4 py-3">
-              <BarChart3 className="h-4 w-4" />
-              <span>Stats</span>
             </TabsTrigger>
             <TabsTrigger value="rooms" className="flex items-center gap-2 px-4 py-3">
               <Home className="h-4 w-4" />
@@ -55,10 +51,6 @@ const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
                 onProductDrag={onProductDrag}
                 currentTool={currentTool}
               />
-            </TabsContent>
-
-            <TabsContent value="statistics" className="mt-0 h-full">
-              <ProductStatistics placedProducts={placedProducts} />
             </TabsContent>
 
             <TabsContent value="rooms" className="mt-0 h-full">
