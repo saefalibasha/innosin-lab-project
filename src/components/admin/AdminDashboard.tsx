@@ -6,9 +6,13 @@ import {
   Users, 
   Settings, 
   BarChart3, 
-  Package
+  Package,
+  FileText
 } from 'lucide-react';
 import { ProductSeriesManager } from './product-series/ProductSeriesManager';
+import ContentManagement from './ContentManagement';
+import { DataSeeder } from './DataSeeder';
+import { DashboardStats } from './DashboardStats';
 
 export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -17,17 +21,30 @@ export const AdminDashboard = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground">
+          Manage your product catalog and system settings
+        </p>
       </div>
 
+      {/* Stats Overview */}
+      <DashboardStats />
+
+      {/* Data Seeder */}
+      <DataSeeder />
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
           </TabsTrigger>
           <TabsTrigger value="products" className="flex items-center gap-2">
             <Package className="w-4 h-4" />
-            Product Series
+            Product Management
+          </TabsTrigger>
+          <TabsTrigger value="content" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Content Management
           </TabsTrigger>
         </TabsList>
 
@@ -70,6 +87,10 @@ export const AdminDashboard = () => {
 
         <TabsContent value="products">
           <ProductSeriesManager />
+        </TabsContent>
+
+        <TabsContent value="content">
+          <ContentManagement />
         </TabsContent>
       </Tabs>
     </div>
