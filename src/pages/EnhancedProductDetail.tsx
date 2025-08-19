@@ -282,8 +282,8 @@ const EnhancedProductDetail = () => {
                       </div>
                     </div>
                   </TabsContent>
-                </Tabs>
-              </CardContent>
+                </CardContent>
+              </Tabs>
             </Card>
           </div>
 
