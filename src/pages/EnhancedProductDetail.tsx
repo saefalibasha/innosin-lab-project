@@ -9,6 +9,8 @@ import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText, Building2, Set
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
 import Enhanced3DViewer from '@/components/Enhanced3DViewer';
+import Enhanced3DViewerOptimized from '@/components/Enhanced3DViewerOptimized';
+import InnosinLabConfigurator from '@/components/product/InnosinLabConfigurator';
 import ProductImageGallery from '@/components/ProductImageGallery';
 import AnimatedSection from '@/components/AnimatedSection';
 import VariantSelector from '@/components/product/VariantSelector';
@@ -136,8 +138,12 @@ const EnhancedProductDetail = () => {
       return 'modular_cabinet';
     }
     
-    // Innosin Lab detection
-    if (category.includes('innosin') || productSeries.includes('innosin')) {
+    // Innosin Lab detection - more specific
+    if (category.includes('innosin') || 
+        productSeries.includes('innosin') ||
+        product?.company_tags?.includes('Innosin Lab') ||
+        productSeries.includes('mobile cabinet') ||
+        productSeries.includes('knee space')) {
       return 'innosin_lab';
     }
     
@@ -341,6 +347,20 @@ const EnhancedProductDetail = () => {
       );
     }
     
+    // Innosin Lab specific configurator
+    if (productType === 'innosin_lab' && hasVariants) {
+      return (
+        <InnosinLabConfigurator
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+          seriesName={series.product_series}
+        />
+      );
+    }
+    
     // Default fallback - use generic VariantSelector
     if (hasVariants) {
       return (
@@ -350,7 +370,8 @@ const EnhancedProductDetail = () => {
           onVariantChange={setSelectedVariantId}
           selectedFinish={selectedFinish}
           onFinishChange={setSelectedFinish}
-          groupByDimensions={true}
+          seriesSlug={series.series_slug}
+          seriesName={series.product_series}
         />
       );
     }
@@ -421,10 +442,20 @@ const EnhancedProductDetail = () => {
 
                 <TabsContent value="3d" className="mt-0">
                   <div className="rounded-xl overflow-hidden border shadow-sm">
-                    <Enhanced3DViewer
-                      modelPath={currentAssets?.model || ''}
-                      className="w-full h-96 lg:h-[500px]"
-                    />
+                    {productType === 'innosin_lab' ? (
+                      <Enhanced3DViewerOptimized
+                        modelPath={currentAssets?.model || ''}
+                        className="w-full h-96 lg:h-[500px]"
+                        productId={productId}
+                        preloadModels={series?.variants?.map(v => v.model_path).filter(Boolean) || []}
+                      />
+                    ) : (
+                      <Enhanced3DViewer
+                        modelPath={currentAssets?.model || ''}
+                        className="w-full h-96 lg:h-[500px]"
+                        productId={productId}
+                      />
+                    )}
                   </div>
                 </TabsContent>
               </Tabs>

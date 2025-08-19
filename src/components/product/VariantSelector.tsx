@@ -9,26 +9,11 @@ import {
   formatAttributeValue 
 } from '@/utils/seriesConfigurationManager';
 
-interface Variant {
-  id: string;
-  name: string;
-  product_code: string;
-  dimensions: string;
-  orientation: string;
-  door_type?: string;
-  variant_type: string;
-  drawer_count?: number;
-  finish_type: string;
-  emergency_shower_type?: string;
-  mounting_type?: string;
-  mixing_type?: string;
-  handle_type?: string;
-  cabinet_class?: string;
-  series_slug?: string;
-}
+// Use Product interface directly instead of separate Variant interface
+import { Product } from '@/types/product';
 
 interface VariantSelectorProps {
-  variants: Variant[];
+  variants: Product[];
   selectedVariantId: string;
   onVariantChange: (variantId: string) => void;
   selectedFinish: string;
@@ -125,7 +110,7 @@ const VariantSelector: React.FC<VariantSelectorProps> = ({
               )}
 
               {configuration.groupingAttributes.map((attr) => {
-                const value = selectedVariant[attr as keyof Variant];
+                const value = selectedVariant[attr as keyof Product];
                 if (!value || value === 'None') return null;
 
                 return (
