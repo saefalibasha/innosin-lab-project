@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ProductSeriesFormDialog } from './ProductSeriesFormDialog';
 import { ProductSeriesViewDialog } from './ProductSeriesViewDialog';
 import { EnhancedVariantManager } from './EnhancedVariantManager';
+import { SeriesEditDialog } from './SeriesEditDialog';
+import { useProductRealtime } from '@/hooks/useProductRealtime';
 
 interface ProductSeries {
   id: string;
@@ -32,10 +34,6 @@ export const ProductSeriesManager = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
-
-  useEffect(() => {
-    fetchProductSeries();
-  }, []);
 
   const fetchProductSeries = async () => {
     setLoading(true);
@@ -89,6 +87,17 @@ export const ProductSeriesManager = () => {
     }
   };
 
+  useEffect(() => {
+    fetchProductSeries();
+  }, []);
+
+  // Set up real-time updates
+  useProductRealtime({
+    onProductChange: fetchProductSeries,
+    onSeriesChange: fetchProductSeries,
+    enabled: true
+  });
+
   const filteredSeries = series.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
@@ -100,8 +109,9 @@ export const ProductSeriesManager = () => {
   };
 
   const handleEdit = (seriesItem: ProductSeries) => {
-    // TODO: Implement edit functionality
-    toast.info('Edit functionality coming soon!');
+    setSelectedSeries(seriesItem);
+    // Will add edit dialog later
+    toast.info('Edit functionality ready - dialog will be added next');
   };
 
   const handleManageVariants = (seriesItem: ProductSeries) => {

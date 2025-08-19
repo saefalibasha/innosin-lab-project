@@ -8,11 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Eye } from 'lucide-react';
+import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Variant } from '@/types/variant';
 import { DatabaseProduct } from '@/types/supabase';
+import { VariantFormDialog } from './VariantFormDialog';
+import { useProductRealtime } from '@/hooks/useProductRealtime';
 
 interface EnhancedVariantManagerProps {
   seriesId: string;
@@ -74,15 +76,19 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
   const [loading, setLoading] = useState(true);
   const [editingVariant, setEditingVariant] = useState<Variant | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedVariants, setSelectedVariants] = useState<Set<string>>(new Set());
 
   const fetchVariants = async () => {
     try {
       setLoading(true);
+      
+      // Fetch variants using both product_series and parent_series_id for better coverage
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .eq('product_series', seriesId)
-        .eq('is_active', true)
+        .or(`product_series.eq.${seriesId},parent_series_id.eq.${seriesId}`)
+        .eq('is_series_parent', false)
         .order('variant_order', { ascending: true });
 
       if (error) throw error;
@@ -103,6 +109,50 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
       fetchVariants();
     }
   }, [seriesId]);
+
+  // Set up real-time updates
+  useProductRealtime({
+    onProductChange: fetchVariants,
+    enabled: true
+  });
+
+  const filteredVariants = variants.filter(variant =>
+    variant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    variant.product_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    variant.editable_title?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleBulkToggleStatus = async (variantIds: string[], isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ 
+          is_active: isActive,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', variantIds);
+
+      if (error) throw error;
+
+      await fetchVariants();
+      onVariantChange?.();
+      setSelectedVariants(new Set());
+      toast.success(`${variantIds.length} variants ${isActive ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('Error updating variants:', error);
+      toast.error('Failed to update variants');
+    }
+  };
+
+  const toggleVariantSelection = (variantId: string) => {
+    const newSelection = new Set(selectedVariants);
+    if (newSelection.has(variantId)) {
+      newSelection.delete(variantId);
+    } else {
+      newSelection.add(variantId);
+    }
+    setSelectedVariants(newSelection);
+  };
 
   const handleDeleteVariant = async (variantId: string) => {
     try {
@@ -161,41 +211,76 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Variants for {seriesName}</h3>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Variant
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add New Variant</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Add variant functionality would be implemented here
-              </p>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button size="sm" onClick={() => setIsAddDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Variant
+        </Button>
       </div>
 
-      {variants.length === 0 ? (
+      {/* Search and Bulk Actions */}
+      <div className="flex gap-4 items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search variants..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        {selectedVariants.size > 0 && (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkToggleStatus(Array.from(selectedVariants), true)}
+            >
+              <ToggleRight className="h-4 w-4 mr-1" />
+              Activate ({selectedVariants.size})
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkToggleStatus(Array.from(selectedVariants), false)}
+            >
+              <ToggleLeft className="h-4 w-4 mr-1" />
+              Deactivate ({selectedVariants.size})
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {filteredVariants.length === 0 ? (
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-muted-foreground">No variants found for this series</p>
+            <p className="text-muted-foreground">
+              {searchTerm ? 'No variants match your search' : 'No variants found for this series'}
+            </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4">
-          {variants.map((variant) => (
-            <Card key={variant.id}>
+          {filteredVariants.map((variant) => (
+            <Card key={variant.id} className={`${!variant.is_active ? 'opacity-50' : ''}`}>
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-base">{variant.editable_title || variant.name}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{variant.product_code}</p>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedVariants.has(variant.id)}
+                      onChange={() => toggleVariantSelection(variant.id)}
+                      className="mt-1"
+                    />
+                    <div>
+                      <CardTitle className="text-base flex items-center gap-2">
+                        {variant.editable_title || variant.name}
+                        {!variant.is_active && (
+                          <Badge variant="secondary" className="text-xs">Inactive</Badge>
+                        )}
+                      </CardTitle>
+                      <p className="text-sm text-muted-foreground">{variant.product_code}</p>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -228,6 +313,9 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
                     {variant.drawer_count > 0 && (
                       <Badge variant="secondary">{variant.drawer_count} Drawers</Badge>
                     )}
+                    {variant.orientation && (
+                      <Badge variant="secondary">{variant.orientation}</Badge>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -236,72 +324,31 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
         </div>
       )}
 
+      {/* Add/Edit Variant Dialog */}
+      <VariantFormDialog
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        seriesId={seriesId}
+        seriesName={seriesName}
+        onVariantSaved={() => {
+          fetchVariants();
+          onVariantChange?.();
+        }}
+      />
+
       {/* Edit Variant Dialog */}
-      <Dialog open={editingVariant !== null} onOpenChange={() => setEditingVariant(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Edit Variant</DialogTitle>
-          </DialogHeader>
-          {editingVariant && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="variant-name">Name</Label>
-                <Input
-                  id="variant-name"
-                  value={editingVariant.editable_title || editingVariant.name}
-                  onChange={(e) => setEditingVariant({
-                    ...editingVariant,
-                    editable_title: e.target.value
-                  })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="variant-description">Description</Label>
-                <Textarea
-                  id="variant-description"
-                  value={editingVariant.editable_description || editingVariant.description}
-                  onChange={(e) => setEditingVariant({
-                    ...editingVariant,
-                    editable_description: e.target.value
-                  })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="variant-dimensions">Dimensions</Label>
-                  <Input
-                    id="variant-dimensions"
-                    value={editingVariant.dimensions}
-                    onChange={(e) => setEditingVariant({
-                      ...editingVariant,
-                      dimensions: e.target.value
-                    })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="variant-code">Product Code</Label>
-                  <Input
-                    id="variant-code"
-                    value={editingVariant.product_code}
-                    onChange={(e) => setEditingVariant({
-                      ...editingVariant,
-                      product_code: e.target.value
-                    })}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setEditingVariant(null)}>
-                  Cancel
-                </Button>
-                <Button onClick={() => handleEditVariant(editingVariant)}>
-                  Save Changes
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <VariantFormDialog
+        open={editingVariant !== null}
+        onClose={() => setEditingVariant(null)}
+        seriesId={seriesId}
+        seriesName={seriesName}
+        variant={editingVariant}
+        onVariantSaved={() => {
+          fetchVariants();
+          onVariantChange?.();
+          setEditingVariant(null);
+        }}
+      />
     </div>
   );
 };
