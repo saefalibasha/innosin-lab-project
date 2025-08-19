@@ -58,7 +58,7 @@ const ShopTheLook = () => {
         title: data.title || 'Shop',
         titleHighlight: data.title_highlight || 'The Look',
         description: data.description || 'Explore our featured laboratory setup.',
-        backgroundImage: data.background_image || '/shop-the-look/modern-lab-setup.jpg',
+        backgroundImage: data.background_image || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80',
         backgroundAlt: data.background_alt || 'Modern Laboratory Setup'
       } as ShopLookContent : null;
     }
@@ -142,7 +142,7 @@ const ShopTheLook = () => {
           <div className="relative">
             {/* Laboratory Background Image - Full Size */}
             <img
-              src={content?.backgroundImage || '/shop-the-look/modern-lab-setup.jpg'}
+              src={content?.backgroundImage || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80'}
               alt={content?.backgroundAlt || 'Modern Laboratory Setup'}
               className="w-full h-[700px] object-cover object-center"
             />

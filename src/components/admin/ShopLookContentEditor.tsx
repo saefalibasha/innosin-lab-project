@@ -45,7 +45,7 @@ export const ShopLookContentEditor = () => {
           title: 'Shop',
           title_highlight: 'The Look',
           description: 'Explore our featured laboratory setup and discover the premium equipment that makes it exceptional.',
-          background_image: '/shop-the-look/modern-lab-setup.jpg',
+          background_image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80',
           background_alt: 'Modern Laboratory Setup',
           is_active: true
         };

@@ -4,6 +4,9 @@ import AdminAuthGuard from '@/components/AdminAuthGuard';
 import { ProductSeriesManager } from '@/components/admin/product-series/ProductSeriesManager';
 import { DataSeeder } from '@/components/admin/DataSeeder';
 import { DashboardStats } from '@/components/admin/DashboardStats';
+import ContentManagement from '@/components/admin/ContentManagement';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Package, FileText } from 'lucide-react';
 
 const Dashboard = () => {
   return (
@@ -24,8 +27,26 @@ const Dashboard = () => {
         {/* Data Seeder */}
         <DataSeeder />
 
-        {/* Product Series Manager */}
-        <ProductSeriesManager />
+        <Tabs defaultValue="products" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="products" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Product Management
+            </TabsTrigger>
+            <TabsTrigger value="content" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Content Management
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="products">
+            <ProductSeriesManager />
+          </TabsContent>
+
+          <TabsContent value="content">
+            <ContentManagement />
+          </TabsContent>
+        </Tabs>
       </div>
     </AdminAuthGuard>
   );
