@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, Plus } from 'lucide-react';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 import { Product } from '@/types/product';
@@ -20,6 +21,55 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState({
+    dimensions: '',
+    numberOfDrawers: '',
+    finishType: '',
+    orientation: '',
+    doorType: '',
+    mountingType: '',
+    handleType: ''
+  });
+
+  // Helper function to calculate dimension volume for sorting
+  const calculateDimensionVolume = (dimensions: string): number => {
+    const parsed = parseDimensionString(dimensions);
+    if (parsed) {
+      return parsed.width * parsed.depth * parsed.height;
+    }
+    return 0;
+  };
+
+  // Get unique filter values
+  const getUniqueStringValues = (key: keyof Product): string[] => {
+    const values = products
+      .map(p => p[key])
+      .filter(Boolean)
+      .filter((value, index, arr) => arr.indexOf(value) === index)
+      .map(value => String(value));
+    
+    if (key === 'dimensions') {
+      return values.sort((a, b) => {
+        const volA = calculateDimensionVolume(a);
+        const volB = calculateDimensionVolume(b);
+        return volA - volB;
+      });
+    }
+    
+    if (key === 'number_of_drawers') {
+      return values.sort((a, b) => Number(a) - Number(b));
+    }
+    
+    return values.sort();
+  };
+
+  const uniqueDimensions = getUniqueStringValues('dimensions');
+  const uniqueDrawerCounts = getUniqueStringValues('number_of_drawers');
+  const uniqueFinishes = getUniqueStringValues('finish_type');
+  const uniqueOrientations = getUniqueStringValues('orientation');
+  const uniqueDoorTypes = getUniqueStringValues('door_type');
+  const uniqueMountingTypes = getUniqueStringValues('mounting_type');
+  const uniqueHandleTypes = getUniqueStringValues('handle_type');
 
   useEffect(() => {
     loadProducts();
@@ -27,7 +77,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
 
   useEffect(() => {
     filterProducts();
-  }, [products, searchTerm]);
+  }, [products, searchTerm, filters]);
 
   const loadProducts = async () => {
     try {
@@ -43,25 +93,48 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
   };
 
   const filterProducts = async () => {
-    if (!searchTerm) {
-      setFilteredProducts(products);
-      return;
+    let filtered = products;
+
+    // Apply search filter
+    if (searchTerm) {
+      try {
+        const searchResults = await searchProductSeries(searchTerm);
+        filtered = searchResults;
+      } catch (error) {
+        console.error('Search error:', error);
+        const term = searchTerm.toLowerCase();
+        filtered = products.filter(product =>
+          product.name.toLowerCase().includes(term) ||
+          product.description.toLowerCase().includes(term) ||
+          product.category.toLowerCase().includes(term)
+        );
+      }
     }
 
-    try {
-      const searchResults = await searchProductSeries(searchTerm);
-      setFilteredProducts(searchResults);
-    } catch (error) {
-      console.error('Search error:', error);
-      // Fallback to client-side filtering
-      const term = searchTerm.toLowerCase();
-      const filtered = products.filter(product =>
-        product.name.toLowerCase().includes(term) ||
-        product.description.toLowerCase().includes(term) ||
-        product.category.toLowerCase().includes(term)
-      );
-      setFilteredProducts(filtered);
+    // Apply variant filters
+    if (filters.dimensions) {
+      filtered = filtered.filter(p => p.dimensions === filters.dimensions);
     }
+    if (filters.numberOfDrawers) {
+      filtered = filtered.filter(p => String(p.number_of_drawers) === filters.numberOfDrawers);
+    }
+    if (filters.finishType) {
+      filtered = filtered.filter(p => p.finish_type === filters.finishType);
+    }
+    if (filters.orientation) {
+      filtered = filtered.filter(p => p.orientation === filters.orientation);
+    }
+    if (filters.doorType) {
+      filtered = filtered.filter(p => p.door_type === filters.doorType);
+    }
+    if (filters.mountingType) {
+      filtered = filtered.filter(p => p.mounting_type === filters.mountingType);
+    }
+    if (filters.handleType) {
+      filtered = filtered.filter(p => p.handle_type === filters.handleType);
+    }
+
+    setFilteredProducts(filtered);
   };
 
   const handleProductSelect = (product: Product) => {
@@ -120,6 +193,113 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"
         />
+      </div>
+
+      <div className="bg-muted/30 p-3 rounded-lg">
+        <h4 className="text-sm font-medium mb-3">Filter Variants:</h4>
+        <div className="grid grid-cols-2 gap-2">
+          {uniqueDimensions.length > 0 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Size:</label>
+              <Select value={filters.dimensions} onValueChange={(value) => setFilters(prev => ({ ...prev, dimensions: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Sizes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Sizes</SelectItem>
+                  {uniqueDimensions.map(dim => (
+                    <SelectItem key={dim} value={dim}>{dim}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {uniqueDrawerCounts.length > 0 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Drawers:</label>
+              <Select value={filters.numberOfDrawers} onValueChange={(value) => setFilters(prev => ({ ...prev, numberOfDrawers: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Drawers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Drawers</SelectItem>
+                  {uniqueDrawerCounts.map(count => (
+                    <SelectItem key={count} value={count}>{count} Drawers</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {uniqueFinishes.length > 0 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Finish:</label>
+              <Select value={filters.finishType} onValueChange={(value) => setFilters(prev => ({ ...prev, finishType: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Finishes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Finishes</SelectItem>
+                  {uniqueFinishes.map(finish => (
+                    <SelectItem key={finish} value={finish}>{finish}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {uniqueOrientations.length > 0 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Orientation:</label>
+              <Select value={filters.orientation} onValueChange={(value) => setFilters(prev => ({ ...prev, orientation: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Orientations" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Orientations</SelectItem>
+                  {uniqueOrientations.map(orientation => (
+                    <SelectItem key={orientation} value={orientation}>{orientation}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {uniqueDoorTypes.length > 0 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Door Type:</label>
+              <Select value={filters.doorType} onValueChange={(value) => setFilters(prev => ({ ...prev, doorType: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Door Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Door Types</SelectItem>
+                  {uniqueDoorTypes.map(doorType => (
+                    <SelectItem key={doorType} value={doorType}>{doorType}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {uniqueMountingTypes.length > 0 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Mounting:</label>
+              <Select value={filters.mountingType} onValueChange={(value) => setFilters(prev => ({ ...prev, mountingType: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Mounting" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Mounting</SelectItem>
+                  {uniqueMountingTypes.map(mounting => (
+                    <SelectItem key={mounting} value={mounting}>{mounting}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
       </div>
 
       <ScrollArea className="h-[calc(100vh-200px)]">
