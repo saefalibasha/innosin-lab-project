@@ -61,15 +61,13 @@ export const useOptimizedProductDetail = (id: string | undefined): UseOptimizedP
       startTimer('variants-fetch');
       let variantData: Product[] = [];
       
-      if (productData.parent_series_id === null || productData.parent_series_id === undefined) {
-        // This is a series parent, fetch its variants
+      // Check if this is a series parent using the is_series_parent flag
+      if (productData.is_series_parent) {
+        // This is a series parent, fetch its variants using parent_series_id = product.id
         variantData = await productService.getVariantsBySeriesId(id);
-      } else {
-        // This is a variant, fetch siblings
-        const parentId = productData.parent_series_id;
-        if (parentId) {
-          variantData = await productService.getVariantsBySeriesId(parentId);
-        }
+      } else if (productData.parent_series_id) {
+        // This is a variant, fetch siblings using the parent_series_id
+        variantData = await productService.getVariantsBySeriesId(productData.parent_series_id);
       }
       
       setVariants(variantData);

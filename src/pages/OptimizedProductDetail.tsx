@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeft, Package, Eye, Download, Wrench, Settings } from 'lucide-react';
 import { useOptimizedProductDetail } from '@/hooks/useOptimizedProductDetail';
 import OptimizedProductViewer3D from '@/components/product/OptimizedProductViewer3D';
-import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
+import EnhancedSeriesConfigurator from '@/components/product/EnhancedSeriesConfigurator';
 import VariantSelector from '@/components/product/VariantSelector';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { toast } from 'sonner';
@@ -104,7 +104,7 @@ const OptimizedProductDetail = () => {
   }
 
   const displayProduct = getDisplayProduct();
-  const isSeriesParent = variants.length > 0;
+  const isSeriesParent = product?.is_series_parent && variants.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -184,7 +184,7 @@ const OptimizedProductDetail = () => {
                 </CardContent>
               </Card>
             ) : isSeriesParent ? (
-              <SeriesProductConfigurator
+              <EnhancedSeriesConfigurator
                 series={product!}
                 variants={variants}
                 selectedVariantId={selectedVariantId}
