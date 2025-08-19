@@ -54,10 +54,10 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
         cabinetTypes.add('MC');
       }
 
-      // Drawer count
-      const drawers = variant.drawer_count || variant.number_of_drawers || 
+      // Drawer count - prioritize number_of_drawers from database
+      const drawers = variant.number_of_drawers || variant.drawer_count || 
         (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
-      if (drawers) drawerCounts.add(drawers);
+      if (drawers && drawers > 0) drawerCounts.add(drawers);
 
       // Dimensions
       if (variant.dimensions) dimensions.add(variant.dimensions);
@@ -98,7 +98,7 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
 
       // Drawer count filter
       if (drawerCount) {
-        const variantDrawers = variant.drawer_count || variant.number_of_drawers || 
+        const variantDrawers = variant.number_of_drawers || variant.drawer_count || 
           (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
         if (variantDrawers !== parseInt(drawerCount)) return false;
       }
@@ -129,7 +129,7 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
       case 'drawerCount':
         return configurationOptions.drawerCounts.filter(count => 
           filtered.some(v => {
-            const variantDrawers = v.drawer_count || v.number_of_drawers || 
+            const variantDrawers = v.number_of_drawers || v.drawer_count || 
               (v.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(v.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
             return variantDrawers === count;
           })
@@ -343,11 +343,11 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
                 </div>
               )}
 
-              {(selectedVariant.drawer_count || selectedVariant.number_of_drawers) && (
+              {(selectedVariant.number_of_drawers || selectedVariant.drawer_count) && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Drawers:</span>
                   <span className="text-sm font-medium">
-                    {selectedVariant.drawer_count || selectedVariant.number_of_drawers}
+                    {selectedVariant.number_of_drawers || selectedVariant.drawer_count}
                   </span>
                 </div>
               )}
