@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Building2, Package, Ruler, Tag } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
-import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
 import ProductAssetViewer from '@/components/product/ProductAssetViewer';
 import { useToast } from '@/hooks/use-toast';
 
@@ -97,105 +96,89 @@ const ProductDetail = () => {
           />
         </div>
 
-        {/* Right Column - Series Configurator */}
+        {/* Right Column - Product Information */}
         <div className="space-y-6">
-          <SeriesProductConfigurator 
-            series={product}
-            variants={[product]}
-            selectedVariantId={product.id}
-            onVariantChange={(variantId) => {
-              // Navigate to the selected variant
-              window.location.href = `/products/${variantId}`;
-            }}
-            selectedFinish={product.finish_type || 'PC'}
-            onFinishChange={(finish) => {
-              // Handle finish change
-              console.log('Finish changed to:', finish);
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Product Information Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              Product Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {product.product_code && (
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">Product Code</dt>
-                <dd className="text-sm">{product.product_code}</dd>
-              </div>
-            )}
-            
-            <div>
-              <dt className="text-sm font-medium text-muted-foreground">Category</dt>
-              <dd className="text-sm">
-                <Badge variant="outline">{product.category}</Badge>
-              </dd>
-            </div>
-
-            {product.product_series && (
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">Series</dt>
-                <dd className="text-sm">{product.product_series}</dd>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Dimensions */}
-        {product.dimensions && (
+          {/* Basic Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Ruler className="w-5 h-5" />
-                Dimensions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">{product.dimensions}</p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Additional Details - Only show if we have finish_type */}
-        {product.finish_type && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tag className="w-5 h-5" />
-                Specifications
+                <Package className="w-5 h-5" />
+                Product Information
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <dt className="text-sm font-medium text-muted-foreground">Finish</dt>
-                <dd className="text-sm">{product.finish_type}</dd>
-              </div>
-              
-              {product.orientation && (
+              {product.product_code && (
                 <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Orientation</dt>
-                  <dd className="text-sm">{product.orientation}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">Product Code</dt>
+                  <dd className="text-sm">{product.product_code}</dd>
                 </div>
               )}
               
-              {product.door_type && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Category</dt>
+                <dd className="text-sm">
+                  <Badge variant="outline">{product.category}</Badge>
+                </dd>
+              </div>
+
+              {product.product_series && (
                 <div>
-                  <dt className="text-sm font-medium text-muted-foreground">Door Type</dt>
-                  <dd className="text-sm">{product.door_type}</dd>
+                  <dt className="text-sm font-medium text-muted-foreground">Series</dt>
+                  <dd className="text-sm">{product.product_series}</dd>
                 </div>
               )}
             </CardContent>
           </Card>
-        )}
+
+          {/* Dimensions */}
+          {product.dimensions && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Ruler className="w-5 h-5" />
+                  Dimensions
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm">{product.dimensions}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Additional Details */}
+          {(product.finish_type || product.orientation || product.door_type) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Tag className="w-5 h-5" />
+                  Specifications
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {product.finish_type && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Finish</dt>
+                    <dd className="text-sm">{product.finish_type}</dd>
+                  </div>
+                )}
+                
+                {product.orientation && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Orientation</dt>
+                    <dd className="text-sm">{product.orientation}</dd>
+                  </div>
+                )}
+                
+                {product.door_type && (
+                  <div>
+                    <dt className="text-sm font-medium text-muted-foreground">Door Type</dt>
+                    <dd className="text-sm">{product.door_type}</dd>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       {/* Full Description */}
