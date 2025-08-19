@@ -44,7 +44,13 @@ export const HotspotEditor = () => {
         .order('display_order', { ascending: true });
       
       if (error) throw error;
-      return data;
+      
+      return data.map(hotspot => ({
+        ...hotspot,
+        specifications: Array.isArray(hotspot.specifications) 
+          ? hotspot.specifications as string[]
+          : ['Premium Quality', 'Professional Grade', 'Industry Standard']
+      })) as Hotspot[];
     }
   });
 
@@ -56,7 +62,7 @@ export const HotspotEditor = () => {
         .from('shop_look_content')
         .select('*')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

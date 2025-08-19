@@ -34,22 +34,21 @@ export const ShopLookContentEditor = () => {
         .from('shop_look_content')
         .select('*')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
-      if (error) {
-        // If no content exists, return default values
-        if (error.code === 'PGRST116') {
-          return {
-            id: '',
-            title: 'Shop',
-            title_highlight: 'The Look',
-            description: 'Explore our featured laboratory setup and discover the premium equipment that makes it exceptional.',
-            background_image: '/shop-the-look/modern-lab-setup.jpg',
-            background_alt: 'Modern Laboratory Setup',
-            is_active: true
-          };
-        }
-        throw error;
+      if (error) throw error;
+      
+      // If no content exists, return default values
+      if (!data) {
+        return {
+          id: '',
+          title: 'Shop',
+          title_highlight: 'The Look',
+          description: 'Explore our featured laboratory setup and discover the premium equipment that makes it exceptional.',
+          background_image: '/shop-the-look/modern-lab-setup.jpg',
+          background_alt: 'Modern Laboratory Setup',
+          is_active: true
+        };
       }
       return data;
     }

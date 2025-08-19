@@ -50,17 +50,17 @@ const ShopTheLook = () => {
         .from('shop_look_content')
         .select('*')
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       
-      return {
+      return data ? {
         title: data.title || 'Shop',
         titleHighlight: data.title_highlight || 'The Look',
         description: data.description || 'Explore our featured laboratory setup.',
         backgroundImage: data.background_image || '/shop-the-look/modern-lab-setup.jpg',
         backgroundAlt: data.background_alt || 'Modern Laboratory Setup'
-      } as ShopLookContent;
+      } as ShopLookContent : null;
     }
   });
 
@@ -86,7 +86,9 @@ const ShopTheLook = () => {
           category: hotspot.category || 'Laboratory Equipment',
           dimensions: 'Contact for specifications',
           description: hotspot.description || '',
-          specifications: hotspot.specifications || ['Premium Quality', 'Professional Grade', 'Industry Standard'],
+          specifications: Array.isArray(hotspot.specifications) 
+            ? hotspot.specifications as string[]
+            : ['Premium Quality', 'Professional Grade', 'Industry Standard'],
           image: hotspot.image || '',
           price: hotspot.price || 'Contact for pricing',
           productLink: hotspot.product_link || '/products'
