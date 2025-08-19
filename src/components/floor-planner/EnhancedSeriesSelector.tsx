@@ -164,9 +164,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                       </p>
                     )}
                     
-                    {(product.number_of_drawers || product.drawer_count) && (
+                    {product.number_of_drawers && (
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Drawers:</span> {product.number_of_drawers || product.drawer_count}
+                        <span className="font-medium">Drawers:</span> {product.number_of_drawers}
                       </p>
                     )}
                     
