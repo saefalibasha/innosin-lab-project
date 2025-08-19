@@ -93,18 +93,13 @@ const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
 class ProductService {
   async getAllProducts(): Promise<Product[]> {
     try {
-      console.log('Fetching all products from Supabase...');
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .order('name');
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      console.log('Raw products data:', data?.length || 0, 'products');
       return (data || [])
         .map(ensureDatabaseProduct)
         .map(transformDatabaseProduct);
@@ -116,24 +111,16 @@ class ProductService {
 
   async getProductById(id: string): Promise<Product | null> {
     try {
-      console.log('Fetching product by ID:', id);
       const { data, error } = await supabase
         .from('products')
         .select('*')
         .eq('id', id)
-        .maybeSingle();
+        .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      if (!data) {
-        console.log('No product found with ID:', id);
-        return null;
-      }
+      if (!data) return null;
 
-      console.log('Product found:', data);
       return transformDatabaseProduct(ensureDatabaseProduct(data));
     } catch (error) {
       console.error('Error fetching product:', error);

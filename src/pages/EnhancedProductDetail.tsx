@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -21,20 +20,21 @@ import { format } from "date-fns"
 
 import { Product, ProductVariant } from '@/types/product';
 import { Variant } from '@/types/variant';
-import { useShoppingCart } from '@/hooks/useShoppingCart'
+import { useShoppingCart } from '@/hooks/use-shopping-cart'
+import { getProduct, getProducts } from '@/lib/shopify';
 import ProductCarousel from '@/components/product/ProductCarousel';
 import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
 import { detectSeriesType } from '@/utils/seriesUtils';
-import { formatCurrency } from '@/utils/formatCurrency';
-import { useToast } from '@/hooks/use-toast';
-import productService from '@/services/productService';
+import { formatCurrency } from '@/utils/format-currency';
+import { toast } from 'react-hot-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 const EnhancedProductDetail = () => {
-  const { id } = useParams();
+  const router = useRouter();
+  const { id } = router.query;
   const [product, setProduct] = useState<Product | null>(null);
   const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
   const [quantity, setQuantity] = useState(1);
@@ -47,41 +47,28 @@ const EnhancedProductDetail = () => {
       if (!id) return;
 
       try {
-        console.log('Fetching product with ID:', id);
         setLoading(true);
-        setError(null);
-        
-        // Fetch the specific product
-        const productData = await productService.getProductById(id as string);
-        console.log('Product data received:', productData);
-        
+        const productData = await getProduct(id as string);
         if (productData) {
           setProduct(productData);
 
           // Fetch all products to find variants of the same series
-          const allProducts = await productService.getAllProducts();
-          console.log('All products:', allProducts.length);
-          
-          // Filter for products in the same series
-          const relatedVariants = allProducts.filter(p => 
-            p.product_series === productData.product_series && 
-            p.product_series // Only if product_series exists
-          );
-          console.log('Related variants found:', relatedVariants.length);
-          
+          const allProducts = await getProducts();
+          const relatedVariants = allProducts.filter(p => p.product_series === productData.product_series);
           setSeriesVariants(relatedVariants);
 
-          // Set initial selected variant to the current product
-          setSelectedVariantId(productData.id);
+          // Set initial selected variant to the first one found
+          if (relatedVariants.length > 0) {
+            setSelectedVariantId(relatedVariants[0].id);
+          }
 
           setSeriesType(detectSeriesType(productData, relatedVariants));
         } else {
-          console.error("Product not found for ID:", id);
-          setError("Product not found");
+          // Handle product not found
+          console.error("Product not found");
         }
       } catch (error) {
         console.error("Error fetching product:", error);
-        setError("Failed to load product");
       } finally {
         setLoading(false);
       }
@@ -100,7 +87,7 @@ const EnhancedProductDetail = () => {
       return;
     }
 
-    const selectedVariant = seriesVariants.find(v => v.id === selectedVariantId) || product;
+    const selectedVariant = seriesVariants.find(v => v.id === selectedVariantId);
     if (!selectedVariant) {
       toast({
         variant: "destructive",
@@ -127,7 +114,7 @@ const EnhancedProductDetail = () => {
         description: "Failed to add item to cart."
       })
     }
-  }, [addItem, quantity, seriesVariants, selectedVariantId, toast, product]);
+  }, [addItem, quantity, seriesVariants, selectedVariantId, toast]);
 
   if (loading) {
     return (
@@ -147,20 +134,8 @@ const EnhancedProductDetail = () => {
     );
   }
 
-  if (error || !product) {
-    return (
-      <div className="container mx-auto px-4 py-10">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold mb-4">Product Not Found</h1>
-          <p className="text-gray-600 mb-4">
-            {error || "The product you're looking for doesn't exist."}
-          </p>
-          <Button onClick={() => window.history.back()}>
-            Go Back
-          </Button>
-        </div>
-      </div>
-    );
+  if (!product) {
+    return <div className="text-center py-10">Product not found</div>;
   }
 
   return (
@@ -177,7 +152,7 @@ const EnhancedProductDetail = () => {
           <p className="text-gray-500 mb-4">{product.description}</p>
 
           {/* Series Configuration */}
-          {seriesVariants.length > 1 && (
+          {seriesVariants.length > 0 && (
             <SeriesProductConfigurator
               series={product}
               variants={seriesVariants}
@@ -204,28 +179,19 @@ const EnhancedProductDetail = () => {
       <div className="mt-12">
         <Separator className="mb-6" />
         <h3 className="text-xl font-semibold mb-4">Full Description</h3>
-        <p className="text-gray-700">{product.fullDescription || product.description}</p>
+        <p className="text-gray-700">{product.fullDescription}</p>
 
-        {product.specifications && product.specifications.length > 0 && (
-          <div className="mt-8">
-            <h3 className="text-xl font-semibold mb-4">Specifications</h3>
-            <ul>
-              {product.specifications.map((spec: any, index: number) => (
-                <li key={index} className="mb-2">
-                  {typeof spec === 'object' ? (
-                    Object.entries(spec).map(([key, value]) => (
-                      <div key={key}>
-                        <strong>{key}:</strong> {String(value)}
-                      </div>
-                    ))
-                  ) : (
-                    <span>{String(spec)}</span>
-                  )}
+        <div className="mt-8">
+          <h3 className="text-xl font-semibold mb-4">Specifications</h3>
+          <ul>
+            {product.specifications &&
+              Object.entries(product.specifications).map(([key, value]) => (
+                <li key={key} className="mb-2">
+                  <strong>{key}:</strong> {value}
                 </li>
               ))}
-            </ul>
-          </div>
-        )}
+          </ul>
+        </div>
       </div>
     </div>
   );
