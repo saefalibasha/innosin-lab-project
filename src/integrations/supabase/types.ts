@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -104,6 +104,51 @@ export type Database = {
           product_id?: string | null
           upload_status?: string | null
           uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      before_after_projects: {
+        Row: {
+          after_image: string | null
+          before_image: string | null
+          completion_date: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          location: string | null
+          project_type: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          after_image?: string | null
+          before_image?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          project_type?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          after_image?: string | null
+          before_image?: string | null
+          completion_date?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          location?: string | null
+          project_type?: string | null
+          title?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -880,6 +925,90 @@ export type Database = {
         }
         Relationships: []
       }
+      shop_look_content: {
+        Row: {
+          background_alt: string | null
+          background_image: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          title: string | null
+          title_highlight: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          background_alt?: string | null
+          background_image?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string | null
+          title_highlight?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          background_alt?: string | null
+          background_image?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          title?: string | null
+          title_highlight?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shop_look_hotspots: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          image: string | null
+          is_active: boolean | null
+          price: string | null
+          product_link: string | null
+          specifications: Json | null
+          title: string
+          updated_at: string | null
+          x_position: number
+          y_position: number
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          price?: string | null
+          product_link?: string | null
+          specifications?: Json | null
+          title: string
+          updated_at?: string | null
+          x_position: number
+          y_position: number
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image?: string | null
+          is_active?: boolean | null
+          price?: string | null
+          product_link?: string | null
+          specifications?: Json | null
+          title?: string
+          updated_at?: string | null
+          x_position?: number
+          y_position?: number
+        }
+        Relationships: []
+      }
       training_data_entries: {
         Row: {
           category: string | null
@@ -1042,8 +1171,8 @@ export type Database = {
     Functions: {
       check_rate_limit: {
         Args: {
-          operation_name: string
           max_attempts?: number
+          operation_name: string
           time_window_minutes?: number
         }
         Returns: boolean
@@ -1057,6 +1186,10 @@ export type Database = {
         Returns: string
       }
       is_admin: {
+        Args: { user_email: string }
+        Returns: boolean
+      }
+      is_super_admin: {
         Args: { user_email: string }
         Returns: boolean
       }

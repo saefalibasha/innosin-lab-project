@@ -2,9 +2,11 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar, MapPin } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface Project {
-  id: number;
+  id: string;
   title: string;
   location: string;
   beforeImage: string;
@@ -20,45 +22,56 @@ const BeforeAfterComparison = () => {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const projects: Project[] = [
-    {
-      id: 1,
-      title: 'NTU Exxon Mobil',
-      location: 'Nanyang Technological University',
-      beforeImage: '/before-after-projects/university-lab-before.jpg',
-      afterImage: '/before-after-projects/university-lab-after.jpg',
-      description: 'We completed addition and alteration works at the ExxonMobil laboratory, Academic Building North, Nanyang Technological University. The scope included the design, fabrication, and installation of modular laboratory furniture systems with 20mm thick graphite epoxy Hychem worktops, powder-coated steel frames, integrated service fixtures, custom storage solutions, and specialized enclosures. The upgrade ensures enhanced durability, chemical resistance, and full compliance with laboratory safety standards.',
-      completionDate: '2025-06-26',
-      projectType: 'University Laboratory'
-    },
-    {
-      id: 2,
-      title: 'NTU Exxon Mobil',
-      location: 'Nanyang Technological University',
-      beforeImage: '/before-after-projects/hospital-pathology-after.jpg',
-      afterImage: '/before-after-projects/hospital-pathology-before.jpg',
-      description: 'We completed addition and alteration works at the ExxonMobil laboratory, Academic Building North, Nanyang Technological University. The scope included the design, fabrication, and installation of modular laboratory furniture systems with 20mm thick graphite epoxy Hychem worktops, powder-coated steel frames, integrated service fixtures, custom storage solutions, and specialized enclosures. The upgrade ensures enhanced durability, chemical resistance, and full compliance with laboratory safety standards.',
-      completionDate: '2025-06-26',
-      projectType: 'Medical Facility'
-    },
-    {
-      id: 3,
-      title: 'Biotech Research Facility',
-      location: 'Biopolis, Singapore',
-      beforeImage: '/before-after-projects/biotech-research-before.jpg',
-      afterImage: '/before-after-projects/biotech-research-after.jpg',
-      description: 'State-of-the-art biotech research facility with cleanroom standards, advanced equipment, and precision environmental controls.',
-      completionDate: '2023-11-20',
-      projectType: 'Research Institute'
+  // Fetch projects from database
+  const { data: projects = [], isLoading } = useQuery({
+    queryKey: ['before-after-projects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('before_after_projects')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      
+      return data.map(project => ({
+        id: project.id,
+        title: project.title,
+        location: project.location || '',
+        beforeImage: project.before_image || '',
+        afterImage: project.after_image || '',
+        description: project.description || '',
+        completionDate: project.completion_date || '',
+        projectType: project.project_type || ''
+      }));
     }
-  ];
+  });
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Card className="overflow-hidden shadow-2xl border-0 bg-white rounded-3xl">
+          <CardContent className="p-12 text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!projects.length) {
+    return null;
+  }
 
   const updateSliderPosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
-    const percentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
+    const percentage = Math.max(5, Math.min(95, (x / rect.width) * 100));
     setSliderPosition(percentage);
   }, []);
 
@@ -142,28 +155,26 @@ const BeforeAfterComparison = () => {
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
               >
-                {/* After Image (background - shows when dragging right) */}
+                {/* Before Image (background - shows when dragging right) */}
                 <img
-                  src={project.afterImage}
-                  alt="After transformation"
+                  src={project.beforeImage}
+                  alt="Before transformation"
                   className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
                   draggable={false}
                 />
                 
-                {/* Before Image (clipped from right - shows when dragging left) */}
+                {/* After Image (clipped from right - shows when dragging left) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{ 
                     clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
-                    transition: isDragging ? 'none' : 'clip-path 0.1s ease-out'
+                    transition: isDragging ? 'none' : 'clip-path 0.08s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
                 >
                   <img
-                    src={project.beforeImage}
-                    alt="Before transformation"
-                    className={`w-full h-full object-cover pointer-events-none ${
-                      currentProject === 1 ? 'object-[25%_70%]' : 'object-center'
-                    }`}
+                    src={project.afterImage}
+                    alt="After transformation"
+                    className="w-full h-full object-cover pointer-events-none object-center"
                     draggable={false}
                   />
                 </div>
@@ -173,12 +184,12 @@ const BeforeAfterComparison = () => {
                   className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl pointer-events-none z-10"
                   style={{ 
                     left: `${sliderPosition}%`,
-                    transition: isDragging ? 'none' : 'left 0.1s ease-out'
+                    transition: isDragging ? 'none' : 'left 0.08s cubic-bezier(0.4, 0, 0.2, 1)'
                   }}
                 >
                   <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-gray-100 pointer-events-none ${
-                    isDragging ? 'scale-110' : ''
-                  } transition-transform duration-150`}>
+                    isDragging ? 'scale-110' : 'hover:scale-105'
+                  } transition-all duration-200 ease-out`}>
                     <div className="w-6 h-6 border-l-2 border-r-2 border-gray-600"></div>
                   </div>
                 </div>

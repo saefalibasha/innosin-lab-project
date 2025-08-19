@@ -8,7 +8,8 @@ import { ShoppingCart, ExternalLink, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
-import { shopTheLookContent } from '@/data/shopTheLookContent';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
 interface Product {
   id: string;
@@ -18,6 +19,8 @@ interface Product {
   description: string;
   specifications: string[];
   image: string;
+  price: string;
+  productLink: string;
 }
 
 interface Hotspot {
@@ -27,27 +30,86 @@ interface Hotspot {
   product: Product;
 }
 
+interface ShopLookContent {
+  title: string;
+  titleHighlight: string;
+  description: string;
+  backgroundImage: string;
+  backgroundAlt: string;
+}
+
 const ShopTheLook = () => {
   const { addItem } = useRFQ();
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
 
-  // Convert content data to component format
-  const products: Product[] = shopTheLookContent.hotspots.map(hotspot => ({
-    id: hotspot.id.toString(),
-    name: hotspot.title,
-    category: hotspot.category,
-    dimensions: 'Contact for specifications',
-    description: hotspot.description,
-    specifications: ['Premium Quality', 'Professional Grade', 'Industry Standard'],
-    image: hotspot.image
-  }));
+  // Fetch shop look content
+  const { data: content, isLoading: contentLoading } = useQuery({
+    queryKey: ['shop-look-content'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shop_look_content')
+        .select('*')
+        .eq('is_active', true)
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        title: data.title || 'Shop',
+        titleHighlight: data.title_highlight || 'The Look',
+        description: data.description || 'Explore our featured laboratory setup.',
+        backgroundImage: data.background_image || '/shop-the-look/modern-lab-setup.jpg',
+        backgroundAlt: data.background_alt || 'Modern Laboratory Setup'
+      } as ShopLookContent;
+    }
+  });
 
-  const hotspots: Hotspot[] = shopTheLookContent.hotspots.map(hotspot => ({
-    id: hotspot.id.toString(),
-    x: hotspot.x,
-    y: hotspot.y,
-    product: products.find(p => p.id === hotspot.id.toString())!
-  }));
+  // Fetch hotspots
+  const { data: hotspots = [], isLoading: hotspotsLoading } = useQuery({
+    queryKey: ['shop-look-hotspots'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shop_look_hotspots')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) throw error;
+      
+      return data.map(hotspot => ({
+        id: hotspot.id,
+        x: Number(hotspot.x_position),
+        y: Number(hotspot.y_position),
+        product: {
+          id: hotspot.id,
+          name: hotspot.title,
+          category: hotspot.category || 'Laboratory Equipment',
+          dimensions: 'Contact for specifications',
+          description: hotspot.description || '',
+          specifications: hotspot.specifications || ['Premium Quality', 'Professional Grade', 'Industry Standard'],
+          image: hotspot.image || '',
+          price: hotspot.price || 'Contact for pricing',
+          productLink: hotspot.product_link || '/products'
+        }
+      })) as Hotspot[];
+    }
+  });
+
+  if (contentLoading || hotspotsLoading) {
+    return (
+      <div className="max-w-6xl mx-auto">
+        <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
+          <CardContent className="p-12 text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
+              <div className="h-[700px] bg-gray-200 rounded"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const handleAddToQuote = (product: Product) => {
     addItem({
@@ -62,22 +124,24 @@ const ShopTheLook = () => {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="text-center mb-8">
-        <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
-          {shopTheLookContent.section.title} <span className="text-sea">{shopTheLookContent.section.titleHighlight}</span>
-        </h2>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
-          {shopTheLookContent.section.description}
-        </p>
-      </div>
+      {content && (
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
+            {content.title} <span className="text-sea">{content.titleHighlight}</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+            {content.description}
+          </p>
+        </div>
+      )}
       
       <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
         <CardContent className="p-0">
           <div className="relative">
             {/* Laboratory Background Image - Full Size */}
             <img
-              src={shopTheLookContent.section.backgroundImage}
-              alt={shopTheLookContent.section.backgroundAlt}
+              src={content?.backgroundImage || '/shop-the-look/modern-lab-setup.jpg'}
+              alt={content?.backgroundAlt || 'Modern Laboratory Setup'}
               className="w-full h-[700px] object-cover object-center"
             />
             
@@ -109,7 +173,7 @@ const ShopTheLook = () => {
                             {hotspot.product.name}
                           </h3>
                           <p className="text-sm text-gray-600 mb-2">
-                            <span className="font-medium">Price:</span> {shopTheLookContent.hotspots.find(h => h.id.toString() === hotspot.id)?.price || 'Contact for pricing'}
+                            <span className="font-medium">Price:</span> {hotspot.product.price}
                           </p>
                         </div>
                         
@@ -143,7 +207,7 @@ const ShopTheLook = () => {
                             size="sm"
                             className="flex-1"
                           >
-                            <Link to={shopTheLookContent.hotspots.find(h => h.id.toString() === hotspot.id)?.productLink || '/products'}>
+                            <Link to={hotspot.product.productLink}>
                               <ExternalLink className="w-4 h-4 mr-2" />
                               View Details
                             </Link>
