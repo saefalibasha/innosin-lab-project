@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator"
 
 import { Product, ProductVariant } from '@/types/product';
 import { useShoppingCart } from '@/hooks/useShoppingCart'
-import { getProduct, getProducts } from '@/lib/shopify';
+import { useProductById } from '@/hooks/useProductById';
+import enhancedProductService from '@/services/enhancedProductService';
 import ProductCarousel from '@/components/product/ProductCarousel';
 import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
 import VirtualizedProductList from '@/components/product/VirtualizedProductList';
@@ -20,9 +21,9 @@ import { useProductPerformance, useImagePreloader } from '@/hooks/useProductPerf
 
 const EnhancedProductDetail = () => {
   const { id } = useParams();
-  const [product, setProduct] = useState<Product | null>(null);
+  const { data: product, isLoading: productLoading, error: productError } = useProductById(id || '');
   const [seriesVariants, setSeriesVariants] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [variantsLoading, setVariantsLoading] = useState(false);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
   const [selectedFinish, setSelectedFinish] = useState<string>('PC');
   const [quantity, setQuantity] = useState(1);
@@ -46,43 +47,47 @@ const EnhancedProductDetail = () => {
   useImagePreloader(seriesVariants);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      if (!id) return;
+    const fetchSeriesVariants = async () => {
+      if (!product) return;
 
       try {
-        setLoading(true);
-        const productData = await getProduct(id as string);
-        if (productData) {
-          setProduct(productData);
+        setVariantsLoading(true);
+        
+        // Fetch all products to find variants of the same series
+        const allProducts = await enhancedProductService.getAllProducts();
+        const relatedVariants = allProducts.filter(p => 
+          p.product_series === product.product_series && p.id !== product.id
+        );
+        
+        // Include the current product in variants
+        const allVariants = [product, ...relatedVariants];
+        setSeriesVariants(allVariants);
 
-          // Fetch all products to find variants of the same series
-          const allProducts = await getProducts();
-          const relatedVariants = allProducts.filter(p => p.product_series === productData.product_series);
-          setSeriesVariants(relatedVariants);
+        // Set initial selected variant to the current product
+        setSelectedVariantId(product.id);
 
-          // Set initial selected variant to the first one found
-          if (relatedVariants.length > 0) {
-            setSelectedVariantId(relatedVariants[0].id);
-          }
-
-          setSeriesType(detectSeriesType(productData, relatedVariants));
-          
-          // Enable virtualized list for large datasets
-          if (relatedVariants.length > 50) {
-            setShowVirtualizedList(true);
-          }
-        } else {
-          console.error("Product not found");
+        setSeriesType(detectSeriesType(product, allVariants));
+        
+        // Enable virtualized list for large datasets
+        if (allVariants.length > 50) {
+          setShowVirtualizedList(true);
         }
       } catch (error) {
-        console.error("Error fetching product:", error);
+        console.error("Error fetching series variants:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load product variants."
+        });
       } finally {
-        setLoading(false);
+        setVariantsLoading(false);
       }
     };
 
-    fetchProduct();
-  }, [id]);
+    if (product) {
+      fetchSeriesVariants();
+    }
+  }, [product, toast]);
 
   const handleAddToCart = useCallback(async () => {
     if (!selectedVariantId) {
@@ -127,7 +132,9 @@ const EnhancedProductDetail = () => {
     setSelectedVariantId(selectedProduct.id);
   }, []);
 
-  if (loading || performanceLoading) {
+  const loading = productLoading || variantsLoading || performanceLoading;
+
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -145,8 +152,17 @@ const EnhancedProductDetail = () => {
     );
   }
 
-  if (!product) {
-    return <div className="text-center py-10">Product not found</div>;
+  if (productError || !product) {
+    return (
+      <div className="container mx-auto px-4 py-10">
+        <div className="text-center">
+          <h1 className="text-2xl font-semibold mb-4">Product not found</h1>
+          <p className="text-muted-foreground">
+            The product you're looking for doesn't exist or has been removed.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (

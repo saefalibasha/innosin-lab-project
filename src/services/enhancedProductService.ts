@@ -1,7 +1,42 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Product as ProductType } from '@/types/product';
-import productService from './productService';
+
+// Transform database product to our Product interface
+const transformDatabaseProduct = (dbProduct: any): ProductType => {
+  return {
+    id: dbProduct.id,
+    name: dbProduct.name,
+    category: dbProduct.category,
+    dimensions: dbProduct.dimensions || '',
+    modelPath: dbProduct.model_path || '',
+    thumbnail: dbProduct.thumbnail_path || '',
+    images: dbProduct.additional_images || [],
+    description: dbProduct.description || '',
+    fullDescription: dbProduct.full_description || dbProduct.description || '',
+    specifications: Array.isArray(dbProduct.specifications) ? dbProduct.specifications : [],
+    finishes: [],
+    variants: [],
+    baseProductId: dbProduct.parent_series_id,
+    finish_type: dbProduct.finish_type,
+    orientation: dbProduct.orientation,
+    drawer_count: dbProduct.drawer_count || 0,
+    door_type: dbProduct.door_type,
+    product_code: dbProduct.product_code || '',
+    thumbnail_path: dbProduct.thumbnail_path,
+    model_path: dbProduct.model_path,
+    mounting_type: dbProduct.mounting_type,
+    mixing_type: dbProduct.mixing_type,
+    handle_type: dbProduct.handle_type,
+    emergency_shower_type: dbProduct.emergency_shower_type,
+    company_tags: dbProduct.company_tags || [],
+    product_series: dbProduct.product_series,
+    parent_series_id: dbProduct.parent_series_id,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at,
+    is_active: dbProduct.is_active
+  };
+};
 
 export class EnhancedProductService {
   private cache = new Map<string, any>();
@@ -14,7 +49,17 @@ export class EnhancedProductService {
       return this.cache.get(cacheKey);
     }
 
-    const products = await productService.getAllProducts();
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      throw new Error(`Failed to fetch products: ${error.message}`);
+    }
+
+    const products = (data || []).map(transformDatabaseProduct);
     this.setCache(cacheKey, products);
     return products;
   }
@@ -25,7 +70,21 @@ export class EnhancedProductService {
       return this.cache.get(cacheKey);
     }
 
-    const product = await productService.getProductById(id);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null; // No rows returned
+      }
+      throw new Error(`Failed to fetch product: ${error.message}`);
+    }
+
+    const product = transformDatabaseProduct(data);
     this.setCache(cacheKey, product);
     return product;
   }
@@ -36,7 +95,18 @@ export class EnhancedProductService {
       return this.cache.get(cacheKey);
     }
 
-    const products = await productService.getProductsByCategory(category);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('category', category)
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      throw new Error(`Failed to fetch products by category: ${error.message}`);
+    }
+
+    const products = (data || []).map(transformDatabaseProduct);
     this.setCache(cacheKey, products);
     return products;
   }
@@ -47,13 +117,33 @@ export class EnhancedProductService {
       return this.cache.get(cacheKey);
     }
 
-    const categories = await productService.getCategories();
+    const { data, error } = await supabase
+      .from('products')
+      .select('category')
+      .eq('is_active', true);
+
+    if (error) {
+      throw new Error(`Failed to fetch categories: ${error.message}`);
+    }
+
+    const categories = [...new Set((data || []).map(item => item.category).filter(Boolean))];
     this.setCache(cacheKey, categories);
     return categories;
   }
 
   async searchProducts(query: string): Promise<ProductType[]> {
-    return await productService.searchProducts(query);
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .or(`name.ilike.%${query}%,description.ilike.%${query}%,category.ilike.%${query}%`)
+      .eq('is_active', true)
+      .order('name');
+
+    if (error) {
+      throw new Error(`Failed to search products: ${error.message}`);
+    }
+
+    return (data || []).map(transformDatabaseProduct);
   }
 
   clearCache() {
