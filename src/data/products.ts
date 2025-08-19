@@ -1,5 +1,5 @@
 import { Product } from '@/types/product';
-import productService from '@/services/productService';
+import { productService } from '@/services/productService';
 
 // For backwards compatibility, we'll keep the synchronous export
 // but recommend using the async fetchProductsFromDatabase function directly

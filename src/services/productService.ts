@@ -18,6 +18,7 @@ class ProductService {
         return await operation();
       } catch (error) {
         lastError = error as Error;
+        console.warn(`${context} attempt ${attempt} failed:`, error);
         
         if (attempt < this.MAX_RETRIES) {
           await this.delay(this.RETRY_DELAY * attempt);
@@ -163,6 +164,74 @@ class ProductService {
       return (data || []).map(this.transformDatabaseProduct);
     }, `Search products: ${query}`);
   }
+
+  async getCategories(): Promise<string[]> {
+    return this.withRetry(async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('category')
+        .eq('is_active', true)
+        .order('category');
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      const uniqueCategories = [...new Set((data || []).map(item => item.category).filter(Boolean))];
+      return uniqueCategories;
+    }, 'Get categories');
+  }
+
+  async fetchProductSeriesFromDatabase(): Promise<Product[]> {
+    return this.getAllProducts();
+  }
+
+  async fetchCompanyTagsFromDatabase(): Promise<string[]> {
+    return this.withRetry(async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('company_tags')
+        .eq('is_active', true);
+
+      if (error) {
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      const allTags = (data || [])
+        .flatMap(item => item.company_tags || [])
+        .filter(Boolean);
+      
+      return [...new Set(allTags)];
+    }, 'Get company tags');
+  }
+
+  async searchProductSeries(query: string): Promise<Product[]> {
+    return this.searchProducts(query);
+  }
+
+  subscribeToProductUpdates(callback: () => void) {
+    const subscription = supabase
+      .channel('product-updates')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'products' 
+        }, 
+        () => {
+          callback();
+        }
+      )
+      .subscribe();
+    
+    return () => subscription.unsubscribe();
+  }
 }
 
 export const productService = new ProductService();
+
+// Export individual functions for compatibility
+export const fetchProductSeriesFromDatabase = () => productService.fetchProductSeriesFromDatabase();
+export const fetchCompanyTagsFromDatabase = () => productService.fetchCompanyTagsFromDatabase();
+export const searchProductSeries = (query: string) => productService.searchProductSeries(query);
+export const subscribeToProductUpdates = (callback: () => void) => productService.subscribeToProductUpdates(callback);
