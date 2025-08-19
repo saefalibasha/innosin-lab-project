@@ -489,12 +489,6 @@ const EnhancedProductDetail = () => {
                   <Building2 className="w-4 h-4 mr-2" />
                   {series.category}
                 </Badge>
-                {/* Debug info */}
-                <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                  <p>Product Type: {productType}</p>
-                  <p>Has Variants: {hasVariants ? 'Yes' : 'No'} ({series?.variants?.length || 0})</p>
-                  <p>Should Show Configurator: {shouldShowConfigurator ? 'Yes' : 'No'}</p>
-                </div>
               </div>
             </AnimatedSection>
 
