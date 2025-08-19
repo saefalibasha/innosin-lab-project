@@ -80,8 +80,10 @@ export class EnhancedProductService {
   }
 
   async subscribeToUpdates(callback: () => void) {
+    // Create unique channel name to avoid conflicts
+    const channelName = `product-updates-${Math.random().toString(36).substr(2, 9)}`;
     const subscription = supabase
-      .channel('product-updates')
+      .channel(channelName)
       .on('postgres_changes', 
         { 
           event: '*', 
@@ -95,7 +97,7 @@ export class EnhancedProductService {
       )
       .subscribe();
     
-    return () => subscription.unsubscribe();
+    return () => supabase.removeChannel(subscription);
   }
 }
 

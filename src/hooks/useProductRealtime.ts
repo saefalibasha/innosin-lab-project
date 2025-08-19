@@ -14,8 +14,10 @@ export const useProductRealtime = ({ onProductChange, onSeriesChange, enabled = 
 
     console.log('🔄 Setting up real-time product updates...');
     
+    // Create unique channel name to avoid conflicts
+    const channelName = `products-changes-${Math.random().toString(36).substr(2, 9)}`;
     const channel = supabase
-      .channel('products-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
@@ -31,7 +33,7 @@ export const useProductRealtime = ({ onProductChange, onSeriesChange, enabled = 
       console.log('🔌 Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [onProductChange, onSeriesChange, enabled]);
+  }, [enabled]); // Removed callback dependencies to prevent re-subscriptions
 
   return null;
 };
