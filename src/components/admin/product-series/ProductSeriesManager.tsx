@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Package, Search, Plus, Eye, Edit, Settings } from 'lucide-react';
+import { Package, Search, Plus, Eye, Edit, Settings, AlertTriangle, CheckCircle, Box } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,9 +19,12 @@ interface ProductSeries {
   category: string;
   description: string;
   thumbnail_path: string;
+  series_model_path: string;
   is_active: boolean;
   variant_count: number;
   completion_percentage: number;
+  has_3d_model: boolean;
+  variants_with_models: number;
 }
 
 export const ProductSeriesManager = () => {
@@ -52,18 +55,33 @@ export const ProductSeriesManager = () => {
       // Calculate stats for each series
       const seriesWithStats = await Promise.all(
         (parentSeries || []).map(async (parent) => {
-          const { count } = await supabase
+          // Count total variants
+          const { count: variantCount } = await supabase
             .from('products')
             .select('*', { count: 'exact', head: true })
             .eq('parent_series_id', parent.id)
             .eq('is_series_parent', false);
 
-          // Calculate completion percentage
+          // Count variants with 3D models
+          const { count: variantsWithModels } = await supabase
+            .from('products')
+            .select('*', { count: 'exact', head: true })
+            .eq('parent_series_id', parent.id)
+            .eq('is_series_parent', false)
+            .not('model_path', 'is', null)
+            .neq('model_path', '');
+
+          // Check if series has its own 3D model
+          const has_3d_model = !!(parent.series_model_path && parent.series_model_path.length > 0);
+
+          // Calculate completion percentage (including 3D model status)
           const hasDescription = parent.description && parent.description.length > 0;
           const hasThumbnail = parent.thumbnail_path && parent.thumbnail_path.length > 0;
-          const hasVariants = (count || 0) > 0;
+          const hasVariants = (variantCount || 0) > 0;
+          const hasSeriesModel = has_3d_model;
+          const allVariantsHaveModels = hasVariants && (variantsWithModels || 0) === (variantCount || 0);
           
-          const completionFields = [hasDescription, hasThumbnail, hasVariants];
+          const completionFields = [hasDescription, hasThumbnail, hasVariants, hasSeriesModel || allVariantsHaveModels];
           const completedFields = completionFields.filter(Boolean).length;
           const completion_percentage = Math.round((completedFields / completionFields.length) * 100);
 
@@ -73,9 +91,12 @@ export const ProductSeriesManager = () => {
             category: parent.category,
             description: parent.description || '',
             thumbnail_path: parent.thumbnail_path || '',
+            series_model_path: parent.series_model_path || '',
             is_active: parent.is_active,
-            variant_count: count || 0,
-            completion_percentage
+            variant_count: variantCount || 0,
+            completion_percentage,
+            has_3d_model,
+            variants_with_models: variantsWithModels || 0
           };
         })
       );
@@ -107,6 +128,28 @@ export const ProductSeriesManager = () => {
   const handleManageVariants = (seriesItem: ProductSeries) => {
     setSelectedSeries(seriesItem);
     setIsVariantDialogOpen(true);
+  };
+
+  const getModelStatus = (seriesItem: ProductSeries) => {
+    if (seriesItem.has_3d_model) {
+      return {
+        icon: <CheckCircle className="w-4 h-4 text-green-500" />,
+        text: "Series Model Available",
+        variant: "default" as const
+      };
+    } else if (seriesItem.variants_with_models === seriesItem.variant_count && seriesItem.variant_count > 0) {
+      return {
+        icon: <CheckCircle className="w-4 h-4 text-blue-500" />,
+        text: "All Variants Have Models",
+        variant: "secondary" as const
+      };
+    } else {
+      return {
+        icon: <AlertTriangle className="w-4 h-4 text-orange-500" />,
+        text: "Missing 3D Models",
+        variant: "destructive" as const
+      };
+    }
   };
 
   if (loading) {
@@ -166,72 +209,93 @@ export const ProductSeriesManager = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSeries.map((seriesItem) => (
-                <Card key={seriesItem.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{seriesItem.name}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {seriesItem.category}
+              {filteredSeries.map((seriesItem) => {
+                const modelStatus = getModelStatus(seriesItem);
+                
+                return (
+                  <Card key={seriesItem.id} className="hover:shadow-md transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="text-lg">{seriesItem.name}</CardTitle>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {seriesItem.category}
+                          </p>
+                        </div>
+                        <Badge variant={seriesItem.is_active ? "default" : "secondary"}>
+                          {seriesItem.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {seriesItem.description || 'No description available'}
                         </p>
                       </div>
-                      <Badge variant={seriesItem.is_active ? "default" : "secondary"}>
-                        {seriesItem.is_active ? "Active" : "Inactive"}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {seriesItem.description || 'No description available'}
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Variants</span>
-                        <span className="font-medium">{seriesItem.variant_count}</span>
+                      
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Variants</span>
+                          <span className="font-medium">{seriesItem.variant_count}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Completion</span>
+                          <span className="font-medium">{seriesItem.completion_percentage}%</span>
+                        </div>
+                        <Progress value={seriesItem.completion_percentage} className="h-2" />
                       </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Completion</span>
-                        <span className="font-medium">{seriesItem.completion_percentage}%</span>
+
+                      {/* 3D Model Status */}
+                      <div className="border-t pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">3D Models</span>
+                          {modelStatus.icon}
+                        </div>
+                        <Badge variant={modelStatus.variant} className="w-full justify-center text-xs">
+                          <Box className="w-3 h-3 mr-1" />
+                          {modelStatus.text}
+                        </Badge>
+                        {seriesItem.variant_count > 0 && !seriesItem.has_3d_model && (
+                          <div className="text-xs text-muted-foreground mt-1 text-center">
+                            {seriesItem.variants_with_models}/{seriesItem.variant_count} variants have models
+                          </div>
+                        )}
                       </div>
-                      <Progress value={seriesItem.completion_percentage} className="h-2" />
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleView(seriesItem)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleEdit(seriesItem)}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1"
-                        onClick={() => handleManageVariants(seriesItem)}
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Variants
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      
+                      <div className="flex gap-2 pt-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleView(seriesItem)}
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleEdit(seriesItem)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={() => handleManageVariants(seriesItem)}
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Variants
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </CardContent>
