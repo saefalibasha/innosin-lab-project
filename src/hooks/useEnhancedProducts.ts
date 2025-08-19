@@ -1,7 +1,94 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Product } from '@/types/product';
-import productService from '@/services/productService';
+import enhancedProductService from '@/services/enhancedProductService';
+
+interface UseProductsOptions {
+  category?: string;
+  autoRefresh?: boolean;
+  refreshInterval?: number;
+}
+
+interface UseProductsResult {
+  products: Product[];
+  categories: string[];
+  loading: boolean;
+  error: string | null;
+  refreshProducts: () => Promise<void>;
+  clearCache: () => void;
+  cacheStats: { products: number; categories: number };
+}
+
+export const useEnhancedProducts = (options: UseProductsOptions = {}): UseProductsResult => {
+  const {
+    category,
+    autoRefresh = false,
+    refreshInterval = 5 * 60 * 1000 // 5 minutes
+  } = options;
+
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = useCallback(async (forceRefresh = false) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [productsData, categoriesData] = await Promise.all([
+        category 
+          ? enhancedProductService.getProductsByCategory(category)
+          : enhancedProductService.getAllProducts(forceRefresh),
+        enhancedProductService.getCategories(forceRefresh)
+      ]);
+
+      setProducts(productsData);
+      setCategories(categoriesData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      console.error('Error in useEnhancedProducts:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [category]);
+
+  const refreshProducts = useCallback(() => fetchData(true), [fetchData]);
+
+  const clearCache = useCallback(() => {
+    enhancedProductService.clearCache();
+    fetchData(true);
+  }, [fetchData]);
+
+  const getCacheStats = useCallback(() => {
+    return enhancedProductService.getCacheStats();
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (!autoRefresh) return;
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, refreshInterval, fetchData]);
+
+  return {
+    products,
+    categories,
+    loading,
+    error,
+    refreshProducts,
+    clearCache,
+    cacheStats: getCacheStats()
+  };
+};
 
 export const useProductById = (id: string | undefined) => {
   const [product, setProduct] = useState<Product | null>(null);
@@ -10,8 +97,8 @@ export const useProductById = (id: string | undefined) => {
 
   useEffect(() => {
     if (!id) {
+      setProduct(null);
       setLoading(false);
-      setError('No product ID provided');
       return;
     }
 
@@ -19,13 +106,17 @@ export const useProductById = (id: string | undefined) => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Fetching product with ID:', id);
-        const productData = await productService.getProductById(id);
-        console.log('Fetched product data:', productData);
+        
+        const productData = await enhancedProductService.getProductById(id);
         setProduct(productData);
+        
+        if (!productData) {
+          setError('Product not found');
+        }
       } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch product';
+        setError(errorMessage);
         console.error('Error fetching product:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load product');
       } finally {
         setLoading(false);
       }
@@ -35,30 +126,4 @@ export const useProductById = (id: string | undefined) => {
   }, [id]);
 
   return { product, loading, error };
-};
-
-export const useAllProducts = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const productsData = await productService.getAllProducts();
-        setProducts(productsData);
-      } catch (err) {
-        console.error('Error fetching products:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load products');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  return { products, loading, error };
 };
