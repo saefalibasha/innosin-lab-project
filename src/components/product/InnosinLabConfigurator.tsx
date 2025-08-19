@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useMemo, useState, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Product } from '@/types/product';
-import { Settings, Package } from 'lucide-react';
+import { Package, Settings2, Filter } from 'lucide-react';
 
 interface InnosinLabConfiguratorProps {
   variants: Product[];
@@ -15,16 +15,12 @@ interface InnosinLabConfiguratorProps {
   seriesName?: string;
 }
 
-interface GroupedConfiguration {
-  cabinetType: string;
-  configurations: {
-    [key: string]: {
-      drawers?: number;
-      dimensions: string;
-      orientation?: string;
-      variants: Product[];
-    };
-  };
+interface ConfigurationOptions {
+  cabinetTypes: string[];
+  drawerCounts: number[];
+  dimensions: string[];
+  orientations: string[];
+  finishes: { value: string; label: string }[];
 }
 
 const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
@@ -36,61 +32,153 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   seriesName = ''
 }) => {
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
+  
+  // Configuration state
+  const [selectedCabinetType, setSelectedCabinetType] = useState<string>('');
+  const [selectedDrawerCount, setSelectedDrawerCount] = useState<string>('');
+  const [selectedDimensions, setSelectedDimensions] = useState<string>('');
+  const [selectedOrientation, setSelectedOrientation] = useState<string>('');
 
-  // Smart grouping for Innosin Lab Mobile Cabinets
-  const groupedConfigurations = useMemo(() => {
-    const groups: { [key: string]: GroupedConfiguration } = {};
+  // Extract all available configuration options
+  const configurationOptions = useMemo((): ConfigurationOptions => {
+    const cabinetTypes = new Set<string>();
+    const drawerCounts = new Set<number>();
+    const dimensions = new Set<string>();
+    const orientations = new Set<string>();
 
     variants.forEach(variant => {
-      // Determine cabinet type from product code
-      let cabinetType = 'Mobile Cabinet';
+      // Cabinet type
       if (variant.product_code?.includes('MCC')) {
-        cabinetType = 'Mobile Combination Cabinet';
+        cabinetTypes.add('MCC');
       } else if (variant.product_code?.includes('MC')) {
-        cabinetType = 'Mobile Cabinet';
+        cabinetTypes.add('MC');
       }
 
-      // Extract configuration details
+      // Drawer count
       const drawers = variant.drawer_count || variant.number_of_drawers || 
         (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
-      
-      const dimensions = variant.dimensions || 'Standard';
-      const orientation = variant.orientation || 'Standard';
+      if (drawers) drawerCounts.add(drawers);
 
-      // Create configuration key
-      const configKey = [
-        drawers ? `${drawers} Drawers` : 'Standard',
-        dimensions,
-        orientation !== 'None' && orientation !== 'Standard' ? orientation : null
-      ].filter(Boolean).join(' | ');
+      // Dimensions
+      if (variant.dimensions) dimensions.add(variant.dimensions);
 
-      if (!groups[cabinetType]) {
-        groups[cabinetType] = {
-          cabinetType,
-          configurations: {}
-        };
+      // Orientation
+      const orientation = variant.orientation;
+      if (orientation && orientation !== 'None' && orientation !== 'Standard') {
+        orientations.add(orientation);
       }
-
-      if (!groups[cabinetType].configurations[configKey]) {
-        groups[cabinetType].configurations[configKey] = {
-          drawers,
-          dimensions,
-          orientation: orientation !== 'None' ? orientation : undefined,
-          variants: []
-        };
-      }
-
-      groups[cabinetType].configurations[configKey].variants.push(variant);
+      orientations.add('Standard');
     });
 
-    return groups;
+    return {
+      cabinetTypes: Array.from(cabinetTypes).sort(),
+      drawerCounts: Array.from(drawerCounts).sort((a, b) => a - b),
+      dimensions: Array.from(dimensions).sort(),
+      orientations: Array.from(orientations).sort(),
+      finishes: [
+        { value: 'PC', label: 'Powder Coat' },
+        { value: 'SS', label: 'Stainless Steel' }
+      ]
+    };
   }, [variants]);
 
-  // Available finish options for Innosin Lab
-  const finishOptions = [
-    { value: 'PC', label: 'Powder Coat' },
-    { value: 'SS', label: 'Stainless Steel' }
-  ];
+  // Filter variants based on current selections
+  const getFilteredVariants = (
+    cabinetType?: string,
+    drawerCount?: string,
+    dimensions?: string,
+    orientation?: string
+  ) => {
+    return variants.filter(variant => {
+      // Cabinet type filter
+      if (cabinetType) {
+        const variantCabinetType = variant.product_code?.includes('MCC') ? 'MCC' : 'MC';
+        if (variantCabinetType !== cabinetType) return false;
+      }
+
+      // Drawer count filter
+      if (drawerCount) {
+        const variantDrawers = variant.drawer_count || variant.number_of_drawers || 
+          (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
+        if (variantDrawers !== parseInt(drawerCount)) return false;
+      }
+
+      // Dimensions filter
+      if (dimensions && variant.dimensions !== dimensions) return false;
+
+      // Orientation filter
+      if (orientation) {
+        const variantOrientation = variant.orientation || 'Standard';
+        if (variantOrientation !== orientation) return false;
+      }
+
+      return true;
+    });
+  };
+
+  // Get available options for each dropdown based on current selections
+  const getAvailableOptions = (optionType: string) => {
+    const filtered = getFilteredVariants(
+      optionType !== 'cabinetType' ? selectedCabinetType : undefined,
+      optionType !== 'drawerCount' ? selectedDrawerCount : undefined,
+      optionType !== 'dimensions' ? selectedDimensions : undefined,
+      optionType !== 'orientation' ? selectedOrientation : undefined
+    );
+
+    switch (optionType) {
+      case 'drawerCount':
+        return configurationOptions.drawerCounts.filter(count => 
+          filtered.some(v => {
+            const variantDrawers = v.drawer_count || v.number_of_drawers || 
+              (v.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(v.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
+            return variantDrawers === count;
+          })
+        );
+      case 'dimensions':
+        return configurationOptions.dimensions.filter(dim => 
+          filtered.some(v => v.dimensions === dim)
+        );
+      case 'orientation':
+        return configurationOptions.orientations.filter(orient => 
+          filtered.some(v => (v.orientation || 'Standard') === orient)
+        );
+      default:
+        return [];
+    }
+  };
+
+  // Auto-select first variant when configuration changes
+  useEffect(() => {
+    const filteredVariants = getFilteredVariants(
+      selectedCabinetType,
+      selectedDrawerCount,
+      selectedDimensions,
+      selectedOrientation
+    );
+    
+    if (filteredVariants.length > 0 && !filteredVariants.find(v => v.id === selectedVariantId)) {
+      onVariantChange(filteredVariants[0].id);
+    }
+  }, [selectedCabinetType, selectedDrawerCount, selectedDimensions, selectedOrientation]);
+
+  // Reset dependent selections when parent selection changes
+  const handleCabinetTypeChange = (value: string) => {
+    setSelectedCabinetType(value);
+    setSelectedDrawerCount('');
+    setSelectedDimensions('');
+    setSelectedOrientation('');
+  };
+
+  const handleDrawerCountChange = (value: string) => {
+    setSelectedDrawerCount(value);
+    setSelectedDimensions('');
+    setSelectedOrientation('');
+  };
+
+  const handleDimensionsChange = (value: string) => {
+    setSelectedDimensions(value);
+    setSelectedOrientation('');
+  };
 
   if (!variants || variants.length === 0) {
     return (
@@ -104,76 +192,139 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings className="w-5 h-5" />
-          Configure Your Mobile Cabinet
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Cabinet Type Selection */}
-        {Object.entries(groupedConfigurations).map(([cabinetType, group]) => (
-          <div key={cabinetType} className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Package className="w-4 h-4 text-primary" />
-              <h4 className="font-semibold text-lg">{cabinetType}</h4>
-            </div>
-
-            {/* Configuration Options */}
-            <div className="grid gap-3">
-              {Object.entries(group.configurations).map(([configKey, config]) => {
-                const hasSelectedVariant = config.variants.some(v => v.id === selectedVariantId);
-                
-                return (
-                  <div key={configKey} className="space-y-2">
-                    <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex-1">
-                        <div className="font-medium">{configKey}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {config.variants.length} variant{config.variants.length !== 1 ? 's' : ''} available
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {config.variants.map(variant => (
-                          <Button
-                            key={variant.id}
-                            variant={variant.id === selectedVariantId ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => onVariantChange(variant.id)}
-                            className="text-xs"
-                          >
-                            {variant.product_code}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <Separator />
+      <CardContent className="space-y-6 pt-6">
+        {/* Configuration Dropdowns */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Settings2 className="w-4 h-4 text-primary" />
+            <h4 className="font-semibold">Configuration Options</h4>
           </div>
-        ))}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Cabinet Type */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-muted-foreground">Cabinet Type</label>
+              <Select value={selectedCabinetType} onValueChange={handleCabinetTypeChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select cabinet type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {configurationOptions.cabinetTypes.map(type => (
+                    <SelectItem key={type} value={type}>
+                      {type === 'MC' ? 'Mobile Cabinet' : 'Mobile Combination Cabinet'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Drawer Count */}
+            {selectedCabinetType && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Number of Drawers</label>
+                <Select value={selectedDrawerCount} onValueChange={handleDrawerCountChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select drawer count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableOptions('drawerCount').map(count => (
+                      <SelectItem key={count} value={count.toString()}>
+                        {count} {count === 1 ? 'Drawer' : 'Drawers'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Dimensions */}
+            {selectedDrawerCount && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Dimensions</label>
+                <Select value={selectedDimensions} onValueChange={handleDimensionsChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select dimensions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableOptions('dimensions').map(dim => (
+                      <SelectItem key={dim} value={dim}>
+                        {dim}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Orientation */}
+            {selectedDimensions && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Orientation</label>
+                <Select value={selectedOrientation} onValueChange={setSelectedOrientation}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select orientation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableOptions('orientation').map(orient => (
+                      <SelectItem key={orient} value={orient}>
+                        {orient === 'LH' ? 'Left Hand' : 
+                         orient === 'RH' ? 'Right Hand' : orient}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <Separator />
 
         {/* Finish Selection */}
         <div className="space-y-3">
-          <h4 className="font-semibold flex items-center gap-2">
-            <span>Finish Options</span>
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            {finishOptions.map(finish => (
-              <Button
-                key={finish.value}
-                variant={selectedFinish === finish.value ? 'default' : 'outline'}
-                onClick={() => onFinishChange(finish.value)}
-                className="h-12"
-              >
-                {finish.label}
-              </Button>
-            ))}
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4 text-primary" />
+            <h4 className="font-medium">Finish Options</h4>
           </div>
+          <Select value={selectedFinish} onValueChange={onFinishChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select finish" />
+            </SelectTrigger>
+            <SelectContent>
+              {configurationOptions.finishes.map(finish => (
+                <SelectItem key={finish.value} value={finish.value}>
+                  {finish.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
+        {/* Available Variants */}
+        {selectedCabinetType && selectedDrawerCount && selectedDimensions && selectedOrientation && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-primary" />
+              <h4 className="font-medium">Available Variants</h4>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {getFilteredVariants(selectedCabinetType, selectedDrawerCount, selectedDimensions, selectedOrientation)
+                .map(variant => (
+                  <button
+                    key={variant.id}
+                    onClick={() => onVariantChange(variant.id)}
+                    className={`p-2 text-xs rounded border transition-colors ${
+                      variant.id === selectedVariantId 
+                        ? 'bg-primary text-primary-foreground border-primary' 
+                        : 'hover:bg-muted border-border'
+                    }`}
+                  >
+                    {variant.product_code}
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
 
         {/* Current Selection Summary */}
         {selectedVariant && (
@@ -215,7 +366,7 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Finish:</span>
                 <span className="text-sm font-medium">
-                  {finishOptions.find(f => f.value === selectedFinish)?.label}
+                  {configurationOptions.finishes.find(f => f.value === selectedFinish)?.label}
                 </span>
               </div>
             </div>
