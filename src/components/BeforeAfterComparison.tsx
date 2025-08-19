@@ -47,25 +47,7 @@ const BeforeAfterComparison = () => {
     }
   });
 
-  if (isLoading) {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <Card className="overflow-hidden shadow-2xl border-0 bg-white rounded-3xl">
-          <CardContent className="p-12 text-center">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!projects.length) {
-    return null;
-  }
-
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const updateSliderPosition = useCallback((clientX: number) => {
     if (!containerRef.current) return;
     
@@ -124,6 +106,26 @@ const BeforeAfterComparison = () => {
       document.removeEventListener('touchend', handleTouchEnd);
     };
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+
+  // NOW CONDITIONAL RETURNS CAN HAPPEN AFTER ALL HOOKS
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Card className="overflow-hidden shadow-2xl border-0 bg-white rounded-3xl">
+          <CardContent className="p-12 text-center">
+            <div className="animate-pulse">
+              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!projects.length) {
+    return null;
+  }
 
   const nextProject = () => {
     setCurrentProject((prev) => (prev + 1) % projects.length);
