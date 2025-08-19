@@ -115,6 +115,32 @@ const EnhancedProductDetail = () => {
       return 'fume_hood';
     }
     
+    // Emergency Shower detection
+    if (productSeries.includes('emergency shower') || 
+        name.includes('emergency shower') ||
+        product?.emergency_shower_type) {
+      return 'emergency_shower';
+    }
+    
+    // Safe Aire II / Fume Hoods detection
+    if (productSeries.includes('safe aire') || 
+        productSeries.includes('fume hood') ||
+        category.includes('fume') ||
+        name.includes('fume hood') ||
+        name.includes('safe aire') ||
+        product?.mounting_type) {
+      return 'fume_hood';
+    }
+
+    // Innosin Lab detection - MOVED UP for priority
+    if (category.includes('innosin') || 
+        productSeries.includes('innosin') ||
+        product?.company_tags?.includes('Innosin Lab') ||
+        category.toLowerCase() === 'innosin lab' ||
+        productSeries.includes('knee space')) {
+      return 'innosin_lab';
+    }
+    
     // Tall Cabinet detection
     if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
       return 'tall_cabinet';
@@ -130,21 +156,10 @@ const EnhancedProductDetail = () => {
       return 'wall_cabinet';
     }
     
-    // Modular Cabinet detection
-    if (productSeries.includes('mobile cabinet') || 
-        productSeries.includes('modular cabinet') ||
-        name.includes('mobile cabinet') ||
-        name.includes('modular cabinet')) {
+    // Modular Cabinet detection - MOVED DOWN and made more specific
+    if ((productSeries.includes('modular cabinet') || name.includes('modular cabinet')) &&
+        !category.includes('innosin')) {
       return 'modular_cabinet';
-    }
-    
-    // Innosin Lab detection - more specific
-    if (category.includes('innosin') || 
-        productSeries.includes('innosin') ||
-        product?.company_tags?.includes('Innosin Lab') ||
-        productSeries.includes('mobile cabinet') ||
-        productSeries.includes('knee space')) {
-      return 'innosin_lab';
     }
     
     return 'standard';
@@ -273,8 +288,8 @@ const EnhancedProductDetail = () => {
       );
     }
     
-    // For modular cabinets
-    if (productType === 'modular_cabinet') {
+    // For modular cabinets - ADD SAFETY CHECK
+    if (productType === 'modular_cabinet' && series?.variants && Array.isArray(series.variants)) {
       return (
         <ModularCabinetConfigurator
           variants={series.variants.map(v => ({
@@ -296,8 +311,8 @@ const EnhancedProductDetail = () => {
       );
     }
     
-    // For tall cabinets
-    if (productType === 'tall_cabinet') {
+    // For tall cabinets - ADD SAFETY CHECK
+    if (productType === 'tall_cabinet' && series?.variants && Array.isArray(series.variants)) {
       return (
         <TallCabinetConfigurator
           variants={series.variants}
@@ -309,8 +324,8 @@ const EnhancedProductDetail = () => {
       );
     }
     
-    // For open racks
-    if (productType === 'open_rack') {
+    // For open racks - ADD SAFETY CHECK
+    if (productType === 'open_rack' && series?.variants && Array.isArray(series.variants)) {
       return (
         <OpenRackConfigurator
           variants={series.variants}
@@ -322,8 +337,8 @@ const EnhancedProductDetail = () => {
       );
     }
     
-    // For wall cabinets
-    if (productType === 'wall_cabinet') {
+    // For wall cabinets - ADD SAFETY CHECK
+    if (productType === 'wall_cabinet' && series?.variants && Array.isArray(series.variants)) {
       return (
         <WallCabinetConfigurator
           variants={series.variants.map(v => ({
@@ -347,8 +362,8 @@ const EnhancedProductDetail = () => {
       );
     }
     
-    // Innosin Lab specific configurator
-    if (productType === 'innosin_lab' && hasVariants) {
+    // Innosin Lab specific configurator - ADD SAFETY CHECK
+    if (productType === 'innosin_lab' && series?.variants && Array.isArray(series.variants)) {
       return (
         <InnosinLabConfigurator
           variants={series.variants}
@@ -361,8 +376,8 @@ const EnhancedProductDetail = () => {
       );
     }
     
-    // Default fallback - use generic VariantSelector
-    if (hasVariants) {
+    // Default fallback - use generic VariantSelector - ADD SAFETY CHECK
+    if (hasVariants && series?.variants && Array.isArray(series.variants)) {
       return (
         <VariantSelector
           variants={series.variants}
