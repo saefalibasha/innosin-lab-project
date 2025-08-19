@@ -29,7 +29,10 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     finish?: string;
     orientation?: string;
     drawerCount?: string;
+    doorType?: string;
     dimensions?: string;
+    category?: string;
+    specifications?: string;
   }>>({});
   const { productSeries, loading, error } = useProductSeries();
 
@@ -85,7 +88,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       if (filters.finish && product.finish_type !== filters.finish) return false;
       if (filters.orientation && product.orientation !== filters.orientation) return false;
       if (filters.drawerCount && String(product.drawer_count) !== filters.drawerCount) return false;
+      if (filters.doorType && product.door_type !== filters.doorType) return false;
       if (filters.dimensions && product.dimensions !== filters.dimensions) return false;
+      if (filters.category && product.category !== filters.category) return false;
       return true;
     });
   };
@@ -117,6 +122,32 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     // For drawer count, sort numerically
     if (field === 'drawer_count') {
       return uniqueValues.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+    
+    // For door type, sort by common lab furniture hierarchy
+    if (field === 'door_type') {
+      const doorOrder = ['Solid', 'Glass', 'Mesh', 'Open'];
+      return uniqueValues.sort((a, b) => {
+        const aIndex = doorOrder.indexOf(a);
+        const bIndex = doorOrder.indexOf(b);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return a.localeCompare(b);
+      });
+    }
+    
+    // For finish types, sort by common lab finishes
+    if (field === 'finish_type') {
+      const finishOrder = ['Powder Coat', 'Stainless Steel', 'Epoxy', 'Phenolic'];
+      return uniqueValues.sort((a, b) => {
+        const aIndex = finishOrder.indexOf(a);
+        const bIndex = finishOrder.indexOf(b);
+        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+        if (aIndex !== -1) return -1;
+        if (bIndex !== -1) return 1;
+        return a.localeCompare(b);
+      });
     }
     
     // Default alphabetical sort for other fields
@@ -309,6 +340,26 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                   )}
                   
+                  {getUniqueValues(series.products, 'door_type').length > 1 && (
+                    <div>
+                      <label className="text-xs font-medium">Door Type:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.doorType || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'doorType', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Door Types</SelectItem>
+                          {getUniqueValues(series.products, 'door_type').map(doorType => (
+                            <SelectItem key={doorType} value={doorType}>{doorType}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
                   {getUniqueValues(series.products, 'dimensions').length > 1 && (
                     <div>
                       <label className="text-xs font-medium">Size:</label>
@@ -384,6 +435,13 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             <div>
                               <span className="font-medium">Drawers:</span>
                               <div className="truncate">{product.drawer_count}</div>
+                            </div>
+                          )}
+                          
+                          {product.door_type && (
+                            <div>
+                              <span className="font-medium">Door:</span>
+                              <div className="truncate">{product.door_type}</div>
                             </div>
                           )}
                         </div>
