@@ -161,21 +161,24 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                 <TooltipProvider key={series.id}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
+                       <Button
                         variant={selectedSeries === series.id ? "default" : "ghost"}
-                        className="w-full p-4 h-auto justify-center"
+                        className="w-full p-3 h-auto text-left flex-col items-start space-y-1"
                         onClick={() => {
                           setSelectedSeries(series.id);
                           setSelectedVariants({});
                           setSelectedProduct(null);
                         }}
                       >
-                        <LazyProductImage
-                          src={series.thumbnail || '/placeholder.svg'}
-                          alt={series.name}
-                          className="w-16 h-16 rounded object-cover"
-                          fallback="/placeholder.svg"
-                        />
+                        <div className="font-medium text-sm leading-tight break-words">
+                          {series.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {series.products.length} variants
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {series.description?.slice(0, 50)}...
+                        </div>
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="max-w-xs">
@@ -225,34 +228,54 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                   <div
                     draggable={!isInteractionDisabled}
                     onDragStart={(e) => handleDragStart(e, selectedProduct)}
-                    className={`border-2 border-dashed rounded-lg p-4 text-center transition-all ${
+                    className={`border-2 border-dashed rounded-lg p-4 transition-all ${
                       isInteractionDisabled 
                         ? 'opacity-50 cursor-not-allowed border-gray-300' 
                         : 'cursor-move hover:border-primary hover:bg-accent/50 border-primary/30'
                     }`}
                   >
-                    <LazyProductImage
-                      src={selectedProduct.thumbnail_path || selectedProduct.thumbnail || '/placeholder.svg'}
-                      alt={selectedProduct.name}
-                      className="w-20 h-20 mx-auto rounded object-cover mb-3"
-                      fallback="/placeholder.svg"
-                    />
-                    
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <h5 className="font-medium text-sm leading-tight break-words">
                         {selectedProduct.name}
                       </h5>
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <div className="break-words">{selectedProduct.product_code}</div>
+                      
+                      <div className="text-xs text-muted-foreground space-y-2">
+                        <div className="bg-muted p-2 rounded">
+                          <div className="font-medium text-foreground">Product Code:</div>
+                          <div className="break-words">{selectedProduct.product_code}</div>
+                        </div>
+                        
                         {selectedProduct.dimensions && (
-                          <div className="break-words">
-                            Dimensions: {selectedProduct.dimensions}
+                          <div className="bg-muted p-2 rounded">
+                            <div className="font-medium text-foreground">Dimensions:</div>
+                            <div className="break-words">{selectedProduct.dimensions}</div>
+                          </div>
+                        )}
+                        
+                        {selectedProduct.finish_type && (
+                          <div className="bg-muted p-2 rounded">
+                            <div className="font-medium text-foreground">Finish:</div>
+                            <div className="break-words">{selectedProduct.finish_type}</div>
+                          </div>
+                        )}
+                        
+                        {selectedProduct.orientation && (
+                          <div className="bg-muted p-2 rounded">
+                            <div className="font-medium text-foreground">Orientation:</div>
+                            <div className="break-words">{selectedProduct.orientation}</div>
+                          </div>
+                        )}
+                        
+                        {selectedProduct.drawer_count && (
+                          <div className="bg-muted p-2 rounded">
+                            <div className="font-medium text-foreground">Drawers:</div>
+                            <div className="break-words">{selectedProduct.drawer_count}</div>
                           </div>
                         )}
                       </div>
                       
                       {!isInteractionDisabled && (
-                        <div className="text-xs text-primary font-medium">
+                        <div className="text-xs text-primary font-medium mt-3 p-2 bg-primary/10 rounded text-center">
                           Drag to place on canvas
                         </div>
                       )}

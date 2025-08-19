@@ -91,6 +91,30 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     return snappedPoint;
   }, [showGrid, gridSize, scale]);
 
+  const findWallEndpoints = useCallback((): Point[] => {
+    const endpoints: Point[] = [];
+    wallSegments.forEach(wall => {
+      endpoints.push(wall.start, wall.end);
+    });
+    return endpoints;
+  }, [wallSegments]);
+
+  const snapToEndpoints = useCallback((point: Point): Point | null => {
+    const endpoints = findWallEndpoints();
+    const snapDistance = 15; // Snap distance in pixels
+    
+    for (const endpoint of endpoints) {
+      const distance = Math.sqrt(
+        Math.pow(point.x - endpoint.x, 2) + Math.pow(point.y - endpoint.y, 2)
+      );
+      
+      if (distance <= snapDistance) {
+        return endpoint;
+      }
+    }
+    return null;
+  }, [findWallEndpoints]);
+
   const findWallAtPoint = useCallback((point: Point): WallSegment | null => {
     const tolerance = 10; // pixels
     
@@ -182,40 +206,16 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getCanvasPoint(e);
-    const snappedPoint = snapToGrid(point);
-    setLastMousePos(snappedPoint);
-    
-    // Generate snap lines when near grid lines
-    if (showGrid) {
-      const gridPixels = gridSize * scale;
-      const snapThreshold = 8; // pixels
-      
-      // Check for vertical snap line
-      const nearestVerticalGrid = Math.round(point.x / gridPixels) * gridPixels;
-      const verticalDistance = Math.abs(point.x - nearestVerticalGrid);
-      
-      // Check for horizontal snap line
-      const nearestHorizontalGrid = Math.round(point.y / gridPixels) * gridPixels;
-      const horizontalDistance = Math.abs(point.y - nearestHorizontalGrid);
-      
-      setSnapLines({
-        x: verticalDistance <= snapThreshold ? nearestVerticalGrid : null,
-        y: horizontalDistance <= snapThreshold ? nearestHorizontalGrid : null
-      });
-    } else {
-      setSnapLines({ x: null, y: null });
-    }
-    
-    // Handle wall hover for better UX
-    if (currentMode === 'select') {
-      const hoveredWallFound = findWallAtPoint(snappedPoint);
-      setHoveredWall(hoveredWallFound?.id || null);
-    }
     
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0) {
+      // Try snapping to endpoints first, then grid
+      const snappedToEndpoint = snapToEndpoints(point);
+      const finalPoint = snappedToEndpoint || snapToGrid(point);
+      setLastMousePos(finalPoint);
+      
       const startPoint = currentPath[0];
-      const dx = snappedPoint.x - startPoint.x;
-      const dy = snappedPoint.y - startPoint.y;
+      const dx = finalPoint.x - startPoint.x;
+      const dy = finalPoint.y - startPoint.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       const distanceInMm = canvasToMm(distance, scale);
       
@@ -224,17 +224,48 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         precision: measurementUnit === 'mm' ? 0 : 2, 
         showUnit: true 
       }));
-    } else if (currentMode === 'wall') {
-      setCurrentLineMeasurement('');
+
+      // Update snap lines for grid alignment
+      if (showGrid) {
+        const gridPixels = gridSize * scale;
+        const snapThreshold = 10; // pixels
+        
+        // Check for vertical snap line
+        const nearestVerticalGrid = Math.round(finalPoint.x / gridPixels) * gridPixels;
+        const verticalDistance = Math.abs(finalPoint.x - nearestVerticalGrid);
+        
+        // Check for horizontal snap line
+        const nearestHorizontalGrid = Math.round(finalPoint.y / gridPixels) * gridPixels;
+        const horizontalDistance = Math.abs(finalPoint.y - nearestHorizontalGrid);
+        
+        setSnapLines({
+          x: verticalDistance <= snapThreshold ? nearestVerticalGrid : null,
+          y: horizontalDistance <= snapThreshold ? nearestHorizontalGrid : null
+        });
+      }
+    } else {
+      const snappedPoint = snapToGrid(point);
+      setLastMousePos(snappedPoint);
+      setSnapLines({ x: null, y: null });
+      
+      if (currentMode === 'wall') {
+        setCurrentLineMeasurement('');
+      }
     }
-  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, currentPath, scale, measurementUnit, findWallAtPoint, showGrid, gridSize]);
+    
+    // Handle wall hover for better UX
+    if (currentMode === 'select') {
+      const hoveredWallFound = findWallAtPoint(point);
+      setHoveredWall(hoveredWallFound?.id || null);
+    }
+  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, currentPath, scale, measurementUnit, findWallAtPoint, showGrid, gridSize]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing && currentMode === 'wall' && currentPath.length >= 1) {
       const newWallSegment: WallSegment = {
         id: `wall-${Date.now()}`,
         start: currentPath[0],
-        end: lastMousePos, // Use the actual mouse position
+        end: lastMousePos,
         thickness: 10,
         color: '#666666',
         type: WallType.INTERIOR
@@ -245,6 +276,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     setIsDrawing(false);
     setCurrentPath([]);
     setCurrentLineMeasurement('');
+    setSnapLines({ x: null, y: null });
   }, [isDrawing, currentMode, currentPath, setWallSegments, lastMousePos]);
 
   const handleDoubleClick = useCallback(() => {
@@ -355,19 +387,32 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
     });
     
-    // Draw wall segments with enhanced selection feedback
+    // Draw wall segments with enhanced selection feedback and connection points
     wallSegments.forEach(wall => {
       const isSelected = selectedWall?.id === wall.id;
       const isHovered = hoveredWall === wall.id;
       
+      // Draw wall line
       ctx.strokeStyle = isSelected ? '#ff4444' : isHovered ? '#ffaa00' : wall.color;
       ctx.lineWidth = wall.thickness + (isSelected ? 4 : isHovered ? 2 : 0);
+      ctx.lineCap = 'round';
       ctx.beginPath();
       ctx.moveTo(wall.start.x, wall.start.y);
       ctx.lineTo(wall.end.x, wall.end.y);
       ctx.stroke();
+
+      // Draw connection points at wall endpoints
+      [wall.start, wall.end].forEach(point => {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+        ctx.fillStyle = isSelected ? '#ff4444' : isHovered ? '#ffaa00' : '#3b82f6';
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
       
-      // Draw wall measurements if selected
+      // Draw wall measurements if selected with larger text
       if ((isSelected || showMeasurements) && measurementUnit) {
         const dx = wall.end.x - wall.start.x;
         const dy = wall.end.y - wall.start.y;
@@ -382,15 +427,22 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           showUnit: true 
         });
         
-        // Draw measurement background
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        // Draw measurement background with better styling
+        ctx.font = '16px Arial'; // Increased from 11px
         const textWidth = ctx.measureText(measurement).width;
-        ctx.fillRect(midX - textWidth/2 - 4, midY - 12, textWidth + 8, 16);
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(midX - textWidth/2 - 6, midY - 12, textWidth + 12, 24);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(midX - textWidth/2 - 6, midY - 12, textWidth + 12, 24);
         
         // Draw measurement text
         ctx.fillStyle = '#ffffff';
-        ctx.font = '11px Arial';
-        ctx.fillText(measurement, midX - textWidth/2, midY + 3);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(measurement, midX, midY);
+        ctx.textAlign = 'start';
+        ctx.textBaseline = 'alphabetic';
       }
     });
     
@@ -531,34 +583,55 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.setLineDash([]); // Reset dash
     }
 
-    // Draw live measurement during wall drawing with better visibility
+    // Draw live measurement during wall drawing with enhanced styling and start/end indicators
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0 && currentLineMeasurement) {
       const startPoint = currentPath[0];
       const endPoint = lastMousePos;
+      
+      // Draw start point indicator
+      ctx.beginPath();
+      ctx.arc(startPoint.x, startPoint.y, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = '#10b981';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw end point indicator
+      ctx.beginPath();
+      ctx.arc(endPoint.x, endPoint.y, 6, 0, 2 * Math.PI);
+      ctx.fillStyle = '#ef4444';
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw measurement at midpoint
       const midX = (startPoint.x + endPoint.x) / 2;
       const midY = (startPoint.y + endPoint.y) / 2;
       
       // Draw measurement background with border
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1;
-      ctx.setLineDash([]);
+      ctx.font = 'bold 16px Arial'; // Increased from 12px
       const textWidth = ctx.measureText(currentLineMeasurement).width;
-      const padding = 6;
+      const padding = 8;
       const rectX = midX - textWidth/2 - padding;
-      const rectY = midY - 14;
+      const rectY = midY - 16;
       const rectWidth = textWidth + (padding * 2);
-      const rectHeight = 20;
+      const rectHeight = 28;
       
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.95)';
       ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+      ctx.lineWidth = 1;
       ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
       
       // Draw measurement text
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 12px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText(currentLineMeasurement, midX, midY + 4);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(currentLineMeasurement, midX, midY);
       ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
     }
     
   }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements, snapLines]);

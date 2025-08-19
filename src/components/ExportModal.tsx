@@ -188,6 +188,16 @@ const ExportModal: React.FC<ExportModalProps> = ({
 
   const handleFormSubmit = async (formData: ExportFormData) => {
     try {
+      // Determine if this is a PDF export (check if we came from PDF button)
+      if (exportFormat === 'png' && showForm) {
+        // Check if this was triggered by PDF export
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('pdf') === 'true') {
+          await handleFormSubmitWithPDF(formData);
+          return;
+        }
+      }
+      
       // Sync to HubSpot first
       await syncToHubSpot(formData, exportFormat);
       
@@ -205,8 +215,25 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handlePDFExport = () => {
+    setExportFormat('png'); // Set format for form
     setMainDialogOpen(false);
-    exportAsPDF();
+    setShowForm(true);
+  };
+
+  const handleFormSubmitWithPDF = async (formData: ExportFormData) => {
+    try {
+      // Sync to HubSpot first
+      await syncToHubSpot(formData, 'pdf');
+      
+      // Then perform PDF export
+      await exportAsPDF();
+      
+      toast.success(`PDF export completed! Contact information has been saved.`);
+    } catch (error) {
+      console.error('PDF export process error:', error);
+      toast.error('PDF export process failed');
+      throw error;
+    }
   };
 
   const calculateStats = () => {
@@ -274,9 +301,9 @@ const ExportModal: React.FC<ExportModalProps> = ({
                 </div>
               </div>
 
-              {/* PDF Export - Direct */}
+              {/* PDF Export - Also requires form */}
               <div className="pt-2 border-t">
-                <p className="text-xs text-gray-600 mb-2">PDF export (no form required):</p>
+                <p className="text-xs text-gray-600 mb-2">PDF export (contact information required):</p>
                 <Button
                   onClick={handlePDFExport}
                   disabled={isExporting}
@@ -300,7 +327,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
 
             <div className="text-xs text-gray-500 p-3 bg-blue-50 rounded">
               <p className="font-semibold mb-1">Why do we need your information?</p>
-              <p>Contact details help us provide better support and follow up on your project needs. PDF exports don't require registration.</p>
+              <p>Contact details help us provide better support and follow up on your project needs. All export formats require contact information for professional service.</p>
             </div>
           </div>
         </DialogContent>

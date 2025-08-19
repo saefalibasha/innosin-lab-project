@@ -20,7 +20,7 @@ interface ExportFormModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: ExportFormData) => Promise<void>;
-  exportFormat: 'png' | 'jpg';
+  exportFormat: 'png' | 'jpg' | 'pdf';
 }
 
 const ExportFormModal: React.FC<ExportFormModalProps> = ({
