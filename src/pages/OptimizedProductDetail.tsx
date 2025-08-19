@@ -244,7 +244,7 @@ const OptimizedProductDetail = () => {
                 <div>
                   <dt className="text-sm font-medium text-muted-foreground">Category</dt>
                   <dd className="text-sm">
-                    <Badge variant="outline">{displayProduct.category}</dd>
+                    <Badge variant="outline">{displayProduct.category}</Badge>
                   </dd>
                 </div>
                 {displayProduct.product_series && (
