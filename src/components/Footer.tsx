@@ -19,33 +19,33 @@ export const Footer = () => {
             </p>
           </div>
           
-          {/* Products & Series */}
+          {/* Product Catalog & Brands */}
           <div>
-            <h4 className="font-semibold mb-4 text-lg">Products & Series</h4>
+            <h4 className="font-semibold mb-4 text-lg">Product Series</h4>
             <ul className="space-y-3 text-gray-300">
               <li>
                 <Link to="/products" className="hover:text-white transition-colors duration-200">
-                  Products Catalog
+                  Product Catalog
                 </Link>
               </li>
               <li>
-                <Link to="/products?series=mobile-cabinet" className="hover:text-white transition-colors duration-200">
-                  Mobile Cabinet Series
+                <Link to="/products?category=Innosin Lab" className="hover:text-white transition-colors duration-200">
+                  Innosin Lab
                 </Link>
               </li>
               <li>
-                <Link to="/products?series=wall-cabinet" className="hover:text-white transition-colors duration-200">
-                  Wall Cabinet Series
+                <Link to="/products?category=Hamilton Laboratory Solutions" className="hover:text-white transition-colors duration-200">
+                  Hamilton Laboratories
                 </Link>
               </li>
               <li>
-                <Link to="/products?series=tall-cabinet" className="hover:text-white transition-colors duration-200">
-                  Tall Cabinet Series
+                <Link to="/products?category=Oriental Giken Inc." className="hover:text-white transition-colors duration-200">
+                  Oriental Giken
                 </Link>
               </li>
               <li>
-                <Link to="/products?series=open-rack" className="hover:text-white transition-colors duration-200">
-                  Open Rack Series
+                <Link to="/products?category=Broen-Lab" className="hover:text-white transition-colors duration-200">
+                  Broen Lab
                 </Link>
               </li>
             </ul>
@@ -66,7 +66,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/rfq" className="hover:text-white transition-colors duration-200">
+                <Link to="/rfq-cart" className="hover:text-white transition-colors duration-200">
                   RFQ Cart
                 </Link>
               </li>
