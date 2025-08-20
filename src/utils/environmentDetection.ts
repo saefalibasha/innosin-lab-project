@@ -1,32 +1,14 @@
 
 export const isLovableDevelopment = (): boolean => {
-  // PRODUCTION DOMAINS - These will ALWAYS show maintenance page to public
-  const productionDomains = [
-    'innosinlab.com',
-    'www.innosinlab.com',
-  ];
-  
   // Server-side detection (for crawlers like Google)
   if (typeof window === 'undefined') {
-    console.log('🤖 Server-side request detected - forcing maintenance for crawlers');
-    return false; // Always show maintenance to crawlers
+    console.log('🤖 Server-side request detected - allowing full site access');
+    return true; // Allow full site access for crawlers
   }
   
   const hostname = window.location.hostname;
   
-  // ABSOLUTE RULE: Production domains = maintenance page only
-  const isProductionDomain = productionDomains.some(domain => 
-    hostname === domain || hostname.endsWith(`.${domain}`)
-  );
-  
-  if (isProductionDomain) {
-    console.log('🚨 PRODUCTION DOMAIN DETECTED - MAINTENANCE MODE ENFORCED:', hostname);
-    document.documentElement.setAttribute('data-maintenance-mode', 'true');
-    document.documentElement.setAttribute('data-environment', 'production');
-    return false;
-  }
-  
-  // Development access - only on Lovable domains and localhost
+  // Allow full site access for all domains now that the site is ready
   const isDevelopment = (
     hostname.includes('lovableproject.com') ||
     hostname.includes('lovable.app') ||
@@ -34,25 +16,24 @@ export const isLovableDevelopment = (): boolean => {
     hostname === '127.0.0.1' ||
     hostname.includes('192.168.') ||
     hostname.includes('10.0.') ||
-    hostname.includes('172.')
+    hostname.includes('172.') ||
+    hostname.includes('innosinlab.com') || // Allow production domain
+    true // Allow any other domain to access full site
   );
   
   if (isDevelopment) {
-    console.log('✅ DEVELOPMENT ACCESS GRANTED:', hostname);
-    document.documentElement.setAttribute('data-environment', 'development');
-  } else {
-    console.log('⚠️ UNKNOWN DOMAIN - DEFAULTING TO MAINTENANCE:', hostname);
+    console.log('✅ FULL SITE ACCESS GRANTED:', hostname);
+    document.documentElement.setAttribute('data-environment', 'production');
   }
   
   console.log('🔍 Environment Detection Summary:', {
     hostname,
     isDevelopment,
-    isProductionDomain,
-    finalDecision: isDevelopment ? 'FULL_SITE' : 'MAINTENANCE_ONLY',
+    finalDecision: 'FULL_SITE',
     userAgent: navigator?.userAgent?.substring(0, 100)
   });
   
-  return isDevelopment;
+  return true; // Always return true to show full site
 };
 
 export const isProductionDeployment = (): boolean => {
