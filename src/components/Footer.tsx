@@ -9,6 +9,8 @@ export const Footer = () => {
   const footerRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
+  console.log('Footer component rendered', { isVisible });
+
   // Update Singapore time every second
   useEffect(() => {
     const timer = setInterval(() => {
