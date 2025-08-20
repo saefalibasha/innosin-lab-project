@@ -114,11 +114,15 @@ const EnhancedLiveChat = () => {
     const sessionId = `session_${Date.now()}`;
     
     try {
+      // Get current user (null for anonymous)
+      const { data: user } = await supabase.auth.getUser();
+      
       // Create session in database first
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
           session_id: sessionId,
+          user_id: user?.user?.id || null, // Allow null for anonymous users
           start_time: new Date().toISOString(),
           status: 'active'
         })
