@@ -176,30 +176,35 @@ export const Footer = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Large Stacked Background Text at Bottom */}
-        <div className="relative h-32 lg:h-40 overflow-hidden">
-          <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pointer-events-none">
-            <div className="relative">
-              <div 
-                className="text-[18vw] lg:text-[12vw] font-black text-white/15 select-none leading-none tracking-tighter"
-                style={{ fontFamily: 'Outfit, sans-serif' }}
-              >
-                INNOSINLAB
-              </div>
-              <div 
-                className="absolute inset-0 text-[18vw] lg:text-[12vw] font-black text-white/10 select-none leading-none tracking-tighter"
-                style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
-              >
-                INNOSINLAB
-              </div>
-              <div 
-                className="absolute inset-0 text-[18vw] lg:text-[12vw] font-black text-white/5 select-none leading-none tracking-tighter"
-                style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(4px, 4px)' }}
-              >
-                INNOSINLAB
-              </div>
-            </div>
+      {/* Large Stacked Background Text at Very Bottom */}
+      <div className="relative w-full overflow-hidden bg-sea">
+        <div className="relative h-24 lg:h-32">
+          {/* Multiple layers for depth effect */}
+          <div 
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/20 select-none leading-none tracking-tighter text-center"
+            style={{ fontFamily: 'Outfit, sans-serif' }}
+          >
+            INNOSINLAB
+          </div>
+          <div 
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/15 select-none leading-none tracking-tighter text-center"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(1px, 1px)' }}
+          >
+            INNOSINLAB
+          </div>
+          <div 
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/10 select-none leading-none tracking-tighter text-center"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
+          >
+            INNOSINLAB
+          </div>
+          <div 
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/5 select-none leading-none tracking-tighter text-center"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
+          >
+            INNOSINLAB
           </div>
         </div>
       </div>
