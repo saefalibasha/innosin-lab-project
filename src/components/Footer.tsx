@@ -201,23 +201,23 @@ export const Footer = () => {
 
       {/* Large Stacked Background Text at Very Bottom */}
       <div className="relative w-full overflow-hidden bg-sea">
-        <div className="relative h-20 lg:h-24">
-          {/* Three layers for depth effect - smaller font size */}
+        <div className="relative h-28 lg:h-36">
+          {/* Three layers for pronounced stacking effect - full width stretch */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[12vw] lg:text-[8vw] font-black text-white/25 select-none leading-none tracking-wide text-center"
+            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/30 select-none leading-none tracking-normal text-center w-full"
             style={{ fontFamily: 'Outfit, sans-serif' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[12vw] lg:text-[8vw] font-black text-white/15 select-none leading-none tracking-wide text-center"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(1px, 1px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/20 select-none leading-none tracking-normal text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[12vw] lg:text-[8vw] font-black text-white/8 select-none leading-none tracking-wide text-center"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/10 select-none leading-none tracking-normal text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(6px, 6px)' }}
           >
             INNOSINLAB
           </div>
