@@ -258,7 +258,8 @@ const ChatHistory = () => {
                         className="h-6 px-2 text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
-                          window.open(`https://app.hubspot.com/contacts/your-hub-id/contact/${session.hubspot_contact_id}`, '_blank');
+                          // Use the standard HubSpot contact URL format
+                          window.open(`https://app.hubspot.com/contacts/${session.hubspot_contact_id}/contact/${session.hubspot_contact_id}`, '_blank');
                         }}
                       >
                         <ExternalLink className="w-3 h-3 mr-1" />
