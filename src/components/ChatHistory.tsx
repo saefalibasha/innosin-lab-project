@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { MessageCircle, User, Bot, Calendar, Mail, Building, Phone, Download, ExternalLink, Ticket } from 'lucide-react';
+import { MessageCircle, User, Bot, Calendar, Mail, Building, Phone, Download, ExternalLink, Ticket, Trash2 } from 'lucide-react';
 
 interface ChatHistorySession {
   session_id: string;
@@ -125,6 +125,44 @@ const ChatHistory = () => {
     URL.revokeObjectURL(url);
   };
 
+  const deleteSession = async (sessionId: string) => {
+    if (!confirm('Are you sure you want to delete this chat session? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      // Delete messages first (due to foreign key constraint)
+      const { error: messagesError } = await supabase
+        .from('chat_messages')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (messagesError) throw messagesError;
+
+      // Delete the session
+      const { error: sessionError } = await supabase
+        .from('chat_sessions')
+        .delete()
+        .eq('session_id', sessionId);
+
+      if (sessionError) throw sessionError;
+
+      // Update local state
+      setSessions(prev => prev.filter(s => s.session_id !== sessionId));
+      
+      // Clear selected session if it was deleted
+      if (selectedSession === sessionId) {
+        setSelectedSession(null);
+        setMessages([]);
+      }
+
+      toast.success('Chat session deleted successfully');
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast.error('Failed to delete chat session');
+    }
+  };
+
   if (loading) {
     return (
       <div className="container-custom py-8">
@@ -235,6 +273,17 @@ const ChatHistory = () => {
                       }}
                     >
                       <Download className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-6 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteSession(session.session_id);
+                      }}
+                    >
+                      <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
