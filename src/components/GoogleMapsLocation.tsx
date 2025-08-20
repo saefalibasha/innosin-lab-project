@@ -109,10 +109,10 @@ const GoogleMapsLocation = () => {
             <CardContent className="p-0">
               <div className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
                 
-                {/* Embedded OpenStreetMap with precise location - Force refresh with key */}
+                {/* Embedded OpenStreetMap with precise location - Force refresh with key and timestamp */}
                 <iframe
-                  key={selectedOffice.id}
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.005},${parseFloat(selectedOffice.coordinates.lat) - 0.005},${parseFloat(selectedOffice.coordinates.lng) + 0.005},${parseFloat(selectedOffice.coordinates.lat) + 0.005}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
+                  key={`${selectedOffice.id}-${Date.now()}`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.003},${parseFloat(selectedOffice.coordinates.lat) - 0.003},${parseFloat(selectedOffice.coordinates.lng) + 0.003},${parseFloat(selectedOffice.coordinates.lat) + 0.003}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}&t=${Date.now()}`}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
