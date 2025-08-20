@@ -133,7 +133,19 @@ const ChatHistory = () => {
     }
 
     try {
-      // Delete messages first (due to foreign key constraint)
+      // Delete in correct order due to foreign key constraints:
+      // 1. First delete HubSpot integration logs (references session_id)
+      const { error: hubspotLogsError } = await supabase
+        .from('hubspot_integration_logs')
+        .delete()
+        .eq('session_id', session.id);
+
+      if (hubspotLogsError) {
+        console.error('Error deleting HubSpot logs:', hubspotLogsError);
+        throw hubspotLogsError;
+      }
+
+      // 2. Then delete chat messages (references session_id) 
       const { error: messagesError } = await supabase
         .from('chat_messages')
         .delete()
@@ -144,7 +156,7 @@ const ChatHistory = () => {
         throw messagesError;
       }
 
-      // Delete the session using the UUID id
+      // 3. Finally delete the session itself
       const { error: sessionError } = await supabase
         .from('chat_sessions')
         .delete()
@@ -164,7 +176,7 @@ const ChatHistory = () => {
         setMessages([]);
       }
 
-      toast.success('Chat session permanently deleted');
+      toast.success('Chat session and all related data permanently deleted');
     } catch (error) {
       console.error('Error deleting session:', error);
       toast.error(`Failed to delete chat session: ${error.message || 'Unknown error'}`);
