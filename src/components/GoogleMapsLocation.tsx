@@ -32,7 +32,9 @@ const GoogleMapsLocation = () => {
   const [selectedOffice, setSelectedOffice] = useState(offices[1]); // Default to HQ
 
   const getMapEmbedUrl = (office: typeof offices[0]) => {
-    return `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.7956945935934!2d${office.coordinates.lng}!3d${office.coordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2z${office.coordinates.lat}N%20${office.coordinates.lng}E!5e0!3m2!1sen!2ssg!4v1000000000000!5m2!1sen!2ssg`;
+    // Use a more reliable Google Maps embed URL format
+    const address = encodeURIComponent(office.address);
+    return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBNLrJhOMz6idD0Kz6EyiKwF9dUo2-LPO4&q=${address}&zoom=15&maptype=roadmap`;
   };
 
   const getDirectionsUrl = (address: string) => {

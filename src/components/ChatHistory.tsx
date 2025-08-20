@@ -139,7 +139,10 @@ const ChatHistory = () => {
         .delete()
         .eq('session_id', session.id);
 
-      if (messagesError) throw messagesError;
+      if (messagesError) {
+        console.error('Error deleting messages:', messagesError);
+        throw messagesError;
+      }
 
       // Delete the session using the UUID id
       const { error: sessionError } = await supabase
@@ -147,7 +150,10 @@ const ChatHistory = () => {
         .delete()
         .eq('id', session.id);
 
-      if (sessionError) throw sessionError;
+      if (sessionError) {
+        console.error('Error deleting session:', sessionError);
+        throw sessionError;
+      }
 
       // Update local state
       setSessions(prev => prev.filter(s => s.id !== session.id));
@@ -161,7 +167,7 @@ const ChatHistory = () => {
       toast.success('Chat session deleted successfully');
     } catch (error) {
       console.error('Error deleting session:', error);
-      toast.error('Failed to delete chat session');
+      toast.error(`Failed to delete chat session: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -258,8 +264,10 @@ const ChatHistory = () => {
                         className="h-6 px-2 text-xs"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Use the standard HubSpot contact URL format
-                          window.open(`https://app.hubspot.com/contacts/${session.hubspot_contact_id}/contact/${session.hubspot_contact_id}`, '_blank');
+                          // Open HubSpot contact using the contact ID
+                          if (session.hubspot_contact_id) {
+                            window.open(`https://app.hubspot.com/contacts/44738119/contact/${session.hubspot_contact_id}`, '_blank');
+                          }
                         }}
                       >
                         <ExternalLink className="w-3 h-3 mr-1" />
