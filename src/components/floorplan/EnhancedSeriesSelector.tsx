@@ -91,7 +91,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     return products.filter(product => {
       if (filters.finish && product.finish_type !== filters.finish) return false;
       if (filters.orientation && product.orientation !== filters.orientation) return false;
-      if (filters.drawerCount && String(product.drawer_count || product.number_of_drawers) !== filters.drawerCount) return false;
+      if (filters.drawerCount && String(product.drawer_count || product.number_of_drawers || 0) !== filters.drawerCount) return false;
       if (filters.doorType && product.door_type !== filters.doorType) return false;
       if (filters.dimensions && product.dimensions !== filters.dimensions) return false;
       if (filters.category && product.category !== filters.category) return false;
@@ -433,21 +433,31 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                   )}
                   
-                  {getUniqueValues(series.products, 'drawer_count').length > 1 && (
+                  {(getUniqueValues(series.products, 'drawer_count').length > 0 || 
+                    getUniqueValues(series.products, 'number_of_drawers').length > 0 ||
+                    series.products.some(p => p.category?.toLowerCase().includes('mobile'))) && (
                     <div>
-                      <label className="text-xs font-medium">Drawers:</label>
+                      <label className="text-xs font-medium text-muted-foreground">Number of Drawers:</label>
                       <Select
                         value={seriesFilters[series.id]?.drawerCount || 'all'}
                         onValueChange={(value) => handleFilterChange(series.id, 'drawerCount', value)}
                       >
                         <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
+                          <SelectValue placeholder="All Drawer Counts" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Drawer Counts</SelectItem>
-                          {getUniqueValues(series.products, 'drawer_count').map(count => (
-                            <SelectItem key={count} value={count}>{count} Drawers</SelectItem>
+                          {/* Combine both drawer_count and number_of_drawers */}
+                          {[...new Set([
+                            ...getUniqueValues(series.products, 'drawer_count'),
+                            ...getUniqueValues(series.products, 'number_of_drawers')
+                          ])].filter(count => count && count !== '0').sort((a, b) => Number(a) - Number(b)).map(count => (
+                            <SelectItem key={count} value={count}>
+                              {count === '0' ? 'No Drawers' : `${count} Drawer${Number(count) > 1 ? 's' : ''}`}
+                            </SelectItem>
                           ))}
+                          {/* Always show option for no drawers */}
+                          <SelectItem value="0">No Drawers</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
