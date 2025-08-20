@@ -132,15 +132,6 @@ const ChatHistory = () => {
       return;
     }
 
-    // Immediately remove from UI for better UX
-    setSessions(prev => prev.filter(s => s.id !== session.id));
-    
-    // Clear selected session if it was deleted
-    if (selectedSession === session.id) {
-      setSelectedSession(null);
-      setMessages([]);
-    }
-
     try {
       // Delete messages first (due to foreign key constraint)
       const { error: messagesError } = await supabase
@@ -150,10 +141,6 @@ const ChatHistory = () => {
 
       if (messagesError) {
         console.error('Error deleting messages:', messagesError);
-        // Restore session to UI if deletion failed
-        setSessions(prev => [...prev, session].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        ));
         throw messagesError;
       }
 
@@ -165,20 +152,19 @@ const ChatHistory = () => {
 
       if (sessionError) {
         console.error('Error deleting session:', sessionError);
-        // Restore session to UI if deletion failed
-        setSessions(prev => [...prev, session].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        ));
         throw sessionError;
       }
 
-      toast.success('Chat session deleted successfully');
+      // Update local state - remove the deleted session
+      setSessions(prev => prev.filter(s => s.id !== session.id));
       
-      // Double-check by refetching data to ensure consistency
-      setTimeout(() => {
-        fetchChatHistory();
-      }, 1000);
-      
+      // Clear selected session if it was deleted
+      if (selectedSession === session.id) {
+        setSelectedSession(null);
+        setMessages([]);
+      }
+
+      toast.success('Chat session permanently deleted');
     } catch (error) {
       console.error('Error deleting session:', error);
       toast.error(`Failed to delete chat session: ${error.message || 'Unknown error'}`);
