@@ -57,19 +57,54 @@ export const parseDimensionString = (dimensionStr: string): Dimensions | null =>
   };
 };
 
-// Calculate canvas scale (pixels per mm)
+// Room-aware scaling for floor planner
+export interface RoomScaleConfig {
+  roomWidthMm: number;
+  roomHeightMm: number;
+  canvasWidthPx: number;
+  canvasHeightPx: number;
+  padding: number; // padding in pixels
+}
+
+// Calculate optimal scale for room-based floor planning
+export const calculateRoomScale = (config: RoomScaleConfig): number => {
+  const availableWidth = config.canvasWidthPx - (config.padding * 2);
+  const availableHeight = config.canvasHeightPx - (config.padding * 2);
+  
+  const scaleX = availableWidth / config.roomWidthMm;
+  const scaleY = availableHeight / config.roomHeightMm;
+  
+  // Use the smaller scale to ensure everything fits
+  return Math.min(scaleX, scaleY);
+};
+
+// Enhanced canvas scale (pixels per mm) with room context
 export const calculateScale = (canvasWidth: number, realWidthMm: number): number => {
   return canvasWidth / realWidthMm;
 };
 
-// Convert canvas coordinates to real-world mm
+// Convert canvas coordinates to real-world mm with room context
 export const canvasToMm = (canvasValue: number, scale: number): number => {
   return canvasValue / scale;
 };
 
-// Convert real-world mm to canvas coordinates
+// Convert real-world mm to canvas coordinates with proper scaling
 export const mmToCanvas = (mmValue: number, scale: number): number => {
   return mmValue * scale;
+};
+
+// Default room scales for typical laboratory sizes
+export const DEFAULT_ROOM_SCALES = {
+  smallLab: { width: 3000, height: 3000 }, // 3m x 3m
+  mediumLab: { width: 5000, height: 4000 }, // 5m x 4m  
+  largeLab: { width: 8000, height: 6000 }, // 8m x 6m
+  xlLab: { width: 12000, height: 8000 } // 12m x 8m
+};
+
+// Calculate appropriate scale for products in room context
+export const calculateProductScale = (roomWidthMm: number, canvasWidthPx: number, padding: number = 100): number => {
+  const availableWidth = canvasWidthPx - (padding * 2);
+  return availableWidth / roomWidthMm;
 };
 
 // Grid size options in mm

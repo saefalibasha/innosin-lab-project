@@ -9,7 +9,7 @@ import { Search, Plus } from 'lucide-react';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 import { Product } from '@/types/product';
 import { fetchProductSeriesFromDatabase, searchProductSeries } from '@/services/productService';
-import { parseDimensionString, mmToCanvas } from '@/utils/dimensionUtils';
+import { parseDimensionString, mmToCanvas, calculateProductScale } from '@/utils/measurements';
 
 interface EnhancedSeriesSelectorProps {
   onProductSelect: (product: PlacedProduct) => void;
@@ -138,20 +138,23 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
   };
 
   const handleProductSelect = (product: Product) => {
-    // Parse dimensions and convert to canvas pixels
+    console.log('Selected product:', product);
+    
+    // Parse dimensions from the dimension string
     const parsedDimensions = parseDimensionString(product.dimensions || '');
     
-    let length = 100; // default fallback
-    let width = 50; // default fallback
-    let height = 30; // default fallback
-    
-    if (parsedDimensions) {
-      // Convert mm to canvas pixels using the scale
-      // Use width as length, depth as width for floor plan layout
-      length = mmToCanvas(parsedDimensions.width, scale);
-      width = mmToCanvas(parsedDimensions.depth, scale);
-      height = mmToCanvas(parsedDimensions.height, scale);
+    if (!parsedDimensions) {
+      console.error('Unable to parse product dimensions');
+      return;
     }
+
+    // Use room-aware scaling: assume a medium lab room (5m x 4m) for context
+    const roomScale = calculateProductScale(5000, 800, 50); // 5m room width, 800px canvas, 50px padding
+    
+    // Convert dimensions to canvas units using room-aware scale
+    const canvasWidth = mmToCanvas(parsedDimensions.width, roomScale);
+    const canvasHeight = mmToCanvas(parsedDimensions.depth, roomScale);
+    const canvasDepth = mmToCanvas(parsedDimensions.height, roomScale);
 
     const placedProduct: PlacedProduct = {
       id: `placed-${product.id}-${Date.now()}`,
@@ -161,9 +164,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
       position: { x: 100, y: 100 },
       rotation: 0,
       dimensions: {
-        length,
-        width,
-        height
+        length: canvasWidth,
+        width: canvasHeight,
+        height: canvasDepth
       },
       color: '#3B82F6',
       thumbnail: product.thumbnail,
@@ -196,11 +199,12 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
       </div>
 
       <div className="bg-muted/30 p-3 rounded-lg">
-        <h4 className="text-sm font-medium mb-3">Filter Variants:</h4>
-        <div className="grid grid-cols-2 gap-2">
-          {uniqueDimensions.length > 0 && (
+        <h4 className="text-sm font-medium mb-3">Filter Product Variants</h4>
+        <div className="grid grid-cols-1 gap-3">
+          {/* Size/Dimensions Filter */}
+          {uniqueDimensions.length > 1 && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Size:</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Size</label>
               <Select value={filters.dimensions} onValueChange={(value) => setFilters(prev => ({ ...prev, dimensions: value }))}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All Sizes" />
@@ -215,26 +219,30 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
             </div>
           )}
 
+          {/* Drawer Count Filter - Enhanced for Mobile Cabinets */}
           {uniqueDrawerCounts.length > 0 && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Drawers:</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Number of Drawers</label>
               <Select value={filters.numberOfDrawers} onValueChange={(value) => setFilters(prev => ({ ...prev, numberOfDrawers: value }))}>
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All Drawers" />
+                  <SelectValue placeholder="All Drawer Counts" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Drawers</SelectItem>
+                  <SelectItem value="">All Drawer Counts</SelectItem>
                   {uniqueDrawerCounts.map(count => (
-                    <SelectItem key={count} value={count}>{count} Drawers</SelectItem>
+                    <SelectItem key={count} value={count}>
+                      {count === '0' ? 'No Drawers' : `${count} Drawer${Number(count) > 1 ? 's' : ''}`}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
 
-          {uniqueFinishes.length > 0 && (
+          {/* Finish Type Filter */}
+          {uniqueFinishes.length > 1 && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Finish:</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Finish Type</label>
               <Select value={filters.finishType} onValueChange={(value) => setFilters(prev => ({ ...prev, finishType: value }))}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All Finishes" />
@@ -249,9 +257,10 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
             </div>
           )}
 
-          {uniqueOrientations.length > 0 && (
+          {/* Orientation Filter */}
+          {uniqueOrientations.length > 1 && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Orientation:</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Orientation</label>
               <Select value={filters.orientation} onValueChange={(value) => setFilters(prev => ({ ...prev, orientation: value }))}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All Orientations" />
@@ -266,9 +275,10 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
             </div>
           )}
 
-          {uniqueDoorTypes.length > 0 && (
+          {/* Door Type Filter */}
+          {uniqueDoorTypes.length > 1 && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Door Type:</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Door Type</label>
               <Select value={filters.doorType} onValueChange={(value) => setFilters(prev => ({ ...prev, doorType: value }))}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="All Door Types" />
@@ -283,17 +293,36 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
             </div>
           )}
 
-          {uniqueMountingTypes.length > 0 && (
+          {/* Mounting Type Filter */}
+          {uniqueMountingTypes.length > 1 && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Mounting:</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Mounting Type</label>
               <Select value={filters.mountingType} onValueChange={(value) => setFilters(prev => ({ ...prev, mountingType: value }))}>
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="All Mounting" />
+                  <SelectValue placeholder="All Mounting Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Mounting</SelectItem>
+                  <SelectItem value="">All Mounting Types</SelectItem>
                   {uniqueMountingTypes.map(mounting => (
                     <SelectItem key={mounting} value={mounting}>{mounting}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Handle Type Filter */}
+          {uniqueHandleTypes.length > 1 && (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Handle Type</label>
+              <Select value={filters.handleType} onValueChange={(value) => setFilters(prev => ({ ...prev, handleType: value }))}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="All Handle Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All Handle Types</SelectItem>
+                  {uniqueHandleTypes.map(handle => (
+                    <SelectItem key={handle} value={handle}>{handle}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

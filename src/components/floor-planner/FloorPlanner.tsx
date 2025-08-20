@@ -54,8 +54,8 @@ export const FloorPlanner = () => {
     setRooms([]);
   }, []);
 
-  // Define scale: 1mm = 0.1 pixels (adjust as needed for your canvas)
-  const scale = 0.1; // pixels per mm
+  // Room-aware scale: optimized for laboratory spaces
+  const scale = 0.15; // 0.15 pixels per mm (150 pixels per meter)
 
   return (
     <div className="h-screen flex">
