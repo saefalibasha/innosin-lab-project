@@ -104,52 +104,116 @@ const GoogleMapsLocation = () => {
         <div className="lg:col-span-7 animate-fade-in-left animate-delay-500">
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
-              <div className="relative h-[700px] bg-gradient-to-b from-blue-100 to-green-100 dark:from-blue-900 dark:to-green-900 rounded-lg overflow-hidden">
-                {/* Simple visual map representation */}
-                <div className="w-full h-full relative flex items-center justify-center">
-                  {/* Location marker */}
-                  <div className="relative">
-                    <div className="bg-red-500 w-8 h-8 rounded-full border-4 border-white shadow-lg animate-bounce"></div>
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-500"></div>
-                  </div>
-                  
-                  {/* Ripple effect around marker */}
-                  <div className="absolute w-16 h-16 bg-red-200 rounded-full animate-ping opacity-75"></div>
-                  <div className="absolute w-24 h-24 bg-red-100 rounded-full animate-ping opacity-50 animation-delay-300"></div>
-                </div>
+              <div className="relative h-[700px] bg-gradient-to-br from-blue-50 via-green-50 to-blue-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-900 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
                 
-                {/* Coordinates and view button */}
-                <div className="absolute top-4 right-4 space-y-2">
-                  <div className="bg-white/90 dark:bg-gray-900/90 p-2 rounded-lg text-xs backdrop-blur-sm">
-                    <div className="text-gray-600 dark:text-gray-300 font-mono">
-                      {parseFloat(selectedOffice.coordinates.lat).toFixed(4)}, {parseFloat(selectedOffice.coordinates.lng).toFixed(4)}
+                {/* Map Grid Background */}
+                <div className="absolute inset-0 opacity-20">
+                  <div className="w-full h-full" style={{
+                    backgroundImage: `
+                      linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
+                    `,
+                    backgroundSize: '50px 50px'
+                  }}></div>
+                </div>
+
+                {/* Office Location Visualization */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  {/* Location Area Circle */}
+                  <div className="relative">
+                    {/* Large area indicator */}
+                    <div className="absolute w-48 h-48 bg-red-100 dark:bg-red-900/20 rounded-full border-2 border-red-300 dark:border-red-700 opacity-30 animate-pulse" style={{transform: 'translate(-50%, -50%)', left: '50%', top: '50%'}}></div>
+                    
+                    {/* Medium area indicator */}
+                    <div className="absolute w-32 h-32 bg-red-200 dark:bg-red-800/30 rounded-full border-2 border-red-400 dark:border-red-600 opacity-50 animate-ping" style={{transform: 'translate(-50%, -50%)', left: '50%', top: '50%', animationDuration: '3s'}}></div>
+                    
+                    {/* Primary location marker */}
+                    <div className="relative flex items-center justify-center">
+                      <div className="w-16 h-16 bg-red-500 rounded-full border-4 border-white shadow-2xl flex items-center justify-center animate-bounce">
+                        <MapPin className="w-8 h-8 text-white" />
+                      </div>
+                      {/* Marker shadow */}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-12 border-transparent border-t-red-500 opacity-80"></div>
+                    </div>
+
+                    {/* Office Name Label */}
+                    <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg border-2 border-gray-200 dark:border-gray-600">
+                      <div className="text-center">
+                        <div className="font-bold text-sm text-gray-800 dark:text-gray-200">{selectedOffice.name}</div>
+                        <div className="text-xs text-gray-600 dark:text-gray-400">{selectedOffice.type}</div>
+                      </div>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}&zoom=15`, '_blank')}
-                    className="bg-white/90 text-gray-900 hover:bg-white text-xs px-2 py-1 h-auto"
-                  >
-                    View on Map
-                  </Button>
+                </div>
+
+                {/* Coordinates Display */}
+                <div className="absolute top-4 right-4 space-y-2">
+                  <div className="bg-white/95 dark:bg-gray-800/95 p-3 rounded-lg shadow-lg backdrop-blur-sm border border-gray-200 dark:border-gray-600">
+                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Coordinates</div>
+                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                      Lat: {parseFloat(selectedOffice.coordinates.lat).toFixed(6)}
+                    </div>
+                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
+                      Lng: {parseFloat(selectedOffice.coordinates.lng).toFixed(6)}
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="space-y-2">
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(`https://www.google.com/maps/?q=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`, '_blank')}
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 h-auto"
+                    >
+                      <Navigation className="w-3 h-3 mr-1" />
+                      Google Maps
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}&zoom=15`, '_blank')}
+                      className="w-full bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 h-auto"
+                    >
+                      <MapPin className="w-3 h-3 mr-1" />
+                      OpenStreetMap
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Distance Indicators */}
+                <div className="absolute bottom-20 left-4 right-4">
+                  <div className="flex justify-between items-end">
+                    <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg text-xs backdrop-blur-sm">
+                      <div className="font-semibold text-gray-700 dark:text-gray-300">Office Area</div>
+                      <div className="text-gray-600 dark:text-gray-400">Commercial District</div>
+                    </div>
+                    <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg text-xs backdrop-blur-sm">
+                      <div className="font-semibold text-gray-700 dark:text-gray-300">Accessibility</div>
+                      <div className="text-gray-600 dark:text-gray-400">Easy parking available</div>
+                    </div>
+                  </div>
                 </div>
                 
-                {/* Overlay with company info */}
-                <div className="absolute bottom-4 left-4 glass-card p-3 rounded-lg shadow-lg max-w-xs animate-slide-up">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="w-6 h-6 bg-sea rounded-sm flex items-center justify-center">
-                      <span className="text-white font-bold text-xs">IL</span>
+                {/* Company Info Overlay */}
+                <div className="absolute bottom-4 left-4 glass-card p-4 rounded-lg shadow-xl max-w-sm animate-slide-up border border-white/20">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-8 h-8 bg-sea rounded-sm flex items-center justify-center">
+                      <span className="text-white font-bold text-sm">IL</span>
                     </div>
                     <div>
                       <h4 className="font-semibold text-sm">Innosin Lab Pte. Ltd.</h4>
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs mt-1">
                         {selectedOffice.type}
                       </Badge>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Professional laboratory equipment and furniture solutions
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Professional laboratory equipment and furniture solutions for modern research facilities.
                   </p>
+                  <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      📍 Currently viewing: <span className="font-semibold">{selectedOffice.name}</span>
+                    </p>
+                  </div>
                 </div>
               </div>
             </CardContent>
