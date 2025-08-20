@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { MessageCircle, User, Bot, Calendar, Mail, Building, Phone, Download, ExternalLink, Ticket, Trash2 } from 'lucide-react';
 
 interface ChatHistorySession {
+  id: string;
   session_id: string;
   name: string | null;
   email: string | null;
@@ -36,6 +37,7 @@ const ChatHistory = () => {
       const { data, error } = await supabase
         .from('chat_sessions')
         .select(`
+          id,
           session_id,
           name,
           email,
@@ -50,13 +52,13 @@ const ChatHistory = () => {
 
       if (error) throw error;
 
-      // Get message count for each session
+      // Get message count for each session using the UUID id
       const sessionsWithCounts = await Promise.all(
         (data || []).map(async (session) => {
           const { count } = await supabase
             .from('chat_messages')
             .select('*', { count: 'exact', head: true })
-            .eq('session_id', session.session_id);
+            .eq('session_id', session.id);
 
           return {
             ...session,
@@ -90,13 +92,13 @@ const ChatHistory = () => {
     }
   };
 
-  const handleSessionClick = (sessionId: string) => {
-    if (selectedSession === sessionId) {
+  const handleSessionClick = (session: ChatHistorySession) => {
+    if (selectedSession === session.id) {
       setSelectedSession(null);
       setMessages([]);
     } else {
-      setSelectedSession(sessionId);
-      fetchMessages(sessionId);
+      setSelectedSession(session.id);
+      fetchMessages(session.id);
     }
   };
 
@@ -125,7 +127,7 @@ const ChatHistory = () => {
     URL.revokeObjectURL(url);
   };
 
-  const deleteSession = async (sessionId: string) => {
+  const deleteSession = async (session: ChatHistorySession) => {
     if (!confirm('Are you sure you want to delete this chat session? This action cannot be undone.')) {
       return;
     }
@@ -135,23 +137,23 @@ const ChatHistory = () => {
       const { error: messagesError } = await supabase
         .from('chat_messages')
         .delete()
-        .eq('session_id', sessionId);
+        .eq('session_id', session.id);
 
       if (messagesError) throw messagesError;
 
-      // Delete the session
+      // Delete the session using the UUID id
       const { error: sessionError } = await supabase
         .from('chat_sessions')
         .delete()
-        .eq('session_id', sessionId);
+        .eq('id', session.id);
 
       if (sessionError) throw sessionError;
 
       // Update local state
-      setSessions(prev => prev.filter(s => s.session_id !== sessionId));
+      setSessions(prev => prev.filter(s => s.id !== session.id));
       
       // Clear selected session if it was deleted
-      if (selectedSession === sessionId) {
+      if (selectedSession === session.id) {
         setSelectedSession(null);
         setMessages([]);
       }
@@ -192,11 +194,11 @@ const ChatHistory = () => {
           
           {filteredSessions.map((session) => (
             <Card 
-              key={session.session_id} 
+              key={session.id} 
               className={`cursor-pointer transition-all duration-200 hover:shadow-md ${
-                selectedSession === session.session_id ? 'ring-2 ring-sea border-sea' : ''
+                selectedSession === session.id ? 'ring-2 ring-sea border-sea' : ''
               }`}
-              onClick={() => handleSessionClick(session.session_id)}
+              onClick={() => handleSessionClick(session)}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
@@ -280,7 +282,7 @@ const ChatHistory = () => {
                       className="h-6 px-2 text-xs text-red-600 hover:bg-red-50 hover:text-red-700"
                       onClick={(e) => {
                         e.stopPropagation();
-                        deleteSession(session.session_id);
+                        deleteSession(session);
                       }}
                     >
                       <Trash2 className="w-3 h-3" />
