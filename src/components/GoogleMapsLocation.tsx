@@ -104,47 +104,19 @@ const GoogleMapsLocation = () => {
         <div className="lg:col-span-7 animate-fade-in-left animate-delay-500">
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
-              <div className="relative h-[700px] bg-gradient-to-br from-blue-50 via-green-50 to-blue-100 dark:from-gray-800 dark:via-gray-700 dark:to-gray-900 rounded-lg overflow-hidden border-2 border-gray-200 dark:border-gray-600">
+              <div className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
                 
-                {/* Map Grid Background */}
-                <div className="absolute inset-0 opacity-20">
-                  <div className="w-full h-full" style={{
-                    backgroundImage: `
-                      linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px),
-                      linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)
-                    `,
-                    backgroundSize: '50px 50px'
-                  }}></div>
-                </div>
-
-                {/* Office Location Visualization */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  {/* Location Area Circle */}
-                  <div className="relative">
-                    {/* Large area indicator */}
-                    <div className="absolute w-48 h-48 bg-red-100 dark:bg-red-900/20 rounded-full border-2 border-red-300 dark:border-red-700 opacity-30 animate-pulse" style={{transform: 'translate(-50%, -50%)', left: '50%', top: '50%'}}></div>
-                    
-                    {/* Medium area indicator */}
-                    <div className="absolute w-32 h-32 bg-red-200 dark:bg-red-800/30 rounded-full border-2 border-red-400 dark:border-red-600 opacity-50 animate-ping" style={{transform: 'translate(-50%, -50%)', left: '50%', top: '50%', animationDuration: '3s'}}></div>
-                    
-                    {/* Primary location marker */}
-                    <div className="relative flex items-center justify-center">
-                      <div className="w-16 h-16 bg-red-500 rounded-full border-4 border-white shadow-2xl flex items-center justify-center animate-bounce">
-                        <MapPin className="w-8 h-8 text-white" />
-                      </div>
-                      {/* Marker shadow */}
-                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-8 border-r-8 border-t-12 border-transparent border-t-red-500 opacity-80"></div>
-                    </div>
-
-                    {/* Office Name Label */}
-                    <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 bg-white dark:bg-gray-800 px-4 py-2 rounded-full shadow-lg border-2 border-gray-200 dark:border-gray-600">
-                      <div className="text-center">
-                        <div className="font-bold text-sm text-gray-800 dark:text-gray-200">{selectedOffice.name}</div>
-                        <div className="text-xs text-gray-600 dark:text-gray-400">{selectedOffice.type}</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Embedded OpenStreetMap */}
+                <iframe
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.01},${parseFloat(selectedOffice.coordinates.lat) - 0.01},${parseFloat(selectedOffice.coordinates.lng) + 0.01},${parseFloat(selectedOffice.coordinates.lat) + 0.01}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  title={`${selectedOffice.name} Location Map`}
+                  className="w-full h-full"
+                />
 
                 {/* Coordinates Display */}
                 <div className="absolute top-4 right-4 space-y-2">
@@ -174,22 +146,8 @@ const GoogleMapsLocation = () => {
                       className="w-full bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 h-auto"
                     >
                       <MapPin className="w-3 h-3 mr-1" />
-                      OpenStreetMap
+                      Full Map
                     </Button>
-                  </div>
-                </div>
-
-                {/* Distance Indicators */}
-                <div className="absolute bottom-20 left-4 right-4">
-                  <div className="flex justify-between items-end">
-                    <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg text-xs backdrop-blur-sm">
-                      <div className="font-semibold text-gray-700 dark:text-gray-300">Office Area</div>
-                      <div className="text-gray-600 dark:text-gray-400">Commercial District</div>
-                    </div>
-                    <div className="bg-white/90 dark:bg-gray-800/90 p-2 rounded-lg text-xs backdrop-blur-sm">
-                      <div className="font-semibold text-gray-700 dark:text-gray-300">Accessibility</div>
-                      <div className="text-gray-600 dark:text-gray-400">Easy parking available</div>
-                    </div>
                   </div>
                 </div>
                 
