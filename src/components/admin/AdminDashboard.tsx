@@ -7,10 +7,12 @@ import {
   Settings, 
   BarChart3, 
   Package,
-  FileText
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { ProductSeriesManager } from './product-series/ProductSeriesManager';
 import ContentManagement from './ContentManagement';
+import ChatHistory from '@/components/ChatHistory';
 import { DataSeeder } from './DataSeeder';
 import { DashboardStats } from './DashboardStats';
 
@@ -33,7 +35,7 @@ export const AdminDashboard = () => {
       <DataSeeder />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <BarChart3 className="w-4 h-4" />
             Overview
@@ -45,6 +47,10 @@ export const AdminDashboard = () => {
           <TabsTrigger value="content" className="flex items-center gap-2">
             <FileText className="w-4 h-4" />
             Content Management
+          </TabsTrigger>
+          <TabsTrigger value="chat" className="flex items-center gap-2">
+            <MessageSquare className="w-4 h-4" />
+            Chat History
           </TabsTrigger>
         </TabsList>
 
@@ -91,6 +97,10 @@ export const AdminDashboard = () => {
 
         <TabsContent value="content">
           <ContentManagement />
+        </TabsContent>
+
+        <TabsContent value="chat">
+          <ChatHistory />
         </TabsContent>
       </Tabs>
     </div>

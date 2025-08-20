@@ -45,7 +45,7 @@ const EnhancedLiveChat = () => {
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const { createContact, syncConversation, loading } = useHubSpotIntegration();
+  const { createContact, createTicket, syncConversation, loading } = useHubSpotIntegration();
 
   const quickResponses = [
     'Product catalog & specifications',
@@ -425,7 +425,6 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
       toast.error('Failed to save contact information. Please try again.');
     }
   };
-
   const handleQuickResponse = (response: string) => {
     setMessage(response);
   };
