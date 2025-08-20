@@ -64,7 +64,7 @@ export const Footer = () => {
     <footer ref={footerRef} className="bg-sea text-white relative overflow-hidden">
       <div className="relative z-10">
         {/* Main Content */}
-        <div className={`container mx-auto px-6 pt-20 pb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className={`container mx-auto px-6 pt-12 pb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
             
             {/* Company Description & Contact */}
@@ -135,6 +135,16 @@ export const Footer = () => {
                     className="text-lg text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
+                    <span>Facebook</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+                <div>
+                  <a 
+                    href="#" 
+                    className="text-lg text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    style={{ fontFamily: 'Outfit, sans-serif' }}
+                  >
                     <span>Instagram</span>
                     <ExternalLink className="w-4 h-4" />
                   </a>
@@ -183,28 +193,28 @@ export const Footer = () => {
       {/* Large Stacked Background Text at Very Bottom */}
       <div className="relative w-full overflow-hidden bg-sea">
         <div className="relative h-24 lg:h-32">
-          {/* Multiple layers for depth effect */}
+          {/* Multiple layers for depth effect - with proper spacing to avoid overlap */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/20 select-none leading-none tracking-tighter text-center"
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/20 select-none leading-none tracking-tight text-center"
             style={{ fontFamily: 'Outfit, sans-serif' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/15 select-none leading-none tracking-tighter text-center"
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/15 select-none leading-none tracking-tight text-center"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(0.5px, 0.5px)' }}
+          >
+            INNOSINLAB
+          </div>
+          <div 
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/10 select-none leading-none tracking-tight text-center"
             style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(1px, 1px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/10 select-none leading-none tracking-tighter text-center"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
-          >
-            INNOSINLAB
-          </div>
-          <div 
-            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/5 select-none leading-none tracking-tighter text-center"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[15vw] font-black text-white/5 select-none leading-none tracking-tight text-center"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(1.5px, 1.5px)' }}
           >
             INNOSINLAB
           </div>
