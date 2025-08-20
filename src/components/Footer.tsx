@@ -50,25 +50,16 @@ export const Footer = () => {
 
   const navigationLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Work', href: '/products' },
-    { name: 'About', href: '/about' },
-    { name: 'Careers', href: '/careers' },
-    { name: 'Systems', href: '/solutions' },
+    { name: 'Products', href: '/products' },
+    { name: 'Solutions', href: '/solutions' },
+    { name: 'Floor Planner', href: '/floorplanner' },
+    { name: 'Blog', href: '/blog' },
+    { name: 'About Us', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
 
   return (
     <footer ref={footerRef} className="bg-sea text-white relative overflow-hidden">
-      {/* Large Background Text */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div 
-          className="text-[18vw] lg:text-[12vw] font-black text-white/5 select-none leading-none tracking-tighter"
-          style={{ fontFamily: 'Outfit, sans-serif' }}
-        >
-          INNOSINLAB
-        </div>
-      </div>
-
       <div className="relative z-10">
         {/* Main Content */}
         <div className={`container mx-auto px-6 pt-20 pb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
@@ -76,7 +67,7 @@ export const Footer = () => {
             
             {/* Company Description & Contact */}
             <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <p 
+              <p
                 className="text-white text-lg leading-relaxed mb-8 max-w-md"
                 style={{ fontFamily: 'Outfit, sans-serif' }}
               >
@@ -93,8 +84,8 @@ export const Footer = () => {
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-4 h-4 text-white/70 mt-0.5" />
                   <div className="text-sm text-white/90">
-                    <div>Innovation Drive, Research Hub</div>
-                    <div>Singapore 138987</div>
+                    <div>Industrial Complex, Tech Park</div>
+                    <div>Johor Bahru, Malaysia 81100</div>
                   </div>
                 </div>
               </div>
@@ -163,7 +154,7 @@ export const Footer = () => {
                 </div>
                 <div>
                   <button className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2">
-                    LEGAL NOTICE
+                    SINGAPORE REGISTERED COMPANY
                   </button>
                 </div>
               </div>
@@ -178,9 +169,35 @@ export const Footer = () => {
                 </div>
               </div>
 
-              {/* Right - Tagline */}
+              {/* Right - Company Slogan */}
               <div className="text-sm text-white/60 text-right max-w-xs">
-                We acknowledge and pay our respects to the Traditional Owners of the lands where we work
+                Innovation in Laboratory Solutions
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Large Stacked Background Text at Bottom */}
+        <div className="relative h-32 lg:h-40 overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 flex items-end justify-center pointer-events-none">
+            <div className="relative">
+              <div 
+                className="text-[18vw] lg:text-[12vw] font-black text-white/15 select-none leading-none tracking-tighter"
+                style={{ fontFamily: 'Outfit, sans-serif' }}
+              >
+                INNOSINLAB
+              </div>
+              <div 
+                className="absolute inset-0 text-[18vw] lg:text-[12vw] font-black text-white/10 select-none leading-none tracking-tighter"
+                style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
+              >
+                INNOSINLAB
+              </div>
+              <div 
+                className="absolute inset-0 text-[18vw] lg:text-[12vw] font-black text-white/5 select-none leading-none tracking-tighter"
+                style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(4px, 4px)' }}
+              >
+                INNOSINLAB
               </div>
             </div>
           </div>
