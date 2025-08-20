@@ -1,19 +1,8 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Phone, Navigation, Mail } from 'lucide-react';
-
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
 
 const GoogleMapsLocation = () => {
   const offices = [
@@ -114,26 +103,36 @@ const GoogleMapsLocation = () => {
         <div className="lg:col-span-7 animate-fade-in-left animate-delay-500">
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
-              <div className="relative h-[700px]">
-                <MapContainer
-                  center={[parseFloat(selectedOffice.coordinates.lat), parseFloat(selectedOffice.coordinates.lng)] as [number, number]}
-                  zoom={15}
-                  style={{ height: '100%', width: '100%' }}
-                  key={selectedOffice.id}
-                >
-                  <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                  />
-                  <Marker position={[parseFloat(selectedOffice.coordinates.lat), parseFloat(selectedOffice.coordinates.lng)]}>
-                    <Popup>
-                      <div className="text-center">
-                        <strong>{selectedOffice.name}</strong><br />
-                        <span className="text-sm">{selectedOffice.address}</span>
-                      </div>
-                    </Popup>
-                  </Marker>
-                </MapContainer>
+              <div className="relative h-[700px] bg-gradient-to-b from-blue-100 to-green-100 dark:from-blue-900 dark:to-green-900 rounded-lg overflow-hidden">
+                {/* Simple visual map representation */}
+                <div className="w-full h-full relative flex items-center justify-center">
+                  {/* Location marker */}
+                  <div className="relative">
+                    <div className="bg-red-500 w-8 h-8 rounded-full border-4 border-white shadow-lg animate-bounce"></div>
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-red-500"></div>
+                  </div>
+                  
+                  {/* Ripple effect around marker */}
+                  <div className="absolute w-16 h-16 bg-red-200 rounded-full animate-ping opacity-75"></div>
+                  <div className="absolute w-24 h-24 bg-red-100 rounded-full animate-ping opacity-50 animation-delay-300"></div>
+                </div>
+                
+                {/* Coordinates and view button */}
+                <div className="absolute top-4 right-4 space-y-2">
+                  <div className="bg-white/90 dark:bg-gray-900/90 p-2 rounded-lg text-xs backdrop-blur-sm">
+                    <div className="text-gray-600 dark:text-gray-300 font-mono">
+                      {parseFloat(selectedOffice.coordinates.lat).toFixed(4)}, {parseFloat(selectedOffice.coordinates.lng).toFixed(4)}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}&zoom=15`, '_blank')}
+                    className="bg-white/90 text-gray-900 hover:bg-white text-xs px-2 py-1 h-auto"
+                  >
+                    View on Map
+                  </Button>
+                </div>
+                
                 {/* Overlay with company info */}
                 <div className="absolute bottom-4 left-4 glass-card p-3 rounded-lg shadow-lg max-w-xs animate-slide-up">
                   <div className="flex items-center space-x-2 mb-2">
@@ -221,4 +220,3 @@ const GoogleMapsLocation = () => {
 };
 
 export default GoogleMapsLocation;
-
