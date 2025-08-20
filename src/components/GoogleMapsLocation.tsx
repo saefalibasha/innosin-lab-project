@@ -1,8 +1,19 @@
 import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Phone, Navigation, Mail } from 'lucide-react';
+
+// Fix for default markers in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
 
 const GoogleMapsLocation = () => {
   const offices = [
@@ -30,12 +41,6 @@ const GoogleMapsLocation = () => {
   ];
 
   const [selectedOffice, setSelectedOffice] = useState(offices[1]); // Default to HQ
-
-  const getMapEmbedUrl = (office: typeof offices[0]) => {
-    // Use a more reliable Google Maps embed URL format
-    const address = encodeURIComponent(office.address);
-    return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBNLrJhOMz6idD0Kz6EyiKwF9dUo2-LPO4&q=${address}&zoom=15&maptype=roadmap`;
-  };
 
   const getDirectionsUrl = (address: string) => {
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -110,16 +115,25 @@ const GoogleMapsLocation = () => {
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
               <div className="relative h-[700px]">
-                <iframe
-                  src={getMapEmbedUrl(selectedOffice)}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title={`${selectedOffice.name} Location`}
-                />
+                <MapContainer
+                  center={[parseFloat(selectedOffice.coordinates.lat), parseFloat(selectedOffice.coordinates.lng)] as [number, number]}
+                  zoom={15}
+                  style={{ height: '100%', width: '100%' }}
+                  key={selectedOffice.id}
+                >
+                  <TileLayer
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  />
+                  <Marker position={[parseFloat(selectedOffice.coordinates.lat), parseFloat(selectedOffice.coordinates.lng)]}>
+                    <Popup>
+                      <div className="text-center">
+                        <strong>{selectedOffice.name}</strong><br />
+                        <span className="text-sm">{selectedOffice.address}</span>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
                 {/* Overlay with company info */}
                 <div className="absolute bottom-4 left-4 glass-card p-3 rounded-lg shadow-lg max-w-xs animate-slide-up">
                   <div className="flex items-center space-x-2 mb-2">
