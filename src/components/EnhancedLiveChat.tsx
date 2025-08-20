@@ -488,7 +488,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
         </CardHeader>
         
         {!isMinimized && (
-          <CardContent className="p-0 flex flex-col h-[536px]">
+          <CardContent className="p-0 flex flex-col h-[600px]">
             {/* Contact Form Modal */}
             {showContactForm && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
@@ -594,15 +594,15 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Responses */}
-            <div className="p-3 border-t border-sea/20 bg-white/50 backdrop-blur-sm">
-              <div className="flex flex-wrap gap-1 mb-3">
-                {quickResponses.map(response => (
+            {/* Quick Responses - Compact */}
+            <div className="p-2 border-t border-sea/20 bg-white/50 backdrop-blur-sm">
+              <div className="flex flex-wrap gap-1 mb-2">
+                {quickResponses.slice(0, 3).map(response => (
                   <Button
                     key={response}
                     variant="outline"
                     size="sm"
-                    className="text-xs h-7 border-sea/30 text-sea hover:bg-sea hover:text-white transition-all duration-300"
+                    className="text-xs h-6 px-2 border-sea/30 text-sea hover:bg-sea hover:text-white transition-all duration-300"
                     onClick={() => handleQuickResponse(response)}
                   >
                     {response}
