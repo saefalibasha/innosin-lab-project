@@ -112,7 +112,7 @@ const GoogleMapsLocation = () => {
                 {/* Embedded OpenStreetMap with precise location - Force refresh with key */}
                 <iframe
                   key={selectedOffice.id}
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.008},${parseFloat(selectedOffice.coordinates.lat) - 0.008},${parseFloat(selectedOffice.coordinates.lng) + 0.008},${parseFloat(selectedOffice.coordinates.lat) + 0.008}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.005},${parseFloat(selectedOffice.coordinates.lat) - 0.005},${parseFloat(selectedOffice.coordinates.lng) + 0.005},${parseFloat(selectedOffice.coordinates.lat) + 0.005}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -121,26 +121,6 @@ const GoogleMapsLocation = () => {
                   title={`${selectedOffice.name} Location Map`}
                   className="w-full h-full"
                 />
-
-                {/* Action Buttons - Top Right */}
-                <div className="absolute top-4 right-4 space-y-2">
-                  <Button
-                    size="sm"
-                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`, '_blank')}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 h-auto shadow-lg"
-                  >
-                    <Navigation className="w-3 h-3 mr-1" />
-                    Google Maps
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}&zoom=17`, '_blank')}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 h-auto shadow-lg"
-                  >
-                    <MapPin className="w-3 h-3 mr-1" />
-                    Full Map
-                  </Button>
-                </div>
                 
                 {/* Company Info Overlay */}
                 <div className="absolute bottom-4 left-4 glass-card p-4 rounded-lg shadow-xl max-w-sm animate-slide-up border border-white/20">
