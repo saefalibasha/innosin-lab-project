@@ -23,7 +23,7 @@ const Contact = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createContact } = useHubSpotIntegration();
+  const { createContact, createTicket } = useHubSpotIntegration();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -62,7 +62,7 @@ const Contact = () => {
         throw supabaseError;
       }
 
-      // Create HubSpot contact
+      // Create HubSpot contact and ticket
       await createContact({
         sessionId,
         name: formData.name,
@@ -71,6 +71,17 @@ const Contact = () => {
         jobTitle: formData.jobTitle,
         subject: formData.subject,
         content: formData.message
+      });
+
+      // Create support ticket for the contact form submission
+      await createTicket({
+        sessionId,
+        name: formData.name,
+        email: formData.email,
+        company: formData.company,
+        jobTitle: formData.jobTitle,
+        subject: `Contact Form: ${formData.subject}`,
+        content: `Contact form submission from ${formData.name} (${formData.company}):\n\n${formData.message}`
       });
 
       toast.success(contactPageContent.form.successMessage);
