@@ -11,7 +11,7 @@ const GoogleMapsLocation = () => {
       id: 'singapore',
       name: 'SINGAPORE',
       address: '510 Bedok North Street 3, Singapore 460510',
-      coordinates: { lat: '1.3321740824098278', lng: '103.930623716398' },
+      coordinates: { lat: '1.3321740824098278', lng: '103.9306237163980' },
       type: 'Branch Office',
       company: 'Innosin Lab Pte. Ltd.'
     },
