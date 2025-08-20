@@ -12,21 +12,24 @@ const GoogleMapsLocation = () => {
       name: 'SINGAPORE',
       address: '510 Bedok North Street 3, Singapore 460510',
       coordinates: { lat: '1.3321740824098278', lng: '103.930623716398' },
-      type: 'Branch Office'
+      type: 'Branch Office',
+      company: 'Innosin Lab Pte. Ltd.'
     },
     {
       id: 'johor',
       name: 'JOHOR BAHRU',
       address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia.',
       coordinates: { lat: '1.5720704381300796', lng: '103.82033832084565' },
-      type: 'Headquarters'
+      type: 'Headquarters',
+      company: 'Innosin Technologies Sdn Bhd'
     },
     {
       id: 'kl',
       name: 'KUALA LUMPUR',
       address: 'B-05-16, kompleks Perindustrian EMHUB, Persiaran Surian, Seksyen 3, Taman Sains Selangor, Petaling Jaya, Malaysia, 47810, Selangor',
       coordinates: { lat: '3.1590964699560318', lng: '101.57309386963026' },
-      type: 'Branch Office'
+      type: 'Branch Office',
+      company: 'Innosin Technologies Sdn Bhd'
     }
   ];
 
@@ -106,9 +109,9 @@ const GoogleMapsLocation = () => {
             <CardContent className="p-0">
               <div className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
                 
-                {/* Embedded OpenStreetMap */}
+                {/* Embedded OpenStreetMap with precise location */}
                 <iframe
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.01},${parseFloat(selectedOffice.coordinates.lat) - 0.01},${parseFloat(selectedOffice.coordinates.lng) + 0.01},${parseFloat(selectedOffice.coordinates.lat) + 0.01}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.008},${parseFloat(selectedOffice.coordinates.lat) - 0.008},${parseFloat(selectedOffice.coordinates.lng) + 0.008},${parseFloat(selectedOffice.coordinates.lat) + 0.008}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -118,47 +121,36 @@ const GoogleMapsLocation = () => {
                   className="w-full h-full"
                 />
 
-                {/* Coordinates Display */}
+                {/* Action Buttons - Top Right */}
                 <div className="absolute top-4 right-4 space-y-2">
-                  <div className="bg-white/95 dark:bg-gray-800/95 p-3 rounded-lg shadow-lg backdrop-blur-sm border border-gray-200 dark:border-gray-600">
-                    <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Coordinates</div>
-                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                      Lat: {parseFloat(selectedOffice.coordinates.lat).toFixed(6)}
-                    </div>
-                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400">
-                      Lng: {parseFloat(selectedOffice.coordinates.lng).toFixed(6)}
-                    </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="space-y-2">
-                    <Button
-                      size="sm"
-                      onClick={() => window.open(`https://www.google.com/maps/?q=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`, '_blank')}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 h-auto"
-                    >
-                      <Navigation className="w-3 h-3 mr-1" />
-                      Google Maps
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}&zoom=15`, '_blank')}
-                      className="w-full bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 h-auto"
-                    >
-                      <MapPin className="w-3 h-3 mr-1" />
-                      Full Map
-                    </Button>
-                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`https://www.google.com/maps/place/${encodeURIComponent(selectedOffice.address)}/@${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng},17z`, '_blank')}
+                    className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 h-auto shadow-lg"
+                  >
+                    <Navigation className="w-3 h-3 mr-1" />
+                    Google Maps
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => window.open(`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}&zoom=17`, '_blank')}
+                    className="w-full bg-green-500 hover:bg-green-600 text-white text-xs px-3 py-2 h-auto shadow-lg"
+                  >
+                    <MapPin className="w-3 h-3 mr-1" />
+                    Full Map
+                  </Button>
                 </div>
                 
                 {/* Company Info Overlay */}
                 <div className="absolute bottom-4 left-4 glass-card p-4 rounded-lg shadow-xl max-w-sm animate-slide-up border border-white/20">
                   <div className="flex items-center space-x-3 mb-3">
                     <div className="w-8 h-8 bg-sea rounded-sm flex items-center justify-center">
-                      <span className="text-white font-bold text-sm">IL</span>
+                      <span className="text-white font-bold text-sm">
+                        {selectedOffice.company.includes('Lab') ? 'IL' : 'IT'}
+                      </span>
                     </div>
                     <div>
-                      <h4 className="font-semibold text-sm">Innosin Lab Pte. Ltd.</h4>
+                      <h4 className="font-semibold text-sm">{selectedOffice.company}</h4>
                       <Badge variant="secondary" className="text-xs mt-1">
                         {selectedOffice.type}
                       </Badge>
