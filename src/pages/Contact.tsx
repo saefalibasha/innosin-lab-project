@@ -128,10 +128,10 @@ const Contact = () => {
         </AnimatedSection>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 lg:items-end">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 lg:items-start">{/* Changed from lg:items-end to lg:items-start for equal height alignment */}
         {/* Contact Form */}
         <AnimatedSection animation="fade-in-left" delay={300}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300 h-fit">{/* Added h-fit to ensure proper height alignment */}
             <CardHeader>
               <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.form.title}</CardTitle>
             </CardHeader>
@@ -250,7 +250,7 @@ const Contact = () => {
 
         {/* Enhanced Get in Touch Info */}
         <AnimatedSection animation="fade-in-right" delay={400}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20">
+          <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20 h-fit">{/* Added h-fit to ensure proper height alignment */}
             <CardHeader className="bg-gradient-to-r from-sea/10 to-sea/20 rounded-t-lg">
               <CardTitle className="text-2xl font-serif text-primary flex items-center space-x-2">
                 <MessageCircle className="w-6 h-6 text-sea" />

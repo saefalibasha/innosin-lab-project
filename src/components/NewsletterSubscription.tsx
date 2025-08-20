@@ -89,10 +89,10 @@ const NewsletterSubscription = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+    <Card className="bg-gradient-to-r from-sea/10 to-sea/20 border-sea/30">
       <CardContent className="p-8">
         <div className="text-center mb-6">
-          <Mail className="w-12 h-12 mx-auto text-blue-600 mb-4" />
+          <Mail className="w-12 h-12 mx-auto text-sea mb-4" />
           <h3 className="text-2xl font-bold text-gray-900 mb-2">
             Stay Updated with Lab Innovations
           </h3>
@@ -127,7 +127,7 @@ const NewsletterSubscription = () => {
           
           <Button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
+            className="w-full bg-sea hover:bg-sea-dark"
             disabled={isLoading}
           >
             {isLoading ? 'Subscribing...' : 'Subscribe to Newsletter'}
@@ -141,15 +141,15 @@ const NewsletterSubscription = () => {
 
         <div className="mt-6 grid grid-cols-3 gap-4 text-center text-sm text-gray-600">
           <div>
-            <div className="font-semibold text-blue-600">Monthly Updates</div>
+            <div className="font-semibold text-sea">Monthly Updates</div>
             <div>Industry insights</div>
           </div>
           <div>
-            <div className="font-semibold text-blue-600">New Products</div>
+            <div className="font-semibold text-sea">New Products</div>
             <div>Latest equipment</div>
           </div>
           <div>
-            <div className="font-semibold text-blue-600">Case Studies</div>
+            <div className="font-semibold text-sea">Case Studies</div>
             <div>Project highlights</div>
           </div>
         </div>
