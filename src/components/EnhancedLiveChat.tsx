@@ -488,7 +488,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
         </CardHeader>
         
         {!isMinimized && (
-          <CardContent className="p-0 flex flex-col h-[600px]">
+          <CardContent className="p-0 flex flex-col h-[580px]">
             {/* Contact Form Modal */}
             {showContactForm && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
