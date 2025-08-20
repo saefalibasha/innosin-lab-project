@@ -219,8 +219,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
             </div>
           )}
 
-          {/* Drawer Count Filter - Enhanced for Mobile Cabinets */}
-          {uniqueDrawerCounts.length > 0 && (
+          {/* Drawer Count Filter - Always show for mobile cabinets */}
+          {(uniqueDrawerCounts.length > 0 || products.some(p => p.category?.toLowerCase().includes('mobile'))) && (
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Number of Drawers</label>
               <Select value={filters.numberOfDrawers} onValueChange={(value) => setFilters(prev => ({ ...prev, numberOfDrawers: value }))}>
@@ -229,11 +229,21 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">All Drawer Counts</SelectItem>
-                  {uniqueDrawerCounts.map(count => (
+                  {uniqueDrawerCounts.length > 0 ? uniqueDrawerCounts.map(count => (
                     <SelectItem key={count} value={count}>
                       {count === '0' ? 'No Drawers' : `${count} Drawer${Number(count) > 1 ? 's' : ''}`}
                     </SelectItem>
-                  ))}
+                  )) : (
+                    <>
+                      <SelectItem value="0">No Drawers</SelectItem>
+                      <SelectItem value="1">1 Drawer</SelectItem>
+                      <SelectItem value="2">2 Drawers</SelectItem>
+                      <SelectItem value="3">3 Drawers</SelectItem>
+                      <SelectItem value="4">4 Drawers</SelectItem>
+                      <SelectItem value="6">6 Drawers</SelectItem>
+                      <SelectItem value="8">8 Drawers</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -346,8 +356,13 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                       {displayTag}
                     </Badge>
                   </div>
-                  <CardTitle className="text-sm leading-tight">
-                    {product.editable_title || product.name}
+                  <CardTitle className="text-sm leading-tight break-words">
+                    <div className="truncate" title={product.editable_title || product.name}>
+                      {(product.editable_title || product.name)?.length > 40 
+                        ? `${(product.editable_title || product.name).substring(0, 40)}...`
+                        : (product.editable_title || product.name)
+                      }
+                    </div>
                   </CardTitle>
                 </CardHeader>
                 
