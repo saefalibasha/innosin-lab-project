@@ -45,3 +45,7 @@ port = 54329
 [[edge_runtime.functions]]
 name = "hubspot-integration"
 verify_jwt = false
+
+[[edge_runtime.functions]]
+name = "ai-chat"
+verify_jwt = false

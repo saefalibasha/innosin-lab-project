@@ -243,26 +243,60 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
   };
 
   const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
-    await new Promise(resolve => setTimeout(resolve, 1500)); // Slightly longer delay for more natural feel
-    
-    const { response: responseText, confidence } = findBestResponse(userMessage);
-    
-    // Check if user is asking for quote or sales related info and no contact info exists
-    const lowerMessage = userMessage.toLowerCase();
-    let finalResponse = responseText;
-    
-    if ((lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('purchase')) && !session?.hubspotContactId) {
-      finalResponse += '\n\nTo provide you with accurate pricing and personalized service, I\'d like to collect your contact information. Would you like to share your details so our team can assist you better?';
-      setTimeout(() => setShowContactForm(true), 2000);
+    try {
+      // First try the OpenAI-powered chat
+      console.log('Calling AI chat function with message:', userMessage);
+      
+      const { data, error } = await supabase.functions.invoke('ai-chat', {
+        body: {
+          message: userMessage,
+          sessionId: session?.sessionId,
+          chatHistory: messages.slice(-10) // Send last 10 messages for context
+        }
+      });
+
+      if (error) {
+        console.error('AI chat function error:', error);
+        throw new Error(error.message);
+      }
+
+      if (data?.success && data?.message) {
+        console.log('AI response received:', data.message);
+        return {
+          id: `bot_${Date.now()}`,
+          message: data.message,
+          sender: 'bot',
+          timestamp: new Date(),
+          confidence: data.confidence || 0.9
+        };
+      } else {
+        throw new Error('Invalid response from AI chat function');
+      }
+    } catch (error) {
+      console.error('AI chat error, falling back to rule-based:', error);
+      
+      // Fallback to rule-based responses if OpenAI fails
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const { response: responseText, confidence } = findBestResponse(userMessage);
+      
+      // Check if user is asking for quote or sales related info and no contact info exists
+      const lowerMessage = userMessage.toLowerCase();
+      let finalResponse = responseText;
+      
+      if ((lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('purchase')) && !session?.hubspotContactId) {
+        finalResponse += '\n\nTo provide you with accurate pricing and personalized service, I\'d like to collect your contact information. Would you like to share your details so our team can assist you better?';
+        setTimeout(() => setShowContactForm(true), 2000);
+      }
+      
+      return {
+        id: `bot_${Date.now()}`,
+        message: finalResponse,
+        sender: 'bot',
+        timestamp: new Date(),
+        confidence
+      };
     }
-    
-    return {
-      id: `bot_${Date.now()}`,
-      message: finalResponse,
-      sender: 'bot',
-      timestamp: new Date(),
-      confidence
-    };
   };
 
   const handleSendMessage = async () => {
