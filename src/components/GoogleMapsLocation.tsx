@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Phone, Navigation, Mail } from 'lucide-react';
 
+// Location component without external map dependencies
 const GoogleMapsLocation = () => {
   const offices = [
     {
