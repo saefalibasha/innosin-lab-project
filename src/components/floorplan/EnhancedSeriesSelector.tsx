@@ -91,7 +91,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     return products.filter(product => {
       if (filters.finish && product.finish_type !== filters.finish) return false;
       if (filters.orientation && product.orientation !== filters.orientation) return false;
-      if (filters.drawerCount && String(product.drawer_count || product.number_of_drawers || 0) !== filters.drawerCount) return false;
+      if (filters.drawerCount && String(product.number_of_drawers || 0) !== filters.drawerCount) return false;
       if (filters.doorType && product.door_type !== filters.doorType) return false;
       if (filters.dimensions && product.dimensions !== filters.dimensions) return false;
       if (filters.category && product.category !== filters.category) return false;
@@ -107,8 +107,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   const getUniqueValues = (products: Product[], field: keyof Product): string[] => {
     const values = products.map(p => {
       let value = p[field];
-      // Handle both drawer_count and number_of_drawers fields
-      if (field === 'drawer_count' && !value && p.number_of_drawers) {
+      // Use number_of_drawers field (the correct field name in database)
+      if (field === 'number_of_drawers') {
         value = p.number_of_drawers;
       }
       return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
@@ -133,7 +133,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     }
     
     // For drawer count, sort numerically
-    if (field === 'drawer_count') {
+    if (field === 'number_of_drawers') {
       return uniqueValues.sort((a, b) => parseInt(a) - parseInt(b));
     }
     
@@ -433,8 +433,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                   )}
                   
-                  {(getUniqueValues(series.products, 'drawer_count').length > 0 || 
-                    getUniqueValues(series.products, 'number_of_drawers').length > 0 ||
+                  {(getUniqueValues(series.products, 'number_of_drawers').length > 0 || 
                     series.products.some(p => p.category?.toLowerCase().includes('mobile'))) && (
                     <div>
                       <label className="text-xs font-medium text-muted-foreground">Number of Drawers:</label>
@@ -447,16 +446,16 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Drawer Counts</SelectItem>
-                          {/* Combine both drawer_count and number_of_drawers */}
-                          {[...new Set([
-                            ...getUniqueValues(series.products, 'drawer_count'),
-                            ...getUniqueValues(series.products, 'number_of_drawers')
-                          ])].filter(count => count && count !== '0').sort((a, b) => Number(a) - Number(b)).map(count => (
-                            <SelectItem key={count} value={count}>
-                              {count === '0' ? 'No Drawers' : `${count} Drawer${Number(count) > 1 ? 's' : ''}`}
-                            </SelectItem>
-                          ))}
-                          {/* Always show option for no drawers */}
+                          {/* Get unique drawer counts from number_of_drawers field */}
+                          {getUniqueValues(series.products, 'number_of_drawers')
+                            .filter(count => count && count !== '0')
+                            .sort((a, b) => Number(a) - Number(b))
+                            .map(count => (
+                              <SelectItem key={count} value={count}>
+                                {Number(count) === 1 ? '1 Drawer' : `${count} Drawers`}
+                              </SelectItem>
+                            ))}
+                          {/* Add "No Drawers" option */}
                           <SelectItem value="0">No Drawers</SelectItem>
                         </SelectContent>
                       </Select>
@@ -554,10 +553,10 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             </div>
                           )}
                           
-                          {product.drawer_count || product.number_of_drawers ? (
+                          {product.number_of_drawers ? (
                             <div>
                               <span className="font-medium">Drawers:</span>
-                              <div className="truncate">{product.drawer_count || product.number_of_drawers}</div>
+                              <div className="truncate">{product.number_of_drawers}</div>
                             </div>
                           ) : null}
                           
