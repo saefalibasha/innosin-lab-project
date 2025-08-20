@@ -11,7 +11,7 @@ const GoogleMapsLocation = () => {
       id: 'singapore',
       name: 'SINGAPORE',
       address: '510 Bedok North Street 3, Singapore 460510',
-      coordinates: { lat: '1.3321740824098278', lng: '103.9306237163980' },
+      coordinates: { lat: '1.3322', lng: '103.9306' },
       type: 'Branch Office',
       company: 'Innosin Lab Pte. Ltd.'
     },
@@ -126,7 +126,7 @@ const GoogleMapsLocation = () => {
                 <div className="absolute top-4 right-4 space-y-2">
                   <Button
                     size="sm"
-                    onClick={() => window.open(`https://www.google.com/maps/place/${encodeURIComponent(selectedOffice.address)}/@${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng},17z`, '_blank')}
+                    onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`, '_blank')}
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs px-3 py-2 h-auto shadow-lg"
                   >
                     <Navigation className="w-3 h-3 mr-1" />
