@@ -122,7 +122,7 @@ export const Footer = () => {
                 <div>
                   <a 
                     href="#" 
-                    className="text-3xl lg:text-4xl text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>LinkedIn</span>
@@ -132,7 +132,7 @@ export const Footer = () => {
                 <div>
                   <a 
                     href="#" 
-                    className="text-3xl lg:text-4xl text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>Facebook</span>
@@ -142,7 +142,7 @@ export const Footer = () => {
                 <div>
                   <a 
                     href="#" 
-                    className="text-3xl lg:text-4xl text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>Instagram</span>
@@ -157,19 +157,19 @@ export const Footer = () => {
         {/* Bottom Section */}
         <div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="container mx-auto px-6 py-8">
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-6 lg:space-y-0">
+            <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
               
               {/* Left - Copyright & Legal (Side by Side) */}
               <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-2 lg:space-y-0">
                 <div 
-                  className="text-sm text-white/60"
+                  className="text-sm text-white/60 uppercase"
                   style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   ©2025 INNOSIN LAB PTE LTD
                 </div>
                 <div>
                   <button 
-                    className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2"
+                    className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     SINGAPORE REGISTERED COMPANY
@@ -179,10 +179,10 @@ export const Footer = () => {
 
               {/* Right - Company Slogan */}
               <div 
-                className="text-sm text-white/60 text-right max-w-xs"
+                className="text-sm text-white/60 text-center lg:text-right uppercase"
                 style={{ fontFamily: 'Outfit, sans-serif' }}
               >
-                Innovation in Laboratory Solutions
+                INNOVATION IN LABORATORY SOLUTIONS
               </div>
             </div>
           </div>
@@ -195,29 +195,29 @@ export const Footer = () => {
           {/* Time positioned closer to logo */}
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
             <div 
-              className="text-sm text-white/60 tracking-wider text-center"
+              className="text-sm text-white/60 tracking-wider text-center uppercase"
               style={{ fontFamily: 'Outfit, sans-serif' }}
             >
               {formatSingaporeTime(currentTime).toUpperCase()}
             </div>
           </div>
           
-          {/* Three layers for pronounced stacking effect - stretched to full width */}
+          {/* Three layers for pronounced stacking effect - contained within boundaries */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/90 select-none leading-none w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2em', transform: 'scaleX(1.2)' }}
+            className="absolute bottom-0 left-0 right-0 text-[14vw] lg:text-[8vw] font-black text-white/90 select-none leading-none text-center w-full px-4"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/60 select-none leading-none w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2em', transform: 'scaleX(1.2) translate(3px, 3px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[14vw] lg:text-[8vw] font-black text-white/60 select-none leading-none text-center w-full px-4"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(3px, 3px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/30 select-none leading-none w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2em', transform: 'scaleX(1.2) translate(6px, 6px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[14vw] lg:text-[8vw] font-black text-white/30 select-none leading-none text-center w-full px-4"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(6px, 6px)' }}
           >
             INNOSINLAB
           </div>
