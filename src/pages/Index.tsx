@@ -44,55 +44,58 @@ const Index = () => {
       {/* Video Hero Section */}
       <VideoHero />
 
-      {/* Featured Companies Section */}
-      <div className="container mx-auto py-10">
-        <section className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold">
+      {/* Featured Companies Section - Modernized */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6">
               Featured Laboratory Partners
             </h2>
-            <p className="text-lg text-muted-foreground">
-              Explore our featured laboratory equipment and solutions.
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Explore our featured laboratory equipment and solutions from industry-leading manufacturers.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             {companyData.map((company, index) => (
               <Card
                 key={index}
-                className="bg-card text-card-foreground shadow-md hover:shadow-lg transition-shadow duration-300"
+                className="group bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 rounded-2xl overflow-hidden"
                 onClick={() => navigate(company.link)}
-                style={{ cursor: 'pointer' }}
               >
-                <CardContent className="p-6 flex flex-col items-center justify-center">
+                <CardContent className="p-8 flex flex-col items-center justify-center h-48">
                   <img
                     src={company.logo}
                     alt={`${company.name} Logo`}
-                    className="w-32 h-32 object-contain rounded-md"
+                    className="w-28 h-28 object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                 </CardContent>
               </Card>
             ))}
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
 
-      {/* Shop The Look Section */}
-      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+      {/* Shop The Look Section - Enhanced */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-white">
         <div className="container mx-auto px-4">
           <ShopTheLook />
         </div>
       </section>
 
-      {/* Before/After Comparison Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-primary mb-4 tracking-tight">
+      {/* Laboratory Transformations Section - Modernized */}
+      <section className="py-28 bg-white relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-6xl font-bold text-primary mb-8 tracking-tight">
               Laboratory <span className="text-sea">Transformations</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              See how we've transformed laboratories across Singapore with cutting-edge equipment and professional design.
+            <p className="text-xl text-muted-foreground max-w-4xl mx-auto leading-relaxed">
+              See how we've transformed laboratories across Singapore with cutting-edge equipment, 
+              innovative design solutions, and professional installation services.
             </p>
           </div>
           <BeforeAfterComparison />
