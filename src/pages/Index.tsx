@@ -51,7 +51,7 @@ const Index = () => {
             <h2 className="text-3xl font-bold">
               Featured Laboratory Partners
             </h2>
-            <p className="text-base text-muted-foreground">
+            <p className="text-lg text-muted-foreground">
               Explore our featured laboratory equipment and solutions.
             </p>
           </div>
@@ -91,7 +91,7 @@ const Index = () => {
             <h2 className="text-3xl font-bold text-primary mb-4 tracking-tight">
               Laboratory <span className="text-sea">Transformations</span>
             </h2>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               See how we've transformed laboratories across Singapore with cutting-edge equipment and professional design.
             </p>
           </div>

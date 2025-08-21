@@ -68,7 +68,7 @@ const VideoHero = () => {
                           </h2>
                           
                           {/* Description */}
-                          <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 leading-relaxed animate-fade-in-right animate-delay-400">
+                          <p className="text-lg md:text-xl lg:text-2xl mb-2 max-w-4xl mx-auto text-white/90 leading-relaxed animate-fade-in-right animate-delay-400">
                             {slide.description.line1}
                             <span className="block mt-1">{slide.description.line2}</span>
                           </p>
@@ -109,21 +109,21 @@ const VideoHero = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-primary mb-2 tracking-tight animate-fade-in">
               {heroContent.ourStory.title} <span className="text-sea">{heroContent.ourStory.titleHighlight}</span>
             </h2>
-            <p className="text-sm text-muted-foreground mb-3 leading-relaxed animate-fade-in animate-delay-200">
+            <p className="text-base text-muted-foreground mb-3 leading-relaxed animate-fade-in animate-delay-200">
               {heroContent.ourStory.description}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
               <div className="animate-fade-in animate-delay-300">
                 <div className="text-xl font-bold text-sea mb-1">{heroContent.ourStory.stats.projectsCompleted.number}</div>
-                <p className="text-muted-foreground text-sm">{heroContent.ourStory.stats.projectsCompleted.label}</p>
+                <p className="text-muted-foreground text-base">{heroContent.ourStory.stats.projectsCompleted.label}</p>
               </div>
               <div className="animate-fade-in animate-delay-500">
                 <div className="text-xl font-bold text-sea mb-1">{heroContent.ourStory.stats.yearsOfExcellence.number}</div>
-                <p className="text-muted-foreground text-sm">{heroContent.ourStory.stats.yearsOfExcellence.label}</p>
+                <p className="text-muted-foreground text-base">{heroContent.ourStory.stats.yearsOfExcellence.label}</p>
               </div>
               <div className="animate-fade-in animate-delay-700">
                 <div className="text-xl font-bold text-sea mb-1">{heroContent.ourStory.stats.researchInstitutions.number}</div>
-                <p className="text-muted-foreground text-sm">{heroContent.ourStory.stats.researchInstitutions.label}</p>
+                <p className="text-muted-foreground text-base">{heroContent.ourStory.stats.researchInstitutions.label}</p>
               </div>
             </div>
             
