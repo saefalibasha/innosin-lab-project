@@ -81,11 +81,11 @@ export const Footer = () => {
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-white/70" />
-                  <span className="text-sm text-white/90">info@innosinlab.com</span>
+                  <span className="text-lg text-white/90">info@innosinlab.com</span>
                 </div>
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-4 h-4 text-white/70 mt-0.5" />
-                  <div className="text-sm text-white/90">
+                  <div className="text-lg text-white/90">
                     <div>Industrial Complex, Tech Park</div>
                     <div>Johor Bahru, Malaysia 81100</div>
                   </div>
@@ -122,7 +122,7 @@ export const Footer = () => {
                 <div>
                   <a 
                     href="#" 
-                    className="text-lg text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-3xl lg:text-4xl text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>LinkedIn</span>
@@ -132,7 +132,7 @@ export const Footer = () => {
                 <div>
                   <a 
                     href="#" 
-                    className="text-lg text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-3xl lg:text-4xl text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>Facebook</span>
@@ -142,7 +142,7 @@ export const Footer = () => {
                 <div>
                   <a 
                     href="#" 
-                    className="text-lg text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                    className="text-3xl lg:text-4xl text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>Instagram</span>
@@ -159,8 +159,8 @@ export const Footer = () => {
           <div className="container mx-auto px-6 py-8">
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-6 lg:space-y-0">
               
-              {/* Left - Copyright & Legal */}
-              <div className="space-y-2">
+              {/* Left - Copyright & Legal (Side by Side) */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-2 lg:space-y-0">
                 <div 
                   className="text-sm text-white/60"
                   style={{ fontFamily: 'Outfit, sans-serif' }}
@@ -177,16 +177,6 @@ export const Footer = () => {
                 </div>
               </div>
 
-              {/* Center - Time */}
-              <div className="text-center">
-                <div 
-                  className="text-sm text-white/60 tracking-wider"
-                  style={{ fontFamily: 'Outfit, sans-serif' }}
-                >
-                  {formatSingaporeTime(currentTime).toUpperCase()}
-                </div>
-              </div>
-
               {/* Right - Company Slogan */}
               <div 
                 className="text-sm text-white/60 text-right max-w-xs"
@@ -199,25 +189,35 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* Large Stacked Logo at Very Bottom */}
+      {/* Large Stacked Logo at Very Bottom with Time */}
       <div className="relative w-full overflow-hidden bg-sea">
         <div className="relative h-32 lg:h-40">
-          {/* Three layers for pronounced stacking effect */}
+          {/* Time positioned closer to logo */}
+          <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
+            <div 
+              className="text-sm text-white/60 tracking-wider text-center"
+              style={{ fontFamily: 'Outfit, sans-serif' }}
+            >
+              {formatSingaporeTime(currentTime).toUpperCase()}
+            </div>
+          </div>
+          
+          {/* Three layers for pronounced stacking effect - stretched to full width */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/90 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif' }}
+            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/90 select-none leading-none w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2em', transform: 'scaleX(1.2)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/60 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/60 select-none leading-none w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2em', transform: 'scaleX(1.2) translate(3px, 3px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/30 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(6px, 6px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/30 select-none leading-none w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.2em', transform: 'scaleX(1.2) translate(6px, 6px)' }}
           >
             INNOSINLAB
           </div>
