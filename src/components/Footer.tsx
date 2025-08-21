@@ -157,19 +157,19 @@ export const Footer = () => {
         {/* Bottom Section */}
         <div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="container mx-auto px-6 py-8">
-            <div className="flex flex-col lg:flex-row justify-between items-center space-y-4 lg:space-y-0">
+            <div className="flex flex-col lg:flex-row justify-between items-baseline space-y-4 lg:space-y-0">
               
               {/* Left - Copyright & Legal (Side by Side) */}
-              <div className="flex flex-col lg:flex-row lg:items-center lg:space-x-6 space-y-2 lg:space-y-0">
+              <div className="flex flex-col lg:flex-row lg:items-baseline lg:space-x-6 space-y-2 lg:space-y-0">
                 <div 
-                  className="text-sm text-white/60 uppercase"
+                  className="text-sm text-white/60 uppercase leading-none"
                   style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   ©2025 INNOSIN LAB PTE LTD
                 </div>
                 <div>
                   <button 
-                    className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase"
+                    className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none"
                     style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     SINGAPORE REGISTERED COMPANY
@@ -177,9 +177,17 @@ export const Footer = () => {
                 </div>
               </div>
 
+              {/* Center - Time */}
+              <div 
+                className="text-sm text-white/60 text-center uppercase leading-none"
+                style={{ fontFamily: 'Outfit, sans-serif' }}
+              >
+                {formatSingaporeTime(currentTime).toUpperCase()}
+              </div>
+
               {/* Right - Company Slogan */}
               <div 
-                className="text-sm text-white/60 text-center lg:text-right uppercase"
+                className="text-sm text-white/60 text-center lg:text-right uppercase leading-none"
                 style={{ fontFamily: 'Outfit, sans-serif' }}
               >
                 INNOVATION IN LABORATORY SOLUTIONS
@@ -189,18 +197,9 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* Large Stacked Logo at Very Bottom with Time */}
+      {/* Large Stacked Logo at Very Bottom */}
       <div className="relative w-full overflow-hidden bg-sea">
-        <div className="relative h-32 lg:h-40">
-          {/* Time positioned closer to logo */}
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
-            <div 
-              className="text-sm text-white/60 tracking-wider text-center uppercase"
-              style={{ fontFamily: 'Outfit, sans-serif' }}
-            >
-              {formatSingaporeTime(currentTime).toUpperCase()}
-            </div>
-          </div>
+        <div className="relative h-24 lg:h-32">
           
           {/* Three layers for pronounced stacking effect - contained within boundaries */}
           <div 
