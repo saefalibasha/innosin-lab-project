@@ -156,7 +156,7 @@ export const Footer = () => {
 
         {/* Bottom Section */}
         <div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="container mx-auto px-6 py-2">
+          <div className="container mx-auto px-6 py-1">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-0 items-baseline">
               
               {/* Left - Copyright */}
@@ -208,24 +208,24 @@ export const Footer = () => {
 
       {/* Large Stacked Logo at Very Bottom */}
       <div className="relative w-full overflow-hidden bg-sea">
-        <div className="relative h-20 lg:h-24 flex items-end justify-center pb-2">
+        <div className="relative h-24 lg:h-28 flex items-center justify-center">
           
           {/* Three layers for pronounced stacking effect - contained within boundaries */}
           <div 
-            className="relative text-[14vw] lg:text-[8vw] font-black text-white/90 select-none leading-none text-center w-full px-4"
+            className="relative text-[12vw] lg:text-[7vw] font-black text-white/90 select-none leading-none text-center w-full px-4"
             style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-2 left-0 right-0 text-[14vw] lg:text-[8vw] font-black text-white/60 select-none leading-none text-center w-full px-4"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(3px, 3px)' }}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/60 select-none leading-none text-center w-full px-4"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-2 left-0 right-0 text-[14vw] lg:text-[8vw] font-black text-white/30 select-none leading-none text-center w-full px-4"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(6px, 6px)' }}
+            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/30 select-none leading-none text-center w-full px-4"
+            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))' }}
           >
             INNOSINLAB
           </div>
