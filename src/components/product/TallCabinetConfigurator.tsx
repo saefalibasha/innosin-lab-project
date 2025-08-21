@@ -121,7 +121,8 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Selected width:', width);
     setSelectedWidth(width);
     
-    if (selectedDepth && selectedHeight && selectedDoorType) {
+    // Try to find matching variant with any complete combination
+    if (selectedDepth && selectedHeight && selectedDoorType && selectedFinish) {
       const matchingVariant = findMatchingVariant(width, selectedDepth, selectedHeight, selectedDoorType, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
@@ -134,7 +135,8 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Selected depth:', depth);
     setSelectedDepth(depth);
     
-    if (selectedWidth && selectedHeight && selectedDoorType) {
+    // Try to find matching variant with any complete combination
+    if (selectedWidth && selectedHeight && selectedDoorType && selectedFinish) {
       const matchingVariant = findMatchingVariant(selectedWidth, depth, selectedHeight, selectedDoorType, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
@@ -147,7 +149,8 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Selected height:', height);
     setSelectedHeight(height);
     
-    if (selectedWidth && selectedDepth && selectedDoorType) {
+    // Try to find matching variant with any complete combination
+    if (selectedWidth && selectedDepth && selectedDoorType && selectedFinish) {
       const matchingVariant = findMatchingVariant(selectedWidth, selectedDepth, height, selectedDoorType, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
@@ -160,7 +163,8 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Selected door type:', doorType);
     setSelectedDoorType(doorType);
     
-    if (selectedWidth && selectedDepth && selectedHeight) {
+    // Try to find matching variant with any complete combination
+    if (selectedWidth && selectedDepth && selectedHeight && selectedFinish) {
       const matchingVariant = findMatchingVariant(selectedWidth, selectedDepth, selectedHeight, doorType, selectedFinish);
       if (matchingVariant) {
         onVariantChange(matchingVariant.id);
@@ -181,14 +185,34 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     }
   };
 
-  // Auto-select single width when available
+  // Initialize selections with first available options
   React.useEffect(() => {
+    // Auto-select single options or initialize with first available
     if (widths.length === 1 && !selectedWidth) {
+      console.log('Auto-selecting single width:', widths[0]);
+      setSelectedWidth(widths[0]);
+    } else if (widths.length > 1 && !selectedWidth) {
+      console.log('Initializing width with first option:', widths[0]);
       setSelectedWidth(widths[0]);
     }
-  }, [widths, selectedWidth]);
 
-  // Initialize selections based on current variant
+    if (depths.length > 0 && !selectedDepth) {
+      console.log('Initializing depth with first option:', depths[0]);
+      setSelectedDepth(depths[0]);
+    }
+
+    if (heights.length > 0 && !selectedHeight) {
+      console.log('Initializing height with first option:', heights[0]);
+      setSelectedHeight(heights[0]);
+    }
+
+    if (doorTypes.length > 0 && !selectedDoorType) {
+      console.log('Initializing door type with first option:', doorTypes[0]);
+      setSelectedDoorType(doorTypes[0]);
+    }
+  }, [widths, depths, heights, doorTypes, selectedWidth, selectedDepth, selectedHeight, selectedDoorType]);
+
+  // Initialize selections based on current variant (override auto-selection)
   React.useEffect(() => {
     const currentVariant = variants.find(v => v.id === selectedVariantId);
     console.log('Current variant:', currentVariant);
@@ -199,11 +223,15 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
       const dimParts = cleanDim.split('x').map(p => p.trim());
       
       if (dimParts.length >= 3) {
+        console.log('Setting dimensions from current variant:', dimParts);
         setSelectedWidth(dimParts[0]);
         setSelectedDepth(dimParts[1]);
         setSelectedHeight(dimParts[2]);
       }
-      setSelectedDoorType(currentVariant.door_type || '');
+      if (currentVariant.door_type) {
+        console.log('Setting door type from current variant:', currentVariant.door_type);
+        setSelectedDoorType(currentVariant.door_type);
+      }
     }
   }, [selectedVariantId, variants]);
 
@@ -218,6 +246,9 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
           <CardTitle className="flex items-center gap-2 text-sm">
             <Ruler className="w-4 h-4 text-primary" />
             Step 1: Select Dimensions
+            <span className="text-xs text-muted-foreground ml-auto">
+              ({widths.length}×{depths.length}×{heights.length} options)
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -288,6 +319,9 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
           <CardTitle className="flex items-center gap-2 text-sm">
             <DoorOpen className="w-4 h-4 text-primary" />
             Step 2: Select Door Type
+            <span className="text-xs text-muted-foreground ml-auto">
+              ({doorTypes.length} options)
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -302,7 +336,6 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
                   size="sm"
                   onClick={() => handleDoorTypeSelect(doorType)}
                   className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
-                  disabled={!isDimensionsComplete}
                 >
                   {selectedDoorType === doorType && <Check className="w-3 h-3" />}
                   <span className="font-medium">{doorType} Door</span>
@@ -319,6 +352,9 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
           <CardTitle className="flex items-center gap-2 text-sm">
             <Palette className="w-4 h-4 text-primary" />
             Step 3: Select Finish
+            <span className="text-xs text-muted-foreground ml-auto">
+              ({availableFinishes.length} options)
+            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -330,7 +366,7 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
                 size="sm"
                 onClick={() => handleFinishSelect(finish.value)}
                 className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
-                disabled={!isDimensionsComplete || !selectedDoorType}
+                disabled={!selectedDoorType}
               >
                 {selectedFinish === finish.value && <Check className="w-3 h-3" />}
                 <span className="font-medium">{finish.label}</span>
@@ -340,8 +376,8 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
         </CardContent>
       </Card>
 
-      {/* Configuration Summary - After Finish Selection */}
-      {(selectedDepth || selectedHeight || selectedDoorType || selectedFinish) && (
+      {/* Configuration Summary - Always visible when any selection is made */}
+      {(selectedWidth || selectedDepth || selectedHeight || selectedDoorType || selectedFinish) && (
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-sm text-primary">
