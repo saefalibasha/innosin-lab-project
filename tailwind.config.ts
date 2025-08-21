@@ -20,8 +20,8 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Times New Roman', 'Times', 'serif'],
-				'serif': ['Times New Roman', 'Times', 'serif'],
+				'sans': ['Lato', 'system-ui', '-apple-system', 'sans-serif'],
+				'serif': ['Lato', 'system-ui', '-apple-system', 'sans-serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
