@@ -20,8 +20,10 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'sans': ['Lato', 'system-ui', '-apple-system', 'sans-serif'],
-				'serif': ['Lato', 'system-ui', '-apple-system', 'sans-serif'],
+				'sans': ['Outfit', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+				'serif': ['Playfair Display', 'Georgia', 'Times', 'serif'],
+				'outfit': ['Outfit', 'system-ui', '-apple-system', 'sans-serif'],
+				'playfair': ['Playfair Display', 'Georgia', 'serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
