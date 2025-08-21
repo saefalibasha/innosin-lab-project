@@ -199,25 +199,25 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* Large Blue Gradient Logo at Very Bottom */}
-      <div className="relative w-full overflow-hidden bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600">
-        <div className="relative h-28 lg:h-36">
-          {/* Three layers for depth effect with blue gradient styling */}
+      {/* Large Stacked Logo at Very Bottom */}
+      <div className="relative w-full overflow-hidden bg-sea">
+        <div className="relative h-32 lg:h-40">
+          {/* Three layers for pronounced stacking effect */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/80 select-none leading-none tracking-normal text-center w-full"
+            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/90 select-none leading-none tracking-normal text-center w-full"
             style={{ fontFamily: 'Outfit, sans-serif' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/60 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/60 select-none leading-none tracking-normal text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/40 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(4px, 4px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/30 select-none leading-none tracking-normal text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(6px, 6px)' }}
           >
             INNOSINLAB
           </div>
