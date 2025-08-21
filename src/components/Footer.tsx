@@ -200,24 +200,24 @@ export const Footer = () => {
       </div>
 
       {/* Large Stacked Logo at Very Bottom */}
-      <div className="relative w-full overflow-hidden bg-sea">
-        <div className="relative h-32 lg:h-40">
-          {/* Three layers for pronounced stacking effect */}
+      <div className="relative w-full overflow-hidden bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600">
+        <div className="relative h-20 lg:h-24">
+          {/* Three layers for stacked effect matching the reference */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/90 select-none leading-none tracking-normal text-center w-full"
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[14vw] font-black text-blue-600/60 select-none leading-none tracking-tight text-center w-full"
             style={{ fontFamily: 'Outfit, sans-serif' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/60 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[14vw] font-black text-blue-300/80 select-none leading-none tracking-tight text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[16vw] lg:text-[10vw] font-black text-white/30 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(6px, 6px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[20vw] lg:text-[14vw] font-black text-white select-none leading-none tracking-tight text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(4px, 4px)' }}
           >
             INNOSINLAB
           </div>
