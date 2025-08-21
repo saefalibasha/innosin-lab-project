@@ -63,12 +63,12 @@ const VideoHero = () => {
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white">
                           {/* Main title */}
-                          <h2 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
+                          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-1 leading-[0.9] tracking-tight animate-fade-in animate-delay-200">
                             <span className="block text-sand-light animate-float">{slide.titles.title1}</span>
                           </h2>
                           
                           {/* Description */}
-                          <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 font-light leading-relaxed animate-fade-in-right animate-delay-400">
+                          <p className="text-base md:text-lg lg:text-xl mb-2 max-w-4xl mx-auto text-white/90 leading-relaxed animate-fade-in-right animate-delay-400">
                             {slide.description.line1}
                             <span className="block mt-1">{slide.description.line2}</span>
                           </p>
@@ -106,7 +106,7 @@ const VideoHero = () => {
       <section className="py-6 bg-gradient-to-b from-background to-secondary/30 relative">
         <div className="container-custom text-center">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-serif font-bold text-primary mb-2 tracking-tight animate-fade-in">
+            <h2 className="text-2xl md:text-3xl font-bold text-primary mb-2 tracking-tight animate-fade-in">
               {heroContent.ourStory.title} <span className="text-sea">{heroContent.ourStory.titleHighlight}</span>
             </h2>
             <p className="text-sm text-muted-foreground mb-3 leading-relaxed animate-fade-in animate-delay-200">

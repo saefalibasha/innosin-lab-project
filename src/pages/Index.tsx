@@ -51,7 +51,7 @@ const Index = () => {
             <h2 className="text-3xl font-bold">
               Featured Laboratory Partners
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Explore our featured laboratory equipment and solutions.
             </p>
           </div>
@@ -64,20 +64,12 @@ const Index = () => {
                 onClick={() => navigate(company.link)}
                 style={{ cursor: 'pointer' }}
               >
-                <CardHeader>
-                  <CardTitle className="text-lg font-semibold leading-tight tracking-tight">
-                    {company.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 flex flex-col items-center">
+                <CardContent className="p-6 flex flex-col items-center justify-center">
                   <img
                     src={company.logo}
                     alt={`${company.name} Logo`}
-                    className="mb-4 w-32 h-32 object-contain rounded-md"
+                    className="w-32 h-32 object-contain rounded-md"
                   />
-                  <CardDescription className="text-sm text-muted-foreground text-center">
-                    {company.description}
-                  </CardDescription>
                 </CardContent>
               </Card>
             ))}
@@ -96,10 +88,10 @@ const Index = () => {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-signore font-bold text-primary mb-4 tracking-tight">
+            <h2 className="text-3xl font-bold text-primary mb-4 tracking-tight">
               Laboratory <span className="text-sea">Transformations</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
               See how we've transformed laboratories across Singapore with cutting-edge equipment and professional design.
             </p>
           </div>
