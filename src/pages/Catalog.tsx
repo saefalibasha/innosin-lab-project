@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Search, Filter } from 'lucide-react';
+import { Reveal, StaggerList } from '@/components/anim';
 
 const Catalog = () => {
   const [searchTerm, setSearchTerm] = useState('');

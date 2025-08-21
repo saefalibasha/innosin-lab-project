@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import GoogleMapsLocation from '@/components/GoogleMapsLocation';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import AnimatedSection from '@/components/AnimatedSection';
+import { Reveal } from '@/components/anim';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

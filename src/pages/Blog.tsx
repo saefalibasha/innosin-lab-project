@@ -8,6 +8,7 @@ import { Calendar, User, ArrowRight, Search, Filter, Clock } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Reveal, StaggerList } from '@/components/anim';
 
 const Blog = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,13 +49,14 @@ const Blog = () => {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-black mb-4">Laboratory Insights Blog</h1>
-          <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-            Expert insights, technical guides, case studies, and industry trends in laboratory design, safety, and equipment from the Innosin Lab team.
-          </p>
-        </div>
+        <Reveal>
+          <div className="text-center mb-16">
+            <h1 className="text-4xl font-bold text-black mb-4">Laboratory Insights Blog</h1>
+            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
+              Expert insights, technical guides, case studies, and industry trends in laboratory design, safety, and equipment from the Innosin Lab team.
+            </p>
+          </div>
+        </Reveal>
 
         {/* Search and Filters */}
         <Card className="mb-12 border-gray-200">
@@ -186,8 +188,9 @@ const Blog = () => {
 
         {/* Articles Grid */}
         {regularPosts.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {regularPosts.map((post) => (
+          <StaggerList
+            items={regularPosts}
+            renderItem={(post) => (
               <Card key={post.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-gray-200">
                 <div className="aspect-video overflow-hidden">
                   <img
@@ -239,8 +242,9 @@ const Blog = () => {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            )}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          />
         )}
 
         {/* Newsletter Subscription CTA */}

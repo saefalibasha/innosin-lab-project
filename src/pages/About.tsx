@@ -102,8 +102,8 @@ const About = () => {
                   Your browser does not support the video tag.
                 </video>
               </div>
-              </div>
             </Reveal>
+          </div>
         </div>
       </section>
 
