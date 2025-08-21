@@ -156,41 +156,50 @@ export const Footer = () => {
 
         {/* Bottom Section */}
         <div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="container mx-auto px-6 py-8">
-            <div className="flex flex-col lg:flex-row justify-between items-baseline space-y-4 lg:space-y-0">
+          <div className="container mx-auto px-6 py-4">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-0 items-baseline">
               
-              {/* Left - Copyright & Legal (Side by Side) */}
-              <div className="flex flex-col lg:flex-row lg:items-baseline lg:space-x-6 space-y-2 lg:space-y-0">
+              {/* Left - Copyright */}
+              <div className="text-center lg:text-left">
                 <div 
                   className="text-sm text-white/60 uppercase leading-none"
                   style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   ©2025 INNOSIN LAB PTE LTD
                 </div>
-                <div>
-                  <button 
-                    className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none"
-                    style={{ fontFamily: 'Outfit, sans-serif' }}
-                  >
-                    SINGAPORE REGISTERED COMPANY
-                  </button>
-                </div>
+              </div>
+
+              {/* Left-Center - Singapore Company */}
+              <div className="text-center lg:text-left">
+                <button 
+                  className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none"
+                  style={{ fontFamily: 'Outfit, sans-serif' }}
+                >
+                  SINGAPORE REGISTERED COMPANY
+                </button>
               </div>
 
               {/* Center - Time */}
-              <div 
-                className="text-sm text-white/60 text-center uppercase leading-none"
-                style={{ fontFamily: 'Outfit, sans-serif' }}
-              >
-                {formatSingaporeTime(currentTime).toUpperCase()}
+              <div className="text-center">
+                <div 
+                  className="text-sm text-white/60 uppercase leading-none"
+                  style={{ fontFamily: 'Outfit, sans-serif' }}
+                >
+                  {formatSingaporeTime(currentTime).toUpperCase()}
+                </div>
               </div>
 
+              {/* Right-Center - Empty for spacing */}
+              <div></div>
+
               {/* Right - Company Slogan */}
-              <div 
-                className="text-sm text-white/60 text-center lg:text-right uppercase leading-none"
-                style={{ fontFamily: 'Outfit, sans-serif' }}
-              >
-                INNOVATION IN LABORATORY SOLUTIONS
+              <div className="text-center lg:text-right">
+                <div 
+                  className="text-sm text-white/60 uppercase leading-none"
+                  style={{ fontFamily: 'Outfit, sans-serif' }}
+                >
+                  INNOVATION IN LABORATORY SOLUTIONS
+                </div>
               </div>
             </div>
           </div>
@@ -199,7 +208,7 @@ export const Footer = () => {
 
       {/* Large Stacked Logo at Very Bottom */}
       <div className="relative w-full overflow-hidden bg-sea">
-        <div className="relative h-24 lg:h-32">
+        <div className="relative h-20 lg:h-24">
           
           {/* Three layers for pronounced stacking effect - contained within boundaries */}
           <div 
