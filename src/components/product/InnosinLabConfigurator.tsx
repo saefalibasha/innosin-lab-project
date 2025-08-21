@@ -93,7 +93,22 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
 
     return {
       drawerCounts: Array.from(drawerCounts).sort((a, b) => a - b),
-      dimensions: Array.from(dimensions).sort(),
+      dimensions: Array.from(dimensions).sort((a, b) => {
+        // Parse dimensions like "500x650" and sort by width first, then height
+        const parseSize = (dim: string) => {
+          const parts = dim.split('x').map(p => parseInt(p.trim()));
+          return { width: parts[0] || 0, height: parts[1] || 0 };
+        };
+        
+        const sizeA = parseSize(a);
+        const sizeB = parseSize(b);
+        
+        // Sort by width first, then by height if widths are equal
+        if (sizeA.width !== sizeB.width) {
+          return sizeA.width - sizeB.width;
+        }
+        return sizeA.height - sizeB.height;
+      }),
       orientations: Array.from(orientations).sort(),
       finishes: [
         { value: 'PC', label: 'Powder Coat' },
