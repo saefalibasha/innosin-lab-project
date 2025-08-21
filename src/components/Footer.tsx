@@ -95,7 +95,7 @@ export const Footer = () => {
 
             {/* Navigation */}
             <div className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h4 className="text-sm font-medium mb-8 text-white/70 uppercase tracking-wide">
+              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
                 Navigation
               </h4>
               <div className="space-y-4">
@@ -115,7 +115,7 @@ export const Footer = () => {
 
             {/* Connect & Social */}
             <div className={`transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <h4 className="text-sm font-medium mb-8 text-white/70 uppercase tracking-wide">
+              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
                 Connect
               </h4>
               <div className="space-y-6">
@@ -199,25 +199,25 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* Large Stacked Background Text at Very Bottom */}
-      <div className="relative w-full overflow-hidden bg-sea">
+      {/* Large Blue Gradient Logo at Very Bottom */}
+      <div className="relative w-full overflow-hidden bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600">
         <div className="relative h-28 lg:h-36">
-          {/* Three layers for pronounced stacking effect - full width stretch */}
+          {/* Three layers for depth effect with blue gradient styling */}
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/30 select-none leading-none tracking-normal text-center w-full"
+            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/80 select-none leading-none tracking-normal text-center w-full"
             style={{ fontFamily: 'Outfit, sans-serif' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/20 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(3px, 3px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/60 select-none leading-none tracking-normal text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(2px, 2px)' }}
           >
             INNOSINLAB
           </div>
           <div 
-            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/10 select-none leading-none tracking-normal text-center w-full"
-            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(6px, 6px)' }}
+            className="absolute bottom-0 left-0 right-0 text-[18vw] lg:text-[12vw] font-black text-white/40 select-none leading-none tracking-normal text-center w-full"
+            style={{ fontFamily: 'Outfit, sans-serif', transform: 'translate(4px, 4px)' }}
           >
             INNOSINLAB
           </div>
