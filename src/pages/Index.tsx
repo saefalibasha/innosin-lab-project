@@ -106,7 +106,11 @@ const Index = () => {
       <LabTransformCTA />
 
       {/* Newsletter Subscription Section */}
-      <NewsletterSubscription />
+      <section className="py-20 bg-gradient-to-br from-sea/5 to-gray-50 transition-all duration-700 ease-in-out">
+        <div className="container mx-auto px-4">
+          <NewsletterSubscription />
+        </div>
+      </section>
     </div>
   );
 };

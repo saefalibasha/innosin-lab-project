@@ -89,72 +89,74 @@ const NewsletterSubscription = () => {
   }
 
   return (
-    <Card className="bg-gradient-to-r from-sea/10 to-sea/20 border-sea/30">
-      <CardContent className="p-8">
-        <div className="text-center mb-6">
-          <Mail className="w-12 h-12 mx-auto text-sea mb-4" />
-          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-            Stay Updated with Lab Innovations
-          </h3>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Get the latest insights on laboratory design, equipment updates, safety regulations, 
-            and industry trends delivered to your inbox monthly.
-          </p>
-        </div>
+    <div className="max-w-4xl mx-auto">
+      <div className="text-center mb-12 animate-fade-in">
+        <Mail className="w-16 h-16 mx-auto text-sea mb-6" />
+        <h3 className="text-3xl md:text-4xl font-bold text-primary mb-4 tracking-tight">
+          Stay Updated with Lab Innovations
+        </h3>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          Get the latest insights on laboratory design, equipment updates, safety regulations, 
+          and industry trends delivered to your inbox monthly.
+        </p>
+      </div>
 
-        <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
-          <div>
-            <Input
-              type="text"
-              placeholder="Your full name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full"
-              required
-            />
-          </div>
-          
-          <div>
-            <Input
-              type="email"
-              placeholder="your.email@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full"
-              required
-            />
-          </div>
-          
-          <Button 
-            type="submit" 
-            className="w-full bg-sea hover:bg-sea-dark"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Subscribing...' : 'Subscribe to Newsletter'}
-          </Button>
-          
-          <p className="text-xs text-gray-500 text-center">
-            By subscribing, you agree to receive marketing emails from Innosin Lab. 
-            You can unsubscribe at any time. We respect your privacy.
-          </p>
-        </form>
+      <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-2xl rounded-2xl overflow-hidden">
+        <CardContent className="p-12">
+          <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-6">
+            <div>
+              <Input
+                type="text"
+                placeholder="Your full name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full h-12 text-lg rounded-xl border-2 focus:border-sea transition-all duration-300"
+                required
+              />
+            </div>
+            
+            <div>
+              <Input
+                type="email"
+                placeholder="your.email@company.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full h-12 text-lg rounded-xl border-2 focus:border-sea transition-all duration-300"
+                required
+              />
+            </div>
+            
+            <Button 
+              type="submit" 
+              className="w-full h-12 text-lg bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-105 rounded-xl"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Subscribing...' : 'Subscribe to Newsletter'}
+            </Button>
+            
+            <p className="text-sm text-muted-foreground text-center leading-relaxed">
+              By subscribing, you agree to receive marketing emails from Innosin Lab. 
+              You can unsubscribe at any time. We respect your privacy.
+            </p>
+          </form>
 
-        <div className="mt-6 grid grid-cols-3 gap-4 text-center text-sm text-gray-600">
-          <div>
-            <div className="font-semibold text-sea">Monthly Updates</div>
-            <div>Industry insights</div>
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+            <div className="animate-fade-in">
+              <div className="font-bold text-sea text-lg mb-2">Monthly Updates</div>
+              <div className="text-muted-foreground">Industry insights</div>
+            </div>
+            <div className="animate-fade-in">
+              <div className="font-bold text-sea text-lg mb-2">New Products</div>
+              <div className="text-muted-foreground">Latest equipment</div>
+            </div>
+            <div className="animate-fade-in">
+              <div className="font-bold text-sea text-lg mb-2">Case Studies</div>
+              <div className="text-muted-foreground">Project highlights</div>
+            </div>
           </div>
-          <div>
-            <div className="font-semibold text-sea">New Products</div>
-            <div>Latest equipment</div>
-          </div>
-          <div>
-            <div className="font-semibold text-sea">Case Studies</div>
-            <div>Project highlights</div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
