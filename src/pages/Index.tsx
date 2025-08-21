@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from '@/components/ui/badge';
+import { Reveal, StaggerList } from '@/components/anim';
 import VideoHero from '@/components/VideoHero';
 import ShopTheLook from '@/components/ShopTheLook';
 import BeforeAfterComparison from '@/components/BeforeAfterComparison';
@@ -47,19 +48,21 @@ const Index = () => {
       {/* Featured Companies Section - Modernized */}
       <section className="py-20 bg-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
-              Featured Laboratory Partners
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Explore our featured laboratory equipment and solutions from industry-leading manufacturers.
-            </p>
-          </div>
+          <Reveal>
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
+                Featured Laboratory Partners
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Explore our featured laboratory equipment and solutions from industry-leading manufacturers.
+              </p>
+            </div>
+          </Reveal>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            {companyData.map((company, index) => (
+          <StaggerList
+            items={companyData}
+            renderItem={(company) => (
               <Card
-                key={index}
                 className="group bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 rounded-2xl overflow-hidden"
                 onClick={() => navigate(company.link)}
               >
@@ -71,8 +74,9 @@ const Index = () => {
                   />
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            )}
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto"
+          />
         </div>
       </section>
 
@@ -89,15 +93,17 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-20 animate-fade-in">
-            <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
-              Laboratory <span className="text-sea">Transformations</span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              See how we've transformed laboratories across Singapore with cutting-edge equipment, 
-              innovative design solutions, and professional installation services.
-            </p>
-          </div>
+          <Reveal>
+            <div className="text-center mb-20">
+              <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
+                Laboratory <span className="text-sea">Transformations</span>
+              </h2>
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                See how we've transformed laboratories across Singapore with cutting-edge equipment, 
+                innovative design solutions, and professional installation services.
+              </p>
+            </div>
+          </Reveal>
           <BeforeAfterComparison />
         </div>
       </section>

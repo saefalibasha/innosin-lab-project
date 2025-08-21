@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Reveal } from '@/components/anim';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ShoppingCart, ExternalLink, Plus } from 'lucide-react';
@@ -127,14 +128,16 @@ const ShopTheLook = () => {
   return (
     <div className="max-w-6xl mx-auto">
       {content && (
-        <div className="text-center mb-8">
-          <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
-            {content.title} <span className="text-sea">{content.titleHighlight}</span>
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
-            {content.description}
-          </p>
-        </div>
+        <Reveal>
+          <div className="text-center mb-8">
+            <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
+              {content.title} <span className="text-sea">{content.titleHighlight}</span>
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+              {content.description}
+            </p>
+          </div>
+        </Reveal>
       )}
       
       <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
