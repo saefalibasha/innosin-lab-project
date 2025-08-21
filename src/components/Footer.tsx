@@ -71,7 +71,7 @@ export const Footer = () => {
             <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <p
                 className="text-white text-lg leading-relaxed mb-8 max-w-md"
-                style={{ fontFamily: 'Outfit, sans-serif' }}
+                style={{ letterSpacing: '0.02em' }}
               >
                 Innosin Lab is a leading provider of innovative laboratory solutions, 
                 empowering scientific advancement through cutting-edge equipment and 
@@ -104,7 +104,6 @@ export const Footer = () => {
                     <Link
                       to={link.href}
                       className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 block"
-                      style={{ fontFamily: 'Outfit, sans-serif' }}
                     >
                       {link.name}
                     </Link>
@@ -123,7 +122,6 @@ export const Footer = () => {
                   <a 
                     href="#" 
                     className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                    style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>LinkedIn</span>
                     <ExternalLink className="w-4 h-4" />
@@ -133,7 +131,6 @@ export const Footer = () => {
                   <a 
                     href="#" 
                     className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                    style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>Facebook</span>
                     <ExternalLink className="w-4 h-4" />
@@ -143,7 +140,6 @@ export const Footer = () => {
                   <a 
                     href="#" 
                     className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                    style={{ fontFamily: 'Outfit, sans-serif' }}
                   >
                     <span>Instagram</span>
                     <ExternalLink className="w-4 h-4" />
@@ -163,7 +159,6 @@ export const Footer = () => {
               <div className="text-center lg:text-left">
                 <div 
                   className="text-sm text-white/60 uppercase leading-none"
-                  style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   ©2025 INNOSIN LAB PTE LTD
                 </div>
@@ -173,7 +168,6 @@ export const Footer = () => {
               <div className="text-center lg:text-left">
                 <button 
                   className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none"
-                  style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   SINGAPORE REGISTERED COMPANY
                 </button>
@@ -183,7 +177,6 @@ export const Footer = () => {
               <div className="text-center">
                 <div 
                   className="text-sm text-white/60 uppercase leading-none"
-                  style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   {formatSingaporeTime(currentTime).toUpperCase()}
                 </div>
@@ -196,7 +189,6 @@ export const Footer = () => {
               <div className="text-center lg:text-right">
                 <div 
                   className="text-sm text-white/60 uppercase leading-none whitespace-nowrap"
-                  style={{ fontFamily: 'Outfit, sans-serif' }}
                 >
                   INNOVATION IN LABORATORY SOLUTIONS
                 </div>
@@ -213,19 +205,19 @@ export const Footer = () => {
           {/* Three layers for pronounced stacking effect - contained within boundaries */}
           <div 
             className="relative text-[12vw] lg:text-[7vw] font-black text-white/90 select-none leading-none text-center w-full px-4"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em' }}
+            style={{ letterSpacing: '0.1em' }}
           >
             INNOSINLAB
           </div>
           <div 
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/60 select-none leading-none text-center w-full px-4"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))' }}
+            style={{ letterSpacing: '0.1em', transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))' }}
           >
             INNOSINLAB
           </div>
           <div 
             className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/30 select-none leading-none text-center w-full px-4"
-            style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '0.1em', transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))' }}
+            style={{ letterSpacing: '0.1em', transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))' }}
           >
             INNOSINLAB
           </div>

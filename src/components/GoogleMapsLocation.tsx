@@ -155,7 +155,7 @@ const GoogleMapsLocation = () => {
         <div className="lg:col-span-3 space-y-4 animate-fade-in-right animate-delay-700">
           <Card className="glass-card hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center space-x-2 text-lg font-serif">
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
                 <MapPin className="w-5 h-5 text-sea" />
                 <span>{selectedOffice.name}</span>
               </CardTitle>
@@ -183,7 +183,7 @@ const GoogleMapsLocation = () => {
           {/* Business Hours */}
           <Card className="glass-card hover:shadow-lg transition-all duration-300">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center space-x-2 text-lg font-serif">
+              <CardTitle className="flex items-center space-x-2 text-lg font-semibold">
                 <Clock className="w-5 h-5 text-sea" />
                 <span>Business Hours</span>
               </CardTitle>

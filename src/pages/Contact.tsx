@@ -112,7 +112,7 @@ const Contact = () => {
       {/* Header */}
       <div className="text-center mb-16">
         <AnimatedSection animation="fade-in" delay={100}>
-          <h1 className="text-4xl font-serif font-bold text-primary mb-4">{contactPageContent.header.title}</h1>
+          <h1 className="text-4xl font-bold text-primary mb-4">{contactPageContent.header.title}</h1>
         </AnimatedSection>
         <AnimatedSection animation="fade-in" delay={300}>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -133,7 +133,7 @@ const Contact = () => {
         <AnimatedSection animation="fade-in-left" delay={300}>
           <Card className="glass-card hover:shadow-xl transition-all duration-300 h-fit">{/* Added h-fit to ensure proper height alignment */}
             <CardHeader>
-              <CardTitle className="text-2xl font-serif text-primary">{contactPageContent.form.title}</CardTitle>
+              <CardTitle className="text-2xl font-bold text-primary">{contactPageContent.form.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -252,7 +252,7 @@ const Contact = () => {
         <AnimatedSection animation="fade-in-right" delay={400}>
           <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20 h-fit">{/* Added h-fit to ensure proper height alignment */}
             <CardHeader className="bg-gradient-to-r from-sea/10 to-sea/20 rounded-t-lg">
-              <CardTitle className="text-2xl font-serif text-primary flex items-center space-x-2">
+              <CardTitle className="text-2xl font-bold text-primary flex items-center space-x-2">
                 <MessageCircle className="w-6 h-6 text-sea" />
                 <span>{contactPageContent.quickContact.title}</span>
               </CardTitle>

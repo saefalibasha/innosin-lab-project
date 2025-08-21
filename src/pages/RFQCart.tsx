@@ -120,7 +120,7 @@ const RFQCart = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <AnimatedSection animation="fade-in" delay={100}>
-            <h1 className="text-4xl font-serif font-bold text-primary mb-4 animate-fade-in">
+            <h1 className="text-4xl font-bold text-primary mb-4 animate-fade-in">
               Request for Quote
             </h1>
           </AnimatedSection>
@@ -142,7 +142,7 @@ const RFQCart = () => {
             <AnimatedSection animation="fade-in-left" delay={200}>
               <Card className="glass-card hover:shadow-xl transition-all duration-300">
                 <CardHeader>
-                  <CardTitle className="flex items-center space-x-2 text-2xl font-serif text-primary">
+                  <CardTitle className="flex items-center space-x-2 text-2xl font-bold text-primary">
                     <ShoppingCart className="w-6 h-6 text-sea" />
                     <span>Selected Items</span>
                   </CardTitle>
@@ -170,7 +170,7 @@ const RFQCart = () => {
                             className="w-16 h-16 object-cover rounded-md bg-sea/10"
                           />
                           <div className="flex-1">
-                            <h3 className="font-serif font-semibold text-primary">{item.name}</h3>
+                            <h3 className="font-semibold text-primary">{item.name}</h3>
                             <p className="text-sm text-muted-foreground">{item.category}</p>
                             <p className="text-xs text-muted-foreground">{item.dimensions}</p>
                           </div>
@@ -235,7 +235,7 @@ const RFQCart = () => {
             <AnimatedSection animation="fade-in-right" delay={400}>
               <Card className="glass-card hover:shadow-xl transition-all duration-300 sticky" style={{ top: '6rem' }}>
                 <CardHeader>
-                  <CardTitle className="text-2xl font-serif text-primary">Contact Information</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-primary">Contact Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
@@ -327,7 +327,7 @@ const RFQCart = () => {
         <AnimatedSection animation="fade-in" delay={600}>
           <Card className="mt-12 glass-card hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
-              <h3 className="text-lg font-serif font-semibold text-primary mb-4">
+              <h3 className="text-lg font-semibold text-primary mb-4">
                 What happens next?
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

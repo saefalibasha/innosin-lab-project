@@ -42,7 +42,7 @@ const CompanyLandingHeader: React.FC<CompanyLandingHeaderProps> = ({ productsCou
           </AnimatedSection>
 
           <AnimatedSection animation="fade-in" delay={300}>
-            <h1 className="text-5xl font-serif font-bold mb-6 company-themed:text-[hsl(var(--company-primary))] text-primary">
+            <h1 className="text-5xl font-bold mb-6 company-themed:text-[hsl(var(--company-primary))] text-primary">
               {activeTheme.name}
             </h1>
           </AnimatedSection>

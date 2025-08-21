@@ -130,7 +130,7 @@ const ShopTheLook = () => {
       {content && (
         <Reveal>
           <div className="text-center mb-8">
-            <h2 className="text-4xl font-serif font-bold text-primary mb-4 tracking-tight">
+            <h2 className="text-4xl font-bold text-primary mb-4 tracking-tight">
               {content.title} <span className="text-sea">{content.titleHighlight}</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
