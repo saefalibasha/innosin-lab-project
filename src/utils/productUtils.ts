@@ -41,20 +41,28 @@ export const getDrawerCount = (product: Product): number => {
 
 export const getConfigurableAttributes = (product: Product, productType: string): string[] => {
   const attributes = [];
+  const name = product.name?.toLowerCase() || '';
+  const productCode = product.product_code?.toLowerCase() || '';
   
   // Always include dimensions for Innosin Lab products
   if (product.dimensions) attributes.push('dimensions');
   
-  // Include drawer count if available
-  const drawerCount = getDrawerCount(product);
-  if (drawerCount > 0) {
-    attributes.push(product.number_of_drawers ? 'number_of_drawers' : 'drawer_count');
+  // Only include drawer count for products that actually have drawers
+  // Exclude knee space benches and other non-cabinet products
+  const isKneeSpace = name.includes('knee space') || productCode.includes('ks');
+  const isOpenRack = name.includes('open rack') || productCode.includes('or-');
+  
+  if (!isKneeSpace && !isOpenRack) {
+    const drawerCount = getDrawerCount(product);
+    if (drawerCount > 0) {
+      attributes.push(product.number_of_drawers ? 'number_of_drawers' : 'drawer_count');
+    }
   }
   
   // Include other relevant attributes
-  if (product.door_type && product.door_type !== 'None') attributes.push('door_type');
-  if (product.orientation && product.orientation !== 'None') attributes.push('orientation');
-  if (product.mounting_type) attributes.push('mounting_type');
+  if (product.door_type && product.door_type !== 'None' && product.door_type !== '') attributes.push('door_type');
+  if (product.orientation && product.orientation !== 'None' && product.orientation !== '') attributes.push('orientation');
+  if (product.mounting_type && product.mounting_type !== '') attributes.push('mounting_type');
   
   return attributes;
 };
