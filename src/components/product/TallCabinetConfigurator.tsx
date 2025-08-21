@@ -20,13 +20,15 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
   selectedFinish,
   onFinishChange
 }) => {
+  const [selectedWidth, setSelectedWidth] = useState<string>('');
   const [selectedDepth, setSelectedDepth] = useState<string>('');
   const [selectedHeight, setSelectedHeight] = useState<string>('');
   const [selectedDoorType, setSelectedDoorType] = useState<string>('');
 
-  // Extract unique depth and height options from dimensions
-  const { depths, heights } = useMemo(() => {
+  // Extract unique width, depth, and height options from dimensions
+  const { widths, depths, heights } = useMemo(() => {
     const dimensionPairs = variants.map(v => v.dimensions).filter(Boolean);
+    const widthSet = new Set<string>();
     const depthSet = new Set<string>();
     const heightSet = new Set<string>();
 
@@ -39,20 +41,25 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
       console.log('Dimension parts after cleaning:', parts);
       
       if (parts.length >= 3) {
+        const width = parts[0]; // First value is width
         const depth = parts[1]; // Second value is depth
         const height = parts[2]; // Third value is height
+        widthSet.add(width);
         depthSet.add(depth);
         heightSet.add(height);
       }
     });
 
+    const sortedWidths = Array.from(widthSet).sort((a, b) => parseInt(a) - parseInt(b));
     const sortedDepths = Array.from(depthSet).sort((a, b) => parseInt(a) - parseInt(b));
     const sortedHeights = Array.from(heightSet).sort((a, b) => parseInt(a) - parseInt(b));
 
+    console.log('Extracted widths:', sortedWidths);
     console.log('Extracted depths:', sortedDepths);
     console.log('Extracted heights:', sortedHeights);
 
     return {
+      widths: sortedWidths,
       depths: sortedDepths,
       heights: sortedHeights
     };
@@ -64,9 +71,25 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     return types;
   }, [variants]);
 
+  // Extract available finishes dynamically from variant data
+  const availableFinishes = useMemo(() => {
+    const finishTypes = [...new Set(variants.map(v => v.finish_type).filter(Boolean))];
+    console.log('Available finish types from data:', finishTypes);
+    
+    const finishOptions = [];
+    if (finishTypes.includes('PC')) {
+      finishOptions.push({ value: 'PC', label: 'Powder Coat' });
+    }
+    if (finishTypes.includes('SS')) {
+      finishOptions.push({ value: 'SS', label: 'Stainless Steel' });
+    }
+    
+    return finishOptions;
+  }, [variants]);
+
   // Find matching variant based on current selections
-  const findMatchingVariant = (depth: string, height: string, doorType: string, finish: string) => {
-    console.log('Finding variant for:', { depth, height, doorType, finish });
+  const findMatchingVariant = (width: string, depth: string, height: string, doorType: string, finish: string) => {
+    console.log('Finding variant for:', { width, depth, height, doorType, finish });
     
     const matchingVariant = variants.find(v => {
       if (!v.dimensions) return false;
@@ -77,7 +100,8 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
       
       if (dimParts.length < 3) return false;
       
-      const matches = dimParts[1] === depth && 
+      const matches = dimParts[0] === width && 
+             dimParts[1] === depth && 
              dimParts[2] === height && 
              v.door_type === doorType && 
              v.finish_type === finish;
@@ -176,24 +200,43 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
+            {/* Width Selection */}
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Width (mm)</label>
+              {widths.length === 1 ? (
+                <div className="w-full h-8 text-sm bg-muted rounded border flex items-center px-3">
+                  <span className="text-muted-foreground">{widths[0]}mm</span>
+                </div>
+              ) : (
+                <Select value={selectedWidth} onValueChange={setSelectedWidth}>
+                  <SelectTrigger className="w-full h-8 text-sm">
+                    <SelectValue placeholder="Width" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border shadow-lg z-50">
+                    {widths.map((width) => (
+                      <SelectItem key={width} value={width}>
+                        {width}mm
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
             {/* Depth Selection */}
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Depth (mm)</label>
               <Select value={selectedDepth} onValueChange={handleDepthSelect}>
                 <SelectTrigger className="w-full h-8 text-sm">
-                  <SelectValue placeholder="Choose depth" />
+                  <SelectValue placeholder="Depth" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
-                  {depths.length === 0 ? (
-                    <SelectItem value="" disabled>No depths available</SelectItem>
-                  ) : (
-                    depths.map((depth) => (
-                      <SelectItem key={depth} value={depth}>
-                        {depth}mm
-                      </SelectItem>
-                    ))
-                  )}
+                  {depths.map((depth) => (
+                    <SelectItem key={depth} value={depth}>
+                      {depth}mm
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -203,23 +246,18 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
               <label className="text-xs text-muted-foreground mb-1 block">Height (mm)</label>
               <Select value={selectedHeight} onValueChange={handleHeightSelect}>
                 <SelectTrigger className="w-full h-8 text-sm">
-                  <SelectValue placeholder="Choose height" />
+                  <SelectValue placeholder="Height" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
-                  {heights.length === 0 ? (
-                    <SelectItem value="" disabled>No heights available</SelectItem>
-                  ) : (
-                    heights.map((height) => (
-                      <SelectItem key={height} value={height}>
-                        {height}mm
-                      </SelectItem>
-                    ))
-                  )}
+                  {heights.map((height) => (
+                    <SelectItem key={height} value={height}>
+                      {height}mm
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Width: 750mm (fixed)</p>
         </CardContent>
       </Card>
 
@@ -264,26 +302,19 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant={selectedFinish === 'PC' ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleFinishSelect('PC')}
-              className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
-              disabled={!isDimensionsComplete || !selectedDoorType}
-            >
-              {selectedFinish === 'PC' && <Check className="w-3 h-3" />}
-              <span className="font-medium">Powder Coat</span>
-            </Button>
-            <Button
-              variant={selectedFinish === 'SS' ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleFinishSelect('SS')}
-              className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
-              disabled={!isDimensionsComplete || !selectedDoorType}
-            >
-              {selectedFinish === 'SS' && <Check className="w-3 h-3" />}
-              <span className="font-medium">Stainless Steel</span>
-            </Button>
+            {availableFinishes.map((finish) => (
+              <Button
+                key={finish.value}
+                variant={selectedFinish === finish.value ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleFinishSelect(finish.value)}
+                className="h-auto py-2 flex flex-col items-center gap-1 text-xs"
+                disabled={!isDimensionsComplete || !selectedDoorType}
+              >
+                {selectedFinish === finish.value && <Check className="w-3 h-3" />}
+                <span className="font-medium">{finish.label}</span>
+              </Button>
+            ))}
           </div>
         </CardContent>
       </Card>
