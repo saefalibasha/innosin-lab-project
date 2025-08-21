@@ -132,18 +132,18 @@ const EnhancedProductDetail = () => {
       return 'fume_hood';
     }
 
-    // Innosin Lab detection - MOVED UP for priority
+    // Tall Cabinet detection - MOVED UP to have priority over general Innosin Lab
+    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
+      return 'tall_cabinet';
+    }
+
+    // Innosin Lab detection - for other Innosin products
     if (category.includes('innosin') || 
         productSeries.includes('innosin') ||
         product?.company_tags?.includes('Innosin Lab') ||
         category.toLowerCase() === 'innosin lab' ||
         productSeries.includes('knee space')) {
       return 'innosin_lab';
-    }
-    
-    // Tall Cabinet detection
-    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
-      return 'tall_cabinet';
     }
     
     // Open Rack detection
