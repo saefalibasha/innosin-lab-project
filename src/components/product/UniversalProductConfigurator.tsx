@@ -29,20 +29,32 @@ const UniversalProductConfigurator = ({
   const getGroupingAttributes = () => {
     const sampleVariant = variants[0];
     const attributes = [];
+    const productName = sampleVariant.name?.toLowerCase() || '';
+    const productCode = sampleVariant.product_code?.toLowerCase() || '';
+
+    // Check if this is a knee space or open rack product (should not have drawer options)
+    const isKneeSpace = productName.includes('knee space') || productCode.includes('ks');
+    const isOpenRack = productName.includes('open rack') || productCode.includes('or-');
 
     // Always check dimensions first for Innosin Lab products
     if (sampleVariant.dimensions) attributes.push('dimensions');
     
-    // Check drawer-related attributes (Innosin uses number_of_drawers, others use drawer_count)
-    if (sampleVariant.number_of_drawers && sampleVariant.number_of_drawers > 0) {
-      attributes.push('number_of_drawers');
-    } else if (sampleVariant.drawer_count && sampleVariant.drawer_count > 0) {
-      attributes.push('drawer_count');
+    // Check drawer-related attributes only for products that actually have drawers
+    if (!isKneeSpace && !isOpenRack) {
+      if (sampleVariant.number_of_drawers && sampleVariant.number_of_drawers > 0) {
+        attributes.push('number_of_drawers');
+      } else if (sampleVariant.drawer_count && sampleVariant.drawer_count > 0) {
+        attributes.push('drawer_count');
+      }
     }
     
-    // Door and orientation attributes
-    if (sampleVariant.door_type && sampleVariant.door_type !== 'None') attributes.push('door_type');
-    if (sampleVariant.orientation && sampleVariant.orientation !== 'None') attributes.push('orientation');
+    // Door and orientation attributes (only if they have meaningful values)
+    if (sampleVariant.door_type && sampleVariant.door_type !== 'None' && sampleVariant.door_type !== '') {
+      attributes.push('door_type');
+    }
+    if (sampleVariant.orientation && sampleVariant.orientation !== 'None' && sampleVariant.orientation !== '') {
+      attributes.push('orientation');
+    }
     
     // Other technical attributes
     if (sampleVariant.mounting_type) attributes.push('mounting_type');
@@ -235,11 +247,18 @@ const UniversalProductConfigurator = ({
                     {selectedVariant.dimensions}
                   </span>
                 )}
-                {(selectedVariant.number_of_drawers || selectedVariant.drawer_count) && (
-                  <span className="bg-background px-2 py-1 rounded">
-                    {selectedVariant.number_of_drawers || selectedVariant.drawer_count} Drawers
-                  </span>
-                )}
+                {(() => {
+                  const productName = selectedVariant.name?.toLowerCase() || '';
+                  const productCode = selectedVariant.product_code?.toLowerCase() || '';
+                  const isKneeSpace = productName.includes('knee space') || productCode.includes('ks');
+                  const isOpenRack = productName.includes('open rack') || productCode.includes('or-');
+                  
+                  return !isKneeSpace && !isOpenRack && (selectedVariant.number_of_drawers || selectedVariant.drawer_count) && (
+                    <span className="bg-background px-2 py-1 rounded">
+                      {selectedVariant.number_of_drawers || selectedVariant.drawer_count} Drawers
+                    </span>
+                  );
+                })()}
                 {selectedVariant.door_type && (
                   <span className="bg-background px-2 py-1 rounded">
                     {selectedVariant.door_type}

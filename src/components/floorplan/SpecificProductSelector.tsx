@@ -68,6 +68,13 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
     const options: Record<string, Set<string>> = {};
     
     products.forEach(product => {
+      const productName = product.name?.toLowerCase() || '';
+      const productCode = product.product_code?.toLowerCase() || '';
+      
+      // Check if this is a knee space or open rack product (should not have drawer options)
+      const isKneeSpace = productName.includes('knee space') || productCode.includes('ks');
+      const isOpenRack = productName.includes('open rack') || productCode.includes('or-');
+      
       // UNIFLEX configurations
       if (seriesType === 'uniflex') {
         if (product.mixing_type) {
@@ -94,15 +101,38 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
       
       // Innosin Lab configurations
       if (seriesType === 'innosin_lab') {
+        // Always show dimensions for Innosin Lab products
+        if (product.dimensions) {
+          if (!options.dimensions) options.dimensions = new Set();
+          options.dimensions.add(product.dimensions);
+        }
+        
+        // Always show finish options
         if (product.finish_type) {
           if (!options.finish_type) options.finish_type = new Set();
           options.finish_type.add(product.finish_type);
         }
-        if (product.orientation) {
+        
+        // Only show drawer count if the product actually has drawers and is not knee space/open rack
+        if (!isKneeSpace && !isOpenRack) {
+          if (product.number_of_drawers && product.number_of_drawers > 0) {
+            if (!options.number_of_drawers) options.number_of_drawers = new Set();
+            options.number_of_drawers.add(product.number_of_drawers.toString());
+          }
+          if (product.drawer_count && product.drawer_count > 0) {
+            if (!options.drawer_count) options.drawer_count = new Set();
+            options.drawer_count.add(product.drawer_count.toString());
+          }
+        }
+        
+        // Only show orientation for products that have meaningful orientation options
+        if (product.orientation && product.orientation !== 'None' && product.orientation !== '') {
           if (!options.orientation) options.orientation = new Set();
           options.orientation.add(product.orientation);
         }
-        if (product.door_type) {
+        
+        // Only show door type for products that have doors
+        if (product.door_type && product.door_type !== 'None' && product.door_type !== '') {
           if (!options.door_type) options.door_type = new Set();
           options.door_type.add(product.door_type);
         }
@@ -114,15 +144,17 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
         options.cabinet_class.add(product.cabinet_class);
       }
       
-      // Common configurations for all types
-      if (product.dimensions) {
-        if (!options.dimensions) options.dimensions = new Set();
-        options.dimensions.add(product.dimensions);
-      }
-      
-      if (product.finish_type && seriesType !== 'innosin_lab') {
-        if (!options.finish_type) options.finish_type = new Set();
-        options.finish_type.add(product.finish_type);
+      // Common configurations for non-Innosin Lab types
+      if (seriesType !== 'innosin_lab') {
+        if (product.dimensions) {
+          if (!options.dimensions) options.dimensions = new Set();
+          options.dimensions.add(product.dimensions);
+        }
+        
+        if (product.finish_type) {
+          if (!options.finish_type) options.finish_type = new Set();
+          options.finish_type.add(product.finish_type);
+        }
       }
     });
     
@@ -161,6 +193,10 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
               return product.door_type === value;
             case 'dimensions':
               return product.dimensions === value;
+            case 'number_of_drawers':
+              return product.number_of_drawers?.toString() === value;
+            case 'drawer_count':
+              return product.drawer_count?.toString() === value;
             default:
               return true;
           }
