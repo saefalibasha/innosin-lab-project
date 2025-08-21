@@ -38,6 +38,32 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   const [selectedDimensions, setSelectedDimensions] = useState<string>('');
   const [selectedOrientation, setSelectedOrientation] = useState<string>('');
 
+  // Detect series type and capabilities
+  const seriesCapabilities = useMemo(() => {
+    const lowerSeriesName = seriesName.toLowerCase();
+    const isKneeSpace = lowerSeriesName.includes('knee space');
+    const isOpenRack = lowerSeriesName.includes('open rack');
+    
+    // Check if any variants actually have drawers
+    const hasDrawers = variants.some(variant => {
+      const drawers = variant.number_of_drawers || variant.drawer_count || 
+        (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
+      return drawers && drawers > 0;
+    });
+
+    // Check if any variants have orientation
+    const hasOrientation = variants.some(variant => 
+      variant.orientation && variant.orientation !== 'None' && variant.orientation !== 'Standard'
+    );
+
+    return {
+      showDrawers: hasDrawers && !isKneeSpace && !isOpenRack,
+      showOrientation: hasOrientation && !isKneeSpace && !isOpenRack,
+      isKneeSpace,
+      isOpenRack
+    };
+  }, [variants, seriesName]);
+
   // Extract all available configuration options
   const configurationOptions = useMemo((): ConfigurationOptions => {
     const drawerCounts = new Set<number>();
@@ -45,20 +71,24 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
     const orientations = new Set<string>();
 
     variants.forEach(variant => {
-      // Drawer count - prioritize number_of_drawers from database
-      const drawers = variant.number_of_drawers || variant.drawer_count || 
-        (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
-      if (drawers && drawers > 0) drawerCounts.add(drawers);
+      // Drawer count - only if series supports drawers
+      if (seriesCapabilities.showDrawers) {
+        const drawers = variant.number_of_drawers || variant.drawer_count || 
+          (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
+        if (drawers && drawers > 0) drawerCounts.add(drawers);
+      }
 
       // Dimensions
       if (variant.dimensions) dimensions.add(variant.dimensions);
 
-      // Orientation
-      const orientation = variant.orientation;
-      if (orientation && orientation !== 'None' && orientation !== 'Standard') {
-        orientations.add(orientation);
+      // Orientation - only if series supports orientation
+      if (seriesCapabilities.showOrientation) {
+        const orientation = variant.orientation;
+        if (orientation && orientation !== 'None' && orientation !== 'Standard') {
+          orientations.add(orientation);
+        }
+        orientations.add('Standard');
       }
-      orientations.add('Standard');
     });
 
     return {
@@ -70,7 +100,7 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
         { value: 'SS', label: 'Stainless Steel' }
       ]
     };
-  }, [variants]);
+  }, [variants, seriesCapabilities]);
 
   // Filter variants based on current selections
   const getFilteredVariants = (
@@ -79,8 +109,8 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
     orientation?: string
   ) => {
     return variants.filter(variant => {
-      // Drawer count filter
-      if (drawerCount) {
+      // Drawer count filter - only apply if series supports drawers
+      if (drawerCount && seriesCapabilities.showDrawers) {
         const variantDrawers = variant.number_of_drawers || variant.drawer_count || 
           (variant.product_code?.match(/DWR?(\d+)/)?.[1] ? parseInt(variant.product_code.match(/DWR?(\d+)/)?.[1]!) : undefined);
         if (variantDrawers !== parseInt(drawerCount)) return false;
@@ -89,8 +119,8 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
       // Dimensions filter
       if (dimensions && variant.dimensions !== dimensions) return false;
 
-      // Orientation filter
-      if (orientation) {
+      // Orientation filter - only apply if series supports orientation
+      if (orientation && seriesCapabilities.showOrientation) {
         const variantOrientation = variant.orientation || 'Standard';
         if (variantOrientation !== orientation) return false;
       }
@@ -132,23 +162,24 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   // Auto-select first variant when configuration changes
   useEffect(() => {
     const filteredVariants = getFilteredVariants(
-      selectedDrawerCount,
+      seriesCapabilities.showDrawers ? selectedDrawerCount : undefined,
       selectedDimensions,
-      selectedOrientation
+      seriesCapabilities.showOrientation ? selectedOrientation : undefined
     );
     
     console.log('🔧 Configuration changed:', {
       drawerCount: selectedDrawerCount,
       dimensions: selectedDimensions,
       orientation: selectedOrientation,
-      filteredVariants: filteredVariants.length
+      filteredVariants: filteredVariants.length,
+      capabilities: seriesCapabilities
     });
     
     if (filteredVariants.length > 0 && !filteredVariants.find(v => v.id === selectedVariantId)) {
       console.log('🎯 Auto-selecting variant:', filteredVariants[0].product_code);
       onVariantChange(filteredVariants[0].id);
     }
-  }, [selectedDrawerCount, selectedDimensions, selectedOrientation]);
+  }, [selectedDrawerCount, selectedDimensions, selectedOrientation, seriesCapabilities]);
 
   // Reset dependent selections when parent selection changes
   const handleDrawerCountChange = (value: string) => {
@@ -201,25 +232,27 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Drawer Count */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-muted-foreground">Number of Drawers</label>
-              <Select value={selectedDrawerCount} onValueChange={handleDrawerCountChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select drawer count" />
-                </SelectTrigger>
-                <SelectContent>
-                  {configurationOptions.drawerCounts.map(count => (
-                    <SelectItem key={count} value={count.toString()}>
-                      {count} {count === 1 ? 'Drawer' : 'Drawers'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Drawer Count - only show if series supports drawers */}
+            {seriesCapabilities.showDrawers && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Number of Drawers</label>
+                <Select value={selectedDrawerCount} onValueChange={handleDrawerCountChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select drawer count" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {configurationOptions.drawerCounts.map(count => (
+                      <SelectItem key={count} value={count.toString()}>
+                        {count} {count === 1 ? 'Drawer' : 'Drawers'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
-            {/* Dimensions */}
-            {selectedDrawerCount && (
+            {/* Dimensions - show immediately for knee space/open rack, or after drawer selection for others */}
+            {(!seriesCapabilities.showDrawers || selectedDrawerCount) && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Dimensions</label>
                 <Select value={selectedDimensions} onValueChange={handleDimensionsChange}>
@@ -237,8 +270,8 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
               </div>
             )}
 
-            {/* Orientation */}
-            {selectedDimensions && (
+            {/* Orientation - only show if series supports orientation and dimensions are selected */}
+            {seriesCapabilities.showOrientation && selectedDimensions && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Orientation</label>
                 <Select value={selectedOrientation} onValueChange={setSelectedOrientation}>
@@ -281,31 +314,38 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
           </Select>
         </div>
 
-        {/* Available Variants */}
-        {selectedDrawerCount && selectedDimensions && selectedOrientation && (
+        {/* Available Variants - show when required selections are made */}
+        {(
+          (!seriesCapabilities.showDrawers || selectedDrawerCount) && 
+          selectedDimensions && 
+          (!seriesCapabilities.showOrientation || selectedOrientation)
+        ) && (
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
               <h4 className="font-medium">Available Variants</h4>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {getFilteredVariants(selectedDrawerCount, selectedDimensions, selectedOrientation)
-                .map(variant => (
-                  <button
-                    key={variant.id}
-                    onClick={() => {
-                      console.log('🎯 Manual variant selection:', variant.product_code, variant.id);
-                      onVariantChange(variant.id);
-                    }}
-                    className={`p-2 text-xs rounded border transition-colors ${
-                      variant.id === selectedVariantId 
-                        ? 'bg-primary text-primary-foreground border-primary' 
-                        : 'hover:bg-muted border-border'
-                    }`}
-                  >
-                    {variant.product_code}
-                  </button>
-                ))}
+              {getFilteredVariants(
+                seriesCapabilities.showDrawers ? selectedDrawerCount : undefined,
+                selectedDimensions,
+                seriesCapabilities.showOrientation ? selectedOrientation : undefined
+              ).map(variant => (
+                <button
+                  key={variant.id}
+                  onClick={() => {
+                    console.log('🎯 Manual variant selection:', variant.product_code, variant.id);
+                    onVariantChange(variant.id);
+                  }}
+                  className={`p-2 text-xs rounded border transition-colors ${
+                    variant.id === selectedVariantId 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'hover:bg-muted border-border'
+                  }`}
+                >
+                  {variant.product_code}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -327,7 +367,7 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
                 </div>
               )}
 
-              {(selectedVariant.number_of_drawers || selectedVariant.drawer_count) && (
+              {seriesCapabilities.showDrawers && (selectedVariant.number_of_drawers || selectedVariant.drawer_count) && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Drawers:</span>
                   <span className="text-sm font-medium">
@@ -336,7 +376,7 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
                 </div>
               )}
 
-              {selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
+              {seriesCapabilities.showOrientation && selectedVariant.orientation && selectedVariant.orientation !== 'None' && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Orientation:</span>
                   <span className="text-sm font-medium">
