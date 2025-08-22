@@ -11,6 +11,8 @@ import { Product } from '@/types/product';
 import { fetchProductSeriesFromDatabase, searchProductSeries } from '@/services/productService';
 import { parseDimensionString, mmToCanvas, calculateProductScale } from '@/utils/measurements';
 import { toTitleCase } from '@/utils/formatting';
+import { formatSeriesName, formatProductName } from '@/utils/seriesNameFormatter';
+import { formatAttributeValue, getOrientationDisplayName } from '@/utils/productTerminology';
 
 interface EnhancedSeriesSelectorProps {
   onProductSelect: (product: PlacedProduct) => void;
@@ -358,10 +360,10 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                     </Badge>
                   </div>
                   <CardTitle className="text-sm leading-tight break-words">
-                    <div className="truncate" title={product.editable_title || product.name}>
-                      {(product.editable_title || product.name)?.length > 40 
-                        ? `${(product.editable_title || product.name).substring(0, 40)}...`
-                        : (product.editable_title || product.name)
+                    <div className="truncate" title={product.editable_title || formatProductName(product.name)}>
+                      {((product.editable_title || formatProductName(product.name))?.length > 40) 
+                        ? `${(product.editable_title || formatProductName(product.name)).substring(0, 40)}...`
+                        : (product.editable_title || formatProductName(product.name))
                       }
                     </div>
                   </CardTitle>
@@ -389,9 +391,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                       </p>
                     )}
                     
-                    {product.number_of_drawers && (
+                    {product.number_of_drawers !== undefined && product.number_of_drawers !== null && (
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Drawers:</span> {product.number_of_drawers}
+                        <span className="font-medium">Drawers:</span> {formatAttributeValue('drawer_count', product.number_of_drawers)}
                       </p>
                     )}
                     
@@ -403,7 +405,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                     
                     {product.orientation && (
                       <p className="text-xs text-muted-foreground">
-                        <span className="font-medium">Orientation:</span> {product.orientation}
+                        <span className="font-medium">Orientation:</span> {getOrientationDisplayName(product.orientation)}
                       </p>
                     )}
                     

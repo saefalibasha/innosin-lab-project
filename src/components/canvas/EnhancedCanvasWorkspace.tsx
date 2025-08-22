@@ -1368,12 +1368,22 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           e.preventDefault();
           console.log('Canvas drop event triggered');
           
+          // Get the drop position
+          const dropPoint = getCanvasPoint(e);
+          const snappedPoint = snapToGrid(dropPoint);
+          
           // Check multiple data transfer formats for better compatibility
           let productData = e.dataTransfer.getData('application/json') || 
                            e.dataTransfer.getData('product') || 
                            e.dataTransfer.getData('text/plain');
           
           console.log('Product data received:', productData);
+          
+          if (!productData) {
+            console.error('No product data found in drop event');
+            toast.error('Failed to place product - no data received');
+            return;
+          }
           
           if (!productData) {
             console.error('No product data found in any format');
