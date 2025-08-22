@@ -1101,10 +1101,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.translate(product.position.x, product.position.y);
       ctx.rotate(product.rotation || 0);
       
-      // Scale dimensions from mm to canvas pixels
-      const lengthPx = (product.dimensions.length * scale) || 40;
-      const widthPx = (product.dimensions.width * scale) || 30;
-      const heightPx = (product.dimensions.height * scale) || 20;
+      // Use dimensions directly as they're already converted to canvas pixels
+      const lengthPx = product.dimensions.length || 40;
+      const widthPx = product.dimensions.width || 30;
       
       // Draw main product body
       ctx.fillStyle = product.color || '#4caf50';
@@ -1112,11 +1111,6 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.lineWidth = 2;
       ctx.fillRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
       ctx.strokeRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
-      
-      // Draw depth indicator (3D effect)
-      const depthOffset = Math.min(heightPx * 0.3, 8);
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
-      ctx.fillRect(-lengthPx/2 + depthOffset, -widthPx/2 + depthOffset, lengthPx, widthPx);
       
       // Draw rotation handle
       if (selectedItems.includes(product.id)) {
@@ -1132,22 +1126,6 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
       
       ctx.restore();
-      
-      // Draw product name and dimensions
-      ctx.fillStyle = '#000000';
-      ctx.font = '10px Arial';
-      const shortName = product.name.length > 15 ? product.name.substring(0, 12) + '...' : product.name;
-      const textWidth = ctx.measureText(shortName).width;
-      ctx.fillText(shortName, product.position.x - textWidth/2, product.position.y - (widthPx/2) - 8);
-      
-      // Show dimensions when selected
-      if (selectedItems.includes(product.id)) {
-        ctx.font = '9px Arial';
-        ctx.fillStyle = '#666666';
-        const dimensionText = `${Math.round(product.dimensions.length)}×${Math.round(product.dimensions.width)}mm`;
-        const dimWidth = ctx.measureText(dimensionText).width;
-        ctx.fillText(dimensionText, product.position.x - dimWidth/2, product.position.y + (widthPx/2) + 15);
-      }
     });
     
     // Draw snap lines when near grid lines

@@ -163,7 +163,7 @@ export const PlacedProductsBar: React.FC<PlacedProductsBarProps> = ({
                     }`}
                     onClick={(e) => handleProductGroupClick(group, e.shiftKey || e.ctrlKey || e.metaKey)}
                   >
-                    <CardContent className="p-3 w-40">
+                    <CardContent className="p-3 w-56">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           <div
@@ -171,12 +171,22 @@ export const PlacedProductsBar: React.FC<PlacedProductsBarProps> = ({
                             style={{ backgroundColor: group.color }}
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium text-xs truncate">
+                            <div className="font-medium text-xs text-foreground">
                               {group.name}
                             </div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="text-xs text-muted-foreground mt-1">
                               {group.dimensions}
                             </div>
+                            {group.instances[0]?.category && (
+                              <div className="text-xs text-muted-foreground/80">
+                                {group.instances[0].category}
+                              </div>
+                            )}
+                            {group.instances[0]?.productId && (
+                              <div className="text-xs text-muted-foreground/60 font-mono">
+                                {group.instances[0].productId}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-1 ml-2">
