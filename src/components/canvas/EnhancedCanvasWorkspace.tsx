@@ -51,8 +51,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   onClearAll
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
-  const [currentPath, setCurrentPath] = useState<Point[]>([]);
+  const [wallStartPoint, setWallStartPoint] = useState<Point | null>(null);
+  const [isWallPreview, setIsWallPreview] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -220,8 +220,25 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     }
     
     if (currentMode === 'wall' || currentMode === 'interior-wall') {
-      setIsDrawing(true);
-      setCurrentPath([snappedPoint]);
+      if (!wallStartPoint) {
+        // First click - start wall drawing
+        setWallStartPoint(snappedPoint);
+        setIsWallPreview(true);
+      } else {
+        // Second click - complete wall
+        const newWallSegment: WallSegment = {
+          id: `wall-${Date.now()}`,
+          start: wallStartPoint,
+          end: snappedPoint,
+          thickness: currentMode === 'interior-wall' ? 6 : 10,
+          color: currentMode === 'interior-wall' ? '#999999' : '#666666',
+          type: currentMode === 'interior-wall' ? WallType.PARTITION : WallType.EXTERIOR
+        };
+        setWallSegments(prev => [...prev, newWallSegment]);
+        setWallStartPoint(null);
+        setIsWallPreview(false);
+        setCurrentLineMeasurement('');
+      }
     } else if (currentMode === 'room') {
       setRoomPoints(prev => [...prev, snappedPoint]);
     } else if (currentMode === 'door') {
@@ -248,7 +265,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setTextAnnotations(prev => [...prev, newAnnotation]);
       }
     }
-  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint, findProductAtPoint]);
+  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint, findProductAtPoint, wallStartPoint, setWallSegments]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getCanvasPoint(e);
@@ -270,11 +287,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       return;
     }
     
-    if (isDrawing && (currentMode === 'wall' || currentMode === 'interior-wall') && currentPath.length > 0) {
-      const startPoint = currentPath[0];
-      
+    if (isWallPreview && wallStartPoint && (currentMode === 'wall' || currentMode === 'interior-wall')) {
       // Constrain to orthogonal lines
-      const constrainedPoint = constrainToOrtho(startPoint, point);
+      const constrainedPoint = constrainToOrtho(wallStartPoint, point);
       
       // Try snapping to endpoints first, then grid
       const snapResult = snapToEndpoints(constrainedPoint);
@@ -287,8 +302,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         vertical: snapResult.showGuides ? finalPoint.x : null
       });
       
-      const dx = finalPoint.x - startPoint.x;
-      const dy = finalPoint.y - startPoint.y;
+      const dx = finalPoint.x - wallStartPoint.x;
+      const dy = finalPoint.y - wallStartPoint.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       const distanceInMm = canvasToMm(distance, scale);
       
@@ -322,7 +337,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       setSnapLines({ x: null, y: null });
       setSnapGuides({ horizontal: null, vertical: null });
       
-      if (currentMode === 'wall' || currentMode === 'interior-wall') {
+      if ((currentMode === 'wall' || currentMode === 'interior-wall') && !isWallPreview) {
         setCurrentLineMeasurement('');
       }
     }
@@ -332,30 +347,19 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const hoveredWallFound = findWallAtPoint(point);
       setHoveredWall(hoveredWallFound?.id || null);
     }
-  }, [isDrawing, isDragging, draggedItem, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, constrainToOrtho, currentPath, scale, measurementUnit, findWallAtPoint, showGrid, gridSize, dragOffset, placedProducts, setPlacedProducts]);
+  }, [isWallPreview, wallStartPoint, isDragging, draggedItem, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, constrainToOrtho, scale, measurementUnit, findWallAtPoint, showGrid, gridSize, dragOffset, placedProducts, setPlacedProducts]);
 
   const handleMouseUp = useCallback(() => {
-    if (isDrawing && (currentMode === 'wall' || currentMode === 'interior-wall') && currentPath.length >= 1) {
-      const newWallSegment: WallSegment = {
-        id: `wall-${Date.now()}`,
-        start: currentPath[0],
-        end: lastMousePos,
-        thickness: currentMode === 'interior-wall' ? 6 : 10,
-        color: currentMode === 'interior-wall' ? '#999999' : '#666666',
-        type: currentMode === 'interior-wall' ? WallType.PARTITION : WallType.EXTERIOR
-      };
-      setWallSegments(prev => [...prev, newWallSegment]);
-    }
-    
-    // Reset dragging state
-    setIsDrawing(false);
+    // Reset dragging state (but not wall preview state)
     setIsDragging(false);
     setDraggedItem(null);
-    setCurrentPath([]);
-    setCurrentLineMeasurement('');
-    setSnapLines({ x: null, y: null });
-    setSnapGuides({ horizontal: null, vertical: null });
-  }, [isDrawing, currentMode, currentPath, setWallSegments, lastMousePos]);
+    
+    // Don't reset wall preview state here - it's handled in handleMouseDown
+    if (!isWallPreview) {
+      setSnapLines({ x: null, y: null });
+      setSnapGuides({ horizontal: null, vertical: null });
+    }
+  }, [isWallPreview]);
 
   const handleDoubleClick = useCallback(() => {
     if (currentMode === 'room' && roomPoints.length >= 3) {
@@ -544,28 +548,35 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       });
     }
     
-    // Draw current drawing path with enhanced visibility
-    if (currentPath.length > 0) {
+    // Draw wall preview line with enhanced visibility
+    if (isWallPreview && wallStartPoint) {
       // Draw the line from start to current mouse position
       ctx.strokeStyle = '#ff4444';
       ctx.lineWidth = 3;
-      ctx.setLineDash([]);
+      ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.moveTo(currentPath[0].x, currentPath[0].y);
+      ctx.moveTo(wallStartPoint.x, wallStartPoint.y);
       ctx.lineTo(lastMousePos.x, lastMousePos.y);
       ctx.stroke();
+      ctx.setLineDash([]);
       
       // Draw start point
-      ctx.fillStyle = '#ff4444';
+      ctx.fillStyle = '#10b981';
       ctx.beginPath();
-      ctx.arc(currentPath[0].x, currentPath[0].y, 4, 0, 2 * Math.PI);
+      ctx.arc(wallStartPoint.x, wallStartPoint.y, 6, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
       
       // Draw current mouse position
-      ctx.fillStyle = '#ff4444';
+      ctx.fillStyle = '#ef4444';
       ctx.beginPath();
-      ctx.arc(lastMousePos.x, lastMousePos.y, 4, 0, 2 * Math.PI);
+      ctx.arc(lastMousePos.x, lastMousePos.y, 6, 0, 2 * Math.PI);
       ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
     
     // Draw doors
@@ -686,35 +697,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.setLineDash([]); // Reset dash
     }
 
-    // Draw live measurement during wall drawing with enhanced styling and start/end indicators
-    if (isDrawing && currentMode === 'wall' && currentPath.length > 0 && currentLineMeasurement) {
-      const startPoint = currentPath[0];
+    // Draw live measurement during wall preview with enhanced styling
+    if (isWallPreview && wallStartPoint && currentLineMeasurement) {
+      const startPoint = wallStartPoint;
       const endPoint = lastMousePos;
-      
-      // Draw start point indicator
-      ctx.beginPath();
-      ctx.arc(startPoint.x, startPoint.y, 6, 0, 2 * Math.PI);
-      ctx.fillStyle = '#10b981';
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      
-      // Draw end point indicator
-      ctx.beginPath();
-      ctx.arc(endPoint.x, endPoint.y, 6, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ef4444';
-      ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
       
       // Draw measurement at midpoint
       const midX = (startPoint.x + endPoint.x) / 2;
       const midY = (startPoint.y + endPoint.y) / 2;
       
       // Draw measurement background with border
-      ctx.font = 'bold 16px Arial'; // Increased from 12px
+      ctx.font = 'bold 16px Arial';
       const textWidth = ctx.measureText(currentLineMeasurement).width;
       const padding = 8;
       const rectX = midX - textWidth/2 - padding;
@@ -737,11 +730,28 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.textBaseline = 'alphabetic';
     }
     
-  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements, snapLines, snapGuides]);
+  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, wallStartPoint, isWallPreview, doors, textAnnotations, placedProducts, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements, snapLines, snapGuides]);
 
   useEffect(() => {
     drawCanvas();
   }, [drawCanvas]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isWallPreview) {
+        // Cancel wall drawing
+        setWallStartPoint(null);
+        setIsWallPreview(false);
+        setCurrentLineMeasurement('');
+        setSnapLines({ x: null, y: null });
+        setSnapGuides({ horizontal: null, vertical: null });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isWallPreview]);
 
   return (
     <div className="w-full h-full bg-white rounded-lg border border-gray-200 overflow-hidden">

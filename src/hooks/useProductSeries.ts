@@ -182,8 +182,19 @@ export const useProductSeries = () => {
         }
       });
 
-      // Filter out series that have no products (after filtering out products without photos)
-      const filteredSeries = Array.from(seriesMap.values()).filter(series => series.products.length > 0);
+      // Filter out series that have no products and unwanted series
+      const filteredSeries = Array.from(seriesMap.values())
+        .filter(series => series.products.length > 0)
+        .filter(series => {
+          const seriesName = series.name.toLowerCase();
+          // Filter out Broen tap/shower series and Innosin chair series
+          const isBroenTapShower = seriesName.includes('broen') && 
+            (seriesName.includes('tap') || seriesName.includes('shower'));
+          const isInnosinChair = seriesName.includes('innosin') && 
+            seriesName.includes('chair');
+          
+          return !isBroenTapShower && !isInnosinChair;
+        });
       
       setProductSeries(filteredSeries);
     } catch (err) {
