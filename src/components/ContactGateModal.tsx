@@ -27,6 +27,7 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
     company: '',
     jobTitle: '',
     phone: '',
+    message: '',
     createInquiry: false,
     inquirySubject: '',
     inquiryContent: ''
@@ -169,6 +170,17 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
                   value={formData.phone}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   placeholder="Enter your phone number"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="message">Message (Optional)</Label>
+                <Textarea
+                  id="message"
+                  value={formData.message}
+                  onChange={(e) => handleInputChange('message', e.target.value)}
+                  placeholder="Tell us about your project or inquiry..."
+                  rows={3}
                 />
               </div>
             </CardContent>
