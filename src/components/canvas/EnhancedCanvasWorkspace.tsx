@@ -189,6 +189,21 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     return Math.sqrt(dx * dx + dy * dy);
   };
 
+  // Helper function to calculate final position with all constraints applied
+  const calculateFinalPosition = useCallback((startPoint: Point, currentPoint: Point): Point => {
+    // Step 1: Apply orthogonal constraint
+    const constrainedPoint = constrainToOrtho(startPoint, currentPoint);
+    
+    // Step 2: Try snapping to endpoints first
+    const snapResult = snapToEndpoints(constrainedPoint);
+    if (snapResult.point) {
+      return snapResult.point;
+    }
+    
+    // Step 3: Fall back to grid snapping
+    return snapToGrid(constrainedPoint);
+  }, [constrainToOrtho, snapToEndpoints, snapToGrid]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getCanvasPoint(e);
     const snappedPoint = snapToGrid(point);
@@ -225,11 +240,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setWallStartPoint(snappedPoint);
         setIsWallPreview(true);
       } else {
-        // Second click - complete wall
+        // Second click - complete wall using same positioning logic as preview
+        const finalEndPoint = calculateFinalPosition(wallStartPoint, point);
+        
         const newWallSegment: WallSegment = {
           id: `wall-${Date.now()}`,
           start: wallStartPoint,
-          end: snappedPoint,
+          end: finalEndPoint,
           thickness: currentMode === 'interior-wall' ? 6 : 10,
           color: currentMode === 'interior-wall' ? '#999999' : '#666666',
           type: currentMode === 'interior-wall' ? WallType.PARTITION : WallType.EXTERIOR
@@ -238,6 +255,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setWallStartPoint(null);
         setIsWallPreview(false);
         setCurrentLineMeasurement('');
+        setSnapGuides({ horizontal: null, vertical: null });
       }
     } else if (currentMode === 'room') {
       setRoomPoints(prev => [...prev, snappedPoint]);
