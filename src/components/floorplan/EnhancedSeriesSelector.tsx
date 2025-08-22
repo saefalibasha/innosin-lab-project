@@ -243,11 +243,13 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       doorType: product.door_type ? toTitleCase(product.door_type) : ''
     };
 
+    // Set only application/json to avoid conflicts
     e.dataTransfer.setData('application/json', JSON.stringify(floorPlanProduct));
-    e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
     e.dataTransfer.effectAllowed = 'copy';
     
-    console.log('Drag started with product data:', floorPlanProduct);
+    console.log('=== DRAG START ===');
+    console.log('Product being dragged:', floorPlanProduct);
+    console.log('Data transfer types set:', e.dataTransfer.types);
     onProductDrag(floorPlanProduct);
     
     if (onProductUsed) {

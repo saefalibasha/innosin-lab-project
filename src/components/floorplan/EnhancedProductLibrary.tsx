@@ -128,7 +128,13 @@ const EnhancedProductLibrary: React.FC<EnhancedProductLibraryProps> = ({
       series: product.category
     };
 
-    e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
+    // Set only application/json to avoid conflicts
+    e.dataTransfer.setData('application/json', JSON.stringify(floorPlanProduct));
+    e.dataTransfer.effectAllowed = 'copy';
+    
+    console.log('=== PRODUCT LIBRARY DRAG START ===');
+    console.log('Product being dragged:', floorPlanProduct);
+    
     onProductDrag(floorPlanProduct);
     
     // Track product usage
@@ -272,11 +278,19 @@ const EnhancedProductLibrary: React.FC<EnhancedProductLibraryProps> = ({
                                   {dimensions.length.toFixed(1)} × {dimensions.width.toFixed(1)}m
                                 </span>
                                 
-                                {product.specifications && Array.isArray(product.specifications) && product.specifications.length > 0 && (
-                                  <Badge variant="secondary" className="text-xs h-4">
-                                    {product.specifications.length} specs
-                                  </Badge>
-                                )}
+                                <div className="flex items-center space-x-1">
+                                  {product.number_of_drawers && (
+                                    <Badge variant="outline" className="text-xs h-4">
+                                      {product.number_of_drawers} drawers
+                                    </Badge>
+                                  )}
+                                  
+                                  {product.specifications && Array.isArray(product.specifications) && product.specifications.length > 0 && (
+                                    <Badge variant="secondary" className="text-xs h-4">
+                                      {product.specifications.length} specs
+                                    </Badge>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>

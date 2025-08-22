@@ -1373,13 +1373,14 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           const dropPoint = getCanvasPoint(e);
           const snappedPoint = snapToGrid(dropPoint);
           
-          // Check multiple data transfer formats for better compatibility
-          let productData = e.dataTransfer.getData('application/json') || 
-                           e.dataTransfer.getData('product') || 
-                           e.dataTransfer.getData('text/plain');
-          
-          console.log('Product data received:', productData);
+          console.log('=== DROP EVENT ===');
           console.log('Available data transfer types:', Array.from(e.dataTransfer.types));
+          
+          // Get product data from application/json format
+          let productData = e.dataTransfer.getData('application/json');
+          
+          console.log('Raw product data received:', productData);
+          console.log('Data length:', productData?.length || 0);
           
           if (!productData) {
             console.error('No product data found in drop event');
