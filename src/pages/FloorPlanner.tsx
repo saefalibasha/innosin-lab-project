@@ -535,6 +535,10 @@ const FloorPlanner = () => {
               showGrid={showGrid}
               scale={scale}
               onScaleChange={handleScaleChange}
+              doorOrientation={'horizontal'}
+              onDoorOrientationChange={(orientation) => {
+                console.log('Door orientation changed to:', orientation);
+              }}
             />
 
             {/* Room Creator Modal */}

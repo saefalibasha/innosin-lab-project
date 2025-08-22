@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RotateCcw } from 'lucide-react';
+import { getOrientationDisplayName } from '@/utils/productTerminology';
 
 interface ProductOrientationSelectorProps {
   orientations: ('LH' | 'RH')[];
@@ -31,13 +32,13 @@ const ProductOrientationSelector: React.FC<ProductOrientationSelectorProps> = ({
             onClick={() => onOrientationChange(orientation)}
             className="transition-all duration-200 min-w-16"
           >
-            {orientation}
+            {getOrientationDisplayName(orientation)}
           </Button>
         ))}
       </div>
       {selectedOrientation !== 'None' && (
         <div className="text-sm text-muted-foreground">
-          Current orientation: <Badge variant="outline">{selectedOrientation}</Badge>
+          Current orientation: <Badge variant="outline">{getOrientationDisplayName(selectedOrientation)}</Badge>
         </div>
       )}
     </div>

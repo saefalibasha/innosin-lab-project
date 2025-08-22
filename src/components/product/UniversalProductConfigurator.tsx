@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { getAttributeLabel, formatAttributeValue, formatFinishType, getOrientationDisplayName } from '@/utils/productTerminology';
 
 interface UniversalProductConfiguratorProps {
   variants: any[];
@@ -85,20 +86,7 @@ const UniversalProductConfigurator = ({
 
   const configGroups = createConfigurationGroups();
 
-  const getAttributeLabel = (attr: string) => {
-    const labels = {
-      dimensions: 'Dimensions',
-      door_type: 'Door Type',
-      orientation: 'Orientation',
-      drawer_count: 'Number of Drawers',
-      number_of_drawers: 'Number of Drawers',
-      mounting_type: 'Mounting Type',
-      mixing_type: 'Mixing Type',
-      handle_type: 'Handle Type',
-      emergency_shower_type: 'Emergency Shower Type'
-    };
-    return labels[attr] || attr.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
+  // Use the utility function for attribute labels
 
   // Enhanced finish options based on product type
   const getFinishOptions = () => {
@@ -137,7 +125,22 @@ const UniversalProductConfigurator = ({
     return standardOptions;
   };
 
-  // Enhanced variant selection logic
+  // Enhanced variant selection logic with cascading filtering
+  const getAvailableValues = (attr: string) => {
+    // Filter variants based on all currently selected attributes except the one being changed
+    const currentSelections = { ...selectedVariant };
+    delete currentSelections[attr];
+    
+    const compatibleVariants = variants.filter(variant => {
+      return groupingAttributes.every(checkAttr => {
+        if (checkAttr === attr) return true; // Don't filter by the attribute being changed
+        return !currentSelections[checkAttr] || variant[checkAttr] === currentSelections[checkAttr];
+      });
+    });
+    
+    return [...new Set(compatibleVariants.map(v => v[attr]).filter(Boolean))];
+  };
+
   const handleAttributeChange = (attr: string, value: string) => {
     // Find the best matching variant based on current selections and new attribute
     let bestMatch = null;
@@ -191,12 +194,9 @@ const UniversalProductConfigurator = ({
                   <SelectValue placeholder={`Select ${getAttributeLabel(attr).toLowerCase()}`} />
                 </SelectTrigger>
                 <SelectContent>
-                  {configGroups[attr]?.map(group => (
-                    <SelectItem key={String(group.value)} value={String(group.value)}>
-                      {/* Enhanced display for different attribute types */}
-                      {attr === 'dimensions' ? String(group.value) :
-                       attr === 'number_of_drawers' || attr === 'drawer_count' ? `${group.value} Drawers` :
-                       String(group.value)}
+                  {getAvailableValues(attr).map(value => (
+                    <SelectItem key={String(value)} value={String(value)}>
+                      {formatAttributeValue(attr, value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -220,7 +220,7 @@ const UniversalProductConfigurator = ({
               onClick={() => onFinishChange(finish.value)}
               className="min-w-0"
             >
-              {finish.label}
+              {formatFinishType(finish.value)}
             </Button>
           ))}
         </div>
@@ -247,32 +247,18 @@ const UniversalProductConfigurator = ({
                     {selectedVariant.dimensions}
                   </span>
                 )}
-                {(() => {
-                  const productName = selectedVariant.name?.toLowerCase() || '';
-                  const productCode = selectedVariant.product_code?.toLowerCase() || '';
-                  const isKneeSpace = productName.includes('knee space') || productCode.includes('ks');
-                  const isOpenRack = productName.includes('open rack') || productCode.includes('or-');
+                {groupingAttributes.map(attr => {
+                  const value = selectedVariant[attr];
+                  if (!value) return null;
                   
-                  return !isKneeSpace && !isOpenRack && (selectedVariant.number_of_drawers || selectedVariant.drawer_count) && (
-                    <span className="bg-background px-2 py-1 rounded">
-                      {selectedVariant.number_of_drawers || selectedVariant.drawer_count} Drawers
+                  return (
+                    <span key={attr} className="bg-background px-2 py-1 rounded">
+                      {formatAttributeValue(attr, value)}
                     </span>
                   );
-                })()}
-                {selectedVariant.door_type && (
-                  <span className="bg-background px-2 py-1 rounded">
-                    {selectedVariant.door_type}
-                  </span>
-                )}
-                {selectedVariant.orientation && (
-                  <span className="bg-background px-2 py-1 rounded">
-                    {selectedVariant.orientation}
-                  </span>
-                )}
+                })}
                 <span className="bg-background px-2 py-1 rounded">
-                  {selectedFinish === 'PC' ? 'Powder Coat' : 
-                   selectedFinish === 'SS' ? 'Stainless Steel' :
-                   selectedFinish === 'SS304' ? 'SS304' : selectedFinish}
+                  {formatFinishType(selectedFinish)}
                 </span>
               </div>
             </div>

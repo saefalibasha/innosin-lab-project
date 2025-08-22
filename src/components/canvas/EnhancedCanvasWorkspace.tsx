@@ -69,6 +69,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
   const [dragMeasurements, setDragMeasurements] = useState<{ top: number; right: number; bottom: number; left: number } | null>(null);
   const [doorSnapPreview, setDoorSnapPreview] = useState<{ point: Point; wall: WallSegment } | null>(null);
+  const [doorOrientation, setDoorOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
   
   // Initialize snap system
   const snapSystem = new SnapSystem(
@@ -596,6 +597,14 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       
       if (doorSnapResult.snapped && doorSnapResult.target) {
         const targetWall = doorSnapResult.target as WallSegment;
+        
+        // Determine door orientation based on wall angle
+        const wallAngle = Math.atan2(
+          targetWall.end.y - targetWall.start.y,
+          targetWall.end.x - targetWall.start.x
+        );
+        const isWallHorizontal = Math.abs(Math.sin(wallAngle)) < 0.5;
+        
         const newDoor: Door = {
           id: `door-${Date.now()}`,
           position: doorSnapResult.point,
@@ -603,7 +612,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           wallId: targetWall.id,
           wallSegmentId: targetWall.id,
           wallPosition: undefined,
-          isEmbedded: true
+          isEmbedded: true,
+          facing: isWallHorizontal ? 'vertical' : 'horizontal'
         };
         setDoors(prev => [...prev, newDoor]);
         toast.success('Door placed on wall');
@@ -616,7 +626,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           wallId: undefined,
           wallSegmentId: undefined,
           wallPosition: undefined,
-          isEmbedded: false
+          isEmbedded: false,
+          facing: doorOrientation
         };
         setDoors(prev => [...prev, newDoor]);
         toast.info('Door placed without wall alignment');
@@ -1365,7 +1376,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           console.log('Product data received:', productData);
           
           if (!productData) {
-            console.log('No product data found in drop event');
+            console.error('No product data found in any format');
+            toast.error('Failed to place product - no data received');
             return;
           }
           

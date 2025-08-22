@@ -62,6 +62,7 @@ export interface Door {
   wallSegmentId?: string;
   wallPosition?: number;
   isEmbedded?: boolean;
+  facing?: 'horizontal' | 'vertical';
 }
 
 export interface TextAnnotation {

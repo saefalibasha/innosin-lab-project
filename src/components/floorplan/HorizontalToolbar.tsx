@@ -15,7 +15,9 @@ import {
   ZoomOut,
   RotateCcw,
   Move,
-  Minus
+  Minus,
+  ArrowUpDown,
+  ArrowLeftRight
 } from 'lucide-react';
 import { DrawingMode } from '@/types/floorPlanTypes';
 
@@ -32,6 +34,8 @@ interface HorizontalToolbarProps {
   showGrid: boolean;
   scale: number;
   onScaleChange?: (newScale: number) => void;
+  doorOrientation?: 'horizontal' | 'vertical';
+  onDoorOrientationChange?: (orientation: 'horizontal' | 'vertical') => void;
 }
 
 const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
@@ -46,7 +50,9 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
   onToggleGrid,
   showGrid,
   scale,
-  onScaleChange
+  onScaleChange,
+  doorOrientation = 'horizontal',
+  onDoorOrientationChange
 }) => {
   return (
     <Card>
@@ -103,6 +109,30 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
               >
                 <DoorOpen className="h-4 w-4" />
               </Button>
+              
+              {/* Door Orientation Controls */}
+              {currentTool === 'door' && onDoorOrientationChange && (
+                <div className="flex items-center border rounded ml-2">
+                  <Button
+                    variant={doorOrientation === 'horizontal' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => onDoorOrientationChange('horizontal')}
+                    title="Horizontal Door"
+                    className="rounded-r-none"
+                  >
+                    <ArrowLeftRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant={doorOrientation === 'vertical' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => onDoorOrientationChange('vertical')}
+                    title="Vertical Door"
+                    className="rounded-l-none"
+                  >
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
               <Button
                 variant={currentTool === 'text' ? 'default' : 'outline'}
                 size="sm"
