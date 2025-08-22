@@ -33,8 +33,11 @@ import ExportModal from '@/components/ExportModal';
 import WallEditor from '@/components/floorplan/WallEditor';
 import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
 import { ContactGateModal } from '@/components/ContactGateModal';
+import { useAuth } from '@/contexts/AuthContext';
 
 const FloorPlanner = () => {
+  const { user, isAdmin } = useAuth();
+  
   // Access control state
   const [hasAccess, setHasAccess] = useState(false);
   const [showContactGate, setShowContactGate] = useState(true);
@@ -42,21 +45,25 @@ const FloorPlanner = () => {
   // Check for admin access or existing session
   useEffect(() => {
     const checkAccess = () => {
-      // Check for admin email
-      const adminEmail = 'saefalib@innosinlab.com';
-      const userEmail = sessionStorage.getItem('userEmail');
-      
       // Check for existing contact info
       const contactInfo = sessionStorage.getItem('contactInfo');
       
-      if (userEmail === adminEmail || contactInfo) {
+      // Admin bypass: if user is logged in as admin
+      if (user && isAdmin) {
+        setHasAccess(true);
+        setShowContactGate(false);
+        return;
+      }
+      
+      // Regular user: check if they provided contact info
+      if (contactInfo) {
         setHasAccess(true);
         setShowContactGate(false);
       }
     };
     
     checkAccess();
-  }, []);
+  }, [user, isAdmin]);
 
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);

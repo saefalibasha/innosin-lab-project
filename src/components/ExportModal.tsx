@@ -181,9 +181,20 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handleExportRequest = (format: 'png' | 'jpg') => {
-    setExportFormat(format);
-    setMainDialogOpen(false);
-    setShowForm(true);
+    // Check if contact info already exists from floor planner entry
+    const existingContactInfo = sessionStorage.getItem('contactInfo');
+    
+    if (existingContactInfo) {
+      // Use existing contact info and export directly
+      setExportFormat(format);
+      exportAsImage(format);
+      setMainDialogOpen(false);
+    } else {
+      // Show form for contact info
+      setExportFormat(format);
+      setMainDialogOpen(false);
+      setShowForm(true);
+    }
   };
 
   const handleFormSubmit = async (formData: ExportFormData) => {
@@ -215,9 +226,19 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handlePDFExport = () => {
-    setExportFormat('png'); // Set format for form
-    setMainDialogOpen(false);
-    setShowForm(true);
+    // Check if contact info already exists from floor planner entry
+    const existingContactInfo = sessionStorage.getItem('contactInfo');
+    
+    if (existingContactInfo) {
+      // Use existing contact info and export directly
+      exportAsPDF();
+      setMainDialogOpen(false);
+    } else {
+      // Show form for contact info
+      setExportFormat('png'); // Set format for form
+      setMainDialogOpen(false);
+      setShowForm(true);
+    }
   };
 
   const handleFormSubmitWithPDF = async (formData: ExportFormData) => {
