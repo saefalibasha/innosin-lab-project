@@ -63,6 +63,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [hoveredWall, setHoveredWall] = useState<string | null>(null);
   const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
   const [snapGuides, setSnapGuides] = useState<{ horizontal: number | null; vertical: number | null }>({ horizontal: null, vertical: null });
+  const [editingMeasurement, setEditingMeasurement] = useState<{ wallId: string; value: string } | null>(null);
+  const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
 
   const CANVAS_WIDTH = canvasWidth;
   const CANVAS_HEIGHT = canvasHeight;
@@ -147,19 +149,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     return null;
   }, [placedProducts]);
 
-  const findWallAtPoint = useCallback((point: Point): WallSegment | null => {
-    const tolerance = 10; // pixels
-    
-    for (const wall of wallSegments) {
-      const distance = distanceFromPointToLine(point, wall.start, wall.end);
-      if (distance <= tolerance) {
-        return wall;
-      }
-    }
-    return null;
-  }, [wallSegments]);
-
-  const distanceFromPointToLine = (point: Point, lineStart: Point, lineEnd: Point): number => {
+  // Helper function to calculate distance from point to line segment
+  const distanceToLineSegment = useCallback((point: Point, lineStart: Point, lineEnd: Point): number => {
     const A = point.x - lineStart.x;
     const B = point.y - lineStart.y;
     const C = lineEnd.x - lineStart.x;
@@ -170,24 +161,124 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     
     if (lenSq === 0) return Math.sqrt(A * A + B * B);
     
-    const param = dot / lenSq;
-    let xx, yy;
-
+    let param = dot / lenSq;
+    
     if (param < 0) {
-      xx = lineStart.x;
-      yy = lineStart.y;
+      return Math.sqrt(A * A + B * B);
     } else if (param > 1) {
-      xx = lineEnd.x;
-      yy = lineEnd.y;
+      const dx = point.x - lineEnd.x;
+      const dy = point.y - lineEnd.y;
+      return Math.sqrt(dx * dx + dy * dy);
     } else {
-      xx = lineStart.x + param * C;
-      yy = lineStart.y + param * D;
+      const projX = lineStart.x + param * C;
+      const projY = lineStart.y + param * D;
+      const dx = point.x - projX;
+      const dy = point.y - projY;
+      return Math.sqrt(dx * dx + dy * dy);
     }
+  }, []);
 
-    const dx = point.x - xx;
-    const dy = point.y - yy;
-    return Math.sqrt(dx * dx + dy * dy);
-  };
+  const findWallAtPoint = useCallback((point: Point): WallSegment | null => {
+    const tolerance = 10; // pixels
+    
+    for (const wall of wallSegments) {
+      const distance = distanceToLineSegment(point, wall.start, wall.end);
+      if (distance <= tolerance) {
+        return wall;
+      }
+    }
+    return null;
+  }, [wallSegments, distanceToLineSegment]);
+
+  // Helper function to check if clicking on measurement text
+  const findMeasurementAtPoint = useCallback((point: Point): string | null => {
+    const tolerance = 20;
+    
+    for (const wall of wallSegments) {
+      const midX = (wall.start.x + wall.end.x) / 2;
+      const midY = (wall.start.y + wall.end.y) / 2;
+      
+      const distance = Math.sqrt(
+        Math.pow(point.x - midX, 2) + Math.pow(point.y - midY, 2)
+      );
+      
+      if (distance <= tolerance) {
+        return wall.id;
+      }
+    }
+    return null;
+  }, [wallSegments]);
+
+  // Helper function to find connected walls
+  const findConnectedWalls = useCallback((wallId: string): string[] => {
+    const targetWall = wallSegments.find(w => w.id === wallId);
+    if (!targetWall) return [];
+    
+    const connected: string[] = [];
+    const tolerance = 5;
+    
+    for (const wall of wallSegments) {
+      if (wall.id === wallId) continue;
+      
+      // Check if walls share endpoints (are connected)
+      const startToStart = Math.sqrt(
+        Math.pow(wall.start.x - targetWall.start.x, 2) + 
+        Math.pow(wall.start.y - targetWall.start.y, 2)
+      );
+      const startToEnd = Math.sqrt(
+        Math.pow(wall.start.x - targetWall.end.x, 2) + 
+        Math.pow(wall.start.y - targetWall.end.y, 2)
+      );
+      const endToStart = Math.sqrt(
+        Math.pow(wall.end.x - targetWall.start.x, 2) + 
+        Math.pow(wall.end.y - targetWall.start.y, 2)
+      );
+      const endToEnd = Math.sqrt(
+        Math.pow(wall.end.x - targetWall.end.x, 2) + 
+        Math.pow(wall.end.y - targetWall.end.y, 2)
+      );
+      
+      if (startToStart <= tolerance || startToEnd <= tolerance || 
+          endToStart <= tolerance || endToEnd <= tolerance) {
+        connected.push(wall.id);
+      }
+    }
+    
+    return connected;
+  }, [wallSegments]);
+
+  // Function to adjust wall length and connected walls
+  const adjustWallLength = useCallback((wallId: string, newLengthMm: number) => {
+    const targetWall = wallSegments.find(w => w.id === wallId);
+    if (!targetWall) return;
+    
+    const currentLengthPx = Math.sqrt(
+      Math.pow(targetWall.end.x - targetWall.start.x, 2) + 
+      Math.pow(targetWall.end.y - targetWall.start.y, 2)
+    );
+    const newLengthPx = (newLengthMm / 1000) * scale * 100; // Convert mm to pixels
+    const ratio = newLengthPx / currentLengthPx;
+    
+    // Calculate direction vector
+    const dirX = (targetWall.end.x - targetWall.start.x) / currentLengthPx;
+    const dirY = (targetWall.end.y - targetWall.start.y) / currentLengthPx;
+    
+    // Calculate new end point
+    const newEnd = {
+      x: targetWall.start.x + dirX * newLengthPx,
+      y: targetWall.start.y + dirY * newLengthPx
+    };
+    
+    // Update wall segments
+    const updatedWalls = wallSegments.map(wall => {
+      if (wall.id === wallId) {
+        return { ...wall, end: newEnd };
+      }
+      return wall;
+    });
+    
+    setWallSegments(updatedWalls);
+  }, [wallSegments, setWallSegments, scale]);
 
   // Snap to wall lengths for interior walls
   const snapToWallLength = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {
@@ -264,6 +355,24 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     setLastMousePos(snappedPoint);
     
     if (currentMode === 'select') {
+      // Check if clicking on measurement text first
+      const clickedMeasurement = findMeasurementAtPoint(snappedPoint);
+      if (clickedMeasurement) {
+        const wall = wallSegments.find(w => w.id === clickedMeasurement);
+        if (wall) {
+          const lengthPx = Math.sqrt(
+            Math.pow(wall.end.x - wall.start.x, 2) + 
+            Math.pow(wall.end.y - wall.start.y, 2)
+          );
+          const lengthMm = (lengthPx / scale / 100) * 1000; // Convert pixels to mm
+          setEditingMeasurement({
+            wallId: clickedMeasurement,
+            value: Math.round(lengthMm).toString()
+          });
+          return;
+        }
+      }
+      
       // Check if clicking on a wall for selection
       const clickedWall = findWallAtPoint(snappedPoint);
       if (clickedWall) {
@@ -337,7 +446,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setTextAnnotations(prev => [...prev, newAnnotation]);
       }
     }
-  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint, findProductAtPoint, wallStartPoint, setWallSegments]);
+  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint, findProductAtPoint, wallStartPoint, setWallSegments, findMeasurementAtPoint, wallSegments, scale]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getCanvasPoint(e);
@@ -426,8 +535,12 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     if (currentMode === 'select') {
       const hoveredWallFound = findWallAtPoint(point);
       setHoveredWall(hoveredWallFound?.id || null);
+      
+      // Check for measurement hover
+      const hoveredMeasurementFound = findMeasurementAtPoint(point);
+      setHoveredMeasurement(hoveredMeasurementFound);
     }
-  }, [isWallPreview, wallStartPoint, isDragging, draggedItem, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, constrainToOrtho, scale, measurementUnit, findWallAtPoint, showGrid, gridSize, dragOffset, placedProducts, setPlacedProducts]);
+  }, [isWallPreview, wallStartPoint, isDragging, draggedItem, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, constrainToOrtho, scale, measurementUnit, findWallAtPoint, showGrid, gridSize, dragOffset, placedProducts, setPlacedProducts, findMeasurementAtPoint]);
 
   const handleMouseUp = useCallback(() => {
     // Reset dragging state (but not wall preview state)
@@ -574,8 +687,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         ctx.stroke();
       });
       
-      // Draw wall measurements if selected with larger text
-      if ((isSelected || showMeasurements) && measurementUnit) {
+      // Always draw clickable measurements for walls
+      if (measurementUnit) {
+        const isMeasurementHovered = hoveredMeasurement === wall.id;
         const dx = wall.end.x - wall.start.x;
         const dy = wall.end.y - wall.start.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -589,17 +703,26 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           showUnit: true 
         });
         
-        // Draw measurement background with better styling
-        ctx.font = '16px Arial'; // Increased from 11px
+        // Draw clickable measurement with hover effects
+        ctx.font = 'bold 14px Arial';
         const textWidth = ctx.measureText(measurement).width;
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.fillRect(midX - textWidth/2 - 6, midY - 12, textWidth + 12, 24);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(midX - textWidth/2 - 6, midY - 12, textWidth + 12, 24);
+        const padding = 8;
         
-        // Draw measurement text
-        ctx.fillStyle = '#ffffff';
+        // Background rectangle with hover and selection states
+        const bgColor = isSelected ? 'rgba(255, 68, 68, 0.9)' : 
+                        isMeasurementHovered ? 'rgba(59, 130, 246, 0.9)' : 
+                        'rgba(255, 255, 255, 0.9)';
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(midX - textWidth/2 - padding, midY - 12, textWidth + padding * 2, 24);
+        
+        // Border with cursor indication
+        ctx.strokeStyle = isSelected ? '#ff4444' : 
+                          isMeasurementHovered ? '#3b82f6' : '#cccccc';
+        ctx.lineWidth = isMeasurementHovered ? 2 : 1;
+        ctx.strokeRect(midX - textWidth/2 - padding, midY - 12, textWidth + padding * 2, 24);
+        
+        // Text
+        ctx.fillStyle = (isSelected || isMeasurementHovered) ? '#ffffff' : '#000000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(measurement, midX, midY);
@@ -834,7 +957,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   }, [isWallPreview]);
 
   return (
-    <div className="w-full h-full bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="relative w-full h-full bg-white rounded-lg border border-gray-200 overflow-hidden">
       <canvas
         ref={canvasRef}
         width={CANVAS_WIDTH}
@@ -884,6 +1007,47 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         }}
         onDragOver={(e) => e.preventDefault()}
       />
+      
+      {/* Measurement editing input */}
+      {editingMeasurement && (
+        <div 
+          className="absolute bg-white border-2 border-blue-500 rounded px-2 py-1 shadow-lg z-10"
+          style={{
+            left: '50%',
+            top: '20px',
+            transform: 'translateX(-50%)'
+          }}
+        >
+          <input
+            type="number"
+            value={editingMeasurement.value}
+            onChange={(e) => setEditingMeasurement(prev => 
+              prev ? { ...prev, value: e.target.value } : null
+            )}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const newLength = parseInt(editingMeasurement.value);
+                if (!isNaN(newLength) && newLength > 0) {
+                  adjustWallLength(editingMeasurement.wallId, newLength);
+                }
+                setEditingMeasurement(null);
+              } else if (e.key === 'Escape') {
+                setEditingMeasurement(null);
+              }
+            }}
+            onBlur={() => {
+              const newLength = parseInt(editingMeasurement.value);
+              if (!isNaN(newLength) && newLength > 0) {
+                adjustWallLength(editingMeasurement.wallId, newLength);
+              }
+              setEditingMeasurement(null);
+            }}
+            className="w-20 text-center border-none outline-none bg-transparent font-bold"
+            autoFocus
+          />
+          <span className="text-sm text-gray-600 ml-1">mm</span>
+        </div>
+      )}
     </div>
   );
 };
