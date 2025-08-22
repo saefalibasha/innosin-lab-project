@@ -1379,15 +1379,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
                            e.dataTransfer.getData('text/plain');
           
           console.log('Product data received:', productData);
+          console.log('Available data transfer types:', Array.from(e.dataTransfer.types));
           
           if (!productData) {
             console.error('No product data found in drop event');
-            toast.error('Failed to place product - no data received');
-            return;
-          }
-          
-          if (!productData) {
-            console.error('No product data found in any format');
             toast.error('Failed to place product - no data received');
             return;
           }
@@ -1442,12 +1437,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             };
             
             // Check for wall collision with accurate dimensions before placing
-            if (!checkWallCollision(newProduct)) {
-              // Apply island/bench wall snapping if applicable
-              const snappedPosition = snapToWallDistance(newProduct);
+            // Allow placement even if no walls exist (empty canvas scenario)
+            const hasWallCollision = wallSegments.length > 0 ? checkWallCollision(newProduct) : false;
+            
+            if (!hasWallCollision) {
+              // Apply island/bench wall snapping if applicable and walls exist
+              const snappedPosition = wallSegments.length > 0 ? snapToWallDistance(newProduct) : newProduct.position;
               newProduct.position = snappedPosition;
               
               setPlacedProducts(prev => [...prev, newProduct]);
+              
+              console.log('Product placed successfully:', newProduct);
               
               console.log('Product placed with accurate dimensions:', {
                 name: newProduct.name,

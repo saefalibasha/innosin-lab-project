@@ -18,6 +18,11 @@ export const toTitleCase = (str: string): string => {
       if (word === 'rh') return 'RH';
       if (word.includes('mm')) return word.toUpperCase();
       
+      // Handle Roman numerals (i, ii, iii, iv, v, vi, vii, viii, ix, x)
+      if (/^i{1,3}$|^iv$|^v$|^vi{1,3}$|^ix$|^x$/.test(word)) {
+        return word.toUpperCase();
+      }
+      
       // Capitalize first letter
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
