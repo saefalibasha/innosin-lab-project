@@ -24,7 +24,7 @@ import SeriesSelector from '@/components/floorplan/SeriesSelector';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
 import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
-import EnhancedSeriesSelector from '@/components/floor-planner/EnhancedSeriesSelector';
+import EnhancedSeriesSelector from '@/components/floorplan/EnhancedSeriesSelector';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import MeasurementInput from '@/components/canvas/MeasurementInput';
 import RoomCreator from '@/components/canvas/RoomCreator';

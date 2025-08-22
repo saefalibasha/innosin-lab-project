@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import EnhancedSeriesSelector from './EnhancedSeriesSelector';
+import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
 import { EnhancedCanvasWorkspace } from '../canvas/EnhancedCanvasWorkspace';
 import { PlacedProduct, Point, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
