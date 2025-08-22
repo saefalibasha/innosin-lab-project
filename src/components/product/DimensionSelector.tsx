@@ -62,7 +62,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
   }, [variants]);
 
   return (
-    <div className={`grid grid-cols-3 gap-12 w-full ${className}`}>
+    <div className={`grid grid-cols-3 gap-16 w-full ${className}`}>
       {/* Width Selection */}
       <div className="space-y-2 min-w-0 flex-1">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Width (mm)</label>
