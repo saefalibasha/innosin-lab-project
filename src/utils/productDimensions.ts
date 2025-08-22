@@ -13,6 +13,19 @@ export interface ProductDimensions {
 export const getProductDimensionsInMm = (product: any): ProductDimensions | null => {
   if (!product) return null;
 
+  // Check if realDimensions exist (from drag data) - these are in meters
+  if (product.realDimensions && typeof product.realDimensions === 'object') {
+    const { length, width, height } = product.realDimensions;
+    if (length && width && height) {
+      return {
+        width: width * 1000, // Convert meters to mm
+        depth: length * 1000, // Convert meters to mm  
+        height: height * 1000, // Convert meters to mm
+        unit: 'mm'
+      };
+    }
+  }
+
   // If dimensions are already parsed as an object
   if (product.parsedDimensions && typeof product.parsedDimensions === 'object') {
     return convertToMm(product.parsedDimensions);
@@ -41,10 +54,10 @@ export const getProductDimensionsInMm = (product: any): ProductDimensions | null
  * Convert parsed dimensions to millimeters
  */
 const convertToMm = (dimensions: ParsedDimensions): ProductDimensions => {
-  const { width, depth, height, unit } = dimensions;
+  const { width, depth, height, unit = 'mm' } = dimensions; // Default unit to 'mm' if undefined
   
   let multiplier = 1;
-  switch (unit.toLowerCase()) {
+  switch ((unit || 'mm').toLowerCase()) {
     case 'cm':
       multiplier = 10;
       break;
