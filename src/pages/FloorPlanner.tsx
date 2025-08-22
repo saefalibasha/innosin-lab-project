@@ -45,15 +45,11 @@ const FloorPlanner = () => {
   // Check for admin access or existing session
   useEffect(() => {
     const checkAccess = () => {
-      console.log('Checking access:', { user, isAdmin, email: user?.email });
-      
       // Check for existing contact info
       const contactInfo = sessionStorage.getItem('contactInfo');
-      console.log('Existing contact info:', contactInfo);
       
       // Admin bypass: if user is logged in as admin
       if (user && isAdmin) {
-        console.log('Admin access granted');
         setHasAccess(true);
         setShowContactGate(false);
         return;
@@ -61,11 +57,8 @@ const FloorPlanner = () => {
       
       // Regular user: check if they provided contact info
       if (contactInfo) {
-        console.log('Contact info found, granting access');
         setHasAccess(true);
         setShowContactGate(false);
-      } else {
-        console.log('No access found, showing contact gate');
       }
     };
     
