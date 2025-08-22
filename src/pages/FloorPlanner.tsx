@@ -322,11 +322,20 @@ const FloorPlanner = () => {
         case 'w':
           setCurrentMode('wall');
           break;
+        case 'i':
+          setCurrentMode('interior-wall');
+          break;
+        case 'm':
+          setCurrentMode('move');
+          break;
         case 'q':
           setCurrentMode('room');
           break;
         case 'd':
           setCurrentMode('door');
+          break;
+        case 't':
+          setCurrentMode('text');
           break;
       }
     };

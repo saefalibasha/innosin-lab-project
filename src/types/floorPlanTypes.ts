@@ -121,5 +121,5 @@ export interface FloorPlanState {
   rooms: Room[];
 }
 
-export type DrawingMode = 'select' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
+export type DrawingMode = 'select' | 'move' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
 export type DrawingTool = DrawingMode;

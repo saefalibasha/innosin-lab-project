@@ -55,11 +55,14 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [currentPath, setCurrentPath] = useState<Point[]>([]);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [lastMousePos, setLastMousePos] = useState<Point>({ x: 0, y: 0 });
   const [currentLineMeasurement, setCurrentLineMeasurement] = useState<string>('');
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
   const [hoveredWall, setHoveredWall] = useState<string | null>(null);
   const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
+  const [snapGuides, setSnapGuides] = useState<{ horizontal: number | null; vertical: number | null }>({ horizontal: null, vertical: null });
 
   const CANVAS_WIDTH = canvasWidth;
   const CANVAS_HEIGHT = canvasHeight;
@@ -99,9 +102,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     return endpoints;
   }, [wallSegments]);
 
-  const snapToEndpoints = useCallback((point: Point): Point | null => {
+  const snapToEndpoints = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {
     const endpoints = findWallEndpoints();
-    const snapDistance = 15; // Snap distance in pixels
+    const snapDistance = 20; // Increased snap distance for better UX
     
     for (const endpoint of endpoints) {
       const distance = Math.sqrt(
@@ -109,11 +112,40 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       );
       
       if (distance <= snapDistance) {
-        return endpoint;
+        return { point: endpoint, showGuides: true };
+      }
+    }
+    return { point: null, showGuides: false };
+  }, [findWallEndpoints]);
+
+  // Constrain to vertical/horizontal lines
+  const constrainToOrtho = useCallback((startPoint: Point, currentPoint: Point): Point => {
+    const dx = currentPoint.x - startPoint.x;
+    const dy = currentPoint.y - startPoint.y;
+    
+    // If the movement is more horizontal than vertical
+    if (Math.abs(dx) > Math.abs(dy)) {
+      return { x: currentPoint.x, y: startPoint.y }; // Horizontal line
+    } else {
+      return { x: startPoint.x, y: currentPoint.y }; // Vertical line
+    }
+  }, []);
+
+  // Find product at point for dragging
+  const findProductAtPoint = useCallback((point: Point): PlacedProduct | null => {
+    for (const product of placedProducts) {
+      const halfWidth = product.dimensions.length / 2;
+      const halfHeight = product.dimensions.width / 2;
+      
+      if (point.x >= product.position.x - halfWidth &&
+          point.x <= product.position.x + halfWidth &&
+          point.y >= product.position.y - halfHeight &&
+          point.y <= product.position.y + halfHeight) {
+        return product;
       }
     }
     return null;
-  }, [findWallEndpoints]);
+  }, [placedProducts]);
 
   const findWallAtPoint = useCallback((point: Point): WallSegment | null => {
     const tolerance = 10; // pixels
@@ -172,8 +204,22 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setSelectedWall(null);
       }
     }
+
+    if (currentMode === 'move') {
+      // Check if clicking on a product for dragging
+      const clickedProduct = findProductAtPoint(snappedPoint);
+      if (clickedProduct) {
+        setDraggedItem(clickedProduct.id);
+        setIsDragging(true);
+        setDragOffset({
+          x: snappedPoint.x - clickedProduct.position.x,
+          y: snappedPoint.y - clickedProduct.position.y
+        });
+        return;
+      }
+    }
     
-    if (currentMode === 'wall') {
+    if (currentMode === 'wall' || currentMode === 'interior-wall') {
       setIsDrawing(true);
       setCurrentPath([snappedPoint]);
     } else if (currentMode === 'room') {
@@ -202,18 +248,45 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setTextAnnotations(prev => [...prev, newAnnotation]);
       }
     }
-  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint]);
+  }, [currentMode, getCanvasPoint, snapToGrid, setRoomPoints, setDoors, setTextAnnotations, findWallAtPoint, findProductAtPoint]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getCanvasPoint(e);
     
-    if (isDrawing && currentMode === 'wall' && currentPath.length > 0) {
+    // Handle product dragging
+    if (isDragging && draggedItem && currentMode === 'move') {
+      const draggedProduct = placedProducts.find(p => p.id === draggedItem);
+      if (draggedProduct) {
+        const newPosition = {
+          x: point.x - dragOffset.x,
+          y: point.y - dragOffset.y
+        };
+        const snappedPosition = snapToGrid(newPosition);
+        
+        setPlacedProducts(prev => prev.map(p => 
+          p.id === draggedItem ? { ...p, position: snappedPosition } : p
+        ));
+      }
+      return;
+    }
+    
+    if (isDrawing && (currentMode === 'wall' || currentMode === 'interior-wall') && currentPath.length > 0) {
+      const startPoint = currentPath[0];
+      
+      // Constrain to orthogonal lines
+      const constrainedPoint = constrainToOrtho(startPoint, point);
+      
       // Try snapping to endpoints first, then grid
-      const snappedToEndpoint = snapToEndpoints(point);
-      const finalPoint = snappedToEndpoint || snapToGrid(point);
+      const snapResult = snapToEndpoints(constrainedPoint);
+      const finalPoint = snapResult.point || snapToGrid(constrainedPoint);
       setLastMousePos(finalPoint);
       
-      const startPoint = currentPath[0];
+      // Show snap guides when snapping
+      setSnapGuides({
+        horizontal: snapResult.showGuides ? finalPoint.y : null,
+        vertical: snapResult.showGuides ? finalPoint.x : null
+      });
+      
       const dx = finalPoint.x - startPoint.x;
       const dy = finalPoint.y - startPoint.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -247,8 +320,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const snappedPoint = snapToGrid(point);
       setLastMousePos(snappedPoint);
       setSnapLines({ x: null, y: null });
+      setSnapGuides({ horizontal: null, vertical: null });
       
-      if (currentMode === 'wall') {
+      if (currentMode === 'wall' || currentMode === 'interior-wall') {
         setCurrentLineMeasurement('');
       }
     }
@@ -258,25 +332,29 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const hoveredWallFound = findWallAtPoint(point);
       setHoveredWall(hoveredWallFound?.id || null);
     }
-  }, [isDrawing, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, currentPath, scale, measurementUnit, findWallAtPoint, showGrid, gridSize]);
+  }, [isDrawing, isDragging, draggedItem, currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, constrainToOrtho, currentPath, scale, measurementUnit, findWallAtPoint, showGrid, gridSize, dragOffset, placedProducts, setPlacedProducts]);
 
   const handleMouseUp = useCallback(() => {
-    if (isDrawing && currentMode === 'wall' && currentPath.length >= 1) {
+    if (isDrawing && (currentMode === 'wall' || currentMode === 'interior-wall') && currentPath.length >= 1) {
       const newWallSegment: WallSegment = {
         id: `wall-${Date.now()}`,
         start: currentPath[0],
         end: lastMousePos,
-        thickness: 10,
-        color: '#666666',
-        type: WallType.INTERIOR
+        thickness: currentMode === 'interior-wall' ? 6 : 10,
+        color: currentMode === 'interior-wall' ? '#999999' : '#666666',
+        type: currentMode === 'interior-wall' ? WallType.PARTITION : WallType.EXTERIOR
       };
       setWallSegments(prev => [...prev, newWallSegment]);
     }
     
+    // Reset dragging state
     setIsDrawing(false);
+    setIsDragging(false);
+    setDraggedItem(null);
     setCurrentPath([]);
     setCurrentLineMeasurement('');
     setSnapLines({ x: null, y: null });
+    setSnapGuides({ horizontal: null, vertical: null });
   }, [isDrawing, currentMode, currentPath, setWallSegments, lastMousePos]);
 
   const handleDoubleClick = useCallback(() => {
@@ -583,6 +661,31 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.setLineDash([]); // Reset dash
     }
 
+    // Draw snap guides for snapping feedback
+    if (snapGuides.vertical !== null || snapGuides.horizontal !== null) {
+      ctx.strokeStyle = '#ff4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 3]);
+      
+      // Draw vertical snap guide
+      if (snapGuides.vertical !== null) {
+        ctx.beginPath();
+        ctx.moveTo(snapGuides.vertical, 0);
+        ctx.lineTo(snapGuides.vertical, CANVAS_HEIGHT);
+        ctx.stroke();
+      }
+      
+      // Draw horizontal snap guide
+      if (snapGuides.horizontal !== null) {
+        ctx.beginPath();
+        ctx.moveTo(0, snapGuides.horizontal);
+        ctx.lineTo(CANVAS_WIDTH, snapGuides.horizontal);
+        ctx.stroke();
+      }
+      
+      ctx.setLineDash([]); // Reset dash
+    }
+
     // Draw live measurement during wall drawing with enhanced styling and start/end indicators
     if (isDrawing && currentMode === 'wall' && currentPath.length > 0 && currentLineMeasurement) {
       const startPoint = currentPath[0];
@@ -634,7 +737,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.textBaseline = 'alphabetic';
     }
     
-  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements, snapLines]);
+  }, [showGrid, gridSize, scale, rooms, wallSegments, roomPoints, currentPath, doors, textAnnotations, placedProducts, isDrawing, currentMode, currentLineMeasurement, lastMousePos, selectedWall, hoveredWall, selectedItems, measurementUnit, showMeasurements, snapLines, snapGuides]);
 
   useEffect(() => {
     drawCanvas();

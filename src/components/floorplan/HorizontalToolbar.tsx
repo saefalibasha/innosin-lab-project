@@ -13,7 +13,9 @@ import {
   Grid,
   ZoomIn,
   ZoomOut,
-  RotateCcw
+  RotateCcw,
+  Move,
+  Minus
 } from 'lucide-react';
 import { DrawingMode } from '@/types/floorPlanTypes';
 
@@ -57,20 +59,39 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
                 variant={currentTool === 'select' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onToolChange('select')}
+                title="Select (V)"
               >
                 <MousePointer className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={currentTool === 'move' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onToolChange('move')}
+                title="Move Products (M)"
+              >
+                <Move className="h-4 w-4" />
               </Button>
               <Button
                 variant={currentTool === 'wall' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onToolChange('wall')}
+                title="Exterior Wall (W)"
               >
                 <Square className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={currentTool === 'interior-wall' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => onToolChange('interior-wall')}
+                title="Interior Wall (I)"
+              >
+                <Minus className="h-4 w-4" />
               </Button>
               <Button
                 variant={currentTool === 'room' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onToolChange('room')}
+                title="Room (Q)"
               >
                 <Home className="h-4 w-4" />
               </Button>
@@ -78,6 +99,7 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
                 variant={currentTool === 'door' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onToolChange('door')}
+                title="Door (D)"
               >
                 <DoorOpen className="h-4 w-4" />
               </Button>
@@ -85,6 +107,7 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
                 variant={currentTool === 'text' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => onToolChange('text')}
+                title="Text (T)"
               >
                 <Type className="h-4 w-4" />
               </Button>
