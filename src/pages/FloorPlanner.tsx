@@ -24,7 +24,7 @@ import SeriesSelector from '@/components/floorplan/SeriesSelector';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
 import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
-import TabbedSidebar from '@/components/floorplan/TabbedSidebar';
+import EnhancedSeriesSelector from '@/components/floor-planner/EnhancedSeriesSelector';
 import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
 import MeasurementInput from '@/components/canvas/MeasurementInput';
 import RoomCreator from '@/components/canvas/RoomCreator';
@@ -491,13 +491,19 @@ const FloorPlanner = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Enhanced Left Sidebar with Tabs - Made Narrower */}
           <div className="lg:col-span-1 space-y-4">
-            <TabbedSidebar
-              onProductDrag={handleProductDrag}
-              currentTool={currentMode}
-              placedProducts={placedProducts}
-              onRoomCreate={handleRoomCreate}
-              onStartRoomCreation={handleStartRoomCreation}
-            />
+            <div className="bg-white rounded-lg border shadow-sm">
+              <div className="p-4 border-b">
+                <h2 className="text-lg font-semibold">Product Library</h2>
+                <p className="text-sm text-muted-foreground">Select products to place on your floor plan</p>
+              </div>
+              <div className="p-4">
+                <EnhancedSeriesSelector
+                  onProductDrag={handleProductDrag}
+                  currentTool={currentMode}
+                  onProductUsed={(productId) => console.log('Product used:', productId)}
+                />
+              </div>
+            </div>
           </div>
 
           {/* Enhanced Main Content Area - Extended to the left */}

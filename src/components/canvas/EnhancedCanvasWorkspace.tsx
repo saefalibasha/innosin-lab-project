@@ -1,7 +1,8 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, WallType } from '@/types/floorPlanTypes';
-import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm, getProductDimensionsInMm, mmToCanvas } from '@/utils/measurements';
+import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm, mmToCanvas } from '@/utils/measurements';
+import { getProductDimensionsInMm } from '@/utils/productDimensions';
 import { SnapSystem, SnapResult } from '@/utils/snapSystem';
 import { toast } from 'sonner';
 
@@ -1401,11 +1402,23 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             // Get accurate dimensions from database in mm
             const accurateDimensionsMm = getProductDimensionsInMm(product);
             
+            if (!accurateDimensionsMm) {
+              console.error('Unable to get product dimensions:', product);
+              toast.error('Product dimensions not available');
+              return;
+            }
+            
             // Convert mm dimensions to canvas pixels for accurate placement
             const canvasDimensions = {
-              length: mmToCanvas(accurateDimensionsMm.length, scale),
-              width: mmToCanvas(accurateDimensionsMm.width, scale),
+              length: mmToCanvas(accurateDimensionsMm.width, scale),
+              width: mmToCanvas(accurateDimensionsMm.depth, scale),
               height: mmToCanvas(accurateDimensionsMm.height, scale)
+            };
+            
+            const originalDimensions = {
+              length: accurateDimensionsMm.width,
+              width: accurateDimensionsMm.depth,
+              height: accurateDimensionsMm.height
             };
             
             const newProduct: PlacedProduct = {
@@ -1416,7 +1429,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
               position: snappedPoint,
               rotation: 0,
               dimensions: canvasDimensions, // Use accurate canvas dimensions
-              originalDimensions: accurateDimensionsMm, // Store original mm dimensions
+              originalDimensions: originalDimensions, // Store original mm dimensions
               color: product.color || '#4caf50',
               scale: 1,
               modelPath: product.modelPath,

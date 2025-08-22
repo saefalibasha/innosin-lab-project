@@ -6,11 +6,18 @@ export interface ParsedDimensions {
   unit: string;
 }
 
-export const parseDimensionString = (dimensionStr: string): ParsedDimensions | null => {
+export const parseDimensionString = (dimensionStr: string | object): ParsedDimensions | null => {
   if (!dimensionStr) return null;
   
+  // Handle if already parsed as an object
+  if (typeof dimensionStr === 'object' && 'width' in dimensionStr) {
+    return dimensionStr as ParsedDimensions;
+  }
+  
+  const dimensionString = String(dimensionStr);
+  
   // Match patterns like "750×500×650 mm", "750 x 500 x 650", "750mm x 500mm x 650mm"
-  const match = dimensionStr.match(/(\d+)\s*[×x]\s*(\d+)\s*[×x]\s*(\d+)\s*(mm|cm|m)?/i);
+  const match = dimensionString.match(/(\d+)\s*[×x]\s*(\d+)\s*[×x]\s*(\d+)\s*(mm|cm|m)?/i);
   
   if (!match) return null;
   

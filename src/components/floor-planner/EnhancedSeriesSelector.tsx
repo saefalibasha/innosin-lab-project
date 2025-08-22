@@ -15,11 +15,20 @@ import { formatSeriesName, formatProductName } from '@/utils/seriesNameFormatter
 import { formatAttributeValue, getOrientationDisplayName } from '@/utils/productTerminology';
 
 interface EnhancedSeriesSelectorProps {
-  onProductSelect: (product: PlacedProduct) => void;
-  scale: number;
+  onProductDrag?: (product: any) => void;
+  onProductSelect?: (product: PlacedProduct) => void;
+  currentTool?: string;
+  onProductUsed?: (productId: string) => void;
+  scale?: number;
 }
 
-const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProductSelect, scale }) => {
+const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ 
+  onProductDrag, 
+  onProductSelect, 
+  currentTool = 'select', 
+  onProductUsed,
+  scale = 0.15 
+}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -178,7 +187,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
       specifications: product.specifications || []
     };
 
-    onProductSelect(placedProduct);
+    onProductSelect?.(placedProduct);
   };
 
   if (loading) {

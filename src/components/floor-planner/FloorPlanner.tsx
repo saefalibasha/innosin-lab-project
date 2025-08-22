@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback } from 'react';
-import TabbedSidebar from './TabbedSidebar';
+import EnhancedSeriesSelector from './EnhancedSeriesSelector';
 import { EnhancedCanvasWorkspace } from '../canvas/EnhancedCanvasWorkspace';
 import { PlacedProduct, Point, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
@@ -41,6 +41,11 @@ export const FloorPlanner = () => {
   const [canvasWidth] = useState(1200);
   const [canvasHeight] = useState(800);
 
+  const handleProductDrag = useCallback((product: any) => {
+    // This will be handled by the canvas workspace
+    console.log('Product dragged:', product);
+  }, []);
+
   const handleProductSelect = useCallback((product: PlacedProduct) => {
     setPlacedProducts(prevProducts => [...prevProducts, product]);
   }, []);
@@ -59,10 +64,18 @@ export const FloorPlanner = () => {
 
   return (
     <div className="h-screen flex">
-      <TabbedSidebar 
-        onSelectProduct={handleProductSelect}
-        scale={scale}
-      />
+      <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold">Product Library</h2>
+          <p className="text-sm text-muted-foreground">Drag products to place on canvas</p>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <EnhancedSeriesSelector
+            onProductDrag={handleProductDrag}
+            currentTool="select"
+          />
+        </div>
+      </div>
       <div className="flex-1 relative">
         <EnhancedCanvasWorkspace
           placedProducts={placedProducts}
