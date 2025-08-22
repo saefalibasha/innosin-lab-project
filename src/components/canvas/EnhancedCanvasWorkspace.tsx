@@ -189,20 +189,74 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     return Math.sqrt(dx * dx + dy * dy);
   };
 
+  // Snap to wall lengths for interior walls
+  const snapToWallLength = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {
+    const snapDistance = 20;
+    let closestPoint: Point | null = null;
+    let minDistance = Infinity;
+    
+    for (const wall of wallSegments) {
+      const A = point.x - wall.start.x;
+      const B = point.y - wall.start.y;
+      const C = wall.end.x - wall.start.x;
+      const D = wall.end.y - wall.start.y;
+
+      const dot = A * C + B * D;
+      const lenSq = C * C + D * D;
+      
+      if (lenSq === 0) continue; // Skip zero-length walls
+      
+      const param = dot / lenSq;
+      
+      // Only consider points along the wall (not extending beyond endpoints)
+      if (param >= 0 && param <= 1) {
+        const projectedPoint = {
+          x: wall.start.x + param * C,
+          y: wall.start.y + param * D
+        };
+        
+        const distance = Math.sqrt(
+          Math.pow(point.x - projectedPoint.x, 2) + Math.pow(point.y - projectedPoint.y, 2)
+        );
+        
+        if (distance <= snapDistance && distance < minDistance) {
+          minDistance = distance;
+          closestPoint = projectedPoint;
+        }
+      }
+    }
+    
+    return { point: closestPoint, showGuides: closestPoint !== null };
+  }, [wallSegments]);
+
   // Helper function to calculate final position with all constraints applied
-  const calculateFinalPosition = useCallback((startPoint: Point, currentPoint: Point): Point => {
+  const calculateFinalPosition = useCallback((startPoint: Point, currentPoint: Point, mode: DrawingMode): Point => {
     // Step 1: Apply orthogonal constraint
     const constrainedPoint = constrainToOrtho(startPoint, currentPoint);
     
-    // Step 2: Try snapping to endpoints first
-    const snapResult = snapToEndpoints(constrainedPoint);
-    if (snapResult.point) {
-      return snapResult.point;
+    if (mode === 'interior-wall') {
+      // For interior walls: try wall length snapping first, then endpoints, then grid
+      const wallSnapResult = snapToWallLength(constrainedPoint);
+      if (wallSnapResult.point) {
+        return wallSnapResult.point;
+      }
+      
+      const endpointSnapResult = snapToEndpoints(constrainedPoint);
+      if (endpointSnapResult.point) {
+        return endpointSnapResult.point;
+      }
+      
+      return snapToGrid(constrainedPoint);
+    } else {
+      // For exterior walls: try endpoints first, then grid (original behavior)
+      const snapResult = snapToEndpoints(constrainedPoint);
+      if (snapResult.point) {
+        return snapResult.point;
+      }
+      
+      return snapToGrid(constrainedPoint);
     }
-    
-    // Step 3: Fall back to grid snapping
-    return snapToGrid(constrainedPoint);
-  }, [constrainToOrtho, snapToEndpoints, snapToGrid]);
+  }, [constrainToOrtho, snapToEndpoints, snapToGrid, snapToWallLength]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const point = getCanvasPoint(e);
@@ -241,7 +295,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         setIsWallPreview(true);
       } else {
         // Second click - complete wall using same positioning logic as preview
-        const finalEndPoint = calculateFinalPosition(wallStartPoint, point);
+        const finalEndPoint = calculateFinalPosition(wallStartPoint, point, currentMode);
         
         const newWallSegment: WallSegment = {
           id: `wall-${Date.now()}`,
@@ -306,18 +360,26 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     }
     
     if (isWallPreview && wallStartPoint && (currentMode === 'wall' || currentMode === 'interior-wall')) {
-      // Constrain to orthogonal lines
-      const constrainedPoint = constrainToOrtho(wallStartPoint, point);
-      
-      // Try snapping to endpoints first, then grid
-      const snapResult = snapToEndpoints(constrainedPoint);
-      const finalPoint = snapResult.point || snapToGrid(constrainedPoint);
+      // Use the same positioning logic as completion
+      const finalPoint = calculateFinalPosition(wallStartPoint, point, currentMode);
       setLastMousePos(finalPoint);
       
-      // Show snap guides when snapping
+      // Show snap guides based on snap type
+      let showGuides = false;
+      const constrainedPoint = constrainToOrtho(wallStartPoint, point);
+      
+      if (currentMode === 'interior-wall') {
+        const wallSnapResult = snapToWallLength(constrainedPoint);
+        const endpointSnapResult = snapToEndpoints(constrainedPoint);
+        showGuides = wallSnapResult.showGuides || endpointSnapResult.showGuides;
+      } else {
+        const endpointSnapResult = snapToEndpoints(constrainedPoint);
+        showGuides = endpointSnapResult.showGuides;
+      }
+      
       setSnapGuides({
-        horizontal: snapResult.showGuides ? finalPoint.y : null,
-        vertical: snapResult.showGuides ? finalPoint.x : null
+        horizontal: showGuides ? finalPoint.y : null,
+        vertical: showGuides ? finalPoint.x : null
       });
       
       const dx = finalPoint.x - wallStartPoint.x;
