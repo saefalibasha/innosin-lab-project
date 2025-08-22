@@ -65,14 +65,14 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
     <div className={`grid grid-cols-3 gap-12 w-full ${className}`}>
       {/* Width Selection */}
       <div className="space-y-2 min-w-0 flex-1">
-        <label className="text-sm font-medium text-muted-foreground">Width (mm)</label>
+        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Width (mm)</label>
         {widths.length === 1 ? (
           <div className="w-full h-10 text-sm bg-muted rounded border flex items-center px-3">
             <span className="text-muted-foreground">{widths[0]}</span>
           </div>
         ) : (
           <Select value={selectedWidth || (widths.length > 0 ? widths[0] : '')} onValueChange={onWidthChange}>
-            <SelectTrigger className="w-full h-10 min-w-[80px] max-w-[100px]">
+            <SelectTrigger className="w-full h-10 min-w-[120px]">
               <SelectValue
                 placeholder="Select width" 
                 defaultValue={widths.length > 0 ? widths[0] : undefined}
@@ -91,9 +91,9 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
 
       {/* Depth Selection */}
       <div className="space-y-2 min-w-0 flex-1">
-        <label className="text-sm font-medium text-muted-foreground">Depth (mm)</label>
+        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Depth (mm)</label>
         <Select value={selectedDepth || (depths.length > 0 ? depths[0] : '')} onValueChange={onDepthChange}>
-          <SelectTrigger className="w-full h-10 min-w-[80px] max-w-[100px]">
+          <SelectTrigger className="w-full h-10 min-w-[120px]">
             <SelectValue 
               placeholder="Select depth" 
               defaultValue={depths.length > 0 ? depths[0] : undefined}
@@ -111,9 +111,9 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
 
       {/* Height Selection */}
       <div className="space-y-2 min-w-0 flex-1">
-        <label className="text-sm font-medium text-muted-foreground">Height (mm)</label>
+        <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Height (mm)</label>
         <Select value={selectedHeight || (heights.length > 0 ? heights[0] : '')} onValueChange={onHeightChange}>
-          <SelectTrigger className="w-full h-10 min-w-[80px] max-w-[100px]">
+          <SelectTrigger className="w-full h-10 min-w-[120px]">
             <SelectValue 
               placeholder="Select height" 
               defaultValue={heights.length > 0 ? heights[0] : undefined}
