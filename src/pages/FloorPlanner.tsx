@@ -32,8 +32,32 @@ import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
 import ExportModal from '@/components/ExportModal';
 import WallEditor from '@/components/floorplan/WallEditor';
 import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
+import { ContactGateModal } from '@/components/ContactGateModal';
 
 const FloorPlanner = () => {
+  // Access control state
+  const [hasAccess, setHasAccess] = useState(false);
+  const [showContactGate, setShowContactGate] = useState(true);
+  
+  // Check for admin access or existing session
+  useEffect(() => {
+    const checkAccess = () => {
+      // Check for admin email
+      const adminEmail = 'saefalib@innosinlab.com';
+      const userEmail = sessionStorage.getItem('userEmail');
+      
+      // Check for existing contact info
+      const contactInfo = sessionStorage.getItem('contactInfo');
+      
+      if (userEmail === adminEmail || contactInfo) {
+        setHasAccess(true);
+        setShowContactGate(false);
+      }
+    };
+    
+    checkAccess();
+  }, []);
+
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
@@ -359,9 +383,38 @@ const FloorPlanner = () => {
     };
   }, [rooms]);
 
+  const handleContactSuccess = useCallback(() => {
+    setHasAccess(true);
+    setShowContactGate(false);
+  }, []);
+
+  const handleContactCancel = useCallback(() => {
+    // Redirect to home or show access denied message
+    window.location.href = '/';
+  }, []);
+
   const containerClass = isFullscreen 
     ? "fixed inset-0 z-50 bg-background" 
     : "min-h-screen bg-background";
+
+  // Show contact gate modal if no access
+  if (!hasAccess) {
+    return (
+      <>
+        <ContactGateModal
+          isOpen={showContactGate}
+          onSuccess={handleContactSuccess}
+          onCancel={handleContactCancel}
+        />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Access Required</h1>
+            <p className="text-muted-foreground">Please provide your contact details to access the Floor Planner.</p>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className={containerClass}>

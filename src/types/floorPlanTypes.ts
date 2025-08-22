@@ -23,6 +23,11 @@ export interface PlacedProduct {
     width: number;
     height: number;
   };
+  originalDimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
   color: string;
   scale?: number;
   modelPath?: string;

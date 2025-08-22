@@ -225,7 +225,7 @@ export const useHubSpotIntegration = () => {
         });
       });
       
-      toast.success('Support ticket created in HubSpot successfully');
+      toast.success('Inquiry submitted successfully');
       return result;
     } catch (error: any) {
       console.error('Error creating HubSpot ticket:', error);
@@ -233,13 +233,21 @@ export const useHubSpotIntegration = () => {
       if (error.message?.includes('rate limit') || error.message?.includes('429')) {
         toast.error('HubSpot API rate limit reached. Please try again in a few minutes.');
       } else {
-        toast.error(`Failed to create support ticket in HubSpot: ${error.message}`);
+        toast.error(`Failed to submit inquiry: ${error.message}`);
       }
       
       throw error;
     } finally {
       setLoading(false);
     }
+  };
+
+  const createInquiry = async (data: HubSpotIntegrationData) => {
+    return await createTicket({
+      ...data,
+      subject: data.subject || 'Floor Planner Inquiry',
+      priority: 'MEDIUM'
+    });
   };
 
   const syncConversation = async (data: HubSpotIntegrationData) => {
@@ -294,6 +302,7 @@ export const useHubSpotIntegration = () => {
     createContact,
     createDeal,
     createTicket,
+    createInquiry,
     syncConversation,
     loading
   };

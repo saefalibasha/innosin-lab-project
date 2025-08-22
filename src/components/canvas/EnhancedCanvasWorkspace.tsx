@@ -1,7 +1,8 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, WallType } from '@/types/floorPlanTypes';
-import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm, getProductDimensionsInMm } from '@/utils/measurements';
+import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm, getProductDimensionsInMm, mmToCanvas } from '@/utils/measurements';
+import { toast } from 'sonner';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
@@ -539,8 +540,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     
     if (currentMode === 'wall' || currentMode === 'interior-wall') {
       if (!wallStartPoint) {
-        // First click - start wall drawing
-        setWallStartPoint(snappedPoint);
+        // PRIORITY 1: First try to snap to endpoints (blue dots) - HIGHEST PRIORITY
+        const endpointSnap = snapToEndpoints(point);
+        if (endpointSnap.point && endpointSnap.isSnapping) {
+          setWallStartPoint(endpointSnap.point);
+          setIsWallPreview(true);
+          return;
+        }
+        
+        // PRIORITY 2: If no endpoint snap, use grid snap
+        const gridSnappedPoint = snapToGrid(point);
+        setWallStartPoint(gridSnappedPoint);
         setIsWallPreview(true);
       } else {
         // Second click - complete wall using same positioning logic as preview
@@ -1269,8 +1279,15 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             const point = getCanvasPoint(e);
             const snappedPoint = snapToGrid(point);
             
-            // Get accurate dimensions from database
-            const accurateDimensions = getProductDimensionsInMm(product);
+            // Get accurate dimensions from database in mm
+            const accurateDimensionsMm = getProductDimensionsInMm(product);
+            
+            // Convert mm dimensions to canvas pixels for accurate placement
+            const canvasDimensions = {
+              length: mmToCanvas(accurateDimensionsMm.length, scale),
+              width: mmToCanvas(accurateDimensionsMm.width, scale),
+              height: mmToCanvas(accurateDimensionsMm.height, scale)
+            };
             
             const newProduct: PlacedProduct = {
               id: `product-${Date.now()}`,
@@ -1279,11 +1296,8 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
               category: product.category || 'Unknown',
               position: snappedPoint,
               rotation: 0,
-              dimensions: {
-                length: accurateDimensions.length,
-                width: accurateDimensions.width,
-                height: accurateDimensions.height
-              },
+              dimensions: canvasDimensions, // Use accurate canvas dimensions
+              originalDimensions: accurateDimensionsMm, // Store original mm dimensions
               color: product.color || '#4caf50',
               scale: 1,
               modelPath: product.modelPath,
@@ -1294,15 +1308,25 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
               variants: product.variants
             };
             
-            // Check for wall collision before placing
+            // Check for wall collision with accurate dimensions before placing
             if (!checkWallCollision(newProduct)) {
               // Apply island/bench wall snapping if applicable
               const snappedPosition = snapToWallDistance(newProduct);
               newProduct.position = snappedPosition;
               
               setPlacedProducts(prev => [...prev, newProduct]);
+              
+              console.log('Product placed with accurate dimensions:', {
+                name: newProduct.name,
+                originalMmDimensions: accurateDimensionsMm,
+                canvasPixelDimensions: canvasDimensions,
+                position: newProduct.position
+              });
+              
+              toast.success(`${newProduct.name} placed successfully`);
             } else {
               console.log('Product placement blocked due to wall collision');
+              toast.error('Cannot place product - it would intersect with a wall');
             }
           } catch (error) {
             console.error('Error placing product:', error);
