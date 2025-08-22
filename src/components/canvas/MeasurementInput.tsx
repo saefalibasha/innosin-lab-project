@@ -145,7 +145,7 @@ const MeasurementInput: React.FC<MeasurementInputProps> = ({
           <div className="text-xs text-gray-600 space-y-1">
             <div>Current Scale: {scale.toFixed(4)} px/mm</div>
             <div>Grid Size: {gridSize}mm</div>
-            <div>1 pixel = {formatMeasurement(1/scale, { unit: 'mm', precision: 2, showUnit: true })}</div>
+            <div>1 pixel = {formatMeasurement(1/scale, 'mm', 2)}</div>
           </div>
         </div>
       </CardContent>

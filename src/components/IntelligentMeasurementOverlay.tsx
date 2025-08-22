@@ -32,11 +32,7 @@ const IntelligentMeasurementOverlay: React.FC<IntelligentMeasurementOverlayProps
   if (!showMeasurements || !canvas) return null;
 
   const formatMeasurementValue = (distanceMm: number): string => {
-    return formatMeasurement(distanceMm, {
-      unit: units,
-      precision: units === 'mm' ? 0 : units === 'cm' ? 1 : 2,
-      showUnit: true
-    });
+    return formatMeasurement(distanceMm, units, units === 'mm' ? 0 : units === 'cm' ? 1 : 2);
   };
 
   const calculateDistance = (p1: Point, p2: Point): number => {

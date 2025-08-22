@@ -1,7 +1,7 @@
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, WallType } from '@/types/floorPlanTypes';
-import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm } from '@/utils/measurements';
+import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm, getProductDimensionsInMm } from '@/utils/measurements';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
@@ -652,11 +652,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const distance = Math.sqrt(dx * dx + dy * dy);
       const distanceInMm = canvasToMm(distance, scale);
       
-      setCurrentLineMeasurement(formatMeasurement(distanceInMm, { 
-        unit: measurementUnit, 
-        precision: measurementUnit === 'mm' ? 0 : 2, 
-        showUnit: true 
-      }));
+      setCurrentLineMeasurement(formatMeasurement(distanceInMm, measurementUnit, measurementUnit === 'mm' ? 0 : 2));
 
       // Update snap lines for grid alignment
       if (showGrid) {
@@ -867,11 +863,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         const midX = (wall.start.x + wall.end.x) / 2;
         const midY = (wall.start.y + wall.end.y) / 2;
         
-        const measurement = formatMeasurement(distanceInMm, { 
-          unit: measurementUnit, 
-          precision: measurementUnit === 'mm' ? 0 : 2, 
-          showUnit: true 
-        });
+        const measurement = formatMeasurement(distanceInMm, measurementUnit, measurementUnit === 'mm' ? 0 : 2);
         
         // Draw clickable measurement with hover effects
         ctx.font = 'bold 14px Arial';
@@ -1277,6 +1269,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             const point = getCanvasPoint(e);
             const snappedPoint = snapToGrid(point);
             
+            // Get accurate dimensions from database
+            const accurateDimensions = getProductDimensionsInMm(product);
+            
             const newProduct: PlacedProduct = {
               id: `product-${Date.now()}`,
               productId: product.id,
@@ -1285,9 +1280,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
               position: snappedPoint,
               rotation: 0,
               dimensions: {
-                length: product.dimensions?.length || 500,
-                width: product.dimensions?.width || 400,
-                height: product.dimensions?.height || 800
+                length: accurateDimensions.length,
+                width: accurateDimensions.width,
+                height: accurateDimensions.height
               },
               color: product.color || '#4caf50',
               scale: 1,

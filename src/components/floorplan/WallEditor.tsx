@@ -143,11 +143,7 @@ export const WallEditor: React.FC<WallEditorProps> = ({
               />
             ) : (
               <div className="h-8 px-3 py-1 bg-gray-50 rounded text-xs flex items-center">
-                {formatMeasurement(wallLengthInMm, { 
-                  unit: measurementUnit, 
-                  precision: measurementUnit === 'mm' ? 0 : 2, 
-                  showUnit: true 
-                })}
+                {formatMeasurement(wallLengthInMm, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}
               </div>
             )}
           </div>
@@ -165,11 +161,7 @@ export const WallEditor: React.FC<WallEditorProps> = ({
               />
             ) : (
               <div className="h-8 px-3 py-1 bg-gray-50 rounded text-xs flex items-center">
-                {formatMeasurement(wallThicknessInMm, { 
-                  unit: measurementUnit, 
-                  precision: measurementUnit === 'mm' ? 0 : 2, 
-                  showUnit: true 
-                })}
+                {formatMeasurement(wallThicknessInMm, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}
               </div>
             )}
           </div>

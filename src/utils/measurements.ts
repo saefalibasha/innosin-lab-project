@@ -39,21 +39,53 @@ export const convertFromMm = (value: number, unit: MeasurementUnit): number => {
 };
 
 // Format measurement with unit
-export const formatMeasurement = (value: number, config: MeasurementConfig): string => {
+export const formatMeasurement = (value: number, unit: MeasurementUnit, precision: number = 0): string => {
+  const converted = convertFromMm(value, unit);
+  const formatted = converted.toFixed(precision);
+  return `${formatted}${unit}`;
+};
+
+// Updated format function with config - for backwards compatibility
+export const formatMeasurementWithConfig = (value: number, config: MeasurementConfig): string => {
   const converted = convertFromMm(value, config.unit);
   const formatted = converted.toFixed(config.precision);
   return config.showUnit ? `${formatted}${config.unit}` : formatted;
 };
 
-// Parse dimension string from database format "750×550×880 mm"
+// Parse dimension string from database format "750×550×880 mm" or "750×550×880"
 export const parseDimensionString = (dimensionStr: string): Dimensions | null => {
-  const match = dimensionStr.match(/(\d+)×(\d+)×(\d+)\s*mm/);
+  if (!dimensionStr) return null;
+  
+  // Try to match format with or without unit specification
+  const match = dimensionStr.match(/(\d+)×(\d+)×(\d+)(?:\s*mm)?/);
   if (!match) return null;
   
   return {
-    width: parseInt(match[1]),
-    height: parseInt(match[2]),
-    depth: parseInt(match[3])
+    width: parseInt(match[1]),    // Length/Width in mm
+    height: parseInt(match[2]),   // Width/Depth in mm  
+    depth: parseInt(match[3])     // Height in mm
+  };
+};
+
+// Get precise dimensions from database product in mm
+export const getProductDimensionsInMm = (product: any): { length: number; width: number; height: number } => {
+  // Try to parse from dimensions string first
+  if (product.dimensions) {
+    const parsed = parseDimensionString(product.dimensions);
+    if (parsed) {
+      return {
+        length: parsed.width,  // Map to our canvas length
+        width: parsed.height,  // Map to our canvas width
+        height: parsed.depth   // Map to our canvas height
+      };
+    }
+  }
+  
+  // Fallback to default lab equipment dimensions if no valid dimensions found
+  return {
+    length: 750,  // Default length in mm
+    width: 500,   // Default width in mm
+    height: 850   // Default height in mm
   };
 };
 

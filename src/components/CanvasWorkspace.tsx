@@ -138,7 +138,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       );
       const midX = (wall.start.x + wall.end.x) / 2;
       const midY = (wall.start.y + wall.end.y) / 2;
-      drawMeasurementText(ctx, midX, midY, formatMeasurement(lengthMm, { unit: 'mm', precision: 0, showUnit: true }), scale);
+      drawMeasurementText(ctx, midX, midY, formatMeasurement(lengthMm, 'mm', 0), scale);
     }
   };
 

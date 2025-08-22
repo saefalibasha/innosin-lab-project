@@ -414,8 +414,8 @@ const FloorPlanner = () => {
             <span>Scale: {scale.toFixed(4)} px/mm</span>
             {roomStatistics && (
               <>
-                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</span>
-                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</span>
+                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</span>
+                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</span>
               </>
             )}
           </div>
@@ -488,6 +488,25 @@ const FloorPlanner = () => {
                   <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
                   
                   <div className="flex items-center space-x-2">
+                    {/* Unit Toggle Above Canvas */}
+                    <div className="bg-muted rounded-md p-1">
+                      <Button
+                        variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setMeasurementUnit('mm')}
+                        className="h-8 px-3 text-xs"
+                      >
+                        MM
+                      </Button>
+                      <Button
+                        variant={measurementUnit === 'm' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setMeasurementUnit('m')}
+                        className="h-8 px-3 text-xs"
+                      >
+                        M
+                      </Button>
+                    </div>
                     <Badge variant="outline" className="text-xs">
                       {gridSize}mm grid
                     </Badge>
@@ -588,8 +607,8 @@ const FloorPlanner = () => {
                       <div key={room.id} className="border rounded p-3 space-y-2">
                         <div className="font-medium">{room.name}</div>
                         <div className="text-sm text-gray-600 space-y-1">
-                          <div>Area: {formatMeasurement(room.area, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</div>
-                          <div>Perimeter: {formatMeasurement(room.perimeter, { unit: measurementUnit, precision: measurementUnit === 'mm' ? 0 : 2, showUnit: true })}</div>
+                          <div>Area: {formatMeasurement(room.area, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
+                          <div>Perimeter: {formatMeasurement(room.perimeter, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
                           <div>Points: {room.points.length}</div>
                         </div>
                       </div>
