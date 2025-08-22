@@ -72,7 +72,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
           </div>
         ) : (
           <Select value={selectedWidth || (widths.length > 0 ? widths[0] : '')} onValueChange={onWidthChange}>
-            <SelectTrigger className="w-full h-10 min-w-[200px]">
+            <SelectTrigger className="w-full h-10 min-w-[300px]">
               <SelectValue
                 placeholder="Select width" 
                 defaultValue={widths.length > 0 ? widths[0] : undefined}
