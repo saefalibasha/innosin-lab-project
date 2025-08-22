@@ -62,13 +62,13 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
   }, [variants]);
 
   return (
-    <div className={`grid grid-cols-3 gap-8 w-full ${className}`}>
+    <div className={`grid grid-cols-3 gap-12 w-full ${className}`}>
       {/* Width Selection */}
       <div className="space-y-2 min-w-0 flex-1">
         <label className="text-sm font-medium text-muted-foreground">Width (mm)</label>
         {widths.length === 1 ? (
           <div className="w-full h-10 text-sm bg-muted rounded border flex items-center px-3">
-            <span className="text-muted-foreground">{widths[0]}mm</span>
+            <span className="text-muted-foreground">{widths[0]}</span>
           </div>
         ) : (
           <Select value={selectedWidth || (widths.length > 0 ? widths[0] : '')} onValueChange={onWidthChange}>
@@ -81,7 +81,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
             <SelectContent className="bg-background border shadow-lg z-50">
               {widths.map((width) => (
                 <SelectItem key={width} value={width}>
-                  {width}mm
+                  {width}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -102,7 +102,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
           <SelectContent className="bg-background border shadow-lg z-50">
             {depths.map((depth) => (
               <SelectItem key={depth} value={depth}>
-                {depth}mm
+                {depth}
               </SelectItem>
             ))}
           </SelectContent>
@@ -122,7 +122,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
           <SelectContent className="bg-background border shadow-lg z-50">
             {heights.map((height) => (
               <SelectItem key={height} value={height}>
-                {height}mm
+                {height}
               </SelectItem>
             ))}
           </SelectContent>
