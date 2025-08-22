@@ -126,6 +126,8 @@ const ObjectLibrary: React.FC<ObjectLibraryProps> = ({ onProductDrag, currentToo
   };
 
   const handleDragStart = (e: React.DragEvent, product: Product) => {
+    console.log('Drag start for product:', product.name);
+    
     const dimensions = extractDimensions(product);
     const floorPlanProduct = {
       id: product.id,
@@ -142,8 +144,18 @@ const ObjectLibrary: React.FC<ObjectLibraryProps> = ({ onProductDrag, currentToo
       variants: product.variants
     };
 
-    e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
-    onProductDrag(floorPlanProduct);
+    // Set data in multiple formats for better compatibility
+    const productJSON = JSON.stringify(floorPlanProduct);
+    e.dataTransfer.setData('application/json', productJSON);
+    e.dataTransfer.setData('product', productJSON);
+    e.dataTransfer.setData('text/plain', productJSON);
+    
+    console.log('Setting drag data:', productJSON);
+    
+    // Call the onProductDrag prop if provided
+    if (onProductDrag) {
+      onProductDrag(floorPlanProduct);
+    }
   };
 
   const isInteractionDisabled = currentTool !== 'select';

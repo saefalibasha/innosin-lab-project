@@ -81,6 +81,110 @@ export class SnapSystem {
     return { point, snapped: false, snapType: null };
   }
 
+  // Enhanced door placement with wall detection
+  public snapDoorToWall(
+    point: Point,
+    wallSegments: WallSegment[]
+  ): SnapResult {
+    if (!this.settings.enabled) {
+      return { point, snapped: false, snapType: null };
+    }
+
+    let nearestWallSnap: SnapResult = { point, snapped: false, snapType: null };
+    let minDistance = Infinity;
+
+    for (const wall of wallSegments) {
+      // Project point onto wall line
+      const projection = this.projectPointOntoWall(point, wall);
+      if (!projection) continue;
+
+      const distance = Math.sqrt(
+        Math.pow(point.x - projection.x, 2) + Math.pow(point.y - projection.y, 2)
+      );
+
+      if (distance < this.snapThreshold && distance < minDistance) {
+        minDistance = distance;
+        nearestWallSnap = {
+          point: projection,
+          snapped: true,
+          snapType: 'wall',
+          target: wall,
+          distance
+        };
+      }
+    }
+
+    return nearestWallSnap;
+  }
+
+  // Project point onto wall line segment
+  private projectPointOntoWall(point: Point, wall: WallSegment): Point | null {
+    const A = point.x - wall.start.x;
+    const B = point.y - wall.start.y;
+    const C = wall.end.x - wall.start.x;
+    const D = wall.end.y - wall.start.y;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    
+    if (lenSq === 0) return null; // Zero-length wall
+
+    const param = dot / lenSq;
+    
+    // Clamp to wall segment
+    const clampedParam = Math.max(0, Math.min(1, param));
+    
+    return {
+      x: wall.start.x + clampedParam * C,
+      y: wall.start.y + clampedParam * D
+    };
+  }
+
+  // Find nearest wall for door placement
+  public findNearestWall(point: Point, wallSegments: WallSegment[]): WallSegment | null {
+    let nearestWall: WallSegment | null = null;
+    let minDistance = this.snapThreshold;
+
+    for (const wall of wallSegments) {
+      const distance = this.distanceToLineSegment(point, wall.start, wall.end);
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestWall = wall;
+      }
+    }
+
+    return nearestWall;
+  }
+
+  // Helper function to calculate distance from point to line segment
+  private distanceToLineSegment(point: Point, lineStart: Point, lineEnd: Point): number {
+    const A = point.x - lineStart.x;
+    const B = point.y - lineStart.y;
+    const C = lineEnd.x - lineStart.x;
+    const D = lineEnd.y - lineStart.y;
+
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    
+    if (lenSq === 0) return Math.sqrt(A * A + B * B);
+    
+    let param = dot / lenSq;
+    
+    if (param < 0) {
+      return Math.sqrt(A * A + B * B);
+    } else if (param > 1) {
+      const dx = point.x - lineEnd.x;
+      const dy = point.y - lineEnd.y;
+      return Math.sqrt(dx * dx + dy * dy);
+    } else {
+      const projX = lineStart.x + param * C;
+      const projY = lineStart.y + param * D;
+      const dx = point.x - projX;
+      const dy = point.y - projY;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+  }
+
   private snapToGrid(point: Point): SnapResult {
     const gridSizePx = mmToCanvas(this.gridSize, this.scale);
     const snappedX = Math.round(point.x / gridSizePx) * gridSizePx;
@@ -249,13 +353,13 @@ export class SnapSystem {
     canvasWidth: number,
     canvasHeight: number
   ): SnapGuide[] {
-    if (!snapResult.snapped || snapResult.snapType !== 'alignment') {
+    if (!snapResult.snapped) {
       return [];
     }
 
     const guides: SnapGuide[] = [];
 
-    if (snapResult.target) {
+    if (snapResult.snapType === 'alignment' && snapResult.target) {
       // Horizontal guide
       guides.push({
         type: 'horizontal',
@@ -272,6 +376,19 @@ export class SnapSystem {
         start: { x: snapResult.point.x, y: 0 },
         end: { x: snapResult.point.x, y: canvasHeight },
         color: 'hsl(var(--primary))'
+      });
+    }
+
+    // Wall snap guides for doors
+    if (snapResult.snapType === 'wall' && snapResult.target) {
+      const wall = snapResult.target as WallSegment;
+      // Show wall highlight guide
+      guides.push({
+        type: 'horizontal',
+        position: snapResult.point.y,
+        start: wall.start,
+        end: wall.end,
+        color: 'hsl(var(--accent))'
       });
     }
 

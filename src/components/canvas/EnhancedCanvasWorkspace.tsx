@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode, WallType } from '@/types/floorPlanTypes';
 import { GRID_SIZES, MeasurementUnit, formatMeasurement, canvasToMm, getProductDimensionsInMm, mmToCanvas } from '@/utils/measurements';
+import { SnapSystem, SnapResult } from '@/utils/snapSystem';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasWorkspaceProps {
@@ -67,6 +68,23 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [editingMeasurement, setEditingMeasurement] = useState<{ wallId: string; value: string } | null>(null);
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
   const [dragMeasurements, setDragMeasurements] = useState<{ top: number; right: number; bottom: number; left: number } | null>(null);
+  const [doorSnapPreview, setDoorSnapPreview] = useState<{ point: Point; wall: WallSegment } | null>(null);
+  
+  // Initialize snap system
+  const snapSystem = new SnapSystem(
+    {
+      enabled: true,
+      gridSnap: showGrid,
+      objectSnap: true,
+      snapDistance: 20,
+      strength: 'medium',
+      snapToObjects: true,
+      snapToAlignment: true,
+      snapToGrid: showGrid
+    },
+    gridSize,
+    scale
+  );
 
   const CANVAS_WIDTH = canvasWidth;
   const CANVAS_HEIGHT = canvasHeight;
@@ -573,16 +591,36 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     } else if (currentMode === 'room') {
       setRoomPoints(prev => [...prev, snappedPoint]);
     } else if (currentMode === 'door') {
-      const newDoor: Door = {
-        id: `door-${Date.now()}`,
-        position: snappedPoint,
-        width: 80,
-        wallId: undefined,
-        wallSegmentId: undefined,
-        wallPosition: undefined,
-        isEmbedded: false
-      };
-      setDoors(prev => [...prev, newDoor]);
+      // Enhanced door placement with wall detection
+      const doorSnapResult = snapSystem.snapDoorToWall(point, wallSegments);
+      
+      if (doorSnapResult.snapped && doorSnapResult.target) {
+        const targetWall = doorSnapResult.target as WallSegment;
+        const newDoor: Door = {
+          id: `door-${Date.now()}`,
+          position: doorSnapResult.point,
+          width: 80,
+          wallId: targetWall.id,
+          wallSegmentId: targetWall.id,
+          wallPosition: undefined,
+          isEmbedded: true
+        };
+        setDoors(prev => [...prev, newDoor]);
+        toast.success('Door placed on wall');
+      } else {
+        // Fallback to regular placement if no wall nearby
+        const newDoor: Door = {
+          id: `door-${Date.now()}`,
+          position: snappedPoint,
+          width: 80,
+          wallId: undefined,
+          wallSegmentId: undefined,
+          wallPosition: undefined,
+          isEmbedded: false
+        };
+        setDoors(prev => [...prev, newDoor]);
+        toast.info('Door placed without wall alignment');
+      }
     } else if (currentMode === 'text') {
       const text = prompt('Enter text:');
       if (text) {
@@ -691,6 +729,21 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       if ((currentMode === 'wall' || currentMode === 'interior-wall') && !isWallPreview) {
         setCurrentLineMeasurement('');
       }
+    }
+    
+    // Handle door snap preview for door placement mode
+    if (currentMode === 'door') {
+      const doorSnapResult = snapSystem.snapDoorToWall(point, wallSegments);
+      if (doorSnapResult.snapped && doorSnapResult.target) {
+        setDoorSnapPreview({
+          point: doorSnapResult.point,
+          wall: doorSnapResult.target as WallSegment
+        });
+      } else {
+        setDoorSnapPreview(null);
+      }
+    } else {
+      setDoorSnapPreview(null);
     }
     
     // Handle wall hover for better UX
@@ -1172,6 +1225,37 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
     }
 
+    // Draw door snap preview for door placement
+    if (doorSnapPreview && currentMode === 'door') {
+      const { point, wall } = doorSnapPreview;
+      
+      // Highlight the target wall
+      ctx.strokeStyle = 'rgba(16, 185, 129, 0.8)';
+      ctx.lineWidth = 6;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(wall.start.x, wall.start.y);
+      ctx.lineTo(wall.end.x, wall.end.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Draw door preview at snap point
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.6)';
+      ctx.strokeStyle = 'rgb(16, 185, 129)';
+      ctx.lineWidth = 2;
+      ctx.fillRect(point.x - 40, point.y - 6, 80, 12);
+      ctx.strokeRect(point.x - 40, point.y - 6, 80, 12);
+      
+      // Draw snap indicator
+      ctx.fillStyle = 'rgb(16, 185, 129)';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 8, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
     // Draw snap guides for snapping feedback
     if (snapGuides.vertical !== null || snapGuides.horizontal !== null) {
       ctx.strokeStyle = '#ff4444';
@@ -1271,11 +1355,24 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         onDoubleClick={handleDoubleClick}
         onDrop={(e) => {
           e.preventDefault();
-          const productData = e.dataTransfer.getData('product');
-          if (!productData) return;
+          console.log('Canvas drop event triggered');
+          
+          // Check multiple data transfer formats for better compatibility
+          let productData = e.dataTransfer.getData('application/json') || 
+                           e.dataTransfer.getData('product') || 
+                           e.dataTransfer.getData('text/plain');
+          
+          console.log('Product data received:', productData);
+          
+          if (!productData) {
+            console.log('No product data found in drop event');
+            return;
+          }
           
           try {
             const product = JSON.parse(productData);
+            console.log('Parsed product:', product);
+            
             const point = getCanvasPoint(e);
             const snappedPoint = snapToGrid(point);
             
@@ -1330,9 +1427,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             }
           } catch (error) {
             console.error('Error placing product:', error);
+            toast.error('Failed to place product - invalid data format');
           }
         }}
-        onDragOver={(e) => e.preventDefault()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+        }}
       />
       
       {/* Measurement editing input */}
