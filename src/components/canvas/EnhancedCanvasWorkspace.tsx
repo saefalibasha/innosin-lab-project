@@ -106,7 +106,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
 
   const snapToEndpoints = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {
     const endpoints = findWallEndpoints();
-    const snapDistance = 20; // Increased snap distance for better UX
+    const snapDistance = 40; // Increased snap distance for better sensitivity
     
     for (const endpoint of endpoints) {
       const distance = Math.sqrt(
@@ -192,7 +192,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
 
   // Helper function to check if clicking on measurement text
   const findMeasurementAtPoint = useCallback((point: Point): string | null => {
-    const tolerance = 20;
+    const tolerance = 30; // Increased tolerance for better clickability
     
     for (const wall of wallSegments) {
       const midX = (wall.start.x + wall.end.x) / 2;
@@ -257,7 +257,6 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       Math.pow(targetWall.end.y - targetWall.start.y, 2)
     );
     const newLengthPx = (newLengthMm / 1000) * scale * 100; // Convert mm to pixels
-    const ratio = newLengthPx / currentLengthPx;
     
     // Calculate direction vector
     const dirX = (targetWall.end.x - targetWall.start.x) / currentLengthPx;
@@ -269,16 +268,55 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       y: targetWall.start.y + dirY * newLengthPx
     };
     
-    // Update wall segments
+    // Get original end point for reference
+    const originalEnd = targetWall.end;
+    const endPointChange = {
+      x: newEnd.x - originalEnd.x,
+      y: newEnd.y - originalEnd.y
+    };
+    
+    // Find connected walls and update their endpoints
+    const connectedWallIds = findConnectedWalls(wallId);
+    
+    // Update wall segments including connected walls
     const updatedWalls = wallSegments.map(wall => {
       if (wall.id === wallId) {
         return { ...wall, end: newEnd };
       }
+      
+      // Update connected walls
+      if (connectedWallIds.includes(wall.id)) {
+        const tolerance = 5;
+        
+        // Check which endpoint is connected and update accordingly
+        let updatedWall = { ...wall };
+        
+        // Check if wall start is connected to target wall's end
+        const startToOriginalEnd = Math.sqrt(
+          Math.pow(wall.start.x - originalEnd.x, 2) + 
+          Math.pow(wall.start.y - originalEnd.y, 2)
+        );
+        if (startToOriginalEnd <= tolerance) {
+          updatedWall.start = newEnd;
+        }
+        
+        // Check if wall end is connected to target wall's end
+        const endToOriginalEnd = Math.sqrt(
+          Math.pow(wall.end.x - originalEnd.x, 2) + 
+          Math.pow(wall.end.y - originalEnd.y, 2)
+        );
+        if (endToOriginalEnd <= tolerance) {
+          updatedWall.end = newEnd;
+        }
+        
+        return updatedWall;
+      }
+      
       return wall;
     });
     
     setWallSegments(updatedWalls);
-  }, [wallSegments, setWallSegments, scale]);
+  }, [wallSegments, setWallSegments, scale, findConnectedWalls]);
 
   // Snap to wall lengths for interior walls
   const snapToWallLength = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {
@@ -676,15 +714,24 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.lineTo(wall.end.x, wall.end.y);
       ctx.stroke();
 
-      // Draw connection points at wall endpoints
+      // Draw connection points at wall endpoints with enhanced size and visibility
       [wall.start, wall.end].forEach(point => {
+        // Draw larger visual connection point
         ctx.beginPath();
-        ctx.arc(point.x, point.y, 4, 0, 2 * Math.PI);
+        ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
         ctx.fillStyle = isSelected ? '#ff4444' : isHovered ? '#ffaa00' : '#3b82f6';
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         ctx.stroke();
+        
+        // Draw larger invisible hit area for better clicking
+        ctx.globalAlpha = 0.1;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 15, 0, 2 * Math.PI);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        ctx.globalAlpha = 1.0;
       });
       
       // Always draw clickable measurements for walls
@@ -963,7 +1010,11 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         width={CANVAS_WIDTH}
         height={CANVAS_HEIGHT}
         style={{ width: '100%', height: '100%', maxWidth: `${CANVAS_WIDTH}px`, maxHeight: `${CANVAS_HEIGHT}px` }}
-        className="w-full h-full cursor-crosshair bg-white border"
+        className={`w-full h-full bg-white border ${
+          currentMode === 'select' && hoveredMeasurement ? 'cursor-pointer' : 
+          currentMode === 'select' ? 'cursor-default' :
+          'cursor-crosshair'
+        }`}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -1042,7 +1093,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
               }
               setEditingMeasurement(null);
             }}
-            className="w-20 text-center border-none outline-none bg-transparent font-bold"
+            className="w-24 text-center border-none outline-none bg-transparent font-bold text-blue-600"
             autoFocus
           />
           <span className="text-sm text-gray-600 ml-1">mm</span>
