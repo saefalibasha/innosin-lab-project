@@ -829,10 +829,58 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.stroke();
     }
     
-    // Draw doors
+    // Draw doors with outswing radius
     doors.forEach(door => {
+      const doorX = door.position.x;
+      const doorY = door.position.y;
+      const doorWidth = door.width;
+      const doorThickness = 10;
+      
+      // Draw door rectangle
       ctx.fillStyle = '#8b4513';
-      ctx.fillRect(door.position.x - door.width/2, door.position.y - 10, door.width, 20);
+      ctx.fillRect(doorX - doorWidth/2, doorY - doorThickness/2, doorWidth, doorThickness);
+      
+      // Draw door frame outline
+      ctx.strokeStyle = '#654321';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(doorX - doorWidth/2, doorY - doorThickness/2, doorWidth, doorThickness);
+      
+      // Draw door swing arc (90-degree outswing by default)
+      const swingRadius = doorWidth;
+      const swingAngle = Math.PI / 2; // 90 degrees
+      
+      // Determine swing direction (assume outswing to the right by default)
+      const swingDirection = 1; // 1 for right, -1 for left
+      const hingeX = doorX - (doorWidth/2) * swingDirection;
+      const hingeY = doorY;
+      
+      // Draw swing arc
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.arc(hingeX, hingeY, swingRadius, 0, swingAngle * swingDirection);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Draw swing end position (door fully open)
+      const endX = hingeX + swingRadius * Math.cos(swingAngle * swingDirection);
+      const endY = hingeY + swingRadius * Math.sin(swingAngle * swingDirection);
+      
+      ctx.strokeStyle = '#3b82f6';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(hingeX, hingeY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Draw hinge point
+      ctx.fillStyle = '#654321';
+      ctx.beginPath();
+      ctx.arc(hingeX, hingeY, 3, 0, 2 * Math.PI);
+      ctx.fill();
     });
     
     // Draw text annotations

@@ -10,6 +10,7 @@ import { PlacedProduct } from '@/types/floorPlanTypes';
 import { Product } from '@/types/product';
 import { fetchProductSeriesFromDatabase, searchProductSeries } from '@/services/productService';
 import { parseDimensionString, mmToCanvas, calculateProductScale } from '@/utils/measurements';
+import { toTitleCase } from '@/utils/formatting';
 
 interface EnhancedSeriesSelectorProps {
   onProductSelect: (product: PlacedProduct) => void;
@@ -353,7 +354,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ onProdu
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <Badge variant="outline" className="text-xs">
-                      {displayTag}
+                      {toTitleCase(displayTag)}
                     </Badge>
                   </div>
                   <CardTitle className="text-sm leading-tight break-words">
