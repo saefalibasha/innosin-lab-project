@@ -181,20 +181,10 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handleExportRequest = (format: 'png' | 'jpg') => {
-    // Check if contact info already exists from floor planner entry
-    const existingContactInfo = sessionStorage.getItem('contactInfo');
-    
-    if (existingContactInfo) {
-      // Use existing contact info and export directly
-      setExportFormat(format);
-      exportAsImage(format);
-      setMainDialogOpen(false);
-    } else {
-      // Show form for contact info
-      setExportFormat(format);
-      setMainDialogOpen(false);
-      setShowForm(true);
-    }
+    // Export directly without contact form
+    setExportFormat(format);
+    exportAsImage(format);
+    setMainDialogOpen(false);
   };
 
   const handleFormSubmit = async (formData: ExportFormData) => {
@@ -226,19 +216,9 @@ const ExportModal: React.FC<ExportModalProps> = ({
   };
 
   const handlePDFExport = () => {
-    // Check if contact info already exists from floor planner entry
-    const existingContactInfo = sessionStorage.getItem('contactInfo');
-    
-    if (existingContactInfo) {
-      // Use existing contact info and export directly
-      exportAsPDF();
-      setMainDialogOpen(false);
-    } else {
-      // Show form for contact info
-      setExportFormat('png'); // Set format for form
-      setMainDialogOpen(false);
-      setShowForm(true);
-    }
+    // Export directly without contact form
+    exportAsPDF();
+    setMainDialogOpen(false);
   };
 
   const handleFormSubmitWithPDF = async (formData: ExportFormData) => {
@@ -299,7 +279,6 @@ const ExportModal: React.FC<ExportModalProps> = ({
               
               {/* Image Exports - Require Form */}
               <div className="space-y-2">
-                <p className="text-xs text-gray-600 mb-2">Image exports require contact information:</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
@@ -322,9 +301,8 @@ const ExportModal: React.FC<ExportModalProps> = ({
                 </div>
               </div>
 
-              {/* PDF Export - Also requires form */}
+              {/* PDF Export */}
               <div className="pt-2 border-t">
-                <p className="text-xs text-gray-600 mb-2">PDF export (contact information required):</p>
                 <Button
                   onClick={handlePDFExport}
                   disabled={isExporting}
@@ -345,21 +323,9 @@ const ExportModal: React.FC<ExportModalProps> = ({
                 </Button>
               </div>
             </div>
-
-            <div className="text-xs text-gray-500 p-3 bg-blue-50 rounded">
-              <p className="font-semibold mb-1">Why do we need your information?</p>
-              <p>Contact details help us provide better support and follow up on your project needs. All export formats require contact information for professional service.</p>
-            </div>
           </div>
         </DialogContent>
       </Dialog>
-
-      <ExportFormModal
-        isOpen={showForm}
-        onClose={() => setShowForm(false)}
-        onSubmit={handleFormSubmit}
-        exportFormat={exportFormat}
-      />
     </>
   );
 };

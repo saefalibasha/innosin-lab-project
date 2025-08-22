@@ -36,7 +36,7 @@ import { ContactGateModal } from '@/components/ContactGateModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 const FloorPlanner = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading } = useAuth();
   
   // Access control state
   const [hasAccess, setHasAccess] = useState(false);
@@ -45,11 +45,15 @@ const FloorPlanner = () => {
   // Check for admin access or existing session
   useEffect(() => {
     const checkAccess = () => {
+      console.log('FloorPlanner checkAccess - user:', user?.email, 'isAdmin:', isAdmin, 'loading:', loading);
+      
       // Check for existing contact info
       const contactInfo = sessionStorage.getItem('contactInfo');
+      console.log('Contact info from session:', contactInfo);
       
       // Admin bypass: if user is logged in as admin
       if (user && isAdmin) {
+        console.log('Admin access granted - bypassing contact gate');
         setHasAccess(true);
         setShowContactGate(false);
         return;
@@ -57,13 +61,16 @@ const FloorPlanner = () => {
       
       // Regular user: check if they provided contact info
       if (contactInfo) {
+        console.log('Contact info found - granting access');
         setHasAccess(true);
         setShowContactGate(false);
+      } else {
+        console.log('No access conditions met - showing contact gate');
       }
     };
     
     checkAccess();
-  }, [user, isAdmin]);
+  }, [user, isAdmin, loading]);
 
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
