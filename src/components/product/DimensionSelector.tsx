@@ -51,18 +51,18 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
   }, [variants]);
 
   return (
-    <div className={`grid grid-cols-3 gap-2 ${className}`}>
+    <div className={`grid grid-cols-3 gap-4 ${className}`}>
       {/* Width Selection */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Width (mm)</label>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-muted-foreground">Width (mm)</label>
         {widths.length === 1 ? (
-          <div className="w-full h-8 text-sm bg-muted rounded border flex items-center px-3">
+          <div className="w-full h-10 text-sm bg-muted rounded border flex items-center px-3">
             <span className="text-muted-foreground">{widths[0]}mm</span>
           </div>
         ) : (
           <Select value={selectedWidth} onValueChange={onWidthChange}>
-            <SelectTrigger className="w-full h-8 text-sm">
-              <SelectValue placeholder="Width" />
+            <SelectTrigger className="w-full h-10">
+              <SelectValue placeholder="Select width" />
             </SelectTrigger>
             <SelectContent className="bg-background border shadow-lg z-50">
               {widths.map((width) => (
@@ -76,11 +76,11 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
       </div>
 
       {/* Depth Selection */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Depth (mm)</label>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-muted-foreground">Depth (mm)</label>
         <Select value={selectedDepth} onValueChange={onDepthChange}>
-          <SelectTrigger className="w-full h-8 text-sm">
-            <SelectValue placeholder="Depth" />
+          <SelectTrigger className="w-full h-10">
+            <SelectValue placeholder="Select depth" />
           </SelectTrigger>
           <SelectContent className="bg-background border shadow-lg z-50">
             {depths.map((depth) => (
@@ -93,11 +93,11 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
       </div>
 
       {/* Height Selection */}
-      <div>
-        <label className="text-xs text-muted-foreground mb-1 block">Height (mm)</label>
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-muted-foreground">Height (mm)</label>
         <Select value={selectedHeight} onValueChange={onHeightChange}>
-          <SelectTrigger className="w-full h-8 text-sm">
-            <SelectValue placeholder="Height" />
+          <SelectTrigger className="w-full h-10">
+            <SelectValue placeholder="Select height" />
           </SelectTrigger>
           <SelectContent className="bg-background border shadow-lg z-50">
             {heights.map((height) => (
