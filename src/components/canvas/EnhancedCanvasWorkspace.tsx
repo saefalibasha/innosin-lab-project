@@ -65,6 +65,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [snapGuides, setSnapGuides] = useState<{ horizontal: number | null; vertical: number | null }>({ horizontal: null, vertical: null });
   const [editingMeasurement, setEditingMeasurement] = useState<{ wallId: string; value: string } | null>(null);
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
+  const [dragMeasurements, setDragMeasurements] = useState<{ top: number; right: number; bottom: number; left: number } | null>(null);
 
   const CANVAS_WIDTH = canvasWidth;
   const CANVAS_HEIGHT = canvasHeight;
@@ -104,7 +105,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     return endpoints;
   }, [wallSegments]);
 
-  const snapToEndpoints = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {
+  const snapToEndpoints = useCallback((point: Point): { point: Point | null, showGuides: boolean, isSnapping: boolean } => {
     const endpoints = findWallEndpoints();
     const snapDistance = 40; // Increased snap distance for better sensitivity
     
@@ -114,10 +115,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       );
       
       if (distance <= snapDistance) {
-        return { point: endpoint, showGuides: true };
+        return { point: endpoint, showGuides: true, isSnapping: true };
       }
     }
-    return { point: null, showGuides: false };
+    return { point: null, showGuides: false, isSnapping: false };
   }, [findWallEndpoints]);
 
   // Constrain to vertical/horizontal lines
@@ -132,6 +133,107 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       return { x: startPoint.x, y: currentPoint.y }; // Vertical line
     }
   }, []);
+
+  // Check if product intersects with walls (collision detection)
+  const checkWallCollision = useCallback((product: PlacedProduct): boolean => {
+    const halfWidth = product.dimensions.length / 2;
+    const halfHeight = product.dimensions.width / 2;
+    
+    const productBounds = {
+      left: product.position.x - halfWidth,
+      right: product.position.x + halfWidth,
+      top: product.position.y - halfHeight,
+      bottom: product.position.y + halfHeight
+    };
+    
+    for (const wall of wallSegments) {
+      // Check if product rectangle intersects with wall line (with wall thickness)
+      const wallThickness = wall.thickness || 10;
+      const minX = Math.min(wall.start.x, wall.end.x) - wallThickness/2;
+      const maxX = Math.max(wall.start.x, wall.end.x) + wallThickness/2;
+      const minY = Math.min(wall.start.y, wall.end.y) - wallThickness/2;
+      const maxY = Math.max(wall.start.y, wall.end.y) + wallThickness/2;
+      
+      if (productBounds.right >= minX && productBounds.left <= maxX &&
+          productBounds.bottom >= minY && productBounds.top <= maxY) {
+        return true; // Collision detected
+      }
+    }
+    return false;
+  }, [wallSegments]);
+
+  // Calculate distance to nearest wall for measurements
+  const calculateWallDistances = useCallback((point: Point): { top: number; right: number; bottom: number; left: number } => {
+    let minTop = Infinity, minRight = Infinity, minBottom = Infinity, minLeft = Infinity;
+    
+    for (const wall of wallSegments) {
+      // For simplicity, consider walls as rectangles based on their orientation
+      const isHorizontal = Math.abs(wall.start.y - wall.end.y) < Math.abs(wall.start.x - wall.end.x);
+      
+      if (isHorizontal) {
+        const wallY = (wall.start.y + wall.end.y) / 2;
+        const wallMinX = Math.min(wall.start.x, wall.end.x);
+        const wallMaxX = Math.max(wall.start.x, wall.end.x);
+        
+        if (point.x >= wallMinX && point.x <= wallMaxX) {
+          if (wallY < point.y) {
+            minTop = Math.min(minTop, point.y - wallY);
+          } else {
+            minBottom = Math.min(minBottom, wallY - point.y);
+          }
+        }
+      } else {
+        const wallX = (wall.start.x + wall.end.x) / 2;
+        const wallMinY = Math.min(wall.start.y, wall.end.y);
+        const wallMaxY = Math.max(wall.start.y, wall.end.y);
+        
+        if (point.y >= wallMinY && point.y <= wallMaxY) {
+          if (wallX < point.x) {
+            minLeft = Math.min(minLeft, point.x - wallX);
+          } else {
+            minRight = Math.min(minRight, wallX - point.x);
+          }
+        }
+      }
+    }
+    
+    return {
+      top: minTop === Infinity ? 0 : Math.round(canvasToMm(minTop, scale)),
+      right: minRight === Infinity ? 0 : Math.round(canvasToMm(minRight, scale)),
+      bottom: minBottom === Infinity ? 0 : Math.round(canvasToMm(minBottom, scale)),
+      left: minLeft === Infinity ? 0 : Math.round(canvasToMm(minLeft, scale))
+    };
+  }, [wallSegments, scale]);
+
+  // Snap island/bench products to wall distances
+  const snapToWallDistance = useCallback((product: PlacedProduct, targetDistance: number = 600): Point => {
+    const isIslandOrBench = product.name.toLowerCase().includes('island') || 
+                           product.name.toLowerCase().includes('bench') ||
+                           product.category?.toLowerCase().includes('bench');
+    
+    if (!isIslandOrBench) return product.position;
+    
+    const distances = calculateWallDistances(product.position);
+    const snapThreshold = 50; // mm
+    
+    let adjustedPosition = { ...product.position };
+    
+    // Snap to standard distances if close
+    if (Math.abs(distances.left - targetDistance) < snapThreshold) {
+      adjustedPosition.x = product.position.x + (targetDistance - distances.left) * scale / 10;
+    }
+    if (Math.abs(distances.right - targetDistance) < snapThreshold) {
+      adjustedPosition.x = product.position.x - (targetDistance - distances.right) * scale / 10;
+    }
+    if (Math.abs(distances.top - targetDistance) < snapThreshold) {
+      adjustedPosition.y = product.position.y + (targetDistance - distances.top) * scale / 10;
+    }
+    if (Math.abs(distances.bottom - targetDistance) < snapThreshold) {
+      adjustedPosition.y = product.position.y - (targetDistance - distances.bottom) * scale / 10;
+    }
+    
+    return adjustedPosition;
+  }, [calculateWallDistances, scale]);
 
   // Find product at point for dragging
   const findProductAtPoint = useCallback((point: Point): PlacedProduct | null => {
@@ -493,17 +595,33 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     if (isDragging && draggedItem && currentMode === 'move') {
       const draggedProduct = placedProducts.find(p => p.id === draggedItem);
       if (draggedProduct) {
-        const newPosition = {
+        let newPosition = {
           x: point.x - dragOffset.x,
           y: point.y - dragOffset.y
         };
-        const snappedPosition = snapToGrid(newPosition);
         
-        setPlacedProducts(prev => prev.map(p => 
-          p.id === draggedItem ? { ...p, position: snappedPosition } : p
-        ));
+        // Apply grid snapping
+        newPosition = snapToGrid(newPosition);
+        
+        // Check for wall collision and prevent placement if collision detected
+        const testProduct = { ...draggedProduct, position: newPosition };
+        if (!checkWallCollision(testProduct)) {
+          // Apply island/bench wall snapping
+          newPosition = snapToWallDistance(testProduct);
+          
+          // Calculate and show real-time measurements
+          const measurements = calculateWallDistances(newPosition);
+          setDragMeasurements(measurements);
+          
+          setPlacedProducts(prev => prev.map(p => 
+            p.id === draggedItem 
+              ? { ...p, position: newPosition }
+              : p
+          ));
+        }
       }
-      return;
+    } else {
+      setDragMeasurements(null);
     }
     
     if (isWallPreview && wallStartPoint && (currentMode === 'wall' || currentMode === 'interior-wall')) {
@@ -714,12 +832,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.lineTo(wall.end.x, wall.end.y);
       ctx.stroke();
 
-      // Draw connection points at wall endpoints with enhanced size and visibility
+    // Draw connection points at wall endpoints with snap color change
       [wall.start, wall.end].forEach(point => {
-        // Draw larger visual connection point
+        // Check if this point is near other endpoints for color change
+        const snapResult = snapToEndpoints(point);
+        
+        // Draw larger visual connection point with snap color
         ctx.beginPath();
         ctx.arc(point.x, point.y, 6, 0, 2 * Math.PI);
-        ctx.fillStyle = isSelected ? '#ff4444' : isHovered ? '#ffaa00' : '#3b82f6';
+        ctx.fillStyle = isSelected ? '#ff4444' : 
+                       isHovered ? '#ffaa00' : 
+                       snapResult.isSnapping ? '#ef4444' : '#3b82f6';
         ctx.fill();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
@@ -829,12 +952,27 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.stroke();
     }
     
-    // Draw doors with outswing radius
+    // Draw doors with scaled size and outswing radius
     doors.forEach(door => {
       const doorX = door.position.x;
       const doorY = door.position.y;
-      const doorWidth = door.width;
-      const doorThickness = 10;
+      
+      // Find nearest wall to scale door size
+      let nearestWall = null;
+      let minDistance = Infinity;
+      
+      for (const wall of wallSegments) {
+        const distance = distanceToLineSegment(door.position, wall.start, wall.end);
+        if (distance < minDistance) {
+          minDistance = distance;
+          nearestWall = wall;
+        }
+      }
+      
+      // Scale door to wall thickness (70% of wall thickness for door thickness, standard width)
+      const wallThickness = nearestWall?.thickness || 10;
+      const doorThickness = Math.max(wallThickness * 0.7, 6); // Minimum 6px
+      const doorWidth = Math.min(Math.max(door.width, 60), 120); // Standard door width range (60-120px)
       
       // Draw door rectangle
       ctx.fillStyle = '#8b4513';
@@ -846,7 +984,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.strokeRect(doorX - doorWidth/2, doorY - doorThickness/2, doorWidth, doorThickness);
       
       // Draw door swing arc (90-degree outswing by default)
-      const swingRadius = doorWidth;
+      const swingRadius = doorWidth * 0.9; // Slightly smaller than door width
       const swingAngle = Math.PI / 2; // 90 degrees
       
       // Determine swing direction (assume outswing to the right by default)
@@ -855,9 +993,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const hingeY = doorY;
       
       // Draw swing arc
-      ctx.strokeStyle = '#3b82f6';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([3, 3]);
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
       ctx.beginPath();
       ctx.arc(hingeX, hingeY, swingRadius, 0, swingAngle * swingDirection);
       ctx.stroke();
@@ -867,9 +1005,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const endX = hingeX + swingRadius * Math.cos(swingAngle * swingDirection);
       const endY = hingeY + swingRadius * Math.sin(swingAngle * swingDirection);
       
-      ctx.strokeStyle = '#3b82f6';
+      ctx.strokeStyle = '#2563eb';
       ctx.lineWidth = 1;
-      ctx.setLineDash([2, 2]);
+      ctx.setLineDash([2, 3]);
       ctx.beginPath();
       ctx.moveTo(hingeX, hingeY);
       ctx.lineTo(endX, endY);
@@ -879,7 +1017,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       // Draw hinge point
       ctx.fillStyle = '#654321';
       ctx.beginPath();
-      ctx.arc(hingeX, hingeY, 3, 0, 2 * Math.PI);
+      ctx.arc(hingeX, hingeY, 2.5, 0, 2 * Math.PI);
       ctx.fill();
     });
     
@@ -968,6 +1106,68 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       }
       
       ctx.setLineDash([]); // Reset dash
+    }
+
+    // Draw real-time drag measurements
+    if (dragMeasurements && isDragging) {
+      const draggedProduct = placedProducts.find(p => p.id === draggedItem);
+      if (draggedProduct) {
+        const pos = draggedProduct.position;
+        
+        // Draw measurement lines and text
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([2, 2]);
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        
+        // Top measurement
+        if (dragMeasurements.top > 0) {
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y - 50);
+          ctx.lineTo(pos.x, pos.y - dragMeasurements.top * scale / 10);
+          ctx.stroke();
+          ctx.fillText(`${dragMeasurements.top}mm`, pos.x, pos.y - 60);
+        }
+        
+        // Right measurement
+        if (dragMeasurements.right > 0) {
+          ctx.beginPath();
+          ctx.moveTo(pos.x + 50, pos.y);
+          ctx.lineTo(pos.x + dragMeasurements.right * scale / 10, pos.y);
+          ctx.stroke();
+          ctx.save();
+          ctx.translate(pos.x + 60, pos.y);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText(`${dragMeasurements.right}mm`, 0, 0);
+          ctx.restore();
+        }
+        
+        // Bottom measurement
+        if (dragMeasurements.bottom > 0) {
+          ctx.beginPath();
+          ctx.moveTo(pos.x, pos.y + 50);
+          ctx.lineTo(pos.x, pos.y + dragMeasurements.bottom * scale / 10);
+          ctx.stroke();
+          ctx.fillText(`${dragMeasurements.bottom}mm`, pos.x, pos.y + 70);
+        }
+        
+        // Left measurement
+        if (dragMeasurements.left > 0) {
+          ctx.beginPath();
+          ctx.moveTo(pos.x - 50, pos.y);
+          ctx.lineTo(pos.x - dragMeasurements.left * scale / 10, pos.y);
+          ctx.stroke();
+          ctx.save();
+          ctx.translate(pos.x - 60, pos.y);
+          ctx.rotate(Math.PI / 2);
+          ctx.fillText(`${dragMeasurements.left}mm`, 0, 0);
+          ctx.restore();
+        }
+        
+        ctx.setLineDash([]);
+      }
     }
 
     // Draw snap guides for snapping feedback
@@ -1099,7 +1299,16 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
               variants: product.variants
             };
             
-            setPlacedProducts(prev => [...prev, newProduct]);
+            // Check for wall collision before placing
+            if (!checkWallCollision(newProduct)) {
+              // Apply island/bench wall snapping if applicable
+              const snappedPosition = snapToWallDistance(newProduct);
+              newProduct.position = snappedPosition;
+              
+              setPlacedProducts(prev => [...prev, newProduct]);
+            } else {
+              console.log('Product placement blocked due to wall collision');
+            }
           } catch (error) {
             console.error('Error placing product:', error);
           }
