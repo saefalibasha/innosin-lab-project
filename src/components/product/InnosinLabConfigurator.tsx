@@ -6,6 +6,8 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Product } from '@/types/product';
 import { Package, Settings2, Filter, RotateCcw } from 'lucide-react';
+import { DimensionSelector } from './DimensionSelector';
+import { parseDimensionString } from '@/utils/dimensionUtils';
 
 interface InnosinLabConfiguratorProps {
   variants: Product[];
@@ -37,6 +39,10 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
   const [selectedDrawerCount, setSelectedDrawerCount] = useState<string>('');
   const [selectedDimensions, setSelectedDimensions] = useState<string>('');
   const [selectedOrientation, setSelectedOrientation] = useState<string>('');
+  const [selectedWidth, setSelectedWidth] = useState<string>('');
+  const [selectedDepth, setSelectedDepth] = useState<string>('');
+  const [selectedHeight, setSelectedHeight] = useState<string>('');
+  const [useDimensionSelector, setUseDimensionSelector] = useState<boolean>(false);
 
   // Detect series type and capabilities
   const seriesCapabilities = useMemo(() => {
@@ -196,16 +202,37 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
     }
   }, [selectedDrawerCount, selectedDimensions, selectedOrientation, seriesCapabilities]);
 
+  // Helper function to update dimensions from width/depth/height
+  const updateSelectedDimensions = (width: string, depth: string, height: string) => {
+    if (width && depth && height) {
+      const dimensionString = `${width}×${depth}×${height} mm`;
+      setSelectedDimensions(dimensionString);
+    } else {
+      setSelectedDimensions('');
+    }
+  };
+
   // Reset dependent selections when parent selection changes
   const handleDrawerCountChange = (value: string) => {
     setSelectedDrawerCount(value);
     setSelectedDimensions('');
     setSelectedOrientation('');
+    setSelectedWidth('');
+    setSelectedDepth('');
+    setSelectedHeight('');
   };
 
   const handleDimensionsChange = (value: string) => {
     setSelectedDimensions(value);
     setSelectedOrientation('');
+    
+    // Parse dimensions and update individual values
+    const parsed = parseDimensionString(value);
+    if (parsed) {
+      setSelectedWidth(parsed.width.toString());
+      setSelectedDepth(parsed.depth.toString());
+      setSelectedHeight(parsed.height.toString());
+    }
   };
 
   // Clear all selections
@@ -213,7 +240,21 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
     setSelectedDrawerCount('');
     setSelectedDimensions('');
     setSelectedOrientation('');
+    setSelectedWidth('');
+    setSelectedDepth('');
+    setSelectedHeight('');
   };
+
+  // Effect to enable dimension selector based on series type
+  React.useEffect(() => {
+    // Enable dimension selector for series that benefit from separate W×D×H selection
+    const shouldUseDimensionSelector = variants.some(v => {
+      if (!v.dimensions) return false;
+      const parsed = parseDimensionString(v.dimensions);
+      return parsed && (parsed.width > 100 || parsed.depth > 100 || parsed.height > 100);
+    });
+    setUseDimensionSelector(shouldUseDimensionSelector);
+  }, [variants]);
 
   if (!variants || variants.length === 0) {
     return (
@@ -270,18 +311,39 @@ const InnosinLabConfigurator: React.FC<InnosinLabConfiguratorProps> = ({
             {(!seriesCapabilities.showDrawers || selectedDrawerCount) && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Dimensions</label>
-                <Select value={selectedDimensions} onValueChange={handleDimensionsChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select dimensions" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {getAvailableOptions('dimensions').map(dim => (
-                      <SelectItem key={dim} value={dim}>
-                        {dim}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {useDimensionSelector ? (
+                  <DimensionSelector
+                    variants={variants}
+                    selectedWidth={selectedWidth}
+                    selectedDepth={selectedDepth}
+                    selectedHeight={selectedHeight}
+                    onWidthChange={(width) => {
+                      setSelectedWidth(width);
+                      updateSelectedDimensions(width, selectedDepth, selectedHeight);
+                    }}
+                    onDepthChange={(depth) => {
+                      setSelectedDepth(depth);
+                      updateSelectedDimensions(selectedWidth, depth, selectedHeight);
+                    }}
+                    onHeightChange={(height) => {
+                      setSelectedHeight(height);
+                      updateSelectedDimensions(selectedWidth, selectedDepth, height);
+                    }}
+                  />
+                ) : (
+                  <Select value={selectedDimensions} onValueChange={handleDimensionsChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select dimensions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableOptions('dimensions').map(dim => (
+                        <SelectItem key={dim} value={dim}>
+                          {dim}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
             )}
 

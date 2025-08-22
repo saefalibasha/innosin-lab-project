@@ -2,8 +2,9 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, Ruler, DoorOpen, Palette, Settings } from 'lucide-react';
+import { Check, DoorOpen, Palette, Settings } from 'lucide-react';
+import { DimensionSelector } from './DimensionSelector';
+import { parseDimensionString } from '@/utils/dimensionUtils';
 
 interface TallCabinetConfiguratorProps {
   variants: any[];
@@ -25,51 +26,13 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
   const [selectedHeight, setSelectedHeight] = useState<string>('');
   const [selectedDoorType, setSelectedDoorType] = useState<string>('');
 
-  // Extract unique width, depth, and height options from dimensions
-  const { widths, depths, heights } = useMemo(() => {
-    const dimensionPairs = variants.map(v => v.dimensions).filter(Boolean);
-    const widthSet = new Set<string>();
-    const depthSet = new Set<string>();
-    const heightSet = new Set<string>();
-
-    console.log('Processing dimensions:', dimensionPairs);
-
-    dimensionPairs.forEach(dim => {
-      // Remove "mm" suffix first, then split by "x"
-      const cleanDim = dim.replace(/mm/g, '');
-      const parts = cleanDim.split('x').map(p => p.trim());
-      console.log('Dimension parts after cleaning:', parts);
-      
-      if (parts.length >= 3) {
-        const width = parts[0]; // First value is width
-        const depth = parts[1]; // Second value is depth
-        const height = parts[2]; // Third value is height
-        widthSet.add(width);
-        depthSet.add(depth);
-        heightSet.add(height);
-      }
-    });
-
-    const sortedWidths = Array.from(widthSet).sort((a, b) => parseInt(a) - parseInt(b));
-    const sortedDepths = Array.from(depthSet).sort((a, b) => parseInt(a) - parseInt(b));
-    const sortedHeights = Array.from(heightSet).sort((a, b) => parseInt(a) - parseInt(b));
-
-    console.log('Extracted widths:', sortedWidths);
-    console.log('Extracted depths:', sortedDepths);
-    console.log('Extracted heights:', sortedHeights);
-
-    return {
-      widths: sortedWidths,
-      depths: sortedDepths,
-      heights: sortedHeights
-    };
-  }, [variants]);
-
+  // Door types are still extracted here
   const doorTypes = useMemo(() => {
     const types = [...new Set(variants.map(v => v.door_type).filter(Boolean))].sort();
     console.log('Door types:', types);
     return types;
   }, [variants]);
+
 
   // Extract available finishes dynamically from variant data
   const availableFinishes = useMemo(() => {
@@ -87,22 +50,19 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     return finishOptions;
   }, [variants]);
 
-  // Find matching variant based on current selections
+  // Find matching variant based on current selections using parseDimensionString
   const findMatchingVariant = (width: string, depth: string, height: string, doorType: string, finish: string) => {
     console.log('Finding variant for:', { width, depth, height, doorType, finish });
     
     const matchingVariant = variants.find(v => {
       if (!v.dimensions) return false;
       
-      // Remove "mm" suffix first, then split by "x"
-      const cleanDim = v.dimensions.replace(/mm/g, '');
-      const dimParts = cleanDim.split('x').map(p => p.trim());
+      const parsed = parseDimensionString(v.dimensions);
+      if (!parsed) return false;
       
-      if (dimParts.length < 3) return false;
-      
-      const matches = dimParts[0] === width && 
-             dimParts[1] === depth && 
-             dimParts[2] === height && 
+      const matches = parsed.width.toString() === width && 
+             parsed.depth.toString() === depth && 
+             parsed.height.toString() === height && 
              v.door_type === doorType && 
              v.finish_type === finish;
              
@@ -187,30 +147,11 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
 
   // Initialize selections with first available options
   React.useEffect(() => {
-    // Auto-select single options or initialize with first available
-    if (widths.length === 1 && !selectedWidth) {
-      console.log('Auto-selecting single width:', widths[0]);
-      setSelectedWidth(widths[0]);
-    } else if (widths.length > 1 && !selectedWidth) {
-      console.log('Initializing width with first option:', widths[0]);
-      setSelectedWidth(widths[0]);
-    }
-
-    if (depths.length > 0 && !selectedDepth) {
-      console.log('Initializing depth with first option:', depths[0]);
-      setSelectedDepth(depths[0]);
-    }
-
-    if (heights.length > 0 && !selectedHeight) {
-      console.log('Initializing height with first option:', heights[0]);
-      setSelectedHeight(heights[0]);
-    }
-
     if (doorTypes.length > 0 && !selectedDoorType) {
       console.log('Initializing door type with first option:', doorTypes[0]);
       setSelectedDoorType(doorTypes[0]);
     }
-  }, [widths, depths, heights, doorTypes, selectedWidth, selectedDepth, selectedHeight, selectedDoorType]);
+  }, [doorTypes, selectedDoorType]);
 
   // Initialize selections based on current variant (override auto-selection)
   React.useEffect(() => {
@@ -218,15 +159,12 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
     console.log('Current variant:', currentVariant);
     
     if (currentVariant && currentVariant.dimensions) {
-      // Remove "mm" suffix first, then split by "x"
-      const cleanDim = currentVariant.dimensions.replace(/mm/g, '');
-      const dimParts = cleanDim.split('x').map(p => p.trim());
-      
-      if (dimParts.length >= 3) {
-        console.log('Setting dimensions from current variant:', dimParts);
-        setSelectedWidth(dimParts[0]);
-        setSelectedDepth(dimParts[1]);
-        setSelectedHeight(dimParts[2]);
+      const parsed = parseDimensionString(currentVariant.dimensions);
+      if (parsed) {
+        console.log('Setting dimensions from current variant:', parsed);
+        setSelectedWidth(parsed.width.toString());
+        setSelectedDepth(parsed.depth.toString());
+        setSelectedHeight(parsed.height.toString());
       }
       if (currentVariant.door_type) {
         console.log('Setting door type from current variant:', currentVariant.door_type);
@@ -244,72 +182,20 @@ const TallCabinetConfigurator: React.FC<TallCabinetConfiguratorProps> = ({
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm">
-            <Ruler className="w-4 h-4 text-primary" />
+            <Settings className="w-4 h-4 text-primary" />
             Step 1: Select Dimensions
-            <span className="text-xs text-muted-foreground ml-auto">
-              ({widths.length}×{depths.length}×{heights.length} options)
-            </span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-2">
-            {/* Width Selection */}
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Width (mm)</label>
-              {widths.length === 1 ? (
-                <div className="w-full h-8 text-sm bg-muted rounded border flex items-center px-3">
-                  <span className="text-muted-foreground">{widths[0]}mm</span>
-                </div>
-              ) : (
-                <Select value={selectedWidth} onValueChange={handleWidthSelect}>
-                  <SelectTrigger className="w-full h-8 text-sm">
-                    <SelectValue placeholder="Width" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border shadow-lg z-50">
-                    {widths.map((width) => (
-                      <SelectItem key={width} value={width}>
-                        {width}mm
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            {/* Depth Selection */}
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Depth (mm)</label>
-              <Select value={selectedDepth} onValueChange={handleDepthSelect}>
-                <SelectTrigger className="w-full h-8 text-sm">
-                  <SelectValue placeholder="Depth" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  {depths.map((depth) => (
-                    <SelectItem key={depth} value={depth}>
-                      {depth}mm
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Height Selection */}
-            <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Height (mm)</label>
-              <Select value={selectedHeight} onValueChange={handleHeightSelect}>
-                <SelectTrigger className="w-full h-8 text-sm">
-                  <SelectValue placeholder="Height" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  {heights.map((height) => (
-                    <SelectItem key={height} value={height}>
-                      {height}mm
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          <DimensionSelector
+            variants={variants}
+            selectedWidth={selectedWidth}
+            selectedDepth={selectedDepth}
+            selectedHeight={selectedHeight}
+            onWidthChange={handleWidthSelect}
+            onDepthChange={handleDepthSelect}
+            onHeightChange={handleHeightSelect}
+          />
         </CardContent>
       </Card>
 
