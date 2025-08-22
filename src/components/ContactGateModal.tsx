@@ -195,7 +195,7 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
                   onCheckedChange={(checked) => handleInputChange('createInquiry', checked as boolean)}
                 />
                 <Label htmlFor="createInquiry" className="text-sm">
-                  I have a specific inquiry about laboratory equipment
+                  I have specific inquiry about Laboratory Furniture Design & Installation.
                 </Label>
               </div>
 
