@@ -34,23 +34,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAdminStatus = async (userEmail: string) => {
     try {
       console.log('Checking admin status for:', userEmail);
+      
+      // Use maybeSingle() instead of single() to avoid errors when no row found
       const { data, error } = await supabase
         .from('admin_roles')
         .select('role, is_active')
         .eq('user_email', userEmail)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
       
       console.log('Admin query result:', { data, error });
       
       if (error) {
-        console.log('No admin role found for user:', userEmail);
+        console.error('Database error checking admin status:', error);
         setIsAdmin(false);
         return;
       }
       
-      console.log('Setting admin status to:', !!data);
-      setIsAdmin(!!data);
+      // data will be null if no admin role found, or the row if found
+      const hasAdminRole = data !== null;
+      console.log('Setting admin status to:', hasAdminRole);
+      setIsAdmin(hasAdminRole);
+      
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
