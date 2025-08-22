@@ -62,7 +62,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
   }, [variants]);
 
   return (
-    <div className={`grid grid-cols-3 gap-16 w-full ${className}`}>
+    <div className={`grid grid-cols-3 gap-20 w-full ${className}`}>
       {/* Width Selection */}
       <div className="space-y-2 min-w-0 flex-1">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Width (mm)</label>
@@ -72,7 +72,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
           </div>
         ) : (
           <Select value={selectedWidth || (widths.length > 0 ? widths[0] : '')} onValueChange={onWidthChange}>
-            <SelectTrigger className="w-full h-10 min-w-[120px]">
+            <SelectTrigger className="w-full h-10 min-w-[80px]">
               <SelectValue
                 placeholder="Select width" 
                 defaultValue={widths.length > 0 ? widths[0] : undefined}
@@ -93,7 +93,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
       <div className="space-y-2 min-w-0 flex-1">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Depth (mm)</label>
         <Select value={selectedDepth || (depths.length > 0 ? depths[0] : '')} onValueChange={onDepthChange}>
-          <SelectTrigger className="w-full h-10 min-w-[120px]">
+          <SelectTrigger className="w-full h-10 min-w-[80px]">
             <SelectValue 
               placeholder="Select depth" 
               defaultValue={depths.length > 0 ? depths[0] : undefined}
@@ -113,7 +113,7 @@ export const DimensionSelector: React.FC<DimensionSelectorProps> = ({
       <div className="space-y-2 min-w-0 flex-1">
         <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">Height (mm)</label>
         <Select value={selectedHeight || (heights.length > 0 ? heights[0] : '')} onValueChange={onHeightChange}>
-          <SelectTrigger className="w-full h-10 min-w-[120px]">
+          <SelectTrigger className="w-full h-10 min-w-[80px]">
             <SelectValue 
               placeholder="Select height" 
               defaultValue={heights.length > 0 ? heights[0] : undefined}
