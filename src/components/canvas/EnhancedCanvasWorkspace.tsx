@@ -28,6 +28,8 @@ interface EnhancedCanvasWorkspaceProps {
   canvasWidth: number;
   canvasHeight: number;
   onClearAll: () => void;
+  doorOrientation?: 'horizontal' | 'vertical';
+  onWallUpdate?: (wall: WallSegment) => void;
 }
 
 export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
@@ -51,7 +53,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   measurementUnit,
   canvasWidth,
   canvasHeight,
-  onClearAll
+  onClearAll,
+  doorOrientation = 'horizontal',
+  onWallUpdate
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [wallStartPoint, setWallStartPoint] = useState<Point | null>(null);
@@ -70,7 +74,6 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
   const [dragMeasurements, setDragMeasurements] = useState<{ top: number; right: number; bottom: number; left: number } | null>(null);
   const [doorSnapPreview, setDoorSnapPreview] = useState<{ point: Point; wall: WallSegment } | null>(null);
-  const [doorOrientation, setDoorOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
   
   // Initialize snap system
   const snapSystem = new SnapSystem(
@@ -379,7 +382,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       Math.pow(targetWall.end.x - targetWall.start.x, 2) + 
       Math.pow(targetWall.end.y - targetWall.start.y, 2)
     );
-    const newLengthPx = (newLengthMm / 1000) * scale * 100; // Convert mm to pixels
+    const newLengthPx = mmToCanvas(newLengthMm, scale); // Convert mm to canvas pixels
     
     // Calculate direction vector
     const dirX = (targetWall.end.x - targetWall.start.x) / currentLengthPx;
@@ -439,7 +442,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     });
     
     setWallSegments(updatedWalls);
-  }, [wallSegments, setWallSegments, scale, findConnectedWalls]);
+    
+    // Call onWallUpdate if provided
+    const updatedTargetWall = updatedWalls.find(w => w.id === wallId);
+    if (updatedTargetWall && onWallUpdate) {
+      onWallUpdate(updatedTargetWall);
+    }
+  }, [wallSegments, setWallSegments, scale, findConnectedWalls, onWallUpdate]);
 
   // Snap to wall lengths for interior walls
   const snapToWallLength = useCallback((point: Point): { point: Point | null, showGuides: boolean } => {

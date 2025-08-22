@@ -86,13 +86,14 @@ const FloorPlanner = () => {
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
   
-  // Room-aware measurement system with intelligent scaling
-  const [scale, setScale] = useState(0.15); // Optimized for room context: 0.15 px/mm = 150px/m
+  // Room-aware measurement system with intelligent scaling for large rooms
+  const [scale, setScale] = useState(0.08); // Optimized for large rooms: 0.08 px/mm = 80px/m (supports 20x20m rooms)
   const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
   const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
+  const [doorOrientation, setDoorOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
   
   // UI state
   const [projectName, setProjectName] = useState('Untitled Floor Plan');
@@ -113,9 +114,9 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions - Enhanced size for better workspace
-  const CANVAS_WIDTH = 1600;
-  const CANVAS_HEIGHT = 1000;
+  // Canvas dimensions - Enhanced size for large rooms (20x20m support)
+  const CANVAS_WIDTH = 2000;
+  const CANVAS_HEIGHT = 1400;
 
   // Enhanced product management
   const handleProductDrag = useCallback((product: any) => {
@@ -146,7 +147,19 @@ const FloorPlanner = () => {
       wall.id === updatedWall.id ? updatedWall : wall
     ));
     setSelectedWall(updatedWall);
-  }, []);
+    
+    // Save state for undo/redo
+    saveState({
+      roomPoints,
+      placedProducts,
+      doors,
+      textAnnotations,
+      wallSegments: wallSegments.map(wall => 
+        wall.id === updatedWall.id ? updatedWall : wall
+      ),
+      rooms
+    });
+  }, [wallSegments, roomPoints, placedProducts, doors, textAnnotations, rooms, saveState]);
 
   const handleWallDelete = useCallback((wallId: string) => {
     setWallSegments(prev => prev.filter(wall => wall.id !== wallId));
@@ -168,6 +181,23 @@ const FloorPlanner = () => {
 
   const handleScaleChange = useCallback((newScale: number) => {
     setScale(newScale);
+  }, []);
+
+  // Door orientation handler
+  const handleDoorOrientationChange = useCallback((orientation: 'horizontal' | 'vertical') => {
+    setDoorOrientation(orientation);
+    console.log('Door orientation changed to:', orientation);
+  }, []);
+
+  // Scale presets for different room sizes
+  const handleRoomSizePreset = useCallback((roomSize: 'small' | 'medium' | 'large') => {
+    const presets = {
+      small: 0.2,   // 3x3m rooms - 200px/m
+      medium: 0.12, // 10x10m rooms - 120px/m  
+      large: 0.08   // 20x20m rooms - 80px/m
+    };
+    setScale(presets[roomSize]);
+    toast.success(`Scale adjusted for ${roomSize} rooms`);
   }, []);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -541,10 +571,8 @@ const FloorPlanner = () => {
               showGrid={showGrid}
               scale={scale}
               onScaleChange={handleScaleChange}
-              doorOrientation={'horizontal'}
-              onDoorOrientationChange={(orientation) => {
-                console.log('Door orientation changed to:', orientation);
-              }}
+              doorOrientation={doorOrientation}
+              onDoorOrientationChange={handleDoorOrientationChange}
             />
 
             {/* Room Creator Modal */}
@@ -641,19 +669,54 @@ const FloorPlanner = () => {
                     canvasWidth={CANVAS_WIDTH}
                     canvasHeight={CANVAS_HEIGHT}
                     onClearAll={handleClear}
+                    doorOrientation={doorOrientation}
+                    onWallUpdate={handleWallUpdate}
                   />
                   
                   {/* Wall Editor Panel */}
-                  {selectedWall && (
-                    <WallEditor
-                      selectedWall={selectedWall}
-                      onWallUpdate={handleWallUpdate}
-                      onWallDelete={handleWallDelete}
-                      onClose={() => setSelectedWall(null)}
-                      scale={scale}
-                      measurementUnit={measurementUnit}
-                    />
-                  )}
+            {selectedWall && (
+              <WallEditor
+                selectedWall={selectedWall}
+                onWallUpdate={handleWallUpdate}
+                onWallDelete={handleWallDelete}
+                onClose={() => setSelectedWall(null)}
+                scale={scale}
+                measurementUnit={measurementUnit}
+              />
+            )}
+
+            {/* Scale Presets for Room Sizes */}
+            <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-40">
+              <div className="bg-white p-2 rounded-lg shadow-lg border">
+                <div className="text-xs text-muted-foreground mb-2">Room Scale Presets</div>
+                <div className="flex gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRoomSizePreset('small')}
+                    className="text-xs px-2"
+                  >
+                    3×3m
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRoomSizePreset('medium')}
+                    className="text-xs px-2"
+                  >
+                    10×10m
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleRoomSizePreset('large')}
+                    className="text-xs px-2"
+                  >
+                    20×20m
+                  </Button>
+                </div>
+              </div>
+            </div>
                 </div>
                 
                 {/* Enhanced Canvas Status */}

@@ -59,8 +59,8 @@ export const FloorPlanner = () => {
     setRooms([]);
   }, []);
 
-  // Room-aware scale: optimized for laboratory spaces
-  const scale = 0.15; // 0.15 pixels per mm (150 pixels per meter)
+  // Room-aware scale: optimized for large laboratory spaces (20x20m support)
+  const scale = 0.08; // 0.08 pixels per mm (80 pixels per meter)
 
   return (
     <div className="h-screen flex">
