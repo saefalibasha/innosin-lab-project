@@ -1409,16 +1409,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             }
             
             // Convert mm dimensions to canvas pixels for accurate placement
+            // Note: Ensure proper mapping of dimensions (L × W × H)
             const canvasDimensions = {
-              length: mmToCanvas(accurateDimensionsMm.width, scale),
-              width: mmToCanvas(accurateDimensionsMm.depth, scale),
-              height: mmToCanvas(accurateDimensionsMm.height, scale)
+              length: mmToCanvas(accurateDimensionsMm.width, scale),  // Width in DB = Length in canvas
+              width: mmToCanvas(accurateDimensionsMm.depth, scale),   // Depth in DB = Width in canvas
+              height: mmToCanvas(accurateDimensionsMm.height, scale)  // Height remains height
             };
             
             const originalDimensions = {
-              length: accurateDimensionsMm.width,
-              width: accurateDimensionsMm.depth,
-              height: accurateDimensionsMm.height
+              length: accurateDimensionsMm.width,   // Width in DB = Length in canvas 
+              width: accurateDimensionsMm.depth,    // Depth in DB = Width in canvas
+              height: accurateDimensionsMm.height   // Height remains height
             };
             
             const newProduct: PlacedProduct = {

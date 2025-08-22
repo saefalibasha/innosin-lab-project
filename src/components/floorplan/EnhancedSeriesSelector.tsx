@@ -10,6 +10,13 @@ import LazyProductImage from '@/components/LazyProductImage';
 import { useProductSeries } from '@/hooks/useProductSeries';
 import { Product } from '@/types/product';
 import { ProductVariantSelector } from './ProductVariantSelector';
+import { formatSeriesName, toTitleCase, formatProductName } from '@/utils/seriesNameFormatter';
+import { 
+  getOrientationDisplayName, 
+  formatDrawerCount, 
+  formatAttributeValue,
+  formatFinishType 
+} from '@/utils/productTerminology';
 
 interface EnhancedSeriesSelectorProps {
   onProductDrag: (product: any) => void;
@@ -104,6 +111,40 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     });
   };
 
+  // Get available filter options based on current selections (cascading filters)
+  const getAvailableFilterOptions = (seriesId: string, products: Product[], field: keyof Product, currentFilters: Record<string, any>) => {
+    // Apply all filters except the one we're calculating options for
+    const otherFilters = { ...currentFilters };
+    delete otherFilters[field === 'finish_type' ? 'finish' : 
+                      field === 'orientation' ? 'orientation' :
+                      field === 'number_of_drawers' ? 'drawerCount' :
+                      field === 'door_type' ? 'doorType' :
+                      field === 'dimensions' ? 'dimensions' :
+                      field === 'mounting_type' ? 'mountingType' :
+                      field === 'mixing_type' ? 'mixingType' :
+                      field === 'handle_type' ? 'handleType' :
+                      field === 'cabinet_class' ? 'cabinetClass' :
+                      field === 'emergency_shower_type' ? 'emergencyShowerType' : ''];
+
+    const tempFilters = { [seriesId]: otherFilters };
+    const filteredProducts = products.filter(product => {
+      const filters = tempFilters[seriesId] || {};
+      if (filters.finish && product.finish_type !== filters.finish) return false;
+      if (filters.orientation && product.orientation !== filters.orientation) return false;
+      if (filters.drawerCount && String(product.number_of_drawers || 0) !== filters.drawerCount) return false;
+      if (filters.doorType && product.door_type !== filters.doorType) return false;
+      if (filters.dimensions && product.dimensions !== filters.dimensions) return false;
+      if (filters.mountingType && product.mounting_type !== filters.mountingType) return false;
+      if (filters.mixingType && product.mixing_type !== filters.mixingType) return false;
+      if (filters.handleType && product.handle_type !== filters.handleType) return false;
+      if (filters.cabinetClass && product.cabinet_class !== filters.cabinetClass) return false;
+      if (filters.emergencyShowerType && product.emergency_shower_type !== filters.emergencyShowerType) return false;
+      return true;
+    });
+
+    return getUniqueValues(filteredProducts, field);
+  };
+
   const getUniqueValues = (products: Product[], field: keyof Product): string[] => {
     const values = products.map(p => {
       let value = p[field];
@@ -177,15 +218,15 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     // Convert millimeters to meters for proper canvas scaling
     const canvasScale = 100; // 1 meter = 100 pixels on canvas
     const scaledDimensions = {
-      width: dimensions.width * canvasScale,  // Convert to canvas units
-      height: dimensions.height * canvasScale,
-      depth: dimensions.length * canvasScale
+      length: dimensions.length * canvasScale,  // L × W × H format
+      width: dimensions.width * canvasScale,   
+      height: dimensions.height * canvasScale
     };
     
     const floorPlanProduct = {
       id: product.id,
       productId: product.id,
-      name: product.name,
+      name: formatProductName(product.name),
       category: product.category,
       dimensions: scaledDimensions,
       realDimensions: dimensions, // Keep original dimensions for reference
@@ -195,14 +236,15 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       description: product.description,
       specifications: product.specifications,
       productCode: product.product_code || product.id,
-      series: product.category,
-      finish: product.finish_type,
-      orientation: product.orientation,
-      drawerCount: product.drawer_count,
-      doorType: product.door_type
+      series: formatSeriesName(product.category || ''),
+      finish: formatFinishType(product.finish_type || ''),
+      orientation: getOrientationDisplayName(product.orientation || ''),
+      drawerCount: product.number_of_drawers ? formatDrawerCount(product.number_of_drawers) : '',
+      doorType: product.door_type ? toTitleCase(product.door_type) : ''
     };
 
     e.dataTransfer.setData('product', JSON.stringify(floorPlanProduct));
+    e.dataTransfer.effectAllowed = 'copy';
     onProductDrag(floorPlanProduct);
     
     if (onProductUsed) {
@@ -274,7 +316,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                 >
                   <div className="flex flex-col items-start space-y-1">
                     <div className="font-medium text-sm leading-tight">
-                      {series.name}
+                      {formatSeriesName(series.name)}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {series.products.length} variants
@@ -305,8 +347,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Finishes</SelectItem>
-                          {getUniqueValues(series.products, 'finish_type').map(finish => (
-                            <SelectItem key={finish} value={finish}>{finish}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'finish_type', seriesFilters[series.id] || {}).map(finish => (
+                            <SelectItem key={finish} value={finish}>{formatFinishType(finish)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -325,8 +367,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Mounting Types</SelectItem>
-                          {getUniqueValues(series.products, 'mounting_type').map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'mounting_type', seriesFilters[series.id] || {}).map(type => (
+                            <SelectItem key={type} value={type}>{toTitleCase(type)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -345,8 +387,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Handle Types</SelectItem>
-                          {getUniqueValues(series.products, 'handle_type').map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'handle_type', seriesFilters[series.id] || {}).map(type => (
+                            <SelectItem key={type} value={type}>{toTitleCase(type)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -365,8 +407,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Classes</SelectItem>
-                          {getUniqueValues(series.products, 'cabinet_class').map(cls => (
-                            <SelectItem key={cls} value={cls}>{cls}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'cabinet_class', seriesFilters[series.id] || {}).map(cls => (
+                            <SelectItem key={cls} value={cls}>{toTitleCase(cls)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -385,8 +427,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Types</SelectItem>
-                          {getUniqueValues(series.products, 'emergency_shower_type').map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'emergency_shower_type', seriesFilters[series.id] || {}).map(type => (
+                            <SelectItem key={type} value={type}>{toTitleCase(type)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -405,8 +447,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Mixing Types</SelectItem>
-                          {getUniqueValues(series.products, 'mixing_type').map(type => (
-                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'mixing_type', seriesFilters[series.id] || {}).map(type => (
+                            <SelectItem key={type} value={type}>{toTitleCase(type)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -425,8 +467,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Orientations</SelectItem>
-                          {getUniqueValues(series.products, 'orientation').map(orientation => (
-                            <SelectItem key={orientation} value={orientation}>{orientation}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'orientation', seriesFilters[series.id] || {}).map(orientation => (
+                            <SelectItem key={orientation} value={orientation}>{getOrientationDisplayName(orientation)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -447,12 +489,12 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         <SelectContent>
                           <SelectItem value="all">All Drawer Counts</SelectItem>
                           {/* Get unique drawer counts from number_of_drawers field */}
-                          {getUniqueValues(series.products, 'number_of_drawers')
+                          {getAvailableFilterOptions(series.id, series.products, 'number_of_drawers', seriesFilters[series.id] || {})
                             .filter(count => count && count !== '0')
                             .sort((a, b) => Number(a) - Number(b))
                             .map(count => (
                               <SelectItem key={count} value={count}>
-                                {Number(count) === 1 ? '1 Drawer' : `${count} Drawers`}
+                                {formatDrawerCount(Number(count))}
                               </SelectItem>
                             ))}
                           {/* Add "No Drawers" option */}
@@ -474,8 +516,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Door Types</SelectItem>
-                          {getUniqueValues(series.products, 'door_type').map(doorType => (
-                            <SelectItem key={doorType} value={doorType}>{doorType}</SelectItem>
+                          {getAvailableFilterOptions(series.id, series.products, 'door_type', seriesFilters[series.id] || {}).map(doorType => (
+                            <SelectItem key={doorType} value={doorType}>{toTitleCase(doorType)}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -523,7 +565,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     >
                       <div className="space-y-2">
                         <div className="font-medium text-sm">
-                          {product.name}
+                          {formatProductName(product.name)}
                         </div>
                         
                         <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
@@ -542,56 +584,56 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                           {product.finish_type && (
                             <div>
                               <span className="font-medium">Finish:</span>
-                              <div className="truncate">{product.finish_type}</div>
+                              <div className="truncate">{formatFinishType(product.finish_type)}</div>
                             </div>
                           )}
                           
                           {product.orientation && (
                             <div>
                               <span className="font-medium">Orient:</span>
-                              <div className="truncate">{product.orientation}</div>
+                              <div className="truncate">{getOrientationDisplayName(product.orientation)}</div>
                             </div>
                           )}
                           
                           {product.number_of_drawers ? (
                             <div>
                               <span className="font-medium">Drawers:</span>
-                              <div className="truncate">{product.number_of_drawers}</div>
+                              <div className="truncate">{formatDrawerCount(product.number_of_drawers)}</div>
                             </div>
                           ) : null}
                           
                           {product.door_type && (
                             <div>
                               <span className="font-medium">Door:</span>
-                              <div className="truncate">{product.door_type}</div>
+                              <div className="truncate">{toTitleCase(product.door_type)}</div>
                             </div>
                           )}
                           
                           {product.mounting_type && (
                             <div>
                               <span className="font-medium">Mount:</span>
-                              <div className="truncate">{product.mounting_type}</div>
+                              <div className="truncate">{toTitleCase(product.mounting_type)}</div>
                             </div>
                           )}
                           
                           {product.handle_type && (
                             <div>
                               <span className="font-medium">Handle:</span>
-                              <div className="truncate">{product.handle_type}</div>
+                              <div className="truncate">{toTitleCase(product.handle_type)}</div>
                             </div>
                           )}
                           
                           {product.cabinet_class && (
                             <div>
                               <span className="font-medium">Class:</span>
-                              <div className="truncate">{product.cabinet_class}</div>
+                              <div className="truncate">{toTitleCase(product.cabinet_class)}</div>
                             </div>
                           )}
                         </div>
                         
                         {!isInteractionDisabled && selectedProduct?.id === product.id && (
                           <div className="text-xs text-primary font-medium p-2 bg-primary/10 rounded text-center">
-                            Drag to place on canvas ({extractDimensions(product).width.toFixed(2)}×{extractDimensions(product).length.toFixed(2)}×{extractDimensions(product).height.toFixed(2)}m)
+                            Drag to place on canvas ({extractDimensions(product).length.toFixed(2)}×{extractDimensions(product).width.toFixed(2)}×{extractDimensions(product).height.toFixed(2)}m)
                           </div>
                         )}
                       </div>
