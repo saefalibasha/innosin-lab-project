@@ -110,26 +110,29 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
                 <DoorOpen className="h-4 w-4" />
               </Button>
               
-              {/* Door Orientation Controls */}
+              {/* Door Orientation Controls - More visible */}
               {currentTool === 'door' && onDoorOrientationChange && (
-                <div className="flex items-center border rounded ml-2">
+                <div className="flex items-center bg-muted/30 border-2 border-primary/20 rounded-lg ml-2 p-1">
+                  <div className="text-xs font-medium text-muted-foreground mr-2">Door:</div>
                   <Button
-                    variant={doorOrientation === 'horizontal' ? 'default' : 'ghost'}
+                    variant={doorOrientation === 'horizontal' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => onDoorOrientationChange('horizontal')}
                     title="Horizontal Door"
-                    className="rounded-r-none"
+                    className="rounded-r-none h-8 px-2"
                   >
-                    <ArrowLeftRight className="h-4 w-4" />
+                    <ArrowLeftRight className="h-4 w-4 mr-1" />
+                    <span className="text-xs">H</span>
                   </Button>
                   <Button
-                    variant={doorOrientation === 'vertical' ? 'default' : 'ghost'}
+                    variant={doorOrientation === 'vertical' ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => onDoorOrientationChange('vertical')}
                     title="Vertical Door"
-                    className="rounded-l-none"
+                    className="rounded-l-none h-8 px-2"
                   >
-                    <ArrowUpDown className="h-4 w-4" />
+                    <ArrowUpDown className="h-4 w-4 mr-1" />
+                    <span className="text-xs">V</span>
                   </Button>
                 </div>
               )}

@@ -486,6 +486,31 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                   )}
                   
+                  {/* Drawer count filter for mobile and modular cabinets */}
+                  {(getUniqueValues(series.products, 'number_of_drawers').length > 0 || 
+                    series.products.some(p => p.number_of_drawers && p.number_of_drawers > 0)) && (
+                    <div>
+                      <label className="text-xs font-medium">Drawers:</label>
+                      <Select
+                        value={seriesFilters[series.id]?.drawerCount || 'all'}
+                        onValueChange={(value) => handleFilterChange(series.id, 'drawerCount', value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Drawer Counts</SelectItem>
+                          {/* Get unique drawer counts from number_of_drawers field */}
+                          {getAvailableFilterOptions(series.id, series.products, 'number_of_drawers', seriesFilters[series.id] || {})
+                            .filter(count => count && count !== '0' && count !== 'null')
+                            .map(count => (
+                            <SelectItem key={count} value={count}>{formatDrawerCount(parseInt(count))}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  
                   {getUniqueValues(series.products, 'orientation').length > 1 && (
                     <div>
                       <label className="text-xs font-medium">Orientation:</label>
@@ -506,34 +531,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     </div>
                   )}
                   
-                  {(getUniqueValues(series.products, 'number_of_drawers').length > 0 || 
-                    series.products.some(p => p.category?.toLowerCase().includes('mobile'))) && (
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground">Number of Drawers:</label>
-                      <Select
-                        value={seriesFilters[series.id]?.drawerCount || 'all'}
-                        onValueChange={(value) => handleFilterChange(series.id, 'drawerCount', value)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue placeholder="All Drawer Counts" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Drawer Counts</SelectItem>
-                          {/* Get unique drawer counts from number_of_drawers field */}
-                          {getAvailableFilterOptions(series.id, series.products, 'number_of_drawers', seriesFilters[series.id] || {})
-                            .filter(count => count && count !== '0')
-                            .sort((a, b) => Number(a) - Number(b))
-                            .map(count => (
-                              <SelectItem key={count} value={count}>
-                                {formatDrawerCount(Number(count))}
-                              </SelectItem>
-                            ))}
-                          {/* Add "No Drawers" option */}
-                          <SelectItem value="0">No Drawers</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
                   
                   {getUniqueValues(series.products, 'door_type').length > 1 && (
                     <div>
