@@ -31,6 +31,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
 }) => {
   const [expandedSeries, setExpandedSeries] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showVariantSelector, setShowVariantSelector] = useState(false);
+  const [selectedProductForVariants, setSelectedProductForVariants] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [seriesFilters, setSeriesFilters] = useState<Record<string, {
     finish?: string;
@@ -209,7 +211,31 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   };
 
   const handleProductSelect = (product: Product) => {
-    setSelectedProduct(product);
+    const isMobileCabinet = product.name?.toLowerCase().includes('mobile cabinet') || 
+                           product.product_code?.toLowerCase().includes('mc-');
+    const isModularCabinet = product.name?.toLowerCase().includes('modular cabinet') ||
+                            product.product_code?.toLowerCase().includes('mcc-');
+    
+    if (isMobileCabinet || isModularCabinet) {
+      setSelectedProductForVariants(product);
+      setShowVariantSelector(true);
+    } else {
+      setSelectedProduct(product);
+    }
+  };
+
+  const handleVariantSelect = (variant: any) => {
+    // Create a new product with variant information
+    const productWithVariant = {
+      ...selectedProductForVariants,
+      id: `${selectedProductForVariants?.id}-${variant.configuration}`,
+      name: variant.name,
+      variant: variant.configuration,
+      drawerCount: variant.drawerCount
+    };
+    setSelectedProduct(productWithVariant);
+    setShowVariantSelector(false);
+    setSelectedProductForVariants(null);
   };
 
   const handleDragStart = (e: React.DragEvent, product: Product) => {
@@ -656,6 +682,17 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
           ))}
         </div>
       </ScrollArea>
+      
+      {/* Product Variant Selector Modal */}
+      <ProductVariantSelector
+        product={selectedProductForVariants}
+        isOpen={showVariantSelector}
+        onClose={() => {
+          setShowVariantSelector(false);
+          setSelectedProductForVariants(null);
+        }}
+        onVariantSelect={handleVariantSelect}
+      />
     </div>
   );
 };

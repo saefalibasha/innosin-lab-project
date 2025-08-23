@@ -52,7 +52,9 @@ export const PlacedProductsBar: React.FC<PlacedProductsBarProps> = ({
           count: 1,
           instances: [product],
           color: product.color || '#6b7280',
-          dimensions: `${Math.round(product.dimensions.length)}×${Math.round(product.dimensions.width)}mm`
+          dimensions: product.originalDimensions ? 
+            `${Math.round(product.originalDimensions.length)}×${Math.round(product.originalDimensions.width)}mm` :
+            `${Math.round(product.dimensions.length)}×${Math.round(product.dimensions.width)}mm`
         });
       }
     });

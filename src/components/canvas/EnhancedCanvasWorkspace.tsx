@@ -954,17 +954,30 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         const textWidth = ctx.measureText(measurement).width;
         const padding = 8;
         
-        // Background rectangle with hover and selection states
-        const bgColor = isSelected ? 'rgba(255, 68, 68, 0.9)' : 
-                        isMeasurementHovered ? 'rgba(59, 130, 246, 0.9)' : 
-                        'rgba(255, 255, 255, 0.9)';
+        // Background rectangle with enhanced visibility and shadow
+        const bgColor = isSelected ? 'rgba(255, 68, 68, 0.95)' : 
+                        isMeasurementHovered ? 'rgba(59, 130, 246, 0.95)' : 
+                        'rgba(255, 255, 255, 0.95)';
+        
+        // Add shadow for better visibility
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 1;
+        ctx.shadowOffsetY = 1;
+        
         ctx.fillStyle = bgColor;
         ctx.fillRect(midX - textWidth/2 - padding, midY - 12, textWidth + padding * 2, 24);
         
-        // Border with cursor indication
+        // Reset shadow
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
+        // Border with enhanced visibility
         ctx.strokeStyle = isSelected ? '#ff4444' : 
-                          isMeasurementHovered ? '#3b82f6' : '#cccccc';
-        ctx.lineWidth = isMeasurementHovered ? 2 : 1;
+                          isMeasurementHovered ? '#3b82f6' : '#000000';
+        ctx.lineWidth = isMeasurementHovered ? 3 : 2;
         ctx.strokeRect(midX - textWidth/2 - padding, midY - 12, textWidth + padding * 2, 24);
         
         // Text
@@ -1392,25 +1405,50 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
             }
             
             // Convert mm dimensions to canvas pixels for accurate placement
-            // Note: Ensure proper mapping of dimensions (L × W × H)
+            // Note: Use proper dimension mapping for laboratory furniture
             const canvasDimensions = {
-              length: mmToCanvas(accurateDimensionsMm.width, scale),  // Width in DB = Length in canvas
-              width: mmToCanvas(accurateDimensionsMm.depth, scale),   // Depth in DB = Width in canvas
+              length: mmToCanvas(accurateDimensionsMm.width, scale),  // Width becomes length for proper display
+              width: mmToCanvas(accurateDimensionsMm.depth, scale),   // Depth becomes width for proper display  
               height: mmToCanvas(accurateDimensionsMm.height, scale)  // Height remains height
             };
             
             const originalDimensions = {
-              length: accurateDimensionsMm.width,   // Width in DB = Length in canvas 
-              width: accurateDimensionsMm.depth,    // Depth in DB = Width in canvas
+              length: accurateDimensionsMm.width,   // Store actual width as length for display
+              width: accurateDimensionsMm.depth,    // Store actual depth as width for display
               height: accurateDimensionsMm.height   // Height remains height
             };
+            
+            // Add 50mm spacing to prevent overlapping when placing side by side
+            const spacingMm = 50;
+            const spacingPx = mmToCanvas(spacingMm, scale);
+            
+            // Check for nearby products and adjust position to maintain spacing
+            let adjustedPosition = { ...snappedPoint };
+            for (const existingProduct of placedProducts) {
+              const distance = Math.sqrt(
+                Math.pow(snappedPoint.x - existingProduct.position.x, 2) + 
+                Math.pow(snappedPoint.y - existingProduct.position.y, 2)
+              );
+              
+              const minDistance = (canvasDimensions.length + existingProduct.dimensions.length) / 2 + spacingPx;
+              
+              if (distance < minDistance) {
+                // Move product to maintain spacing
+                const angle = Math.atan2(
+                  snappedPoint.y - existingProduct.position.y,
+                  snappedPoint.x - existingProduct.position.x
+                );
+                adjustedPosition.x = existingProduct.position.x + Math.cos(angle) * minDistance;
+                adjustedPosition.y = existingProduct.position.y + Math.sin(angle) * minDistance;
+              }
+            }
             
             const newProduct: PlacedProduct = {
               id: `product-${Date.now()}`,
               productId: product.id,
               name: product.name,
               category: product.category || 'Unknown',
-              position: snappedPoint,
+              position: adjustedPosition,
               rotation: 0,
               dimensions: canvasDimensions, // Use accurate canvas dimensions
               originalDimensions: originalDimensions, // Store original mm dimensions
