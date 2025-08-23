@@ -9,7 +9,7 @@ import { Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import LazyProductImage from '@/components/LazyProductImage';
 import { useProductSeries } from '@/hooks/useProductSeries';
 import { Product } from '@/types/product';
-import { ProductVariantSelector } from './ProductVariantSelector';
+import ProductVariantSelector from './ProductVariantSelector';
 import { formatSeriesName, toTitleCase, formatProductName } from '@/utils/seriesNameFormatter';
 import { 
   getOrientationDisplayName, 

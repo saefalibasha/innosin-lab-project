@@ -829,7 +829,8 @@ const FloorPlanner = () => {
                   )}
                 </CardContent>
               </Card>
-          )}
+            )}
+          </div>
         </div>
       </div>
       
