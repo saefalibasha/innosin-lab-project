@@ -28,6 +28,8 @@ interface EnhancedCanvasWorkspaceProps {
   canvasWidth: number;
   canvasHeight: number;
   onClearAll: () => void;
+  selectedProducts: string[];
+  onProductSelect: (products: string[]) => void;
   doorOrientation?: 'horizontal' | 'vertical';
   onWallUpdate?: (wall: WallSegment) => void;
 }
@@ -54,13 +56,15 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   canvasWidth,
   canvasHeight,
   onClearAll,
+  selectedProducts,
+  onProductSelect,
   doorOrientation = 'horizontal',
   onWallUpdate
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [wallStartPoint, setWallStartPoint] = useState<Point | null>(null);
   const [isWallPreview, setIsWallPreview] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState<string[]>(selectedProducts);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
@@ -71,6 +75,11 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const [snapLines, setSnapLines] = useState<{ x: number | null; y: number | null }>({ x: null, y: null });
   const [snapGuides, setSnapGuides] = useState<{ horizontal: number | null; vertical: number | null }>({ horizontal: null, vertical: null });
   const [editingMeasurement, setEditingMeasurement] = useState<{ wallId: string; value: string } | null>(null);
+
+  // Sync selectedItems with selectedProducts prop
+  useEffect(() => {
+    setSelectedItems(selectedProducts);
+  }, [selectedProducts]);
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
   const [dragMeasurements, setDragMeasurements] = useState<{ top: number; right: number; bottom: number; left: number } | null>(null);
   const [doorSnapPreview, setDoorSnapPreview] = useState<{ point: Point; wall: WallSegment } | null>(null);
@@ -550,13 +559,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         const isCtrlPressed = e.metaKey || e.ctrlKey;
         if (isCtrlPressed) {
           // Multi-select: toggle this product
-          const newSelection = selectedItems.includes(clickedProduct.id)
-            ? selectedItems.filter(id => id !== clickedProduct.id)
-            : [...selectedItems, clickedProduct.id];
-          setSelectedItems(newSelection);
+          const newSelection = selectedProducts.includes(clickedProduct.id)
+            ? selectedProducts.filter(id => id !== clickedProduct.id)
+            : [...selectedProducts, clickedProduct.id];
+          onProductSelect(newSelection);
         } else {
           // Single select: clear others and select this one
-          setSelectedItems([clickedProduct.id]);
+          onProductSelect([clickedProduct.id]);
         }
         return;
       }
@@ -569,7 +578,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       } else {
         setSelectedWall(null);
         // Clear product selection if clicking on empty space
-        setSelectedItems([]);
+        onProductSelect([]);
       }
     }
 
@@ -643,7 +652,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           wallSegmentId: targetWall.id,
           wallPosition: undefined,
           isEmbedded: true,
-          facing: isWallHorizontal ? 'vertical' : 'horizontal'
+          facing: doorOrientation
         };
         setDoors(prev => [...prev, newDoor]);
         toast.success('Door placed on wall');

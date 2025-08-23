@@ -31,6 +31,7 @@ export const FloorPlanner = () => {
   const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(currentState.textAnnotations);
   const [wallSegments, setWallSegments] = useState<WallSegment[]>(currentState.wallSegments);
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
   // Canvas settings
   const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
@@ -77,10 +78,12 @@ export const FloorPlanner = () => {
         </div>
       </div>
       <div className="flex-1 relative">
-        <EnhancedCanvasWorkspace
-          placedProducts={placedProducts}
-          setPlacedProducts={setPlacedProducts}
-          roomPoints={roomPoints}
+            <EnhancedCanvasWorkspace
+              placedProducts={placedProducts}
+              setPlacedProducts={setPlacedProducts}
+              selectedProducts={selectedProducts}
+              onProductSelect={setSelectedProducts}
+              roomPoints={roomPoints}
           setRoomPoints={setRoomPoints}
           doors={doors}
           setDoors={setDoors}

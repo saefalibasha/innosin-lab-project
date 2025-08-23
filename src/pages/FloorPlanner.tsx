@@ -710,6 +710,8 @@ const FloorPlanner = () => {
                     canvasWidth={CANVAS_WIDTH}
                     canvasHeight={CANVAS_HEIGHT}
                     onClearAll={handleClear}
+                    selectedProducts={selectedProducts}
+                    onProductSelect={setSelectedProducts}
                     doorOrientation={doorOrientation}
                     onWallUpdate={handleWallUpdate}
                   />
