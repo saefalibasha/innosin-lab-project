@@ -647,10 +647,16 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         // Check if wall is more horizontal or vertical
         const isWallHorizontal = Math.abs(Math.cos(wallAngle)) > Math.abs(Math.sin(wallAngle));
         
+        // Debug: log wall information
+        console.log(`Wall angle: ${wallAngle * 180 / Math.PI} degrees, isWallHorizontal: ${isWallHorizontal}`);
+        console.log(`Wall start: (${targetWall.start.x}, ${targetWall.start.y}), end: (${targetWall.end.x}, ${targetWall.end.y})`);
+        
         // Door should be parallel to wall:
         // If wall is horizontal, door should be horizontal
         // If wall is vertical, door should be vertical
         const doorFacing: 'horizontal' | 'vertical' = isWallHorizontal ? 'horizontal' : 'vertical';
+        
+        console.log(`Door facing: ${doorFacing}`);
         
         const newDoor: Door = {
           id: `door-${Date.now()}`,
@@ -1082,6 +1088,9 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     doors.forEach(door => {
       const doorX = door.position.x;
       const doorY = door.position.y;
+      
+      // Debug: log door orientation
+      console.log(`Door ${door.id}: facing=${door.facing}, position=(${doorX}, ${doorY})`);
       
       // Find nearest wall to scale door size
       let nearestWall = null;
