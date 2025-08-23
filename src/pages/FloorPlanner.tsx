@@ -149,11 +149,13 @@ const FloorPlanner = () => {
   }, []);
 
   const handleRotateSelected = useCallback(() => {
+    console.log('Rotating selected products:', selectedProducts);
     setPlacedProducts(prev => prev.map(product => 
       selectedProducts.includes(product.id)
         ? { ...product, rotation: (product.rotation || 0) + Math.PI / 2 }
         : product
     ));
+    toast.success(`Rotated ${selectedProducts.length} product(s)`);
   }, [selectedProducts]);
 
   const handleRotateCounterClockwise = useCallback(() => {
@@ -406,8 +408,12 @@ const FloorPlanner = () => {
           }
           break;
         case 'r':
+        case 'R':
           if (selectedProducts.length > 0) {
+            console.log('R key pressed, rotating products');
             handleRotateSelected();
+          } else {
+            toast.info('Select products first, then press R to rotate');
           }
           break;
         case 'Escape':

@@ -950,7 +950,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         const measurement = formatMeasurement(distanceInMm, measurementUnit, measurementUnit === 'mm' ? 0 : 2);
         
         // Draw clickable measurement with hover effects
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 18px Arial';
         const textWidth = ctx.measureText(measurement).width;
         const padding = 8;
         
@@ -966,7 +966,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         ctx.shadowOffsetY = 1;
         
         ctx.fillStyle = bgColor;
-        ctx.fillRect(midX - textWidth/2 - padding, midY - 12, textWidth + padding * 2, 24);
+        ctx.fillRect(midX - textWidth/2 - padding, midY - 16, textWidth + padding * 2, 32);
         
         // Reset shadow
         ctx.shadowColor = 'transparent';
@@ -978,7 +978,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         ctx.strokeStyle = isSelected ? '#ff4444' : 
                           isMeasurementHovered ? '#3b82f6' : '#000000';
         ctx.lineWidth = isMeasurementHovered ? 3 : 2;
-        ctx.strokeRect(midX - textWidth/2 - padding, midY - 12, textWidth + padding * 2, 24);
+        ctx.strokeRect(midX - textWidth/2 - padding, midY - 16, textWidth + padding * 2, 32);
         
         // Text
         ctx.fillStyle = (isSelected || isMeasurementHovered) ? '#ffffff' : '#000000';
@@ -1134,21 +1134,49 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.fillRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
       ctx.strokeRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
       
-      // Draw rotation handle
+      // Draw selection indicator and rotation handle
       if (selectedItems.includes(product.id)) {
+        // Selection outline
+        ctx.strokeStyle = '#ff4444';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(-lengthPx/2 - 5, -widthPx/2 - 5, lengthPx + 10, widthPx + 10);
+        
+        // Rotation handle - larger and more visible
+        ctx.fillStyle = '#ff4444';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(lengthPx/2 + 20, 0, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Add rotation indicator arrow
         ctx.strokeStyle = '#ff4444';
         ctx.lineWidth = 2;
-        ctx.strokeRect(-lengthPx/2 - 3, -widthPx/2 - 3, lengthPx + 6, widthPx + 6);
-        
-        // Rotation handle
-        ctx.fillStyle = '#ff4444';
         ctx.beginPath();
-        ctx.arc(lengthPx/2 + 15, 0, 4, 0, 2 * Math.PI);
-        ctx.fill();
+        ctx.moveTo(lengthPx/2 + 14, -3);
+        ctx.lineTo(lengthPx/2 + 20, 0);
+        ctx.lineTo(lengthPx/2 + 14, 3);
+        ctx.stroke();
+        // Add rotation instruction text
+        ctx.fillStyle = '#ff4444';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Press R to rotate', 0, widthPx/2 + 20);
+        ctx.textAlign = 'start';
       }
       
       ctx.restore();
     });
+    
+    // Show rotation hint when products are selected
+    if (selectedItems.length > 0) {
+      ctx.fillStyle = 'rgba(255, 68, 68, 0.9)';
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText(`Press R to rotate selected products (${selectedItems.length})`, CANVAS_WIDTH / 2, 30);
+      ctx.textAlign = 'start';
+    }
     
     // Draw snap lines when near grid lines
     if (snapLines.x !== null || snapLines.y !== null) {
@@ -1186,7 +1214,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         ctx.lineWidth = 1;
         ctx.setLineDash([2, 2]);
         ctx.fillStyle = '#10b981';
-        ctx.font = 'bold 11px Arial';
+        ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
         
         // Top measurement
