@@ -638,25 +638,16 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       if (doorSnapResult.snapped && doorSnapResult.target) {
         const targetWall = doorSnapResult.target as WallSegment;
         
-        // Determine door orientation based on wall angle - door should be parallel to wall
-        const wallAngle = Math.atan2(
-          targetWall.end.y - targetWall.start.y,
-          targetWall.end.x - targetWall.start.x
-        );
+        // Simple logic: determine if wall is horizontal or vertical
+        const wallDeltaX = Math.abs(targetWall.end.x - targetWall.start.x);
+        const wallDeltaY = Math.abs(targetWall.end.y - targetWall.start.y);
         
-        // Check if wall is more horizontal or vertical
-        const isWallHorizontal = Math.abs(Math.cos(wallAngle)) > Math.abs(Math.sin(wallAngle));
-        
-        // Debug: log wall information
-        console.log(`Wall angle: ${wallAngle * 180 / Math.PI} degrees, isWallHorizontal: ${isWallHorizontal}`);
-        console.log(`Wall start: (${targetWall.start.x}, ${targetWall.start.y}), end: (${targetWall.end.x}, ${targetWall.end.y})`);
-        
-        // Door should be parallel to wall:
-        // If wall is horizontal, door should be horizontal
-        // If wall is vertical, door should be vertical
+        // If wall is more horizontal than vertical, door should be horizontal
+        // If wall is more vertical than horizontal, door should be vertical
+        const isWallHorizontal = wallDeltaX > wallDeltaY;
         const doorFacing: 'horizontal' | 'vertical' = isWallHorizontal ? 'horizontal' : 'vertical';
         
-        console.log(`Door facing: ${doorFacing}`);
+        console.log(`Wall deltas: X=${wallDeltaX}, Y=${wallDeltaY}, isHorizontal=${isWallHorizontal}, doorFacing=${doorFacing}`);
         
         const newDoor: Door = {
           id: `door-${Date.now()}`,
