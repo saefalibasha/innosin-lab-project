@@ -1103,11 +1103,13 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       // Use door.facing to determine orientation
       const isHorizontal = door.facing === 'horizontal';
       
-      // Calculate door dimensions based on orientation
+      // For a door parallel to the wall:
+      // - Horizontal door: wide rectangle (door width = normal, door thickness = wall thickness)
+      // - Vertical door: tall rectangle (door width = wall thickness, door height = normal door width)
       const rectWidth = isHorizontal ? doorWidth : doorThickness;
       const rectHeight = isHorizontal ? doorThickness : doorWidth;
       
-      // Draw door rectangle with correct orientation
+      // Draw door rectangle with correct orientation (parallel to wall)
       ctx.fillStyle = '#8b4513';
       ctx.fillRect(doorX - rectWidth/2, doorY - rectHeight/2, rectWidth, rectHeight);
       
@@ -1123,19 +1125,17 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       // Determine swing direction and hinge position based on orientation
       let hingeX, hingeY, swingStartAngle;
       
-      if (isHorizontal) {
-        // Horizontal door - hinge on left or right side
-        const swingDirection = 1; // 1 for right, -1 for left
-        hingeX = doorX - (doorWidth/2) * swingDirection;
-        hingeY = doorY;
-        swingStartAngle = swingDirection > 0 ? 0 : Math.PI; // Start angle for arc
-      } else {
-        // Vertical door - hinge on top or bottom side
-        const swingDirection = 1; // 1 for down, -1 for up
-        hingeX = doorX;
-        hingeY = doorY - (doorWidth/2) * swingDirection;
-        swingStartAngle = swingDirection > 0 ? -Math.PI/2 : Math.PI/2; // Start angle for arc
-      }
+       if (isHorizontal) {
+         // Horizontal door (parallel to horizontal wall) - hinge at edge of door
+         hingeX = doorX - rectWidth/2; // Hinge at left edge
+         hingeY = doorY;
+         swingStartAngle = -Math.PI/2; // Start swing downward from door
+       } else {
+         // Vertical door (parallel to vertical wall) - hinge at edge of door
+         hingeX = doorX;
+         hingeY = doorY - rectHeight/2; // Hinge at top edge
+         swingStartAngle = 0; // Start swing to the right from door
+       }
       
       // Draw swing arc
       ctx.strokeStyle = '#2563eb';
