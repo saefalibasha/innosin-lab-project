@@ -632,8 +632,15 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     } else if (currentMode === 'room') {
       setRoomPoints(prev => [...prev, snappedPoint]);
     } else if (currentMode === 'door') {
+      console.log('=== DOOR PLACEMENT STARTED ===');
+      console.log('Available walls:', wallSegments.length);
+      wallSegments.forEach((wall, i) => {
+        console.log(`Wall ${i}: start(${wall.start.x}, ${wall.start.y}) end(${wall.end.x}, ${wall.end.y})`);
+      });
+      
       // Enhanced door placement with wall detection
       const doorSnapResult = snapSystem.snapDoorToWall(point, wallSegments);
+      console.log('Snap result:', doorSnapResult);
       
       if (doorSnapResult.snapped && doorSnapResult.target) {
         const targetWall = doorSnapResult.target as WallSegment;
