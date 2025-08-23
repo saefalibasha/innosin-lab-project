@@ -147,25 +147,23 @@ const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
             </Select>
           </div>
           
-          {selectedVariant && (
-            <div className="p-3 bg-muted rounded-lg">
-              {(() => {
-                const variant = variants.find(v => v.id === selectedVariant);
-                return variant ? (
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">{variant.configuration}</Badge>
-                      {variant.drawerCount && (
-                        <Badge variant="outline">{variant.drawerCount} Drawers</Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{variant.description}</p>
-                    <p className="text-xs font-mono">{variant.dimensions}</p>
+          {selectedVariant && (() => {
+            const variant = variants.find(v => v.id === selectedVariant);
+            return variant ? (
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary">{variant.configuration}</Badge>
+                    {variant.drawerCount && (
+                      <Badge variant="outline">{variant.drawerCount} Drawers</Badge>
+                    )}
                   </div>
-                ) : null;
-              })()}
-            </div>
-          )}
+                  <p className="text-sm text-muted-foreground">{variant.description}</p>
+                  <p className="text-xs font-mono">{variant.dimensions}</p>
+                </div>
+              </div>
+            ) : null;
+          })()}
           
           <div className="flex gap-2 pt-2">
             <Button variant="outline" onClick={onClose} className="flex-1">
