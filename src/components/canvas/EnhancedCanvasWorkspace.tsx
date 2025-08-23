@@ -638,16 +638,22 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       if (doorSnapResult.snapped && doorSnapResult.target) {
         const targetWall = doorSnapResult.target as WallSegment;
         
+        console.log(`=== PLACING DOOR ON WALL ===`);
+        console.log(`Wall start: (${targetWall.start.x}, ${targetWall.start.y})`);
+        console.log(`Wall end: (${targetWall.end.x}, ${targetWall.end.y})`);
+        
         // Simple logic: determine if wall is horizontal or vertical
         const wallDeltaX = Math.abs(targetWall.end.x - targetWall.start.x);
         const wallDeltaY = Math.abs(targetWall.end.y - targetWall.start.y);
+        
+        console.log(`Wall deltas: X=${wallDeltaX}, Y=${wallDeltaY}`);
         
         // If wall is more horizontal than vertical, door should be horizontal
         // If wall is more vertical than horizontal, door should be vertical
         const isWallHorizontal = wallDeltaX > wallDeltaY;
         const doorFacing: 'horizontal' | 'vertical' = isWallHorizontal ? 'horizontal' : 'vertical';
         
-        console.log(`Wall deltas: X=${wallDeltaX}, Y=${wallDeltaY}, isHorizontal=${isWallHorizontal}, doorFacing=${doorFacing}`);
+        console.log(`Wall is horizontal: ${isWallHorizontal}, Door facing: ${doorFacing}`);
         
         const newDoor: Door = {
           id: `door-${Date.now()}`,
@@ -1080,8 +1086,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const doorX = door.position.x;
       const doorY = door.position.y;
       
-      // Debug: log door orientation
-      console.log(`Door ${door.id}: facing=${door.facing}, position=(${doorX}, ${doorY})`);
+      // Debug: log door details
+      console.log(`=== RENDERING DOOR ${door.id} ===`);
+      console.log(`Door facing: ${door.facing}`);
+      console.log(`Door position: (${doorX}, ${doorY})`);
       
       // Find nearest wall to scale door size
       let nearestWall = null;
@@ -1100,14 +1108,19 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const doorThickness = Math.max(wallThickness * 0.7, 6); // Minimum 6px
       const doorWidth = Math.min(Math.max(door.width, 60), 120); // Standard door width range (60-120px)
       
+      console.log(`Wall thickness: ${wallThickness}, Door thickness: ${doorThickness}, Door width: ${doorWidth}`);
+      
       // Use door.facing to determine orientation
       const isHorizontal = door.facing === 'horizontal';
+      console.log(`Is horizontal door: ${isHorizontal}`);
       
       // For a door parallel to the wall:
       // - Horizontal door: wide rectangle (door width = normal, door thickness = wall thickness)
       // - Vertical door: tall rectangle (door width = wall thickness, door height = normal door width)
       const rectWidth = isHorizontal ? doorWidth : doorThickness;
       const rectHeight = isHorizontal ? doorThickness : doorWidth;
+      
+      console.log(`Rectangle dimensions: ${rectWidth} x ${rectHeight} (width x height)`);
       
       // Draw door rectangle with correct orientation (parallel to wall)
       ctx.fillStyle = '#8b4513';
