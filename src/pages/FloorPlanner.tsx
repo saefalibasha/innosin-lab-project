@@ -32,6 +32,8 @@ import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
 import ExportModal from '@/components/ExportModal';
 import WallEditor from '@/components/floorplan/WallEditor';
 import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
+import ProductVariantSelector from '@/components/floorplan/ProductVariantSelector';
+import ProductRotationControl from '@/components/floorplan/ProductRotationControl';
 import { ContactGateModal } from '@/components/ContactGateModal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -85,6 +87,8 @@ const FloorPlanner = () => {
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
+  const [showVariantSelector, setShowVariantSelector] = useState(false);
+  const [selectedProductForVariant, setSelectedProductForVariant] = useState<any>(null);
   
   // Room-aware measurement system with intelligent scaling for large rooms
   const [scale, setScale] = useState(0.08); // Optimized for large rooms: 0.08 px/mm = 80px/m (supports 20x20m rooms)
@@ -120,7 +124,18 @@ const FloorPlanner = () => {
 
   // Enhanced product management
   const handleProductDrag = useCallback((product: any) => {
-    setDraggedProduct(product);
+    // Check if product needs variant selection
+    const needsVariantSelection = product.name?.toLowerCase().includes('mobile cabinet') || 
+                                 product.name?.toLowerCase().includes('modular cabinet') ||
+                                 product.productId?.toLowerCase().includes('mc-') ||
+                                 product.productId?.toLowerCase().includes('mcc-');
+    
+    if (needsVariantSelection) {
+      setSelectedProductForVariant(product);
+      setShowVariantSelector(true);
+    } else {
+      setDraggedProduct(product);
+    }
   }, []);
 
   const handleDeleteSelected = useCallback(() => {
@@ -140,6 +155,36 @@ const FloorPlanner = () => {
         : product
     ));
   }, [selectedProducts]);
+
+  const handleRotateCounterClockwise = useCallback(() => {
+    setPlacedProducts(prev => prev.map(product => 
+      selectedProducts.includes(product.id)
+        ? { ...product, rotation: (product.rotation || 0) - Math.PI / 2 }
+        : product
+    ));
+  }, [selectedProducts]);
+
+  const handleRotateToAngle = useCallback((angle: number) => {
+    setPlacedProducts(prev => prev.map(product => 
+      selectedProducts.includes(product.id)
+        ? { ...product, rotation: angle }
+        : product
+    ));
+  }, [selectedProducts]);
+
+  const handleVariantSelect = useCallback((variant: any) => {
+    const updatedProduct = {
+      ...selectedProductForVariant,
+      name: variant.name,
+      productId: variant.id,
+      dimensions: variant.dimensions,
+      configuration: variant.configuration,
+      drawerCount: variant.drawerCount
+    };
+    setDraggedProduct(updatedProduct);
+    setShowVariantSelector(false);
+    setSelectedProductForVariant(null);
+  }, [selectedProductForVariant]);
 
   // Wall management handlers
   const handleWallUpdate = useCallback((updatedWall: WallSegment) => {
@@ -189,16 +234,6 @@ const FloorPlanner = () => {
     console.log('Door orientation changed to:', orientation);
   }, []);
 
-  // Scale presets for different room sizes
-  const handleRoomSizePreset = useCallback((roomSize: 'small' | 'medium' | 'large') => {
-    const presets = {
-      small: 0.2,   // 3x3m rooms - 200px/m
-      medium: 0.12, // 10x10m rooms - 120px/m  
-      large: 0.08   // 20x20m rooms - 80px/m
-    };
-    setScale(presets[roomSize]);
-    toast.success(`Scale adjusted for ${roomSize} rooms`);
-  }, []);
 
   const handleToggleFullscreen = useCallback(() => {
     setIsFullscreen(prev => !prev);
@@ -673,50 +708,25 @@ const FloorPlanner = () => {
                     onWallUpdate={handleWallUpdate}
                   />
                   
+                  {/* Product Rotation Controls */}
+                  <ProductRotationControl
+                    selectedProducts={selectedProducts}
+                    onRotateClockwise={handleRotateSelected}
+                    onRotateCounterClockwise={handleRotateCounterClockwise}
+                    onRotateToAngle={handleRotateToAngle}
+                  />
+                  
                   {/* Wall Editor Panel */}
-            {selectedWall && (
-              <WallEditor
-                selectedWall={selectedWall}
-                onWallUpdate={handleWallUpdate}
-                onWallDelete={handleWallDelete}
-                onClose={() => setSelectedWall(null)}
-                scale={scale}
-                measurementUnit={measurementUnit}
-              />
-            )}
-
-            {/* Scale Presets for Room Sizes */}
-            <div className="fixed bottom-4 right-4 flex flex-col gap-2 z-40">
-              <div className="bg-white p-2 rounded-lg shadow-lg border">
-                <div className="text-xs text-muted-foreground mb-2">Room Scale Presets</div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRoomSizePreset('small')}
-                    className="text-xs px-2"
-                  >
-                    3×3m
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRoomSizePreset('medium')}
-                    className="text-xs px-2"
-                  >
-                    10×10m
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRoomSizePreset('large')}
-                    className="text-xs px-2"
-                  >
-                    20×20m
-                  </Button>
-                </div>
-              </div>
-            </div>
+                  {selectedWall && (
+                    <WallEditor
+                      selectedWall={selectedWall}
+                      onWallUpdate={handleWallUpdate}
+                      onWallDelete={handleWallDelete}
+                      onClose={() => setSelectedWall(null)}
+                      scale={scale}
+                      measurementUnit={measurementUnit}
+                    />
+                  )}
                 </div>
                 
                 {/* Enhanced Canvas Status */}
@@ -819,10 +829,20 @@ const FloorPlanner = () => {
                   )}
                 </CardContent>
               </Card>
-            )}
-          </div>
+          )}
         </div>
       </div>
+      
+      {/* Product Variant Selector Modal */}
+      <ProductVariantSelector
+        product={selectedProductForVariant}
+        isOpen={showVariantSelector}
+        onClose={() => {
+          setShowVariantSelector(false);
+          setSelectedProductForVariant(null);
+        }}
+        onVariantSelect={handleVariantSelect}
+      />
     </div>
   );
 };
