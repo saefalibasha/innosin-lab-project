@@ -64,7 +64,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [wallStartPoint, setWallStartPoint] = useState<Point | null>(null);
   const [isWallPreview, setIsWallPreview] = useState(false);
-  const [selectedItems, setSelectedItems] = useState<string[]>(selectedProducts);
+  const [selectedItems, setSelectedItems] = useState<string[]>(selectedProducts || []);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
@@ -78,7 +78,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
 
   // Sync selectedItems with selectedProducts prop
   useEffect(() => {
-    setSelectedItems(selectedProducts);
+    setSelectedItems(selectedProducts || []);
   }, [selectedProducts]);
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
   const [dragMeasurements, setDragMeasurements] = useState<{ top: number; right: number; bottom: number; left: number } | null>(null);
@@ -559,9 +559,10 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
         const isCtrlPressed = e.metaKey || e.ctrlKey;
         if (isCtrlPressed) {
           // Multi-select: toggle this product
-          const newSelection = selectedProducts.includes(clickedProduct.id)
-            ? selectedProducts.filter(id => id !== clickedProduct.id)
-            : [...selectedProducts, clickedProduct.id];
+          const currentSelection = selectedProducts || [];
+          const newSelection = currentSelection.includes(clickedProduct.id)
+            ? currentSelection.filter(id => id !== clickedProduct.id)
+            : [...currentSelection, clickedProduct.id];
           onProductSelect(newSelection);
         } else {
           // Single select: clear others and select this one
@@ -1164,7 +1165,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       ctx.strokeRect(-lengthPx/2, -widthPx/2, lengthPx, widthPx);
       
       // Draw selection indicator and rotation handle
-      if (selectedItems.includes(product.id)) {
+      if (selectedItems && selectedItems.includes(product.id)) {
         // Selection outline
         ctx.strokeStyle = '#ff4444';
         ctx.lineWidth = 3;
@@ -1201,7 +1202,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
     });
     
     // Show rotation hint when products are selected
-    if (selectedItems.length > 0) {
+    if (selectedItems && selectedItems.length > 0) {
       // Background for better visibility
       ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
       const hintText = `Press R to rotate selected products (${selectedItems.length})`;
