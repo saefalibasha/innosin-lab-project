@@ -97,7 +97,7 @@ const FloorPlanner = () => {
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
   const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
-  const [doorOrientation, setDoorOrientation] = useState<'horizontal' | 'vertical'>('horizontal');
+  // Door orientation removed - now automatic based on wall direction
   
   // UI state
   const [projectName, setProjectName] = useState('Untitled Floor Plan');
@@ -230,11 +230,7 @@ const FloorPlanner = () => {
     setScale(newScale);
   }, []);
 
-  // Door orientation handler
-  const handleDoorOrientationChange = useCallback((orientation: 'horizontal' | 'vertical') => {
-    setDoorOrientation(orientation);
-    console.log('Door orientation changed to:', orientation);
-  }, []);
+  // Door orientation handler removed - now automatic
 
 
   const handleToggleFullscreen = useCallback(() => {
@@ -612,8 +608,6 @@ const FloorPlanner = () => {
               showGrid={showGrid}
               scale={scale}
               onScaleChange={handleScaleChange}
-              doorOrientation={doorOrientation}
-              onDoorOrientationChange={handleDoorOrientationChange}
             />
 
             {/* Room Creator Modal */}
@@ -712,7 +706,6 @@ const FloorPlanner = () => {
                     onClearAll={handleClear}
                     selectedProducts={selectedProducts}
                     onProductSelect={setSelectedProducts}
-                    doorOrientation={doorOrientation}
                     onWallUpdate={handleWallUpdate}
                   />
                   

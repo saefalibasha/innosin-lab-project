@@ -5,9 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Variant } from '@/types/variant';
+import { FileUploadManager } from '../FileUploadManager';
 
 interface VariantFormDialogProps {
   open: boolean;
@@ -269,6 +271,22 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
                 onChange={(e) => setFormData({ ...formData, drawer_count: parseInt(e.target.value) || 0 })}
               />
             </div>
+          </div>
+
+          <Separator className="my-6" />
+          
+          {/* File Upload Section */}
+          <div>
+            <h3 className="text-lg font-medium mb-4">Product Assets</h3>
+            <FileUploadManager
+              productCode={formData.product_code}
+              allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
+              maxFiles={5}
+              onFilesUploaded={(files) => {
+                console.log('Files uploaded for product:', formData.product_code, files);
+                toast.success(`${files.filter(f => f.status === 'success').length} files uploaded successfully`);
+              }}
+            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
