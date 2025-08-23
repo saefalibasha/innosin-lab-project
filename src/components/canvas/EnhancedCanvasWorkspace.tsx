@@ -1100,36 +1100,55 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
       const doorThickness = Math.max(wallThickness * 0.7, 6); // Minimum 6px
       const doorWidth = Math.min(Math.max(door.width, 60), 120); // Standard door width range (60-120px)
       
-      // Draw door rectangle
+      // Use door.facing to determine orientation
+      const isHorizontal = door.facing === 'horizontal';
+      
+      // Calculate door dimensions based on orientation
+      const rectWidth = isHorizontal ? doorWidth : doorThickness;
+      const rectHeight = isHorizontal ? doorThickness : doorWidth;
+      
+      // Draw door rectangle with correct orientation
       ctx.fillStyle = '#8b4513';
-      ctx.fillRect(doorX - doorWidth/2, doorY - doorThickness/2, doorWidth, doorThickness);
+      ctx.fillRect(doorX - rectWidth/2, doorY - rectHeight/2, rectWidth, rectHeight);
       
       // Draw door frame outline
       ctx.strokeStyle = '#654321';
       ctx.lineWidth = 1;
-      ctx.strokeRect(doorX - doorWidth/2, doorY - doorThickness/2, doorWidth, doorThickness);
+      ctx.strokeRect(doorX - rectWidth/2, doorY - rectHeight/2, rectWidth, rectHeight);
       
       // Draw door swing arc (90-degree outswing by default)
-      const swingRadius = doorWidth * 0.9; // Slightly smaller than door width
+      const swingRadius = (isHorizontal ? doorWidth : doorWidth) * 0.9; // Use door width for swing radius
       const swingAngle = Math.PI / 2; // 90 degrees
       
-      // Determine swing direction (assume outswing to the right by default)
-      const swingDirection = 1; // 1 for right, -1 for left
-      const hingeX = doorX - (doorWidth/2) * swingDirection;
-      const hingeY = doorY;
+      // Determine swing direction and hinge position based on orientation
+      let hingeX, hingeY, swingStartAngle;
+      
+      if (isHorizontal) {
+        // Horizontal door - hinge on left or right side
+        const swingDirection = 1; // 1 for right, -1 for left
+        hingeX = doorX - (doorWidth/2) * swingDirection;
+        hingeY = doorY;
+        swingStartAngle = swingDirection > 0 ? 0 : Math.PI; // Start angle for arc
+      } else {
+        // Vertical door - hinge on top or bottom side
+        const swingDirection = 1; // 1 for down, -1 for up
+        hingeX = doorX;
+        hingeY = doorY - (doorWidth/2) * swingDirection;
+        swingStartAngle = swingDirection > 0 ? -Math.PI/2 : Math.PI/2; // Start angle for arc
+      }
       
       // Draw swing arc
       ctx.strokeStyle = '#2563eb';
       ctx.lineWidth = 1.5;
       ctx.setLineDash([4, 4]);
       ctx.beginPath();
-      ctx.arc(hingeX, hingeY, swingRadius, 0, swingAngle * swingDirection);
+      ctx.arc(hingeX, hingeY, swingRadius, swingStartAngle, swingStartAngle + swingAngle);
       ctx.stroke();
       ctx.setLineDash([]);
       
       // Draw swing end position (door fully open)
-      const endX = hingeX + swingRadius * Math.cos(swingAngle * swingDirection);
-      const endY = hingeY + swingRadius * Math.sin(swingAngle * swingDirection);
+      const endX = hingeX + swingRadius * Math.cos(swingStartAngle + swingAngle);
+      const endY = hingeY + swingRadius * Math.sin(swingStartAngle + swingAngle);
       
       ctx.strokeStyle = '#2563eb';
       ctx.lineWidth = 1;
