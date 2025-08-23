@@ -34,8 +34,7 @@ interface HorizontalToolbarProps {
   showGrid: boolean;
   scale: number;
   onScaleChange?: (newScale: number) => void;
-  doorOrientation?: 'horizontal' | 'vertical';
-  onDoorOrientationChange?: (orientation: 'horizontal' | 'vertical') => void;
+  // doorOrientation props removed - automatic based on wall direction
 }
 
 const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
@@ -51,8 +50,7 @@ const HorizontalToolbar: React.FC<HorizontalToolbarProps> = ({
   showGrid,
   scale,
   onScaleChange,
-  doorOrientation = 'horizontal',
-  onDoorOrientationChange
+  // doorOrientation params removed - automatic based on wall direction
 }) => {
   return (
     <Card>

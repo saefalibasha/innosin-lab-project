@@ -30,7 +30,7 @@ interface EnhancedCanvasWorkspaceProps {
   onClearAll: () => void;
   selectedProducts: string[];
   onProductSelect: (products: string[]) => void;
-  doorOrientation?: 'horizontal' | 'vertical';
+  // doorOrientation removed - automatic based on wall direction
   onWallUpdate?: (wall: WallSegment) => void;
 }
 
@@ -58,7 +58,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
   onClearAll,
   selectedProducts,
   onProductSelect,
-  doorOrientation = 'horizontal',
+  // doorOrientation removed - automatic based on wall direction
   onWallUpdate
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -677,7 +677,7 @@ export const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = (
           wallSegmentId: undefined,
           wallPosition: undefined,
           isEmbedded: false,
-          facing: doorOrientation
+          facing: 'horizontal' // Default fallback when no wall detected
         };
         setDoors(prev => [...prev, newDoor]);
         toast.info('Door placed without wall alignment');
