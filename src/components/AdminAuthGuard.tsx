@@ -2,55 +2,21 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 interface AdminAuthGuardProps {
   children: React.ReactNode;
 }
 
 const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
-  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isAdmin, loading } = useAuth();
   const { toast } = useToast();
 
-  useEffect(() => {
-    checkAdminAccess();
-  }, []);
+  // Debug info for troubleshooting
+  console.log('AdminAuthGuard - Auth state:', { user: !!user, isAdmin, loading });
 
-  const checkAdminAccess = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user?.email) {
-        setIsAdmin(false);
-        setIsLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase.rpc('is_admin', { 
-        user_email: user.email 
-      });
-
-      if (error) {
-        console.error('Error checking admin access:', error);
-        setIsAdmin(false);
-      } else {
-        setIsAdmin(data);
-      }
-    } catch (error) {
-      console.error('Error in admin check:', error);
-      setIsAdmin(false);
-      toast({
-        title: "Access Error",
-        description: "Unable to verify admin access",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -59,12 +25,32 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto" />
+          <h1 className="text-2xl font-bold">Authentication Required</h1>
+          <p className="text-muted-foreground">Please log in to access the admin dashboard.</p>
+          <button 
+            onClick={() => window.location.href = '/auth'} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You don't have permission to access this page.</p>
+        <div className="text-center space-y-4">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto" />
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">You don't have permission to access this page.</p>
+          <p className="text-sm text-muted-foreground">User: {user.email}</p>
         </div>
       </div>
     );

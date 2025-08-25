@@ -84,6 +84,13 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
       if (error) {
         console.error('Supabase upload error:', error);
+        // Provide more specific error messages
+        if (error.message?.includes('row-level security')) {
+          throw new Error('Authentication required. Please log in as an admin user.');
+        }
+        if (error.message?.includes('JWT')) {
+          throw new Error('Session expired. Please refresh the page and try again.');
+        }
         throw new Error(`Storage upload failed: ${error.message}`);
       }
 
@@ -224,7 +231,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     onDrop,
     accept: {
       'model/gltf-binary': ['.glb'],
-      'application/octet-stream': ['.glb'], // Additional MIME type for GLB files
+      'application/octet-stream': ['.glb'], // GLB files might be served as octet-stream
+      'model/gltf+json': ['.gltf'],
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png']
     },
@@ -239,8 +247,22 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
             message: 'GLB file must be smaller than 50MB'
           };
         }
+        // Allow GLB files even with unexpected MIME types
+        if (!['model/gltf-binary', 'application/octet-stream', ''].includes(file.type)) {
+          console.warn('GLB file has unexpected MIME type:', file.type, 'but allowing upload');
+        }
       }
       return null;
+    },
+    onDropRejected: (fileRejections) => {
+      fileRejections.forEach((rejection) => {
+        console.error('File rejected:', rejection.file.name, rejection.errors);
+        toast({
+          title: "File Rejected",
+          description: `${rejection.file.name}: ${rejection.errors.map(e => e.message).join(', ')}`,
+          variant: "destructive",
+        });
+      });
     }
   });
 

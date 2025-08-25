@@ -9,8 +9,16 @@ export const isPlaceholderAsset = (url: string): boolean => {
   // Check if it's in the public folder (typically placeholder files)
   if (url.startsWith('/products/') && !url.includes('supabase')) return true;
   
-  // Check for Supabase storage URLs that might be placeholders
+  // Check for Supabase storage URLs that might be placeholders by content
   if (url.includes('supabase') && url.includes('placeholder')) return true;
+  
+  // Check for files that are obviously text placeholders by trying to fetch content-type
+  if (url.startsWith('http') || url.startsWith('/')) {
+    // We'll check this asynchronously, but for immediate checks, use heuristics
+    if (url.endsWith('.glb') && url.includes('/products/') && !url.includes('supabase')) {
+      return true; // Likely a placeholder GLB file in public folder
+    }
+  }
   
   return false;
 };
@@ -71,29 +79,35 @@ export const validateModelRenderability = async (url: string): Promise<boolean> 
   if (!url || isPlaceholderAsset(url)) return false;
   
   try {
+    // First check if file is accessible
+    const response = await fetch(url, { method: 'HEAD' });
+    if (!response.ok) return false;
+    
     // Use dynamic import to avoid bundle size issues
     const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
     const loader = new GLTFLoader();
     
     return new Promise((resolve) => {
       // Set a shorter timeout for faster validation
-      const timeoutId = setTimeout(() => resolve(false), 3000);
+      const timeoutId = setTimeout(() => resolve(false), 2000);
       
       loader.load(
         url,
-        () => {
+        (gltf) => {
           clearTimeout(timeoutId);
-          resolve(true); // Success
+          // Basic validation: check if scene has children
+          resolve(gltf.scene && gltf.scene.children.length > 0);
         },
         undefined, // Progress - not used
-        () => {
+        (error) => {
           clearTimeout(timeoutId);
-          resolve(false); // Error
+          console.warn('GLTF loading error for', url, ':', error);
+          resolve(false);
         }
       );
     });
   } catch (error) {
-    console.error('Model validation error:', error);
+    console.warn('Model validation error for', url, ':', error);
     return false;
   }
 };
