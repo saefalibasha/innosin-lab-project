@@ -9,6 +9,9 @@ export const isPlaceholderAsset = (url: string): boolean => {
   // Check if it's in the public folder (typically placeholder files)
   if (url.startsWith('/products/') && !url.includes('supabase')) return true;
   
+  // Check for Supabase storage URLs that might be placeholders
+  if (url.includes('supabase') && url.includes('placeholder')) return true;
+  
   return false;
 };
 
@@ -73,15 +76,21 @@ export const validateModelRenderability = async (url: string): Promise<boolean> 
     const loader = new GLTFLoader();
     
     return new Promise((resolve) => {
+      // Set a shorter timeout for faster validation
+      const timeoutId = setTimeout(() => resolve(false), 3000);
+      
       loader.load(
         url,
-        () => resolve(true), // Success
+        () => {
+          clearTimeout(timeoutId);
+          resolve(true); // Success
+        },
         undefined, // Progress - not used
-        () => resolve(false) // Error
+        () => {
+          clearTimeout(timeoutId);
+          resolve(false); // Error
+        }
       );
-      
-      // Timeout for model loading
-      setTimeout(() => resolve(false), 5000);
     });
   } catch (error) {
     console.error('Model validation error:', error);

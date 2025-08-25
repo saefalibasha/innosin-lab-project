@@ -279,7 +279,9 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
           <div>
             <h3 className="text-lg font-medium mb-4">Product Assets</h3>
             <FileUploadManager
+              productId={variant?.id}
               productCode={formData.product_code}
+              variantCode={formData.product_code}
               allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
               maxFiles={5}
               onFilesUploaded={(files) => {

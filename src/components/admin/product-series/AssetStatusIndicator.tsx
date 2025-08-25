@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, XCircle, Image, Box, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { validateAssetAccessibility } from '@/utils/assetValidator';
+import { validateAssetAccessibility, isPlaceholderAsset } from '@/utils/assetValidator';
 
 interface AssetStatusIndicatorProps {
   hasImage: boolean;

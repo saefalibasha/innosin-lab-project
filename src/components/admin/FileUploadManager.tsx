@@ -48,10 +48,18 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
   const uploadFile = async (file: File): Promise<UploadedFile> => {
     const fileId = `${Date.now()}-${file.name}`;
     const codeToUse = variantCode || productCode;
-    const fileName = codeToUse ? `${codeToUse}-${file.name}` : file.name;
+    
+    // Generate clean filename
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const fileName = codeToUse ? `${codeToUse}-${sanitizedFileName}` : `${timestamp}-${sanitizedFileName}`;
+    
+    // Organize files by type
+    const fileType = file.type.startsWith('image/') ? 'images' : 
+                    file.name.toLowerCase().endsWith('.glb') ? 'models' : 'other';
     const filePath = codeToUse 
-      ? `products/${codeToUse.toLowerCase()}/${fileName}`
-      : `uploads/${fileName}`;
+      ? `products/${codeToUse.toLowerCase()}/${fileType}/${fileName}`
+      : `uploads/${fileType}/${fileName}`;
 
     const uploadedFile: UploadedFile = {
       id: fileId,
@@ -64,6 +72,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     };
 
     try {
+      console.log(`Uploading ${file.name} (${file.type}) to ${filePath}`);
+      
       // Upload with progress tracking for large files
       const { data, error } = await supabase.storage
         .from('documents')
@@ -72,11 +82,26 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
           upsert: true
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase upload error:', error);
+        throw new Error(`Storage upload failed: ${error.message}`);
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('documents')
         .getPublicUrl(filePath);
+
+      console.log(`Upload successful: ${publicUrl}`);
+
+      // Verify the uploaded file is accessible
+      try {
+        const response = await fetch(publicUrl, { method: 'HEAD' });
+        if (!response.ok) {
+          console.warn(`File not immediately accessible: ${response.status}`);
+        }
+      } catch (fetchError) {
+        console.warn('File verification failed:', fetchError);
+      }
 
       const successFile = {
         ...uploadedFile,
@@ -138,13 +163,38 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     const newFiles: UploadedFile[] = [];
 
     for (const file of acceptedFiles) {
-      const uploadedFile = await uploadFile(file);
-      newFiles.push(uploadedFile);
-      setUploadedFiles(prev => [...prev, uploadedFile]);
-      
-      // Trigger individual success callback
-      if (uploadedFile.status === 'success') {
-        onUploadSuccess?.(uploadedFile);
+      try {
+        // Validate file type explicitly for GLB files
+        const isGLB = file.name.toLowerCase().endsWith('.glb') || 
+                     file.type === 'model/gltf-binary' || 
+                     file.type === 'application/octet-stream';
+        
+        if (isGLB && file.size > 50 * 1024 * 1024) { // 50MB limit for GLB
+          throw new Error('GLB file too large. Maximum size is 50MB.');
+        }
+
+        const uploadedFile = await uploadFile(file);
+        newFiles.push(uploadedFile);
+        setUploadedFiles(prev => [...prev, uploadedFile]);
+        
+        // Trigger individual success callback
+        if (uploadedFile.status === 'success') {
+          onUploadSuccess?.(uploadedFile);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        const errorFile: UploadedFile = {
+          id: Math.random().toString(36),
+          name: file.name,
+          type: file.type,
+          url: '',
+          size: file.size,
+          status: 'error',
+          progress: 0,
+          error: error instanceof Error ? error.message : 'Upload failed'
+        };
+        newFiles.push(errorFile);
+        setUploadedFiles(prev => [...prev, errorFile]);
       }
     }
 
@@ -168,17 +218,30 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         variant: "destructive",
       });
     }
-  }, [productCode, onFilesUploaded, toast]);
+  }, [productCode, variantCode, onFilesUploaded, onUploadSuccess, toast]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
       'model/gltf-binary': ['.glb'],
+      'application/octet-stream': ['.glb'], // Additional MIME type for GLB files
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png']
     },
     maxFiles,
-    disabled: isUploading
+    disabled: isUploading,
+    validator: (file) => {
+      // Custom validation for GLB files
+      if (file.name.toLowerCase().endsWith('.glb')) {
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+          return {
+            code: 'file-too-large',
+            message: 'GLB file must be smaller than 50MB'
+          };
+        }
+      }
+      return null;
+    }
   });
 
   const removeFile = (fileId: string) => {
