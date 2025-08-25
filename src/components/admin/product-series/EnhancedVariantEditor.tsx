@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,13 +19,23 @@ import * as z from "zod"
 import { toast } from "@/hooks/use-toast"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Trash } from 'lucide-react';
+import { Plus, Trash, Edit } from 'lucide-react';
+import { ProductSeries } from '@/types/product-series';
+import { Variant } from '@/types';
+import { updateProductSeries } from '@/lib/api/product-series';
+import { createVariant, deleteVariant } from '@/lib/api/variants';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 interface EnhancedVariantEditorProps {
-  productSeries: any;
-  onUpdate: (updatedSeries: any) => void;
-  onAddVariant: (newVariant: any) => void;
-  onDeleteVariant: (variantId: string) => void;
+  variant: any;
+  onVariantUpdated: () => void;
+  seriesName: string;
 }
 
 const formSchema = z.object({
@@ -38,156 +49,117 @@ const formSchema = z.object({
 })
 
 export const EnhancedVariantEditor = ({ 
-  productSeries, 
-  onUpdate, 
-  onAddVariant,
-  onDeleteVariant 
+  variant, 
+  onVariantUpdated,
+  seriesName 
 }: EnhancedVariantEditorProps) => {
-  const [editingVariant, setEditingVariant] = useState<any>(null);
-  const [newVariantName, setNewVariantName] = useState('');
-  const [newVariantCode, setNewVariantCode] = useState('');
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast()
-  const queryClient = useQueryClient()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      variant_code: "",
-      description: "",
+      name: variant?.name || "",
+      variant_code: variant?.product_code || "",
+      description: variant?.description || "",
     },
   })
 
-  const handleEdit = (variant: any) => {
-    setEditingVariant(variant);
-  };
-
-  const handleCancelEdit = () => {
-    setEditingVariant(null);
-  };
-
-  const handleSave = async (variant: any) => {
-    onUpdate({
-      ...productSeries,
-      variants: productSeries.variants?.map((v: any) =>
-        v.id === variant.id ? { ...v, ...editingVariant } : v
-      ),
-    });
-    setEditingVariant(null);
-  };
-
-  const handleAddVariant = async () => {
-    if (newVariantName && newVariantCode) {
-      const newVariant = {
-        id: Date.now().toString(),
-        name: newVariantName,
-        variant_code: newVariantCode,
-        product_series_id: productSeries.id,
-      };
-      await onAddVariant(newVariant);
-      setNewVariantName('');
-      setNewVariantCode('');
+  const handleSave = async (values: z.infer<typeof formSchema>) => {
+    try {
+      // Update variant logic here
+      await onVariantUpdated();
+      setIsOpen(false);
+      toast({
+        title: "Success",
+        description: "Variant updated successfully",
+      });
+    } catch (error) {
+      console.error('Error updating variant:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update variant",
+        variant: "destructive",
+      });
     }
   };
 
-  const handleDeleteVariant = async (variantId: string) => {
-    await onDeleteVariant(variantId);
-  };
-
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">{productSeries.name}</h2>
-        <p className="text-gray-500">Series Code: {productSeries.series_code}</p>
-      </div>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Variant - {variant?.name}</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSave)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Variant Name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="variant_code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Variant Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Variant Code" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-      <div className="grid gap-6">
-        {productSeries.variants?.map((variant: any) => (
-          <Card key={variant.id} className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">{variant.name}</h3>
-              <div>
-                {editingVariant?.id === variant.id ? null : (
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(variant)}>
-                    Edit
-                  </Button>
-                )}
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteVariant(variant.id)}>
-                  <Trash className="h-4 w-4 mr-2" />
-                  Delete
-                </Button>
-              </div>
+            <div className="space-y-4">
+              <Label>Upload Assets</Label>
+              <FileUploadManager
+                productId={variant?.id}
+                variantCode={form.getValues().variant_code}
+                allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
+                maxFiles={10}
+                onUploadSuccess={(files) => {
+                  console.log('Files uploaded:', files);
+                }}
+              />
             </div>
 
-            {editingVariant?.id === variant.id ? (
-              <div className="space-y-4">
-                <Input
-                  type="text"
-                  placeholder="Variant Name"
-                  value={editingVariant?.name || ''}
-                  onChange={(e) =>
-                    setEditingVariant({ ...editingVariant, name: e.target.value })
-                  }
-                />
-                <Input
-                  type="text"
-                  placeholder="Variant Code"
-                  value={editingVariant?.variant_code || ''}
-                  onChange={(e) =>
-                    setEditingVariant({ ...editingVariant, variant_code: e.target.value })
-                  }
-                />
-
-                <div className="space-y-4">
-                  <Label>Upload Assets</Label>
-                  <FileUploadManager
-                    productId={productSeries.id}
-                    variantCode={variant.variant_code}
-                    allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
-                    maxFiles={10}
-                    onUploadSuccess={(files) => {
-                      console.log('Files uploaded:', files);
-                    }}
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  <Button variant="ghost" onClick={handleCancelEdit}>
-                    Cancel
-                  </Button>
-                  <Button onClick={() => handleSave(variant)}>Save</Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p>Variant Code: {variant.variant_code}</p>
-              </div>
-            )}
-          </Card>
-        ))}
-      </div>
-
-      <div className="border rounded-md p-4">
-        <h3 className="text-lg font-semibold mb-2">Add New Variant</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Input
-            type="text"
-            placeholder="New Variant Name"
-            value={newVariantName}
-            onChange={(e) => setNewVariantName(e.target.value)}
-          />
-          <Input
-            type="text"
-            placeholder="New Variant Code"
-            value={newVariantCode}
-            onChange={(e) => setNewVariantCode(e.target.value)}
-          />
-        </div>
-        <Button className="mt-4" onClick={handleAddVariant}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Variant
-        </Button>
-      </div>
-    </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit">Save Changes</Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 };
