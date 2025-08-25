@@ -73,6 +73,19 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
     try {
       console.log(`Uploading ${file.name} (${file.type}) to ${filePath}`);
+      console.log('Current user auth state:', await supabase.auth.getUser());
+      console.log('Admin roles check for current user...');
+      
+      // Debug: Check admin status before upload
+      const { data: user } = await supabase.auth.getUser();
+      if (user.user?.email) {
+        const { data: adminCheck, error: adminError } = await supabase
+          .from('admin_roles')
+          .select('*')
+          .eq('user_email', user.user.email)
+          .eq('is_active', true);
+        console.log('Admin check result:', { adminCheck, adminError });
+      }
       
       // Upload with progress tracking for large files
       const { data, error } = await supabase.storage
@@ -83,13 +96,20 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         });
 
       if (error) {
-        console.error('Supabase upload error:', error);
+        console.error('Supabase upload error details:', {
+          message: error.message,
+          error: error
+        });
+        
         // Provide more specific error messages
         if (error.message?.includes('row-level security')) {
           throw new Error('Authentication required. Please log in as an admin user.');
         }
         if (error.message?.includes('JWT')) {
           throw new Error('Session expired. Please refresh the page and try again.');
+        }
+        if (error.message?.includes('policy')) {
+          throw new Error(`Storage policy error: ${error.message}`);
         }
         throw new Error(`Storage upload failed: ${error.message}`);
       }
