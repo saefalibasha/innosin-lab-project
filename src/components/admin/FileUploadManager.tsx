@@ -32,6 +32,14 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     );
   }
 
+  // Adapt the callback to match StreamlinedFileUpload's expected signature
+  const handleUploadSuccess = () => {
+    if (onUploadSuccess) {
+      // Call with a generic file object since StreamlinedFileUpload doesn't provide specific file info
+      onUploadSuccess({ success: true });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
@@ -44,7 +52,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       <StreamlinedFileUpload
         productId={productId}
         variantCode={variantCode}
-        onUploadSuccess={onUploadSuccess}
+        onUploadSuccess={handleUploadSuccess}
       />
     </div>
   );
