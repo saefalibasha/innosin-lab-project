@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Target, MousePointer, Move, Eye, EyeOff, Upload, Image } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Json } from '@supabase/supabase-js'; // ✅ Added for casting
+import { Json } from '@supabase/supabase-js';
 
 interface Hotspot {
   id: string;
@@ -36,7 +36,7 @@ export const HotspotEditor = () => {
   const [showHotspots, setShowHotspots] = useState(true);
   const [backgroundImage, setBackgroundImage] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
-  const imageRef = useRef<HTMLImageElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -82,7 +82,6 @@ export const HotspotEditor = () => {
     mutationFn: async (hotspot: Partial<Hotspot>) => {
       const { id, specifications, ...rest } = hotspot;
       const formattedSpec = specifications as Json;
-
       const payload = { ...rest, specifications: formattedSpec };
 
       const { error } = id
@@ -161,12 +160,6 @@ export const HotspotEditor = () => {
     toast.info('Click on the image where you want to place the hotspot');
   };
 
-  const handleEditPosition = (hotspot: Hotspot) => {
-    setEditingHotspot(hotspot);
-    setIsPositioning(true);
-    toast.info('Click on the image to reposition this hotspot');
-  };
-
   const handleHotspotDragStart = (e: React.DragEvent, hotspotId: string) => {
     setDraggedHotspot(hotspotId);
     e.dataTransfer.effectAllowed = 'move';
@@ -189,9 +182,9 @@ export const HotspotEditor = () => {
     setDraggedHotspot(null);
   };
 
-  const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
-    if (!isPositioning) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPositioning || !imageRef.current) return;
+    const rect = imageRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     const newHotspot: Hotspot = {
@@ -213,35 +206,73 @@ export const HotspotEditor = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSave = (formData: FormData) => {
-    const specificationsArray = (formData.get('specifications') as string || '')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean);
-
-    const hotspotData: Partial<Hotspot> = {
-      id: editingHotspot?.id || undefined,
-      x_position: editingHotspot?.x_position ?? 50,
-      y_position: editingHotspot?.y_position ?? 50,
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      price: formData.get('price') as string,
-      category: formData.get('category') as string,
-      image: formData.get('image') as string,
-      product_link: formData.get('product_link') as string,
-      specifications: specificationsArray,
-      is_active: formData.get('is_active') === 'on',
-      display_order: parseInt(formData.get('display_order') as string)
-    };
-
-    saveHotspotMutation.mutate(hotspotData);
-  };
-
   if (isLoading) return <div className="text-center py-8">Loading hotspots...</div>;
 
   return (
     <div className="space-y-6">
-      {/* Your existing JSX for managing and displaying hotspots goes here */}
+      <div
+        className="relative w-full h-[500px] border rounded-md overflow-hidden bg-cover bg-center"
+        ref={imageRef}
+        onClick={handleImageClick}
+        onDragOver={handleHotspotDragOver}
+        onDrop={handleHotspotDrop}
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      >
+        {showHotspots && hotspots.map(h => (
+          <div
+            key={h.id}
+            className="absolute w-6 h-6 bg-primary rounded-full cursor-pointer flex items-center justify-center"
+            draggable
+            onDragStart={(e) => handleHotspotDragStart(e, h.id)}
+            onClick={() => handleEdit(h)}
+            style={{
+              left: `${h.x_position}%`,
+              top: `${h.y_position}%`,
+              transform: 'translate(-50%, -50%)',
+            }}
+            title={h.title}
+          >
+            <Target className="w-3 h-3 text-white" />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-4">
+        <Button variant="default" onClick={handleAddNew}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add Hotspot
+        </Button>
+
+        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+          <Upload className="w-4 h-4 mr-2" />
+          Upload Background
+        </Button>
+
+        <input
+          type="file"
+          accept="image/*"
+          ref={fileInputRef}
+          onChange={handleFileInputChange}
+          className="hidden"
+        />
+
+        <Button
+          variant="ghost"
+          onClick={() => setShowHotspots(!showHotspots)}
+        >
+          {showHotspots ? (
+            <>
+              <EyeOff className="w-4 h-4 mr-2" />
+              Hide Hotspots
+            </>
+          ) : (
+            <>
+              <Eye className="w-4 h-4 mr-2" />
+              Show Hotspots
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 };
