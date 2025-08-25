@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -101,14 +100,18 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
         // Log the upload in our database (non-blocking)
         try {
-          const uploadRecord = {
+          const uploadRecord: any = {
             file_path: filePath,
             file_type: file.type,
             file_size: file.size,
-            product_id: productId || null,
             upload_status: 'completed',
             uploaded_by: 'user'
           };
+
+          // Only include product_id if we have one
+          if (productId) {
+            uploadRecord.product_id = productId;
+          }
 
           console.log('Logging upload record:', uploadRecord);
 
