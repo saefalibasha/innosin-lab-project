@@ -21,8 +21,9 @@ const BeforeAfterComparison = () => {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const containerBounds = useRef<DOMRect | null>(null);
+  const animationFrame = useRef<number>();
 
-  // Fetch projects from database
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['before-after-projects'],
     queryFn: async () => {
@@ -33,7 +34,7 @@ const BeforeAfterComparison = () => {
         .order('display_order', { ascending: true });
       
       if (error) throw error;
-      
+
       return data.map(project => ({
         id: project.id,
         title: project.title,
@@ -47,35 +48,44 @@ const BeforeAfterComparison = () => {
     }
   });
 
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const updateSliderPosition = useCallback((clientX: number) => {
-    if (!containerRef.current) return;
-    
-    const rect = containerRef.current.getBoundingClientRect();
+    if (!containerBounds.current) return;
+    const rect = containerBounds.current;
     const x = clientX - rect.left;
     const percentage = Math.max(5, Math.min(95, (x / rect.width) * 100));
     setSliderPosition(percentage);
   }, []);
 
+  const throttledUpdate = useCallback((clientX: number) => {
+    if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
+    animationFrame.current = requestAnimationFrame(() => {
+      updateSliderPosition(clientX);
+    });
+  }, [updateSliderPosition]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
+    containerBounds.current = containerRef.current?.getBoundingClientRect() || null;
     updateSliderPosition(e.clientX);
   }, [updateSliderPosition]);
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     e.preventDefault();
-    updateSliderPosition(e.clientX);
-  }, [isDragging, updateSliderPosition]);
+    throttledUpdate(e.clientX);
+  }, [isDragging, throttledUpdate]);
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
+    containerBounds.current = null;
+    if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
   }, []);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     e.preventDefault();
     setIsDragging(true);
+    containerBounds.current = containerRef.current?.getBoundingClientRect() || null;
     const touch = e.touches[0];
     updateSliderPosition(touch.clientX);
   }, [updateSliderPosition]);
@@ -84,11 +94,13 @@ const BeforeAfterComparison = () => {
     if (!isDragging) return;
     e.preventDefault();
     const touch = e.touches[0];
-    updateSliderPosition(touch.clientX);
-  }, [isDragging, updateSliderPosition]);
+    throttledUpdate(touch.clientX);
+  }, [isDragging, throttledUpdate]);
 
   const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
+    containerBounds.current = null;
+    if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
   }, []);
 
   useEffect(() => {
@@ -98,7 +110,6 @@ const BeforeAfterComparison = () => {
       document.addEventListener('touchmove', handleTouchMove, { passive: false });
       document.addEventListener('touchend', handleTouchEnd);
     }
-
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
@@ -107,7 +118,6 @@ const BeforeAfterComparison = () => {
     };
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
-  // NOW CONDITIONAL RETURNS CAN HAPPEN AFTER ALL HOOKS
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto">
@@ -149,28 +159,24 @@ const BeforeAfterComparison = () => {
       <Card className="overflow-hidden shadow-2xl border-0 bg-white rounded-3xl">
         <CardContent className="p-0">
           <div className="grid grid-cols-1 lg:grid-cols-3">
-            {/* Image Comparison */}
             <div className="lg:col-span-2 relative">
               <div
                 ref={containerRef}
-                className={`relative w-full h-96 lg:h-[600px] overflow-hidden select-none cursor-col-resize`}
+                className="relative w-full h-96 lg:h-[600px] overflow-hidden select-none cursor-col-resize"
                 onMouseDown={handleMouseDown}
                 onTouchStart={handleTouchStart}
               >
-                {/* Before Image (background - shows when dragging right) */}
                 <img
                   src={project.beforeImage}
                   alt="Before transformation"
                   className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
                   draggable={false}
                 />
-                
-                {/* After Image (clipped from right - shows when dragging left) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
-                  style={{ 
+                  style={{
                     clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
-                    transition: isDragging ? 'none' : 'clip-path 0.08s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transition: isDragging ? 'none' : 'clip-path 0.08s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
                   <img
@@ -180,13 +186,11 @@ const BeforeAfterComparison = () => {
                     draggable={false}
                   />
                 </div>
-
-                {/* Slider Line */}
                 <div
                   className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl pointer-events-none z-10"
-                  style={{ 
+                  style={{
                     left: `${sliderPosition}%`,
-                    transition: isDragging ? 'none' : 'left 0.08s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transition: isDragging ? 'none' : 'left 0.08s cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
                   <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-gray-100 pointer-events-none ${
@@ -195,8 +199,6 @@ const BeforeAfterComparison = () => {
                     <div className="w-6 h-6 border-l-2 border-r-2 border-gray-600"></div>
                   </div>
                 </div>
-
-                {/* Labels - Fixed for all slides to show consistent behavior */}
                 {sliderPosition >= 30 && (
                   <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
                     BEFORE
@@ -209,8 +211,6 @@ const BeforeAfterComparison = () => {
                 )}
               </div>
             </div>
-
-            {/* Project Details */}
             <div className="p-10 bg-gradient-to-br from-gray-50 to-white">
               <div className="mb-6">
                 <span className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium px-3 py-1 rounded-full mb-4 shadow-sm">
@@ -219,48 +219,41 @@ const BeforeAfterComparison = () => {
                 <h3 className="text-2xl font-light text-gray-900 mb-3 leading-tight">
                   {project.title}
                 </h3>
-                
                 <div className="flex items-center text-gray-600 text-sm mb-2">
                   <MapPin className="w-4 h-4 mr-2" />
                   {project.location}
                 </div>
                 <div className="flex items-center text-gray-500 text-sm">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Completed: {new Date(project.completionDate).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  Completed: {new Date(project.completionDate).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                   })}
                 </div>
               </div>
-
               <p className="text-gray-700 leading-relaxed mb-8 font-light">
                 {project.description}
               </p>
-
-              {/* Project Navigation - Repositioned outside interaction area */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-medium text-gray-600">Browse Projects</h4>
                   <span className="text-xs text-gray-500">{currentProject + 1} of {projects.length}</span>
                 </div>
-                
-                {/* Project Indicators with Navigation */}
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-3">
                     {projects.map((_, index) => (
                       <button
                         key={index}
                         className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                          index === currentProject 
-                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 scale-125' 
+                          index === currentProject
+                            ? 'bg-gradient-to-r from-blue-600 to-blue-700 scale-125'
                             : 'bg-gray-300 hover:bg-gray-400'
                         }`}
                         onClick={() => switchToProject(index)}
                       />
                     ))}
                   </div>
-                  
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
@@ -281,7 +274,6 @@ const BeforeAfterComparison = () => {
                   </div>
                 </div>
               </div>
-
               <div className="text-xs text-gray-500 space-y-1 bg-gray-100 p-4 rounded-xl">
                 <p className="flex items-center">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
@@ -301,3 +293,4 @@ const BeforeAfterComparison = () => {
 };
 
 export default BeforeAfterComparison;
+
