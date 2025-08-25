@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { BeforeAfterComparison } from '@/components/BeforeAfterComparison';
+import BeforeAfterComparison from '@/components/BeforeAfterComparison'; // ✅ FIXED
 import { Loader2, AlertCircle } from 'lucide-react';
 
 interface Project {
