@@ -46,3 +46,41 @@ export interface RealtimePayload {
   old?: DatabaseProduct;
   eventType: 'INSERT' | 'UPDATE' | 'DELETE';
 }
+
+export interface Database {
+  public: {
+    Tables: {
+      products: {
+        Row: DatabaseProduct;
+        Insert: Partial<DatabaseProduct>;
+        Update: Partial<DatabaseProduct>;
+      };
+      shop_look_images: {
+        Row: {
+          id: string;
+          url: string;
+          alt: string | null;
+          filename: string;
+          uploaded_at: string;
+        };
+        Insert: {
+          url: string;
+          alt?: string | null;
+          filename: string;
+          uploaded_at?: string;
+        };
+        Update: {
+          url?: string;
+          alt?: string | null;
+          filename?: string;
+          uploaded_at?: string;
+        };
+      };
+      // Add any other tables you have here
+    };
+    Views: {};
+    Functions: {};
+    Enums: {};
+    CompositeTypes: {};
+  };
+}
