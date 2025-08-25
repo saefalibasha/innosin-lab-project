@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -85,14 +84,14 @@ export const EnhancedVariantEditor = ({
         variant_code: newVariantCode,
         product_series_id: productSeries.id,
       };
-      onAddVariant(newVariant);
+      await onAddVariant(newVariant);
       setNewVariantName('');
       setNewVariantCode('');
     }
   };
 
   const handleDeleteVariant = async (variantId: string) => {
-    onDeleteVariant(variantId);
+    await onDeleteVariant(variantId);
   };
 
   return (

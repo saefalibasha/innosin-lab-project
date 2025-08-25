@@ -11,5 +11,6 @@ export interface ProductSeries {
   id: string;
   name: string;
   series_code: string;
+  description?: string;
   variants?: Variant[];
 }
