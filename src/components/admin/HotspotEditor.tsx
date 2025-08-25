@@ -6,13 +6,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Target, MousePointer, Move, Eye, EyeOff, Upload, Image, Save, RotateCcw } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Plus, Edit, Trash2, Target, Upload, Eye, EyeOff, RotateCcw, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Json } from '@supabase/supabase-js';
 import StreamlinedFileUpload from '@/components/ui/StreamlinedFileUpload';
+
+type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
 
 interface Hotspot {
   id: string;
@@ -39,20 +40,18 @@ interface ShopLookContent {
   is_active: boolean;
 }
 
-export const HotspotEditor = () => {
+const HotspotEditor = () => {
   const [editingHotspot, setEditingHotspot] = useState<Hotspot | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isPositioning, setIsPositioning] = useState(false);
   const [draggedHotspot, setDraggedHotspot] = useState<string | null>(null);
   const [showHotspots, setShowHotspots] = useState(true);
   const [formData, setFormData] = useState<Partial<ShopLookContent>>({});
-  const [isEditing, setIsEditing] = useState(false);
-  const [backgroundImage, setBackgroundImage] = useState<string>('');
   const imageRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  const { data: hotspots = [], isLoading } = useQuery({
+  const { data: hotspots = [] } = useQuery({
     queryKey: ['admin-shop-look-hotspots'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -62,9 +61,7 @@ export const HotspotEditor = () => {
       if (error) throw error;
       return data.map(h => ({
         ...h,
-        specifications: Array.isArray(h.specifications)
-          ? h.specifications
-          : ['Premium Quality', 'Professional Grade', 'Industry Standard']
+        specifications: Array.isArray(h.specifications) ? h.specifications : []
       })) as Hotspot[];
     }
   });
@@ -79,15 +76,72 @@ export const HotspotEditor = () => {
         .maybeSingle();
       if (error) throw error;
       return data;
+    },
+    onSuccess: (data) => {
+      if (data) setFormData(data);
     }
   });
 
-  useEffect(() => {
-    if (content?.background_image) {
-      setBackgroundImage(content.background_image);
-      setFormData(content);
+  const saveHotspotMutation = useMutation({
+    mutationFn: async (hotspot: Partial<Hotspot>) => {
+      const { id, specifications, ...rest } = hotspot;
+      const payload = { ...rest, specifications: specifications as Json };
+      const { error } = id
+        ? await supabase.from('shop_look_hotspots').update(payload).eq('id', id)
+        : await supabase.from('shop_look_hotspots').insert(payload);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-shop-look-hotspots'] });
+      setIsDialogOpen(false);
+      setEditingHotspot(null);
+      toast.success('Hotspot saved successfully');
+    },
+    onError: (error) => toast.error('Failed to save hotspot: ' + error.message)
+  });
+
+  const saveContentMutation = useMutation({
+    mutationFn: async (data: Partial<ShopLookContent>) => {
+      if (content?.id) {
+        const { error } = await supabase.from('shop_look_content').update(data).eq('id', content.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('shop_look_content').insert(data);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['shop-look-content'] });
+      toast.success('Content saved');
     }
-  }, [content]);
+  });
+
+  const handleImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isPositioning || !imageRef.current) return;
+    const rect = imageRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const newHotspot: Hotspot = {
+      id: '', x_position: x, y_position: y,
+      title: 'New', description: '', price: '',
+      category: '', image: '', product_link: '',
+      specifications: [], is_active: true, display_order: hotspots.length + 1
+    };
+    setEditingHotspot(newHotspot);
+    setIsPositioning(false);
+    setIsDialogOpen(true);
+  };
+
+  const handleHotspotDragOver = (e: React.DragEvent) => e.preventDefault();
+  const handleHotspotDrop = (e: React.DragEvent) => e.preventDefault();
+  const handleHotspotDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedHotspot(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleEdit = (hotspot: Hotspot) => {
+    setEditingHotspot(hotspot);
+    setIsDialogOpen(true);
+  };
 
   const handleInputChange = (field: keyof ShopLookContent, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -97,100 +151,44 @@ export const HotspotEditor = () => {
     handleInputChange('background_image', url);
   };
 
-  const saveContentMutation = useMutation({
-    mutationFn: async (contentData: Partial<ShopLookContent>) => {
-      if (content?.id) {
-        const { error } = await supabase
-          .from('shop_look_content')
-          .update(contentData)
-          .eq('id', content.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('shop_look_content')
-          .insert(contentData);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shop-look-content'] });
-      toast.success('Content saved successfully');
-      setIsEditing(false);
-    },
-    onError: (error) => toast.error('Failed to save content: ' + error.message)
-  });
-
-  const handleSaveContent = () => {
-    saveContentMutation.mutate(formData);
-  };
-
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <Card>
-        <CardHeader className="flex justify-between items-center">
-          <CardTitle>Shop The Look Content</CardTitle>
-          {isEditing ? (
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                <RotateCcw className="w-4 h-4 mr-2" /> Cancel
-              </Button>
-              <Button onClick={handleSaveContent} disabled={saveContentMutation.isPending}>
-                <Save className="w-4 h-4 mr-2" /> Save
-              </Button>
-            </div>
-          ) : (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit className="w-4 h-4 mr-2" /> Edit
-            </Button>
-          )}
+        <CardHeader>
+          <CardTitle>Shop the Look Content</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          {isEditing ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Title</Label>
-                  <Input value={formData.title || ''} onChange={(e) => handleInputChange('title', e.target.value)} />
-                </div>
-                <div>
-                  <Label>Highlight</Label>
-                  <Input value={formData.title_highlight || ''} onChange={(e) => handleInputChange('title_highlight', e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <Label>Description</Label>
-                <Textarea value={formData.description || ''} onChange={(e) => handleInputChange('description', e.target.value)} />
-              </div>
-              <div>
-                <Label>Background Image</Label>
-                <StreamlinedFileUpload onFileUploaded={handleFileUploaded} acceptedTypes="image/*" maxSizeMB={10} currentImage={formData.background_image} />
-              </div>
-              <div>
-                <Label>Alt Text</Label>
-                <Input value={formData.background_alt || ''} onChange={(e) => handleInputChange('background_alt', e.target.value)} />
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="is_active" checked={formData.is_active ?? true} onCheckedChange={(checked) => handleInputChange('is_active', checked)} />
-                <Label htmlFor="is_active">Active</Label>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-2xl font-bold">{content?.title} <span className="text-primary">{content?.title_highlight}</span></h2>
-              <p className="text-muted-foreground">{content?.description}</p>
-            </div>
-          )}
+        <CardContent className="space-y-4">
+          <Input
+            placeholder="Title"
+            value={formData.title || ''}
+            onChange={(e) => handleInputChange('title', e.target.value)}
+          />
+          <Input
+            placeholder="Highlight"
+            value={formData.title_highlight || ''}
+            onChange={(e) => handleInputChange('title_highlight', e.target.value)}
+          />
+          <Textarea
+            placeholder="Description"
+            value={formData.description || ''}
+            onChange={(e) => handleInputChange('description', e.target.value)}
+          />
+          <StreamlinedFileUpload
+            acceptedTypes="image/*"
+            maxSizeMB={10}
+            currentImage={formData.background_image}
+            onFileUploaded={handleFileUploaded}
+          />
+          <Button onClick={() => saveContentMutation.mutate(formData)}>Save Content</Button>
         </CardContent>
       </Card>
 
-      {/* Hotspot Editor remains unchanged visually */}
-      <div
-        className="relative w-full h-[500px] border rounded-md overflow-hidden bg-cover bg-center"
+      <div className="relative w-full h-[500px] border rounded-md overflow-hidden bg-cover bg-center"
         ref={imageRef}
         onClick={handleImageClick}
         onDragOver={handleHotspotDragOver}
         onDrop={handleHotspotDrop}
-        style={{ backgroundImage: `url(${backgroundImage})` }}
+        style={{ backgroundImage: `url(${formData.background_image})` }}
       >
         {showHotspots && hotspots.map(h => (
           <div
@@ -202,7 +200,7 @@ export const HotspotEditor = () => {
             style={{
               left: `${h.x_position}%`,
               top: `${h.y_position}%`,
-              transform: 'translate(-50%, -50%)',
+              transform: 'translate(-50%, -50%)'
             }}
             title={h.title}
           >
@@ -211,18 +209,11 @@ export const HotspotEditor = () => {
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
-        <Button variant="default" onClick={() => {
-          setIsPositioning(true);
-          toast.info('Click on the image to place hotspot');
-        }}>
-          <Plus className="w-4 h-4 mr-2" /> Add Hotspot
-        </Button>
-
-        <Button variant="ghost" onClick={() => setShowHotspots(!showHotspots)}>
-          {showHotspots ? <><EyeOff className="w-4 h-4 mr-2" /> Hide Hotspots</> : <><Eye className="w-4 h-4 mr-2" /> Show Hotspots</>}
-        </Button>
-      </div>
+      <Button variant="default" onClick={() => setIsPositioning(true)}>
+        <Plus className="w-4 h-4 mr-2" /> Add Hotspot
+      </Button>
     </div>
   );
 };
+
+export default HotspotEditor;
