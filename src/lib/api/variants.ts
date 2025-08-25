@@ -7,7 +7,7 @@ export const createVariant = async (variant: Partial<Variant>) => {
     .from('products')
     .insert({
       name: variant.name,
-      product_code: variant.product_code,
+      product_code: variant.variant_code, // Use variant_code from the Variant type
       description: variant.description,
       parent_series_id: variant.product_series_id,
       is_series_parent: false,
