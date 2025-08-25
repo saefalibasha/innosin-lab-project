@@ -26,6 +26,7 @@ import { mockAdminSeries } from '@/data/mockProducts';
 import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
 import { cn } from '@/lib/utils';
+import { validateAssetAccessibility, batchPreloadImages } from '@/utils/assetValidator';
 
 // Transform any database object to proper DatabaseProduct with defaults
 const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
@@ -125,6 +126,13 @@ interface ProductSeries {
   activeProducts: number;
   completionRate: number;
   hasAssets: number;
+  assetValidation: {
+    validImages: number;
+    validModels: number;
+    brokenImages: number;
+    brokenModels: number;
+    isValidating: boolean;
+  };
 }
 
 interface ProductSeriesManagerProps {
@@ -144,6 +152,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [validatingAssets, setValidatingAssets] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -175,7 +184,14 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
             // Transform each mock product through the proper transformation pipeline
             const dbProduct = ensureDatabaseProduct(product);
             return transformDatabaseProduct(dbProduct);
-          })
+          }),
+          assetValidation: {
+            validImages: 0,
+            validModels: 0,
+            brokenImages: 0,
+            brokenModels: 0,
+            isValidating: false
+          }
         }));
         setSeries(transformedMockSeries);
         setIsUsingMockData(true);
@@ -204,12 +220,12 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         seriesMap.get(seriesName)!.push(transformedProduct);
       });
 
-      // Calculate series statistics and create ProductSeries objects with improved completion metrics
+      // Calculate series statistics and create ProductSeries objects with enhanced asset validation
       const seriesData: ProductSeries[] = Array.from(seriesMap.entries()).map(([name, transformedProducts]) => {
         const totalProducts = transformedProducts.length;
         const activeProducts = transformedProducts.filter(p => p.is_active).length;
         
-        // Improved asset completion calculation
+        // Basic asset counting for immediate display
         const productsWithBothAssets = transformedProducts.filter(p => {
           const hasImage = !!(p.thumbnail_path);
           const hasModel = !!(p.model_path);
@@ -231,7 +247,14 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
           totalProducts,
           activeProducts,
           completionRate,
-          hasAssets: productsWithSomeAssets // Keep this for "With Assets" display
+          hasAssets: productsWithSomeAssets,
+          assetValidation: {
+            validImages: 0,
+            validModels: 0,
+            brokenImages: 0,
+            brokenModels: 0,
+            isValidating: false
+          }
         };
       });
 
@@ -250,7 +273,14 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
           // Transform each mock product through the proper transformation pipeline
           const dbProduct = ensureDatabaseProduct(product);
           return transformDatabaseProduct(dbProduct);
-        })
+        }),
+        assetValidation: {
+          validImages: 0,
+          validModels: 0,
+          brokenImages: 0,
+          brokenModels: 0,
+          isValidating: false
+        }
       }));
       setSeries(transformedMockSeries);
       setIsUsingMockData(true);
@@ -337,6 +367,58 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         variant: "destructive",
       });
     }
+  };
+
+  const validateSeriesAssets = async (seriesName: string) => {
+    const seriesIndex = series.findIndex(s => s.name === seriesName);
+    if (seriesIndex === -1) return;
+
+    // Update series to show validation in progress
+    setSeries(prev => prev.map((s, index) => 
+      index === seriesIndex 
+        ? { ...s, assetValidation: { ...s.assetValidation, isValidating: true } }
+        : s
+    ));
+
+    const seriesData = series[seriesIndex];
+    let validImages = 0, validModels = 0, brokenImages = 0, brokenModels = 0;
+
+    // Validate assets for each product in the series
+    for (const product of seriesData.products) {
+      try {
+        const result = await validateAssetAccessibility(product.thumbnail_path, product.model_path);
+        
+        if (product.thumbnail_path) {
+          if (result.imageValid) validImages++;
+          else brokenImages++;
+        }
+        
+        if (product.model_path) {
+          if (result.modelValid) validModels++;
+          else brokenModels++;
+        }
+      } catch (error) {
+        console.error('Asset validation error for product:', product.id, error);
+        if (product.thumbnail_path) brokenImages++;
+        if (product.model_path) brokenModels++;
+      }
+    }
+
+    // Update series with validation results
+    setSeries(prev => prev.map((s, index) => 
+      index === seriesIndex 
+        ? { 
+            ...s, 
+            assetValidation: { 
+              validImages, 
+              validModels, 
+              brokenImages, 
+              brokenModels, 
+              isValidating: false 
+            } 
+          }
+        : s
+    ));
   };
 
   const handleProductSaved = () => {
@@ -461,16 +543,32 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-sm font-medium">
-                          {Math.round(seriesData.completionRate)}% Complete
-                        </div>
-                        <Progress value={seriesData.completionRate} className="w-20" />
+                        <div className="text-sm font-medium">{Math.round(seriesData.completionRate)}% Complete</div>
+                        <Progress value={seriesData.completionRate} className="w-24 h-2" />
                       </div>
-                      <Badge 
-                        className={`${getSeriesStatusColor(seriesData.completionRate)} text-white`}
-                      >
-                        {seriesData.hasAssets}/{seriesData.totalProducts}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="whitespace-nowrap">
+                          {seriesData.hasAssets} with assets
+                        </Badge>
+                        {seriesData.assetValidation.isValidating ? (
+                          <Badge variant="outline" className="whitespace-nowrap">
+                            <RefreshCw className="h-3 w-3 animate-spin mr-1" />
+                            Validating...
+                          </Badge>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              validateSeriesAssets(seriesData.name);
+                            }}
+                            className="h-6 px-2 text-xs"
+                          >
+                            Validate Assets
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>

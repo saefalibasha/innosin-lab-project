@@ -8,13 +8,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight, Image, Box } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Variant } from '@/types/variant';
 import { DatabaseProduct } from '@/types/supabase';
 import { VariantFormDialog } from './VariantFormDialog';
 import { useProductRealtime } from '@/hooks/useProductRealtime';
+import { AssetStatusIndicator } from './AssetStatusIndicator';
 
 interface EnhancedVariantManagerProps {
   seriesId: string;
@@ -301,8 +302,38 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <p className="text-sm">{variant.editable_description || variant.description}</p>
+                  
+                  {/* Asset Status */}
+                  <div className="border-t pt-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Assets</span>
+                      <AssetStatusIndicator
+                        hasImage={!!variant.thumbnail_path}
+                        hasModel={!!variant.model_path}
+                        imagePath={variant.thumbnail_path}
+                        modelPath={variant.model_path}
+                        showValidation={true}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="flex items-center gap-1">
+                        <Image className="h-3 w-3" />
+                        <span className={variant.thumbnail_path ? "text-green-600" : "text-muted-foreground"}>
+                          {variant.thumbnail_path ? "Image Available" : "No Image"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Box className="h-3 w-3" />
+                        <span className={variant.model_path ? "text-green-600" : "text-muted-foreground"}>
+                          {variant.model_path ? "Model Available" : "No Model"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Variant Properties */}
                   <div className="flex flex-wrap gap-2">
                     {variant.dimensions && (
                       <Badge variant="secondary">{variant.dimensions}</Badge>
