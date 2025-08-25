@@ -1,302 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from "@/components/ui/dialog"
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import { Variant } from '@/types';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { Variant } from '@/types/variant';
-import { FileUploadManager } from '../FileUploadManager';
+import { FileUploadManager } from '@/components/admin/FileUploadManager';
+import { ProductSeries } from '@/types/product-series';
+
+const formSchema = z.object({
+  variant_code: z.string().min(2, {
+    message: "Variant code must be at least 2 characters.",
+  }),
+  description: z.string().optional(),
+})
 
 interface VariantFormDialogProps {
   open: boolean;
-  onClose: () => void;
-  seriesId: string;
-  seriesName: string;
-  variant?: Variant | null;
-  onVariantSaved: () => void;
+  onOpenChange: (open: boolean) => void;
+  productSeries: ProductSeries;
+  variant?: Variant;
+  onSave: (variant: Variant) => void;
 }
 
-export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
+export const VariantFormDialog = ({
   open,
-  onClose,
-  seriesId,
-  seriesName,
+  onOpenChange,
+  productSeries,
   variant,
-  onVariantSaved
-}) => {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    dimensions: '',
-    finish_type: '',
-    orientation: '',
-    door_type: '',
-    drawer_count: 0,
-    product_code: '',
-    editable_title: '',
-    editable_description: ''
-  });
-  const [loading, setLoading] = useState(false);
+  onSave
+}: VariantFormDialogProps) => {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      variant_code: variant?.variant_code || "",
+      description: variant?.description || "",
+    },
+  })
 
-  useEffect(() => {
-    if (variant) {
-      setFormData({
-        name: variant.name || '',
-        description: variant.description || '',
-        dimensions: variant.dimensions || '',
-        finish_type: variant.finish_type || '',
-        orientation: variant.orientation || '',
-        door_type: variant.door_type || '',
-        drawer_count: variant.drawer_count || 0,
-        product_code: variant.product_code || '',
-        editable_title: variant.editable_title || '',
-        editable_description: variant.editable_description || ''
-      });
-    } else {
-      setFormData({
-        name: '',
-        description: '',
-        dimensions: '',
-        finish_type: '',
-        orientation: '',
-        door_type: '',
-        drawer_count: 0,
-        product_code: '',
-        editable_title: '',
-        editable_description: ''
-      });
-    }
-  }, [variant, open]);
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    const newVariant = {
+      ...values,
+      product_series_id: productSeries.id,
+      id: variant?.id,
+    };
+    onSave(newVariant);
+    onOpenChange(false);
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    try {
-      if (variant) {
-        // Update existing variant
-        const { error } = await supabase
-          .from('products')
-          .update({
-            name: formData.name,
-            description: formData.description,
-            dimensions: formData.dimensions,
-            finish_type: formData.finish_type,
-            orientation: formData.orientation,
-            door_type: formData.door_type,
-            drawer_count: formData.drawer_count,
-            product_code: formData.product_code,
-            editable_title: formData.editable_title,
-            editable_description: formData.editable_description,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', variant.id);
-
-        if (error) throw error;
-        toast.success('Variant updated successfully');
-      } else {
-        // Create new variant
-        const { error } = await supabase
-          .from('products')
-          .insert({
-            name: formData.name,
-            description: formData.description,
-            dimensions: formData.dimensions,
-            finish_type: formData.finish_type,
-            orientation: formData.orientation,
-            door_type: formData.door_type,
-            drawer_count: formData.drawer_count,
-            product_code: formData.product_code,
-            editable_title: formData.editable_title,
-            editable_description: formData.editable_description,
-            product_series: seriesId,
-            parent_series_id: seriesId,
-            is_series_parent: false,
-            is_active: true,
-            category: 'Laboratory Equipment',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-        toast.success('Variant created successfully');
-      }
-
-      onVariantSaved();
-      onClose();
-    } catch (error) {
-      console.error('Error saving variant:', error);
-      toast.error('Failed to save variant');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleSubmit = form.handleSubmit(onSubmit);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {variant ? 'Edit Variant' : 'Add New Variant'} - {seriesName}
-          </DialogTitle>
+          <DialogTitle>{variant ? "Edit Variant" : "Create Variant"}</DialogTitle>
+          <DialogDescription>
+            {variant ? "Edit details for this variant." : "Add a new variant to the product series."}
+          </DialogDescription>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="product_code">Product Code</Label>
-              <Input
-                id="product_code"
-                value={formData.product_code}
-                onChange={(e) => setFormData({ ...formData, product_code: e.target.value })}
-                required
-              />
-            </div>
-          </div>
 
-          <div>
-            <Label htmlFor="editable_title">Display Title</Label>
-            <Input
-              id="editable_title"
-              value={formData.editable_title}
-              onChange={(e) => setFormData({ ...formData, editable_title: e.target.value })}
-              placeholder="Optional custom title for display"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="variant_code"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Variant Code</FormLabel>
+                <FormControl>
+                  <Input placeholder="VR01" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-            />
-          </div>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Input placeholder="A short description" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          <div>
-            <Label htmlFor="editable_description">Display Description</Label>
-            <Textarea
-              id="editable_description"
-              value={formData.editable_description}
-              onChange={(e) => setFormData({ ...formData, editable_description: e.target.value })}
-              rows={3}
-              placeholder="Optional custom description for display"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dimensions">Dimensions</Label>
-              <Input
-                id="dimensions"
-                value={formData.dimensions}
-                onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
-                placeholder="e.g., 24W x 24D x 36H"
-              />
-            </div>
-            <div>
-              <Label htmlFor="finish_type">Finish Type</Label>
-              <Select
-                value={formData.finish_type}
-                onValueChange={(value) => setFormData({ ...formData, finish_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select finish" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="powder_coated">Powder Coated</SelectItem>
-                  <SelectItem value="stainless_steel">Stainless Steel</SelectItem>
-                  <SelectItem value="phenolic_resin">Phenolic Resin</SelectItem>
-                  <SelectItem value="epoxy_resin">Epoxy Resin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="orientation">Orientation</Label>
-              <Select
-                value={formData.orientation}
-                onValueChange={(value) => setFormData({ ...formData, orientation: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select orientation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="left">Left</SelectItem>
-                  <SelectItem value="right">Right</SelectItem>
-                  <SelectItem value="center">Center</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="door_type">Door Type</Label>
-              <Select
-                value={formData.door_type}
-                onValueChange={(value) => setFormData({ ...formData, door_type: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select door type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hinged">Hinged</SelectItem>
-                  <SelectItem value="sliding">Sliding</SelectItem>
-                  <SelectItem value="folding">Folding</SelectItem>
-                  <SelectItem value="none">No Door</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="drawer_count">Drawer Count</Label>
-              <Input
-                id="drawer_count"
-                type="number"
-                min="0"
-                value={formData.drawer_count}
-                onChange={(e) => setFormData({ ...formData, drawer_count: parseInt(e.target.value) || 0 })}
-              />
-            </div>
-          </div>
-
-          <Separator className="my-6" />
-          
-          {/* File Upload Section */}
-          <div>
-            <h3 className="text-lg font-medium mb-4">Product Assets</h3>
+          <div className="space-y-4">
+            <Label>Upload Assets</Label>
             <FileUploadManager
-              productId={variant?.id}
-              productCode={formData.product_code}
-              variantCode={formData.product_code}
+              productId={productSeries.id}
+              variantCode={form.getValues().variant_code}
               allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
-              maxFiles={5}
-              onFilesUploaded={(files) => {
-                console.log('Files uploaded for product:', formData.product_code, files);
-                toast.success(`${files.filter(f => f.status === 'success').length} files uploaded successfully`);
+              maxFiles={10}
+              onUploadSuccess={(files) => {
+                console.log('Files uploaded for variant:', files);
+                // Handle uploaded files
               }}
             />
           </div>
 
-          <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Saving...' : variant ? 'Update Variant' : 'Create Variant'}
+          <div className="flex justify-end">
+            <Button type="submit">
+              {variant ? "Update Variant" : "Create Variant"}
             </Button>
           </div>
         </form>
