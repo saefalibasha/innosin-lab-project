@@ -100,7 +100,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const publicUrl = urlData.publicUrl;
         console.log('Public URL generated:', publicUrl);
 
-        // Log the upload in our database - only if user is authenticated and admin
+        // Try to log the upload in our database (optional - won't affect success)
+        let databaseLogged = false;
         if (user && isAdmin) {
           try {
             const uploadRecord: any = {
@@ -116,22 +117,21 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
               uploadRecord.product_id = productId;
             }
 
-            console.log('Logging upload record:', uploadRecord);
+            console.log('Attempting to log upload record:', uploadRecord);
 
             const { error: logError } = await supabase
               .from('asset_uploads')
               .insert(uploadRecord);
 
             if (logError) {
-              console.warn('Failed to log upload (but upload succeeded):', logError);
+              console.warn('Failed to log upload in database:', logError);
             } else {
               console.log('Upload logged successfully in database');
+              databaseLogged = true;
             }
           } catch (logErr) {
-            console.warn('Failed to log upload (but upload succeeded):', logErr);
+            console.warn('Failed to log upload in database:', logErr);
           }
-        } else {
-          console.log('Skipping database logging - user not authenticated or not admin');
         }
 
         const fileInfo = {
@@ -141,7 +141,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
           type: file.type,
           size: file.size,
           productId,
-          variantCode
+          variantCode,
+          databaseLogged
         };
 
         setUploadedFiles(prev => [...prev, fileInfo]);
@@ -151,6 +152,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
           onUploadSuccess(fileInfo);
         }
 
+        // Success toast - no mention of database logging issues
         toast({
           title: "Upload Successful",
           description: `${fileName} has been uploaded successfully`,
@@ -159,12 +161,10 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     } catch (error: any) {
       console.error('Upload failed:', error);
       
-      // Provide more specific error messages
+      // Only show errors for actual upload failures
       let errorMessage = 'Failed to upload file';
       
-      if (error.message?.includes('row-level security')) {
-        errorMessage = 'File uploaded to storage successfully, but database logging failed due to permissions.';
-      } else if (error.message?.includes('policy')) {
+      if (error.message?.includes('policy')) {
         errorMessage = 'Storage policy restriction. Please check your permissions.';
       } else if (error.message?.includes('Duplicate')) {
         errorMessage = 'File with this name already exists. Please rename your file or try again.';
@@ -255,6 +255,11 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
                 <span className="text-xs text-gray-500">
                   ({(file.size / 1024 / 1024).toFixed(2)} MB)
                 </span>
+                {!file.databaseLogged && user && isAdmin && (
+                  <span className="text-xs text-amber-600 bg-amber-100 px-2 py-1 rounded">
+                    Storage only
+                  </span>
+                )}
               </div>
               <Button
                 variant="ghost"
