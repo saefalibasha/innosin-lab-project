@@ -16,6 +16,17 @@ export const useProductRealtime = ({ onProductChange, onSeriesChange, enabled = 
     
     // Create unique channel name to avoid conflicts
     const channelName = `products-changes-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Debounce updates to prevent excessive re-renders
+    let updateTimeout: NodeJS.Timeout;
+    const debouncedUpdate = () => {
+      clearTimeout(updateTimeout);
+      updateTimeout = setTimeout(() => {
+        onProductChange?.();
+        onSeriesChange?.();
+      }, 500); // 500ms debounce
+    };
+
     const channel = supabase
       .channel(channelName)
       .on(
@@ -23,14 +34,14 @@ export const useProductRealtime = ({ onProductChange, onSeriesChange, enabled = 
         { event: '*', schema: 'public', table: 'products' },
         (payload) => {
           console.log('📡 Real-time product update received:', payload);
-          onProductChange?.();
-          onSeriesChange?.();
+          debouncedUpdate();
         }
       )
       .subscribe();
 
     return () => {
       console.log('🔌 Cleaning up real-time subscription');
+      clearTimeout(updateTimeout);
       supabase.removeChannel(channel);
     };
   }, [enabled]); // Removed callback dependencies to prevent re-subscriptions
