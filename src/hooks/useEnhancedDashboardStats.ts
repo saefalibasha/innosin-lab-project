@@ -33,97 +33,47 @@ export const useEnhancedDashboardStats = () => {
       setLoading(true);
       setError(null);
 
-      // Fetch total products
-      const { count: totalProducts, error: productsError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true });
+      // Fetch basic stats first for fast dashboard loading
+      const [
+        { count: totalProducts, error: productsError },
+        { count: activeSeries, error: seriesError },
+        { count: totalVariants, error: variantsError },
+      ] = await Promise.all([
+        supabase.from('products').select('*', { count: 'exact', head: true }),
+        supabase.from('products').select('*', { count: 'exact', head: true })
+          .eq('is_series_parent', true).eq('is_active', true),
+        supabase.from('products').select('*', { count: 'exact', head: true })
+          .eq('is_series_parent', false).eq('is_active', true)
+      ]);
 
-      if (productsError) throw productsError;
-
-      // Fetch active series (series parents)
-      const { count: activeSeries, error: seriesError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_series_parent', true)
-        .eq('is_active', true);
-
-      if (seriesError) throw seriesError;
-
-      // Fetch total variants (non-series parents)
-      const { count: totalVariants, error: variantsError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_series_parent', false)
-        .eq('is_active', true);
-
-      if (variantsError) throw variantsError;
-
-      // Fetch products with assets and validate them with real accessibility checks
-      const { data: productsWithAssets, error: assetsError } = await supabase
-        .from('products')
-        .select('id, thumbnail_path, model_path, series_thumbnail_path, series_model_path, is_series_parent')
-        .eq('is_active', true);
-
-      if (assetsError) throw assetsError;
-
-      // Validate actual asset accessibility (not just database paths)
-      let workingAssetsCount = 0;
-      let totalAssetsWithBoth = 0;
-
-      if (productsWithAssets) {
-        for (const product of productsWithAssets) {
-          const imagePath = product.thumbnail_path || product.series_thumbnail_path;
-          const modelPath = product.model_path || product.series_model_path;
-          
-          if (imagePath || modelPath) {
-            const { imageValid, modelValid } = await validateAssetAccessibility(imagePath, modelPath);
-            
-            if (imageValid || modelValid) {
-              workingAssetsCount++;
-            }
-            
-            if (imageValid && modelValid) {
-              totalAssetsWithBoth++;
-            }
-          }
-        }
+      if (productsError || seriesError || variantsError) {
+        throw productsError || seriesError || variantsError;
       }
 
-      const assetsUploaded = workingAssetsCount;
-
-      // Calculate completion rate based on assets and variants
-      const { data: seriesData, error: seriesCompletionError } = await supabase
-        .from('products')
-        .select('target_variant_count, id')
-        .eq('is_series_parent', true)
-        .eq('is_active', true);
-
-      if (seriesCompletionError) throw seriesCompletionError;
-
-      // Calculate asset completion rate based on actual working assets
-      const totalActiveProducts = productsWithAssets?.length || 1;
-      const assetCompletionRate = Math.round((totalAssetsWithBoth / totalActiveProducts) * 100);
-      
-      // Variant completion rate vs target
-      const totalTargetVariants = seriesData?.reduce((sum, series) => 
-        sum + (series.target_variant_count || 4), 0) || 0;
-      
-      const variantCompletionRate = totalTargetVariants > 0 ? 
-        Math.min((totalVariants || 0) / totalTargetVariants * 100, 100) : 0;
-
-      // Combined completion rate (weighted average)
-      const completionRate = Math.round((assetCompletionRate * 0.6) + (variantCompletionRate * 0.4));
-
-      // Get recent activity (products updated in last 24 hours)
+      // Get recent activity
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-
-      const { count: recentActivity, error: activityError } = await supabase
+      const { count: recentActivity } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
         .gte('updated_at', yesterday.toISOString());
 
-      if (activityError) throw activityError;
+      // Use simple completion rate based on database data (not real asset validation)
+      const { data: productsWithAssets } = await supabase
+        .from('products')
+        .select('thumbnail_path, model_path, series_thumbnail_path, series_model_path')
+        .eq('is_active', true);
+
+      // Count products that have both image and model paths in database
+      const assetsUploaded = productsWithAssets?.filter(product => {
+        const hasImage = product.thumbnail_path || product.series_thumbnail_path;
+        const hasModel = product.model_path || product.series_model_path;
+        return hasImage && hasModel;
+      }).length || 0;
+
+      // Calculate simple completion rate
+      const totalActiveProducts = productsWithAssets?.length || 1;
+      const completionRate = Math.round((assetsUploaded / totalActiveProducts) * 100);
 
       setStats({
         totalProducts: totalProducts || 0,
@@ -131,7 +81,7 @@ export const useEnhancedDashboardStats = () => {
         totalVariants: totalVariants || 0,
         assetsUploaded,
         recentActivity: recentActivity || 0,
-        completionRate: Math.round(completionRate),
+        completionRate,
         lastUpdated: new Date()
       });
 
@@ -151,8 +101,8 @@ export const useEnhancedDashboardStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchStats, 30000);
+    // Auto-refresh every 5 minutes instead of 30 seconds
+    const interval = setInterval(fetchStats, 300000);
     
     return () => clearInterval(interval);
   }, []);
