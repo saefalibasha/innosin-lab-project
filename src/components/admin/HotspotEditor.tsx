@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Edit, Trash2, Target, MousePointer, Move, Eye, EyeOff, Upload, Image } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { Json } from '@supabase/supabase-js'; // ✅ Added for casting
 
 interface Hotspot {
   id: string;
@@ -79,10 +80,15 @@ export const HotspotEditor = () => {
 
   const saveHotspotMutation = useMutation({
     mutationFn: async (hotspot: Partial<Hotspot>) => {
-      const { id, ...rest } = hotspot;
+      const { id, specifications, ...rest } = hotspot;
+      const formattedSpec = specifications as Json;
+
+      const payload = { ...rest, specifications: formattedSpec };
+
       const { error } = id
-        ? await supabase.from('shop_look_hotspots').update(rest).eq('id', id)
-        : await supabase.from('shop_look_hotspots').insert(rest);
+        ? await supabase.from('shop_look_hotspots').update(payload).eq('id', id)
+        : await supabase.from('shop_look_hotspots').insert(payload);
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -235,7 +241,7 @@ export const HotspotEditor = () => {
 
   return (
     <div className="space-y-6">
-      {/* UI and JSX remains unchanged */}
+      {/* Your existing JSX for managing and displaying hotspots goes here */}
     </div>
   );
 };
