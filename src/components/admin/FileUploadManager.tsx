@@ -4,7 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, X, CheckCircle } from 'lucide-react';
+import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface FileUploadManagerProps {
   productId?: string;
@@ -70,22 +70,26 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const publicUrl = urlData.publicUrl;
         console.log('Public URL generated:', publicUrl);
 
-        // Log the upload in our database
-        const uploadRecord = {
-          file_path: filePath,
-          file_type: file.type,
-          file_size: file.size,
-          product_id: productId || null,
-          upload_status: 'completed',
-          uploaded_by: 'admin' // We know it's an admin because of our RLS policy
-        };
+        // Try to log the upload in our database (but don't fail if it doesn't work)
+        try {
+          const uploadRecord = {
+            file_path: filePath,
+            file_type: file.type,
+            file_size: file.size,
+            product_id: productId || null,
+            upload_status: 'completed',
+            uploaded_by: 'user' // Changed from 'admin' since we now allow public uploads
+          };
 
-        const { error: logError } = await supabase
-          .from('asset_uploads')
-          .insert(uploadRecord);
+          const { error: logError } = await supabase
+            .from('asset_uploads')
+            .insert(uploadRecord);
 
-        if (logError) {
-          console.warn('Failed to log upload:', logError);
+          if (logError) {
+            console.warn('Failed to log upload (but upload succeeded):', logError);
+          }
+        } catch (logErr) {
+          console.warn('Failed to log upload (but upload succeeded):', logErr);
         }
 
         const fileInfo = {
@@ -112,9 +116,20 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       }
     } catch (error: any) {
       console.error('Upload failed:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to upload file';
+      if (error.message?.includes('row-level security')) {
+        errorMessage = 'Upload failed due to security restrictions. Please try again or contact support.';
+      } else if (error.message?.includes('policy')) {
+        errorMessage = 'Upload failed due to permissions. Please check your access rights.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       toast({
         title: "Upload Failed",
-        description: error.message || "Failed to upload file",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -160,15 +175,21 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
             <p className="text-sm text-gray-500">
               Supported formats: {allowedTypes.join(', ')} (Max {maxFiles} files)
             </p>
+            <p className="text-xs text-gray-400 mt-2">
+              Files will be uploaded to public storage
+            </p>
           </div>
         )}
       </div>
 
       {fileRejections.length > 0 && (
-        <div className="text-red-600 text-sm">
-          <p>Some files were rejected:</p>
+        <div className="text-red-600 text-sm space-y-1">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-4 w-4" />
+            <span className="font-medium">Some files were rejected:</span>
+          </div>
           {fileRejections.map(({ file, errors }) => (
-            <div key={file.name}>
+            <div key={file.name} className="ml-6">
               {file.name}: {errors.map(e => e.message).join(', ')}
             </div>
           ))}
