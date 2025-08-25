@@ -12,9 +12,12 @@ import { Upload, FileImage, Box, X, Check, AlertCircle } from 'lucide-react';
 interface FileUploadManagerProps {
   productId?: string;
   productCode?: string;
+  variantCode?: string;
   onFilesUploaded?: (files: UploadedFile[]) => void;
+  onUploadSuccess?: (file: UploadedFile) => void;
   allowedTypes?: string[];
   maxFiles?: number;
+  autoUpdateProduct?: boolean;
 }
 
 interface UploadedFile {
@@ -31,9 +34,12 @@ interface UploadedFile {
 export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
   productId,
   productCode,
+  variantCode,
   onFilesUploaded,
+  onUploadSuccess,
   allowedTypes = ['.glb', '.jpg', '.jpeg', '.png'],
-  maxFiles = 10
+  maxFiles = 10,
+  autoUpdateProduct = false
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -41,9 +47,10 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
   const uploadFile = async (file: File): Promise<UploadedFile> => {
     const fileId = `${Date.now()}-${file.name}`;
-    const fileName = productCode ? `${productCode}-${file.name}` : file.name;
-    const filePath = productCode 
-      ? `products/${productCode.toLowerCase()}/${fileName}`
+    const codeToUse = variantCode || productCode;
+    const fileName = codeToUse ? `${codeToUse}-${file.name}` : file.name;
+    const filePath = codeToUse 
+      ? `products/${codeToUse.toLowerCase()}/${fileName}`
       : `uploads/${fileName}`;
 
     const uploadedFile: UploadedFile = {
@@ -57,6 +64,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     };
 
     try {
+      // Upload with progress tracking for large files
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
@@ -70,12 +78,19 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         .from('documents')
         .getPublicUrl(filePath);
 
-      return {
+      const successFile = {
         ...uploadedFile,
         url: publicUrl,
-        status: 'success',
+        status: 'success' as const,
         progress: 100
       };
+
+      // Auto-update product record if enabled
+      if (autoUpdateProduct && productId && publicUrl) {
+        await updateProductWithAsset(productId, file.type, publicUrl);
+      }
+
+      return successFile;
     } catch (error) {
       console.error('Upload error:', error);
       return {
@@ -83,6 +98,36 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         status: 'error',
         error: error instanceof Error ? error.message : 'Upload failed'
       };
+    }
+  };
+
+  const updateProductWithAsset = async (productId: string, fileType: string, url: string) => {
+    try {
+      const updateData: any = {};
+      
+      if (fileType.startsWith('image/')) {
+        updateData.thumbnail_path = url;
+      } else if (fileType.includes('gltf') || fileType.includes('glb')) {
+        updateData.model_path = url;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabase
+          .from('products')
+          .update(updateData)
+          .eq('id', productId);
+
+        if (error) {
+          console.error('Failed to update product with asset:', error);
+          toast({
+            title: "Upload Warning",
+            description: "File uploaded but failed to link to product",
+            variant: "destructive",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error updating product:', error);
     }
   };
 
@@ -96,6 +141,11 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       const uploadedFile = await uploadFile(file);
       newFiles.push(uploadedFile);
       setUploadedFiles(prev => [...prev, uploadedFile]);
+      
+      // Trigger individual success callback
+      if (uploadedFile.status === 'success') {
+        onUploadSuccess?.(uploadedFile);
+      }
     }
 
     setIsUploading(false);

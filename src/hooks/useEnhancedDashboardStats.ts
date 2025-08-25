@@ -65,11 +65,16 @@ export const useEnhancedDashboardStats = () => {
 
       if (assetsError) throw assetsError;
 
-      // Use dynamic asset validation instead of just checking URL existence
+      // Import asset validator for real validation
+      const { isPlaceholderAsset } = await import('@/utils/assetValidator');
+
+      // Count only real (non-placeholder) assets
       const assetsUploaded = productsWithAssets?.filter(p => {
-        const hasImage = p.thumbnail_path || p.series_thumbnail_path;
-        const hasModel = p.model_path || p.series_model_path;
-        return hasImage || hasModel;
+        const hasRealImage = (p.thumbnail_path && !isPlaceholderAsset(p.thumbnail_path)) || 
+                            (p.series_thumbnail_path && !isPlaceholderAsset(p.series_thumbnail_path));
+        const hasRealModel = (p.model_path && !isPlaceholderAsset(p.model_path)) || 
+                            (p.series_model_path && !isPlaceholderAsset(p.series_model_path));
+        return hasRealImage || hasRealModel;
       }).length || 0;
 
       // Calculate completion rate based on assets and variants
@@ -81,11 +86,13 @@ export const useEnhancedDashboardStats = () => {
 
       if (seriesCompletionError) throw seriesCompletionError;
 
-      // Calculate asset completion rate: products with both image and model assets
+      // Calculate asset completion rate: products with both real image and model assets
       const productsWithBothAssets = productsWithAssets?.filter(p => {
-        const hasImage = p.thumbnail_path || p.series_thumbnail_path;
-        const hasModel = p.model_path || p.series_model_path;
-        return hasImage && hasModel;
+        const hasRealImage = (p.thumbnail_path && !isPlaceholderAsset(p.thumbnail_path)) || 
+                            (p.series_thumbnail_path && !isPlaceholderAsset(p.series_thumbnail_path));
+        const hasRealModel = (p.model_path && !isPlaceholderAsset(p.model_path)) || 
+                            (p.series_model_path && !isPlaceholderAsset(p.series_model_path));
+        return hasRealImage && hasRealModel;
       }).length || 0;
 
       const totalActiveProducts = productsWithAssets?.length || 1;

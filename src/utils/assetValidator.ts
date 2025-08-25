@@ -1,18 +1,30 @@
 
-// Utility functions for validating and managing assets
+// Enhanced asset validation utilities
+export const isPlaceholderAsset = (url: string): boolean => {
+  if (!url || typeof url !== 'string') return true;
+  
+  // Check for placeholder text in content or filename
+  if (url.includes('placeholder') || url.includes('PLACEHOLDER')) return true;
+  
+  // Check if it's in the public folder (typically placeholder files)
+  if (url.startsWith('/products/') && !url.includes('supabase')) return true;
+  
+  return false;
+};
+
 export const isValidImageUrl = (url: string): boolean => {
   if (!url || typeof url !== 'string') return false;
   
-  // Check if it's a placeholder
-  if (url.includes('placeholder') || url.includes('PLACEHOLDER')) return false;
+  // Exclude placeholder assets
+  if (isPlaceholderAsset(url)) return false;
   
   // Check if it's a valid URL format
   try {
     new URL(url);
     return true;
   } catch {
-    // Check if it's a relative path
-    return url.startsWith('/') || url.startsWith('./') || url.startsWith('../');
+    // Check if it's a relative path from Supabase storage
+    return url.startsWith('/') && url.includes('supabase');
   }
 };
 
@@ -36,7 +48,7 @@ export const getOptimalImageUrl = (urls: (string | undefined)[], fallback: strin
 
 export const preloadImage = (src: string): Promise<boolean> => {
   return new Promise((resolve) => {
-    if (!isValidImageUrl(src)) {
+    if (!src || isPlaceholderAsset(src)) {
       resolve(false);
       return;
     }
@@ -46,13 +58,39 @@ export const preloadImage = (src: string): Promise<boolean> => {
     img.onerror = () => resolve(false);
     img.src = src;
     
-    // Timeout after 5 seconds
-    setTimeout(() => resolve(false), 5000);
+    // Timeout after 3 seconds for faster validation
+    setTimeout(() => resolve(false), 3000);
   });
 };
 
+// Validate 3D model renderability using Three.js loader
+export const validateModelRenderability = async (url: string): Promise<boolean> => {
+  if (!url || isPlaceholderAsset(url)) return false;
+  
+  try {
+    // Use dynamic import to avoid bundle size issues
+    const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+    const loader = new GLTFLoader();
+    
+    return new Promise((resolve) => {
+      loader.load(
+        url,
+        () => resolve(true), // Success
+        undefined, // Progress - not used
+        () => resolve(false) // Error
+      );
+      
+      // Timeout for model loading
+      setTimeout(() => resolve(false), 5000);
+    });
+  } catch (error) {
+    console.error('Model validation error:', error);
+    return false;
+  }
+};
+
 export const validateModelFile = async (url: string): Promise<boolean> => {
-  if (!isValidModelUrl(url)) return false;
+  if (!isValidModelUrl(url) || isPlaceholderAsset(url)) return false;
   
   try {
     const response = await fetch(url, { method: 'HEAD' });
@@ -63,9 +101,12 @@ export const validateModelFile = async (url: string): Promise<boolean> => {
     const isGLBFile = contentType?.includes('model/gltf-binary') || contentType?.includes('application/octet-stream');
     const isReasonableSize = contentLength ? parseInt(contentLength) > 100 : true; // At least 100 bytes
     
-    console.log('Model validation:', { url, contentType, contentLength, isGLBFile, isReasonableSize });
+    // For real validation, also try to parse with Three.js
+    if (response.ok && isGLBFile && isReasonableSize) {
+      return await validateModelRenderability(url);
+    }
     
-    return response.ok && isGLBFile && isReasonableSize;
+    return false;
   } catch (error) {
     console.error('Model validation error:', url, error);
     return false;
@@ -132,6 +173,7 @@ export const batchPreloadImages = async (sources: string[]): Promise<{ [key: str
 };
 
 export default {
+  isPlaceholderAsset,
   isValidImageUrl,
   isValidModelUrl,
   sanitizeImageUrl,
@@ -139,5 +181,6 @@ export default {
   preloadImage,
   batchPreloadImages,
   validateModelFile,
+  validateModelRenderability,
   validateAssetAccessibility
 };
