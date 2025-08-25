@@ -1,3 +1,4 @@
+
 import React from 'react';
 import {
   Dialog,
@@ -19,10 +20,8 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Variant } from '@/types';
 import { Label } from '@/components/ui/label';
 import { FileUploadManager } from '@/components/admin/FileUploadManager';
-import { ProductSeries } from '@/types/product-series';
 
 const formSchema = z.object({
   variant_code: z.string().min(2, {
@@ -34,17 +33,19 @@ const formSchema = z.object({
 interface VariantFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  productSeries: ProductSeries;
-  variant?: Variant;
-  onSave: (variant: Variant) => void;
+  seriesId: string;
+  seriesName: string;
+  variant?: any;
+  onVariantSaved: () => void;
 }
 
 export const VariantFormDialog = ({
   open,
   onOpenChange,
-  productSeries,
+  seriesId,
+  seriesName,
   variant,
-  onSave
+  onVariantSaved
 }: VariantFormDialogProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,10 +58,10 @@ export const VariantFormDialog = ({
   const onSubmit = (values: z.infer<typeof formSchema>) => {
     const newVariant = {
       ...values,
-      product_series_id: productSeries.id,
+      product_series_id: seriesId,
       id: variant?.id,
     };
-    onSave(newVariant);
+    onVariantSaved();
     onOpenChange(false);
   }
 
@@ -108,13 +109,12 @@ export const VariantFormDialog = ({
           <div className="space-y-4">
             <Label>Upload Assets</Label>
             <FileUploadManager
-              productId={productSeries.id}
+              productId={seriesId}
               variantCode={form.getValues().variant_code}
               allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
               maxFiles={10}
               onUploadSuccess={(files) => {
                 console.log('Files uploaded for variant:', files);
-                // Handle uploaded files
               }}
             />
           </div>

@@ -1,9 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { ProductSeries } from '@/types';
 import { FileUploadManager } from '@/components/admin/FileUploadManager';
 import {
   Form,
@@ -18,15 +18,12 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { toast } from "@/hooks/use-toast"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { updateProductSeries } from "@/lib/api/product-series"
-import { createVariant } from "@/lib/api/variants"
-import { deleteVariant } from "@/lib/api/variants"
 import { useToast } from "@/hooks/use-toast"
 import { Plus, Trash } from 'lucide-react';
 
 interface EnhancedVariantEditorProps {
-  productSeries: ProductSeries;
-  onUpdate: (updatedSeries: ProductSeries) => void;
+  productSeries: any;
+  onUpdate: (updatedSeries: any) => void;
   onAddVariant: (newVariant: any) => void;
   onDeleteVariant: (variantId: string) => void;
 }
@@ -62,57 +59,6 @@ export const EnhancedVariantEditor = ({
     },
   })
 
-  const { mutate: updateSeries, isPending: isUpdating } = useMutation({
-    mutationFn: updateProductSeries,
-    onSuccess: () => {
-      toast({
-        title: "Successfully updated product series!",
-      })
-      queryClient.invalidateQueries({ queryKey: ['product-series', productSeries.id] })
-    },
-    onError: (error) => {
-      toast({
-        title: "Something went wrong!",
-        description: error.message,
-        variant: "destructive",
-      })
-    },
-  })
-
-  const { mutate: addVariant, isPending: isCreating } = useMutation({
-    mutationFn: createVariant,
-    onSuccess: () => {
-      toast({
-        title: "Successfully created variant!",
-      })
-      queryClient.invalidateQueries({ queryKey: ['product-series', productSeries.id] })
-    },
-    onError: (error) => {
-      toast({
-        title: "Something went wrong!",
-        description: error.message,
-        variant: "destructive",
-      })
-    },
-  })
-
-  const { mutate: removeVariant, isPending: isDeleting } = useMutation({
-    mutationFn: deleteVariant,
-    onSuccess: () => {
-      toast({
-        title: "Successfully deleted variant!",
-      })
-      queryClient.invalidateQueries({ queryKey: ['product-series', productSeries.id] })
-    },
-    onError: (error) => {
-      toast({
-        title: "Something went wrong!",
-        description: error.message,
-        variant: "destructive",
-      })
-    },
-  })
-
   const handleEdit = (variant: any) => {
     setEditingVariant(variant);
   };
@@ -122,11 +68,9 @@ export const EnhancedVariantEditor = ({
   };
 
   const handleSave = async (variant: any) => {
-    // Here you would typically make an API call to save the changes
-    // to the variant. For this example, we'll just update the local state.
     onUpdate({
       ...productSeries,
-      variants: productSeries.variants?.map((v) =>
+      variants: productSeries.variants?.map((v: any) =>
         v.id === variant.id ? { ...v, ...editingVariant } : v
       ),
     });
@@ -135,17 +79,12 @@ export const EnhancedVariantEditor = ({
 
   const handleAddVariant = async () => {
     if (newVariantName && newVariantCode) {
-      // Here you would typically make an API call to add the new variant
-      // to the product series. For this example, we'll just update the local state.
       const newVariant = {
-        id: Date.now().toString(), // Temporary ID
+        id: Date.now().toString(),
         name: newVariantName,
         variant_code: newVariantCode,
         product_series_id: productSeries.id,
       };
-      addVariant({
-        ...newVariant,
-      })
       onAddVariant(newVariant);
       setNewVariantName('');
       setNewVariantCode('');
@@ -153,9 +92,6 @@ export const EnhancedVariantEditor = ({
   };
 
   const handleDeleteVariant = async (variantId: string) => {
-    removeVariant({
-      id: variantId,
-    })
     onDeleteVariant(variantId);
   };
 
@@ -167,7 +103,7 @@ export const EnhancedVariantEditor = ({
       </div>
 
       <div className="grid gap-6">
-        {productSeries.variants?.map((variant) => (
+        {productSeries.variants?.map((variant: any) => (
           <Card key={variant.id} className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">{variant.name}</h3>
@@ -177,7 +113,7 @@ export const EnhancedVariantEditor = ({
                     Edit
                   </Button>
                 )}
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteVariant(variant.id)} disabled={isDeleting}>
+                <Button variant="destructive" size="sm" onClick={() => handleDeleteVariant(variant.id)}>
                   <Trash className="h-4 w-4 mr-2" />
                   Delete
                 </Button>
@@ -210,9 +146,8 @@ export const EnhancedVariantEditor = ({
                     variantCode={variant.variant_code}
                     allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
                     maxFiles={10}
-                    onFilesUploaded={(files) => {
+                    onUploadSuccess={(files) => {
                       console.log('Files uploaded:', files);
-                      // Handle uploaded files
                     }}
                   />
                 </div>
@@ -227,7 +162,6 @@ export const EnhancedVariantEditor = ({
             ) : (
               <div className="space-y-2">
                 <p>Variant Code: {variant.variant_code}</p>
-                {/* Display other variant details here */}
               </div>
             )}
           </Card>
@@ -250,7 +184,7 @@ export const EnhancedVariantEditor = ({
             onChange={(e) => setNewVariantCode(e.target.value)}
           />
         </div>
-        <Button className="mt-4" onClick={handleAddVariant} disabled={isCreating}>
+        <Button className="mt-4" onClick={handleAddVariant}>
           <Plus className="h-4 w-4 mr-2" />
           Add Variant
         </Button>

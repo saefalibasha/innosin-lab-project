@@ -358,7 +358,7 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
       {/* Add/Edit Variant Dialog */}
       <VariantFormDialog
         open={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
+        onOpenChange={setIsAddDialogOpen}
         seriesId={seriesId}
         seriesName={seriesName}
         onVariantSaved={() => {
@@ -370,7 +370,7 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
       {/* Edit Variant Dialog */}
       <VariantFormDialog
         open={editingVariant !== null}
-        onClose={() => setEditingVariant(null)}
+        onOpenChange={(open) => !open && setEditingVariant(null)}
         seriesId={seriesId}
         seriesName={seriesName}
         variant={editingVariant}
