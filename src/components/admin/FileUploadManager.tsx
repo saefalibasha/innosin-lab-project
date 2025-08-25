@@ -98,31 +98,38 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const publicUrl = urlData.publicUrl;
         console.log('Public URL generated:', publicUrl);
 
-        // Log the upload in our database (non-blocking)
+        // Log the upload in our database (non-blocking) - Skip database logging for now
         try {
-          const uploadRecord: any = {
-            file_path: filePath,
-            file_type: file.type,
-            file_size: file.size,
-            upload_status: 'completed',
-            uploaded_by: 'user'
-          };
+          // Get current user for RLS
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            const uploadRecord: any = {
+              file_path: filePath,
+              file_type: file.type,
+              file_size: file.size,
+              upload_status: 'completed',
+              uploaded_by: user.id // Use user ID instead of 'user' string
+            };
 
-          // Only include product_id if we have one
-          if (productId) {
-            uploadRecord.product_id = productId;
-          }
+            // Only include product_id if we have one
+            if (productId) {
+              uploadRecord.product_id = productId;
+            }
 
-          console.log('Logging upload record:', uploadRecord);
+            console.log('Logging upload record:', uploadRecord);
 
-          const { error: logError } = await supabase
-            .from('asset_uploads')
-            .insert(uploadRecord);
+            const { error: logError } = await supabase
+              .from('asset_uploads')
+              .insert(uploadRecord);
 
-          if (logError) {
-            console.warn('Failed to log upload (but upload succeeded):', logError);
+            if (logError) {
+              console.warn('Failed to log upload (but upload succeeded):', logError);
+            } else {
+              console.log('Upload logged successfully');
+            }
           } else {
-            console.log('Upload logged successfully');
+            console.warn('User not authenticated, skipping database logging');
           }
         } catch (logErr) {
           console.warn('Failed to log upload (but upload succeeded):', logErr);
@@ -157,9 +164,9 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       let errorMessage = 'Failed to upload file';
       
       if (error.message?.includes('row-level security')) {
-        errorMessage = 'Upload security policy error. Files are uploaded to public storage but database logging may have failed.';
+        errorMessage = 'Authentication required for database logging. File uploaded to storage successfully.';
       } else if (error.message?.includes('policy')) {
-        errorMessage = 'Storage policy restriction. Trying alternative upload method...';
+        errorMessage = 'Storage policy restriction. Please check your permissions.';
       } else if (error.message?.includes('Duplicate')) {
         errorMessage = 'File with this name already exists. Please rename your file or try again.';
       } else if (error.message?.includes('size')) {
