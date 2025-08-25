@@ -65,8 +65,6 @@ export const VariantFormDialog = ({
     onOpenChange(false);
   }
 
-  const handleSubmit = form.handleSubmit(onSubmit);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -77,54 +75,56 @@ export const VariantFormDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="variant_code"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Variant Code</FormLabel>
-                <FormControl>
-                  <Input placeholder="VR01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Input placeholder="A short description" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="space-y-4">
-            <Label>Upload Assets</Label>
-            <FileUploadManager
-              productId={seriesId}
-              variantCode={form.getValues().variant_code}
-              allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
-              maxFiles={10}
-              onUploadSuccess={(files) => {
-                console.log('Files uploaded for variant:', files);
-              }}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="variant_code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Variant Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="VR01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
 
-          <div className="flex justify-end">
-            <Button type="submit">
-              {variant ? "Update Variant" : "Create Variant"}
-            </Button>
-          </div>
-        </form>
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl>
+                    <Input placeholder="A short description" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="space-y-4">
+              <Label>Upload Assets</Label>
+              <FileUploadManager
+                productId={seriesId}
+                variantCode={form.getValues().variant_code}
+                allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
+                maxFiles={10}
+                onUploadSuccess={(files) => {
+                  console.log('Files uploaded for variant:', files);
+                }}
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="submit">
+                {variant ? "Update Variant" : "Create Variant"}
+              </Button>
+            </div>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
