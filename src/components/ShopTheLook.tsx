@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +42,6 @@ const ShopTheLook = () => {
   const { addItem } = useRFQ();
   const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
 
-  // Fetch shop look content
   const { data: content, isLoading: contentLoading } = useQuery({
     queryKey: ['shop-look-content'],
     queryFn: async () => {
@@ -52,20 +50,19 @@ const ShopTheLook = () => {
         .select('*')
         .eq('is_active', true)
         .maybeSingle();
-      
+
       if (error) throw error;
-      
+
       return data ? {
         title: data.title || 'Shop',
         titleHighlight: data.title_highlight || 'The Look',
         description: data.description || 'Explore our featured laboratory setup.',
-        backgroundImage: data.background_image || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80',
+        backgroundImage: data.background_image || '/placeholder.svg',
         backgroundAlt: data.background_alt || 'Modern Laboratory Setup'
-      } as ShopLookContent : null;
+      } : null;
     }
   });
 
-  // Fetch hotspots
   const { data: hotspots = [], isLoading: hotspotsLoading } = useQuery({
     queryKey: ['shop-look-hotspots'],
     queryFn: async () => {
@@ -74,9 +71,9 @@ const ShopTheLook = () => {
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
-      
+
       if (error) throw error;
-      
+
       return data.map(hotspot => ({
         id: hotspot.id,
         x: Number(hotspot.x_position),
@@ -87,7 +84,7 @@ const ShopTheLook = () => {
           category: hotspot.category || 'Laboratory Equipment',
           dimensions: 'Contact for specifications',
           description: hotspot.description || '',
-          specifications: Array.isArray(hotspot.specifications) 
+          specifications: Array.isArray(hotspot.specifications)
             ? hotspot.specifications as string[]
             : ['Premium Quality', 'Professional Grade', 'Industry Standard'],
           image: hotspot.image || '',
@@ -98,7 +95,18 @@ const ShopTheLook = () => {
     }
   });
 
-  if (contentLoading || hotspotsLoading) {
+  const handleAddToQuote = (product: Product) => {
+    addItem({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      dimensions: product.dimensions,
+      image: product.image
+    });
+    toast.success(`${product.name} added to quote request`);
+  };
+
+  if (contentLoading || hotspotsLoading || !content) {
     return (
       <div className="max-w-6xl mx-auto">
         <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
@@ -114,43 +122,29 @@ const ShopTheLook = () => {
     );
   }
 
-  const handleAddToQuote = (product: Product) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      dimensions: product.dimensions,
-      image: product.image
-    });
-    toast.success(`${product.name} added to quote request`);
-  };
-
   return (
     <div className="max-w-6xl mx-auto">
-      {content && (
-        <Reveal>
-          <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-primary mb-4 tracking-tight">
-              {content.title} <span className="text-sea">{content.titleHighlight}</span>
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
-              {content.description}
-            </p>
-          </div>
-        </Reveal>
-      )}
-      
+      <Reveal>
+        <div className="text-center mb-8">
+          <h2 className="text-4xl font-bold text-primary mb-4 tracking-tight">
+            {content.title} <span className="text-sea">{content.titleHighlight}</span>
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
+            {content.description}
+          </p>
+        </div>
+      </Reveal>
+
       <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
         <CardContent className="p-0">
           <div className="relative">
-            {/* Laboratory Background Image - Full Size */}
             <img
-              src={content?.backgroundImage || 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?auto=format&fit=crop&w=1920&q=80'}
-              alt={content?.backgroundAlt || 'Modern Laboratory Setup'}
+              src={content.backgroundImage}
+              alt={content.backgroundAlt}
               className="w-full h-[700px] object-cover object-center"
+              onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
             />
-            
-            {/* Hotspots */}
+
             {hotspots.map((hotspot) => (
               <Popover key={hotspot.id} open={activeHotspot === hotspot.id} onOpenChange={(open) => setActiveHotspot(open ? hotspot.id : null)}>
                 <PopoverTrigger asChild>
@@ -181,11 +175,11 @@ const ShopTheLook = () => {
                             <span className="font-medium">Price:</span> {hotspot.product.price}
                           </p>
                         </div>
-                        
+
                         <p className="text-sm text-gray-700 leading-relaxed">
                           {hotspot.product.description}
                         </p>
-                        
+
                         <div>
                           <h4 className="text-sm font-medium text-gray-900 mb-2">Key Features:</h4>
                           <div className="flex flex-wrap gap-1">
@@ -196,7 +190,7 @@ const ShopTheLook = () => {
                             ))}
                           </div>
                         </div>
-                        
+
                         <div className="flex space-x-2 pt-2">
                           <Button
                             onClick={() => handleAddToQuote(hotspot.product)}
@@ -206,12 +200,7 @@ const ShopTheLook = () => {
                             <ShoppingCart className="w-4 h-4 mr-2" />
                             Add to Quote
                           </Button>
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                          >
+                          <Button asChild variant="outline" size="sm" className="flex-1">
                             <Link to={hotspot.product.productLink}>
                               <ExternalLink className="w-4 h-4 mr-2" />
                               View Details
@@ -224,8 +213,7 @@ const ShopTheLook = () => {
                 </PopoverContent>
               </Popover>
             ))}
-            
-            {/* Instructions Overlay */}
+
             <div className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
               <div className="flex items-center space-x-3">
                 <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center animate-pulse">
