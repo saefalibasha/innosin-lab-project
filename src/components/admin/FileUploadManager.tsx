@@ -1,3 +1,4 @@
+
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,19 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
   const { toast } = useToast();
   const { user, isAdmin } = useAuth();
 
+  // Check if user is authenticated before allowing uploads
+  if (!user) {
+    return (
+      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+        <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <p className="text-gray-600 mb-2">Authentication Required</p>
+        <p className="text-sm text-gray-500">
+          Please log in to upload files to the system.
+        </p>
+      </div>
+    );
+  }
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
 
@@ -48,7 +62,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
         console.log('Uploading to path:', filePath);
 
-        // Upload to Supabase Storage with no auth required
+        // Upload to Supabase Storage - now with proper authentication
         let { data, error } = await supabase.storage
           .from('documents')
           .upload(filePath, file, {
@@ -74,14 +88,13 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
               .from('documents')
               .upload(newFilePath, file, {
                 cacheControl: '3600',
-                upsert: true // Allow upsert on retry
+                upsert: true
               });
               
             if (retryError) {
               throw retryError;
             }
             
-            // Update variables for success handling
             data = retryData;
             filePath = newFilePath;
             fileName = newFileName;
@@ -100,7 +113,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const publicUrl = urlData.publicUrl;
         console.log('Public URL generated:', publicUrl);
 
-        // Try to log the upload in our database (optional - won't affect success)
+        // Try to log the upload in our database (optional)
         let databaseLogged = false;
         if (user && isAdmin) {
           try {
@@ -112,7 +125,6 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
               uploaded_by: user.id
             };
 
-            // Only include product_id if we have one
             if (productId) {
               uploadRecord.product_id = productId;
             }
@@ -147,12 +159,10 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
         setUploadedFiles(prev => [...prev, fileInfo]);
 
-        // Call the success callback
         if (onUploadSuccess) {
           onUploadSuccess(fileInfo);
         }
 
-        // Success toast - no mention of database logging issues
         toast({
           title: "Upload Successful",
           description: `${fileName} has been uploaded successfully`,
@@ -161,11 +171,10 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     } catch (error: any) {
       console.error('Upload failed:', error);
       
-      // Only show errors for actual upload failures
       let errorMessage = 'Failed to upload file';
       
       if (error.message?.includes('policy')) {
-        errorMessage = 'Storage policy restriction. Please check your permissions.';
+        errorMessage = 'Authentication required or insufficient permissions. Please ensure you are logged in.';
       } else if (error.message?.includes('Duplicate')) {
         errorMessage = 'File with this name already exists. Please rename your file or try again.';
       } else if (error.message?.includes('size')) {
@@ -190,7 +199,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       'image/jpeg': ['.jpg', '.jpeg'],
       'image/png': ['.png'],
       'model/gltf-binary': ['.glb'],
-      'application/octet-stream': ['.glb'] // Fallback for GLB files
+      'application/octet-stream': ['.glb']
     },
     maxFiles,
     disabled: uploading,
@@ -224,7 +233,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
               Supported formats: {allowedTypes.join(', ')} (Max {maxFiles} files, 50MB each)
             </p>
             <p className="text-xs text-gray-400 mt-2">
-              Files will be uploaded to public storage
+              Files will be uploaded to secure authenticated storage
             </p>
           </div>
         )}
