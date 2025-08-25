@@ -19,7 +19,7 @@ import Contact from "./pages/Contact";
 import Blog from "./pages/Blog";
 import FloorPlanner from "./pages/FloorPlanner";
 import RFQCart from "./pages/RFQCart";
-import AdminDashboard from "./pages/AdminDashboard";
+import Dashboard from "./pages/admin/Dashboard";
 import Auth from "./pages/Auth";
 import Maintenance from "./pages/Maintenance";
 import NotFound from "./pages/NotFound";
@@ -110,7 +110,7 @@ const DevelopmentApp: React.FC = () => (
                     <Route path="/rfq-cart" element={<RFQCart />} />
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/maintenance" element={<Maintenance />} />
-                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/dashboard" element={<Dashboard />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </main>

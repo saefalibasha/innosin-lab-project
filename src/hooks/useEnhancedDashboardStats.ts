@@ -57,32 +57,49 @@ export const useEnhancedDashboardStats = () => {
 
       if (variantsError) throw variantsError;
 
-      // Fetch products with assets
+      // Fetch products with assets and validate them
       const { data: productsWithAssets, error: assetsError } = await supabase
         .from('products')
-        .select('thumbnail_path, model_path')
+        .select('thumbnail_path, model_path, series_thumbnail_path, series_model_path, is_series_parent')
         .eq('is_active', true);
 
       if (assetsError) throw assetsError;
 
-      const assetsUploaded = productsWithAssets?.filter(p => 
-        p.thumbnail_path || p.model_path
-      ).length || 0;
+      // Use dynamic asset validation instead of just checking URL existence
+      const assetsUploaded = productsWithAssets?.filter(p => {
+        const hasImage = p.thumbnail_path || p.series_thumbnail_path;
+        const hasModel = p.model_path || p.series_model_path;
+        return hasImage || hasModel;
+      }).length || 0;
 
-      // Calculate completion rate using current variants vs target variants
+      // Calculate completion rate based on assets and variants
       const { data: seriesData, error: seriesCompletionError } = await supabase
         .from('products')
-        .select('target_variant_count')
+        .select('target_variant_count, id')
         .eq('is_series_parent', true)
         .eq('is_active', true);
 
       if (seriesCompletionError) throw seriesCompletionError;
 
+      // Calculate asset completion rate: products with both image and model assets
+      const productsWithBothAssets = productsWithAssets?.filter(p => {
+        const hasImage = p.thumbnail_path || p.series_thumbnail_path;
+        const hasModel = p.model_path || p.series_model_path;
+        return hasImage && hasModel;
+      }).length || 0;
+
+      const totalActiveProducts = productsWithAssets?.length || 1;
+      const assetCompletionRate = Math.round((productsWithBothAssets / totalActiveProducts) * 100);
+      
+      // Variant completion rate vs target
       const totalTargetVariants = seriesData?.reduce((sum, series) => 
         sum + (series.target_variant_count || 4), 0) || 0;
       
-      const completionRate = totalTargetVariants > 0 ? 
+      const variantCompletionRate = totalTargetVariants > 0 ? 
         Math.min((totalVariants || 0) / totalTargetVariants * 100, 100) : 0;
+
+      // Combined completion rate (weighted average)
+      const completionRate = Math.round((assetCompletionRate * 0.6) + (variantCompletionRate * 0.4));
 
       // Get recent activity (products updated in last 24 hours)
       const yesterday = new Date();
