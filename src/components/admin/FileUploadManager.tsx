@@ -38,17 +38,17 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const timestamp = Date.now();
         const fileExtension = file.name.split('.').pop();
         const baseFileName = file.name.replace(/\.[^/.]+$/, "");
-        const fileName = `${baseFileName}_${timestamp}.${fileExtension}`;
+        let fileName = `${baseFileName}_${timestamp}.${fileExtension}`;
         
         // Create the file path in the documents bucket
-        const filePath = productId && variantCode 
+        let filePath = productId && variantCode 
           ? `products/${variantCode}/${fileName}`
           : `uploads/${fileName}`;
 
         console.log('Uploading to path:', filePath);
 
         // Upload to Supabase Storage with no auth required
-        const { data, error } = await supabase.storage
+        let { data, error } = await supabase.storage
           .from('documents')
           .upload(filePath, file, {
             cacheControl: '3600',
@@ -81,7 +81,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
             }
             
             // Update variables for success handling
-            data.path = retryData.path;
+            data = retryData;
             filePath = newFilePath;
             fileName = newFileName;
           } else {
