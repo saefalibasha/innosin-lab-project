@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { validateAssetAccessibility } from '@/utils/assetValidator';
 
 interface EnhancedDashboardStats {
   totalProducts: number;
@@ -57,20 +58,38 @@ export const useEnhancedDashboardStats = () => {
 
       if (variantsError) throw variantsError;
 
-      // Fetch products with assets and validate them
+      // Fetch products with assets and validate them with real accessibility checks
       const { data: productsWithAssets, error: assetsError } = await supabase
         .from('products')
-        .select('thumbnail_path, model_path, series_thumbnail_path, series_model_path, is_series_parent')
+        .select('id, thumbnail_path, model_path, series_thumbnail_path, series_model_path, is_series_parent')
         .eq('is_active', true);
 
       if (assetsError) throw assetsError;
 
-      // Use dynamic asset validation instead of just checking URL existence
-      const assetsUploaded = productsWithAssets?.filter(p => {
-        const hasImage = p.thumbnail_path || p.series_thumbnail_path;
-        const hasModel = p.model_path || p.series_model_path;
-        return hasImage || hasModel;
-      }).length || 0;
+      // Validate actual asset accessibility (not just database paths)
+      let workingAssetsCount = 0;
+      let totalAssetsWithBoth = 0;
+
+      if (productsWithAssets) {
+        for (const product of productsWithAssets) {
+          const imagePath = product.thumbnail_path || product.series_thumbnail_path;
+          const modelPath = product.model_path || product.series_model_path;
+          
+          if (imagePath || modelPath) {
+            const { imageValid, modelValid } = await validateAssetAccessibility(imagePath, modelPath);
+            
+            if (imageValid || modelValid) {
+              workingAssetsCount++;
+            }
+            
+            if (imageValid && modelValid) {
+              totalAssetsWithBoth++;
+            }
+          }
+        }
+      }
+
+      const assetsUploaded = workingAssetsCount;
 
       // Calculate completion rate based on assets and variants
       const { data: seriesData, error: seriesCompletionError } = await supabase
@@ -81,15 +100,9 @@ export const useEnhancedDashboardStats = () => {
 
       if (seriesCompletionError) throw seriesCompletionError;
 
-      // Calculate asset completion rate: products with both image and model assets
-      const productsWithBothAssets = productsWithAssets?.filter(p => {
-        const hasImage = p.thumbnail_path || p.series_thumbnail_path;
-        const hasModel = p.model_path || p.series_model_path;
-        return hasImage && hasModel;
-      }).length || 0;
-
+      // Calculate asset completion rate based on actual working assets
       const totalActiveProducts = productsWithAssets?.length || 1;
-      const assetCompletionRate = Math.round((productsWithBothAssets / totalActiveProducts) * 100);
+      const assetCompletionRate = Math.round((totalAssetsWithBoth / totalActiveProducts) * 100);
       
       // Variant completion rate vs target
       const totalTargetVariants = seriesData?.reduce((sum, series) => 
