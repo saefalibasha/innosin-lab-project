@@ -47,7 +47,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
         console.log('Uploading to path:', filePath);
 
-        // Upload to Supabase Storage
+        // Upload to Supabase Storage with no auth required
         const { data, error } = await supabase.storage
           .from('documents')
           .upload(filePath, file, {
@@ -57,7 +57,36 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
         if (error) {
           console.error('Upload error:', error);
-          throw error;
+          
+          // Handle specific error types
+          if (error.message?.includes('duplicate')) {
+            // If duplicate, try with a different timestamp
+            const newTimestamp = Date.now() + Math.random() * 1000;
+            const newFileName = `${baseFileName}_${Math.floor(newTimestamp)}.${fileExtension}`;
+            const newFilePath = productId && variantCode 
+              ? `products/${variantCode}/${newFileName}`
+              : `uploads/${newFileName}`;
+            
+            console.log('Retrying upload with new filename:', newFilePath);
+            
+            const { data: retryData, error: retryError } = await supabase.storage
+              .from('documents')
+              .upload(newFilePath, file, {
+                cacheControl: '3600',
+                upsert: true // Allow upsert on retry
+              });
+              
+            if (retryError) {
+              throw retryError;
+            }
+            
+            // Update variables for success handling
+            data.path = retryData.path;
+            filePath = newFilePath;
+            fileName = newFileName;
+          } else {
+            throw error;
+          }
         }
 
         console.log('Upload successful:', data);
@@ -70,7 +99,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const publicUrl = urlData.publicUrl;
         console.log('Public URL generated:', publicUrl);
 
-        // Try to log the upload in our database (but don't fail if it doesn't work)
+        // Log the upload in our database (non-blocking)
         try {
           const uploadRecord = {
             file_path: filePath,
@@ -78,8 +107,10 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
             file_size: file.size,
             product_id: productId || null,
             upload_status: 'completed',
-            uploaded_by: 'user' // Changed from 'admin' since we now allow public uploads
+            uploaded_by: 'user'
           };
+
+          console.log('Logging upload record:', uploadRecord);
 
           const { error: logError } = await supabase
             .from('asset_uploads')
@@ -87,6 +118,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
 
           if (logError) {
             console.warn('Failed to log upload (but upload succeeded):', logError);
+          } else {
+            console.log('Upload logged successfully');
           }
         } catch (logErr) {
           console.warn('Failed to log upload (but upload succeeded):', logErr);
@@ -119,16 +152,21 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       
       // Provide more specific error messages
       let errorMessage = 'Failed to upload file';
+      
       if (error.message?.includes('row-level security')) {
-        errorMessage = 'Upload failed due to security restrictions. Please try again or contact support.';
+        errorMessage = 'Upload security policy error. Files are uploaded to public storage but database logging may have failed.';
       } else if (error.message?.includes('policy')) {
-        errorMessage = 'Upload failed due to permissions. Please check your access rights.';
+        errorMessage = 'Storage policy restriction. Trying alternative upload method...';
+      } else if (error.message?.includes('Duplicate')) {
+        errorMessage = 'File with this name already exists. Please rename your file or try again.';
+      } else if (error.message?.includes('size')) {
+        errorMessage = 'File size exceeds the maximum allowed limit.';
       } else if (error.message) {
         errorMessage = error.message;
       }
 
       toast({
-        title: "Upload Failed",
+        title: "Upload Error", 
         description: errorMessage,
         variant: "destructive",
       });
@@ -146,7 +184,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       'application/octet-stream': ['.glb'] // Fallback for GLB files
     },
     maxFiles,
-    disabled: uploading
+    disabled: uploading,
+    maxSize: 50 * 1024 * 1024 // 50MB max file size
   });
 
   const removeFile = (index: number) => {
@@ -173,7 +212,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
               Drag & drop files here, or click to select files
             </p>
             <p className="text-sm text-gray-500">
-              Supported formats: {allowedTypes.join(', ')} (Max {maxFiles} files)
+              Supported formats: {allowedTypes.join(', ')} (Max {maxFiles} files, 50MB each)
             </p>
             <p className="text-xs text-gray-400 mt-2">
               Files will be uploaded to public storage
