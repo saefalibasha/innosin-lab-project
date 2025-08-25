@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight, Image, Box, Upload } from 'lucide-react';
+import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight, Image, Box } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Variant } from '@/types/variant';
@@ -16,7 +16,6 @@ import { DatabaseProduct } from '@/types/supabase';
 import { VariantFormDialog } from './VariantFormDialog';
 import { useProductRealtime } from '@/hooks/useProductRealtime';
 import { AssetStatusIndicator } from './AssetStatusIndicator';
-import { VariantFileUploadModal } from '@/components/admin/VariantFileUploadModal';
 
 interface EnhancedVariantManagerProps {
   seriesId: string;
@@ -80,7 +79,6 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVariants, setSelectedVariants] = useState<Set<string>>(new Set());
-  const [uploadModal, setUploadModal] = useState<{isOpen: boolean, variantCode: string, fileType: 'glb' | 'jpg'} | null>(null);
 
   const fetchVariants = async () => {
     try {
@@ -320,45 +318,17 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <Image className="h-3 w-3" />
-                          <span className={variant.thumbnail_path ? "text-green-600" : "text-muted-foreground"}>
-                            {variant.thumbnail_path ? "Image" : "No Image"}
-                          </span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => setUploadModal({
-                            isOpen: true,
-                            variantCode: variant.product_code,
-                            fileType: 'jpg'
-                          })}
-                        >
-                          <Upload className="h-3 w-3" />
-                        </Button>
+                      <div className="flex items-center gap-1">
+                        <Image className="h-3 w-3" />
+                        <span className={variant.thumbnail_path ? "text-green-600" : "text-muted-foreground"}>
+                          {variant.thumbnail_path ? "Image Available" : "No Image"}
+                        </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <Box className="h-3 w-3" />
-                          <span className={variant.model_path ? "text-green-600" : "text-muted-foreground"}>
-                            {variant.model_path ? "Model" : "No Model"}
-                          </span>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                          onClick={() => setUploadModal({
-                            isOpen: true,
-                            variantCode: variant.product_code,
-                            fileType: 'glb'
-                          })}
-                        >
-                          <Upload className="h-3 w-3" />
-                        </Button>
+                      <div className="flex items-center gap-1">
+                        <Box className="h-3 w-3" />
+                        <span className={variant.model_path ? "text-green-600" : "text-muted-foreground"}>
+                          {variant.model_path ? "Model Available" : "No Model"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -410,21 +380,6 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
           setEditingVariant(null);
         }}
       />
-
-      {/* File Upload Modal */}
-      {uploadModal && (
-        <VariantFileUploadModal
-          isOpen={uploadModal.isOpen}
-          onClose={() => setUploadModal(null)}
-          variantCode={uploadModal.variantCode}
-          fileType={uploadModal.fileType}
-          onUploadComplete={() => {
-            fetchVariants();
-            onVariantChange?.();
-            setUploadModal(null);
-          }}
-        />
-      )}
     </div>
   );
 };

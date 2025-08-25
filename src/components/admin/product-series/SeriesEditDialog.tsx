@@ -7,7 +7,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { FileUploadManager } from '@/components/admin/FileUploadManager';
 
 interface SeriesEditDialogProps {
   isOpen: boolean;
@@ -128,24 +127,13 @@ export const SeriesEditDialog: React.FC<SeriesEditDialogProps> = ({
           </div>
           
           <div>
-            <Label>Series Thumbnail</Label>
-            <FileUploadManager
-              productId={series?.id || ''}
-              productCode={series?.name || ''}
-              allowedTypes={['image/jpeg', 'image/png', 'image/jpg']}
-              maxFiles={1}
-              onFilesUploaded={(files) => {
-                if (files.length > 0) {
-                  setFormData({ ...formData, thumbnail_path: files[0].url });
-                  toast.success('Thumbnail uploaded successfully');
-                }
-              }}
+            <Label htmlFor="thumbnail">Thumbnail Path</Label>
+            <Input
+              id="thumbnail"
+              value={formData.thumbnail_path}
+              onChange={(e) => setFormData({ ...formData, thumbnail_path: e.target.value })}
+              placeholder="Path to thumbnail image"
             />
-            {formData.thumbnail_path && (
-              <div className="mt-2 text-sm text-muted-foreground">
-                Current: {formData.thumbnail_path.split('/').pop()}
-              </div>
-            )}
           </div>
           
           <div>

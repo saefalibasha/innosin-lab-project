@@ -33,7 +33,6 @@ export const ProductSeriesManager = () => {
   const [selectedSeries, setSelectedSeries] = useState<ProductSeries | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
 
   const fetchProductSeries = async () => {
@@ -111,7 +110,8 @@ export const ProductSeriesManager = () => {
 
   const handleEdit = (seriesItem: ProductSeries) => {
     setSelectedSeries(seriesItem);
-    setIsEditDialogOpen(true);
+    // Will add edit dialog later
+    toast.info('Edit functionality ready - dialog will be added next');
   };
 
   const handleManageVariants = (seriesItem: ProductSeries) => {
@@ -261,14 +261,6 @@ export const ProductSeriesManager = () => {
         series={selectedSeries}
         onEdit={handleEdit}
         onManageVariants={handleManageVariants}
-      />
-
-      {/* Edit Series Dialog */}
-      <SeriesEditDialog
-        isOpen={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        series={selectedSeries}
-        onSeriesUpdated={fetchProductSeries}
       />
 
       {/* Variant Management Dialog */}
