@@ -24,7 +24,10 @@ import { DatabaseProduct } from '@/types/supabase';
 import { Product } from '@/types/product';
 import { fetchProductsByParentSeriesId, updateProduct } from '@/api/products';
 import { useParams } from 'react-router-dom';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Image, Box, Eye } from 'lucide-react';
+import { AssetStatusIndicator } from './AssetStatusIndicator';
+import { EnhancedVariantEditor } from './EnhancedVariantEditor';
+import { AssetPreviewModal } from './AssetPreviewModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -107,6 +110,8 @@ const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
   const [loading, setLoading] = useState(true);
   const [selectedVariant, setSelectedVariant] = useState<Product | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [previewVariant, setPreviewVariant] = useState<Product | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -206,23 +211,54 @@ const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
               <TableRow>
                 <TableHead className="w-[200px]">Name</TableHead>
                 <TableHead>Code</TableHead>
+                <TableHead>Assets</TableHead>
                 <TableHead>Dimensions</TableHead>
                 <TableHead>Active</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {variants.map((variant) => (
-                <TableRow key={variant.id}>
-                  <TableCell className="font-medium">{variant.name}</TableCell>
-                  <TableCell>{variant.product_code}</TableCell>
-                  <TableCell>{variant.dimensions}</TableCell>
-                  <TableCell>{variant.is_active ? 'Yes' : 'No'}</TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => handleEditClick(variant)}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
+              {variants.map((variant) => {
+                const hasImage = Boolean(variant.thumbnail || variant.thumbnail_path);
+                const hasModel = Boolean(variant.modelPath || variant.model_path);
+                
+                return (
+                  <TableRow key={variant.id}>
+                    <TableCell className="font-medium">{variant.name}</TableCell>
+                    <TableCell>{variant.product_code}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <AssetStatusIndicator 
+                          hasImage={hasImage}
+                          hasModel={hasModel}
+                          productCode={variant.product_code}
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => {
+                            setPreviewVariant(variant);
+                            setIsPreviewOpen(true);
+                          }}
+                          className="gap-1"
+                        >
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    <TableCell>{variant.dimensions}</TableCell>
+                    <TableCell>{variant.is_active ? 'Yes' : 'No'}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex gap-2 justify-end">
+                        <EnhancedVariantEditor
+                          variant={variant}
+                          onVariantUpdated={() => fetchVariants(seriesId)}
+                          seriesName="Product Series"
+                        />
+                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(variant)}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Quick Edit
+                        </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-red-500">
@@ -243,9 +279,11 @@ const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </ScrollArea>
@@ -354,6 +392,17 @@ const VariantManager: React.FC<VariantManagerProps> = ({ seriesId }) => {
             </Form>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Asset Preview Modal */}
+        <AssetPreviewModal
+          open={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          productCode={previewVariant?.product_code || ''}
+          productName={previewVariant?.name || ''}
+          thumbnailPath={previewVariant?.thumbnail || previewVariant?.thumbnail_path}
+          modelPath={previewVariant?.modelPath || previewVariant?.model_path}
+          additionalImages={previewVariant?.images || []}
+        />
       </CardContent>
     </Card>
   );

@@ -138,7 +138,7 @@ export const VariantFormDialog: React.FC<VariantFormDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {variant ? 'Edit Variant' : 'Add New Variant'} - {seriesName}
