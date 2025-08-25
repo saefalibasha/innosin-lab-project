@@ -88,17 +88,8 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
           error: error
         });
         
-        // Provide more specific error messages
-        if (error.message?.includes('row-level security')) {
-          throw new Error('Authentication required. Please log in as an admin user.');
-        }
-        if (error.message?.includes('JWT')) {
-          throw new Error('Session expired. Please refresh the page and try again.');
-        }
-        if (error.message?.includes('policy')) {
-          throw new Error(`Storage policy error: ${error.message}`);
-        }
-        throw new Error(`Storage upload failed: ${error.message}`);
+        // Let the real error show instead of assuming it's authentication
+        throw new Error(`Upload failed: ${error.message}`);
       }
 
       const { data: { publicUrl } } = supabase.storage
