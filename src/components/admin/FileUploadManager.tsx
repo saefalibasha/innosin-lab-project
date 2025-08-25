@@ -74,6 +74,25 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     try {
       console.log(`Uploading ${file.name} (${file.type}) to ${filePath}`);
       
+      // Debug: Check auth state before upload
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      console.log('Auth state during upload:', { 
+        user: user?.email, 
+        userId: user?.id, 
+        authError,
+        sessionExists: !!user
+      });
+      
+      // Debug: Check admin status
+      if (user?.email) {
+        const { data: adminCheck, error: adminError } = await supabase
+          .from('admin_roles')
+          .select('*')
+          .eq('user_email', user.email)
+          .eq('is_active', true);
+        console.log('Admin check during upload:', { adminCheck, adminError });
+      }
+      
       // Upload with progress tracking for large files
       const { data, error } = await supabase.storage
         .from('documents')
