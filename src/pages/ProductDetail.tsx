@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Building2, Package, Ruler, Tag } from 'lucide-react';
 import { useProductById } from '@/hooks/useEnhancedProducts';
 import SeriesProductConfigurator from '@/components/product/SeriesProductConfigurator';
-import ProductAssetViewer from '@/components/product/ProductAssetViewer';
+import ProductAssetViewerV2 from '@/components/product/ProductAssetViewerV2';
 import { useToast } from '@/hooks/use-toast';
 
 const ProductDetail = () => {
@@ -17,6 +17,14 @@ const ProductDetail = () => {
 
   const handleBack = () => {
     window.history.back();
+  };
+
+  const handleMissingModel = (modelPath: string, productId?: string) => {
+    toast({
+      title: "3D Model Not Available",
+      description: "This model has been logged for review and upload.",
+      variant: "default",
+    });
   };
 
   if (loading) {
@@ -86,7 +94,7 @@ const ProductDetail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Product Assets (Images & 3D Model) */}
         <div className="lg:col-span-2">
-          <ProductAssetViewer 
+          <ProductAssetViewerV2 
             currentAssets={{
               thumbnail: product.thumbnail,
               model: product.modelPath,
@@ -94,6 +102,7 @@ const ProductDetail = () => {
             }}
             productName={product.name}
             productId={product.id}
+            onMissingModel={handleMissingModel}
           />
         </div>
 

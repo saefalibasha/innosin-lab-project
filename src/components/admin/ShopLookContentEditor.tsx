@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Edit, Save, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import StreamlinedFileUpload from '@/components/ui/StreamlinedFileUpload';
 
 interface ShopLookContent {
   id: string;
@@ -98,6 +100,10 @@ export const ShopLookContentEditor = () => {
 
   const handleInputChange = (field: keyof ShopLookContent, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleFileUploaded = (url: string) => {
+    handleInputChange('background_image', url);
   };
 
   if (isLoading) {
@@ -193,38 +199,49 @@ export const ShopLookContentEditor = () => {
             )}
           </div>
 
-          {/* Background Image */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="background_image">Background Image URL</Label>
-              {isEditing ? (
-                <Input
-                  id="background_image"
-                  value={formData.background_image || ''}
-                  onChange={(e) => handleInputChange('background_image', e.target.value)}
-                  placeholder="/shop-the-look/modern-lab-setup.jpg"
+          {/* Background Image Upload/URL */}
+          <div className="space-y-4">
+            <Label>Background Image</Label>
+            
+            {isEditing ? (
+              <div className="space-y-4">
+                <StreamlinedFileUpload
+                  onFileUploaded={handleFileUploaded}
+                  acceptedTypes="image/*"
+                  maxSizeMB={10}
+                  currentImage={formData.background_image}
                 />
-              ) : (
-                <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">
-                  {displayData?.background_image || '/shop-the-look/modern-lab-setup.jpg'}
+                
+                <div>
+                  <Label htmlFor="background_image_url">Or enter image URL directly</Label>
+                  <Input
+                    id="background_image_url"
+                    value={formData.background_image || ''}
+                    onChange={(e) => handleInputChange('background_image', e.target.value)}
+                    placeholder="/shop-the-look/modern-lab-setup.jpg"
+                  />
                 </div>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="background_alt">Background Alt Text</Label>
-              {isEditing ? (
-                <Input
-                  id="background_alt"
-                  value={formData.background_alt || ''}
-                  onChange={(e) => handleInputChange('background_alt', e.target.value)}
-                  placeholder="Modern Laboratory Setup"
-                />
-              ) : (
-                <div className="mt-1 p-2 bg-gray-50 rounded border">
-                  {displayData?.background_alt || 'Modern Laboratory Setup'}
+                
+                <div>
+                  <Label htmlFor="background_alt">Alt Text</Label>
+                  <Input
+                    id="background_alt"
+                    value={formData.background_alt || ''}
+                    onChange={(e) => handleInputChange('background_alt', e.target.value)}
+                    placeholder="Modern Laboratory Setup"
+                  />
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  URL: {displayData?.background_image || '/shop-the-look/modern-lab-setup.jpg'}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Alt: {displayData?.background_alt || 'Modern Laboratory Setup'}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Background Image Preview */}
