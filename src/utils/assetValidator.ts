@@ -45,7 +45,65 @@ export const preloadImage = (src: string): Promise<boolean> => {
     img.onload = () => resolve(true);
     img.onerror = () => resolve(false);
     img.src = src;
+    
+    // Timeout after 5 seconds
+    setTimeout(() => resolve(false), 5000);
   });
+};
+
+export const validateModelFile = async (url: string): Promise<boolean> => {
+  if (!isValidModelUrl(url)) return false;
+  
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    return response.ok && response.headers.get('content-type')?.includes('model/gltf-binary');
+  } catch {
+    return false;
+  }
+};
+
+export const validateAssetAccessibility = async (imagePath?: string, modelPath?: string): Promise<{
+  imageValid: boolean;
+  modelValid: boolean;
+  imageError?: string;
+  modelError?: string;
+}> => {
+  const results = {
+    imageValid: false,
+    modelValid: false,
+    imageError: undefined as string | undefined,
+    modelError: undefined as string | undefined
+  };
+
+  // Validate image
+  if (imagePath) {
+    try {
+      results.imageValid = await preloadImage(imagePath);
+      if (!results.imageValid) {
+        results.imageError = 'Image failed to load or is corrupted';
+      }
+    } catch (error) {
+      results.imageError = 'Image accessibility check failed';
+    }
+  } else {
+    results.imageError = 'No image path provided';
+  }
+
+  // Validate model
+  if (modelPath) {
+    try {
+      results.modelValid = await validateModelFile(modelPath);
+      if (!results.modelValid) {
+        results.modelError = '3D model failed to load or invalid format';
+      }
+    } catch (error) {
+      results.modelError = '3D model accessibility check failed';
+    }
+  } else {
+    results.modelError = 'No model path provided';
+  }
+
+  return results;
 };
 
 export const batchPreloadImages = async (sources: string[]): Promise<{ [key: string]: boolean }> => {
@@ -69,5 +127,7 @@ export default {
   sanitizeImageUrl,
   getOptimalImageUrl,
   preloadImage,
-  batchPreloadImages
+  batchPreloadImages,
+  validateModelFile,
+  validateAssetAccessibility
 };

@@ -16,13 +16,16 @@ import {
   Edit,
   Eye,
   BarChart3,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
+import { AssetStatusIndicator } from './product-series/AssetStatusIndicator';
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
 import { mockAdminSeries } from '@/data/mockProducts';
 import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
+import { cn } from '@/lib/utils';
 
 // Transform any database object to proper DatabaseProduct with defaults
 const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
@@ -201,20 +204,34 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         seriesMap.get(seriesName)!.push(transformedProduct);
       });
 
-      // Calculate series statistics and create ProductSeries objects
+      // Calculate series statistics and create ProductSeries objects with improved completion metrics
       const seriesData: ProductSeries[] = Array.from(seriesMap.entries()).map(([name, transformedProducts]) => {
         const totalProducts = transformedProducts.length;
         const activeProducts = transformedProducts.filter(p => p.is_active).length;
-        const hasAssets = transformedProducts.filter(p => p.thumbnail_path || p.model_path).length;
-        const completionRate = totalProducts > 0 ? (hasAssets / totalProducts) * 100 : 0;
+        
+        // Improved asset completion calculation
+        const productsWithBothAssets = transformedProducts.filter(p => {
+          const hasImage = !!(p.thumbnail_path);
+          const hasModel = !!(p.model_path);
+          return hasImage && hasModel;
+        }).length;
+        
+        const productsWithSomeAssets = transformedProducts.filter(p => {
+          const hasImage = !!(p.thumbnail_path);
+          const hasModel = !!(p.model_path);
+          return hasImage || hasModel;
+        }).length;
+        
+        // Completion rate based on products with both image AND model
+        const completionRate = totalProducts > 0 ? (productsWithBothAssets / totalProducts) * 100 : 0;
 
         return {
           name,
-          products: transformedProducts, // These are now properly transformed Product objects
+          products: transformedProducts,
           totalProducts,
           activeProducts,
           completionRate,
-          hasAssets
+          hasAssets: productsWithSomeAssets // Keep this for "With Assets" display
         };
       });
 
@@ -347,6 +364,23 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Header with Refresh Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Product Series Manager</h2>
+          <p className="text-muted-foreground">Manage product series with real-time asset validation</p>
+        </div>
+        <Button
+          onClick={fetchProductSeries}
+          disabled={loading}
+          variant="outline"
+          className="gap-2"
+        >
+          <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+          Refresh Data
+        </Button>
+      </div>
+
       {/* Connection Status Indicator */}
       {isUsingMockData && (
         <Card className="border-amber-200 bg-amber-50">
@@ -395,7 +429,8 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
             <div className="text-2xl font-bold text-purple-600">
               {Math.round(series.reduce((acc, s) => acc + s.completionRate, 0) / series.length || 0)}%
             </div>
-            <div className="text-sm text-muted-foreground">Avg Completion</div>
+            <div className="text-sm text-muted-foreground">Asset Completion</div>
+            <div className="text-xs text-muted-foreground mt-1">Both image & model</div>
           </CardContent>
         </Card>
       </div>
@@ -457,20 +492,15 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                             </Badge>
                           </div>
                           
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-3">
-                            <div className="flex items-center gap-1">
-                              <Image className="h-3 w-3" />
-                              <span className={product.thumbnail_path ? 'text-green-600' : 'text-red-600'}>
-                                {product.thumbnail_path ? 'Image' : 'No Image'}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Box className="h-3 w-3" />
-                              <span className={product.model_path ? 'text-green-600' : 'text-red-600'}>
-                                {product.model_path ? '3D Model' : 'No Model'}
-                              </span>
-                            </div>
-                          </div>
+                          <AssetStatusIndicator
+                            hasImage={!!product.thumbnail_path}
+                            hasModel={!!product.model_path}
+                            imagePath={product.thumbnail_path}
+                            modelPath={product.model_path}
+                            productCode={product.product_code}
+                            showValidation={true}
+                            className="mb-3"
+                          />
                           
                           <div className="flex items-center gap-2">
                             <Button
