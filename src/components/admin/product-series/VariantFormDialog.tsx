@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -47,6 +47,8 @@ export const VariantFormDialog = ({
   variant,
   onVariantSaved
 }: VariantFormDialogProps) => {
+  const [variantCode, setVariantCode] = useState(variant?.variant_code || "");
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -55,7 +57,7 @@ export const VariantFormDialog = ({
     },
   })
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = useCallback((values: z.infer<typeof formSchema>) => {
     const newVariant = {
       ...values,
       product_series_id: seriesId,
@@ -63,7 +65,12 @@ export const VariantFormDialog = ({
     };
     onVariantSaved();
     onOpenChange(false);
-  }
+  }, [seriesId, variant?.id, onVariantSaved, onOpenChange])
+
+  const handleVariantCodeChange = useCallback((value: string) => {
+    setVariantCode(value);
+    form.setValue('variant_code', value);
+  }, [form])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,7 +91,14 @@ export const VariantFormDialog = ({
                 <FormItem>
                   <FormLabel>Variant Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="VR01" {...field} />
+                    <Input 
+                      placeholder="VR01" 
+                      {...field} 
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleVariantCodeChange(e.target.value);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,7 +123,7 @@ export const VariantFormDialog = ({
               <Label>Upload Assets</Label>
               <FileUploadManager
                 productId={seriesId}
-                variantCode={form.getValues().variant_code}
+                variantCode={variantCode}
                 allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
                 maxFiles={10}
                 onUploadSuccess={(files) => {
