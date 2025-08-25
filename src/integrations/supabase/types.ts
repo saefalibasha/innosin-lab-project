@@ -1193,6 +1193,15 @@ export type Database = {
         Args: { user_email: string }
         Returns: boolean
       }
+      process_uploaded_asset: {
+        Args: {
+          p_file_path: string
+          p_file_type: string
+          p_product_id: string
+          p_public_url: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
