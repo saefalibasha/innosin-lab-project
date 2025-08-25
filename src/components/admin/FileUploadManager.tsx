@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Upload, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FileUploadManagerProps {
   productId?: string;
@@ -23,6 +24,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -98,18 +100,15 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
         const publicUrl = urlData.publicUrl;
         console.log('Public URL generated:', publicUrl);
 
-        // Log the upload in our database (non-blocking) - Skip database logging for now
-        try {
-          // Get current user for RLS
-          const { data: { user } } = await supabase.auth.getUser();
-          
-          if (user) {
+        // Log the upload in our database - only if user is authenticated and admin
+        if (user && isAdmin) {
+          try {
             const uploadRecord: any = {
               file_path: filePath,
               file_type: file.type,
               file_size: file.size,
               upload_status: 'completed',
-              uploaded_by: user.id // Use user ID instead of 'user' string
+              uploaded_by: user.id
             };
 
             // Only include product_id if we have one
@@ -126,13 +125,13 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
             if (logError) {
               console.warn('Failed to log upload (but upload succeeded):', logError);
             } else {
-              console.log('Upload logged successfully');
+              console.log('Upload logged successfully in database');
             }
-          } else {
-            console.warn('User not authenticated, skipping database logging');
+          } catch (logErr) {
+            console.warn('Failed to log upload (but upload succeeded):', logErr);
           }
-        } catch (logErr) {
-          console.warn('Failed to log upload (but upload succeeded):', logErr);
+        } else {
+          console.log('Skipping database logging - user not authenticated or not admin');
         }
 
         const fileInfo = {
@@ -164,7 +163,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
       let errorMessage = 'Failed to upload file';
       
       if (error.message?.includes('row-level security')) {
-        errorMessage = 'Authentication required for database logging. File uploaded to storage successfully.';
+        errorMessage = 'File uploaded to storage successfully, but database logging failed due to permissions.';
       } else if (error.message?.includes('policy')) {
         errorMessage = 'Storage policy restriction. Please check your permissions.';
       } else if (error.message?.includes('Duplicate')) {
@@ -183,7 +182,7 @@ export const FileUploadManager: React.FC<FileUploadManagerProps> = ({
     } finally {
       setUploading(false);
     }
-  }, [productId, variantCode, onUploadSuccess, toast]);
+  }, [productId, variantCode, onUploadSuccess, toast, user, isAdmin]);
 
   const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
     onDrop,
