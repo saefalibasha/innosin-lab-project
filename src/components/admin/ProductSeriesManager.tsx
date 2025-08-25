@@ -22,6 +22,9 @@ import {
 import { AssetStatusIndicator } from './product-series/AssetStatusIndicator';
 import ProductFormDialog from './ProductFormDialog';
 import ProductViewDialog from './ProductViewDialog';
+import { SeriesEditDialog } from './product-series/SeriesEditDialog';
+import { EnhancedVariantManager } from './product-series/EnhancedVariantManager';
+import { Dialog } from '@/components/ui/dialog';
 import { mockAdminSeries } from '@/data/mockProducts';
 import { Product } from '@/types/product';
 import { DatabaseProduct } from '@/types/supabase';
@@ -153,6 +156,15 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [validatingAssets, setValidatingAssets] = useState(false);
+  const [selectedSeries, setSelectedSeries] = useState<{
+    id: string;
+    name: string;
+    category: string;
+    description: string;
+    thumbnail_path: string;
+    is_active: boolean;
+  } | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -238,7 +250,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
           return hasImage || hasModel;
         }).length;
         
-        // Completion rate based on products with both image AND model
+         // Calculate completion rate based on products with both accessible assets
         const completionRate = totalProducts > 0 ? (productsWithBothAssets / totalProducts) * 100 : 0;
 
         return {
@@ -312,11 +324,22 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
     onProductSelect?.(product);
   };
 
-  const handleEdit = (product: Product) => {
-    console.log('Editing product:', product);
-    setEditingProduct(product);
-    setIsEditOpen(true);
-    onProductEdit?.(product);
+  const handleEdit = (seriesName: string) => {
+    console.log('Editing series:', seriesName);
+    // Find the first product in the series to get series metadata
+    const seriesData = series.find(s => s.name === seriesName);
+    if (seriesData && seriesData.products.length > 0) {
+      const firstProduct = seriesData.products[0];
+      setSelectedSeries({
+        id: firstProduct.id,
+        name: seriesName,
+        category: firstProduct.category || '',
+        description: firstProduct.description || '',
+        thumbnail_path: firstProduct.thumbnail_path || '',
+        is_active: firstProduct.is_active ?? true
+      });
+      setIsEditDialogOpen(true);
+    }
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -404,11 +427,13 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
       }
     }
 
-    // Update series with validation results
+    // Update series with validation results and recalculate completion rate
     setSeries(prev => prev.map((s, index) => 
       index === seriesIndex 
         ? { 
-            ...s, 
+            ...s,
+            // Update completion rate based on validated assets
+            completionRate: s.totalProducts > 0 ? ((validImages === validModels ? validImages : Math.min(validImages, validModels)) / s.totalProducts) * 100 : 0,
             assetValidation: { 
               validImages, 
               validModels, 
@@ -550,7 +575,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                         <Badge variant="secondary" className="whitespace-nowrap">
                           {seriesData.hasAssets} with assets
                         </Badge>
-                        {seriesData.assetValidation.isValidating ? (
+                         {seriesData.assetValidation.isValidating ? (
                           <Badge variant="outline" className="whitespace-nowrap">
                             <RefreshCw className="h-3 w-3 animate-spin mr-1" />
                             Validating...
@@ -568,6 +593,18 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                             Validate Assets
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(seriesData.name);
+                          }}
+                          className="h-6 px-2 text-xs gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Edit
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -612,7 +649,10 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEdit(product)}
+                              onClick={() => {
+                                setEditingProduct(product);
+                                setIsEditOpen(true);
+                              }}
                             >
                               <Edit className="h-3 w-3 mr-1" />
                               Edit
@@ -629,23 +669,55 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         ))}
       </div>
 
-      {/* Product View Dialog */}
-      <ProductViewDialog
-        isOpen={isViewOpen}
-        onOpenChange={setIsViewOpen}
-        product={selectedProduct}
-        onEdit={handleEdit}
-        onDelete={handleDeleteProduct}
-        onToggleStatus={toggleProductStatus}
-      />
-
-      {/* Product Edit Dialog */}
-      <ProductFormDialog
-        isOpen={isEditOpen}
+      {/* Dialogs */}
+      <ProductFormDialog 
+        isOpen={isEditOpen} 
         onOpenChange={setIsEditOpen}
         product={editingProduct}
         onProductSaved={handleProductSaved}
       />
+      
+      <ProductViewDialog
+        isOpen={isViewOpen}
+        onOpenChange={setIsViewOpen}
+        product={selectedProduct}
+        onEdit={(product) => {
+          setEditingProduct(product);
+          setIsEditOpen(true);
+        }}
+        onDelete={handleDeleteProduct}
+        onToggleStatus={toggleProductStatus}
+      />
+
+      <SeriesEditDialog
+        isOpen={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        series={selectedSeries}
+        onSeriesUpdated={() => {
+          fetchProductSeries();
+          setIsEditDialogOpen(false);
+          setSelectedSeries(null);
+        }}
+      />
+
+      {/* Variant Management Dialog */}
+      <Dialog open={!!selectedSeries && !isEditDialogOpen} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedSeries(null);
+        }
+      }}>
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg">
+            {selectedSeries && (
+              <EnhancedVariantManager
+                seriesId={selectedSeries.id}
+                seriesName={selectedSeries.name}
+                onVariantChange={fetchProductSeries}
+              />
+            )}
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 };

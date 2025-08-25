@@ -64,12 +64,15 @@ export const AssetStatusIndicator: React.FC<AssetStatusIndicatorProps> = ({
       
       if (hasImage && hasModel) {
         if (imageOk && modelOk) return 'complete';
-        if (imageOk || modelOk) return 'partial';
-        return 'error';
+        if (!imageOk && !modelOk) return 'error';
+        return 'partial';
       }
-      if (hasImage && imageOk) return 'partial';
-      if (hasModel && modelOk) return 'partial';
-      if (hasImage || hasModel) return 'error';
+      if (hasImage) {
+        return imageOk ? 'partial' : 'error';
+      }
+      if (hasModel) {
+        return modelOk ? 'partial' : 'error';
+      }
       return 'missing';
     }
     

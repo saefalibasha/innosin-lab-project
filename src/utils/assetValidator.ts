@@ -56,8 +56,18 @@ export const validateModelFile = async (url: string): Promise<boolean> => {
   
   try {
     const response = await fetch(url, { method: 'HEAD' });
-    return response.ok && response.headers.get('content-type')?.includes('model/gltf-binary');
-  } catch {
+    const contentType = response.headers.get('content-type');
+    const contentLength = response.headers.get('content-length');
+    
+    // Check if it's a real GLB file (should be binary and reasonably sized)
+    const isGLBFile = contentType?.includes('model/gltf-binary') || contentType?.includes('application/octet-stream');
+    const isReasonableSize = contentLength ? parseInt(contentLength) > 100 : true; // At least 100 bytes
+    
+    console.log('Model validation:', { url, contentType, contentLength, isGLBFile, isReasonableSize });
+    
+    return response.ok && isGLBFile && isReasonableSize;
+  } catch (error) {
+    console.error('Model validation error:', url, error);
     return false;
   }
 };
