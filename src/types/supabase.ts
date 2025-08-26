@@ -61,19 +61,70 @@ export interface Database {
           url: string;
           alt: string | null;
           filename: string;
-          uploaded_at: string;
+          created_at: string;
+          created_by: string | null;
         };
         Insert: {
           url: string;
           alt?: string | null;
-          filename: string;
-          uploaded_at?: string;
+          filename?: string;
+          created_at?: string;
+          created_by?: string | null;
         };
         Update: {
           url?: string;
           alt?: string | null;
           filename?: string;
-          uploaded_at?: string;
+          created_at?: string;
+          created_by?: string | null;
+        };
+      };
+      shop_look_hotspots: {
+        Row: {
+          id: string;
+          x_position: number;
+          y_position: number;
+          title: string;
+          description: string | null;
+          price: string | null;
+          category: string | null;
+          image: string | null;
+          product_link: string | null;
+          specifications: any;
+          is_active: boolean | null;
+          display_order: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          x_position: number;
+          y_position: number;
+          title: string;
+          description?: string | null;
+          price?: string | null;
+          category?: string | null;
+          image?: string | null;
+          product_link?: string | null;
+          specifications?: any;
+          is_active?: boolean | null;
+          display_order?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          x_position?: number;
+          y_position?: number;
+          title?: string;
+          description?: string | null;
+          price?: string | null;
+          category?: string | null;
+          image?: string | null;
+          product_link?: string | null;
+          specifications?: any;
+          is_active?: boolean | null;
+          display_order?: number | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       // Add any other tables you have here

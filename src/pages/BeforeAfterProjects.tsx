@@ -1,23 +1,27 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import BeforeAfterComparison from '@/components/BeforeAfterComparison'; // ✅ FIXED
-import { Loader2, AlertCircle } from 'lucide-react';
+import BeforeAfterComparison from '@/components/ui/BeforeAfterComparison';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, MapPin } from 'lucide-react';
 
-interface Project {
+interface BeforeAfterProject {
   id: string;
   title: string;
-  description: string | null;
-  before_image: string | null;
-  after_image: string | null;
-  location: string | null;
-  completion_date: string | null;
-  project_type: string | null;
-  display_order: number | null;
+  description: string;
+  before_image: string;
+  after_image: string;
+  location: string;
+  completion_date: string;
+  project_type: string;
+  is_active: boolean;
+  display_order: number;
 }
 
-export const BeforeAfterProjects: React.FC = () => {
-  const { data: projects, isLoading, error } = useQuery({
+const BeforeAfterProjects = () => {
+  const { data: projects = [], isLoading, error } = useQuery({
     queryKey: ['before-after-projects'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -27,16 +31,16 @@ export const BeforeAfterProjects: React.FC = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      return data as Project[];
+      return data as BeforeAfterProject[];
     }
   });
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-lg text-muted-foreground">Loading projects...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading projects...</p>
         </div>
       </div>
     );
@@ -44,105 +48,75 @@ export const BeforeAfterProjects: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-          <p className="text-lg text-destructive">Error loading projects</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            {error instanceof Error ? error.message : 'Unknown error occurred'}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!projects || projects.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-primary mb-8">Before & After Projects</h1>
-            <p className="text-xl text-muted-foreground">No projects available at the moment.</p>
-          </div>
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center text-red-500">
+          <p>Error loading projects. Please try again later.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-6">
-            Before & After Projects
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Discover the transformational power of our laboratory solutions. 
-            See how we've helped transform workspaces into modern, efficient laboratories.
-          </p>
-        </div>
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold text-primary">Before & After Projects</h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Discover the transformational power of our laboratory solutions through real project showcases
+        </p>
+      </div>
 
-        <div className="space-y-24">
-          {projects.map((project, index) => (
-            <div key={project.id} className="space-y-8">
-              {/* Project Header */}
-              <div className="text-center space-y-4">
-                <h2 className="text-3xl font-bold text-foreground">
-                  {project.title}
-                </h2>
-                {project.description && (
-                  <p className="text-lg text-muted-foreground max-w-4xl mx-auto">
-                    {project.description}
-                  </p>
-                )}
-                <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-                  {project.location && (
-                    <span className="flex items-center gap-1">
-                      📍 {project.location}
-                    </span>
-                  )}
-                  {project.completion_date && (
-                    <span className="flex items-center gap-1">
-                      📅 {new Date(project.completion_date).toLocaleDateString()}
-                    </span>
-                  )}
+      {projects.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No projects available at this time.</p>
+        </div>
+      ) : (
+        <div className="grid gap-8">
+          {projects.map((project) => (
+            <Card key={project.id} className="overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-2">
+                    <CardTitle className="text-2xl">{project.title}</CardTitle>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      {project.location && (
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          {project.location}
+                        </div>
+                      )}
+                      {project.completion_date && (
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          {new Date(project.completion_date).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
+                    {project.description && (
+                      <p className="text-muted-foreground">{project.description}</p>
+                    )}
+                  </div>
                   {project.project_type && (
-                    <span className="flex items-center gap-1 bg-primary/10 px-3 py-1 rounded-full">
-                      {project.project_type}
-                    </span>
+                    <Badge variant="secondary">{project.project_type}</Badge>
                   )}
                 </div>
-              </div>
-
-              {/* Before/After Comparison */}
-              {project.before_image && project.after_image ? (
-                <div className="max-w-6xl mx-auto">
+              </CardHeader>
+              <CardContent>
+                <div className="h-96 w-full">
                   <BeforeAfterComparison
                     beforeImage={project.before_image}
                     afterImage={project.after_image}
                     beforeLabel="Before"
                     afterLabel="After"
+                    className="h-full"
                   />
                 </div>
-              ) : (
-                <div className="max-w-6xl mx-auto bg-muted rounded-lg p-12 text-center">
-                  <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">
-                    Images for this project are currently unavailable
-                  </p>
-                </div>
-              )}
-
-              {/* Separator for multiple projects */}
-              {index < projects.length - 1 && (
-                <div className="flex items-center justify-center pt-12">
-                  <div className="w-24 h-px bg-border"></div>
-                </div>
-              )}
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
 };
+
+export default BeforeAfterProjects;

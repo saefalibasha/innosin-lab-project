@@ -925,39 +925,6 @@ export type Database = {
         }
         Relationships: []
       }
-      shop_look_content: {
-        Row: {
-          background_alt: string | null
-          background_image: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          title: string | null
-          title_highlight: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          background_alt?: string | null
-          background_image?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          title?: string | null
-          title_highlight?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          background_alt?: string | null
-          background_image?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          title?: string | null
-          title_highlight?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       shop_look_hotspots: {
         Row: {
           category: string | null
@@ -1006,6 +973,30 @@ export type Database = {
           updated_at?: string | null
           x_position?: number
           y_position?: number
+        }
+        Relationships: []
+      }
+      shop_look_images: {
+        Row: {
+          alt: string | null
+          created_at: string
+          filename: string | null
+          id: number
+          url: string | null
+        }
+        Insert: {
+          alt?: string | null
+          created_at?: string
+          filename?: string | null
+          id?: number
+          url?: string | null
+        }
+        Update: {
+          alt?: string | null
+          created_at?: string
+          filename?: string | null
+          id?: number
+          url?: string | null
         }
         Relationships: []
       }

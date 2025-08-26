@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectEditor } from './ProjectEditor';
-import { HotspotEditor } from './HotspotEditor';
+import HotspotEditor from './HotspotEditor';
 import { BlogManagement } from './BlogManagement';
 
 const ContentManagement = () => {
