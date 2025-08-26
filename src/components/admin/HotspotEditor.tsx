@@ -128,7 +128,7 @@ export const HotspotEditor = () => {
 
       const publicUrl = urlData.publicUrl;
 
-      // Save to DB with created_at timestamp
+      // 👇 Add `returning: 'minimal'` to avoid SELECT that violates RLS
       const { error: dbError } = await supabase
         .from('shop_look_images')
         .insert({
@@ -136,7 +136,7 @@ export const HotspotEditor = () => {
           alt: 'Uploaded background image',
           filename: file.name,
           created_at: new Date().toISOString()
-        });
+        }, { returning: 'minimal' });
 
       if (dbError) throw dbError;
 
