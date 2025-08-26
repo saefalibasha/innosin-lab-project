@@ -1,53 +1,39 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
-import { siteContent } from '@/data/siteContent';
+import { Mail, MapPin, ExternalLink } from 'lucide-react';
 
 export const Footer = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const footerRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  console.log('Footer component rendered', { isVisible });
-
-  // Update Singapore time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // Intersection Observer for animations
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
+        if (entry.isIntersecting) setIsVisible(true);
       },
       { threshold: 0.1 }
     );
-
-    if (footerRef.current) {
-      observer.observe(footerRef.current);
-    }
-
+    if (footerRef.current) observer.observe(footerRef.current);
     return () => observer.disconnect();
   }, []);
 
   const formatSingaporeTime = (date: Date) => {
-    const options = {
+    return new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Singapore',
-      weekday: 'long' as const,
-      hour: '2-digit' as const,
-      minute: '2-digit' as const,
-      second: '2-digit' as const,
-      timeZoneName: 'short' as const,
-    };
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short',
+    }).format(date);
   };
 
   const navigationLinks = [
@@ -64,20 +50,23 @@ export const Footer = () => {
     <footer ref={footerRef} className="bg-sea text-white relative overflow-hidden">
       <div className="relative z-10">
         {/* Main Content */}
-        <div className={`container mx-auto px-6 pt-12 pb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div
+          className={`container mx-auto px-6 pt-12 pb-16 transition-all duration-1000 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+        >
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-            
             {/* Company Description & Contact */}
-            <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <p
-                className="text-white text-lg leading-relaxed mb-8 max-w-md"
-                style={{ letterSpacing: '0.02em' }}
-              >
+            <div
+              className={`transition-all duration-700 delay-100 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
+              <p className="text-white text-lg leading-relaxed mb-8 max-w-md">
                 Innosin Lab is a leading provider of innovative laboratory solutions, 
                 empowering scientific advancement through cutting-edge equipment and 
                 expert consultation services across Southeast Asia.
               </p>
-              
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-white/70" />
@@ -94,7 +83,11 @@ export const Footer = () => {
             </div>
 
             {/* Navigation */}
-            <div className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div
+              className={`transition-all duration-700 delay-200 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
               <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
                 Navigation
               </h4>
@@ -113,85 +106,63 @@ export const Footer = () => {
             </div>
 
             {/* Connect & Social */}
-            <div className={`transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div
+              className={`transition-all duration-700 delay-300 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+              }`}
+            >
               <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
                 Connect
               </h4>
               <div className="space-y-6">
-                <div>
-                  <a 
-                    href="#" 
+                {['LinkedIn', 'Facebook', 'Instagram'].map((platform) => (
+                  <a
+                    key={platform}
+                    href="#"
                     className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
                   >
-                    <span>LinkedIn</span>
+                    <span>{platform}</span>
                     <ExternalLink className="w-4 h-4" />
                   </a>
-                </div>
-                <div>
-                  <a 
-                    href="#" 
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>Facebook</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-                <div>
-                  <a 
-                    href="#" 
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>Instagram</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section */}
-<div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-  {/* Info row */}
-  <div className="container mx-auto px-6 py-4">
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center text-center lg:text-left">
-      {/* Left - Copyright */}
-      <div className="flex justify-center lg:justify-start">
-        <span className="text-base font-medium text-white">
-          ©2025 INNOSIN LAB PTE LTD
-        </span>
-      </div>
+        <div
+          className={`transition-all duration-700 delay-600 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          }`}
+        >
+          <div className="container mx-auto px-6 py-4">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-0 items-center">
+              <div className="text-center lg:text-left text-sm text-white/60 uppercase">
+                ©2025 INNOSIN LAB PTE LTD
+              </div>
+              <div className="text-center text-sm text-white/60 uppercase underline underline-offset-2">
+                SINGAPORE REGISTERED COMPANY
+              </div>
+              <div className="text-center text-sm text-white/60 uppercase">
+                {formatSingaporeTime(currentTime).toUpperCase()}
+              </div>
+              <div className="text-center lg:text-right text-sm text-white/60 uppercase whitespace-nowrap">
+                INNOVATION IN LABORATORY SOLUTIONS
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Singapore Company */}
-      <div className="flex justify-center">
-        <button className="text-base font-medium text-white underline underline-offset-2 hover:text-gray-200 transition-colors">
-          SINGAPORE REGISTERED COMPANY
-        </button>
+        {/* Large Logo at the Very Bottom */}
+        <div className="relative w-full bg-sea py-6 flex items-center justify-center">
+          <h1
+            className="text-white text-[10vw] lg:text-[6vw] font-extrabold tracking-widest opacity-90"
+          >
+            INNOSINLAB
+          </h1>
+        </div>
       </div>
-
-      {/* Center - Time */}
-      <div className="flex justify-center">
-        <span className="text-base font-medium text-white">
-          {formatSingaporeTime(currentTime).toUpperCase()}
-        </span>
-      </div>
-
-      {/* Slogan */}
-      <div className="flex justify-center lg:justify-end">
-        <span className="text-base font-semibold text-white whitespace-nowrap">
-          INNOVATION IN LABORATORY SOLUTIONS
-        </span>
-      </div>
-    </div>
-  </div>
-
-  {/* Large bottom logo */}
-  <div className="relative w-full bg-sea flex items-center justify-center py-8">
-    <h1
-      className="text-white text-[15vw] lg:text-[8vw] font-extrabold tracking-wide leading-none text-center"
-      style={{ letterSpacing: '0.08em' }}
-    >
-      INNOSINLAB
-    </h1>
-  </div>
-</div>
+    </footer>
+  );
+};
