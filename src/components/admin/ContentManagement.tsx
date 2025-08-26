@@ -1,37 +1,40 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProjectEditor } from './ProjectEditor';
-import HotspotEditor from './HotspotEditor';
-import { BlogManagement } from './BlogManagement';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { HotspotEditor } from '@/components/admin/HotspotEditor';
+import { ShopLookContentEditor } from '@/components/admin/ShopLookContentEditor';
 
 const ContentManagement = () => {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">Content Management</h1>
-          <p className="text-muted-foreground">
-            Manage before/after projects and shop the look section content
-          </p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Content Management</h2>
+        <p className="text-muted-foreground">
+          Manage your website content, shop the look sections, and interactive elements.
+        </p>
       </div>
 
-      <Tabs defaultValue="projects" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="projects">Before/After Projects</TabsTrigger>
-          <TabsTrigger value="hotspots">Shop The Look Management</TabsTrigger>
-          <TabsTrigger value="blog">Blog Management</TabsTrigger>
+      <Tabs defaultValue="shop-look" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="shop-look">Shop The Look</TabsTrigger>
+          <TabsTrigger value="hotspots">Interactive Hotspots</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="projects" className="space-y-6">
+        <TabsContent value="shop-look" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Project Management</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Shop The Look Content
+                <Badge variant="secondary">Active</Badge>
+              </CardTitle>
+              <CardDescription>
+                Configure the main content for your Shop The Look section including title, description, and background images.
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProjectEditor />
+              <ShopLookContentEditor />
             </CardContent>
           </Card>
         </TabsContent>
@@ -39,21 +42,16 @@ const ContentManagement = () => {
         <TabsContent value="hotspots" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Shop The Look Management</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                Interactive Hotspots
+                <Badge variant="secondary">Management</Badge>
+              </CardTitle>
+              <CardDescription>
+                Add and manage interactive hotspots on your Shop The Look images to highlight specific products.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <HotspotEditor />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="blog" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Blog Management</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BlogManagement />
             </CardContent>
           </Card>
         </TabsContent>

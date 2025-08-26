@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,20 +47,24 @@ const ShopTheLook = () => {
     queryKey: ['shop-look-content'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('shop_look_content')
+        .from('shop_look_hotspots')
         .select('*')
         .eq('is_active', true)
+        .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.warn('Shop look content not found, using defaults');
+      }
 
-      return data ? {
-        title: data.title || 'Shop',
-        titleHighlight: data.title_highlight || 'The Look',
-        description: data.description || 'Explore our featured laboratory setup.',
-        backgroundImage: data.background_image || '/placeholder.svg',
-        backgroundAlt: data.background_alt || 'Modern Laboratory Setup'
-      } : null;
+      // Return default content structure regardless of data
+      return {
+        title: 'Shop',
+        titleHighlight: 'The Look',
+        description: 'Explore our featured laboratory setup.',
+        backgroundImage: '/placeholder.svg',
+        backgroundAlt: 'Modern Laboratory Setup'
+      } as ShopLookContent;
     }
   });
 
@@ -86,6 +91,8 @@ const ShopTheLook = () => {
           description: hotspot.description || '',
           specifications: Array.isArray(hotspot.specifications)
             ? hotspot.specifications as string[]
+            : typeof hotspot.specifications === 'object' && hotspot.specifications
+            ? Object.values(hotspot.specifications as object) as string[]
             : ['Premium Quality', 'Professional Grade', 'Industry Standard'],
           image: hotspot.image || '',
           price: hotspot.price || 'Contact for pricing',

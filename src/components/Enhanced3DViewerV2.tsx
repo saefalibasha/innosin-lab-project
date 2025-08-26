@@ -1,4 +1,3 @@
-
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
@@ -13,6 +12,10 @@ interface Enhanced3DViewerV2Props {
   onError?: () => void;
   onMissingModel?: (modelPath: string, productId?: string) => void;
   productId?: string;
+}
+
+interface GLTFResult {
+  scene: THREE.Group;
 }
 
 const modelCache = new Map();
@@ -35,7 +38,7 @@ const Model = ({
   const { viewport } = useThree();
   const [modelLoaded, setModelLoaded] = useState(false);
 
-  const gltf = useLoader(GLTFLoader, url);
+  const gltf = useLoader(GLTFLoader, url) as GLTFResult;
 
   useEffect(() => {
     if (gltf && gltf.scene && groupRef.current) {
