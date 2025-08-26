@@ -1,17 +1,22 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, ExternalLink } from 'lucide-react';
+import { Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
+import { siteContent } from '@/data/siteContent';
 
 export const Footer = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const footerRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
+  console.log('Footer component rendered', { isVisible });
+
   // Update Singapore time every second
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+
     return () => clearInterval(timer);
   }, []);
 
@@ -19,11 +24,17 @@ export const Footer = () => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
       },
       { threshold: 0.1 }
     );
-    if (footerRef.current) observer.observe(footerRef.current);
+
+    if (footerRef.current) {
+      observer.observe(footerRef.current);
+    }
+
     return () => observer.disconnect();
   }, []);
 
@@ -58,11 +69,15 @@ export const Footer = () => {
             
             {/* Company Description & Contact */}
             <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-              <p className="text-white text-lg leading-relaxed mb-8 max-w-md" style={{ letterSpacing: '0.02em' }}>
+              <p
+                className="text-white text-lg leading-relaxed mb-8 max-w-md"
+                style={{ letterSpacing: '0.02em' }}
+              >
                 Innosin Lab is a leading provider of innovative laboratory solutions, 
                 empowering scientific advancement through cutting-edge equipment and 
                 expert consultation services across Southeast Asia.
               </p>
+              
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-white/70" />
@@ -103,75 +118,81 @@ export const Footer = () => {
                 Connect
               </h4>
               <div className="space-y-6">
-                {['LinkedIn', 'Facebook', 'Instagram'].map((platform) => (
-                  <div key={platform}>
-                    <a href="#" className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2">
-                      <span>{platform}</span>
-                      <ExternalLink className="w-4 h-4" />
-                    </a>
-                  </div>
-                ))}
+                <div>
+                  <a 
+                    href="#" 
+                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <span>LinkedIn</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+                <div>
+                  <a 
+                    href="#" 
+                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <span>Facebook</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+                <div>
+                  <a 
+                    href="#" 
+                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <span>Instagram</span>
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="container mx-auto px-6 py-1">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-0 items-baseline">
-              
-              {/* Left - Copyright */}
-              <div className="text-center lg:text-left">
-                <div className="text-sm text-white/60 uppercase leading-none">
-                  ©2025 INNOSIN LAB PTE LTD
-                </div>
-              </div>
-
-              {/* Left-Center - Singapore Company */}
-              <div className="text-center lg:text-left">
-                <button className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none">
-                  SINGAPORE REGISTERED COMPANY
-                </button>
-              </div>
-
-              {/* Center - Time */}
-              <div className="text-center">
-                <div className="text-sm text-white/60 uppercase leading-none">
-                  {formatSingaporeTime(currentTime).toUpperCase()}
-                </div>
-              </div>
-
-              {/* Right-Center - Empty for spacing */}
-              <div></div>
-
-              {/* Right - Company Slogan */}
-              <div className="text-center lg:text-right pr-8"> 
-                {/* ⬅ Added padding-right so it's not flush */}
-                <div className="text-sm text-white/60 uppercase leading-none whitespace-nowrap">
-                  INNOVATION IN LABORATORY SOLUTIONS
-                </div>
-              </div>
-            </div>
-          </div>
+<div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+  <div className="container mx-auto px-6 py-1">
+    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-0 items-baseline">
+      
+      {/* Left - Copyright */}
+      <div className="text-center lg:text-left">
+        <div 
+          className="text-sm text-white/60 uppercase leading-none"
+        >
+          ©2025 INNOSIN LAB PTE LTD
         </div>
       </div>
 
-      {/* Large Stacked Logo at Very Bottom */}
-      <div className="relative w-full overflow-hidden bg-sea">
-        <div className="relative h-24 lg:h-28 flex items-center justify-center">
-          {/* Three layers for pronounced stacking effect */}
-          <div className="relative text-[12vw] lg:text-[7vw] font-black text-white/90 select-none leading-none text-center w-full px-4" style={{ letterSpacing: '0.1em' }}>
-            INNOSINLAB
-          </div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/60 select-none leading-none text-center w-full px-4" style={{ letterSpacing: '0.1em', transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))' }}>
-            INNOSINLAB
-          </div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/30 select-none leading-none text-center w-full px-4" style={{ letterSpacing: '0.1em', transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))' }}>
-            INNOSINLAB
-          </div>
+      {/* Left-Center - Singapore Company */}
+      <div className="text-center lg:text-left">
+        <button 
+          className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none"
+        >
+          SINGAPORE REGISTERED COMPANY
+        </button>
+      </div>
+
+      {/* Center - Time */}
+      <div className="text-center">
+        <div 
+          className="text-sm text-white/60 uppercase leading-none"
+        >
+          {formatSingaporeTime(currentTime).toUpperCase()}
         </div>
       </div>
-    </footer>
-  );
-};
+
+      {/* Right-Center - Empty for spacing */}
+      <div></div>
+
+      {/* Right - Company Slogan (shifted left slightly) */}
+      <div className="text-center lg:text-right pr-24"> 
+        <div 
+          className="text-sm text-white/60 uppercase leading-none whitespace-nowrap"
+        >
+          INNOVATION IN LABORATORY SOLUTIONS
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
