@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -80,9 +79,23 @@ const HotspotEditor = () => {
   // Save hotspot mutation
   const saveHotspotMutation = useMutation({
     mutationFn: async (hotspotData: Partial<Hotspot>) => {
+      // Ensure required fields are present
+      if (!hotspotData.title || !hotspotData.x_position || !hotspotData.y_position) {
+        throw new Error('Title, x_position, and y_position are required');
+      }
+
       const dataToSave = {
-        ...hotspotData,
-        specifications: JSON.stringify(hotspotData.specifications || [])
+        title: hotspotData.title,
+        x_position: hotspotData.x_position,
+        y_position: hotspotData.y_position,
+        description: hotspotData.description || '',
+        price: hotspotData.price || 'Contact for pricing',
+        category: hotspotData.category || 'Laboratory Equipment',
+        image: hotspotData.image || '',
+        product_link: hotspotData.product_link || '/products',
+        specifications: JSON.stringify(hotspotData.specifications || []),
+        is_active: hotspotData.is_active ?? true,
+        display_order: hotspotData.display_order ?? 0
       };
 
       if (hotspotData.id) {
@@ -167,6 +180,10 @@ const HotspotEditor = () => {
   const handleSave = () => {
     if (!formData.title) {
       toast.error('Title is required');
+      return;
+    }
+    if (!formData.x_position || !formData.y_position) {
+      toast.error('Position is required');
       return;
     }
     saveHotspotMutation.mutate(formData);

@@ -1,10 +1,9 @@
-
-import React, { useState, useEffect, useRef } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Camera, Box, AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Eye, Box, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 import Enhanced3DViewerV2 from '@/components/Enhanced3DViewerV2';
-import ProductImageGalleryV2 from '@/components/ProductImageGalleryV2';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface StickyProductAssetsV2Props {
   currentAssets: {
@@ -14,7 +13,6 @@ interface StickyProductAssetsV2Props {
   } | null;
   productName: string;
   className?: string;
-  onMissingModel?: (productId: string, productName: string) => void;
   productId?: string;
 }
 
@@ -22,147 +20,172 @@ const StickyProductAssetsV2 = ({
   currentAssets,
   productName,
   className = '',
-  onMissingModel,
   productId
 }: StickyProductAssetsV2Props) => {
-  const [activeTab, setActiveTab] = useState('photos');
+  const [activeView, setActiveView] = useState<'images' | '3d'>('images');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [modelError, setModelError] = useState(false);
-  const [isSticky, setIsSticky] = useState(false);
-  const [model3DKey, setModel3DKey] = useState(0); // Key to force re-render
-  const tabContentRef = useRef<HTMLDivElement>(null);
+  const [viewerKey, setViewerKey] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const threshold = 300;
-      setIsSticky(scrollY > threshold);
-    };
+  // Prepare image gallery
+  const allImages = [
+    currentAssets?.thumbnail,
+    ...(currentAssets?.images || [])
+  ].filter(Boolean);
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const hasModel = currentAssets?.model && currentAssets.model.trim() !== '' && !modelError;
+  const hasImages = allImages.length > 0;
+  const currentImage = allImages[currentImageIndex] || '';
 
   // Reset model error when assets change
   useEffect(() => {
     setModelError(false);
-    // Force re-render of 3D model component when switching back to it
-    if (activeTab === '3d') {
-      setModel3DKey(prev => prev + 1);
-    }
-  }, [currentAssets?.model, activeTab]);
+  }, [currentAssets?.model]);
 
-  // Handle tab switching with proper 3D model initialization
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    // Force re-render of 3D model when switching to 3D tab
-    if (value === '3d') {
+  // Handle view switching with proper re-initialization
+  const handleViewChange = (view: 'images' | '3d') => {
+    setActiveView(view);
+    if (view === '3d') {
+      // Force re-render of 3D viewer
       setTimeout(() => {
-        setModel3DKey(prev => prev + 1);
+        setViewerKey(prev => prev + 1);
       }, 100);
     }
   };
 
   const handleModelError = () => {
     setModelError(true);
-    if (onMissingModel && productId) {
-      onMissingModel(productId, productName);
-    }
   };
 
-  const getDisplayImages = () => {
-    if (currentAssets?.images && currentAssets.images.length > 0) {
-      return currentAssets.images;
-    }
-    if (currentAssets?.thumbnail) {
-      return [currentAssets.thumbnail];
-    }
-    return [];
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex > 0 ? prevIndex - 1 : allImages.length - 1
+    );
   };
 
-  const hasModel = currentAssets?.model && !modelError;
-  const hasImages = getDisplayImages().length > 0;
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex < allImages.length - 1 ? prevIndex + 1 : 0
+    );
+  };
+
+  const onMissingModel = (productId: string, productName: string) => {
+    console.warn(`Missing model for product ${productId}: ${productName}`);
+  };
 
   return (
-    <div className={`${className} transition-all duration-300`}>
-      <div className={`${isSticky ? 'sticky top-20 z-10' : ''}`}>
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 h-12 bg-muted">
-            <TabsTrigger 
-              value="photos" 
-              className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-background"
-            >
-              <Camera className="w-4 h-4" />
-              Photos
-              {hasImages && (
-                <span className="ml-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">
-                  {getDisplayImages().length}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger 
-              value="3d" 
-              className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-background"
-            >
-              <Box className="w-4 h-4" />
-              3D Model
-              {!hasModel && (
-                <AlertCircle className="w-3 h-3 text-amber-500" />
-              )}
-            </TabsTrigger>
-          </TabsList>
+    <div className={`space-y-4 ${className}`}>
+      {/* View Toggle */}
+      <div className="flex gap-2">
+        <Button
+          variant={activeView === 'images' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleViewChange('images')}
+          disabled={!hasImages}
+          className="flex-1"
+        >
+          <Eye className="w-4 h-4 mr-2" />
+          Images
+          {hasImages && (
+            <Badge variant="secondary" className="ml-2 text-xs">
+              {allImages.length}
+            </Badge>
+          )}
+        </Button>
+        <Button
+          variant={activeView === '3d' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handleViewChange('3d')}
+          disabled={!hasModel}
+          className="flex-1"
+        >
+          <Box className="w-4 h-4 mr-2" />
+          3D Model
+          {!hasModel && (
+            <AlertCircle className="w-3 h-3 ml-1 text-amber-500" />
+          )}
+        </Button>
+      </div>
 
-          <div ref={tabContentRef}>
-            <TabsContent value="photos" className="mt-0">
-              <div className="rounded-xl overflow-hidden border shadow-sm bg-background">
-                {hasImages ? (
-                  <ProductImageGalleryV2
-                    images={getDisplayImages()}
-                    thumbnail={currentAssets?.thumbnail || ''}
-                    productName={productName}
-                    className="w-full h-96 lg:h-[500px]"
-                  />
-                ) : (
-                  <div className="w-full h-96 lg:h-[500px] bg-muted flex items-center justify-center">
-                    <div className="text-center">
-                      <Camera className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground">No images available</p>
+      {/* Main Asset Display */}
+      <Card className="overflow-hidden" ref={cardRef}>
+        <CardContent className="p-0 relative">
+          {activeView === 'images' && hasImages ? (
+            <>
+              <div className="relative aspect-square">
+                <img
+                  src={currentImage}
+                  alt={`${productName} - Image ${currentImageIndex + 1}`}
+                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+                  style={{ opacity: 1 }}
+                />
+                {allImages.length > 1 && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 text-white bg-black/20 hover:bg-black/40 rounded-full"
+                      onClick={handlePrevImage}
+                    >
+                      <ChevronLeft className="w-6 h-6" />
+                      <span className="sr-only">Previous</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white bg-black/20 hover:bg-black/40 rounded-full"
+                      onClick={handleNextImage}
+                    >
+                      <ChevronRight className="w-6 h-6" />
+                      <span className="sr-only">Next</span>
+                    </Button>
+                    <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 bg-black/50 text-white text-xs px-2 py-1 rounded-full">
+                      {currentImageIndex + 1} / {allImages.length}
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
-            </TabsContent>
-
-            <TabsContent value="3d" className="mt-0">
-              <div className="rounded-xl overflow-hidden border shadow-sm bg-background">
-                {hasModel ? (
-                  <Enhanced3DViewerV2
-                    key={`model-${model3DKey}`} // Force re-render
-                    modelPath={currentAssets.model}
-                    className="w-full h-96 lg:h-[500px]"
-                    onError={handleModelError}
-                    onMissingModel={onMissingModel}
-                    productId={productId}
-                  />
+            </>
+          ) : activeView === '3d' && hasModel ? (
+            <Enhanced3DViewerV2
+              key={`viewer-${viewerKey}`}
+              modelUrl={currentAssets.model}
+              className="aspect-square"
+              onError={handleModelError}
+              onMissingModel={onMissingModel}
+              productId={productId}
+            />
+          ) : (
+            <div className="aspect-square bg-muted flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                {activeView === 'images' ? (
+                  <>
+                    <Eye className="w-12 h-12 mx-auto mb-4" />
+                    <p className="text-sm">No images available</p>
+                  </>
                 ) : (
-                  <div className="w-full h-96 lg:h-[500px] bg-muted flex items-center justify-center">
-                    <div className="text-center max-w-sm">
-                      <Box className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-muted-foreground mb-4">3D model not available</p>
-                      {modelError && (
-                        <Alert className="text-left">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertDescription>
-                            Model failed to load. This has been logged for review.
-                          </AlertDescription>
-                        </Alert>
-                      )}
-                    </div>
-                  </div>
+                  <>
+                    <Box className="w-12 h-12 mx-auto mb-4" />
+                    <p className="text-sm">
+                      {modelError ? 'Model failed to load' : 'No 3D model available'}
+                    </p>
+                  </>
                 )}
               </div>
-            </TabsContent>
-          </div>
-        </Tabs>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Asset Status */}
+      <div className="flex gap-2 text-xs text-muted-foreground">
+        <Badge variant={hasImages ? 'default' : 'secondary'}>
+          {hasImages ? `${allImages.length} Image${allImages.length !== 1 ? 's' : ''}` : 'No Images'}
+        </Badge>
+        <Badge variant={hasModel ? 'default' : 'secondary'}>
+          {hasModel ? '3D Model Available' : 'No 3D Model'}
+        </Badge>
       </div>
     </div>
   );

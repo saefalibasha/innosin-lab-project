@@ -109,7 +109,7 @@ const ProductAssetViewerV2 = ({
           ) : activeView === '3d' && hasModel ? (
             <Enhanced3DViewerV2
               key={`viewer-${viewerKey}`}
-              modelPath={currentAssets.model}
+              modelUrl={currentAssets.model}
               className="aspect-square"
               onError={handleModelError}
               onMissingModel={onMissingModel}
