@@ -1,13 +1,14 @@
+
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'; // ✅ Corrected import
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Box3, Vector3, Group } from 'three';
-import { AlertCircle, Loader2 } from 'lucide-react'; // ✅ Removed invalid `Box` import
+import { AlertCircle, Loader2 } from 'lucide-react';
 import * as THREE from 'three';
 
 interface Enhanced3DViewerV2Props {
-  modelPath: string;
+  modelUrl: string;
   className?: string;
   onError?: () => void;
   onMissingModel?: (modelPath: string, productId?: string) => void;
@@ -37,7 +38,7 @@ const Model = ({
   const gltf = useLoader(GLTFLoader, url);
 
   useEffect(() => {
-    if (gltf && groupRef.current) {
+    if (gltf && gltf.scene && groupRef.current) {
       groupRef.current.clear();
 
       const modelClone = gltf.scene.clone();
@@ -95,7 +96,7 @@ const LoadingFallback = () => {
 };
 
 const Enhanced3DViewerV2 = ({
-  modelPath,
+  modelUrl,
   className = '',
   onError,
   onMissingModel,
@@ -110,10 +111,10 @@ const Enhanced3DViewerV2 = ({
     setLoadError(true);
     setIsLoading(false);
     if (onMissingModel) {
-      onMissingModel(modelPath, productId);
+      onMissingModel(modelUrl, productId);
     }
     if (onError) onError();
-  }, [modelPath, productId, onMissingModel, onError]);
+  }, [modelUrl, productId, onMissingModel, onError]);
 
   const handleLoaded = useCallback(() => {
     setIsLoading(false);
@@ -129,7 +130,7 @@ const Enhanced3DViewerV2 = ({
     return `/products/${path}`;
   }, []);
 
-  const resolvedModelPath = getModelPath(modelPath);
+  const resolvedModelPath = getModelPath(modelUrl);
 
   useEffect(() => {
     if (resolvedModelPath) {

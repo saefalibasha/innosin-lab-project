@@ -60,21 +60,23 @@ export interface Database {
           id: string;
           url: string;
           alt: string | null;
-          filename: string;
+          filename: string | null;
           created_at: string;
           created_by: string | null;
         };
         Insert: {
+          id?: string;
           url: string;
           alt?: string | null;
-          filename?: string;
+          filename?: string | null;
           created_at?: string;
           created_by?: string | null;
         };
         Update: {
+          id?: string;
           url?: string;
           alt?: string | null;
-          filename?: string;
+          filename?: string | null;
           created_at?: string;
           created_by?: string | null;
         };
@@ -97,6 +99,7 @@ export interface Database {
           updated_at: string;
         };
         Insert: {
+          id?: string;
           x_position: number;
           y_position: number;
           title: string;
@@ -112,6 +115,7 @@ export interface Database {
           updated_at?: string;
         };
         Update: {
+          id?: string;
           x_position?: number;
           y_position?: number;
           title?: string;
@@ -127,7 +131,44 @@ export interface Database {
           updated_at?: string;
         };
       };
-      // Add any other tables you have here
+      shop_look_content: {
+        Row: {
+          id: string;
+          title: string;
+          title_highlight: string;
+          description: string;
+          background_image: string;
+          background_alt: string;
+          is_active: boolean;
+          display_order: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title?: string;
+          title_highlight?: string;
+          description?: string;
+          background_image?: string;
+          background_alt?: string;
+          is_active?: boolean;
+          display_order?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          title_highlight?: string;
+          description?: string;
+          background_image?: string;
+          background_alt?: string;
+          is_active?: boolean;
+          display_order?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Views: {};
     Functions: {};
