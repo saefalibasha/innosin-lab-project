@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,7 +50,7 @@ const Blog = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Reveal>
           <div className="text-center mb-16">
-            <h1 className="text-4xl font-bold text-black mb-4">Laboratory Insights Blog</h1>
+            <h1 className="text-4xl font-bold text-sea mb-4">Laboratory Insights Blog</h1>
             <p className="text-xl text-gray-700 max-w-3xl mx-auto">
               Expert insights, technical guides, case studies, and industry trends in laboratory design, safety, and equipment from the Innosin Lab team.
             </p>
@@ -100,7 +99,7 @@ const Blog = () => {
               </Select>
 
               <div className="flex items-center">
-                <Badge variant="secondary" className="text-sm bg-gray-100 text-gray-800">
+                <Badge variant="secondary" className="text-sm bg-sea/10 text-sea">
                   {filteredPosts.length} articles found
                 </Badge>
               </div>
@@ -111,7 +110,7 @@ const Blog = () => {
         {/* Loading State */}
         {isLoading && (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-sea mx-auto mb-4"></div>
             <p className="text-gray-600">Loading blog posts...</p>
           </div>
         )}
@@ -130,7 +129,7 @@ const Blog = () => {
         {/* Featured Article */}
         {featuredPost && (
           <div className="mb-16">
-            <h2 className="text-2xl font-bold text-black mb-6">Featured Article</h2>
+            <h2 className="text-2xl font-bold text-sea mb-6">Featured Article</h2>
             <Card className="overflow-hidden shadow-xl border-gray-200">
               <div className="md:flex">
                 <div className="md:w-1/2">
@@ -142,7 +141,7 @@ const Blog = () => {
                 </div>
                 <div className="md:w-1/2 p-8">
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                    <Badge className="bg-black text-white">
+                    <Badge className="bg-sea text-white">
                       {featuredPost.category}
                     </Badge>
                     <span className="flex items-center gap-1">
@@ -155,7 +154,7 @@ const Blog = () => {
                     </span>
                   </div>
                   
-                  <h3 className="text-2xl font-bold text-black mb-4">
+                  <h3 className="text-2xl font-bold text-sea mb-4">
                     {featuredPost.title}
                   </h3>
                   
@@ -165,7 +164,7 @@ const Blog = () => {
                   
                   <div className="flex flex-wrap gap-2 mb-6">
                     {featuredPost.tags?.slice(0, 3).map(tag => (
-                      <Badge key={tag} variant="outline" className="text-xs border-gray-300">
+                      <Badge key={tag} variant="outline" className="text-xs border-sea text-sea">
                         {tag}
                       </Badge>
                     ))}
@@ -176,7 +175,7 @@ const Blog = () => {
                       <User className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">{featuredPost.author}</span>
                     </div>
-                    <Button className="bg-black hover:bg-gray-800 text-white">
+                    <Button className="bg-sea hover:bg-sea/90 text-white">
                       Read Article <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </div>
@@ -202,7 +201,7 @@ const Blog = () => {
                 
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs text-sea border-sea">
                       {post.category}
                     </Badge>
                     <span className="flex items-center gap-1">
@@ -211,7 +210,7 @@ const Blog = () => {
                     </span>
                   </div>
                   
-                  <CardTitle className="text-lg leading-tight hover:text-black transition-colors">
+                  <CardTitle className="text-lg leading-tight text-sea hover:text-sea/80 transition-colors">
                     {post.title}
                   </CardTitle>
                 </CardHeader>
@@ -223,7 +222,7 @@ const Blog = () => {
                   
                   <div className="flex flex-wrap gap-1 mb-4">
                     {post.tags?.slice(0, 2).map(tag => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="secondary" className="text-xs bg-sea/10 text-sea">
                         {tag}
                       </Badge>
                     ))}
@@ -237,7 +236,7 @@ const Blog = () => {
                     <span className="text-xs text-gray-500">{post.read_time} min read</span>
                   </div>
                   
-                  <Button variant="outline" size="sm" className="w-full mt-4 hover:bg-black hover:border-black">
+                  <Button variant="outline" size="sm" className="w-full mt-4 border-sea text-sea hover:bg-sea hover:text-white">
                     Read Full Article
                   </Button>
                 </CardContent>
@@ -249,10 +248,10 @@ const Blog = () => {
 
         {/* Newsletter Subscription CTA */}
         <div className="mt-20">
-          <Card className="bg-black text-white border-black">
+          <Card className="bg-sea text-white border-sea">
             <CardContent className="p-8 text-center">
               <h3 className="text-2xl font-bold mb-4">Never Miss an Update</h3>
-              <p className="mb-6 text-gray-300 max-w-2xl mx-auto">
+              <p className="mb-6 text-white/80 max-w-2xl mx-auto">
                 Subscribe to our newsletter and get the latest laboratory insights, technical guides, and industry news delivered directly to your inbox every month.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
@@ -261,11 +260,11 @@ const Blog = () => {
                   placeholder="Enter your email address"
                   className="flex-1 bg-white text-black border-white"
                 />
-                <Button variant="secondary" className="whitespace-nowrap bg-white text-black hover:bg-gray-200">
+                <Button variant="secondary" className="whitespace-nowrap bg-white text-sea hover:bg-gray-200">
                   Subscribe Now
                 </Button>
               </div>
-              <p className="text-xs text-gray-400 mt-4">
+              <p className="text-xs text-white/70 mt-4">
                 Join 2,500+ laboratory professionals who trust our insights
               </p>
             </CardContent>
