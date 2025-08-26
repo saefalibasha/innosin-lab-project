@@ -182,11 +182,8 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* Right-Center - Empty for spacing */}
-      <div></div>
-
       {/* Right - Company Slogan (shifted left slightly) */}
-      <div className="text-center lg:text-right pr-24"> 
+      <div className="text-center lg:text-right pr-6"> 
         <div 
           className="text-sm text-white/60 uppercase leading-none whitespace-nowrap"
         >
