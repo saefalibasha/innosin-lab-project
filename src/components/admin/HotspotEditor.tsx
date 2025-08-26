@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ export const HotspotEditor = () => {
       const { data, error } = await supabase
         .from('shop_look_images')
         .select('*')
-        .order('uploaded_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
@@ -122,16 +122,20 @@ export const HotspotEditor = () => {
 
       if (uploadError) throw uploadError;
 
-      const { data: urlData } = supabase.storage.from('shop-look-images').getPublicUrl(filePath);
+      const { data: urlData } = supabase.storage
+        .from('shop-look-images')
+        .getPublicUrl(filePath);
+
       const publicUrl = urlData.publicUrl;
 
-      // Save URL to shop_look_images table
+      // Save to DB with created_at timestamp
       const { error: dbError } = await supabase
         .from('shop_look_images')
         .insert({
           url: publicUrl,
           alt: 'Uploaded background image',
-          filename: file.name
+          filename: file.name,
+          created_at: new Date().toISOString()
         });
 
       if (dbError) throw dbError;
@@ -144,7 +148,8 @@ export const HotspotEditor = () => {
     }
   };
 
-  if (isLoadingHotspots || isLoadingBackground) return <div className="text-center py-8">Loading...</div>;
+  if (isLoadingHotspots || isLoadingBackground)
+    return <div className="text-center py-8">Loading...</div>;
 
   return (
     <div className="space-y-6">
