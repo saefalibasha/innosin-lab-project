@@ -12,7 +12,6 @@ export const Footer = () => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
@@ -20,17 +19,11 @@ export const Footer = () => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
+        if (entry.isIntersecting) setIsVisible(true);
       },
       { threshold: 0.1 }
     );
-
-    if (footerRef.current) {
-      observer.observe(footerRef.current);
-    }
-
+    if (footerRef.current) observer.observe(footerRef.current);
     return () => observer.disconnect();
   }, []);
 
@@ -60,24 +53,16 @@ export const Footer = () => {
     <footer ref={footerRef} className="bg-sea text-white relative overflow-hidden">
       <div className="relative z-10">
         {/* Main Content */}
-        <div
-          className={`container mx-auto px-6 pt-12 pb-16 transition-all duration-1000 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
+        <div className={`container mx-auto px-6 pt-12 pb-16 transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+            
             {/* Company Description & Contact */}
-            <div
-              className={`transition-all duration-700 delay-100 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
+            <div className={`transition-all duration-700 delay-100 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <p className="text-white text-lg leading-relaxed mb-8 max-w-md" style={{ letterSpacing: '0.02em' }}>
-                Innosin Lab is a leading provider of innovative laboratory solutions,
-                empowering scientific advancement through cutting-edge equipment and
+                Innosin Lab is a leading provider of innovative laboratory solutions, 
+                empowering scientific advancement through cutting-edge equipment and 
                 expert consultation services across Southeast Asia.
               </p>
-
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-white/70" />
@@ -94,12 +79,10 @@ export const Footer = () => {
             </div>
 
             {/* Navigation */}
-            <div
-              className={`transition-all duration-700 delay-200 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">Navigation</h4>
+            <div className={`transition-all duration-700 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
+                Navigation
+              </h4>
               <div className="space-y-4">
                 {navigationLinks.map((link) => (
                   <div key={link.name}>
@@ -115,56 +98,34 @@ export const Footer = () => {
             </div>
 
             {/* Connect & Social */}
-            <div
-              className={`transition-all duration-700 delay-300 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">Connect</h4>
+            <div className={`transition-all duration-700 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
+                Connect
+              </h4>
               <div className="space-y-6">
-                <div>
-                  <a
-                    href="#"
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>LinkedIn</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-                <div>
-                  <a
-                    href="#"
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>Facebook</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-                <div>
-                  <a
-                    href="#"
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>Instagram</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
+                {['LinkedIn', 'Facebook', 'Instagram'].map((platform) => (
+                  <div key={platform}>
+                    <a href="#" className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2">
+                      <span>{platform}</span>
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div
-          className={`transition-all duration-700 delay-600 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
+        <div className={`transition-all duration-700 delay-600 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="container mx-auto px-6 py-1">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-0 items-baseline">
+              
               {/* Left - Copyright */}
               <div className="text-center lg:text-left">
-                <div className="text-sm text-white/60 uppercase leading-none">©2025 INNOSIN LAB PTE LTD</div>
+                <div className="text-sm text-white/60 uppercase leading-none">
+                  ©2025 INNOSIN LAB PTE LTD
+                </div>
               </div>
 
               {/* Left-Center - Singapore Company */}
@@ -181,11 +142,12 @@ export const Footer = () => {
                 </div>
               </div>
 
-              {/* Right-Center - Empty */}
+              {/* Right-Center - Empty for spacing */}
               <div></div>
 
-              {/* Right - Company Slogan (shifted left) */}
-              <div className="text-center lg:text-right pr-6">
+              {/* Right - Company Slogan */}
+              <div className="text-center lg:text-right pr-8"> 
+                {/* ⬅ Added padding-right so it's not flush */}
                 <div className="text-sm text-white/60 uppercase leading-none whitespace-nowrap">
                   INNOVATION IN LABORATORY SOLUTIONS
                 </div>
@@ -195,31 +157,17 @@ export const Footer = () => {
         </div>
       </div>
 
-      {/* Large Stacked Logo */}
+      {/* Large Stacked Logo at Very Bottom */}
       <div className="relative w-full overflow-hidden bg-sea">
         <div className="relative h-24 lg:h-28 flex items-center justify-center">
-          <div
-            className="relative text-[12vw] lg:text-[7vw] font-black text-white/90 select-none leading-none text-center w-full px-4"
-            style={{ letterSpacing: '0.1em' }}
-          >
+          {/* Three layers for pronounced stacking effect */}
+          <div className="relative text-[12vw] lg:text-[7vw] font-black text-white/90 select-none leading-none text-center w-full px-4" style={{ letterSpacing: '0.1em' }}>
             INNOSINLAB
           </div>
-          <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/60 select-none leading-none text-center w-full px-4"
-            style={{
-              letterSpacing: '0.1em',
-              transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))',
-            }}
-          >
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/60 select-none leading-none text-center w-full px-4" style={{ letterSpacing: '0.1em', transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))' }}>
             INNOSINLAB
           </div>
-          <div
-            className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/30 select-none leading-none text-center w-full px-4"
-            style={{
-              letterSpacing: '0.1em',
-              transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))',
-            }}
-          >
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/30 select-none leading-none text-center w-full px-4" style={{ letterSpacing: '0.1em', transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))' }}>
             INNOSINLAB
           </div>
         </div>
