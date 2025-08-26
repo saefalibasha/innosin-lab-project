@@ -1,39 +1,39 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, ExternalLink } from 'lucide-react';
+
+const SEA_BLUE = '#108CCF'; // your previous footer color
 
 export const Footer = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
   const footerRef = useRef<HTMLElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Update Singapore time every second
+  // tick clock
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(t);
   }, []);
 
-  // Intersection Observer for entrance animation
+  // simple reveal on view
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    const io = new IntersectionObserver(
       ([entry]) => entry.isIntersecting && setIsVisible(true),
       { threshold: 0.1 }
     );
-    if (footerRef.current) observer.observe(footerRef.current);
-    return () => observer.disconnect();
+    if (footerRef.current) io.observe(footerRef.current);
+    return () => io.disconnect();
   }, []);
 
-  const formatSingaporeTime = (date: Date) => {
-    const options = {
+  const formatSingaporeTime = (date: Date) =>
+    new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Singapore',
-      weekday: 'long' as const,
-      hour: '2-digit' as const,
-      minute: '2-digit' as const,
-      second: '2-digit' as const,
-      timeZoneName: 'short' as const,
-    };
-    return new Intl.DateTimeFormat('en-GB', options).format(date);
-  };
+      weekday: 'long',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short',
+    }).format(date);
 
   const navigationLinks = [
     { name: 'Home', href: '/' },
@@ -46,179 +46,160 @@ export const Footer = () => {
   ];
 
   return (
-    <footer ref={footerRef} className="bg-sea text-white relative overflow-hidden">
-      <div className="relative z-10">
-        {/* Main Content */}
-        <div
-          className={`container mx-auto px-6 pt-12 pb-16 transition-all duration-1000 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-            {/* Company Description & Contact */}
-            <div
-              className={`transition-all duration-700 delay-100 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <p
-                className="text-white text-lg leading-relaxed mb-8 max-w-md"
-                style={{ letterSpacing: '0.02em' }}
-              >
-                Innosin Lab is a leading provider of innovative laboratory solutions,
-                empowering scientific advancement through cutting-edge equipment and
-                expert consultation services across Southeast Asia.
-              </p>
+    <footer
+      ref={footerRef}
+      className="relative overflow-hidden text-white"
+      style={{ backgroundColor: SEA_BLUE }}
+    >
+      {/* top grid with thin separators */}
+      <div
+        className={[
+          'container mx-auto px-6 pt-12 pb-16',
+          'transition-all duration-700',
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
+        ].join(' ')}
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 border border-white/25 rounded-md">
+          {/* Company / About / Contact */}
+          <div className="p-6 border-b lg:border-b-0 lg:border-r border-white/25">
+            <p className="text-white/95 text-lg leading-relaxed mb-8 tracking-wide">
+              Innosin Lab is a leading provider of innovative laboratory solutions,
+              empowering scientific advancement through cutting-edge equipment and
+              expert consultation services across Southeast Asia.
+            </p>
 
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-4 h-4 text-white/70" />
-                  <span className="text-lg text-white/90">info@innosinlab.com</span>
-                </div>
-                <div className="flex items-start space-x-3">
-                  <MapPin className="w-4 h-4 text-white/70 mt-0.5" />
-                  <div className="text-lg text-white/90">
-                    <div>Industrial Complex, Tech Park</div>
-                    <div>Johor Bahru, Malaysia 81100</div>
-                  </div>
-                </div>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Mail className="w-4 h-4 text-white/80" />
+                <span className="text-white/90 text-base">info@innosinlab.com</span>
               </div>
-            </div>
-
-            {/* Navigation */}
-            <div
-              className={`transition-all duration-700 delay-200 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
-                Navigation
-              </h4>
-              <div className="space-y-4">
-                {navigationLinks.map((link) => (
-                  <div key={link.name}>
-                    <Link
-                      to={link.href}
-                      className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 block"
-                    >
-                      {link.name}
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Connect & Social */}
-            <div
-              className={`transition-all duration-700 delay-300 ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-              }`}
-            >
-              <h4 className="text-base font-bold mb-8 text-white uppercase tracking-wide">
-                Connect
-              </h4>
-              <div className="space-y-6">
-                <div>
-                  <a
-                    href="#"
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>LinkedIn</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-                <div>
-                  <a
-                    href="#"
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>Facebook</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                </div>
-                <div>
-                  <a
-                    href="#"
-                    className="text-3xl lg:text-4xl font-bold text-white hover:text-white/80 transition-colors duration-200 flex items-center space-x-2"
-                  >
-                    <span>Instagram</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
+              <div className="flex items-start gap-3">
+                <MapPin className="w-4 h-4 text-white/80 mt-1" />
+                <div className="text-white/90 text-base">
+                  <div>Industrial Complex, Tech Park</div>
+                  <div>Johor Bahru, Malaysia 81100</div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Navigation */}
+          <div className="p-6 border-b lg:border-b-0 lg:border-r border-white/25">
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/80 mb-6">
+              Website
+            </h4>
+            <div className="space-y-4">
+              {navigationLinks.map((link) => (
+                <div key={link.name} className="flex items-center justify-between group">
+                  <Link
+                    to={link.href}
+                    className="text-2xl lg:text-3xl font-extrabold tracking-tight"
+                  >
+                    {link.name}
+                  </Link>
+                  <span className="text-white/90 text-sm group-hover:opacity-100 opacity-70">
+                    <ExternalLink className="w-4 h-4" />
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* dotted rows */}
+            <div className="mt-6 space-y-3">
+              {navigationLinks.slice(0, 3).map((l) => (
+                <div
+                  key={`dot-${l.name}`}
+                  className="border-t-2 border-dotted border-white/30"
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Social */}
+          <div className="p-6">
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-white/80 mb-6">
+              Connect
+            </h4>
+            <div className="space-y-6">
+              {[
+                { label: 'LinkedIn', href: '#' },
+                { label: 'Facebook', href: '#' },
+                { label: 'Instagram', href: '#' },
+              ].map((s) => (
+                <a
+                  key={s.label}
+                  href={s.href}
+                  className="flex items-center justify-between group"
+                >
+                  <span className="text-2xl lg:text-3xl font-extrabold tracking-tight">
+                    {s.label}
+                  </span>
+                  <ExternalLink className="w-4 h-4 text-white/90 group-hover:rotate-6 transition-transform" />
+                </a>
+              ))}
+            </div>
+
+            <div className="mt-6 space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={`soc-${i}`}
+                  className="border-t-2 border-dotted border-white/30"
+                />
+              ))}
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Bottom Section */}
-        <div
-          className={`transition-all duration-700 delay-600 ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <div className="container mx-auto px-6 py-1">
-            {/* You removed the spacer; use 4 columns now */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-0 items-baseline">
-              {/* Left - Copyright */}
-              <div className="text-center lg:text-left">
-                <div className="text-sm text-white/60 uppercase leading-none">
-                  ©2025 INNOSIN LAB PTE LTD
-                </div>
+      {/* bottom bar */}
+      <div
+        className={[
+          'transition-all duration-700',
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
+        ].join(' ')}
+      >
+        <div className="container mx-auto px-6 py-3">
+          <div className="grid grid-cols-1 lg:grid-cols-5 items-baseline gap-4 lg:gap-0 border border-white/25 rounded-md">
+            {/* left */}
+            <div className="px-4 py-2 border-b lg:border-b-0 lg:border-r border-white/25 text-center lg:text-left">
+              <div className="text-sm text-white/70 uppercase tracking-wide">
+                ©2025 INNOSIN LAB PTE LTD
               </div>
+            </div>
 
-              {/* Left-Center - Singapore Company */}
-              <div className="text-center lg:text-left">
-                <button className="text-sm text-white/60 hover:text-white/80 transition-colors duration-200 underline underline-offset-2 uppercase leading-none">
-                  SINGAPORE REGISTERED COMPANY
-                </button>
+            {/* left-center */}
+            <div className="px-4 py-2 border-b lg:border-b-0 lg:border-r border-white/25 text-center lg:text-left">
+              <button className="text-sm text-white/70 hover:text-white/90 underline underline-offset-2 uppercase tracking-wide">
+                Singapore Registered Company
+              </button>
+            </div>
+
+            {/* center time */}
+            <div className="px-4 py-2 border-b lg:border-b-0 lg:border-r border-white/25 text-center">
+              <div className="text-sm text-white/70 uppercase tracking-wide">
+                {formatSingaporeTime(currentTime).toUpperCase()}
               </div>
+            </div>
 
-              {/* Center - Time */}
-              <div className="text-center">
-                <div className="text-sm text-white/60 uppercase leading-none">
-                  {formatSingaporeTime(currentTime).toUpperCase()}
-                </div>
-              </div>
+            {/* spacer (kept for layout balance) */}
+            <div className="hidden lg:block px-4 py-2 lg:border-r border-white/25" />
 
-              {/* Right - Company Slogan (nudged left via pr-6) */}
-              <div className="text-center lg:text-right pr-6">
-                <div className="text-sm text-white/60 uppercase leading-none whitespace-nowrap">
-                  INNOVATION IN LABORATORY SOLUTIONS
-                </div>
+            {/* right slogan — shifted slightly left on large screens */}
+            <div className="px-4 py-2 text-center lg:text-right lg:pr-6">
+              <div className="text-sm text-white/70 uppercase tracking-wide whitespace-nowrap">
+                Innovation in Laboratory Solutions
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Large Stacked Logo at Very Bottom */}
-        <div className="relative w-full overflow-hidden bg-sea">
-          <div className="relative h-24 lg:h-28 flex items-center justify-center">
-            <div
-              className="relative text-[12vw] lg:text-[7vw] font-black text-white/90 select-none leading-none text-center w-full px-4"
-              style={{ letterSpacing: '0.1em' }}
-            >
-              INNOSINLAB
-            </div>
-            <div
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/60 select-none leading-none text-center w-full px-4"
-              style={{
-                letterSpacing: '0.1em',
-                transform: 'translate(calc(-50% + 2px), calc(-50% + 2px))',
-              }}
-            >
-              INNOSINLAB
-            </div>
-            <div
-              className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[12vw] lg:text-[7vw] font-black text-white/30 select-none leading-none text-center w-full px-4"
-              style={{
-                letterSpacing: '0.1em',
-                transform: 'translate(calc(-50% + 4px), calc(-50% + 4px))',
-              }}
-            >
-              INNOSINLAB
-            </div>
-          </div>
-        </div>
+      {/* optional subtle oversized wordmark backdrop (kept simple) */}
+      <div
+        className="select-none pointer-events-none w-full text-center font-black leading-none py-6"
+        style={{ color: 'rgba(255,255,255,0.1)', letterSpacing: '0.08em' }}
+      >
+        <div className="text-[11vw] md:text-[7vw]">INNOSINLAB</div>
       </div>
     </footer>
   );
