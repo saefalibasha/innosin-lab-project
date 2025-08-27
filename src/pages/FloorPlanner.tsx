@@ -30,12 +30,9 @@ const FloorPlanner = () => {
       <EnhancedExportModal
         isOpen={exportModalOpen}
         onClose={() => setExportModalOpen(false)}
-        floorPlanData={{
-          name: 'Floor Plan',
-          products: [],
-          rooms: [],
-          metadata: {}
-        }}
+        projectName="Floor Plan"
+        placedProducts={[]}
+        roomPoints={[]}
       />
     </div>
   );

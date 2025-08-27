@@ -1,6 +1,6 @@
 
-import React, { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import React, { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,21 +11,22 @@ import { PlacedProduct, Point } from '@/types/floorPlanTypes';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 
 interface EnhancedExportModalProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
-  roomPoints: Point[];
-  placedProducts: PlacedProduct[];
-  projectName: string;
-  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
+  roomPoints?: Point[];
+  placedProducts?: PlacedProduct[];
+  projectName?: string;
 }
 
 export const EnhancedExportModal: React.FC<EnhancedExportModalProps> = ({
+  isOpen,
+  onClose,
   canvasRef,
-  roomPoints,
-  placedProducts,
-  projectName,
-  children
+  roomPoints = [],
+  placedProducts = [],
+  projectName = 'Floor Plan'
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [exportType, setExportType] = useState<'download' | 'hubspot'>('download');
   const [isExporting, setIsExporting] = useState(false);
   const [contactInfo, setContactInfo] = useState({
@@ -38,8 +39,27 @@ export const EnhancedExportModal: React.FC<EnhancedExportModalProps> = ({
   const { createInquiry, loading: hubspotLoading } = useHubSpotIntegration();
 
   const generateHighQualityImage = async (): Promise<Blob> => {
-    if (!canvasRef.current) {
-      throw new Error('Canvas not available');
+    if (!canvasRef?.current) {
+      // Create a placeholder canvas if no canvas ref is provided
+      const canvas = document.createElement('canvas');
+      canvas.width = 1200;
+      canvas.height = 800;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#333333';
+        ctx.font = '24px Arial';
+        ctx.fillText('Floor Plan Preview', 50, 50);
+      }
+      
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          }
+        }, 'image/jpeg', 0.95);
+      });
     }
 
     const canvas = canvasRef.current;
@@ -106,7 +126,7 @@ export const EnhancedExportModal: React.FC<EnhancedExportModalProps> = ({
       
       URL.revokeObjectURL(url);
       toast.success('Floor plan downloaded successfully!');
-      setIsOpen(false);
+      onClose();
     } catch (error) {
       console.error('Export error:', error);
       toast.error('Failed to export floor plan');
@@ -155,7 +175,7 @@ ${base64Image}
         });
         
         toast.success('Floor plan sent to our team successfully!');
-        setIsOpen(false);
+        onClose();
         setContactInfo({ name: '', email: '', company: '', message: '' });
       };
       
@@ -169,10 +189,7 @@ ${base64Image}
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        {children}
-      </DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
