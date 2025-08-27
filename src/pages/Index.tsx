@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from "@/components/ui/card"
 import { Reveal, StaggerList } from '@/components/anim';
 import VideoHero from '@/components/VideoHero';
 import ShopTheLook from '@/components/ShopTheLook';
@@ -18,25 +16,29 @@ const Index = () => {
       name: 'Broen-Lab',
       description: 'Advanced fume hoods and ventilation systems designed for chemical safety and efficiency',
       logo: '/brand-logos/broen-lab-logo.png',
-      link: '/products?company=Broen-Lab'
+      link: '/products?company=Broen-Lab',
+      origin: 'Denmark',
     },
     {
       name: 'Hamilton Laboratory Solutions',
       description: 'Premium laboratory furniture and benches with chemical-resistant surfaces',
       logo: '/brand-logos/hamilton-laboratory-logo.png',
-      link: '/products?company=Hamilton Laboratory Solutions'
+      link: '/products?company=Hamilton Laboratory Solutions',
+      origin: 'USA',
     },
     {
       name: 'Oriental Giken Inc.',
       description: 'Emergency safety equipment including eye wash stations and safety showers',
       logo: '/brand-logos/oriental-giken-logo.png',
-      link: '/products?company=Oriental Giken Inc.'
+      link: '/products?company=Oriental Giken Inc.',
+      origin: 'Japan',
     },
     {
       name: 'Innosin Lab',
       description: 'Comprehensive storage solutions and laboratory equipment for modern research facilities',
       logo: '/brand-logos/innosin-lab-logo.png',
-      link: '/products?company=Innosin Lab'
+      link: '/products?company=Innosin Lab',
+      origin: 'Malaysia',
     }
   ];
 
@@ -45,7 +47,7 @@ const Index = () => {
       {/* Video Hero Section */}
       <VideoHero />
 
-      {/* Featured Companies Section - Modernized */}
+      {/* Featured Companies Section */}
       <section className="py-20 bg-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <Reveal>
@@ -66,12 +68,17 @@ const Index = () => {
                 className="group bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 rounded-2xl overflow-hidden"
                 onClick={() => navigate(company.link)}
               >
-                <CardContent className="p-8 flex flex-col items-center justify-center h-48">
+                <CardContent className="p-8 flex flex-col items-center justify-center h-52">
                   <img
                     src={company.logo}
                     alt={`${company.name} Logo`}
                     className="w-28 h-28 object-contain transition-transform duration-300 group-hover:scale-110"
                   />
+                  {/* Country of Origin */}
+                  <div className="mt-4 text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground/80">Country of Origin:</span>{' '}
+                    <span className="text-foreground/70">{company.origin}</span>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -80,18 +87,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Shop The Look Section - Enhanced */}
+      {/* Shop The Look Section */}
       <section className="py-24 bg-gradient-to-br from-gray-50 to-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <ShopTheLook />
         </div>
       </section>
 
-      {/* Laboratory Transformations Section - Modernized */}
+      {/* Laboratory Transformations Section */}
       <section className="py-28 bg-white relative overflow-hidden transition-all duration-700 ease-in-out">
-        {/* Background decoration */}
-        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
-        
+        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
           <Reveal>
             <div className="text-center mb-20">
