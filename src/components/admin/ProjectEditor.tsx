@@ -192,7 +192,7 @@ const ProjectEditor = () => {
         <h3 className="text-lg font-semibold">Before & After Projects</h3>
         <Button
           onClick={() => setIsCreating(true)}
-          disabled={isCreating || editingProject}
+          disabled={isCreating || Boolean(editingProject)}
         >
           <Plus className="w-4 h-4 mr-2" />
           Add New Project
@@ -340,7 +340,7 @@ const ProjectEditor = () => {
                     variant="outline"
                     size="sm"
                     onClick={() => handleEdit(project)}
-                    disabled={isCreating || editingProject}
+                    disabled={isCreating || Boolean(editingProject)}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
