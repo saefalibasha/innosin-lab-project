@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Reveal, StaggerList } from '@/components/anim';
 import VideoHero from '@/components/VideoHero';
 import ShopTheLook from '@/components/ShopTheLook';
@@ -14,32 +14,36 @@ const Index = () => {
   const companyData = [
     {
       name: 'Broen-Lab',
-      description: 'Advanced fume hoods and ventilation systems designed for chemical safety and efficiency',
+      origin: 'Denmark',
+      description:
+        'Advanced fume hoods and ventilation systems designed for chemical safety and efficiency',
       logo: '/brand-logos/broen-lab-logo.png',
       link: '/products?company=Broen-Lab',
-      origin: 'Denmark',
     },
     {
       name: 'Hamilton Laboratory Solutions',
-      description: 'Premium laboratory furniture and benches with chemical-resistant surfaces',
+      origin: 'USA',
+      description:
+        'Premium laboratory furniture and benches with chemical-resistant surfaces',
       logo: '/brand-logos/hamilton-laboratory-logo.png',
       link: '/products?company=Hamilton Laboratory Solutions',
-      origin: 'USA',
     },
     {
       name: 'Oriental Giken Inc.',
-      description: 'Emergency safety equipment including eye wash stations and safety showers',
+      origin: 'Japan',
+      description:
+        'Emergency safety equipment including eye wash stations and safety showers',
       logo: '/brand-logos/oriental-giken-logo.png',
       link: '/products?company=Oriental Giken Inc.',
-      origin: 'Japan',
     },
     {
       name: 'Innosin Lab',
-      description: 'Comprehensive storage solutions and laboratory equipment for modern research facilities',
+      origin: 'Malaysia',
+      description:
+        'Comprehensive storage solutions and laboratory equipment for modern research facilities',
       logo: '/brand-logos/innosin-lab-logo.png',
       link: '/products?company=Innosin Lab',
-      origin: 'Malaysia',
-    }
+    },
   ];
 
   return (
@@ -47,7 +51,7 @@ const Index = () => {
       {/* Video Hero Section */}
       <VideoHero />
 
-      {/* Featured Companies Section */}
+      {/* Featured Companies */}
       <section className="py-20 bg-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <Reveal>
@@ -56,7 +60,8 @@ const Index = () => {
                 Featured Laboratory Partners
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Explore our featured laboratory equipment and solutions from industry-leading manufacturers.
+                Explore our featured laboratory equipment and solutions from
+                industry-leading manufacturers.
               </p>
             </div>
           </Reveal>
@@ -69,15 +74,22 @@ const Index = () => {
                 className="group bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 rounded-2xl overflow-hidden"
                 onClick={() => navigate(company.link)}
               >
-                <CardContent className="p-8 flex flex-col items-center justify-center h-56">
-                  <img
-                    src={company.logo}
-                    alt={`${company.name} Logo`}
-                    className="w-28 h-28 object-contain transition-transform duration-300 group-hover:scale-110"
-                  />
-                  {/* Country of Origin */}
-                  <div className="mt-4">
-                    <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground border-muted">
+                {/* Optional: show the brand name up top (compact) */}
+                <CardHeader className="pb-0">
+                  <CardTitle className="text-center text-base font-semibold text-primary/80">
+                    {company.name}
+                  </CardTitle>
+                </CardHeader>
+
+                <CardContent className="p-6 pt-4">
+                  <div className="flex flex-col items-center justify-center space-y-5 min-h-[220px]">
+                    <img
+                      src={company.logo}
+                      alt={`${company.name} Logo`}
+                      className="w-32 h-32 object-contain transition-transform duration-300 group-hover:scale-110"
+                    />
+
+                    <span className="inline-block rounded-full border px-3 py-1 text-sm text-muted-foreground border-muted text-center">
                       Country of Origin: {company.origin}
                     </span>
                   </div>
@@ -89,16 +101,16 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Shop The Look Section */}
+      {/* Shop The Look */}
       <section className="py-24 bg-gradient-to-br from-gray-50 to-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <ShopTheLook />
         </div>
       </section>
 
-      {/* Laboratory Transformations Section */}
+      {/* Laboratory Transformations */}
       <section className="py-28 bg-white relative overflow-hidden transition-all duration-700 ease-in-out">
-        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent" />
         <div className="container mx-auto px-4 relative z-10">
           <Reveal>
             <div className="text-center mb-20">
@@ -106,8 +118,9 @@ const Index = () => {
                 Laboratory <span className="text-sea">Transformations</span>
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                See how we've transformed laboratories across Singapore with cutting-edge equipment, 
-                innovative design solutions, and professional installation services.
+                See how we've transformed laboratories across Singapore with
+                cutting-edge equipment, innovative design solutions, and
+                professional installation services.
               </p>
             </div>
           </Reveal>
@@ -115,10 +128,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Lab Transform CTA Section */}
+      {/* CTA */}
       <LabTransformCTA />
 
-      {/* Newsletter Subscription Section */}
+      {/* Newsletter */}
       <section className="py-20 bg-gradient-to-br from-sea/5 to-gray-50 transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <NewsletterSubscription />
