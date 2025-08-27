@@ -1,24 +1,28 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Package } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Package, Layers } from 'lucide-react';
 
 interface ProductVariant {
   id: string;
   name: string;
-  dimensions: string;
-  description: string;
-  drawerCount?: number;
-  configuration?: string;
+  drawerCount?: string;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  thumbnail?: string;
 }
 
 interface ProductVariantSelectorProps {
   product: any;
   isOpen: boolean;
   onClose: () => void;
-  onVariantSelect: (variant: ProductVariant) => void;
+  onVariantSelect: (variant: any) => void;
 }
 
 const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
@@ -27,159 +31,103 @@ const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   onClose,
   onVariantSelect
 }) => {
-  const [selectedVariant, setSelectedVariant] = useState<string>('');
+  if (!product) return null;
 
-  if (!isOpen) return null;
-
-  // Generate variants based on product type
-  const getProductVariants = (product: any): ProductVariant[] => {
-    const variants: ProductVariant[] = [];
+  const handleVariantSelect = (variant: ProductVariant) => {
+    const selectedVariant = {
+      ...product,
+      id: variant.id,
+      productId: variant.id.toUpperCase(),
+      name: `${product.name} - ${variant.name}`,
+      drawerCount: variant.drawerCount,
+      dimensions: variant.dimensions || product.dimensions,
+      thumbnail: variant.thumbnail || product.thumbnail
+    };
     
-    // Check if it's a mobile cabinet or modular cabinet
-    const isMobileCabinet = product.name?.toLowerCase().includes('mobile cabinet') || 
-                           product.productId?.toLowerCase().includes('mc-');
-    const isModularCabinet = product.name?.toLowerCase().includes('modular cabinet') ||
-                            product.productId?.toLowerCase().includes('mcc-');
-    
-    if (isMobileCabinet || isModularCabinet) {
-      // Add drawer variants
-      const baseVariants = [
-        { drawers: 2, suffix: 'DWR2', description: '2 Drawers' },
-        { drawers: 3, suffix: 'DWR3', description: '3 Drawers' }, 
-        { drawers: 4, suffix: 'DWR4', description: '4 Drawers' },
-        { drawers: 6, suffix: 'DWR6', description: '6 Drawers' },
-        { drawers: 8, suffix: 'DWR8', description: '8 Drawers' }
-      ];
-      
-      // Add left/right hand variants
-      const handVariants = [
-        { hand: 'LH', description: 'Left Hand' },
-        { hand: 'RH', description: 'Right Hand' }
-      ];
-      
-      // Standard configuration
-      variants.push({
-        id: `${product.productId}-standard`,
-        name: `${product.name} - Standard`,
-        dimensions: product.dimensions || '500×500×650 mm',
-        description: 'Standard configuration',
-        configuration: 'Standard'
-      });
-      
-      // Add drawer variants
-      baseVariants.forEach(variant => {
-        variants.push({
-          id: `${product.productId}-${variant.suffix}`,
-          name: `${product.name} - ${variant.description}`,
-          dimensions: product.dimensions || '500×500×650 mm',
-          description: variant.description,
-          drawerCount: variant.drawers,
-          configuration: variant.suffix
-        });
-      });
-      
-      // Add hand variants
-      handVariants.forEach(variant => {
-        variants.push({
-          id: `${product.productId}-${variant.hand}`,
-          name: `${product.name} - ${variant.description}`,
-          dimensions: product.dimensions || '500×500×650 mm',
-          description: variant.description,
-          configuration: variant.hand
-        });
-      });
-    } else {
-      // Default variant for other products
-      variants.push({
-        id: `${product.productId}-default`,
-        name: product.name,
-        dimensions: product.dimensions || 'Standard size',
-        description: 'Standard configuration',
-        configuration: 'Default'
-      });
-    }
-    
-    return variants;
-  };
-
-  const variants = getProductVariants(product);
-
-  const handleVariantSelect = () => {
-    const variant = variants.find(v => v.id === selectedVariant);
-    if (variant) {
-      onVariantSelect(variant);
-      onClose();
-    }
+    onVariantSelect(selectedVariant);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Select Product Variant
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">{product.name}</p>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Choose Configuration:</label>
-            <Select value={selectedVariant} onValueChange={setSelectedVariant}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a variant" />
-              </SelectTrigger>
-              <SelectContent>
-                {variants.map(variant => (
-                  <SelectItem key={variant.id} value={variant.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{variant.description}</span>
-                      <span className="text-xs text-muted-foreground">{variant.dimensions}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            Select {product.name} Variant
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          <div className="text-sm text-gray-600">
+            Choose from available configurations and drawer options:
           </div>
           
-          {selectedVariant && (() => {
-            const variant = variants.find(v => v.id === selectedVariant);
-            return variant ? (
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{variant.configuration}</Badge>
-                    {variant.drawerCount && (
-                      <Badge variant="outline">{variant.drawerCount} Drawers</Badge>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+            {product.variants?.map((variant: ProductVariant) => (
+              <Card 
+                key={variant.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow border-2 hover:border-blue-200"
+                onClick={() => handleVariantSelect(variant)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-medium text-sm mb-1">{variant.name}</h3>
+                      
+                      {variant.drawerCount && (
+                        <div className="flex items-center gap-1 mb-2">
+                          <Layers className="h-3 w-3 text-blue-600" />
+                          <Badge variant="secondary" className="text-xs">
+                            {variant.drawerCount}
+                          </Badge>
+                        </div>
+                      )}
+                      
+                      {variant.dimensions && (
+                        <div className="text-xs text-gray-500">
+                          {variant.dimensions.length} × {variant.dimensions.width} × {variant.dimensions.height}mm
+                        </div>
+                      )}
+                    </div>
+                    
+                    {variant.thumbnail && (
+                      <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden ml-2">
+                        <img 
+                          src={variant.thumbnail} 
+                          alt={variant.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{variant.description}</p>
-                  <p className="text-xs font-mono">{variant.dimensions}</p>
-                </div>
-              </div>
-            ) : null;
-          })()}
+                  
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleVariantSelect(variant);
+                    }}
+                  >
+                    Select This Variant
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
           
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleVariantSelect} 
-              disabled={!selectedVariant}
-              className="flex-1"
-            >
-              Select Variant
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

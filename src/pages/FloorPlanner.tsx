@@ -505,7 +505,7 @@ const FloorPlanner = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Enhanced Floor Planner</h1>
-              <p className="text-muted-foreground">Design your laboratory layout with room-based precision</p>
+              <p className="text-muted-foreground">Design your laboratory layout with collision detection and smart snapping</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -523,16 +523,17 @@ const FloorPlanner = () => {
                 <Save className="h-4 w-4 mr-2" />
                 Save
               </Button>
-              <ExportModal
+              <EnhancedExportModal
                 canvasRef={canvasRef}
                 roomPoints={roomPoints}
                 placedProducts={placedProducts}
+                projectName={projectName}
               >
                 <Button variant="outline">
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
-              </ExportModal>
+              </EnhancedExportModal>
               <Button onClick={handleToggleFullscreen} variant="outline">
                 <Maximize2 className="h-4 w-4" />
               </Button>
@@ -556,14 +557,14 @@ const FloorPlanner = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Enhanced Left Sidebar with Tabs - Made Narrower */}
+          {/* Enhanced Left Sidebar with Thumbnail Products */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white rounded-lg border shadow-sm">
               <div className="p-4 border-b">
                 <h2 className="text-lg font-semibold">Product Library</h2>
-                <p className="text-sm text-muted-foreground">Select products to place on your floor plan</p>
+                <p className="text-sm text-muted-foreground">Drag products to place on your floor plan</p>
               </div>
-              <div className="p-4">
+              <div className="h-96">
                 <EnhancedSeriesSelector
                   onProductDrag={handleProductDrag}
                   currentTool={currentMode}
@@ -573,7 +574,7 @@ const FloorPlanner = () => {
             </div>
           </div>
 
-          {/* Enhanced Main Content Area - Extended to the left */}
+          {/* Enhanced Main Content Area */}
           <div className="lg:col-span-3 space-y-4">
             {/* Placed Products Horizontal Bar */}
             <PlacedProductsBar
@@ -621,11 +622,11 @@ const FloorPlanner = () => {
               </div>
             )}
 
-            {/* Enhanced Canvas - Made Smaller */}
+            {/* Enhanced Canvas with Collision Detection */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
+                  <CardTitle className="text-lg">Canvas - Enhanced with Collision Detection</CardTitle>
                   
                   <div className="flex items-center space-x-2">
                     {/* Unit Toggle Above Canvas */}
@@ -655,6 +656,9 @@ const FloorPlanner = () => {
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       Mode: {currentMode}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      Collision Detection: ON
                     </Badge>
                     <Button variant="outline" size="sm" asChild>
                       <label>
@@ -735,6 +739,7 @@ const FloorPlanner = () => {
                   <span>Mode: {currentMode}</span>
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>
+                  <span>Collision Detection: Active</span>
                   <span>Rooms: {rooms.length}</span>
                   <span>
                     {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
@@ -835,7 +840,7 @@ const FloorPlanner = () => {
         </div>
       </div>
       
-      {/* Product Variant Selector Modal */}
+      {/* Product Variant Selector Modal with Enhanced Drawer Display */}
       <ProductVariantSelector
         product={selectedProductForVariant}
         isOpen={showVariantSelector}
