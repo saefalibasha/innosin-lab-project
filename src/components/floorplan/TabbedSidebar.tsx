@@ -9,28 +9,30 @@ import RoomTools from './RoomTools';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
 interface TabbedSidebarProps {
-  onProductDrag: (product: any) => void;
-  onProductUsed?: (product: any) => void; // <-- add this so we can forward it
+  onProductDrag?: (product: any) => void;                 // optional: for drag previews
+  onProductSelect: (product: PlacedProduct) => void;      // NEW: add to canvas when clicked
   currentTool: string;
   placedProducts: PlacedProduct[];
   onRoomCreate: (room: any) => void;
   onStartRoomCreation: () => void;
+  scale?: number;                                         // optional: forward to selector
 }
 
 const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
   onProductDrag,
-  onProductUsed,
+  onProductSelect,
   currentTool,
   placedProducts,
   onRoomCreate,
-  onStartRoomCreation
+  onStartRoomCreation,
+  scale
 }) => {
-  const [activeTab, setActiveTab] = useState<'products' | 'rooms' | 'stats' | 'help'>('products');
+  const [activeTab, setActiveTab] = useState('products');
 
   return (
     <Card className="w-full h-full">
       <CardContent className="p-6">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full h-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="products" className="flex items-center gap-2 px-4 py-3">
               <Package className="h-4 w-4" />
@@ -40,9 +42,9 @@ const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
               <Home className="h-4 w-4" />
               <span>Rooms</span>
             </TabsTrigger>
-            <TabsTrigger value="stats" className="flex items-center gap-2 px-4 py-3">
+            <TabsTrigger value="analytics" className="flex items-center gap-2 px-4 py-3">
               <BarChart3 className="h-4 w-4" />
-              <span>Stats</span>
+              <span>Analytics</span>
             </TabsTrigger>
             <TabsTrigger value="help" className="flex items-center gap-2 px-4 py-3">
               <HelpCircle className="h-4 w-4" />
@@ -54,8 +56,9 @@ const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
             <TabsContent value="products" className="mt-0 h-full">
               <EnhancedSeriesSelector
                 onProductDrag={onProductDrag}
-                onProductUsed={onProductUsed}   // <-- forward it to fix the prop error
+                onProductSelect={onProductSelect}   // ← wire up add-to-canvas
                 currentTool={currentTool}
+                scale={scale}
               />
             </TabsContent>
 
@@ -66,8 +69,8 @@ const TabbedSidebar: React.FC<TabbedSidebarProps> = ({
               />
             </TabsContent>
 
-            <TabsContent value="stats" className="mt-0 h-full overflow-auto">
-              <ProductStatistics placedProducts={placedProducts} />
+            <TabsContent value="analytics" className="mt-0 h-full">
+              <ProductStatistics products={placedProducts} />
             </TabsContent>
 
             <TabsContent value="help" className="mt-0 h-full">
