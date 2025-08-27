@@ -1,15 +1,34 @@
-import React, { useState, useMemo } from 'react';
+// src/components/floorplan/EnhancedSeriesSelector.tsx
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { useProductSeries } from '@/hooks/useProductSeries';
 import { Product } from '@/types/product';
 import ProductVariantSelector from './ProductVariantSelector';
-import { formatSeriesName, toTitleCase, formatProductName } from '@/utils/seriesNameFormatter';
-import { getOrientationDisplayName, formatDrawerCount, formatFinishType } from '@/utils/productTerminology';
+import {
+  formatSeriesName,
+  toTitleCase,
+  formatProductName,
+} from '@/utils/seriesNameFormatter';
+import {
+  getOrientationDisplayName,
+  formatDrawerCount,
+  formatFinishType,
+} from '@/utils/productTerminology';
 
 interface EnhancedSeriesSelectorProps {
   onProductDrag: (product: any) => void;
@@ -17,185 +36,172 @@ interface EnhancedSeriesSelectorProps {
   onProductUsed?: (productId: string) => void;
 }
 
-type SeriesFilters = Record<
-  string,
-  {
-    finish?: string;
-    orientation?: string;
-    drawerCount?: string;
-    doorType?: string;
-    dimensions?: string;
-    category?: string;
-    mountingType?: string;
-    mixingType?: string;
-    handleType?: string;
-    cabinetClass?: string;
-    emergencyShowerType?: string;
-  }
->;
-
-const normalize = (v: unknown) =>
-  v === null || v === undefined || v === '' ? undefined : String(v);
-
-const numOrUndefined = (v: unknown) => {
-  const n = typeof v === 'number' ? v : Number(v);
-  return Number.isFinite(n) ? n : undefined;
-};
-
 const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   onProductDrag,
   currentTool,
   onProductUsed,
 }) => {
-  const [expandedSeries, setExpandedSeries] = useState<string | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [showVariantSelector, setShowVariantSelector] = useState(false);
-  const [selectedProductForVariants, setSelectedProductForVariants] = useState<Product | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [seriesFilters, setSeriesFilters] = useState<SeriesFilters>({});
   const { productSeries, loading, error } = useProductSeries();
 
-  // ————— helpers —————
-
-  const extractDimensions = (product: Product) => {
-    const dim = product.dimensions;
-    if (dim) {
-      const m = dim.match(
-        /(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*(mm|cm|m)?/i
-      );
-      if (m) {
-        const [, L, W, H, unit = 'mm'] = m;
-        const factor = unit.toLowerCase() === 'mm' ? 0.001 : unit.toLowerCase() === 'cm' ? 0.01 : 1;
-        return { length: parseFloat(L) * factor, width: parseFloat(W) * factor, height: parseFloat(H) * factor };
+  const [expandedSeries, setExpandedSeries] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [seriesFilters, setSeriesFilters] = useState<
+    Record<
+      string,
+      {
+        finish?: string;
+        orientation?: string;
+        drawerCount?: string;
+        doorType?: string;
+        dimensions?: string;
+        category?: string;
+        mountingType?: string;
+        mixingType?: string;
+        handleType?: string;
+        cabinetClass?: string;
+        emergencyShowerType?: string;
       }
-    }
-    return { length: 1.0, width: 0.6, height: 0.85 };
-  };
+    >
+  >({});
 
-  /** unique values helper with smart sorts */
-  const uniqueValues = (products: Product[], field: keyof Product): string[] => {
-    const vals = products
-      .map(p => {
-        if (field === 'number_of_drawers') {
-          const n = numOrUndefined(p.number_of_drawers);
-          return n === undefined ? '' : String(n);
-        }
-        const raw = (p as any)[field];
-        return typeof raw === 'string' || typeof raw === 'number' ? String(raw) : '';
-      })
-      .filter(Boolean);
+  // Variant chooser (shown only if multiple choices still remain)
+  const [showVariantSelector, setShowVariantSelector] = useState(false);
+  const [selectedProductForVariants, setSelectedProductForVariants] =
+    useState<Product | null>(null);
 
-    const set = Array.from(new Set(vals));
-
-    if (field === 'number_of_drawers') {
-      return set.sort((a, b) => parseInt(a) - parseInt(b));
-    }
-
-    if (field === 'dimensions') {
-      const vol = (s: string) => {
-        const m = s.match(/(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)/i);
-        if (!m) return 0;
-        const [, L, W, H] = m;
-        return parseFloat(L) * parseFloat(W) * parseFloat(H);
-        };
-      return set.sort((a, b) => vol(a) - vol(b));
-    }
-
-    if (field === 'door_type') {
-      const order = ['Solid', 'Glass', 'Mesh', 'Open'];
-      return set.sort((a, b) => {
-        const ai = order.indexOf(a);
-        const bi = order.indexOf(b);
-        if (ai !== -1 && bi !== -1) return ai - bi;
-        if (ai !== -1) return -1;
-        if (bi !== -1) return 1;
-        return a.localeCompare(b);
-      });
-    }
-
-    if (field === 'finish_type') {
-      const order = ['Powder Coat', 'Stainless Steel', 'Epoxy', 'Phenolic'];
-      return set.sort((a, b) => {
-        const ai = order.indexOf(a);
-        const bi = order.indexOf(b);
-        if (ai !== -1 && bi !== -1) return ai - bi;
-        if (ai !== -1) return -1;
-        if (bi !== -1) return 1;
-        return a.localeCompare(b);
-      });
-    }
-
-    return set.sort();
-  };
+  const isInteractionDisabled = currentTool !== 'select';
 
   const filteredSeries = useMemo(() => {
     if (!searchTerm) return productSeries;
     const term = searchTerm.toLowerCase();
     return productSeries.filter(
-      s => s.name.toLowerCase().includes(term) || s.description?.toLowerCase().includes(term)
+      (s) =>
+        s.name.toLowerCase().includes(term) ||
+        s.description?.toLowerCase().includes(term)
     );
   }, [productSeries, searchTerm]);
 
-  // ————— filter mechanics —————
-
   const handleSeriesToggle = (seriesId: string) => {
     setExpandedSeries(expandedSeries === seriesId ? null : seriesId);
-    setSelectedProduct(null);
     if (!seriesFilters[seriesId]) {
-      setSeriesFilters(prev => ({ ...prev, [seriesId]: {} }));
+      setSeriesFilters((prev) => ({ ...prev, [seriesId]: {} }));
     }
   };
 
-  const setFilter = (seriesId: string, key: keyof SeriesFilters[string], value: string) => {
-    setSeriesFilters(prev => ({
+  const handleFilterChange = (
+    seriesId: string,
+    filterKey:
+      | 'finish'
+      | 'orientation'
+      | 'drawerCount'
+      | 'doorType'
+      | 'dimensions'
+      | 'category'
+      | 'mountingType'
+      | 'mixingType'
+      | 'handleType'
+      | 'cabinetClass'
+      | 'emergencyShowerType',
+    value: string
+  ) => {
+    setSeriesFilters((prev) => ({
       ...prev,
       [seriesId]: {
         ...prev[seriesId],
-        [key]: value === 'all' ? undefined : value,
+        [filterKey]: value === 'all' ? undefined : value,
       },
     }));
-    setSelectedProduct(null);
   };
 
-  const applyFilters = (seriesId: string, products: Product[]) => {
-    const f = seriesFilters[seriesId] || {};
-    return products.filter(p => {
-      const finish = normalize(p.finish_type);
-      const orientation = normalize(p.orientation);
-      const drawers = numOrUndefined(p.number_of_drawers);
-      const doorType = normalize(p.door_type);
-      const dimensions = normalize(p.dimensions);
-      const category = normalize(p.category);
-      const mounting = normalize(p.mounting_type);
-      const mixing = normalize(p.mixing_type);
-      const handle = normalize(p.handle_type);
-      const cabinetClass = normalize(p.cabinet_class);
-      const shower = normalize(p.emergency_shower_type);
+  const getUniqueValues = (products: Product[], field: keyof Product): string[] => {
+    const values = products
+      .map((p) => {
+        const v = p[field];
+        return typeof v === 'number' || typeof v === 'string' ? String(v) : '';
+      })
+      .filter(Boolean);
 
-      if (f.finish && finish !== f.finish) return false;
-      if (f.orientation && orientation !== f.orientation) return false;
-      if (f.drawerCount && String(drawers ?? '') !== f.drawerCount) return false;
-      if (f.doorType && doorType !== f.doorType) return false;
-      if (f.dimensions && dimensions !== f.dimensions) return false;
-      if (f.category && category !== f.category) return false;
-      if (f.mountingType && mounting !== f.mountingType) return false;
-      if (f.mixingType && mixing !== f.mixingType) return false;
-      if (f.handleType && handle !== f.handleType) return false;
-      if (f.cabinetClass && cabinetClass !== f.cabinetClass) return false;
-      if (f.emergencyShowerType && shower !== f.emergencyShowerType) return false;
+    const uniques = [...new Set(values)];
+
+    // dimension sort (volume-ish)
+    if (field === 'dimensions') {
+      const vol = (dim: string) => {
+        const m = dim.match(
+          /(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)/i
+        );
+        if (!m) return 0;
+        return parseFloat(m[1]) * parseFloat(m[2]) * parseFloat(m[3]);
+      };
+      return uniques.sort((a, b) => vol(a) - vol(b));
+    }
+
+    // drawer count numeric sort
+    if (field === 'number_of_drawers') {
+      return uniques.sort((a, b) => parseInt(a) - parseInt(b));
+    }
+
+    // door/finish nice-ish sorts
+    if (field === 'door_type') {
+      const order = ['Solid', 'Glass', 'Mesh', 'Open'];
+      return uniques.sort((a, b) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return a.localeCompare(b);
+      });
+    }
+    if (field === 'finish_type') {
+      const order = ['Powder Coat', 'Stainless Steel', 'Epoxy', 'Phenolic'];
+      return uniques.sort((a, b) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return a.localeCompare(b);
+      });
+    }
+
+    return uniques.sort();
+  };
+
+  const getFilteredProducts = (
+    seriesId: string,
+    products: Product[]
+  ): Product[] => {
+    const f = seriesFilters[seriesId] || {};
+    return products.filter((p) => {
+      if (f.finish && p.finish_type !== f.finish) return false;
+      if (f.orientation && p.orientation !== f.orientation) return false;
+      if (f.drawerCount && String(p.number_of_drawers || 0) !== f.drawerCount)
+        return false;
+      if (f.doorType && p.door_type !== f.doorType) return false;
+      if (f.dimensions && p.dimensions !== f.dimensions) return false;
+      if (f.category && p.category !== f.category) return false;
+      if (f.mountingType && p.mounting_type !== f.mountingType) return false;
+      if (f.mixingType && p.mixing_type !== f.mixingType) return false;
+      if (f.handleType && p.handle_type !== f.handleType) return false;
+      if (f.cabinetClass && p.cabinet_class !== f.cabinetClass) return false;
+      if (
+        f.emergencyShowerType &&
+        p.emergency_shower_type !== f.emergencyShowerType
+      )
+        return false;
       return true;
     });
   };
 
-  const optionsFor = (
+  const getAvailableFilterOptions = (
     seriesId: string,
     products: Product[],
     field: keyof Product,
-    current: SeriesFilters[string]
+    currentFilters: Record<string, any>
   ) => {
-    // temporarily drop this field from filters to compute options
-    const { ...others } = current || {};
-    const mapKey: Record<string, keyof SeriesFilters[string]> = {
+    // apply all filters except the one we’re computing options for
+    const other = { ...currentFilters };
+    const mapKey: Record<string, string> = {
       finish_type: 'finish',
       orientation: 'orientation',
       number_of_drawers: 'drawerCount',
@@ -207,98 +213,94 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       cabinet_class: 'cabinetClass',
       emergency_shower_type: 'emergencyShowerType',
     };
-    const k = mapKey[field as string];
-    if (k) delete (others as any)[k];
+    delete other[mapKey[field as string] ?? ''];
 
-    const temp = { [seriesId]: others } as SeriesFilters;
-    const filtered = products.filter(p => applyFilters(seriesId, [p]).length > 0); // cheap reuse
-    return uniqueValues(filtered, field);
+    const filtered = products.filter((p) => {
+      if (other.finish && p.finish_type !== other.finish) return false;
+      if (other.orientation && p.orientation !== other.orientation) return false;
+      if (
+        other.drawerCount &&
+        String(p.number_of_drawers || 0) !== other.drawerCount
+      )
+        return false;
+      if (other.doorType && p.door_type !== other.doorType) return false;
+      if (other.dimensions && p.dimensions !== other.dimensions) return false;
+      if (other.mountingType && p.mounting_type !== other.mountingType)
+        return false;
+      if (other.mixingType && p.mixing_type !== other.mixingType) return false;
+      if (other.handleType && p.handle_type !== other.handleType) return false;
+      if (other.cabinetClass && p.cabinet_class !== other.cabinetClass)
+        return false;
+      if (
+        other.emergencyShowerType &&
+        p.emergency_shower_type !== other.emergencyShowerType
+      )
+        return false;
+      return true;
+    });
+
+    return getUniqueValues(filtered, field);
   };
 
-  // ————— selection and DnD —————
+  // When clicking a product tile:
+  // - if current filters still leave multiple valid variants → open modal
+  // - otherwise skip modal (already narrowed to a single variant)
+  const handleProductClick = (seriesId: string, product: Product) => {
+    const series = productSeries.find((s) => s.id === seriesId);
+    if (!series) return;
 
-  const handleProductSelect = (product: Product) => {
-    const mobile =
-      product.name?.toLowerCase().includes('mobile cabinet') ||
-      product.product_code?.toLowerCase().includes('mc-');
-    const modular =
-      product.name?.toLowerCase().includes('modular cabinet') ||
-      product.product_code?.toLowerCase().includes('mcc-');
-
-    if (mobile || modular) {
+    const stillValid = getFilteredProducts(seriesId, series.products);
+    if (stillValid.length > 1) {
       setSelectedProductForVariants(product);
       setShowVariantSelector(true);
     } else {
-      setSelectedProduct(product);
+      // exact or single match → no popup
+      // (optional) You could auto-start drag here if you want.
+      setSelectedProductForVariants(null);
+      setShowVariantSelector(false);
     }
   };
 
   const handleVariantSelect = (variant: any) => {
-    // attach chosen configuration to the selected product (used primarily for display/drag)
-    setSelectedProduct(
-      selectedProductForVariants
-        ? {
-            ...selectedProductForVariants,
-            id: `${selectedProductForVariants.id}-${variant.configuration}`,
-            name: variant.name,
-          }
-        : null
-    );
+    // If you want to carry the variant data further, you can enrich the product here.
     setShowVariantSelector(false);
     setSelectedProductForVariants(null);
   };
 
-  const handleDragStart = (e: React.DragEvent, product: Product) => {
-    const dims = extractDimensions(product);
-    const canvasScale = 100; // 1 m = 100 px for canvas
-    const scaled = {
-      length: dims.length * canvasScale,
-      width: dims.width * canvasScale,
-      height: dims.height * canvasScale,
-    };
-
-    const payload = {
-      id: product.id,
-      productId: product.id,
-      name: formatProductName(product.name),
-      category: product.category,
-      dimensions: scaled,
-      realDimensions: dims,
-      color: getCategoryColor(product.category),
-      modelPath: (product as any).model_path || (product as any).modelPath,
-      thumbnail: (product as any).thumbnail_path || (product as any).thumbnail,
-      description: product.description,
-      specifications: product.specifications,
-      productCode: product.product_code || product.id,
-      series: formatSeriesName(product.category || ''),
-      finish: formatFinishType(product.finish_type || ''),
-      orientation: getOrientationDisplayName(product.orientation || ''),
-      drawerCount:
-        numOrUndefined(product.number_of_drawers) !== undefined
-          ? formatDrawerCount(Number(product.number_of_drawers))
-          : '',
-      doorType: product.door_type ? toTitleCase(product.door_type) : '',
-    };
-
-    e.dataTransfer.setData('application/json', JSON.stringify(payload));
-    e.dataTransfer.effectAllowed = 'copy';
-    onProductDrag(payload);
-    onProductUsed?.(product.id);
-  };
-
-  const getCategoryColor = (category?: string): string => {
+  const getCategoryColor = (category: string): string => {
     const colors: Record<string, string> = {
       'Innosin Lab': '#10b981',
       'Broen-Lab': '#3b82f6',
       'Hamilton Laboratory Solutions': '#1d4ed8',
       'Oriental Giken Inc.': '#ef4444',
     };
-    return (category && colors[category]) || '#6b7280';
+    return colors[category] || '#6b7280';
   };
 
-  const isInteractionDisabled = currentTool !== 'select';
+  const handleDragStart = (e: React.DragEvent, product: Product) => {
+    // minimal, reliable payload for canvas
+    const payload = {
+      id: product.id,
+      productId: product.id,
+      name: formatProductName(product.name),
+      product_code: product.product_code || product.id,
+      category: product.category,
+      thumbnail: product.thumbnail_path || product.thumbnail,
+      modelPath: product.model_path || product.modelPath,
+      // keep raw props; the canvas will size it as needed
+      dimensions: product.dimensions,
+      finish_type: product.finish_type,
+      number_of_drawers: product.number_of_drawers,
+      orientation: product.orientation,
+      door_type: product.door_type,
+      color: getCategoryColor(product.category),
+    };
 
-  // ————— render —————
+    e.dataTransfer.setData('application/json', JSON.stringify(payload));
+    e.dataTransfer.effectAllowed = 'copy';
+    if (onProductUsed) onProductUsed(product.id);
+    onProductDrag(payload);
+  };
 
   if (loading) {
     return (
@@ -340,8 +342,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-2">
           {filteredSeries.map((series) => {
-            const current = seriesFilters[series.id] || {};
-            const filteredProducts = applyFilters(series.id, series.products);
+            const f = seriesFilters[series.id] || {};
+            const filtered = getFilteredProducts(series.id, series.products);
 
             return (
               <Collapsible
@@ -359,7 +361,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                         {formatSeriesName(series.name)}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {filteredProducts.length} variants
+                        {series.products.length} variants
                       </div>
                     </div>
                     {expandedSeries === series.id ? (
@@ -371,27 +373,35 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                 </CollapsibleTrigger>
 
                 <CollapsibleContent className="space-y-3 pl-4 mt-2">
-                  {/* Variant Filters */}
+                  {/* FILTER VARIANTS */}
                   <div className="space-y-2 p-3 bg-muted/30 rounded-lg border">
                     <div className="text-xs font-medium text-muted-foreground mb-2">
                       Filter Variants
                     </div>
 
-                    {uniqueValues(series.products, 'finish_type').length > 1 && (
+                    {/* Orientation */}
+                    {getUniqueValues(series.products, 'orientation').length > 1 && (
                       <div>
-                        <label className="text-xs font-medium">Finish:</label>
+                        <label className="text-xs font-medium">Orientation</label>
                         <Select
-                          value={current.finish || 'all'}
-                          onValueChange={(v) => setFilter(series.id, 'finish', v)}
+                          value={f.orientation || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'orientation', value)
+                          }
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="All Finishes" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">All Finishes</SelectItem>
-                            {optionsFor(series.id, series.products, 'finish_type', current).map((opt) => (
-                              <SelectItem key={opt} value={opt}>
-                                {formatFinishType(opt)}
+                            <SelectItem value="all">All Orientations</SelectItem>
+                            {getAvailableFilterOptions(
+                              series.id,
+                              series.products,
+                              'orientation',
+                              f
+                            ).map((orientation) => (
+                              <SelectItem key={orientation} value={orientation}>
+                                {getOrientationDisplayName(orientation)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -399,23 +409,35 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                       </div>
                     )}
 
-                    {uniqueValues(series.products, 'number_of_drawers').length > 0 && (
+                    {/* Drawers (JUST UNDER ORIENTATION) */}
+                    {(getUniqueValues(series.products, 'number_of_drawers').length >
+                      1 ||
+                      series.products.some(
+                        (p) => (p.number_of_drawers || 0) > 0
+                      )) && (
                       <div>
-                        <label className="text-xs font-medium">Drawers:</label>
+                        <label className="text-xs font-medium">Drawers</label>
                         <Select
-                          value={current.drawerCount || 'all'}
-                          onValueChange={(v) => setFilter(series.id, 'drawerCount', v)}
+                          value={f.drawerCount || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'drawerCount', value)
+                          }
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="All Drawer Counts" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Drawer Counts</SelectItem>
-                            {optionsFor(series.id, series.products, 'number_of_drawers', current)
-                              .filter((n) => n && n !== '0')
-                              .map((n) => (
-                                <SelectItem key={n} value={n}>
-                                  {formatDrawerCount(parseInt(n))}
+                            {getAvailableFilterOptions(
+                              series.id,
+                              series.products,
+                              'number_of_drawers',
+                              f
+                            )
+                              .filter((c) => c && c !== '0' && c !== 'null')
+                              .map((count) => (
+                                <SelectItem key={count} value={count}>
+                                  {formatDrawerCount(parseInt(count))}
                                 </SelectItem>
                               ))}
                           </SelectContent>
@@ -423,65 +445,56 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                       </div>
                     )}
 
-                    {uniqueValues(series.products, 'orientation').length > 1 && (
+                    {/* Size */}
+                    {getUniqueValues(series.products, 'dimensions').length > 1 && (
                       <div>
-                        <label className="text-xs font-medium">Orientation:</label>
+                        <label className="text-xs font-medium">Size</label>
                         <Select
-                          value={current.orientation || 'all'}
-                          onValueChange={(v) => setFilter(series.id, 'orientation', v)}
+                          value={f.dimensions || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'dimensions', value)
+                          }
                         >
                           <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="All Orientations" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Orientations</SelectItem>
-                            {optionsFor(series.id, series.products, 'orientation', current).map((o) => (
-                              <SelectItem key={o} value={o}>
-                                {getOrientationDisplayName(o)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {uniqueValues(series.products, 'door_type').length > 1 && (
-                      <div>
-                        <label className="text-xs font-medium">Door Type:</label>
-                        <Select
-                          value={current.doorType || 'all'}
-                          onValueChange={(v) => setFilter(series.id, 'doorType', v)}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="All Door Types" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All Door Types</SelectItem>
-                            {optionsFor(series.id, series.products, 'door_type', current).map((o) => (
-                              <SelectItem key={o} value={o}>
-                                {toTitleCase(o)}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                    {uniqueValues(series.products, 'dimensions').length > 1 && (
-                      <div>
-                        <label className="text-xs font-medium">Size:</label>
-                        <Select
-                          value={current.dimensions || 'all'}
-                          onValueChange={(v) => setFilter(series.id, 'dimensions', v)}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue placeholder="All Sizes" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="all">All Sizes</SelectItem>
-                            {uniqueValues(series.products, 'dimensions').map((o) => (
-                              <SelectItem key={o} value={o}>
-                                {o}
+                            {getUniqueValues(series.products, 'dimensions').map(
+                              (size) => (
+                                <SelectItem key={size} value={size}>
+                                  {size}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Finish */}
+                    {getUniqueValues(series.products, 'finish_type').length > 1 && (
+                      <div>
+                        <label className="text-xs font-medium">Finish</label>
+                        <Select
+                          value={f.finish || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'finish', value)
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Finishes</SelectItem>
+                            {getAvailableFilterOptions(
+                              series.id,
+                              series.products,
+                              'finish_type',
+                              f
+                            ).map((finish) => (
+                              <SelectItem key={finish} value={finish}>
+                                {formatFinishType(finish)}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -490,57 +503,42 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                     )}
                   </div>
 
-                  {/* Filtered Products — image-only cards with product_code overlay */}
-                  {filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {filteredProducts.map((product) => {
-                        const code = product.product_code || product.id;
-                        const img =
-                          (product as any).thumbnail_path ||
-                          (product as any).thumbnail ||
-                          '';
+                  {/* PRODUCT GRID (image only + code below) */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {filtered.map((product) => (
+                      <div
+                        key={product.id}
+                        draggable={!isInteractionDisabled}
+                        onDragStart={(e) => handleDragStart(e, product)}
+                        onClick={() => handleProductClick(series.id, product)}
+                        className={`border rounded-lg p-2 transition-all ${
+                          isInteractionDisabled
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'cursor-move hover:border-primary/60'
+                        }`}
+                        title={formatProductName(product.name)}
+                      >
+                        <div className="aspect-square bg-white rounded overflow-hidden flex items-center justify-center">
+                          <img
+                            src={product.thumbnail_path || product.thumbnail}
+                            alt={product.name}
+                            className="max-w-full max-h-full object-contain"
+                          />
+                        </div>
 
-                        return (
-                          <div
-                            key={product.id}
-                            draggable={!isInteractionDisabled}
-                            onDragStart={(e) => handleDragStart(e, product)}
-                            onClick={() => handleProductSelect(product)}
-                            className={`relative border rounded-lg overflow-hidden bg-white transition-all ${
-                              isInteractionDisabled
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'cursor-move hover:shadow-md'
-                            } ${
-                              selectedProduct?.id === product.id ? 'ring-2 ring-primary' : ''
-                            }`}
-                          >
-                            {/* badge with product_code */}
-                            <div className="absolute left-2 top-2 z-10 rounded-md bg-black/60 text-white text-[10px] px-2 py-1">
-                              {code}
-                            </div>
+                        {/* Product code as caption (does NOT cover image) */}
+                        <p className="text-[10px] text-center mt-2 font-medium text-muted-foreground">
+                          {product.product_code || product.id}
+                        </p>
+                      </div>
+                    ))}
 
-                            <div className="aspect-video bg-gray-50">
-                              {img ? (
-                                <img
-                                  src={img}
-                                  alt={product.name}
-                                  className="w-full h-full object-contain"
-                                />
-                              ) : (
-                                <div className="w-full h-full grid place-items-center text-xs text-muted-foreground">
-                                  No Image
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-muted-foreground p-4 text-center">
-                      No products match the selected filters
-                    </div>
-                  )}
+                    {filtered.length === 0 && (
+                      <div className="col-span-2 text-center py-4 text-sm text-muted-foreground">
+                        No products match the selected filters
+                      </div>
+                    )}
+                  </div>
                 </CollapsibleContent>
               </Collapsible>
             );
@@ -548,9 +546,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
         </div>
       </ScrollArea>
 
-      {/* Variant modal (still supported; tiles remain image-only) */}
+      {/* Variant chooser (will appear ONLY if more than one valid variant remains) */}
       <ProductVariantSelector
-        product={selectedProductForVariants}
+        product={selectedProductForVariants || undefined}
         isOpen={showVariantSelector}
         onClose={() => {
           setShowVariantSelector(false);
