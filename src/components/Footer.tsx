@@ -159,7 +159,7 @@ export const Footer = () => {
             </div>
 
             {/* right slogan */}
-            <div className="px-4 py-6 flex items-center justify-center lg:justify-end lg:pr-6">
+            <div className="px-5 py-6 flex items-center justify-center lg:justify-end lg:pr-6">
               <div className="text-sm text-white/80 uppercase tracking-wide text-center lg:text-right whitespace-nowrap">
                 Innovation in Laboratory Solutions
               </div>
