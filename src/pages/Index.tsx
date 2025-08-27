@@ -65,19 +65,21 @@ const Index = () => {
             items={companyData}
             renderItem={(company) => (
               <Card
+                key={company.name}
                 className="group bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 rounded-2xl overflow-hidden"
                 onClick={() => navigate(company.link)}
               >
-                <CardContent className="p-8 flex flex-col items-center justify-center h-52">
+                <CardContent className="p-8 flex flex-col items-center justify-center h-56">
                   <img
                     src={company.logo}
                     alt={`${company.name} Logo`}
                     className="w-28 h-28 object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                   {/* Country of Origin */}
-                  <div className="mt-4 text-sm text-muted-foreground">
-                    <span className="font-medium text-foreground/80">Country of Origin:</span>{' '}
-                    <span className="text-foreground/70">{company.origin}</span>
+                  <div className="mt-4">
+                    <span className="inline-block rounded-full border px-3 py-1 text-xs text-muted-foreground border-muted">
+                      Country of Origin: {company.origin}
+                    </span>
                   </div>
                 </CardContent>
               </Card>
@@ -96,7 +98,7 @@ const Index = () => {
 
       {/* Laboratory Transformations Section */}
       <section className="py-28 bg-white relative overflow-hidden transition-all duration-700 ease-in-out">
-        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
         <div className="container mx-auto px-4 relative z-10">
           <Reveal>
             <div className="text-center mb-20">
