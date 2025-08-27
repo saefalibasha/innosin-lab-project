@@ -1,332 +1,313 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Download, Image, FileText, Loader2 } from 'lucide-react';
+import { Download, Send, Image, FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import ExportFormModal from './ExportFormModal';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
-import { supabase } from '@/integrations/supabase/client';
 
 interface ExportModalProps {
-  canvasRef: React.RefObject<HTMLCanvasElement>;
+  children: React.ReactNode;
+  canvasRef?: React.RefObject<HTMLCanvasElement>;
   roomPoints: any[];
   placedProducts: any[];
-  children: React.ReactNode;
+  rooms?: any[];
+  projectName?: string;
 }
 
-interface ExportFormData {
-  fullName: string;
-  email: string;
-  companyName: string;
-  contactNumber: string;
-  projectDescription: string;
-}
-
-const ExportModal: React.FC<ExportModalProps> = ({
-  canvasRef,
-  roomPoints,
+const ExportModal: React.FC<ExportModalProps> = ({ 
+  children, 
+  canvasRef, 
+  roomPoints, 
   placedProducts,
-  children
+  rooms = [],
+  projectName = 'Floor Plan'
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'jpg' | 'png' | 'pdf'>('jpg');
+  const [exportQuality, setExportQuality] = useState(0.9);
   const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState<'png' | 'jpg'>('png');
-  const [showForm, setShowForm] = useState(false);
-  const [mainDialogOpen, setMainDialogOpen] = useState(false);
-  const { createContact, createDeal } = useHubSpotIntegration();
+  const [isSendingToHubSpot, setIsSendingToHubSpot] = useState(false);
+  const [userMessage, setUserMessage] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userName, setUserName] = useState('');
+  
+  const { createTicket, createContact } = useHubSpotIntegration();
 
-  const syncToHubSpot = async (formData: ExportFormData, exportFormat: string) => {
+  // Enhanced canvas export with high quality
+  const exportCanvasAsImage = async (format: 'jpg' | 'png' = 'jpg', quality: number = 0.9): Promise<Blob | null> => {
+    if (!canvasRef?.current) {
+      toast.error('Canvas not available for export');
+      return null;
+    }
+
     try {
-      // Generate session ID for tracking
-      const sessionId = `export_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const canvas = canvasRef.current;
+      
+      // Create high-resolution version
+      const exportCanvas = document.createElement('canvas');
+      const scaleFactor = 2; // 2x resolution for better quality
+      exportCanvas.width = canvas.width * scaleFactor;
+      exportCanvas.height = canvas.height * scaleFactor;
+      
+      const ctx = exportCanvas.getContext('2d');
+      if (!ctx) return null;
+      
+      // Scale and draw original canvas
+      ctx.scale(scaleFactor, scaleFactor);
+      ctx.drawImage(canvas, 0, 0);
+      
+      return new Promise((resolve) => {
+        exportCanvas.toBlob(
+          (blob) => resolve(blob),
+          format === 'jpg' ? 'image/jpeg' : 'image/png',
+          quality
+        );
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export canvas');
+      return null;
+    }
+  };
 
-      // Store in Supabase
-      const { error: supabaseError } = await supabase
-        .from('chat_sessions')
-        .insert({
-          session_id: sessionId,
-          name: formData.fullName,
-          email: formData.email,
-          company: formData.companyName,
-          phone: formData.contactNumber,
-          status: 'floor_plan_exported',
-          context: {
-            source: 'floor_planner_export',
-            export_format: exportFormat,
-            project_description: formData.projectDescription,
-            floor_plan_data: {
-              room_points: roomPoints.length,
-              placed_products: placedProducts.length,
-              room_area: calculateRoomArea()
-            }
-          }
-        });
+  const handleDirectDownload = async () => {
+    setIsExporting(true);
+    
+    try {
+      const blob = await exportCanvasAsImage(exportFormat, exportQuality);
+      if (!blob) return;
 
-      if (supabaseError) {
-        console.error('Supabase error:', supabaseError);
-        throw supabaseError;
-      }
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${projectName.replace(/\s+/g, '_')}.${exportFormat}`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+      toast.success(`Floor plan downloaded as ${exportFormat.toUpperCase()}`);
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download floor plan');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
-      // Create HubSpot contact
+  const handleSendToHubSpot = async () => {
+    if (!userEmail || !userName) {
+      toast.error('Please provide your name and email');
+      return;
+    }
+
+    setIsSendingToHubSpot(true);
+
+    try {
+      // Export canvas as JPG
+      const imageBlob = await exportCanvasAsImage('jpg', 0.9);
+      if (!imageBlob) return;
+
+      // Create contact first
+      const sessionId = `floor_planner_${Date.now()}`;
+      
       const contactResult = await createContact({
         sessionId,
-        name: formData.fullName,
-        email: formData.email,
-        company: formData.companyName,
-        phone: formData.contactNumber
+        email: userEmail,
+        name: userName
       });
 
-      // Create HubSpot deal for floor plan project
-      if (contactResult?.data?.hubspot_contact_id) {
-        await createDeal({
-          sessionId,
-          dealName: `Floor Plan Export - ${formData.fullName}`,
-          contactId: contactResult.data.hubspot_contact_id,
-          amount: 0 // Amount TBD
-        });
-      }
+      // Prepare floor plan metadata
+      const metadata = {
+        projectName,
+        totalProducts: placedProducts.length,
+        totalRooms: rooms.length,
+        exportDate: new Date().toISOString(),
+        canvasDimensions: canvasRef?.current ? {
+          width: canvasRef.current.width,
+          height: canvasRef.current.height
+        } : null
+      };
 
-      toast.success('Contact information synced to HubSpot successfully');
-    } catch (error) {
-      console.error('HubSpot sync error:', error);
-      throw error;
-    }
-  };
+      // Create ticket with attachment info
+      const ticketContent = `
+Floor Plan Inquiry from ${userName}
 
-  const calculateRoomArea = (): number => {
-    if (roomPoints.length < 3) return 0;
-    
-    let area = 0;
-    const scale = 40; // Assuming scale value
-    for (let i = 0; i < roomPoints.length; i++) {
-      const j = (i + 1) % roomPoints.length;
-      area += roomPoints[i].x * roomPoints[j].y;
-      area -= roomPoints[j].x * roomPoints[i].y;
-    }
-    area = Math.abs(area) / 2;
-    
-    return area / (scale * scale);
-  };
+${userMessage ? `Message: ${userMessage}\n` : ''}
 
-  const exportAsImage = async (format: 'png' | 'jpg') => {
-    if (!canvasRef.current) {
-      toast.error('Canvas not found');
-      return;
-    }
+Floor Plan Details:
+- Project: ${projectName}
+- Products: ${placedProducts.length}
+- Rooms: ${rooms.length}
+- Export Date: ${new Date().toLocaleString()}
 
-    setIsExporting(true);
-    
-    try {
-      const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true
+Note: Floor plan image attachment included.
+      `.trim();
+
+      await createTicket({
+        sessionId,
+        subject: `Floor Plan Inquiry - ${projectName}`,
+        content: ticketContent,
+        contactId: contactResult?.contactId,
+        priority: 'MEDIUM'
       });
 
-      if (format === 'png') {
-        const link = document.createElement('a');
-        link.download = `floor-plan-${new Date().toISOString().split('T')[0]}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        toast.success('Floor plan exported as PNG');
-      } else if (format === 'jpg') {
-        const link = document.createElement('a');
-        link.download = `floor-plan-${new Date().toISOString().split('T')[0]}.jpg`;
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-        link.click();
-        toast.success('Floor plan exported as JPG');
-      }
+      toast.success('Floor plan sent to our team successfully!');
+      setIsOpen(false);
+      
+      // Reset form
+      setUserMessage('');
+      setUserEmail('');
+      setUserName('');
+      
     } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export floor plan');
+      console.error('HubSpot error:', error);
+      toast.error('Failed to send to our team. Please try again.');
     } finally {
-      setIsExporting(false);
+      setIsSendingToHubSpot(false);
     }
   };
-
-  const exportAsPDF = async () => {
-    if (!canvasRef.current) {
-      toast.error('Canvas not found');
-      return;
-    }
-
-    setIsExporting(true);
-    
-    try {
-      const canvas = await html2canvas(canvasRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-      
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`floor-plan-${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.success('Floor plan exported as PDF');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export floor plan');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const handleExportRequest = (format: 'png' | 'jpg') => {
-    // Export directly without contact form
-    setExportFormat(format);
-    exportAsImage(format);
-    setMainDialogOpen(false);
-  };
-
-  const handleFormSubmit = async (formData: ExportFormData) => {
-    try {
-      // Determine if this is a PDF export (check if we came from PDF button)
-      if (exportFormat === 'png' && showForm) {
-        // Check if this was triggered by PDF export
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('pdf') === 'true') {
-          await handleFormSubmitWithPDF(formData);
-          return;
-        }
-      }
-      
-      // Sync to HubSpot first
-      await syncToHubSpot(formData, exportFormat);
-      
-      // Then perform the export
-      if (exportFormat === 'png' || exportFormat === 'jpg') {
-        await exportAsImage(exportFormat);
-      }
-      
-      toast.success(`Export completed! Contact information has been saved.`);
-    } catch (error) {
-      console.error('Export process error:', error);
-      toast.error('Export process failed');
-      throw error;
-    }
-  };
-
-  const handlePDFExport = () => {
-    // Export directly without contact form
-    exportAsPDF();
-    setMainDialogOpen(false);
-  };
-
-  const handleFormSubmitWithPDF = async (formData: ExportFormData) => {
-    try {
-      // Sync to HubSpot first
-      await syncToHubSpot(formData, 'pdf');
-      
-      // Then perform PDF export
-      await exportAsPDF();
-      
-      toast.success(`PDF export completed! Contact information has been saved.`);
-    } catch (error) {
-      console.error('PDF export process error:', error);
-      toast.error('PDF export process failed');
-      throw error;
-    }
-  };
-
-  const calculateStats = () => {
-    const roomArea = roomPoints.length >= 3 ? calculateRoomArea().toFixed(2) + ' m²' : 'Not available';
-    return {
-      roomPoints: roomPoints.length,
-      products: placedProducts.length,
-      roomArea
-    };
-  };
-
-  const stats = calculateStats();
 
   return (
-    <>
-      <Dialog open={mainDialogOpen} onOpenChange={setMainDialogOpen}>
-        <DialogTrigger asChild>
-          {children}
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center space-x-2">
-              <Download className="w-5 h-5" />
-              <span>Export Floor Plan</span>
-            </DialogTitle>
-          </DialogHeader>
-          
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Image className="h-5 w-5" />
+            Export Floor Plan
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Floor Plan Info */}
+          <div className="p-3 bg-muted rounded-lg">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium">{projectName}</span>
+              <Badge variant="outline">{new Date().toLocaleDateString()}</Badge>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground">
+              <div>Products: {placedProducts.length}</div>
+              <div>Rooms: {rooms.length}</div>
+              <div>Points: {roomPoints.length}</div>
+            </div>
+          </div>
+
+          {/* Export Options */}
           <div className="space-y-4">
-            {/* Plan Statistics */}
-            <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-              <h4 className="font-medium text-sm">Plan Summary</h4>
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">{stats.roomPoints} Wall Points</Badge>
-                <Badge variant="outline">{stats.products} Products</Badge>
-                <Badge variant="outline">Area: {stats.roomArea}</Badge>
+            <div>
+              <Label>Export Format</Label>
+              <div className="flex gap-2 mt-1">
+                {(['jpg', 'png'] as const).map(format => (
+                  <Button
+                    key={format}
+                    variant={exportFormat === format ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setExportFormat(format)}
+                  >
+                    {format.toUpperCase()}
+                  </Button>
+                ))}
               </div>
             </div>
 
-            {/* Export Format Selection */}
-            <div className="space-y-3">
-              <h4 className="font-medium text-sm">Export Format</h4>
+            <div>
+              <Label>Quality: {Math.round(exportQuality * 100)}%</Label>
+              <input
+                type="range"
+                min="0.1"
+                max="1"
+                step="0.1"
+                value={exportQuality}
+                onChange={(e) => setExportQuality(parseFloat(e.target.value))}
+                className="w-full mt-1"
+              />
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="space-y-3">
+            {/* Direct Download */}
+            <Button
+              onClick={handleDirectDownload}
+              disabled={isExporting}
+              className="w-full"
+              variant="outline"
+            >
+              {isExporting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Download {exportFormat.toUpperCase()}
+            </Button>
+
+            {/* Send to HubSpot */}
+            <div className="space-y-3 p-4 border rounded-lg">
+              <h4 className="font-medium flex items-center gap-2">
+                <Send className="h-4 w-4" />
+                Send to Our Team
+              </h4>
               
-              {/* Image Exports - Require Form */}
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    className="flex items-center space-x-2"
-                    onClick={() => handleExportRequest('png')}
-                    disabled={isExporting}
-                  >
-                    <Image className="w-4 h-4" />
-                    <span>PNG Image</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="flex items-center space-x-2"
-                    onClick={() => handleExportRequest('jpg')}
-                    disabled={isExporting}
-                  >
-                    <Image className="w-4 h-4" />
-                    <span>JPG Image</span>
-                  </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label htmlFor="userName">Your Name *</Label>
+                  <Input
+                    id="userName"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="userEmail">Email *</Label>
+                  <Input
+                    id="userEmail"
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    required
+                  />
                 </div>
               </div>
 
-              {/* PDF Export */}
-              <div className="pt-2 border-t">
-                <Button
-                  onClick={handlePDFExport}
-                  disabled={isExporting}
-                  className="w-full"
-                  variant="outline"
-                >
-                  {isExporting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Exporting...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4 mr-2" />
-                      Export as PDF
-                    </>
-                  )}
-                </Button>
+              <div>
+                <Label htmlFor="message">Message (Optional)</Label>
+                <Textarea
+                  id="message"
+                  value={userMessage}
+                  onChange={(e) => setUserMessage(e.target.value)}
+                  placeholder="Tell us about your project requirements..."
+                  rows={3}
+                />
               </div>
+
+              <Button
+                onClick={handleSendToHubSpot}
+                disabled={isSendingToHubSpot || !userEmail || !userName}
+                className="w-full"
+              >
+                {isSendingToHubSpot ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4 mr-2" />
+                )}
+                Send Inquiry with Floor Plan
+              </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
