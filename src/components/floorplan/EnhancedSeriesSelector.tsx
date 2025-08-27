@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, Grid, List } from 'lucide-react';
 import { ThumbnailProductCard } from './ThumbnailProductCard';
-import { generateProductId } from '@/utils/productUtils';
 
 interface EnhancedSeriesSelectorProps {
   onProductDrag: (product: any) => void;
