@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Calendar, MapPin } from 'lucide-react';
@@ -9,20 +9,28 @@ interface Project {
   id: string;
   title: string;
   location: string;
+  before_image?: string;
+  after_image?: string;
+  description?: string;
+  completion_date?: string;
+  project_type?: string;
+  // normalized fields used in the UI below:
   beforeImage: string;
   afterImage: string;
-  description: string;
   completionDate: string;
   projectType: string;
 }
 
+const MIN_CLIP = 2;   // tighten the bounds so it doesn't feel sticky
+const MAX_CLIP = 98;
+
 const BeforeAfterComparison = () => {
   const [currentProject, setCurrentProject] = useState(0);
-  const [sliderPosition, setSliderPosition] = useState(50);
+  const [sliderPosition, setSliderPosition] = useState(50);   // percent
   const [isDragging, setIsDragging] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const containerBounds = useRef<DOMRect | null>(null);
-  const animationFrame = useRef<number>();
+  const boundsRef = useRef<DOMRect | null>(null);
 
   const { data: projects = [], isLoading } = useQuery({
     queryKey: ['before-after-projects'],
@@ -32,91 +40,63 @@ const BeforeAfterComparison = () => {
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
-      
+
       if (error) throw error;
 
-      return data.map(project => ({
-        id: project.id,
-        title: project.title,
-        location: project.location || '',
-        beforeImage: project.before_image || '',
-        afterImage: project.after_image || '',
-        description: project.description || '',
-        completionDate: project.completion_date || '',
-        projectType: project.project_type || ''
-      }));
-    }
+      return (data || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        location: p.location || '',
+        beforeImage: p.before_image || '',
+        afterImage: p.after_image || '',
+        description: p.description || '',
+        completionDate: p.completion_date || '',
+        projectType: p.project_type || '',
+      })) as Project[];
+    },
   });
 
-  const updateSliderPosition = useCallback((clientX: number) => {
-    if (!containerBounds.current) return;
-    const rect = containerBounds.current;
+  const setPositionFromClientX = useCallback((clientX: number) => {
+    if (!boundsRef.current) return;
+    const rect = boundsRef.current;
     const x = clientX - rect.left;
-    const percentage = Math.max(5, Math.min(95, (x / rect.width) * 100));
-    setSliderPosition(percentage);
+    // convert to percent and clamp
+    const pct = Math.max(MIN_CLIP, Math.min(MAX_CLIP, (x / rect.width) * 100));
+    setSliderPosition(pct);
   }, []);
 
-  const throttledUpdate = useCallback((clientX: number) => {
-    if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
-    animationFrame.current = requestAnimationFrame(() => {
-      updateSliderPosition(clientX);
-    });
-  }, [updateSliderPosition]);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+  // Pointer handlers — super responsive on mouse AND touch
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
+    boundsRef.current = containerRef.current?.getBoundingClientRect() || null;
     setIsDragging(true);
-    containerBounds.current = containerRef.current?.getBoundingClientRect() || null;
-    updateSliderPosition(e.clientX);
-  }, [updateSliderPosition]);
+    // capture future pointer events to this element (prevents losing the drag)
+    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+    setPositionFromClientX(e.clientX);
+  }, [setPositionFromClientX]);
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const onWindowPointerMove = useCallback((e: PointerEvent) => {
     if (!isDragging) return;
-    e.preventDefault();
-    throttledUpdate(e.clientX);
-  }, [isDragging, throttledUpdate]);
+    // no throttling – update every move for speed
+    setPositionFromClientX(e.clientX);
+  }, [isDragging, setPositionFromClientX]);
 
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    containerBounds.current = null;
-    if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
-  }, []);
-
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-    containerBounds.current = containerRef.current?.getBoundingClientRect() || null;
-    const touch = e.touches[0];
-    updateSliderPosition(touch.clientX);
-  }, [updateSliderPosition]);
-
-  const handleTouchMove = useCallback((e: TouchEvent) => {
+  const onWindowPointerUp = useCallback(() => {
     if (!isDragging) return;
-    e.preventDefault();
-    const touch = e.touches[0];
-    throttledUpdate(touch.clientX);
-  }, [isDragging, throttledUpdate]);
-
-  const handleTouchEnd = useCallback(() => {
     setIsDragging(false);
-    containerBounds.current = null;
-    if (animationFrame.current) cancelAnimationFrame(animationFrame.current);
-  }, []);
+    boundsRef.current = null;
+  }, [isDragging]);
 
   useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove, { passive: false });
-      document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      document.addEventListener('touchend', handleTouchEnd);
-    }
+    if (!isDragging) return;
+    // Use passive: false so we can prevent default on touch if needed
+    window.addEventListener('pointermove', onWindowPointerMove, { passive: false });
+    window.addEventListener('pointerup', onWindowPointerUp, { passive: true });
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('touchmove', handleTouchMove);
-      document.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('pointermove', onWindowPointerMove);
+      window.removeEventListener('pointerup', onWindowPointerUp);
     };
-  }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
+  }, [isDragging, onWindowPointerMove, onWindowPointerUp]);
 
   if (isLoading) {
     return (
@@ -133,17 +113,15 @@ const BeforeAfterComparison = () => {
     );
   }
 
-  if (!projects.length) {
-    return null;
-  }
+  if (!projects.length) return null;
 
   const nextProject = () => {
-    setCurrentProject((prev) => (prev + 1) % projects.length);
+    setCurrentProject((p) => (p + 1) % projects.length);
     setSliderPosition(50);
   };
 
   const prevProject = () => {
-    setCurrentProject((prev) => (prev - 1 + projects.length) % projects.length);
+    setCurrentProject((p) => (p - 1 + projects.length) % projects.length);
     setSliderPosition(50);
   };
 
@@ -159,58 +137,75 @@ const BeforeAfterComparison = () => {
       <Card className="overflow-hidden shadow-2xl border-0 bg-white rounded-3xl">
         <CardContent className="p-0">
           <div className="grid grid-cols-1 lg:grid-cols-3">
+            {/* BEFORE/AFTER area */}
             <div className="lg:col-span-2 relative">
               <div
                 ref={containerRef}
-                className="relative w-full h-96 lg:h-[600px] overflow-hidden select-none cursor-col-resize"
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
+                className="relative w-full h-96 lg:h-[600px] overflow-hidden select-none cursor-col-resize touch-none"
+                onPointerDown={onPointerDown}
               >
+                {/* BEFORE */}
                 <img
                   src={project.beforeImage}
                   alt="Before transformation"
                   className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none"
                   draggable={false}
                 />
+
+                {/* AFTER (clipped) */}
                 <div
                   className="absolute inset-0 overflow-hidden"
                   style={{
                     clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
-                    transition: isDragging ? 'none' : 'clip-path 0.08s cubic-bezier(0.4, 0, 0.2, 1)',
+                    // no transition while dragging, tiny snap when released
+                    transition: isDragging ? 'none' : 'clip-path 40ms ease-out',
                   }}
                 >
                   <img
                     src={project.afterImage}
                     alt="After transformation"
-                    className="w-full h-full object-cover pointer-events-none object-center"
+                    className="w-full h-full object-cover object-center pointer-events-none"
                     draggable={false}
                   />
                 </div>
+
+                {/* Divider + Handle */}
                 <div
-                  className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl pointer-events-none z-10"
+                  className="absolute top-0 bottom-0 w-[3px] bg-white shadow-2xl pointer-events-none z-10"
                   style={{
                     left: `${sliderPosition}%`,
-                    transition: isDragging ? 'none' : 'left 0.08s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transition: isDragging ? 'none' : 'left 40ms ease-out',
                   }}
                 >
-                  <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-xl flex items-center justify-center border-4 border-gray-100 pointer-events-none ${
-                    isDragging ? 'scale-110' : 'hover:scale-105'
-                  } transition-all duration-200 ease-out`}>
-                    <div className="w-6 h-6 border-l-2 border-r-2 border-gray-600"></div>
+                  {/* Increase hit feel visually */}
+                  <div
+                    className={[
+                      'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+                      'w-14 h-14 bg-white rounded-full shadow-xl border-4 border-gray-100',
+                      'flex items-center justify-center',
+                      'transition-transform duration-100 ease-out',
+                      isDragging ? 'scale-110' : 'group-hover:scale-105',
+                    ].join(' ')}
+                  >
+                    <div className="w-7 h-7 border-l-2 border-r-2 border-gray-700" />
                   </div>
                 </div>
-                {sliderPosition >= 30 && (
-                  <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+
+                {/* Labels (hide when near the opposite side) */}
+                {sliderPosition >= 28 && (
+                  <div className="absolute top-6 left-6 bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none">
                     BEFORE
                   </div>
                 )}
-                {sliderPosition <= 70 && (
-                  <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none transition-opacity duration-300">
+                {sliderPosition <= 72 && (
+                  <div className="absolute top-6 right-6 bg-gradient-to-r from-green-600 to-green-700 text-white px-4 py-2 rounded-full text-sm font-medium shadow-lg pointer-events-none">
                     AFTER
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Right panel */}
             <div className="p-10 bg-gradient-to-br from-gray-50 to-white">
               <div className="mb-6">
                 <span className="inline-block bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-medium px-3 py-1 rounded-full mb-4 shadow-sm">
@@ -225,27 +220,34 @@ const BeforeAfterComparison = () => {
                 </div>
                 <div className="flex items-center text-gray-500 text-sm">
                   <Calendar className="w-4 h-4 mr-2" />
-                  Completed: {new Date(project.completionDate).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                  Completed:{' '}
+                  {project.completionDate
+                    ? new Date(project.completionDate).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })
+                    : '—'}
                 </div>
               </div>
+
               <p className="text-gray-700 leading-relaxed mb-8 font-light">
                 {project.description}
               </p>
+
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-medium text-gray-600">Browse Projects</h4>
-                  <span className="text-xs text-gray-500">{currentProject + 1} of {projects.length}</span>
+                  <span className="text-xs text-gray-500">
+                    {currentProject + 1} of {projects.length}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex space-x-3">
                     {projects.map((_, index) => (
                       <button
                         key={index}
-                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                        className={`w-3 h-3 rounded-full transition-all duration-200 ${
                           index === currentProject
                             ? 'bg-gradient-to-r from-blue-600 to-blue-700 scale-125'
                             : 'bg-gray-300 hover:bg-gray-400'
@@ -259,7 +261,7 @@ const BeforeAfterComparison = () => {
                       variant="outline"
                       size="sm"
                       onClick={prevProject}
-                      className="bg-white hover:bg-gray-50 border border-gray-300 rounded-full w-8 h-8 p-0 transition-all duration-300 hover:scale-110"
+                      className="bg-white hover:bg-gray-50 border border-gray-300 rounded-full w-8 h-8 p-0 transition-all duration-200 hover:scale-110"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </Button>
@@ -267,13 +269,14 @@ const BeforeAfterComparison = () => {
                       variant="outline"
                       size="sm"
                       onClick={nextProject}
-                      className="bg-white hover:bg-gray-50 border border-gray-300 rounded-full w-8 h-8 p-0 transition-all duration-300 hover:scale-110"
+                      className="bg-white hover:bg-gray-50 border border-gray-300 rounded-full w-8 h-8 p-0 transition-all duration-200 hover:scale-110"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
               </div>
+
               <div className="text-xs text-gray-500 space-y-1 bg-gray-100 p-4 rounded-xl">
                 <p className="flex items-center">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
@@ -293,4 +296,3 @@ const BeforeAfterComparison = () => {
 };
 
 export default BeforeAfterComparison;
-
