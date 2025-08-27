@@ -126,7 +126,11 @@ export const Footer = () => {
                 { label: 'Facebook', href: '#' },
                 { label: 'Instagram', href: '#' },
               ].map((s) => (
-                <a key={s.label} href={s.href} className="flex items-center justify-between group">
+                <a
+                  key={s.label}
+                  href={s.href}
+                  className="flex items-center justify-between group"
+                >
                   <span className="text-2xl lg:text-3xl font-extrabold tracking-tight">
                     {s.label}
                   </span>
@@ -137,50 +141,64 @@ export const Footer = () => {
 
             <div className="mt-6 space-y-3">
               {[0, 1, 2].map((i) => (
-                <div key={`soc-${i}`} className="border-t-2 border-dotted border-white/30" />
+                <div
+                  key={`soc-${i}`}
+                  className="border-t-2 border-dotted border-white/30"
+                />
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* bottom bar – improved fit in boxes */}
-<div
-  className={[
-    'transition-all duration-700',
-    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
-  ].join(' ')}
->
-  <div className="container mx-auto px-6 py-3">
-    <div className="grid grid-cols-1 lg:grid-cols-4 border border-white/25 rounded-md text-center">
-      
-      {/* left */}
-      <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center lg:justify-start">
-        <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide">
-          ©2025 INNOSIN LAB PTE LTD
-        </span>
+      {/* bottom bar – perfectly centered cells */}
+      <div
+        className={[
+          'transition-all duration-700',
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
+        ].join(' ')}
+      >
+        <div className="container mx-auto px-6 py-3">
+          <div className="grid grid-cols-1 lg:grid-cols-4 border border-white/25 rounded-md">
+            {/* left */}
+            <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center lg:justify-start">
+              <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide">
+                ©2025 INNOSIN LAB PTE LTD
+              </span>
+            </div>
+
+            {/* left-center */}
+            <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center lg:justify-start">
+              <button className="text-[12px] md:text-sm text-white/80 hover:text-white/95 underline underline-offset-2 uppercase tracking-wide">
+                Singapore Registered Company
+              </button>
+            </div>
+
+            {/* center time */}
+            <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center">
+              <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide text-center">
+                {formatSingaporeTime(currentTime).toUpperCase()}
+              </span>
+            </div>
+
+            {/* right slogan */}
+            <div className="px-4 py-3 flex items-center justify-center lg:justify-end lg:pr-6">
+              <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide text-center lg:text-right sm:whitespace-normal lg:whitespace-nowrap">
+                Innovation in Laboratory Solutions
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* left-center */}
-      <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center lg:justify-start">
-        <button className="text-[12px] md:text-sm text-white/80 hover:text-white/95 underline underline-offset-2 uppercase tracking-wide">
-          Singapore Registered Company
-        </button>
+      {/* large wordmark – bigger, white, centered */}
+      <div className="w-full flex items-center justify-center py-8 select-none">
+        <h1 className="text-white font-black leading-none tracking-[0.08em] text-[14vw] md:text-[10vw] lg:text-[7vw] drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+          INNOSINLAB
+        </h1>
       </div>
+    </footer>
+  );
+};
 
-      {/* center time */}
-      <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center">
-        <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide">
-          {formatSingaporeTime(currentTime).toUpperCase()}
-        </span>
-      </div>
-
-      {/* right slogan */}
-      <div className="px-4 py-3 flex items-center justify-center lg:justify-end lg:pr-6">
-        <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide sm:whitespace-normal lg:whitespace-nowrap">
-          Innovation in Laboratory Solutions
-        </span>
-      </div>
-    </div>
-  </div>
-</div>
+export default Footer;
