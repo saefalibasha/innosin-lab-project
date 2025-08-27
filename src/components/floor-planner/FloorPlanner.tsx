@@ -1,6 +1,9 @@
+// src/components/floor-planner/FloorPlanner.tsx
 import React, { useState, useCallback } from 'react';
 import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
+// ⬇️ EnhancedCanvasWorkspace is a DEFAULT export — import it like this:
 import EnhancedCanvasWorkspace from '../canvas/EnhancedCanvasWorkspace';
+
 import {
   PlacedProduct,
   Point,
@@ -23,8 +26,7 @@ export const FloorPlanner: React.FC = () => {
     rooms: [] as Room[],
   };
 
-  const { saveState, undo, redo, canUndo, canRedo, currentState } =
-    useFloorPlanHistory(initialFloorPlanState);
+  const { currentState } = useFloorPlanHistory(initialFloorPlanState);
 
   const [roomPoints, setRoomPoints] = useState<Point[]>(currentState.roomPoints);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(
@@ -41,18 +43,22 @@ export const FloorPlanner: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
   // Canvas settings
-  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
-  const [showGrid, setShowGrid] = useState(true);
-  const [showMeasurements, setShowMeasurements] = useState(true);
-  const [gridSize, setGridSize] = useState(100); // mm
-  const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
+  const [currentMode] = useState<DrawingMode>('select');
+  const [showGrid] = useState(true);
+  const [showMeasurements] = useState(true);
+  const [gridSize] = useState(100); // mm
+  const [measurementUnit] = useState<MeasurementUnit>('mm');
   const [canvasWidth] = useState(1200);
   const [canvasHeight] = useState(800);
 
   const handleProductDrag = useCallback((product: any) => {
-    // Drag start from the library; placement happens via canvas drop
-    // (left here for compatibility with your selector)
-    // console.log('Product dragged:', product);
+    // Drag preview handled inside the canvas; keep for logs/debug
+    console.log('Product dragged:', product);
+  }, []);
+
+  // ⬇️ This is what actually places a product coming from the sidebar
+  const handleProductSelect = useCallback((product: PlacedProduct) => {
+    setPlacedProducts((prev) => [...prev, product]);
   }, []);
 
   const handleClearAll = useCallback(() => {
@@ -64,24 +70,25 @@ export const FloorPlanner: React.FC = () => {
     setRooms([]);
   }, []);
 
-  // Room-aware scale: pixels per mm
+  // Room-aware scale: optimized for large laboratory spaces (20x20m support)
   const scale = 0.08; // 0.08 px/mm (≈80 px per meter)
 
   return (
     <div className="h-screen flex">
-      {/* Sidebar / Product Library */}
+      {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold">Product Library</h2>
-          <p className="text-sm text-muted-foreground">
-            Drag products to place on canvas
-          </p>
+          <p className="text-sm text-muted-foreground">Drag or click “Add” to place</p>
         </div>
         <div className="flex-1 overflow-hidden">
           <EnhancedSeriesSelector
             onProductDrag={handleProductDrag}
-            currentTool={currentMode}        // keep the sidebar in sync with the active tool
-            onProductUsed={() => { /* no-op for compatibility */ }}
+            currentTool="select"
+            // ⬇️ Important: pass this so clicking “Add to Floor Plan” works
+            onProductSelect={handleProductSelect}
+            // Optional: align scaling with your canvas (not required)
+            scale={scale}
           />
         </div>
       </div>
@@ -89,24 +96,20 @@ export const FloorPlanner: React.FC = () => {
       {/* Canvas */}
       <div className="flex-1 relative">
         <EnhancedCanvasWorkspace
-          // placement & selection
           placedProducts={placedProducts}
           setPlacedProducts={setPlacedProducts}
           selectedProducts={selectedProducts}
           onProductSelect={setSelectedProducts}
-          // room & walls
           roomPoints={roomPoints}
           setRoomPoints={setRoomPoints}
-          wallSegments={wallSegments}
-          setWallSegments={setWallSegments}
-          rooms={rooms}
-          setRooms={setRooms}
-          // doors & annotations
           doors={doors}
           setDoors={setDoors}
           textAnnotations={textAnnotations}
           setTextAnnotations={setTextAnnotations}
-          // canvas config
+          wallSegments={wallSegments}
+          setWallSegments={setWallSegments}
+          rooms={rooms}
+          setRooms={setRooms}
           scale={scale}
           currentMode={currentMode}
           showGrid={showGrid}
@@ -115,7 +118,6 @@ export const FloorPlanner: React.FC = () => {
           measurementUnit={measurementUnit}
           canvasWidth={canvasWidth}
           canvasHeight={canvasHeight}
-          // actions
           onClearAll={handleClearAll}
         />
       </div>
