@@ -1,8 +1,7 @@
-// src/pages/Index.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from '@/components/ui/badge';
 import { Reveal, StaggerList } from '@/components/anim';
 import VideoHero from '@/components/VideoHero';
 import ShopTheLook from '@/components/ShopTheLook';
@@ -10,50 +9,43 @@ import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
 
-type Company = {
-  name: string;
-  logo: string;
-  link: string;
-  country: string;
-};
-
 const Index = () => {
   const navigate = useNavigate();
 
-  const companyData: Company[] = [
+  const companyData = [
     {
       name: 'Broen-Lab',
       logo: '/brand-logos/broen-lab-logo.png',
-      link: '/products?company=Broen-Lab',
-      country: 'Denmark',
+      origin: 'Denmark',
+      link: '/products?company=Broen-Lab'
     },
     {
       name: 'Hamilton Laboratory Solutions',
       logo: '/brand-logos/hamilton-laboratory-logo.png',
-      link: '/products?company=Hamilton Laboratory Solutions',
-      country: 'USA',
+      origin: 'USA',
+      link: '/products?company=Hamilton Laboratory Solutions'
     },
     {
       name: 'Oriental Giken Inc.',
       logo: '/brand-logos/oriental-giken-logo.png',
-      link: '/products?company=Oriental Giken Inc.',
-      country: 'Japan',
+      origin: 'Japan',
+      link: '/products?company=Oriental Giken Inc.'
     },
     {
       name: 'Innosin Lab',
       logo: '/brand-logos/innosin-lab-logo.png',
-      link: '/products?company=Innosin Lab',
-      country: 'Malaysia',
-    },
+      origin: 'Malaysia',
+      link: '/products?company=Innosin Lab'
+    }
   ];
 
   return (
     <div className="min-h-screen">
-      {/* Video Hero */}
+      {/* Video Hero Section */}
       <VideoHero />
 
-      {/* Featured Companies */}
-      <section className="py-20 bg-white">
+      {/* Featured Companies Section */}
+      <section className="py-20 bg-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <Reveal>
             <div className="text-center mb-16">
@@ -61,8 +53,7 @@ const Index = () => {
                 Featured Laboratory Partners
               </h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Explore our featured laboratory equipment and solutions from
-                industry-leading manufacturers.
+                Explore our featured laboratory equipment and solutions from industry-leading manufacturers.
               </p>
             </div>
           </Reveal>
@@ -71,63 +62,59 @@ const Index = () => {
             items={companyData}
             renderItem={(company) => (
               <Card
-                key={company.name}
+                className="group bg-white border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer hover:-translate-y-2 rounded-2xl overflow-hidden"
                 onClick={() => navigate(company.link)}
-                className="group cursor-pointer rounded-2xl border-0 bg-white shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
               >
-                <CardContent className="flex h-64 flex-col items-center justify-center p-6">
-                  {/* Bigger logo */}
+                <CardContent className="p-6 flex flex-col items-center justify-center space-y-3 h-60">
+                  {/* Bigger Logo */}
                   <img
                     src={company.logo}
                     alt={`${company.name} Logo`}
-                    className="h-40 w-40 object-contain transition-transform duration-300 group-hover:scale-110"
+                    className="w-32 h-32 object-contain transition-transform duration-300 group-hover:scale-110"
                   />
-
-                  {/* Tight gap + always single line */}
-                  <div className="mt-3 whitespace-nowrap text-center text-xs md:text-sm text-gray-700">
-                    Country of Origin: {company.country}
-                  </div>
+                  {/* Badge Style Country of Origin */}
+                  <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-100 text-gray-800">
+                    Country of Origin: {company.origin}
+                  </Badge>
                 </CardContent>
               </Card>
             )}
-            className="mx-auto grid max-w-6xl grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4"
+            className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto"
           />
         </div>
       </section>
 
-      {/* Shop The Look */}
-      <section className="bg-gradient-to-br from-gray-50 to-white py-24">
+      {/* Shop The Look Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-white transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <ShopTheLook />
         </div>
       </section>
 
-      {/* Laboratory Transformations */}
-      <section className="relative overflow-hidden bg-white py-28">
-        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent" />
-        <div className="container relative z-10 mx-auto px-4">
+      {/* Laboratory Transformations Section */}
+      <section className="py-28 bg-white relative overflow-hidden transition-all duration-700 ease-in-out">
+        <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
+        <div className="container mx-auto px-4 relative z-10">
           <Reveal>
-            <div className="mb-20 text-center">
-              <h2 className="mb-6 text-4xl font-bold tracking-tight text-primary md:text-5xl">
+            <div className="text-center mb-20">
+              <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
                 Laboratory <span className="text-sea">Transformations</span>
               </h2>
-              <p className="mx-auto max-w-3xl text-xl leading-relaxed text-muted-foreground">
-                See how we've transformed laboratories across Singapore with
-                cutting-edge equipment, innovative design solutions, and
-                professional installation services.
+              <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                See how we've transformed laboratories across Singapore with cutting-edge equipment, 
+                innovative design solutions, and professional installation services.
               </p>
             </div>
           </Reveal>
-
           <BeforeAfterComparison />
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Lab Transform CTA Section */}
       <LabTransformCTA />
 
-      {/* Newsletter */}
-      <section className="bg-gradient-to-br from-sea/5 to-gray-50 py-20">
+      {/* Newsletter Subscription Section */}
+      <section className="py-20 bg-gradient-to-br from-sea/5 to-gray-50 transition-all duration-700 ease-in-out">
         <div className="container mx-auto px-4">
           <NewsletterSubscription />
         </div>
