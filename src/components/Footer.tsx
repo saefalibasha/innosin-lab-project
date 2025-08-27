@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, MapPin, ExternalLink } from 'lucide-react';
 
-const SEA_BLUE = '#108CCF'; // your footer color
+const SEA_BLUE = '#108CCF'; // footer background color
 
 export const Footer = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -51,7 +51,7 @@ export const Footer = () => {
       className="relative overflow-hidden text-white"
       style={{ backgroundColor: SEA_BLUE }}
     >
-      {/* top grid with thin separators */}
+      {/* Top grid */}
       <div
         className={[
           'container mx-auto px-6 pt-12 pb-16',
@@ -103,16 +103,6 @@ export const Footer = () => {
                 </div>
               ))}
             </div>
-
-            {/* dotted rows */}
-            <div className="mt-6 space-y-3">
-              {navigationLinks.slice(0, 3).map((l) => (
-                <div
-                  key={`dot-${l.name}`}
-                  className="border-t-2 border-dotted border-white/30"
-                />
-              ))}
-            </div>
           </div>
 
           {/* Social */}
@@ -122,15 +112,11 @@ export const Footer = () => {
             </h4>
             <div className="space-y-6">
               {[
-                { label: 'LinkedIn', href: '#' },
-                { label: 'Facebook', href: '#' },
-                { label: 'Instagram', href: '#' },
+                { label: 'LinkedIn', href: 'https://linkedin.com/company/innosin-lab-pte-ltd' },
+                { label: 'Facebook', href: 'https://www.facebook.com/InnosinTecLab/' },
+                { label: 'Instagram', href: 'https://www.instagram.com/innosin_techlab/?hl=en' },
               ].map((s) => (
-                <a
-                  key={s.label}
-                  href={s.href}
-                  className="flex items-center justify-between group"
-                >
+                <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between group">
                   <span className="text-2xl lg:text-3xl font-extrabold tracking-tight">
                     {s.label}
                   </span>
@@ -138,20 +124,11 @@ export const Footer = () => {
                 </a>
               ))}
             </div>
-
-            <div className="mt-6 space-y-3">
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={`soc-${i}`}
-                  className="border-t-2 border-dotted border-white/30"
-                />
-              ))}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* bottom bar – perfectly centered cells */}
+      {/* Bottom bar */}
       <div
         className={[
           'transition-all duration-700',
@@ -161,39 +138,48 @@ export const Footer = () => {
         <div className="container mx-auto px-6 py-3">
           <div className="grid grid-cols-1 lg:grid-cols-4 border border-white/25 rounded-md">
             {/* left */}
-            <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center lg:justify-start">
-              <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide">
+            <div className="px-4 py-6 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-white/25">
+              <div className="text-sm text-white/80 uppercase tracking-wide text-center">
                 ©2025 INNOSIN LAB PTE LTD
-              </span>
+              </div>
             </div>
 
             {/* left-center */}
-            <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center lg:justify-start">
-              <button className="text-[12px] md:text-sm text-white/80 hover:text-white/95 underline underline-offset-2 uppercase tracking-wide">
+            <div className="px-4 py-6 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-white/25">
+              <button className="text-sm text-white/80 hover:text-white/95 underline underline-offset-2 uppercase tracking-wide">
                 Singapore Registered Company
               </button>
             </div>
 
             {/* center time */}
-            <div className="px-4 py-3 border-b lg:border-b-0 lg:border-r border-white/25 flex items-center justify-center">
-              <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide text-center">
+            <div className="px-4 py-6 flex items-center justify-center border-b lg:border-b-0 lg:border-r border-white/25">
+              <div className="text-sm text-white/80 uppercase tracking-wide text-center">
                 {formatSingaporeTime(currentTime).toUpperCase()}
-              </span>
+              </div>
             </div>
 
             {/* right slogan */}
-            <div className="px-4 py-3 flex items-center justify-center lg:justify-end lg:pr-6">
-              <span className="text-[12px] md:text-sm text-white/80 uppercase tracking-wide text-center lg:text-right sm:whitespace-normal lg:whitespace-nowrap">
+            <div className="px-4 py-6 flex items-center justify-center lg:justify-end lg:pr-6">
+              <div className="text-sm text-white/80 uppercase tracking-wide text-center lg:text-right whitespace-nowrap">
                 Innovation in Laboratory Solutions
-              </span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* large wordmark – bigger, white, centered */}
-      <div className="w-full flex items-center justify-center py-8 select-none">
-        <h1 className="text-white font-black leading-none tracking-[0.08em] text-[14vw] md:text-[10vw] lg:text-[7vw] drop-shadow-[0_1px_1px_rgba(0,0,0,0.15)]">
+      {/* INNOSINLAB logo stretched with 3D shadow */}
+      <div className="w-full flex items-center justify-center py-12 select-none">
+        <h1
+          className="font-black leading-none text-center w-full"
+          style={{
+            color: 'white',
+            fontSize: '12vw',
+            letterSpacing: '0.1em',
+            textShadow:
+              '3px 3px 0px rgba(0,0,0,0.25), 6px 6px 0px rgba(0,0,0,0.15), 9px 9px 0px rgba(0,0,0,0.1)',
+          }}
+        >
           INNOSINLAB
         </h1>
       </div>
