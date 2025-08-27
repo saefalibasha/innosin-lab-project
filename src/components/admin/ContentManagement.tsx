@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { HotspotEditor } from '@/components/admin/HotspotEditor';
 import { ShopLookContentEditor } from '@/components/admin/ShopLookContentEditor';
+import ProjectEditor from '@/components/admin/ProjectEditor';
 
 const ContentManagement = () => {
   return (
@@ -12,14 +13,15 @@ const ContentManagement = () => {
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Content Management</h2>
         <p className="text-muted-foreground">
-          Manage your website content, shop the look sections, and interactive elements.
+          Manage your website content, shop the look sections, before/after projects, and interactive elements.
         </p>
       </div>
 
       <Tabs defaultValue="shop-look" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="shop-look">Shop The Look</TabsTrigger>
           <TabsTrigger value="hotspots">Interactive Hotspots</TabsTrigger>
+          <TabsTrigger value="projects">Before/After Projects</TabsTrigger>
         </TabsList>
 
         <TabsContent value="shop-look" className="space-y-6">
@@ -52,6 +54,23 @@ const ContentManagement = () => {
             </CardHeader>
             <CardContent>
               <HotspotEditor />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="projects" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Before & After Projects
+                <Badge variant="secondary">Portfolio</Badge>
+              </CardTitle>
+              <CardDescription>
+                Manage your before and after project showcase to demonstrate your work and capabilities.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ProjectEditor />
             </CardContent>
           </Card>
         </TabsContent>

@@ -1,284 +1,352 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Edit, Trash2, Upload, Eye } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import StreamlinedFileUpload from '@/components/ui/StreamlinedFileUpload';
 
 interface Project {
   id: string;
   title: string;
+  description: string;
   location: string;
+  project_type: string;
   before_image: string;
   after_image: string;
-  description: string;
   completion_date: string;
-  project_type: string;
-  is_active: boolean;
   display_order: number;
+  is_active: boolean;
 }
 
-export const ProjectEditor = () => {
+interface ProjectForm {
+  title: string;
+  description: string;
+  location: string;
+  project_type: string;
+  before_image: string;
+  after_image: string;
+  completion_date: string;
+  display_order: number;
+  is_active: boolean;
+}
+
+const ProjectEditor = () => {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState<ProjectForm>({
+    title: '',
+    description: '',
+    location: '',
+    project_type: '',
+    before_image: '',
+    after_image: '',
+    completion_date: '',
+    display_order: 0,
+    is_active: true
+  });
+
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch projects
   const { data: projects = [], isLoading } = useQuery({
-    queryKey: ['admin-before-after-projects'],
+    queryKey: ['before-after-projects'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('before_after_projects')
         .select('*')
-        .order('display_order', { ascending: true });
+        .order('display_order');
+      
+      if (error) throw error;
+      return data as Project[];
+    }
+  });
+
+  const createProjectMutation = useMutation({
+    mutationFn: async (project: Omit<Project, 'id'>) => {
+      const { data, error } = await supabase
+        .from('before_after_projects')
+        .insert([project])
+        .select()
+        .single();
       
       if (error) throw error;
       return data;
-    }
-  });
-
-  // Create/Update project mutation
-  const saveProjectMutation = useMutation({
-    mutationFn: async (project: any) => {
-      if (project.id) {
-        const { error } = await supabase
-          .from('before_after_projects')
-          .update(project)
-          .eq('id', project.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('before_after_projects')
-          .insert(project);
-        if (error) throw error;
-      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-before-after-projects'] });
       queryClient.invalidateQueries({ queryKey: ['before-after-projects'] });
-      setIsDialogOpen(false);
-      setEditingProject(null);
-      toast.success('Project saved successfully');
+      setIsCreating(false);
+      resetForm();
+      toast({ title: "Success", description: "Project created successfully" });
     },
     onError: (error) => {
-      toast.error('Failed to save project: ' + error.message);
+      toast({ title: "Error", description: "Failed to create project", variant: "destructive" });
+      console.error('Create project error:', error);
     }
   });
 
-  // Delete project mutation
+  const updateProjectMutation = useMutation({
+    mutationFn: async ({ id, ...project }: Project) => {
+      const { data, error } = await supabase
+        .from('before_after_projects')
+        .update(project)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['before-after-projects'] });
+      setEditingProject(null);
+      resetForm();
+      toast({ title: "Success", description: "Project updated successfully" });
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: "Failed to update project", variant: "destructive" });
+      console.error('Update project error:', error);
+    }
+  });
+
   const deleteProjectMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('before_after_projects')
         .delete()
         .eq('id', id);
+      
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-before-after-projects'] });
       queryClient.invalidateQueries({ queryKey: ['before-after-projects'] });
-      toast.success('Project deleted successfully');
+      toast({ title: "Success", description: "Project deleted successfully" });
     },
     onError: (error) => {
-      toast.error('Failed to delete project: ' + error.message);
+      toast({ title: "Error", description: "Failed to delete project", variant: "destructive" });
+      console.error('Delete project error:', error);
     }
   });
 
-  const handleEdit = (project: Project) => {
-    setEditingProject(project);
-    setIsDialogOpen(true);
-  };
-
-  const handleAddNew = () => {
-    setEditingProject({
-      id: '',
+  const resetForm = () => {
+    setFormData({
       title: '',
+      description: '',
       location: '',
+      project_type: '',
       before_image: '',
       after_image: '',
-      description: '',
       completion_date: '',
-      project_type: '',
-      is_active: true,
-      display_order: projects.length + 1
+      display_order: 0,
+      is_active: true
     });
-    setIsDialogOpen(true);
   };
 
-  const handleSave = (formData: FormData) => {
-    const projectData = {
-      id: editingProject?.id || undefined,
-      title: formData.get('title') as string,
-      location: formData.get('location') as string,
-      before_image: formData.get('before_image') as string,
-      after_image: formData.get('after_image') as string,
-      description: formData.get('description') as string,
-      completion_date: formData.get('completion_date') as string,
-      project_type: formData.get('project_type') as string,
-      is_active: formData.get('is_active') === 'on',
-      display_order: parseInt(formData.get('display_order') as string)
-    };
+  const handleEdit = (project: Project) => {
+    setEditingProject(project);
+    setFormData({
+      title: project.title,
+      description: project.description || '',
+      location: project.location || '',
+      project_type: project.project_type || '',
+      before_image: project.before_image || '',
+      after_image: project.after_image || '',
+      completion_date: project.completion_date || '',
+      display_order: project.display_order,
+      is_active: project.is_active
+    });
+  };
 
-    saveProjectMutation.mutate(projectData);
+  const handleSave = () => {
+    if (!formData.title.trim()) {
+      toast({ title: "Error", description: "Title is required", variant: "destructive" });
+      return;
+    }
+
+    if (editingProject) {
+      updateProjectMutation.mutate({ ...editingProject, ...formData });
+    } else {
+      createProjectMutation.mutate(formData);
+    }
+  };
+
+  const handleCancel = () => {
+    setEditingProject(null);
+    setIsCreating(false);
+    resetForm();
   };
 
   if (isLoading) {
-    return <div className="text-center py-8">Loading projects...</div>;
+    return <div className="flex justify-center p-8">Loading projects...</div>;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Manage Before/After Projects</h3>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddNew}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Project
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingProject?.id ? 'Edit Project' : 'Add New Project'}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); handleSave(new FormData(e.currentTarget)); }} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    name="title"
-                    defaultValue={editingProject?.title}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="location">Location</Label>
-                  <Input
-                    id="location"
-                    name="location"
-                    defaultValue={editingProject?.location}
-                  />
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="before_image">Before Image URL</Label>
-                  <Input
-                    id="before_image"
-                    name="before_image"
-                    defaultValue={editingProject?.before_image}
-                    placeholder="/path/to/before-image.jpg"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="after_image">After Image URL</Label>
-                  <Input
-                    id="after_image"
-                    name="after_image"
-                    defaultValue={editingProject?.after_image}
-                    placeholder="/path/to/after-image.jpg"
-                  />
-                </div>
-              </div>
+        <h3 className="text-lg font-semibold">Before & After Projects</h3>
+        <Button
+          onClick={() => setIsCreating(true)}
+          disabled={isCreating || editingProject}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add New Project
+        </Button>
+      </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="project_type">Project Type</Label>
-                  <Input
-                    id="project_type"
-                    name="project_type"
-                    defaultValue={editingProject?.project_type}
-                    placeholder="University Laboratory"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="completion_date">Completion Date</Label>
-                  <Input
-                    id="completion_date"
-                    name="completion_date"
-                    type="date"
-                    defaultValue={editingProject?.completion_date}
-                  />
-                </div>
-              </div>
-
+      {(isCreating || editingProject) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingProject ? 'Edit Project' : 'Create New Project'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  name="description"
-                  defaultValue={editingProject?.description}
-                  rows={4}
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Project title"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="display_order">Display Order</Label>
-                  <Input
-                    id="display_order"
-                    name="display_order"
-                    type="number"
-                    defaultValue={editingProject?.display_order}
-                    min="1"
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="is_active"
-                    name="is_active"
-                    defaultChecked={editingProject?.is_active}
-                  />
-                  <Label htmlFor="is_active">Active</Label>
-                </div>
+              <div>
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  placeholder="Project location"
+                />
               </div>
-
-              <div className="flex justify-end space-x-2">
-                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={saveProjectMutation.isPending}>
-                  {saveProjectMutation.isPending ? 'Saving...' : 'Save Project'}
-                </Button>
+              <div>
+                <Label htmlFor="project_type">Project Type</Label>
+                <Input
+                  id="project_type"
+                  value={formData.project_type}
+                  onChange={(e) => setFormData({ ...formData, project_type: e.target.value })}
+                  placeholder="e.g., Laboratory Renovation"
+                />
               </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
+              <div>
+                <Label htmlFor="completion_date">Completion Date</Label>
+                <Input
+                  id="completion_date"
+                  type="date"
+                  value={formData.completion_date}
+                  onChange={(e) => setFormData({ ...formData, completion_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="display_order">Display Order</Label>
+                <Input
+                  id="display_order"
+                  type="number"
+                  value={formData.display_order}
+                  onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Project description"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Before Image</Label>
+                <StreamlinedFileUpload
+                  onFileUploaded={(url) => setFormData({ ...formData, before_image: url })}
+                  currentImage={formData.before_image}
+                  className="mt-2"
+                />
+              </div>
+              <div>
+                <Label>After Image</Label>
+                <StreamlinedFileUpload
+                  onFileUploaded={(url) => setFormData({ ...formData, after_image: url })}
+                  currentImage={formData.after_image}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="is_active"
+                checked={formData.is_active}
+                onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+              />
+              <Label htmlFor="is_active">Active</Label>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSave}
+                disabled={createProjectMutation.isPending || updateProjectMutation.isPending}
+              >
+                <Save className="w-4 h-4 mr-2" />
+                Save
+              </Button>
+              <Button variant="outline" onClick={handleCancel}>
+                <X className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4">
         {projects.map((project) => (
-          <Card key={project.id} className="relative">
-            <CardHeader className="pb-3">
+          <Card key={project.id}>
+            <CardContent className="p-4">
               <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-lg">{project.title}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{project.location}</p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <Badge variant={project.is_active ? 'default' : 'secondary'}>
-                      {project.is_active ? 'Active' : 'Inactive'}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h4 className="font-semibold">{project.title}</h4>
+                    <Badge variant={project.is_active ? "default" : "secondary"}>
+                      {project.is_active ? "Active" : "Inactive"}
                     </Badge>
-                    <Badge variant="outline">{project.project_type}</Badge>
+                  </div>
+                  {project.description && (
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {project.description}
+                    </p>
+                  )}
+                  <div className="flex gap-4 text-sm text-muted-foreground">
+                    {project.location && <span>Location: {project.location}</span>}
+                    {project.project_type && <span>Type: {project.project_type}</span>}
+                    {project.completion_date && <span>Completed: {project.completion_date}</span>}
                   </div>
                 </div>
-                <div className="flex space-x-2">
-                  <Button size="sm" variant="outline" onClick={() => handleEdit(project)}>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(project)}
+                    disabled={isCreating || editingProject}
+                  >
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button
-                    size="sm"
                     variant="outline"
+                    size="sm"
                     onClick={() => deleteProjectMutation.mutate(project.id)}
                     disabled={deleteProjectMutation.isPending}
                   >
@@ -286,33 +354,6 @@ export const ProjectEditor = () => {
                   </Button>
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-sm font-medium">Before Image:</p>
-                  {project.before_image && (
-                    <img
-                      src={project.before_image}
-                      alt="Before"
-                      className="w-full h-24 object-cover rounded mt-1"
-                    />
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-medium">After Image:</p>
-                  {project.after_image && (
-                    <img
-                      src={project.after_image}
-                      alt="After"
-                      className="w-full h-24 object-cover rounded mt-1"
-                    />
-                  )}
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {project.description}
-              </p>
             </CardContent>
           </Card>
         ))}
@@ -320,3 +361,5 @@ export const ProjectEditor = () => {
     </div>
   );
 };
+
+export default ProjectEditor;

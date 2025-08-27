@@ -54,14 +54,14 @@ const StreamlinedFileUpload = ({
       const filePath = `shop-the-look/${fileName}`;
 
       const { data, error } = await supabase.storage
-        .from('images')
+        .from('shop-look-images')
         .upload(filePath, file);
 
       if (error) throw error;
 
       // Get the public URL
       const { data: { publicUrl } } = supabase.storage
-        .from('images')
+        .from('shop-look-images')
         .getPublicUrl(filePath);
 
       onFileUploaded(publicUrl);

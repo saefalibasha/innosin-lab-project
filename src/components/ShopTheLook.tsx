@@ -1,240 +1,223 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Reveal } from '@/components/anim';
-import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ShoppingCart, ExternalLink, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useRFQ } from '@/contexts/RFQContext';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  dimensions: string;
-  description: string;
-  specifications: string[];
-  image: string;
-  price: string;
-  productLink: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { CheckCircle, ShoppingCart, ArrowRight } from 'lucide-react';
 
 interface Hotspot {
   id: string;
-  x: number;
-  y: number;
-  product: Product;
-}
-
-interface ShopLookContent {
   title: string;
-  titleHighlight: string;
   description: string;
-  backgroundImage: string;
-  backgroundAlt: string;
+  x_position: number;
+  y_position: number;
+  price: string;
+  category: string;
+  image: string;
+  product_link: string;
+  specifications: string[];
 }
 
 const ShopTheLook = () => {
-  const { addItem } = useRFQ();
-  const [activeHotspot, setActiveHotspot] = useState<string | null>(null);
+  const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
 
-  const { data: content, isLoading: contentLoading } = useQuery({
-    queryKey: ['shop-look-content'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('shop_look_hotspots')
-        .select('*')
-        .eq('is_active', true)
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        console.warn('Shop look content not found, using defaults');
-      }
-
-      // Return default content structure regardless of data
-      return {
-        title: 'Shop',
-        titleHighlight: 'The Look',
-        description: 'Explore our featured laboratory setup.',
-        backgroundImage: '/placeholder.svg',
-        backgroundAlt: 'Modern Laboratory Setup'
-      } as ShopLookContent;
-    }
-  });
-
-  const { data: hotspots = [], isLoading: hotspotsLoading } = useQuery({
+  // Fetch hotspots from Supabase
+  const { data: hotspots = [], isLoading } = useQuery({
     queryKey: ['shop-look-hotspots'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('shop_look_hotspots')
         .select('*')
         .eq('is_active', true)
-        .order('display_order', { ascending: true });
-
+        .order('display_order');
+      
       if (error) throw error;
-
+      
+      // Transform specifications from JSON to string array
       return data.map(hotspot => ({
-        id: hotspot.id,
-        x: Number(hotspot.x_position),
-        y: Number(hotspot.y_position),
-        product: {
-          id: hotspot.id,
-          name: hotspot.title,
-          category: hotspot.category || 'Laboratory Equipment',
-          dimensions: 'Contact for specifications',
-          description: hotspot.description || '',
-          specifications: Array.isArray(hotspot.specifications)
-            ? hotspot.specifications as string[]
-            : typeof hotspot.specifications === 'object' && hotspot.specifications
-            ? Object.values(hotspot.specifications as object) as string[]
-            : ['Premium Quality', 'Professional Grade', 'Industry Standard'],
-          image: hotspot.image || '',
-          price: hotspot.price || 'Contact for pricing',
-          productLink: hotspot.product_link || '/products'
-        }
+        ...hotspot,
+        specifications: Array.isArray(hotspot.specifications) 
+          ? hotspot.specifications 
+          : typeof hotspot.specifications === 'string' 
+            ? [hotspot.specifications]
+            : ['Premium Quality', 'Professional Grade', 'Industry Standard']
       })) as Hotspot[];
     }
   });
 
-  const handleAddToQuote = (product: Product) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      category: product.category,
-      dimensions: product.dimensions,
-      image: product.image
-    });
-    toast.success(`${product.name} added to quote request`);
+  // Mock content data since we don't have shop_look_content table yet
+  const shopLookContent = {
+    title: "Shop The Look",
+    title_highlight: "Premium Laboratory Solutions",
+    description: "Discover our complete range of laboratory equipment and furniture designed for modern research facilities. Click on the interactive points to explore each product in detail.",
+    background_image: "/api/placeholder/1200/800",
+    background_alt: "Modern laboratory setup with premium equipment"
   };
 
-  if (contentLoading || hotspotsLoading || !content) {
+  if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto">
-        <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
-          <CardContent className="p-12 text-center">
-            <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto mb-8"></div>
-              <div className="h-[700px] bg-gray-200 rounded"></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center">Loading...</div>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <Reveal>
-        <div className="text-center mb-8">
-          <h2 className="text-4xl font-bold text-primary mb-4 tracking-tight">
-            {content.title} <span className="text-sea">{content.titleHighlight}</span>
+    <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50">
+      <div className="container mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            {shopLookContent.title}
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-light">
-            {content.description}
+          <h3 className="text-2xl font-semibold text-blue-600 mb-6">
+            {shopLookContent.title_highlight}
+          </h3>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            {shopLookContent.description}
           </p>
         </div>
-      </Reveal>
 
-      <Card className="overflow-hidden shadow-xl border-0 bg-white rounded-3xl">
-        <CardContent className="p-0">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
+          {/* Interactive Image */}
           <div className="relative">
-            <img
-              src={content.backgroundImage}
-              alt={content.backgroundAlt}
-              className="w-full h-[700px] object-cover object-center"
-              onError={(e) => { e.currentTarget.src = '/placeholder.svg'; }}
-            />
-
-            {hotspots.map((hotspot) => (
-              <Popover key={hotspot.id} open={activeHotspot === hotspot.id} onOpenChange={(open) => setActiveHotspot(open ? hotspot.id : null)}>
-                <PopoverTrigger asChild>
-                  <Button
-                    className="absolute w-8 h-8 rounded-full bg-white border-4 border-blue-500 shadow-lg hover:scale-110 transition-all duration-200 p-0 animate-pulse hover:animate-none"
-                    style={{
-                      left: `${hotspot.x}%`,
-                      top: `${hotspot.y}%`,
-                      transform: 'translate(-50%, -50%)'
-                    }}
-                    onClick={() => setActiveHotspot(activeHotspot === hotspot.id ? null : hotspot.id)}
-                  >
-                    <Plus className="w-4 h-4 text-blue-500" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-96 p-0 shadow-2xl border-0" side="top" align="center">
-                  <Card className="border-0">
-                    <CardContent className="p-6">
-                      <div className="space-y-4">
-                        <div>
-                          <Badge variant="outline" className="mb-2 text-xs">
-                            {hotspot.product.category}
-                          </Badge>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                            {hotspot.product.name}
-                          </h3>
-                          <p className="text-sm text-gray-600 mb-2">
-                            <span className="font-medium">Price:</span> {hotspot.product.price}
-                          </p>
-                        </div>
-
-                        <p className="text-sm text-gray-700 leading-relaxed">
-                          {hotspot.product.description}
-                        </p>
-
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-900 mb-2">Key Features:</h4>
-                          <div className="flex flex-wrap gap-1">
-                            {hotspot.product.specifications.map((spec, index) => (
-                              <Badge key={index} variant="secondary" className="text-xs">
-                                {spec}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="flex space-x-2 pt-2">
-                          <Button
-                            onClick={() => handleAddToQuote(hotspot.product)}
-                            className="flex-1 bg-black hover:bg-gray-800 text-white"
-                            size="sm"
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-2" />
-                            Add to Quote
-                          </Button>
-                          <Button asChild variant="outline" size="sm" className="flex-1">
-                            <Link to={hotspot.product.productLink}>
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              View Details
-                            </Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </PopoverContent>
-              </Popover>
-            ))}
-
-            <div className="absolute bottom-6 left-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center animate-pulse">
-                  <Plus className="w-3 h-3 text-white" />
-                </div>
-                <p className="text-sm font-medium text-gray-900">
-                  Click the <span className="text-blue-500">+</span> icons to explore products
-                </p>
-              </div>
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+              <img
+                src={shopLookContent.background_image}
+                alt={shopLookContent.background_alt}
+                className="w-full h-auto object-cover"
+                onError={(e) => {
+                  e.currentTarget.src = '/api/placeholder/800/600';
+                }}
+              />
+              
+              {/* Hotspot Markers */}
+              {hotspots.map((hotspot) => (
+                <button
+                  key={hotspot.id}
+                  className={`absolute w-6 h-6 rounded-full border-2 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 ${
+                    selectedHotspot?.id === hotspot.id
+                      ? 'bg-blue-600 animate-pulse'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                  style={{
+                    left: `${hotspot.x_position}%`,
+                    top: `${hotspot.y_position}%`,
+                  }}
+                  onClick={() => setSelectedHotspot(hotspot)}
+                  aria-label={`View ${hotspot.title}`}
+                >
+                  <div className="w-full h-full rounded-full bg-white/20" />
+                </button>
+              ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+
+          {/* Product Details */}
+          <div className="space-y-6">
+            {selectedHotspot ? (
+              <Card className="border-0 shadow-xl">
+                <CardContent className="p-8">
+                  <div className="space-y-6">
+                    {/* Product Header */}
+                    <div>
+                      <Badge className="mb-3 bg-blue-100 text-blue-800 hover:bg-blue-200">
+                        {selectedHotspot.category}
+                      </Badge>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                        {selectedHotspot.title}
+                      </h3>
+                      <p className="text-gray-600 leading-relaxed">
+                        {selectedHotspot.description}
+                      </p>
+                    </div>
+
+                    <Separator />
+
+                    {/* Product Image */}
+                    {selectedHotspot.image && (
+                      <div className="relative overflow-hidden rounded-lg">
+                        <img
+                          src={selectedHotspot.image}
+                          alt={selectedHotspot.title}
+                          className="w-full h-48 object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = '/api/placeholder/400/200';
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Specifications */}
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3">Key Features</h4>
+                      <div className="space-y-2">
+                        {selectedHotspot.specifications.map((spec, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            <span className="text-gray-600">{spec}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Price and Actions */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Price</p>
+                        <p className="text-2xl font-bold text-gray-900">
+                          {selectedHotspot.price}
+                        </p>
+                      </div>
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(selectedHotspot.product_link, '_blank')}
+                        >
+                          <ArrowRight className="w-4 h-4 mr-1" />
+                          Learn More
+                        </Button>
+                        <Button 
+                          size="sm"
+                          onClick={() => window.open('/contact', '_blank')}
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-1" />
+                          Get Quote
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-0 shadow-xl">
+                <CardContent className="p-8 text-center">
+                  <div className="space-y-4">
+                    <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+                      <ShoppingCart className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      Explore Our Products
+                    </h3>
+                    <p className="text-gray-600">
+                      Click on any blue marker in the image to discover detailed information about our laboratory equipment and furniture.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 
