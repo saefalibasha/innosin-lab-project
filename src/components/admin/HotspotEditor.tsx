@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -26,39 +27,39 @@ interface Hotspot {
   display_order: number;
 }
 
-interface ShopLookImage {
+interface ShopLookContent {
   id: string;
-  url: string;
-  filename: string;
-  alt: string;
+  background_image: string;
+  background_alt: string;
+  title: string;
 }
 
 const HotspotEditor = () => {
-  const [selectedImage, setSelectedImage] = useState<ShopLookImage | null>(null);
+  const [selectedContent, setSelectedContent] = useState<ShopLookContent | null>(null);
   const [editingHotspot, setEditingHotspot] = useState<Hotspot | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newHotspotPosition, setNewHotspotPosition] = useState<{ x: number; y: number } | null>(null);
   const [formData, setFormData] = useState<Partial<Hotspot>>({});
   const queryClient = useQueryClient();
 
-  // Fetch shop look images
-  const { data: images = [], isLoading: imagesLoading } = useQuery({
-    queryKey: ['shop-look-images'],
+  // Fetch shop look content for background image
+  const { data: contentList = [], isLoading: contentLoading } = useQuery({
+    queryKey: ['shop-look-content'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('shop_look_images')
+        .from('shop_look_content')
         .select('*')
+        .eq('is_active', true)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Convert to proper format, handling type mismatch
-      return (data || []).map(img => ({
-        id: String(img.id),
-        url: img.url || '',
-        filename: img.filename || '',
-        alt: img.alt || ''
-      })) as ShopLookImage[];
+      return (data || []).map(content => ({
+        id: String(content.id),
+        background_image: content.background_image || '',
+        background_alt: content.background_alt || '',
+        title: content.title || ''
+      })) as ShopLookContent[];
     }
   });
 
@@ -217,19 +218,19 @@ const HotspotEditor = () => {
     handleInputChange('specifications', specs);
   };
 
-  if (imagesLoading || hotspotsLoading) {
+  if (contentLoading || hotspotsLoading) {
     return <div className="text-center py-8">Loading...</div>;
   }
 
-  if (images.length === 0) {
+  if (contentList.length === 0) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">No shop look images found. Please upload an image first.</p>
+        <p className="text-muted-foreground">No shop look content found. Please create content first.</p>
       </div>
     );
   }
 
-  const currentImage = selectedImage || images[0];
+  const currentContent = selectedContent || contentList[0];
 
   return (
     <div className="space-y-6">
@@ -246,18 +247,18 @@ const HotspotEditor = () => {
         </div>
       </div>
 
-      {images.length > 1 && (
+      {contentList.length > 1 && (
         <div className="space-y-2">
-          <Label>Select Background Image</Label>
+          <Label>Select Background Content</Label>
           <div className="flex flex-wrap gap-2">
-            {images.map((image) => (
+            {contentList.map((content) => (
               <Button
-                key={image.id}
-                variant={selectedImage?.id === image.id ? "default" : "outline"}
+                key={content.id}
+                variant={selectedContent?.id === content.id ? "default" : "outline"}
                 size="sm"
-                onClick={() => setSelectedImage(image)}
+                onClick={() => setSelectedContent(content)}
               >
-                {image.filename || `Image ${image.id}`}
+                {content.title || `Content ${content.id}`}
               </Button>
             ))}
           </div>
@@ -267,8 +268,8 @@ const HotspotEditor = () => {
       <div className="relative">
         <div className={`relative ${isCreating ? 'cursor-crosshair' : ''}`}>
           <img
-            src={currentImage.url}
-            alt={currentImage.alt}
+            src={currentContent.background_image || '/placeholder.svg'}
+            alt={currentContent.background_alt}
             className="w-full h-[600px] object-cover rounded-lg border"
             onClick={handleImageClick}
             onError={(e) => {
