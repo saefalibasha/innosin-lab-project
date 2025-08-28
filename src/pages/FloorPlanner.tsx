@@ -13,13 +13,21 @@ import {
   Copy,
   Maximize2,
   Home,
-  Square
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, FloorPlanState, DrawingMode } from '@/types/floorPlanTypes';
+import {
+  Point,
+  PlacedProduct,
+  Door,
+  TextAnnotation,
+  WallSegment,
+  Room,
+  FloorPlanState,
+  DrawingMode
+} from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
-import { formatMeasurement, canvasToMm, mmToCanvas, GRID_SIZES, MeasurementUnit } from '@/utils/measurements';
+import { formatMeasurement, canvasToMm, GRID_SIZES, MeasurementUnit } from '@/utils/measurements';
 import SeriesSelector from '@/components/floorplan/SeriesSelector';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
@@ -32,7 +40,6 @@ import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
 import ExportModal from '@/components/ExportModal';
 import WallEditor from '@/components/floorplan/WallEditor';
 import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
-import ProductVariantSelector from '@/components/floorplan/ProductVariantSelector';
 import ProductRotationControl from '@/components/floorplan/ProductRotationControl';
 import { ContactGateModal } from '@/components/ContactGateModal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,30 +54,17 @@ const FloorPlanner = () => {
   // Check for admin access or existing session
   useEffect(() => {
     const checkAccess = () => {
-      console.log('FloorPlanner checkAccess - user:', user?.email, 'isAdmin:', isAdmin, 'loading:', loading);
-      
-      // Check for existing contact info
       const contactInfo = sessionStorage.getItem('contactInfo');
-      console.log('Contact info from session:', contactInfo);
-      
-      // Admin bypass: if user is logged in as admin
       if (user && isAdmin) {
-        console.log('Admin access granted - bypassing contact gate');
         setHasAccess(true);
         setShowContactGate(false);
         return;
       }
-      
-      // Regular user: check if they provided contact info
       if (contactInfo) {
-        console.log('Contact info found - granting access');
         setHasAccess(true);
         setShowContactGate(false);
-      } else {
-        console.log('No access conditions met - showing contact gate');
       }
     };
-    
     checkAccess();
   }, [user, isAdmin, loading]);
 
@@ -87,17 +81,14 @@ const FloorPlanner = () => {
   const [draggedProduct, setDraggedProduct] = useState<any>(null);
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
-  const [showVariantSelector, setShowVariantSelector] = useState(false);
-  const [selectedProductForVariant, setSelectedProductForVariant] = useState<any>(null);
-  
+
   // Room-aware measurement system with intelligent scaling for large rooms
-  const [scale, setScale] = useState(0.08); // Optimized for large rooms: 0.08 px/mm = 80px/m (supports 20x20m rooms)
+  const [scale, setScale] = useState(0.08); // 0.08 px/mm = 80px/m (supports ~20x20m rooms)
   const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
   const [showGrid, setShowGrid] = useState(true);
   const [showMeasurements, setShowMeasurements] = useState(true);
   const [showProducts, setShowProducts] = useState(true);
   const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
-  // Door orientation removed - now automatic based on wall direction
   
   // UI state
   const [projectName, setProjectName] = useState('Untitled Floor Plan');
@@ -118,24 +109,14 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions - Enhanced size for large rooms (20x20m support)
+  // Canvas dimensions
   const CANVAS_WIDTH = 2000;
   const CANVAS_HEIGHT = 1400;
 
-  // Enhanced product management
+  // Product management — all variant (drawer) picking happens inside EnhancedSeriesSelector now
   const handleProductDrag = useCallback((product: any) => {
-    // Check if product needs variant selection
-    const needsVariantSelection = product.name?.toLowerCase().includes('mobile cabinet') || 
-                                 product.name?.toLowerCase().includes('modular cabinet') ||
-                                 product.productId?.toLowerCase().includes('mc-') ||
-                                 product.productId?.toLowerCase().includes('mcc-');
-    
-    if (needsVariantSelection) {
-      setSelectedProductForVariant(product);
-      setShowVariantSelector(true);
-    } else {
-      setDraggedProduct(product);
-    }
+    // Expect product to already include selected variant info (e.g., drawerCount, configuration, dimensions, etc.)
+    setDraggedProduct(product);
   }, []);
 
   const handleDeleteSelected = useCallback(() => {
@@ -149,7 +130,6 @@ const FloorPlanner = () => {
   }, []);
 
   const handleRotateSelected = useCallback(() => {
-    console.log('Rotating selected products:', selectedProducts);
     setPlacedProducts(prev => prev.map(product => 
       selectedProducts.includes(product.id)
         ? { ...product, rotation: (product.rotation || 0) + Math.PI / 2 }
@@ -173,20 +153,6 @@ const FloorPlanner = () => {
         : product
     ));
   }, [selectedProducts]);
-
-  const handleVariantSelect = useCallback((variant: any) => {
-    const updatedProduct = {
-      ...selectedProductForVariant,
-      name: variant.name,
-      productId: variant.id,
-      dimensions: variant.dimensions,
-      configuration: variant.configuration,
-      drawerCount: variant.drawerCount
-    };
-    setDraggedProduct(updatedProduct);
-    setShowVariantSelector(false);
-    setSelectedProductForVariant(null);
-  }, [selectedProductForVariant]);
 
   // Wall management handlers
   const handleWallUpdate = useCallback((updatedWall: WallSegment) => {
@@ -213,29 +179,12 @@ const FloorPlanner = () => {
     setSelectedWall(null);
   }, []);
 
-  // Enhanced view controls
-  const handleToggleGrid = useCallback(() => {
-    setShowGrid(prev => !prev);
-  }, []);
-
-  const handleToggleMeasurements = useCallback(() => {
-    setShowMeasurements(prev => !prev);
-  }, []);
-
-  const handleUnitChange = useCallback((unit: MeasurementUnit) => {
-    setMeasurementUnit(unit);
-  }, []);
-
-  const handleScaleChange = useCallback((newScale: number) => {
-    setScale(newScale);
-  }, []);
-
-  // Door orientation handler removed - now automatic
-
-
-  const handleToggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => !prev);
-  }, []);
+  // View controls
+  const handleToggleGrid = useCallback(() => setShowGrid(prev => !prev), []);
+  const handleToggleMeasurements = useCallback(() => setShowMeasurements(prev => !prev), []);
+  const handleUnitChange = useCallback((unit: MeasurementUnit) => setMeasurementUnit(unit), []);
+  const handleScaleChange = useCallback((newScale: number) => setScale(newScale), []);
+  const handleToggleFullscreen = useCallback(() => setIsFullscreen(prev => !prev), []);
 
   // Room creation
   const handleRoomCreate = useCallback((room: Room) => {
@@ -259,7 +208,7 @@ const FloorPlanner = () => {
     }
   }, []);
 
-  // File operations with mm precision
+  // File operations
   const handleSave = useCallback(() => {
     const floorPlanData = {
       name: projectName,
@@ -282,12 +231,10 @@ const FloorPlanner = () => {
     const dataStr = JSON.stringify(floorPlanData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    
     const link = document.createElement('a');
     link.href = url;
     link.download = `${projectName.replace(/\s+/g, '_')}.json`;
     link.click();
-    
     URL.revokeObjectURL(url);
     toast.success('Floor plan saved successfully');
   }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, measurementUnit, showGrid, showMeasurements, showProducts]);
@@ -295,7 +242,6 @@ const FloorPlanner = () => {
   const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -316,9 +262,8 @@ const FloorPlanner = () => {
           setShowMeasurements(data.settings.showMeasurements ?? true);
           setShowProducts(data.settings.showProducts ?? true);
         }
-        
         toast.success('Floor plan loaded successfully');
-      } catch (error) {
+      } catch {
         toast.error('Failed to load floor plan');
       }
     };
@@ -364,18 +309,15 @@ const FloorPlanner = () => {
     }
   }, [redo]);
 
-  // Enhanced keyboard shortcuts
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey) {
         switch (e.key) {
           case 'z':
             e.preventDefault();
-            if (e.shiftKey) {
-              handleRedo();
-            } else {
-              handleUndo();
-            }
+            if (e.shiftKey) handleRedo();
+            else handleUndo();
             break;
           case 's':
             e.preventDefault();
@@ -395,22 +337,15 @@ const FloorPlanner = () => {
             break;
         }
       }
-      
       switch (e.key) {
         case 'Delete':
         case 'Backspace':
-          if (selectedProducts.length > 0) {
-            handleDeleteSelected();
-          }
+          if (selectedProducts.length > 0) handleDeleteSelected();
           break;
         case 'r':
         case 'R':
-          if (selectedProducts.length > 0) {
-            console.log('R key pressed, rotating products');
-            handleRotateSelected();
-          } else {
-            toast.info('Select products first, then press R to rotate');
-          }
+          if (selectedProducts.length > 0) handleRotateSelected();
+          else toast.info('Select products first, then press R to rotate');
           break;
         case 'Escape':
           setSelectedProducts([]);
@@ -421,41 +356,31 @@ const FloorPlanner = () => {
           e.preventDefault();
           handleToggleFullscreen();
           break;
-        case 'v':
-          setCurrentMode('select');
-          break;
-        case 'w':
-          setCurrentMode('wall');
-          break;
-        case 'i':
-          setCurrentMode('interior-wall');
-          break;
-        case 'm':
-          setCurrentMode('move');
-          break;
-        case 'q':
-          setCurrentMode('room');
-          break;
-        case 'd':
-          setCurrentMode('door');
-          break;
-        case 't':
-          setCurrentMode('text');
-          break;
+        case 'v': setCurrentMode('select'); break;
+        case 'w': setCurrentMode('wall'); break;
+        case 'i': setCurrentMode('interior-wall'); break;
+        case 'm': setCurrentMode('move'); break;
+        case 'q': setCurrentMode('room'); break;
+        case 'd': setCurrentMode('door'); break;
+        case 't': setCurrentMode('text'); break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, handleSave, selectedProducts, placedProducts, handleDeleteSelected, handleRotateSelected, handleToggleGrid, handleToggleMeasurements, handleToggleFullscreen]);
+  }, [
+    handleUndo, handleRedo, handleSave,
+    selectedProducts, placedProducts,
+    handleDeleteSelected, handleRotateSelected,
+    handleToggleGrid, handleToggleMeasurements,
+    handleToggleFullscreen
+  ]);
 
-  // Calculate room area and statistics
+  // Room stats
   const roomStatistics = useMemo(() => {
     if (rooms.length === 0) return null;
-    
     const totalArea = rooms.reduce((sum, room) => sum + room.area, 0);
     const totalPerimeter = rooms.reduce((sum, room) => sum + room.perimeter, 0);
-    
     return {
       totalArea,
       totalPerimeter,
@@ -470,7 +395,6 @@ const FloorPlanner = () => {
   }, []);
 
   const handleContactCancel = useCallback(() => {
-    // Redirect to home or show access denied message
     window.location.href = '/';
   }, []);
 
@@ -478,7 +402,6 @@ const FloorPlanner = () => {
     ? "fixed inset-0 z-50 bg-background" 
     : "min-h-screen bg-background";
 
-  // Show contact gate modal if no access
   if (!hasAccess) {
     return (
       <>
@@ -539,7 +462,7 @@ const FloorPlanner = () => {
             </div>
           </div>
           
-          {/* Enhanced Stats */}
+          {/* Stats */}
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">
             <span>Rooms: {rooms.length}</span>
             <span>Products: {placedProducts.length}</span>
@@ -556,7 +479,7 @@ const FloorPlanner = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Enhanced Left Sidebar with Tabs - Made Narrower */}
+          {/* Left Sidebar */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-white rounded-lg border shadow-sm">
               <div className="p-4 border-b">
@@ -568,14 +491,14 @@ const FloorPlanner = () => {
                   onProductDrag={handleProductDrag}
                   currentTool={currentMode}
                   onProductUsed={(productId) => console.log('Product used:', productId)}
+                  // Any new props you add to EnhancedSeriesSelector for drawer/variant filtering can be passed here
                 />
               </div>
             </div>
           </div>
 
-          {/* Enhanced Main Content Area - Extended to the left */}
+          {/* Main Content */}
           <div className="lg:col-span-3 space-y-4">
-            {/* Placed Products Horizontal Bar */}
             <PlacedProductsBar
               placedProducts={placedProducts}
               selectedProducts={selectedProducts}
@@ -594,7 +517,7 @@ const FloorPlanner = () => {
               onRotateSelected={handleRotateSelected}
               onClearSelection={handleClearSelection}
             />
-            {/* Enhanced Horizontal Toolbar - Remove Zoom Controls */}
+
             <HorizontalToolbar
               currentTool={currentMode}
               onToolChange={handleToolChange}
@@ -610,7 +533,6 @@ const FloorPlanner = () => {
               onScaleChange={handleScaleChange}
             />
 
-            {/* Room Creator Modal */}
             {showRoomCreator && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <RoomCreator
@@ -621,14 +543,12 @@ const FloorPlanner = () => {
               </div>
             )}
 
-            {/* Enhanced Canvas - Made Smaller */}
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
                   
                   <div className="flex items-center space-x-2">
-                    {/* Unit Toggle Above Canvas */}
                     <div className="bg-muted rounded-md p-1">
                       <Button
                         variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
@@ -709,7 +629,6 @@ const FloorPlanner = () => {
                     onWallUpdate={handleWallUpdate}
                   />
                   
-                  {/* Product Rotation Controls */}
                   <ProductRotationControl
                     selectedProducts={selectedProducts}
                     onRotateClockwise={handleRotateSelected}
@@ -717,7 +636,6 @@ const FloorPlanner = () => {
                     onRotateToAngle={handleRotateToAngle}
                   />
                   
-                  {/* Wall Editor Panel */}
                   {selectedWall && (
                     <WallEditor
                       selectedWall={selectedWall}
@@ -730,20 +648,16 @@ const FloorPlanner = () => {
                   )}
                 </div>
                 
-                {/* Enhanced Canvas Status */}
                 <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                   <span>Mode: {currentMode}</span>
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>
                   <span>Rooms: {rooms.length}</span>
-                  <span>
-                    {selectedProducts.length > 0 && `${selectedProducts.length} selected`}
-                  </span>
+                  <span>{selectedProducts.length > 0 && `${selectedProducts.length} selected`}</span>
                 </div>
               </CardContent>
             </Card>
-            
-            {/* Room Information Panel */}
+
             {rooms.length > 0 && (
               <Card>
                 <CardHeader>
@@ -754,7 +668,7 @@ const FloorPlanner = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {rooms.map((room, index) => (
+                    {rooms.map((room) => (
                       <div key={room.id} className="border rounded p-3 space-y-2">
                         <div className="font-medium">{room.name}</div>
                         <div className="text-sm text-gray-600 space-y-1">
@@ -768,8 +682,7 @@ const FloorPlanner = () => {
                 </CardContent>
               </Card>
             )}
-            
-            {/* Enhanced Selection Properties */}
+
             {selectedProducts.length > 0 && (
               <Card>
                 <CardHeader>
@@ -789,11 +702,7 @@ const FloorPlanner = () => {
                       <RotateCcw className="h-3 w-3 mr-1" />
                       Rotate
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                    >
+                    <Button variant="outline" size="sm" className="flex-1">
                       <Copy className="h-3 w-3 mr-1" />
                       Copy
                     </Button>
@@ -815,14 +724,15 @@ const FloorPlanner = () => {
                       {(() => {
                         const product = placedProducts.find(p => p.id === selectedProducts[0]);
                         if (!product) return null;
-                        
                         return (
                           <div className="space-y-1 text-xs">
                             <div><strong>Name:</strong> {product.name}</div>
                             <div><strong>Category:</strong> {product.category}</div>
                             <div><strong>Dimensions:</strong> {product.dimensions.length}×{product.dimensions.width}mm</div>
-                            <div><strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm</div>
-                            <div><strong>Rotation:</strong> {Math.round(product.rotation * 180 / Math.PI)}°</div>
+                            <div>
+                              <strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm
+                            </div>
+                            <div><strong>Rotation:</strong> {Math.round((product.rotation || 0) * 180 / Math.PI)}°</div>
                           </div>
                         );
                       })()}
@@ -834,17 +744,6 @@ const FloorPlanner = () => {
           </div>
         </div>
       </div>
-      
-      {/* Product Variant Selector Modal */}
-      <ProductVariantSelector
-        product={selectedProductForVariant}
-        isOpen={showVariantSelector}
-        onClose={() => {
-          setShowVariantSelector(false);
-          setSelectedProductForVariant(null);
-        }}
-        onVariantSelect={handleVariantSelect}
-      />
     </div>
   );
 };
