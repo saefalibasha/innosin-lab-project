@@ -36,7 +36,7 @@ interface EnhancedCanvasWorkspaceProps {
   currentMode: DrawingMode;
   showGrid: boolean;
   showMeasurements: boolean;
-  gridSize: number; // in real units (e.g., meters/decimeters depending on your app)
+  gridSize: number;
   measurementUnit: MeasurementUnit;
   canvasWidth: number;
   canvasHeight: number;
@@ -46,16 +46,37 @@ interface EnhancedCanvasWorkspaceProps {
   onWallUpdate?: (wall: WallSegment) => void;
 }
 
+/* ===================== Config ===================== */
+
 const PRODUCT_CLEARANCE_MM = 20; // min gap to other furniture
 const WALL_CLEARANCE_MM = 10;    // min gap to walls
 const USE_RAF_FOR_DRAG = true;
 
-/* ---------------- Math / geometry helpers ---------------- */
+/* ===================== Math helpers ===================== */
 
 const len = (a: Point, b: Point) =>
   Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
 
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, v));
+
+const dot = (ax:number, ay:number, bx:number, by:number) => ax*bx + ay*by;
+
+const rot = (x:number, y:number, ang:number) => ({
+  x: x*Math.cos(ang) - y*Math.sin(ang),
+  y: x*Math.sin(ang) + y*Math.cos(ang),
+});
+
+const toAABB = (pts: Point[]) => {
+  let left = Infinity, right = -Infinity, top = Infinity, bottom = -Infinity;
+  for (const p of pts) {
+    left = Math.min(left, p.x);
+    right = Math.max(right, p.x);
+    top = Math.min(top, p.y);
+    bottom = Math.max(bottom, p.y);
+  }
+  return { left, right, top, bottom };
+};
 
 const segmentAABB = (start: Point, end: Point, thickness: number) => {
   const minX = Math.min(start.x, end.x) - thickness / 2;
@@ -75,61 +96,118 @@ const aabbOverlap = (
   a.top < b.bottom + pad &&
   a.bottom > b.top - pad;
 
-const toProductAABB = (p: PlacedProduct) => {
-  const halfL = (p.dimensions.length ?? 40) / 2;
-  const halfW = (p.dimensions.width ?? 30) / 2;
-  return {
-    left: p.position.x - halfL,
-    right: p.position.x + halfL,
-    top: p.position.y - halfW,
-    bottom: p.position.y + halfW,
-  };
+const pointToSegmentDist = (p:Point, a:Point, b:Point) => {
+  const vx = b.x - a.x, vy = b.y - a.y;
+  const wx = p.x - a.x, wy = p.y - a.y;
+  const c1 = dot(wx, wy, vx, vy);
+  if (c1 <= 0) return Math.hypot(p.x - a.x, p.y - a.y);
+  const c2 = dot(vx, vy, vx, vy);
+  if (c2 <= c1) return Math.hypot(p.x - b.x, p.y - b.y);
+  const t = c1 / c2;
+  const proj = { x: a.x + t*vx, y: a.y + t*vy };
+  return Math.hypot(p.x - proj.x, p.y - proj.y);
 };
 
-/** rotate local (x,y) by angle (radians) */
-const rot = (x: number, y: number, ang: number) => ({
-  x: x * Math.cos(ang) - y * Math.sin(ang),
-  y: x * Math.sin(ang) + y * Math.cos(ang),
-});
-
-/** corners of a (possibly rotated) product */
-const getRectCorners = (center: Point, L: number, W: number, rotation = 0) => {
-  const hx = L / 2;
-  const hy = W / 2;
-  const locals = [
-    { x: -hx, y: -hy },
-    { x: hx, y: -hy },
-    { x: hx, y: hy },
-    { x: -hx, y: hy },
+/** distance from (possibly rotated) product rect to a wall segment */
+const rectToSegmentMinDist = (
+  center: Point,
+  length: number,
+  width: number,
+  rotation: number,
+  segA: Point,
+  segB: Point
+) => {
+  const hx = length/2, hy = width/2;
+  const ptsLocal = [
+    {x:-hx, y:-hy}, {x:hx, y:-hy}, {x:hx, y:hy}, {x:-hx, y:hy}
   ];
-  return locals.map((pt) => {
-    const r = rot(pt.x, pt.y, rotation);
+  const pts = ptsLocal.map(pt => {
+    const r = rot(pt.x, pt.y, rotation||0);
     return { x: center.x + r.x, y: center.y + r.y };
+  });
+
+  const edges = [
+    [pts[0], pts[1]], [pts[1], pts[2]],
+    [pts[2], pts[3]], [pts[3], pts[0]],
+  ] as Array<[Point,Point]>;
+
+  let min = Infinity;
+  for (const v of pts) min = Math.min(min, pointToSegmentDist(v, segA, segB));
+  for (const [a,b] of edges) {
+    min = Math.min(min, pointToSegmentDist(segA, a, b));
+    min = Math.min(min, pointToSegmentDist(segB, a, b));
+  }
+  return min;
+};
+
+const productCorners = (p:PlacedProduct): Point[] => {
+  const L = p.dimensions.length ?? 40;
+  const W = p.dimensions.width ?? 30;
+  const hx = L/2, hy = W/2;
+  const ptsLocal = [
+    {x:-hx, y:-hy}, {x:hx, y:-hy}, {x:hx, y:hy}, {x:-hx, y:hy}
+  ];
+  return ptsLocal.map(pt => {
+    const r = rot(pt.x, pt.y, p.rotation || 0);
+    return { x: p.position.x + r.x, y: p.position.y + r.y };
   });
 };
 
-/** point-in-polygon (ray casting) */
-const pointInPolygon = (pt: Point, poly: Point[]) => {
+const toProductAABB = (p: PlacedProduct) => toAABB(productCorners(p));
+
+/* ---------- polygon helpers (keep inside the main walls) ---------- */
+
+const near = (a:Point, b:Point, eps=1e-3) => Math.hypot(a.x-b.x, a.y-b.y) < eps;
+
+/** order wall endpoints into a closed polygon if possible */
+const wallsToPolygon = (walls: WallSegment[]): Point[] | null => {
+  if (walls.length < 3) return null;
+  // collect unique endpoints
+  const pts: Point[] = [];
+  const pushUnique = (p:Point) => {
+    if (!pts.some(q => near(p,q))) pts.push({x:p.x, y:p.y});
+  };
+  walls.forEach(w => { pushUnique(w.start); pushUnique(w.end); });
+
+  // Greedy chain by nearest neighbor
+  let start = pts[0];
+  const poly = [start];
+  const remaining = pts.slice(1);
+  while (remaining.length) {
+    let bestIdx = -1, bestD = Infinity;
+    for (let i=0;i<remaining.length;i++) {
+      const d = len(poly[poly.length-1], remaining[i]);
+      if (d < bestD) { bestD = d; bestIdx = i; }
+    }
+    const next = remaining.splice(bestIdx,1)[0];
+    poly.push(next);
+  }
+  // close if last connects to first
+  if (!near(poly[0], poly[poly.length-1])) poly.push(poly[0]);
+  // validate: every vertex should be an endpoint of at least one wall
+  const ok = poly.length >= 4;
+  return ok ? poly.slice(0, -1) : null;
+};
+
+const pointInPolygon = (pt:Point, poly:Point[]) => {
+  // ray casting
   let inside = false;
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i].x, yi = poly[i].y;
-    const xj = poly[j].x, yj = poly[j].y;
-    const intersect =
-      yi > pt.y !== yj > pt.y &&
-      pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi;
+  for (let i=0,j=poly.length-1;i<poly.length;j=i++) {
+    const xi=poly[i].x, yi=poly[i].y, xj=poly[j].x, yj=poly[j].y;
+    const intersect = ((yi>pt.y)!==(yj>pt.y)) &&
+      (pt.x < (xj-xi)*(pt.y-yi)/(yj-yi + 1e-9) + xi);
     if (intersect) inside = !inside;
   }
   return inside;
 };
 
-/** angle of wall and a "text-safe" angle so text never upside down */
-const wallAngle = (w: WallSegment) =>
-  Math.atan2(w.end.y - w.start.y, w.end.x - w.start.x);
-const normalizeTextAngle = (ang: number) => {
-  // keep text upright: range [-90°, 90°]
-  if (ang > Math.PI / 2 || ang < -Math.PI / 2) return ang + Math.PI;
-  return ang;
+/** ensure all rect corners lie inside polygon */
+const rectInsidePolygon = (p:PlacedProduct, poly:Point[]) => {
+  const corners = productCorners(p);
+  return corners.every(c => pointInPolygon(c, poly));
 };
+
+/* ===================== Component ===================== */
 
 const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   roomPoints,
@@ -185,7 +263,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   // door snap preview
   const [doorSnapPreview, setDoorSnapPreview] = useState<{ point: Point; wall: WallSegment } | null>(null);
 
-  // snap system (your util)
   const snapSystem = new SnapSystem(
     {
       enabled: true,
@@ -206,31 +283,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   useEffect(() => setSelectedItems(selectedProducts || []), [selectedProducts]);
 
-  /* ---------------- Constraining to INSIDE walls (room polygon) ---------------- */
-
-  const primaryRoomPolygon = useCallback((): Point[] | null => {
-    // prefer an explicitly closed room if available
-    if (rooms && rooms.length && rooms[0].points.length >= 3) return rooms[0].points;
-    // if user is currently drawing a room, don't enforce yet
-    if (roomPoints.length >= 3) return roomPoints;
-    return null;
-  }, [rooms, roomPoints]);
-
-  /** Check if a product (with rotation) is fully inside the room polygon (if any). */
-  const productInsideRoom = useCallback((prod: PlacedProduct): boolean => {
-    const poly = primaryRoomPolygon();
-    if (!poly) return true; // no room defined → don't block placement
-    const L = prod.dimensions.length ?? 40;
-    const W = prod.dimensions.width ?? 30;
-    const corners = getRectCorners(prod.position, L, W, prod.rotation || 0);
-    // require all 4 corners inside
-    for (const c of corners) {
-      if (!pointInPolygon(c, poly)) return false;
-    }
-    return true;
-  }, [primaryRoomPolygon]);
-
-  /* ---------------- Helpers ---------------- */
+  /* ---------- Helpers ---------- */
 
   const getCanvasPoint = useCallback((e: React.MouseEvent<HTMLCanvasElement>): Point => {
     const canvas = canvasRef.current;
@@ -276,18 +329,38 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     return Math.abs(dx) > Math.abs(dy) ? { x: p.x, y: start.y } : { x: start.x, y: p.y };
   }, []);
 
-  const collidesWithWalls = useCallback(
+  /* ---------- Robust wall + inside-room checks ---------- */
+
+  const outerPolygon = useCallback(() => {
+    // prefer a drawn room polygon if present; else derive from walls
+    if (rooms.length && rooms[0].points.length >= 3) return rooms[0].points;
+    return wallsToPolygon(wallSegments);
+  }, [rooms, wallSegments]);
+
+  const rectTooCloseToAnyWall = useCallback(
     (prod: PlacedProduct): boolean => {
-      const pad = mmToCanvas(WALL_CLEARANCE_MM, scale);
-      const a = toProductAABB(prod);
-      const expanded = { left: a.left - pad, right: a.right + pad, top: a.top - pad, bottom: a.bottom + pad };
+      const L = prod.dimensions.length ?? 40;
+      const W = prod.dimensions.width ?? 30;
+      const clearancePx = mmToCanvas(WALL_CLEARANCE_MM, scale);
       for (const w of wallSegments) {
-        const wAABB = segmentAABB(w.start, w.end, w.thickness ?? 10);
-        if (aabbOverlap(expanded, wAABB)) return true;
+        const need = (w.thickness ?? 10) / 2 + clearancePx;
+        const d = rectToSegmentMinDist(prod.position, L, W, prod.rotation || 0, w.start, w.end);
+        if (d < need) return true;
       }
       return false;
     },
     [wallSegments, scale]
+  );
+
+  const rectOutsideWalls = useCallback(
+    (prod:PlacedProduct): boolean => {
+      const poly = outerPolygon();
+      if (!poly) return false; // if we can't deduce, don't block
+      // require center and all corners be inside polygon
+      if (!pointInPolygon(prod.position, poly)) return true;
+      return !rectInsidePolygon(prod, poly);
+    },
+    [outerPolygon]
   );
 
   const collidesWithFurniture = useCallback(
@@ -303,6 +376,13 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     },
     [placedProducts, scale]
   );
+
+  const blockReasons = useCallback((candidate:PlacedProduct, exceptId?:string) => {
+    if (rectOutsideWalls(candidate)) return 'outside_walls';
+    if (rectTooCloseToAnyWall(candidate)) return 'near_wall';
+    if (collidesWithFurniture(candidate, exceptId)) return 'overlap_furniture';
+    return null;
+  }, [rectOutsideWalls, rectTooCloseToAnyWall, collidesWithFurniture]);
 
   const clampToCanvas = useCallback(
     (pos: Point, dimsPx: { length: number; width: number }): Point => {
@@ -323,7 +403,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         bottom = Infinity,
         left = Infinity;
       for (const w of wallSegments) {
-        const horiz = Math.abs(w.start.y - w.end.y) < Math.abs(w.start.x - w.start.x);
+        const horiz = Math.abs(w.start.y - w.end.y) < Math.abs(w.start.x - w.end.x);
         if (horiz) {
           const wy = (w.start.y + w.end.y) / 2;
           const minX = Math.min(w.start.x, w.end.x);
@@ -372,37 +452,21 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     [calculateWallDistances, scale]
   );
 
+  /* ---------- Picking ---------- */
+
   const findProductAtPoint = useCallback(
     (p: Point) => {
       for (const prod of placedProducts) {
-        const halfL = (prod.dimensions.length ?? 40) / 2;
-        const halfW = (prod.dimensions.width ?? 30) / 2;
-        if (
-          p.x >= prod.position.x - halfL &&
-          p.x <= prod.position.x + halfL &&
-          p.y >= prod.position.y - halfW &&
-          p.y <= prod.position.y + halfW
-        )
-          return prod;
+        // quick rotated-rect hit using corners AABB (good enough)
+        const aabb = toProductAABB(prod);
+        if (p.x >= aabb.left && p.x <= aabb.right && p.y >= aabb.top && p.y <= aabb.bottom) return prod;
       }
       return null;
     },
     [placedProducts]
   );
 
-  const distanceToLineSegment = useCallback((p: Point, a: Point, b: Point) => {
-    const A = p.x - a.x;
-    const B = p.y - a.y;
-    const C = b.x - a.x;
-    const D = b.y - a.y;
-    const dot = A * C + B * D;
-    const lenSq = C * C + D * D;
-    if (lenSq === 0) return Math.sqrt(A * A + B * B);
-    let t = dot / lenSq;
-    t = Math.max(0, Math.min(1, t));
-    const proj = { x: a.x + t * C, y: a.y + t * D };
-    return len(p, proj);
-  }, []);
+  const distanceToLineSegment = useCallback((p: Point, a: Point, b: Point) => pointToSegmentDist(p,a,b), []);
 
   const findWallAtPoint = useCallback(
     (p: Point) => {
@@ -427,16 +491,18 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     [wallSegments]
   );
 
+  /* ---------- Connected walls + length edit ---------- */
+
   const findConnectedWalls = useCallback(
     (id: string) => {
       const t = wallSegments.find((w) => w.id === id);
       if (!t) return [];
       const out: string[] = [];
       const tol = 5;
-      const near = (p1: Point, p2: Point) => len(p1, p2) <= tol;
+      const nearp = (p1: Point, p2: Point) => len(p1, p2) <= tol;
       for (const w of wallSegments) {
         if (w.id === id) continue;
-        if (near(w.start, t.start) || near(w.start, t.end) || near(w.end, t.start) || near(w.end, t.end)) {
+        if (nearp(w.start, t.start) || nearp(w.start, t.end) || nearp(w.end, t.start) || nearp(w.end, t.end)) {
           out.push(w.id);
         }
       }
@@ -461,10 +527,10 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         if (w.id === id) return { ...w, end: newEnd };
         if (connected.includes(w.id)) {
           const tol = 5;
-          const near = (p1: Point, p2: Point) => len(p1, p2) <= tol;
+          const nearp = (p1: Point, p2: Point) => len(p1, p2) <= tol;
           let res = { ...w };
-          if (near(w.start, oldEnd)) res.start = newEnd;
-          if (near(w.end, oldEnd)) res.end = newEnd;
+          if (nearp(w.start, oldEnd)) res.start = newEnd;
+          if (nearp(w.end, oldEnd)) res.end = newEnd;
           return res;
         }
         return w;
@@ -521,7 +587,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     [constrainToOrtho, snapToWallLength, snapToEndpoints, snapToGrid]
   );
 
-  /* ---------------- Mouse handlers ---------------- */
+  /* ===================== Mouse handlers ===================== */
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -673,7 +739,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     ]
   );
 
-  // rAF-powered dragging
+  /* ---------- Dragging ---------- */
+
   const applyDragAt = useCallback(
     (clientX: number, clientY: number) => {
       if (!isDragging || !draggedItem) return;
@@ -694,24 +761,21 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
       let candidate: PlacedProduct = { ...dragged, position: pos };
 
-      // wall distance snap for benches/islands
-      pos = snapIslandBenchDistance(candidate);
-      candidate.position = pos;
+      // optional spacing snap for benches/islands
+      candidate.position = snapIslandBenchDistance(candidate);
 
-      const wallHit = collidesWithWalls(candidate);
-      const furnHit = collidesWithFurniture(candidate, draggedItem);
-      const outOfRoom = !productInsideRoom(candidate);
+      const reason = blockReasons(candidate, draggedItem);
 
-      if (!wallHit && !furnHit && !outOfRoom) {
-        setPlacedProducts((prev) => prev.map((p) => (p.id === draggedItem ? { ...p, position: pos } : p)));
-        setLastValidPos(pos);
-        setDragMeasurements(calculateWallDistances(pos));
+      if (!reason) {
+        setPlacedProducts((prev) => prev.map((p) => (p.id === draggedItem ? { ...p, position: candidate.position } : p)));
+        setLastValidPos(candidate.position);
+        setDragMeasurements(calculateWallDistances(candidate.position));
       } else if (lastValidPos) {
-        // soft rollback toward the last valid position
+        // gentle rubber-banding back to last valid
         const alpha = 0.35;
         const smooth = {
-          x: lastValidPos.x * (1 - alpha) + pos.x * alpha,
-          y: lastValidPos.y * (1 - alpha) + pos.y * alpha,
+          x: lastValidPos.x * (1 - alpha) + candidate.position.x * alpha,
+          y: lastValidPos.y * (1 - alpha) + candidate.position.y * alpha,
         };
         setPlacedProducts((prev) => prev.map((p) => (p.id === draggedItem ? { ...p, position: smooth } : p)));
       }
@@ -724,12 +788,10 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       placedProducts,
       clampToCanvas,
       snapIslandBenchDistance,
-      collidesWithWalls,
-      collidesWithFurniture,
-      productInsideRoom,
       setPlacedProducts,
       lastValidPos,
       calculateWallDistances,
+      blockReasons,
     ]
   );
 
@@ -845,7 +907,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
           for (let i = 0; i < roomPoints.length; i++) {
             const j = (i + 1) % roomPoints.length;
             area += roomPoints[i].x * roomPoints[j].y - roomPoints[j].x * roomPoints[i].y;
-            }
+          }
           return Math.abs(area) / 2;
         })(),
         perimeter: (() => {
@@ -863,7 +925,16 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     }
   }, [currentMode, roomPoints, rooms.length, setRooms, setRoomPoints]);
 
-  /* ---------------- Drawing ---------------- */
+  /* ===================== Drawing ===================== */
+
+  const wallAngleAndNormal = (w:WallSegment) => {
+    const vx = w.end.x - w.start.x;
+    const vy = w.end.y - w.start.y;
+    const ang = Math.atan2(vy, vx);
+    const nx = -Math.sin(ang);
+    const ny =  Math.cos(ang);
+    return { ang, nx, ny };
+  };
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -923,7 +994,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       }
     });
 
-    // walls + dimension labels
+    // walls + dimension (upright, larger)
     wallSegments.forEach((w) => {
       const isSel = selectedWall?.id === w.id;
       const isHov = hoveredWall === w.id;
@@ -946,53 +1017,66 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
         ctx.stroke();
-
-        // invisible hit target
-        ctx.globalAlpha = 0.1;
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 15, 0, Math.PI * 2);
-        ctx.fillStyle = '#3b82f6';
-        ctx.fill();
-        ctx.globalAlpha = 1;
       });
 
-      // dimension labels (bigger + not upside down)
+      // dimension label (parallel to wall, never upside-down)
       if (showMeasurements) {
         const d = len(w.start, w.end);
         const mm = canvasToMm(d, scale);
         const txt = formatMeasurement(mm, measurementUnit, measurementUnit === 'mm' ? 0 : 2);
 
-        const mid = { x: (w.start.x + w.end.x) / 2, y: (w.start.y + w.end.y) / 2 };
-        const ang = normalizeTextAngle(wallAngle(w));
+        const { ang, nx, ny } = wallAngleAndNormal(w);
+
+        // choose outward side away from room center if we have one
+        let dir = 1;
+        if (rooms.length && rooms[0].points.length) {
+          const mid = { x:(w.start.x+w.end.x)/2, y:(w.start.y+w.end.y)/2 };
+          const room = rooms[0];
+          const cx = room.points.reduce((s,p)=>s+p.x,0)/room.points.length;
+          const cy = room.points.reduce((s,p)=>s+p.y,0)/room.points.length;
+          const vx = mid.x - cx, vy = mid.y - cy;
+          dir = (vx*nx + vy*ny) > 0 ? 1 : -1;
+        }
+
+        const offset = (w.thickness ?? 10) * 1.2 + 22;
+        const mid = { x: (w.start.x + w.end.x)/2 + nx*offset*dir, y: (w.start.y + w.end.y)/2 + ny*offset*dir };
+
+        // keep text upright
+        let textAng = ang;
+        if (textAng > Math.PI/2 || textAng < -Math.PI/2) textAng += Math.PI;
 
         ctx.save();
         ctx.translate(mid.x, mid.y);
-        ctx.rotate(ang);
+        ctx.rotate(textAng);
 
-        // background box
-        ctx.font = 'bold 30px Arial'; // increased font size
-        const padX = 10;
-        const padY = 8;
-        const tw = ctx.measureText(txt).width;
-        const th = 30; // approximate text height
-        const isSel = selectedWall?.id === w.id;
-        const isHover = hoveredMeasurement === w.id;
-        const bg = isSel ? 'rgba(255, 68, 68, 0.95)' : isHover ? 'rgba(59, 130, 246, 0.95)' : 'rgba(255,255,255,0.95)';
-        ctx.fillStyle = bg;
-        ctx.strokeStyle = isSel ? '#ff4444' : isHover ? '#3b82f6' : '#000';
-        ctx.lineWidth = isHover ? 3 : 2;
-
+        // leader ticks
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4,2]);
         ctx.beginPath();
-        ctx.rect(-tw / 2 - padX, -th / 2 - padY / 2, tw + padX * 2, th + padY);
+        ctx.moveTo(-d/2, 0);
+        ctx.lineTo(-d/2, (offset*0.6)*(-dir));
+        ctx.moveTo( d/2, 0);
+        ctx.lineTo( d/2, (offset*0.6)*(-dir));
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // label box (bigger font)
+        ctx.font = 'bold 28px Arial';
+        const tw = ctx.measureText(txt).width;
+        const pad = 8;
+        ctx.fillStyle = 'rgba(255,255,255,0.96)';
+        ctx.strokeStyle = isSel ? '#ff4444' : isHov ? '#3b82f6' : '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.rect(-tw/2 - pad, -18, tw + pad*2, 34);
         ctx.fill();
         ctx.stroke();
 
-        // text
-        ctx.fillStyle = isSel || isHover ? '#fff' : '#000';
+        ctx.fillStyle = '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(txt, 0, 2);
-
+        ctx.fillText(txt, 0, -1);
         ctx.restore();
       }
     });
@@ -1029,17 +1113,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.beginPath();
       ctx.arc(wallStartPoint.x, wallStartPoint.y, 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
 
       ctx.fillStyle = '#ef4444';
       ctx.beginPath();
       ctx.arc(lastMousePos.x, lastMousePos.y, 6, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
     }
 
     // doors
@@ -1051,10 +1129,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       let min = Infinity;
       for (const w of wallSegments) {
         const d = distanceToLineSegment(door.position, w.start, w.end);
-        if (d < min) {
-          min = d;
-          nearest = w;
-        }
+        if (d < min) { min = d; nearest = w; }
       }
       const wth = nearest?.thickness ?? 10;
       const doorTh = Math.max(wth * 0.7, 6);
@@ -1069,29 +1144,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.strokeStyle = '#654321';
       ctx.lineWidth = 1;
       ctx.strokeRect(x - rw / 2, y - rh / 2, rw, rh);
-
-      const R = doorW * 0.9;
-      const start = horiz ? -Math.PI / 2 : 0;
-      const hinge = horiz ? { x: x - rw / 2, y } : { x, y: y - rh / 2 };
-      ctx.strokeStyle = '#2563eb';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.arc(hinge.x, hinge.y, R, start, start + Math.PI / 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      const endX = hinge.x + R * Math.cos(start + Math.PI / 2);
-      const endY = hinge.y + R * Math.sin(start + Math.PI / 2);
-      ctx.setLineDash([2, 3]);
-      ctx.beginPath();
-      ctx.moveTo(hinge.x, hinge.y);
-      ctx.lineTo(endX, endY);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      ctx.fillStyle = '#654321';
-      ctx.beginPath();
-      ctx.arc(hinge.x, hinge.y, 2.5, 0, Math.PI * 2);
-      ctx.fill();
     });
 
     // text annotations
@@ -1116,13 +1168,11 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.fillRect(-L / 2, -W / 2, L, W);
       ctx.strokeRect(-L / 2, -W / 2, L, W);
 
-      // selection adorners
       if (selectedItems?.includes(prod.id)) {
         ctx.strokeStyle = '#ff4444';
         ctx.lineWidth = 3;
         ctx.strokeRect(-L / 2 - 5, -W / 2 - 5, L + 10, W + 10);
 
-        // rotation handle
         ctx.fillStyle = '#ff4444';
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
@@ -1130,21 +1180,12 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         ctx.arc(L / 2 + 20, 0, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-
-        // hint
-        ctx.fillStyle = 'rgba(0,0,0,0.8)';
-        ctx.fillRect(-42, W / 2 + 10, 84, 20);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Press R to rotate', 0, W / 2 + 24);
-        ctx.textAlign = 'start';
       }
 
       ctx.restore();
     });
 
-    // global rotation hint
+    // rotation hint
     if (selectedItems?.length) {
       ctx.fillStyle = 'rgba(0,0,0,0.8)';
       const hint = `Press R to rotate selected products (${selectedItems.length})`;
@@ -1201,11 +1242,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
           ctx.moveTo(pos.x + 50, pos.y);
           ctx.lineTo(pos.x + (dragMeasurements.right * scale) / 10, pos.y);
           ctx.stroke();
-          ctx.save();
-          ctx.translate(pos.x + 60, pos.y);
-          ctx.rotate(-Math.PI / 2);
-          ctx.fillText(`${dragMeasurements.right}mm`, 0, 0);
-          ctx.restore();
         }
         if (dragMeasurements.bottom > 0) {
           ctx.beginPath();
@@ -1219,11 +1255,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
           ctx.moveTo(pos.x - 50, pos.y);
           ctx.lineTo(pos.x - (dragMeasurements.left * scale) / 10, pos.y);
           ctx.stroke();
-          ctx.save();
-          ctx.translate(pos.x - 60, pos.y);
-          ctx.rotate(Math.PI / 2);
-          ctx.fillText(`${dragMeasurements.left}mm`, 0, 0);
-          ctx.restore();
         }
         ctx.setLineDash([]);
       }
@@ -1246,14 +1277,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.lineWidth = 2;
       ctx.fillRect(point.x - 40, point.y - 6, 80, 12);
       ctx.strokeRect(point.x - 40, point.y - 6, 80, 12);
-
-      ctx.fillStyle = 'rgb(16,185,129)';
-      ctx.beginPath();
-      ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
-      ctx.stroke();
     }
 
     // snap guides
@@ -1276,68 +1299,42 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       ctx.setLineDash([]);
     }
 
-    // live wall measure box during preview (bigger)
+    // live wall measure during preview
     if (isWallPreview && wallStartPoint && currentLineMeasurement) {
-      const midX = (wallStartPoint.x + lastMousePos.x) / 2;
-      const midY = (wallStartPoint.y + lastMousePos.y) / 2;
-      ctx.font = 'bold 20px Arial';
+      const vx = lastMousePos.x - wallStartPoint.x;
+      const vy = lastMousePos.y - wallStartPoint.y;
+      let ang = Math.atan2(vy, vx);
+      if (ang > Math.PI/2 || ang < -Math.PI/2) ang += Math.PI;
+
+      const nx = -Math.sin(ang), ny = Math.cos(ang);
+      const offset = 24;
+      const mid = { x:(wallStartPoint.x+lastMousePos.x)/2 + nx*offset, y:(wallStartPoint.y+lastMousePos.y)/2 + ny*offset };
+
+      ctx.save();
+      ctx.translate(mid.x, mid.y);
+      ctx.rotate(ang);
+      ctx.font = 'bold 28px Arial';
       const tw = ctx.measureText(currentLineMeasurement).width;
-      const pad = 10;
-      const rx = midX - tw / 2 - pad;
-      const ry = midY - 18;
-      const rw = tw + pad * 2;
-      const rh = 32;
-
+      const pad = 8;
       ctx.fillStyle = 'rgba(239,68,68,0.95)';
-      ctx.fillRect(rx, ry, rw, rh);
-      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(rx, ry, rw, rh);
-
+      ctx.fillRect(-tw/2 - pad, -18, tw + pad*2, 34);
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(currentLineMeasurement, midX, midY);
-      ctx.textAlign = 'start';
-      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(currentLineMeasurement, 0, -1);
+      ctx.restore();
     }
   }, [
-    CANVAS_WIDTH,
-    CANVAS_HEIGHT,
-    showGrid,
-    gridSize,
-    scale,
-    rooms,
-    wallSegments,
-    selectedWall,
-    hoveredWall,
-    snapToEndpoints,
-    showMeasurements,
-    hoveredMeasurement,
-    measurementUnit,
-    roomPoints,
-    isWallPreview,
-    wallStartPoint,
-    lastMousePos,
-    currentLineMeasurement,
-    doors,
-    distanceToLineSegment,
-    placedProducts,
-    selectedItems,
-    snapLines,
-    dragMeasurements,
-    isDragging,
-    draggedItem,
-    doorSnapPreview,
-    currentMode,
-    snapGuides,
+    CANVAS_WIDTH, CANVAS_HEIGHT, showGrid, gridSize, scale, rooms, wallSegments,
+    selectedWall, hoveredWall, snapToEndpoints, showMeasurements, measurementUnit,
+    roomPoints, isWallPreview, wallStartPoint, lastMousePos, currentLineMeasurement,
+    doors, distanceToLineSegment, placedProducts, selectedItems, snapLines,
+    dragMeasurements, isDragging, draggedItem, doorSnapPreview, currentMode, snapGuides
   ]);
 
-  useEffect(() => {
-    drawCanvas();
-  }, [drawCanvas]);
+  useEffect(() => { drawCanvas(); }, [drawCanvas]);
 
-  // Esc cancels wall preview / R rotates
+  // Esc cancels wall preview + rotate selected
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isWallPreview) {
@@ -1359,13 +1356,15 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     return () => window.removeEventListener('keydown', onKey);
   }, [isWallPreview, selectedItems, setPlacedProducts]);
 
+  /* ===================== JSX ===================== */
+
   return (
     <div className="relative w-full h-full bg-white rounded-lg border border-gray-200 overflow-hidden">
       <canvas
         ref={canvasRef}
-        width={CANVAS_WIDTH}
-        height={CANVAS_HEIGHT}
-        style={{ width: '100%', height: '100%', maxWidth: `${CANVAS_WIDTH}px`, maxHeight: `${CANVAS_HEIGHT}px` }}
+        width={canvasWidth}
+        height={canvasHeight}
+        style={{ width: '100%', height: '100%', maxWidth: `${canvasWidth}px`, maxHeight: `${canvasHeight}px` }}
         className={`w-full h-full bg-white border ${
           currentMode === 'select' && hoveredMeasurement
             ? 'cursor-pointer'
@@ -1432,21 +1431,13 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
               variants: product.variants,
             };
 
-            // reject if colliding or outside room polygon
-            if (wallSegments.length && collidesWithWalls(newProd)) {
-              toast.error('Cannot place product: too close to a wall');
-              return;
-            }
-            if (collidesWithFurniture(newProd)) {
-              toast.error('Cannot place product: overlaps another item');
-              return;
-            }
-            if (!productInsideRoom(newProd)) {
-              toast.error('Place items inside the room boundary');
-              return;
-            }
+            // enforce inside room/walls + not too close to walls + no overlap
+            const reason = blockReasons(newProd);
+            if (reason === 'outside_walls') { toast.error('Place items inside the walls.'); return; }
+            if (reason === 'near_wall')     { toast.error('Keep a small clearance from the walls.'); return; }
+            if (reason === 'overlap_furniture') { toast.error('Cannot place: overlaps another item.'); return; }
 
-            // bench/island snap if close
+            // optional spacing snap
             newProd.position = wallSegments.length ? snapIslandBenchDistance(newProd) : newProd.position;
 
             setPlacedProducts((prev) => [...prev, newProd]);
