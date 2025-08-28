@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import BlogPostManagement from './BlogPostManagement';
+import { BlogManagement } from './BlogManagement';
 import BeforeAfterProjectManagement from './BeforeAfterProjectManagement';
 import ShopLookContentEditor from './shop-look/ShopLookContentEditor';
 import HotspotEditor from './shop-look/HotspotEditor';
@@ -50,7 +50,7 @@ const ContentManagement = () => {
         </TabsList>
 
         <TabsContent value="blog" className="space-y-6">
-          <BlogPostManagement />
+          <BlogManagement />
         </TabsContent>
 
         <TabsContent value="projects" className="space-y-6">

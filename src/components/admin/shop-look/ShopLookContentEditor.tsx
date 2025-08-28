@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Upload, Save, Eye, EyeOff } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Upload, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ShopLookContent {
@@ -24,11 +25,14 @@ interface ShopLookContent {
 
 const ShopLookContentEditor = () => {
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  const { data: content, isLoading } = useQuery({
+  const { data: content, isLoading, error } = useQuery({
     queryKey: ['shop-look-content'],
     queryFn: async () => {
+      console.log('Fetching shop look content...');
       const { data, error } = await supabase
         .from('shop_look_content')
         .select('*')
@@ -37,21 +41,40 @@ const ShopLookContentEditor = () => {
         .limit(1)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching content:', error);
+        throw error;
+      }
+      console.log('Fetched content:', data);
       return data;
     }
   });
 
   const updateContentMutation = useMutation({
     mutationFn: async (updatedContent: Partial<ShopLookContent>) => {
+      console.log('Updating content with:', updatedContent);
+      
       if (!content?.id) {
         // Create new content if none exists
         const { data, error } = await supabase
           .from('shop_look_content')
-          .insert([updatedContent])
+          .insert([{
+            title: 'Shop The Look',
+            title_highlight: 'Premium Laboratory Solutions',
+            description: 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.',
+            background_alt: 'Modern laboratory setup with premium equipment',
+            is_active: true,
+            display_order: 0,
+            ...updatedContent
+          }])
           .select()
           .single();
-        if (error) throw error;
+        
+        if (error) {
+          console.error('Error creating content:', error);
+          throw error;
+        }
+        console.log('Created content:', data);
         return data;
       } else {
         // Update existing content
@@ -61,7 +84,12 @@ const ShopLookContentEditor = () => {
           .eq('id', content.id)
           .select()
           .single();
-        if (error) throw error;
+        
+        if (error) {
+          console.error('Error updating content:', error);
+          throw error;
+        }
+        console.log('Updated content:', data);
         return data;
       }
     },
@@ -69,70 +97,132 @@ const ShopLookContentEditor = () => {
       queryClient.invalidateQueries({ queryKey: ['shop-look-content'] });
       toast.success('Content updated successfully');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error updating content:', error);
-      toast.error('Failed to update content');
+      toast.error(`Failed to update content: ${error.message}`);
     }
   });
+
+  const validateFile = (file: File): string | null => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return 'Please select an image file (JPG, PNG, GIF, WebP)';
+    }
+    
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return 'File size must be less than 10MB';
+    }
+    
+    return null;
+  };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file
+    const validationError = validateFile(file);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+
     setUploadingImage(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
     try {
-      // Upload to shop-look-images bucket
+      console.log('Starting image upload:', { name: file.name, size: file.size, type: file.type });
+      
+      // Generate clean filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      const fileName = `shop-look-bg-${Date.now()}.${fileExt}`;
       const filePath = `backgrounds/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('shop-look-images')
-        .upload(filePath, file);
+      setUploadProgress(25);
 
-      if (uploadError) throw uploadError;
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('shop-look-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Upload failed: ${uploadError.message}`);
+      }
+
+      console.log('Upload successful:', uploadData);
+      setUploadProgress(75);
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from('shop-look-images')
         .getPublicUrl(filePath);
+
+      const publicUrl = urlData.publicUrl;
+      console.log('Public URL:', publicUrl);
+
+      setUploadProgress(90);
 
       // Update content with new background image
       await updateContentMutation.mutateAsync({
         background_image: publicUrl
       });
 
+      setUploadProgress(100);
       toast.success('Background image uploaded successfully');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Failed to upload image');
+      
+      // Reset file input
+      event.target.value = '';
+      
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      setUploadError(error.message);
+      
+      let errorMessage = 'Upload failed';
+      if (error.message?.includes('policy')) {
+        errorMessage = 'Permission denied. Please ensure you are logged in as an admin.';
+      } else if (error.message?.includes('size')) {
+        errorMessage = 'File size too large';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setUploadingImage(false);
+      setTimeout(() => {
+        setUploadProgress(0);
+        setUploadError(null);
+      }, 3000);
     }
   };
 
   const handleContentUpdate = (field: keyof ShopLookContent, value: any) => {
-    if (!content) return;
-    
     updateContentMutation.mutate({
       [field]: value
     });
   };
 
-  const handleSave = () => {
-    if (!content) return;
-    
-    updateContentMutation.mutate({
-      title: content.title,
-      title_highlight: content.title_highlight,
-      description: content.description,
-      background_alt: content.background_alt,
-      is_active: content.is_active
-    });
-  };
-
   if (isLoading) {
     return <div className="p-4">Loading content...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 border border-destructive rounded-lg">
+        <div className="flex items-center gap-2 text-destructive mb-2">
+          <AlertCircle className="w-4 h-4" />
+          <span className="font-medium">Error loading content</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
+      </div>
+    );
   }
 
   return (
@@ -150,7 +240,7 @@ const ShopLookContentEditor = () => {
             <Label htmlFor="title">Main Title</Label>
             <Input
               id="title"
-              value={content?.title || ''}
+              value={content?.title || 'Shop The Look'}
               onChange={(e) => handleContentUpdate('title', e.target.value)}
               placeholder="Shop The Look"
             />
@@ -160,7 +250,7 @@ const ShopLookContentEditor = () => {
             <Label htmlFor="title-highlight">Title Highlight</Label>
             <Input
               id="title-highlight"
-              value={content?.title_highlight || ''}
+              value={content?.title_highlight || 'Premium Laboratory Solutions'}
               onChange={(e) => handleContentUpdate('title_highlight', e.target.value)}
               placeholder="Premium Laboratory Solutions"
             />
@@ -170,7 +260,7 @@ const ShopLookContentEditor = () => {
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={content?.description || ''}
+              value={content?.description || 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.'}
               onChange={(e) => handleContentUpdate('description', e.target.value)}
               placeholder="Discover our complete range..."
               rows={3}
@@ -181,72 +271,102 @@ const ShopLookContentEditor = () => {
         {/* Background Image */}
         <div className="space-y-4">
           <Label>Background Image</Label>
+          
+          {/* Current Image Preview */}
           {content?.background_image && (
             <div className="relative">
               <img
                 src={content.background_image}
                 alt={content.background_alt || 'Background'}
                 className="w-full h-48 object-cover rounded-lg border"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.svg';
+                }}
               />
-              <div className="absolute inset-0 bg-black/20 rounded-lg flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                <Button variant="secondary" size="sm">
-                  Change Image
-                </Button>
+              <div className="absolute top-2 right-2">
+                <div className="flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded text-xs">
+                  <CheckCircle className="w-3 h-3" />
+                  Current
+                </div>
               </div>
             </div>
           )}
           
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              disabled={uploadingImage}
-              onClick={() => document.getElementById('background-upload')?.click()}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {uploadingImage ? 'Uploading...' : 'Upload Background Image'}
-            </Button>
-            <input
-              id="background-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="hidden"
-            />
+          {/* Upload Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                disabled={uploadingImage}
+                onClick={() => document.getElementById('background-upload')?.click()}
+                className="flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                {uploadingImage ? 'Uploading...' : 'Upload New Background'}
+              </Button>
+              
+              <input
+                id="background-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              
+              <div className="text-xs text-muted-foreground">
+                Max 10MB • JPG, PNG, GIF, WebP
+              </div>
+            </div>
+
+            {/* Upload Progress */}
+            {uploadingImage && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span>Uploading image...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-2" />
+              </div>
+            )}
+
+            {/* Upload Error */}
+            {uploadError && (
+              <div className="flex items-center gap-2 text-destructive text-sm">
+                <AlertCircle className="w-4 h-4" />
+                <span>{uploadError}</span>
+              </div>
+            )}
           </div>
 
           <div>
             <Label htmlFor="background-alt">Image Alt Text</Label>
             <Input
               id="background-alt"
-              value={content?.background_alt || ''}
+              value={content?.background_alt || 'Modern laboratory setup with premium equipment'}
               onChange={(e) => handleContentUpdate('background_alt', e.target.value)}
-              placeholder="Modern laboratory setup with premium equipment"
+              placeholder="Describe the image for accessibility"
             />
           </div>
         </div>
 
         {/* Settings */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-4 border-t">
           <div className="flex items-center gap-2">
             <Switch
-              checked={content?.is_active || false}
+              checked={content?.is_active !== false}
               onCheckedChange={(checked) => handleContentUpdate('is_active', checked)}
             />
             <Label>Active</Label>
-            {content?.is_active ? (
+            {content?.is_active !== false ? (
               <Eye className="w-4 h-4 text-green-600" />
             ) : (
               <EyeOff className="w-4 h-4 text-gray-400" />
             )}
           </div>
 
-          <Button
-            onClick={handleSave}
-            disabled={updateContentMutation.isPending}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {updateContentMutation.isPending ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <div className="text-sm text-muted-foreground">
+            {updateContentMutation.isPending ? 'Saving...' : 'Auto-saved'}
+          </div>
         </div>
       </CardContent>
     </Card>
