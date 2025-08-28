@@ -19,23 +19,43 @@ import { getProductDimensionsInMm } from '@/utils/productDimensions';
 import { SnapSystem } from '@/utils/snapSystem';
 import { toast } from 'sonner';
 
-/* ===================== Config ===================== */
+interface EnhancedCanvasWorkspaceProps {
+  roomPoints: Point[];
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
+  wallSegments: WallSegment[];
+  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
+  placedProducts: PlacedProduct[];
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
+  doors: Door[];
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
+  textAnnotations: TextAnnotation[];
+  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
+  rooms: Room[];
+  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  scale: number;
+  currentMode: DrawingMode;
+  showGrid: boolean;
+  showMeasurements: boolean;
+  gridSize: number; // in real units (e.g., meters/decimeters depending on your app)
+  measurementUnit: MeasurementUnit;
+  canvasWidth: number;
+  canvasHeight: number;
+  onClearAll: () => void;
+  selectedProducts: string[];
+  onProductSelect: (products: string[]) => void;
+  onWallUpdate?: (wall: WallSegment) => void;
+}
 
-const PRODUCT_CLEARANCE_MM = 20;        // min gap to other furniture
-const WALL_CLEARANCE_MM = 10;           // min gap to walls
-const EDGE_SNAP_MM = 3;                 // flush join tolerance between products
-const EDGE_JOIN_GAP_MM = 0;             // gap after snap (0 = seamless)
-const GROUP_MOVE_PREVIEW_SOFTEN = 0.35; // smoothing when blocked
+const PRODUCT_CLEARANCE_MM = 20; // min gap to other furniture
+const WALL_CLEARANCE_MM = 10;    // min gap to walls
 const USE_RAF_FOR_DRAG = true;
 
-/* ===================== Math helpers ===================== */
+/* ---------------- Math / geometry helpers ---------------- */
 
 const len = (a: Point, b: Point) =>
   Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
-
-const dot = (ax:number, ay:number, bx:number, by:number) => ax*bx + ay*by;
 
 const segmentAABB = (start: Point, end: Point, thickness: number) => {
   const minX = Math.min(start.x, end.x) - thickness / 2;
@@ -55,61 +75,6 @@ const aabbOverlap = (
   a.top < b.bottom + pad &&
   a.bottom > b.top - pad;
 
-/** rotate a local point by angle (radians) */
-const rot = (x:number, y:number, ang:number) => ({
-  x: x*Math.cos(ang) - y*Math.sin(ang),
-  y: x*Math.sin(ang) + y*Math.cos(ang),
-});
-
-/** distance from point to line segment */
-const pointToSegmentDist = (p:Point, a:Point, b:Point) => {
-  const vx = b.x - a.x, vy = b.y - a.y;
-  const wx = p.x - a.x, wy = p.y - a.y;
-  const c1 = dot(wx, wy, vx, vy);
-  if (c1 <= 0) return Math.hypot(p.x - a.x, p.y - a.y);
-  const c2 = dot(vx, vy, vx, vy);
-  if (c2 <= c1) return Math.hypot(p.x - b.x, p.y - b.y);
-  const t = c1 / c2;
-  const proj = { x: a.x + t*vx, y: a.y + t*vy };
-  return Math.hypot(p.x - proj.x, p.y - proj.y);
-};
-
-/** min distance from a (possibly rotated) product rectangle to a wall segment */
-const rectToSegmentMinDist = (
-  center: Point,
-  length: number,
-  width: number,
-  rotation: number,
-  segA: Point,
-  segB: Point
-) => {
-  // rectangle corners in local space (centered)
-  const hx = length/2, hy = width/2;
-  const ptsLocal = [
-    {x:-hx, y:-hy}, {x:hx, y:-hy}, {x:hx, y:hy}, {x:-hx, y:hy}
-  ];
-  const pts = ptsLocal.map(pt => {
-    const r = rot(pt.x, pt.y, rotation||0);
-    return { x: center.x + r.x, y: center.y + r.y };
-  });
-
-  // check distance from segment to each edge of rect and rect vertices to segment
-  const edges = [
-    [pts[0], pts[1]], [pts[1], pts[2]],
-    [pts[2], pts[3]], [pts[3], pts[0]],
-  ] as Array<[Point,Point]>;
-
-  let min = Infinity;
-  // vertex to segment
-  for (const v of pts) min = Math.min(min, pointToSegmentDist(v, segA, segB));
-  // segment to rect edges (approximate by endpoints)
-  for (const [a,b] of edges) {
-    min = Math.min(min, pointToSegmentDist(segA, a, b));
-    min = Math.min(min, pointToSegmentDist(segB, a, b));
-  }
-  return min;
-};
-
 const toProductAABB = (p: PlacedProduct) => {
   const halfL = (p.dimensions.length ?? 40) / 2;
   const halfW = (p.dimensions.width ?? 30) / 2;
@@ -121,81 +86,79 @@ const toProductAABB = (p: PlacedProduct) => {
   };
 };
 
-/** return angle and outward unit normal for a wall (normal points to "left" of start→end) */
-const wallAngleAndNormal = (w:WallSegment) => {
-  const vx = w.end.x - w.start.x;
-  const vy = w.end.y - w.start.y;
-  const ang = Math.atan2(vy, vx);
-  // unit normal (left-hand)
-  const nx = -Math.sin(ang);
-  const ny =  Math.cos(ang);
-  return { ang, nx, ny };
+/** rotate local (x,y) by angle (radians) */
+const rot = (x: number, y: number, ang: number) => ({
+  x: x * Math.cos(ang) - y * Math.sin(ang),
+  y: x * Math.sin(ang) + y * Math.cos(ang),
+});
+
+/** corners of a (possibly rotated) product */
+const getRectCorners = (center: Point, L: number, W: number, rotation = 0) => {
+  const hx = L / 2;
+  const hy = W / 2;
+  const locals = [
+    { x: -hx, y: -hy },
+    { x: hx, y: -hy },
+    { x: hx, y: hy },
+    { x: -hx, y: hy },
+  ];
+  return locals.map((pt) => {
+    const r = rot(pt.x, pt.y, rotation);
+    return { x: center.x + r.x, y: center.y + r.y };
+  });
 };
 
-/* ===================== Component ===================== */
+/** point-in-polygon (ray casting) */
+const pointInPolygon = (pt: Point, poly: Point[]) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i].x, yi = poly[i].y;
+    const xj = poly[j].x, yj = poly[j].y;
+    const intersect =
+      yi > pt.y !== yj > pt.y &&
+      pt.x < ((xj - xi) * (pt.y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
+};
 
-const EnhancedCanvasWorkspace: React.FC<{
-  roomPoints: Point[];
-  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
-  wallSegments: WallSegment[];
-  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
-  placedProducts: PlacedProduct[];
-  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
-  doors: Door[];
-  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
-  textAnnotations: TextAnnotation[];
-  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
-  rooms: Room[];
-  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
-  scale: number;
-  currentMode: DrawingMode;
-  showGrid: boolean;
-  showMeasurements: boolean;
-  gridSize: number;
-  measurementUnit: MeasurementUnit;
-  canvasWidth: number;
-  canvasHeight: number;
-  onClearAll: () => void;
-  selectedProducts: string[];
-  onProductSelect: (products: string[]) => void;
-  onWallUpdate?: (wall: WallSegment) => void;
-}> = (props) => {
-  const {
-    roomPoints, setRoomPoints,
-    wallSegments, setWallSegments,
-    placedProducts, setPlacedProducts,
-    doors, setDoors,
-    textAnnotations, setTextAnnotations,
-    rooms, setRooms,
-    scale, currentMode, showGrid, showMeasurements, gridSize,
-    measurementUnit, canvasWidth, canvasHeight,
-    selectedProducts, onProductSelect, onWallUpdate,
-  } = props;
+/** angle of wall and a "text-safe" angle so text never upside down */
+const wallAngle = (w: WallSegment) =>
+  Math.atan2(w.end.y - w.start.y, w.end.x - w.start.x);
+const normalizeTextAngle = (ang: number) => {
+  // keep text upright: range [-90°, 90°]
+  if (ang > Math.PI / 2 || ang < -Math.PI / 2) return ang + Math.PI;
+  return ang;
+};
 
+const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
+  roomPoints,
+  setRoomPoints,
+  wallSegments,
+  setWallSegments,
+  placedProducts,
+  setPlacedProducts,
+  doors,
+  setDoors,
+  textAnnotations,
+  setTextAnnotations,
+  rooms,
+  setRooms,
+  scale,
+  currentMode,
+  showGrid,
+  showMeasurements,
+  gridSize,
+  measurementUnit,
+  canvasWidth,
+  canvasHeight,
+  selectedProducts,
+  onProductSelect,
+  onWallUpdate,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  /* ---------- New: simple group system for linked products ---------- */
-  const [groups, setGroups] = useState<Record<string,string>>({}); // productId -> groupId
-
-  const getGroupMembers = (prodId:string) => {
-    const gid = groups[prodId];
-    if (!gid) return [prodId];
-    return Object.keys(groups).filter(id => groups[id] === gid);
-  };
-
-  const ensureGroup = (ids: string[]) => {
-    if (ids.length < 2) return;
-    // pick existing group or create
-    let gid = ids.map(i => groups[i]).find(Boolean) || `grp-${Date.now()}`;
-    setGroups(prev => {
-      const next = {...prev};
-      ids.forEach(id => next[id] = gid!);
-      return next;
-    });
-  };
-
-  /* ---------- State & common helpers (unchanged bits + tweaks) ---------- */
-
+  // wall preview / snapping / measures
   const [wallStartPoint, setWallStartPoint] = useState<Point | null>(null);
   const [isWallPreview, setIsWallPreview] = useState(false);
   const [lastMousePos, setLastMousePos] = useState<Point>({ x: 0, y: 0 });
@@ -210,6 +173,7 @@ const EnhancedCanvasWorkspace: React.FC<{
   const [hoveredMeasurement, setHoveredMeasurement] = useState<string | null>(null);
   const [editingMeasurement, setEditingMeasurement] = useState<{ wallId: string; value: string } | null>(null);
 
+  // selection / dragging
   const [selectedItems, setSelectedItems] = useState<string[]>(selectedProducts || []);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -218,8 +182,10 @@ const EnhancedCanvasWorkspace: React.FC<{
   const [lastValidPos, setLastValidPos] = useState<Point | null>(null);
   const dragRafRef = useRef<number | null>(null);
 
+  // door snap preview
   const [doorSnapPreview, setDoorSnapPreview] = useState<{ point: Point; wall: WallSegment } | null>(null);
 
+  // snap system (your util)
   const snapSystem = new SnapSystem(
     {
       enabled: true,
@@ -240,7 +206,31 @@ const EnhancedCanvasWorkspace: React.FC<{
 
   useEffect(() => setSelectedItems(selectedProducts || []), [selectedProducts]);
 
-  /* ---------- Positioning & snapping helpers ---------- */
+  /* ---------------- Constraining to INSIDE walls (room polygon) ---------------- */
+
+  const primaryRoomPolygon = useCallback((): Point[] | null => {
+    // prefer an explicitly closed room if available
+    if (rooms && rooms.length && rooms[0].points.length >= 3) return rooms[0].points;
+    // if user is currently drawing a room, don't enforce yet
+    if (roomPoints.length >= 3) return roomPoints;
+    return null;
+  }, [rooms, roomPoints]);
+
+  /** Check if a product (with rotation) is fully inside the room polygon (if any). */
+  const productInsideRoom = useCallback((prod: PlacedProduct): boolean => {
+    const poly = primaryRoomPolygon();
+    if (!poly) return true; // no room defined → don't block placement
+    const L = prod.dimensions.length ?? 40;
+    const W = prod.dimensions.width ?? 30;
+    const corners = getRectCorners(prod.position, L, W, prod.rotation || 0);
+    // require all 4 corners inside
+    for (const c of corners) {
+      if (!pointInPolygon(c, poly)) return false;
+    }
+    return true;
+  }, [primaryRoomPolygon]);
+
+  /* ---------------- Helpers ---------------- */
 
   const getCanvasPoint = useCallback((e: React.MouseEvent<HTMLCanvasElement>): Point => {
     const canvas = canvasRef.current;
@@ -286,19 +276,14 @@ const EnhancedCanvasWorkspace: React.FC<{
     return Math.abs(dx) > Math.abs(dy) ? { x: p.x, y: start.y } : { x: start.x, y: p.y };
   }, []);
 
-  /* ---------- Improved collisions ---------- */
-
-  // Robust wall collision using rect-to-segment distance
-  const rectHitsAnyWall = useCallback(
+  const collidesWithWalls = useCallback(
     (prod: PlacedProduct): boolean => {
-      const lenPx = prod.dimensions.length ?? 40;
-      const widPx = prod.dimensions.width ?? 30;
-      const clearancePx = mmToCanvas(WALL_CLEARANCE_MM, scale);
+      const pad = mmToCanvas(WALL_CLEARANCE_MM, scale);
+      const a = toProductAABB(prod);
+      const expanded = { left: a.left - pad, right: a.right + pad, top: a.top - pad, bottom: a.bottom + pad };
       for (const w of wallSegments) {
-        const t = w.thickness ?? 10;
-        const required = t/2 + clearancePx;
-        const d = rectToSegmentMinDist(prod.position, lenPx, widPx, prod.rotation||0, w.start, w.end);
-        if (d < required) return true;
+        const wAABB = segmentAABB(w.start, w.end, w.thickness ?? 10);
+        if (aabbOverlap(expanded, wAABB)) return true;
       }
       return false;
     },
@@ -333,9 +318,12 @@ const EnhancedCanvasWorkspace: React.FC<{
 
   const calculateWallDistances = useCallback(
     (p: Point) => {
-      let top = Infinity, right = Infinity, bottom = Infinity, left = Infinity;
+      let top = Infinity,
+        right = Infinity,
+        bottom = Infinity,
+        left = Infinity;
       for (const w of wallSegments) {
-        const horiz = Math.abs(w.start.y - w.end.y) < Math.abs(w.start.x - w.end.x);
+        const horiz = Math.abs(w.start.y - w.end.y) < Math.abs(w.start.x - w.start.x);
         if (horiz) {
           const wy = (w.start.y + w.end.y) / 2;
           const minX = Math.min(w.start.x, w.end.x);
@@ -364,7 +352,6 @@ const EnhancedCanvasWorkspace: React.FC<{
     [wallSegments, scale]
   );
 
-  /* ---------- Bench/Island spacing helper (unchanged) ---------- */
   const snapIslandBenchDistance = useCallback(
     (prod: PlacedProduct, targetMm = 600): Point => {
       const isBench =
@@ -385,8 +372,6 @@ const EnhancedCanvasWorkspace: React.FC<{
     [calculateWallDistances, scale]
   );
 
-  /* ---------- Picking helpers ---------- */
-
   const findProductAtPoint = useCallback(
     (p: Point) => {
       for (const prod of placedProducts) {
@@ -405,7 +390,19 @@ const EnhancedCanvasWorkspace: React.FC<{
     [placedProducts]
   );
 
-  const distanceToLineSegment = useCallback((p: Point, a: Point, b: Point) => pointToSegmentDist(p,a,b), []);
+  const distanceToLineSegment = useCallback((p: Point, a: Point, b: Point) => {
+    const A = p.x - a.x;
+    const B = p.y - a.y;
+    const C = b.x - a.x;
+    const D = b.y - a.y;
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    if (lenSq === 0) return Math.sqrt(A * A + B * B);
+    let t = dot / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const proj = { x: a.x + t * C, y: a.y + t * D };
+    return len(p, proj);
+  }, []);
 
   const findWallAtPoint = useCallback(
     (p: Point) => {
@@ -429,8 +426,6 @@ const EnhancedCanvasWorkspace: React.FC<{
     },
     [wallSegments]
   );
-
-  /* ---------- Wall length edit (unchanged) ---------- */
 
   const findConnectedWalls = useCallback(
     (id: string) => {
@@ -526,374 +521,306 @@ const EnhancedCanvasWorkspace: React.FC<{
     [constrainToOrtho, snapToWallLength, snapToEndpoints, snapToGrid]
   );
 
-  /* ---------- Product edge docking + linking ---------- */
+  /* ---------------- Mouse handlers ---------------- */
 
-  const edgeDockToNeighbors = useCallback((candidate: PlacedProduct, exceptId?:string) => {
-    const snapPx = mmToCanvas(EDGE_SNAP_MM, scale);
-    const joinGapPx = mmToCanvas(EDGE_JOIN_GAP_MM, scale);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const p = getCanvasPoint(e);
+      const snapped = snapToGrid(p);
+      setLastMousePos(snapped);
 
-    const Lc = candidate.dimensions.length ?? 40;
-    const Wc = candidate.dimensions.width ?? 30;
-
-    // AABB (fast first pass)
-    const ca = toProductAABB(candidate);
-
-    let snapped = { ...candidate.position };
-    let snappedAny = false;
-    let linkWith: string[] = [];
-
-    for (const o of placedProducts) {
-      if (o.id === candidate.id || o.id === exceptId) continue;
-      const ob = toProductAABB(o);
-      if (!aabbOverlap(ca, ob, snapPx + 10)) continue; // quick reject
-
-      const Lo = o.dimensions.length ?? 40;
-      const Wo = o.dimensions.width ?? 30;
-
-      // We only consider axis-aligned edge docking for now (rotation small-agnostic).
-      // Horizontal join (left/right)
-      const leftGap = Math.abs((ob.right) - (ca.left));
-      const rightGap = Math.abs((ca.right) - (ob.left));
-      const vertOverlap = Math.min(ca.bottom, ob.bottom) - Math.max(ca.top, ob.top);
-
-      if (vertOverlap > Math.min(Wc, Wo) * 0.35) {
-        if (leftGap <= snapPx) {
-          snapped.x = o.position.x + (Lo/2) + (Lc/2) + joinGapPx;
-          snappedAny = true;
-          linkWith.push(o.id);
-        } else if (rightGap <= snapPx) {
-          snapped.x = o.position.x - (Lo/2) - (Lc/2) - joinGapPx;
-          snappedAny = true;
-          linkWith.push(o.id);
+      if (currentMode === 'select') {
+        const mId = findMeasurementAtPoint(snapped);
+        if (mId) {
+          const w = wallSegments.find((x) => x.id === mId);
+          if (w) {
+            const mm = Math.round(canvasToMm(len(w.start, w.end), scale));
+            setEditingMeasurement({ wallId: mId, value: String(mm) });
+            return;
+          }
         }
-      }
-
-      // Vertical join (top/bottom)
-      const topGap = Math.abs((ob.bottom) - (ca.top));
-      const bottomGap = Math.abs((ca.bottom) - (ob.top));
-      const horizOverlap = Math.min(ca.right, ob.right) - Math.max(ca.left, ob.left);
-
-      if (horizOverlap > Math.min(Lc, Lo) * 0.35) {
-        if (topGap <= snapPx) {
-          snapped.y = o.position.y + (Wo/2) + (Wc/2) + joinGapPx;
-          snappedAny = true;
-          linkWith.push(o.id);
-        } else if (bottomGap <= snapPx) {
-          snapped.y = o.position.y - (Wo/2) - (Wc/2) - joinGapPx;
-          snappedAny = true;
-          linkWith.push(o.id);
+        const prod = findProductAtPoint(snapped);
+        if (prod) {
+          const multi = e.metaKey || e.ctrlKey;
+          if (multi) {
+            const now = selectedProducts || [];
+            const next = now.includes(prod.id) ? now.filter((id) => id !== prod.id) : [...now, prod.id];
+            onProductSelect(next);
+          } else {
+            onProductSelect([prod.id]);
+          }
+          return;
         }
-      }
-    }
-
-    return { pos: snappedAny ? snapped : candidate.position, snappedAny, linkWith: Array.from(new Set(linkWith)) };
-  }, [placedProducts, scale]);
-
-  /* ===================== Mouse handlers ===================== */
-
-  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const p = getCanvasPoint(e);
-    const snapped = snapToGrid(p);
-    setLastMousePos(snapped);
-
-    if (currentMode === 'select') {
-      const mId = findMeasurementAtPoint(snapped);
-      if (mId) {
-        const w = wallSegments.find((x) => x.id === mId);
+        const w = findWallAtPoint(snapped);
         if (w) {
-          const mm = Math.round(canvasToMm(len(w.start, w.end), scale));
-          setEditingMeasurement({ wallId: mId, value: String(mm) });
+          setSelectedWall(w);
+          return;
+        }
+        setSelectedWall(null);
+        onProductSelect([]);
+      }
+
+      if (currentMode === 'move') {
+        const prod = findProductAtPoint(snapped);
+        if (prod) {
+          setDraggedItem(prod.id);
+          setIsDragging(true);
+          setDragOffset({ x: snapped.x - prod.position.x, y: snapped.y - prod.position.y });
+          setLastValidPos(prod.position);
           return;
         }
       }
-      const prod = findProductAtPoint(snapped);
-      if (prod) {
-        const multi = e.metaKey || e.ctrlKey;
-        if (multi) {
-          const now = selectedProducts || [];
-          const next = now.includes(prod.id) ? now.filter((id) => id !== prod.id) : [...now, prod.id];
-          onProductSelect(next);
+
+      if (currentMode === 'wall' || currentMode === 'interior-wall') {
+        if (!wallStartPoint) {
+          const ep = snapToEndpoints(p);
+          if (ep.point && ep.isSnapping) setWallStartPoint(ep.point);
+          else setWallStartPoint(snapToGrid(p));
+          setIsWallPreview(true);
         } else {
-          onProductSelect([prod.id]);
+          const end = finalPointForPreview(wallStartPoint, p, currentMode);
+          const seg: WallSegment = {
+            id: `wall-${Date.now()}`,
+            start: wallStartPoint,
+            end,
+            thickness: currentMode === 'interior-wall' ? 6 : 10,
+            color: currentMode === 'interior-wall' ? '#999999' : '#666666',
+            type: currentMode === 'interior-wall' ? WallType.PARTITION : WallType.EXTERIOR,
+          };
+          setWallSegments((prev) => [...prev, seg]);
+          setWallStartPoint(null);
+          setIsWallPreview(false);
+          setCurrentLineMeasurement('');
+          setSnapGuides({ horizontal: null, vertical: null });
         }
         return;
       }
-      const w = findWallAtPoint(snapped);
-      if (w) {
-        setSelectedWall(w);
+
+      if (currentMode === 'room') {
+        setRoomPoints((prev) => [...prev, snapped]);
         return;
       }
-      setSelectedWall(null);
-      onProductSelect([]);
-    }
 
-    if (currentMode === 'move') {
-      const prod = findProductAtPoint(snapped);
-      if (prod) {
-        setDraggedItem(prod.id);
-        setIsDragging(true);
-        setDragOffset({ x: snapped.x - prod.position.x, y: snapped.y - prod.position.y });
-        setLastValidPos(prod.position);
+      if (currentMode === 'door') {
+        const s = snapSystem.snapDoorToWall(p, wallSegments);
+        if (s.snapped && s.target) {
+          const wall = s.target as WallSegment;
+          const dx = Math.abs(wall.end.x - wall.start.x);
+          const dy = Math.abs(wall.end.y - wall.start.y);
+          const facing: 'horizontal' | 'vertical' = dx > dy ? 'horizontal' : 'vertical';
+          const door: Door = {
+            id: `door-${Date.now()}`,
+            position: s.point,
+            width: 80,
+            wallId: wall.id,
+            wallSegmentId: wall.id,
+            wallPosition: undefined,
+            isEmbedded: true,
+            facing,
+          };
+          setDoors((prev) => [...prev, door]);
+          toast.success('Door placed on wall');
+        } else {
+          const door: Door = {
+            id: `door-${Date.now()}`,
+            position: snapped,
+            width: 80,
+            wallId: undefined,
+            wallSegmentId: undefined,
+            wallPosition: undefined,
+            isEmbedded: false,
+            facing: 'horizontal',
+          };
+          setDoors((prev) => [...prev, door]);
+          toast.info('Door placed without wall alignment');
+        }
         return;
       }
-    }
 
-    if (currentMode === 'wall' || currentMode === 'interior-wall') {
-      if (!wallStartPoint) {
-        const ep = snapToEndpoints(p);
-        if (ep.point && ep.isSnapping) setWallStartPoint(ep.point);
-        else setWallStartPoint(snapToGrid(p));
-        setIsWallPreview(true);
+      if (currentMode === 'text') {
+        const text = prompt('Enter text:');
+        if (text) {
+          const ann: TextAnnotation = {
+            id: `text-${Date.now()}`,
+            position: snapped,
+            text,
+            fontSize: 14,
+            color: '#000000',
+          };
+          setTextAnnotations((prev) => [...prev, ann]);
+        }
+      }
+    },
+    [
+      currentMode,
+      getCanvasPoint,
+      snapToGrid,
+      snapToEndpoints,
+      finalPointForPreview,
+      wallStartPoint,
+      setWallSegments,
+      findMeasurementAtPoint,
+      wallSegments,
+      scale,
+      findProductAtPoint,
+      selectedProducts,
+      onProductSelect,
+      findWallAtPoint,
+      setRoomPoints,
+      snapSystem,
+      setDoors,
+      setTextAnnotations,
+    ]
+  );
+
+  // rAF-powered dragging
+  const applyDragAt = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!isDragging || !draggedItem) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const raw = { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+
+      let pos = { x: raw.x - dragOffset.x, y: raw.y - dragOffset.y };
+      pos = snapToGrid(pos);
+
+      const dragged = placedProducts.find((p) => p.id === draggedItem);
+      if (!dragged) return;
+
+      pos = clampToCanvas(pos, dragged.dimensions);
+
+      let candidate: PlacedProduct = { ...dragged, position: pos };
+
+      // wall distance snap for benches/islands
+      pos = snapIslandBenchDistance(candidate);
+      candidate.position = pos;
+
+      const wallHit = collidesWithWalls(candidate);
+      const furnHit = collidesWithFurniture(candidate, draggedItem);
+      const outOfRoom = !productInsideRoom(candidate);
+
+      if (!wallHit && !furnHit && !outOfRoom) {
+        setPlacedProducts((prev) => prev.map((p) => (p.id === draggedItem ? { ...p, position: pos } : p)));
+        setLastValidPos(pos);
+        setDragMeasurements(calculateWallDistances(pos));
+      } else if (lastValidPos) {
+        // soft rollback toward the last valid position
+        const alpha = 0.35;
+        const smooth = {
+          x: lastValidPos.x * (1 - alpha) + pos.x * alpha,
+          y: lastValidPos.y * (1 - alpha) + pos.y * alpha,
+        };
+        setPlacedProducts((prev) => prev.map((p) => (p.id === draggedItem ? { ...p, position: smooth } : p)));
+      }
+    },
+    [
+      isDragging,
+      draggedItem,
+      dragOffset,
+      snapToGrid,
+      placedProducts,
+      clampToCanvas,
+      snapIslandBenchDistance,
+      collidesWithWalls,
+      collidesWithFurniture,
+      productInsideRoom,
+      setPlacedProducts,
+      lastValidPos,
+      calculateWallDistances,
+    ]
+  );
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      const p = getCanvasPoint(e);
+
+      if (isDragging && draggedItem && currentMode === 'move') {
+        if (USE_RAF_FOR_DRAG) {
+          if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
+          dragRafRef.current = requestAnimationFrame(() => applyDragAt(e.clientX, e.clientY));
+        } else {
+          applyDragAt(e.clientX, e.clientY);
+        }
       } else {
+        setDragMeasurements(null);
+      }
+
+      if (isWallPreview && wallStartPoint && (currentMode === 'wall' || currentMode === 'interior-wall')) {
         const end = finalPointForPreview(wallStartPoint, p, currentMode);
-        const seg: WallSegment = {
-          id: `wall-${Date.now()}`,
-          start: wallStartPoint,
-          end,
-          thickness: currentMode === 'interior-wall' ? 6 : 10,
-          color: currentMode === 'interior-wall' ? '#999999' : '#666666',
-          type: currentMode === 'interior-wall' ? WallType.PARTITION : WallType.EXTERIOR,
-        };
-        setWallSegments((prev) => [...prev, seg]);
-        setWallStartPoint(null);
-        setIsWallPreview(false);
-        setCurrentLineMeasurement('');
-        setSnapGuides({ horizontal: null, vertical: null });
-      }
-      return;
-    }
+        setLastMousePos(end);
 
-    if (currentMode === 'room') {
-      setRoomPoints((prev) => [...prev, snapped]);
-      return;
-    }
-
-    if (currentMode === 'door') {
-      const s = snapSystem.snapDoorToWall(p, wallSegments);
-      if (s.snapped && s.target) {
-        const wall = s.target as WallSegment;
-        const dx = Math.abs(wall.end.x - wall.start.x);
-        const dy = Math.abs(wall.end.y - wall.start.y);
-        const facing: 'horizontal' | 'vertical' = dx > dy ? 'horizontal' : 'vertical';
-        const door: Door = {
-          id: `door-${Date.now()}`,
-          position: s.point,
-          width: 80,
-          wallId: wall.id,
-          wallSegmentId: wall.id,
-          wallPosition: undefined,
-          isEmbedded: true,
-          facing,
-        };
-        setDoors((prev) => [...prev, door]);
-        toast.success('Door placed on wall');
-      } else {
-        const door: Door = {
-          id: `door-${Date.now()}`,
-          position: snapped,
-          width: 80,
-          wallId: undefined,
-          wallSegmentId: undefined,
-          wallPosition: undefined,
-          isEmbedded: false,
-          facing: 'horizontal',
-        };
-        setDoors((prev) => [...prev, door]);
-        toast.info('Door placed without wall alignment');
-      }
-      return;
-    }
-
-    if (currentMode === 'text') {
-      const text = prompt('Enter text:');
-      if (text) {
-        const ann: TextAnnotation = {
-          id: `text-${Date.now()}`,
-          position: snapped,
-          text,
-          fontSize: 14,
-          color: '#000000',
-        };
-        setTextAnnotations((prev) => [...prev, ann]);
-      }
-    }
-  }, [
-    currentMode, getCanvasPoint, snapToGrid, snapToEndpoints, finalPointForPreview,
-    wallStartPoint, setWallSegments, findMeasurementAtPoint, wallSegments, scale,
-    findProductAtPoint, selectedProducts, onProductSelect, findWallAtPoint,
-    setRoomPoints, snapSystem, setDoors, setTextAnnotations
-  ]);
-
-  /* ---------- Dragging (with docking & group move) ---------- */
-
-  const applyDragAt = useCallback((clientX: number, clientY: number) => {
-    if (!isDragging || !draggedItem) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    const raw = { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
-
-    const draggingIds = getGroupMembers(draggedItem);
-
-    // compute desired delta for the primary item
-    const dragged = placedProducts.find((p) => p.id === draggedItem);
-    if (!dragged) return;
-
-    let basePos = { x: raw.x - dragOffset.x, y: raw.y - dragOffset.y };
-    basePos = snapToGrid(basePos);
-    basePos = clampToCanvas(basePos, dragged.dimensions);
-
-    // preview candidate for main
-    let candidateMain: PlacedProduct = { ...dragged, position: basePos };
-
-    // bench spacing
-    candidateMain.position = snapIslandBenchDistance(candidateMain);
-
-    // edge docking (main)
-    const dock = edgeDockToNeighbors(candidateMain, draggedItem);
-    if (dock.snappedAny) {
-      candidateMain.position = dock.pos;
-      ensureGroup([draggedItem, ...dock.linkWith]);
-    }
-
-    // build candidate positions for all group members (offset by delta of main)
-    const delta = {
-      x: candidateMain.position.x - dragged.position.x,
-      y: candidateMain.position.y - dragged.position.y,
-    };
-
-    const nextMap: Record<string, Point> = {};
-    nextMap[draggedItem] = candidateMain.position;
-
-    for (const id of draggingIds) {
-      if (id === draggedItem) continue;
-      const p = placedProducts.find(pp => pp.id === id);
-      if (!p) continue;
-      nextMap[id] = { x: p.position.x + delta.x, y: p.position.y + delta.y };
-    }
-
-    // collision check for all involved
-    const buildWithPos = (p:PlacedProduct, pos:Point):PlacedProduct => ({...p, position: pos});
-    let blocked = false;
-
-    // walls
-    for (const id of draggingIds) {
-      const p = placedProducts.find(pp => pp.id === id)!;
-      const test = buildWithPos(p, nextMap[id]);
-      if (rectHitsAnyWall(test)) { blocked = true; break; }
-    }
-    // furniture (against non-group items)
-    if (!blocked) {
-      for (const id of draggingIds) {
-        const p = placedProducts.find(pp => pp.id === id)!;
-        const test = buildWithPos(p, nextMap[id]);
-        for (const other of placedProducts) {
-          if (draggingIds.includes(other.id)) continue;
-          const padPx = mmToCanvas(PRODUCT_CLEARANCE_MM, scale);
-          if (aabbOverlap(toProductAABB(test), toProductAABB(other), padPx)) {
-            blocked = true; break;
-          }
+        let show = false;
+        const constrained = constrainToOrtho(wallStartPoint, p);
+        if (currentMode === 'interior-wall') {
+          const s1 = snapToWallLength(constrained);
+          const s2 = snapToEndpoints(constrained);
+          show = s1.showGuides || s2.showGuides;
+        } else {
+          const s2 = snapToEndpoints(constrained);
+          show = s2.showGuides;
         }
-        if (blocked) break;
-      }
-    }
+        setSnapGuides({ horizontal: show ? end.y : null, vertical: show ? end.x : null });
 
-    if (!blocked) {
-      setPlacedProducts(prev =>
-        prev.map(p => nextMap[p.id] ? ({...p, position: nextMap[p.id]}) : p)
-      );
-      setLastValidPos(candidateMain.position);
-      setDragMeasurements(calculateWallDistances(candidateMain.position));
-    } else if (lastValidPos) {
-      // smooth fallback on main only (group stays visually tight)
-      const alpha = GROUP_MOVE_PREVIEW_SOFTEN;
-      const smooth = {
-        x: lastValidPos.x * (1 - alpha) + candidateMain.position.x * alpha,
-        y: lastValidPos.y * (1 - alpha) + candidateMain.position.y * alpha,
-      };
-      setPlacedProducts(prev =>
-        prev.map(p => p.id === draggedItem ? ({...p, position: smooth}) : p)
-      );
-    }
-  }, [
-    isDragging, draggedItem, dragOffset, placedProducts, snapToGrid, clampToCanvas,
-    snapIslandBenchDistance, edgeDockToNeighbors, ensureGroup, rectHitsAnyWall,
-    calculateWallDistances, lastValidPos, getGroupMembers, scale
-  ]);
+        const dist = len(wallStartPoint, end);
+        const mm = canvasToMm(dist, scale);
+        setCurrentLineMeasurement(formatMeasurement(mm, measurementUnit, measurementUnit === 'mm' ? 0 : 2));
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
-    const p = getCanvasPoint(e);
-
-    if (isDragging && draggedItem && currentMode === 'move') {
-      if (USE_RAF_FOR_DRAG) {
-        if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
-        dragRafRef.current = requestAnimationFrame(() => applyDragAt(e.clientX, e.clientY));
+        if (showGrid) {
+          const gridPx = gridSize * scale;
+          const thr = 10;
+          const nv = Math.round(end.x / gridPx) * gridPx;
+          const nh = Math.round(end.y / gridPx) * gridPx;
+          setSnapLines({
+            x: Math.abs(end.x - nv) <= thr ? nv : null,
+            y: Math.abs(end.y - nh) <= thr ? nh : null,
+          });
+        }
       } else {
-        applyDragAt(e.clientX, e.clientY);
+        const s = snapToGrid(p);
+        setLastMousePos(s);
+        setSnapLines({ x: null, y: null });
+        setSnapGuides({ horizontal: null, vertical: null });
+        if ((currentMode === 'wall' || currentMode === 'interior-wall') && !isWallPreview) {
+          setCurrentLineMeasurement('');
+        }
       }
-    } else {
-      setDragMeasurements(null);
-    }
 
-    if (isWallPreview && wallStartPoint && (currentMode === 'wall' || currentMode === 'interior-wall')) {
-      const end = finalPointForPreview(wallStartPoint, p, currentMode);
-      setLastMousePos(end);
-
-      let show = false;
-      const constrained = constrainToOrtho(wallStartPoint, p);
-      if (currentMode === 'interior-wall') {
-        const s1 = snapToWallLength(constrained);
-        const s2 = snapToEndpoints(constrained);
-        show = s1.showGuides || s2.showGuides;
+      if (currentMode === 'door') {
+        const s = snapSystem.snapDoorToWall(p, wallSegments);
+        if (s.snapped && s.target) setDoorSnapPreview({ point: s.point, wall: s.target as WallSegment });
+        else setDoorSnapPreview(null);
       } else {
-        const s2 = snapToEndpoints(constrained);
-        show = s2.showGuides;
+        setDoorSnapPreview(null);
       }
-      setSnapGuides({ horizontal: show ? end.y : null, vertical: show ? end.x : null });
 
-      const dist = len(wallStartPoint, end);
-      const mm = canvasToMm(dist, scale);
-      setCurrentLineMeasurement(formatMeasurement(mm, measurementUnit, measurementUnit === 'mm' ? 0 : 2));
-
-      if (showGrid) {
-        const gridPx = gridSize * scale;
-        const thr = 10;
-        const nv = Math.round(end.x / gridPx) * gridPx;
-        const nh = Math.round(end.y / gridPx) * gridPx;
-        setSnapLines({
-          x: Math.abs(end.x - nv) <= thr ? nv : null,
-          y: Math.abs(end.y - nh) <= thr ? nh : null,
-        });
+      if (currentMode === 'select') {
+        setHoveredWall(findWallAtPoint(p)?.id || null);
+        setHoveredMeasurement(findMeasurementAtPoint(p));
       }
-    } else {
-      const s = snapToGrid(p);
-      setLastMousePos(s);
-      setSnapLines({ x: null, y: null });
-      setSnapGuides({ horizontal: null, vertical: null });
-      if ((currentMode === 'wall' || currentMode === 'interior-wall') && !isWallPreview) {
-        setCurrentLineMeasurement('');
-      }
-    }
-
-    if (currentMode === 'door') {
-      const s = snapSystem.snapDoorToWall(p, wallSegments);
-      if (s.snapped && s.target) setDoorSnapPreview({ point: s.point, wall: s.target as WallSegment });
-      else setDoorSnapPreview(null);
-    } else {
-      setDoorSnapPreview(null);
-    }
-
-    if (currentMode === 'select') {
-      setHoveredWall(findWallAtPoint(p)?.id || null);
-      setHoveredMeasurement(findMeasurementAtPoint(p));
-    }
-  }, [
-    currentMode, getCanvasPoint, isDragging, draggedItem, isWallPreview, wallStartPoint,
-    finalPointForPreview, constrainToOrtho, snapToGrid, showGrid, gridSize, scale,
-    findWallAtPoint, findMeasurementAtPoint, snapSystem, wallSegments, applyDragAt
-  ]);
+    },
+    [
+      currentMode,
+      getCanvasPoint,
+      isDragging,
+      draggedItem,
+      isWallPreview,
+      wallStartPoint,
+      finalPointForPreview,
+      constrainToOrtho,
+      snapToGrid,
+      showGrid,
+      gridSize,
+      scale,
+      findWallAtPoint,
+      findMeasurementAtPoint,
+      snapSystem,
+      wallSegments,
+      applyDragAt,
+    ]
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -918,7 +845,7 @@ const EnhancedCanvasWorkspace: React.FC<{
           for (let i = 0; i < roomPoints.length; i++) {
             const j = (i + 1) % roomPoints.length;
             area += roomPoints[i].x * roomPoints[j].y - roomPoints[j].x * roomPoints[i].y;
-          }
+            }
           return Math.abs(area) / 2;
         })(),
         perimeter: (() => {
@@ -936,7 +863,7 @@ const EnhancedCanvasWorkspace: React.FC<{
     }
   }, [currentMode, roomPoints, rooms.length, setRooms, setRoomPoints]);
 
-  /* ===================== Drawing ===================== */
+  /* ---------------- Drawing ---------------- */
 
   const drawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
@@ -996,7 +923,7 @@ const EnhancedCanvasWorkspace: React.FC<{
       }
     });
 
-    // walls + dimension tags (parallel & offset outward)
+    // walls + dimension labels
     wallSegments.forEach((w) => {
       const isSel = selectedWall?.id === w.id;
       const isHov = hoveredWall === w.id;
@@ -1019,62 +946,53 @@ const EnhancedCanvasWorkspace: React.FC<{
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
         ctx.stroke();
+
+        // invisible hit target
+        ctx.globalAlpha = 0.1;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, 15, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        ctx.globalAlpha = 1;
       });
 
-      // dimension (offset outside & parallel)
+      // dimension labels (bigger + not upside down)
       if (showMeasurements) {
         const d = len(w.start, w.end);
         const mm = canvasToMm(d, scale);
         const txt = formatMeasurement(mm, measurementUnit, measurementUnit === 'mm' ? 0 : 2);
 
-        const { ang, nx, ny } = wallAngleAndNormal(w);
-
-        // pick outward direction: away from approximate room center if available; fallback upward
-        let dir = 1;
-        if (rooms.length && rooms[0].points.length) {
-          const mid = { x:(w.start.x+w.end.x)/2, y:(w.start.y+w.end.y)/2 };
-          const room = rooms[0];
-          const cx = room.points.reduce((s,p)=>s+p.x,0)/room.points.length;
-          const cy = room.points.reduce((s,p)=>s+p.y,0)/room.points.length;
-          const vx = mid.x - cx, vy = mid.y - cy;
-          dir = (vx*nx + vy*ny) > 0 ? 1 : -1; // push away from room
-        }
-
-        const offset = (w.thickness ?? 10) * 1.2 + 18; // keep off the wall
-        const mid = { x: (w.start.x + w.end.x)/2 + nx*offset*dir, y: (w.start.y + w.end.y)/2 + ny*offset*dir };
+        const mid = { x: (w.start.x + w.end.x) / 2, y: (w.start.y + w.end.y) / 2 };
+        const ang = normalizeTextAngle(wallAngle(w));
 
         ctx.save();
         ctx.translate(mid.x, mid.y);
-        ctx.rotate(ang); // text parallel to wall
+        ctx.rotate(ang);
 
-        // leader lines (perp to wall)
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4,2]);
-        ctx.beginPath();
-        ctx.moveTo(-d/2, 0);
-        ctx.lineTo(-d/2, (offset*0.6)*(-dir)); // back to the wall region (visual)
-        ctx.moveTo( d/2, 0);
-        ctx.lineTo( d/2, (offset*0.6)*(-dir));
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // label box
-        ctx.font = 'bold 16px Arial';
+        // background box
+        ctx.font = 'bold 30px Arial'; // increased font size
+        const padX = 10;
+        const padY = 8;
         const tw = ctx.measureText(txt).width;
-        const pad = 6;
-        ctx.fillStyle = 'rgba(255,255,255,0.95)';
-        ctx.strokeStyle = isSel ? '#ff4444' : isHov ? '#3b82f6' : '#000';
-        ctx.lineWidth = 2;
+        const th = 30; // approximate text height
+        const isSel = selectedWall?.id === w.id;
+        const isHover = hoveredMeasurement === w.id;
+        const bg = isSel ? 'rgba(255, 68, 68, 0.95)' : isHover ? 'rgba(59, 130, 246, 0.95)' : 'rgba(255,255,255,0.95)';
+        ctx.fillStyle = bg;
+        ctx.strokeStyle = isSel ? '#ff4444' : isHover ? '#3b82f6' : '#000';
+        ctx.lineWidth = isHover ? 3 : 2;
+
         ctx.beginPath();
-        ctx.rect(-tw/2 - pad, -16, tw + pad*2, 24);
+        ctx.rect(-tw / 2 - padX, -th / 2 - padY / 2, tw + padX * 2, th + padY);
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = '#000';
+        // text
+        ctx.fillStyle = isSel || isHover ? '#fff' : '#000';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(txt, 0, -4);
+        ctx.fillText(txt, 0, 2);
+
         ctx.restore();
       }
     });
@@ -1111,23 +1029,32 @@ const EnhancedCanvasWorkspace: React.FC<{
       ctx.beginPath();
       ctx.arc(wallStartPoint.x, wallStartPoint.y, 6, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
       ctx.fillStyle = '#ef4444';
       ctx.beginPath();
       ctx.arc(lastMousePos.x, lastMousePos.y, 6, 0, Math.PI * 2);
       ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
 
-    // doors (unchanged visuals)
+    // doors
     doors.forEach((door) => {
       const x = door.position.x;
       const y = door.position.y;
 
       let nearest: WallSegment | null = null;
-      let minD = Infinity;
+      let min = Infinity;
       for (const w of wallSegments) {
-        const d = pointToSegmentDist(door.position, w.start, w.end);
-        if (d < minD) { minD = d; nearest = w; }
+        const d = distanceToLineSegment(door.position, w.start, w.end);
+        if (d < min) {
+          min = d;
+          nearest = w;
+        }
       }
       const wth = nearest?.thickness ?? 10;
       const doorTh = Math.max(wth * 0.7, 6);
@@ -1137,15 +1064,37 @@ const EnhancedCanvasWorkspace: React.FC<{
       const rw = horiz ? doorW : doorTh;
       const rh = horiz ? doorTh : doorW;
 
-      const ctx2 = ctx;
-      ctx2.fillStyle = '#8b4513';
-      ctx2.fillRect(x - rw / 2, y - rh / 2, rw, rh);
-      ctx2.strokeStyle = '#654321';
-      ctx2.lineWidth = 1;
-      ctx2.strokeRect(x - rw / 2, y - rh / 2, rw, rh);
+      ctx.fillStyle = '#8b4513';
+      ctx.fillRect(x - rw / 2, y - rh / 2, rw, rh);
+      ctx.strokeStyle = '#654321';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - rw / 2, y - rh / 2, rw, rh);
+
+      const R = doorW * 0.9;
+      const start = horiz ? -Math.PI / 2 : 0;
+      const hinge = horiz ? { x: x - rw / 2, y } : { x, y: y - rh / 2 };
+      ctx.strokeStyle = '#2563eb';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.arc(hinge.x, hinge.y, R, start, start + Math.PI / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const endX = hinge.x + R * Math.cos(start + Math.PI / 2);
+      const endY = hinge.y + R * Math.sin(start + Math.PI / 2);
+      ctx.setLineDash([2, 3]);
+      ctx.beginPath();
+      ctx.moveTo(hinge.x, hinge.y);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#654321';
+      ctx.beginPath();
+      ctx.arc(hinge.x, hinge.y, 2.5, 0, Math.PI * 2);
+      ctx.fill();
     });
 
-    // annotations
+    // text annotations
     textAnnotations.forEach((t) => {
       ctx.fillStyle = t.color;
       ctx.font = `${t.fontSize}px Arial`;
@@ -1154,21 +1103,20 @@ const EnhancedCanvasWorkspace: React.FC<{
 
     // furniture
     placedProducts.forEach((prod) => {
-      const L = prod.dimensions.length ?? 40;
-      const W = prod.dimensions.width ?? 30;
-
       ctx.save();
       ctx.translate(prod.position.x, prod.position.y);
       ctx.rotate(prod.rotation || 0);
 
-      // body
+      const L = prod.dimensions.length ?? 40;
+      const W = prod.dimensions.width ?? 30;
+
       ctx.fillStyle = prod.color || '#4caf50';
       ctx.strokeStyle = '#2e7d32';
       ctx.lineWidth = 2;
       ctx.fillRect(-L / 2, -W / 2, L, W);
       ctx.strokeRect(-L / 2, -W / 2, L, W);
 
-      // selection
+      // selection adorners
       if (selectedItems?.includes(prod.id)) {
         ctx.strokeStyle = '#ff4444';
         ctx.lineWidth = 3;
@@ -1182,6 +1130,15 @@ const EnhancedCanvasWorkspace: React.FC<{
         ctx.arc(L / 2 + 20, 0, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
+
+        // hint
+        ctx.fillStyle = 'rgba(0,0,0,0.8)';
+        ctx.fillRect(-42, W / 2 + 10, 84, 20);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Press R to rotate', 0, W / 2 + 24);
+        ctx.textAlign = 'start';
       }
 
       ctx.restore();
@@ -1244,6 +1201,11 @@ const EnhancedCanvasWorkspace: React.FC<{
           ctx.moveTo(pos.x + 50, pos.y);
           ctx.lineTo(pos.x + (dragMeasurements.right * scale) / 10, pos.y);
           ctx.stroke();
+          ctx.save();
+          ctx.translate(pos.x + 60, pos.y);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText(`${dragMeasurements.right}mm`, 0, 0);
+          ctx.restore();
         }
         if (dragMeasurements.bottom > 0) {
           ctx.beginPath();
@@ -1257,6 +1219,11 @@ const EnhancedCanvasWorkspace: React.FC<{
           ctx.moveTo(pos.x - 50, pos.y);
           ctx.lineTo(pos.x - (dragMeasurements.left * scale) / 10, pos.y);
           ctx.stroke();
+          ctx.save();
+          ctx.translate(pos.x - 60, pos.y);
+          ctx.rotate(Math.PI / 2);
+          ctx.fillText(`${dragMeasurements.left}mm`, 0, 0);
+          ctx.restore();
         }
         ctx.setLineDash([]);
       }
@@ -1279,6 +1246,14 @@ const EnhancedCanvasWorkspace: React.FC<{
       ctx.lineWidth = 2;
       ctx.fillRect(point.x - 40, point.y - 6, 80, 12);
       ctx.strokeRect(point.x - 40, point.y - 6, 80, 12);
+
+      ctx.fillStyle = 'rgb(16,185,129)';
+      ctx.beginPath();
+      ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
     }
 
     // snap guides
@@ -1301,36 +1276,68 @@ const EnhancedCanvasWorkspace: React.FC<{
       ctx.setLineDash([]);
     }
 
-    // live wall measure during preview (offset a bit)
+    // live wall measure box during preview (bigger)
     if (isWallPreview && wallStartPoint && currentLineMeasurement) {
-      const { ang, nx, ny } = wallAngleAndNormal({start:wallStartPoint, end:lastMousePos, thickness:8, color:'#', id:'', type:WallType.EXTERIOR});
-      const offset = 24;
-      const mid = { x:(wallStartPoint.x+lastMousePos.x)/2 + nx*offset, y:(wallStartPoint.y+lastMousePos.y)/2 + ny*offset };
-      ctx.save();
-      ctx.translate(mid.x, mid.y);
-      ctx.rotate(ang);
-      ctx.font = 'bold 16px Arial';
+      const midX = (wallStartPoint.x + lastMousePos.x) / 2;
+      const midY = (wallStartPoint.y + lastMousePos.y) / 2;
+      ctx.font = 'bold 20px Arial';
       const tw = ctx.measureText(currentLineMeasurement).width;
-      const pad = 8;
+      const pad = 10;
+      const rx = midX - tw / 2 - pad;
+      const ry = midY - 18;
+      const rw = tw + pad * 2;
+      const rh = 32;
+
       ctx.fillStyle = 'rgba(239,68,68,0.95)';
-      ctx.fillRect(-tw/2 - pad, -16, tw + pad*2, 28);
+      ctx.fillRect(rx, ry, rw, rh);
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(rx, ry, rw, rh);
+
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(currentLineMeasurement, 0, -3);
-      ctx.restore();
+      ctx.fillText(currentLineMeasurement, midX, midY);
+      ctx.textAlign = 'start';
+      ctx.textBaseline = 'alphabetic';
     }
   }, [
-    CANVAS_WIDTH, CANVAS_HEIGHT, showGrid, gridSize, scale, rooms, wallSegments,
-    selectedWall, hoveredWall, snapToEndpoints, showMeasurements, measurementUnit,
-    roomPoints, isWallPreview, wallStartPoint, lastMousePos, currentLineMeasurement,
-    doors, placedProducts, selectedItems, snapLines, dragMeasurements, isDragging,
-    draggedItem, doorSnapPreview, currentMode, snapGuides
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT,
+    showGrid,
+    gridSize,
+    scale,
+    rooms,
+    wallSegments,
+    selectedWall,
+    hoveredWall,
+    snapToEndpoints,
+    showMeasurements,
+    hoveredMeasurement,
+    measurementUnit,
+    roomPoints,
+    isWallPreview,
+    wallStartPoint,
+    lastMousePos,
+    currentLineMeasurement,
+    doors,
+    distanceToLineSegment,
+    placedProducts,
+    selectedItems,
+    snapLines,
+    dragMeasurements,
+    isDragging,
+    draggedItem,
+    doorSnapPreview,
+    currentMode,
+    snapGuides,
   ]);
 
-  useEffect(() => { drawCanvas(); }, [drawCanvas]);
+  useEffect(() => {
+    drawCanvas();
+  }, [drawCanvas]);
 
-  // Esc cancels wall preview + rotate selected
+  // Esc cancels wall preview / R rotates
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isWallPreview) {
@@ -1352,15 +1359,13 @@ const EnhancedCanvasWorkspace: React.FC<{
     return () => window.removeEventListener('keydown', onKey);
   }, [isWallPreview, selectedItems, setPlacedProducts]);
 
-  /* ===================== JSX ===================== */
-
   return (
     <div className="relative w-full h-full bg-white rounded-lg border border-gray-200 overflow-hidden">
       <canvas
         ref={canvasRef}
-        width={canvasWidth}
-        height={canvasHeight}
-        style={{ width: '100%', height: '100%', maxWidth: `${canvasWidth}px`, maxHeight: `${canvasHeight}px` }}
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        style={{ width: '100%', height: '100%', maxWidth: `${CANVAS_WIDTH}px`, maxHeight: `${CANVAS_HEIGHT}px` }}
         className={`w-full h-full bg-white border ${
           currentMode === 'select' && hoveredMeasurement
             ? 'cursor-pointer'
@@ -1408,7 +1413,7 @@ const EnhancedCanvasWorkspace: React.FC<{
             pos = snapToGrid(pos);
             pos = clampToCanvas(pos, dimsPx);
 
-            let newProd: PlacedProduct = {
+            const newProd: PlacedProduct = {
               id: `product-${Date.now()}`,
               productId: product.id,
               name: product.name,
@@ -1427,16 +1432,8 @@ const EnhancedCanvasWorkspace: React.FC<{
               variants: product.variants,
             };
 
-            // bench/island snap if close
-            newProd.position = wallSegments.length ? snapIslandBenchDistance(newProd) : newProd.position;
-
-            // edge docking on drop
-            const dock = edgeDockToNeighbors(newProd);
-            newProd.position = dock.pos;
-            if (dock.snappedAny) ensureGroup([newProd.id, ...dock.linkWith]);
-
-            // collision checks
-            if (wallSegments.length && rectHitsAnyWall(newProd)) {
+            // reject if colliding or outside room polygon
+            if (wallSegments.length && collidesWithWalls(newProd)) {
               toast.error('Cannot place product: too close to a wall');
               return;
             }
@@ -1444,6 +1441,13 @@ const EnhancedCanvasWorkspace: React.FC<{
               toast.error('Cannot place product: overlaps another item');
               return;
             }
+            if (!productInsideRoom(newProd)) {
+              toast.error('Place items inside the room boundary');
+              return;
+            }
+
+            // bench/island snap if close
+            newProd.position = wallSegments.length ? snapIslandBenchDistance(newProd) : newProd.position;
 
             setPlacedProducts((prev) => [...prev, newProd]);
             toast.success(`${newProd.name} placed`);
