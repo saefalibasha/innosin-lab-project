@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
-// ⬇️ Default import (the component is a default export)
 import EnhancedCanvasWorkspace from '../canvas/EnhancedCanvasWorkspace';
 
 import {
@@ -25,8 +24,7 @@ export const FloorPlanner = () => {
     rooms: [] as Room[],
   };
 
-  const { saveState, undo, redo, canUndo, canRedo, currentState } =
-    useFloorPlanHistory(initialFloorPlanState);
+  const { currentState } = useFloorPlanHistory(initialFloorPlanState);
 
   const [roomPoints, setRoomPoints] = useState<Point[]>(currentState.roomPoints);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(
@@ -43,16 +41,19 @@ export const FloorPlanner = () => {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
   // Canvas settings
-  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
-  const [showGrid, setShowGrid] = useState(true);
-  const [showMeasurements, setShowMeasurements] = useState(true);
-  const [gridSize, setGridSize] = useState(100); // in mm
-  const [measurementUnit, setMeasurementUnit] =
-    useState<MeasurementUnit>('mm');
+  const [currentMode] = useState<DrawingMode>('select');
+  const [showGrid] = useState(true);
+  const [showMeasurements] = useState(true);
+  const [gridSize] = useState(100); // mm
+  const [measurementUnit] = useState<MeasurementUnit>('mm');
+
+  // Canvas pixel dimensions (internal drawing surface)
   const [canvasWidth] = useState(1200);
   const [canvasHeight] = useState(800);
 
-  // Products are dragged from the sidebar; the canvas handles the drop.
+  // Room-aware scale (px per mm)
+  const scale = 0.08; // 80 px per meter
+
   const handleProductDrag = useCallback((product: any) => {
     console.log('Product dragged:', product);
   }, []);
@@ -64,10 +65,8 @@ export const FloorPlanner = () => {
     setTextAnnotations([]);
     setWallSegments([]);
     setRooms([]);
+    setSelectedProducts([]);
   }, []);
-
-  // Room-aware scale: optimized for large laboratory spaces (20x20m support)
-  const scale = 0.08; // 0.08 pixels per mm (80 pixels per meter)
 
   return (
     <div className="h-screen flex">
@@ -83,38 +82,39 @@ export const FloorPlanner = () => {
           <EnhancedSeriesSelector
             onProductDrag={handleProductDrag}
             currentTool="select"
-            // (optional) onProductUsed={(id) => console.log('Used product:', id)}
           />
         </div>
       </div>
 
-      {/* Canvas */}
+      {/* Canvas area (give it a real height!) */}
       <div className="flex-1 relative">
-        <EnhancedCanvasWorkspace
-          placedProducts={placedProducts}
-          setPlacedProducts={setPlacedProducts}
-          selectedProducts={selectedProducts}
-          onProductSelect={setSelectedProducts}
-          roomPoints={roomPoints}
-          setRoomPoints={setRoomPoints}
-          doors={doors}
-          setDoors={setDoors}
-          textAnnotations={textAnnotations}
-          setTextAnnotations={setTextAnnotations}
-          wallSegments={wallSegments}
-          setWallSegments={setWallSegments}
-          rooms={rooms}
-          setRooms={setRooms}
-          scale={scale}
-          currentMode={currentMode}
-          showGrid={showGrid}
-          showMeasurements={showMeasurements}
-          gridSize={gridSize}
-          measurementUnit={measurementUnit}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          onClearAll={handleClearAll}
-        />
+        <div className="w-full h-[700px]"> {/* <-- key fix: set an explicit height */}
+          <EnhancedCanvasWorkspace
+            placedProducts={placedProducts}
+            setPlacedProducts={setPlacedProducts}
+            selectedProducts={selectedProducts}
+            onProductSelect={setSelectedProducts}
+            roomPoints={roomPoints}
+            setRoomPoints={setRoomPoints}
+            doors={doors}
+            setDoors={setDoors}
+            textAnnotations={textAnnotations}
+            setTextAnnotations={setTextAnnotations}
+            wallSegments={wallSegments}
+            setWallSegments={setWallSegments}
+            rooms={rooms}
+            setRooms={setRooms}
+            scale={scale}
+            currentMode={currentMode}
+            showGrid={showGrid}
+            showMeasurements={showMeasurements}
+            gridSize={gridSize}
+            measurementUnit={measurementUnit}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            onClearAll={handleClearAll}
+          />
+        </div>
       </div>
     </div>
   );
