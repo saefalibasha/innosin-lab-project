@@ -21,8 +21,41 @@ interface Hotspot {
   specifications: string[];
 }
 
+interface ShopLookContent {
+  title: string;
+  title_highlight: string;
+  description: string;
+  background_image: string;
+  background_alt: string;
+}
+
 const ShopTheLook = () => {
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
+
+  // Fetch shop look content
+  const { data: shopLookContent } = useQuery({
+    queryKey: ['shop-look-content'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('shop_look_content')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order')
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      // Return default content if none found
+      return data || {
+        title: "Shop The Look",
+        title_highlight: "Premium Laboratory Solutions",
+        description: "Discover our complete range of laboratory equipment and furniture designed for modern research facilities. Click on the interactive points to explore each product in detail.",
+        background_image: "/api/placeholder/1200/800",
+        background_alt: "Modern laboratory setup with premium equipment"
+      };
+    }
+  });
 
   // Fetch hotspots from Supabase
   const { data: hotspots = [], isLoading } = useQuery({
@@ -48,16 +81,7 @@ const ShopTheLook = () => {
     }
   });
 
-  // Mock content data since we don't have shop_look_content table yet
-  const shopLookContent = {
-    title: "Shop The Look",
-    title_highlight: "Premium Laboratory Solutions",
-    description: "Discover our complete range of laboratory equipment and furniture designed for modern research facilities. Click on the interactive points to explore each product in detail.",
-    background_image: "/api/placeholder/1200/800",
-    background_alt: "Modern laboratory setup with premium equipment"
-  };
-
-  if (isLoading) {
+  if (isLoading || !shopLookContent) {
     return (
       <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="container mx-auto px-4">

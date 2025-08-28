@@ -1,76 +1,94 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { HotspotEditor } from '@/components/admin/HotspotEditor';
-import { ShopLookContentEditor } from '@/components/admin/ShopLookContentEditor';
-import ProjectEditor from '@/components/admin/ProjectEditor';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import BlogPostManagement from './BlogPostManagement';
+import BeforeAfterProjectManagement from './BeforeAfterProjectManagement';
+import ShopLookContentEditor from './shop-look/ShopLookContentEditor';
+import HotspotEditor from './shop-look/HotspotEditor';
+import { 
+  FileText, 
+  Image, 
+  Eye, 
+  Target,
+  Camera,
+  Settings
+} from 'lucide-react';
 
 const ContentManagement = () => {
+  const [activeTab, setActiveTab] = useState('blog');
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Content Management</h2>
-        <p className="text-muted-foreground">
-          Manage your website content, shop the look sections, before/after projects, and interactive elements.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Content Management</h2>
+          <p className="text-muted-foreground">
+            Manage blog posts, projects, and interactive content
+          </p>
+        </div>
       </div>
 
-      <Tabs defaultValue="shop-look" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="shop-look">Shop The Look</TabsTrigger>
-          <TabsTrigger value="hotspots">Interactive Hotspots</TabsTrigger>
-          <TabsTrigger value="projects">Before/After Projects</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="blog" className="flex items-center gap-2">
+            <FileText className="w-4 h-4" />
+            Blog Posts
+          </TabsTrigger>
+          <TabsTrigger value="projects" className="flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            Projects
+          </TabsTrigger>
+          <TabsTrigger value="shop-content" className="flex items-center gap-2">
+            <Settings className="w-4 h-4" />
+            Shop Content
+          </TabsTrigger>
+          <TabsTrigger value="shop-hotspots" className="flex items-center gap-2">
+            <Target className="w-4 h-4" />
+            Hotspots
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="shop-look" className="space-y-6">
+        <TabsContent value="blog" className="space-y-6">
+          <BlogPostManagement />
+        </TabsContent>
+
+        <TabsContent value="projects" className="space-y-6">
+          <BeforeAfterProjectManagement />
+        </TabsContent>
+
+        <TabsContent value="shop-content" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Shop The Look Content
-                <Badge variant="secondary">Active</Badge>
+                <Eye className="w-5 h-5" />
+                Shop The Look - Content Settings
               </CardTitle>
-              <CardDescription>
-                Configure the main content for your Shop The Look section including title, description, and background images.
-              </CardDescription>
             </CardHeader>
             <CardContent>
+              <p className="text-muted-foreground mb-6">
+                Configure the main content, title, description, and background image for the Shop The Look section. 
+                Upload a background image here to make it available for hotspot editing.
+              </p>
               <ShopLookContentEditor />
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="hotspots" className="space-y-6">
+        <TabsContent value="shop-hotspots" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Interactive Hotspots
-                <Badge variant="secondary">Management</Badge>
+                <Target className="w-5 h-5" />
+                Shop The Look - Interactive Hotspots
               </CardTitle>
-              <CardDescription>
-                Add and manage interactive hotspots on your Shop The Look images to highlight specific products.
-              </CardDescription>
             </CardHeader>
             <CardContent>
+              <p className="text-muted-foreground mb-6">
+                Add interactive product hotspots to your background image. Click on the image to place hotspots, 
+                then select products from your catalog to automatically populate the hotspot information.
+              </p>
               <HotspotEditor />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="projects" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Before & After Projects
-                <Badge variant="secondary">Portfolio</Badge>
-              </CardTitle>
-              <CardDescription>
-                Manage your before and after project showcase to demonstrate your work and capabilities.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ProjectEditor />
             </CardContent>
           </Card>
         </TabsContent>
