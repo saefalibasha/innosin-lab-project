@@ -1,5 +1,5 @@
 // src/pages/EnhancedProductDetail.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -75,8 +75,16 @@ const EnhancedProductDetail = () => {
     }
   };
 
-  const currentVariant = series?.variants?.find((v: any) => v.id === selectedVariantId);
-  const displayProduct = currentVariant || series;
+  const currentVariant = useMemo(
+    () => series?.variants?.find((v: any) => v.id === selectedVariantId),
+    [series, selectedVariantId]
+  );
+
+  // ✅ Single declaration of displayProduct, reused everywhere
+  const displayProduct = useMemo(
+    () => currentVariant || series,
+    [currentVariant, series]
+  );
 
   // Enhanced product type detection
   const getProductType = () => {
@@ -350,7 +358,7 @@ const EnhancedProductDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -368,18 +376,13 @@ const EnhancedProductDetail = () => {
     );
   }
 
-  const displayProduct = currentVariant || series;
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container-custom py-8 pt-20">
         {/* Breadcrumb */}
         <AnimatedSection animation="fade-in" delay={100}>
           <div className="flex items-center gap-2 mb-8">
-            <Link
-              to="/products"
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
+            <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
               <ArrowLeft className="w-4 h-4" />
               Back to Catalog
             </Link>
@@ -387,7 +390,7 @@ const EnhancedProductDetail = () => {
         </AnimatedSection>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column */}
+          {/* Left Column - Photos/3D Model Toggle */}
           <div className="space-y-6">
             <AnimatedSection animation="slide-in-left" delay={200}>
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -437,8 +440,9 @@ const EnhancedProductDetail = () => {
             </AnimatedSection>
           </div>
 
-          {/* Right Column */}
+          {/* Right Column - Product Info */}
           <div className="space-y-6">
+            {/* Product Header */}
             <AnimatedSection animation="slide-in-right" delay={300}>
               <div className="space-y-4">
                 <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
@@ -451,6 +455,7 @@ const EnhancedProductDetail = () => {
               </div>
             </AnimatedSection>
 
+            {/* Product Overview */}
             <AnimatedSection animation="slide-in-right" delay={350}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -467,6 +472,7 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
+            {/* Product Configuration */}
             {shouldShowConfigurator && (
               <AnimatedSection animation="slide-in-right" delay={400}>
                 <Card className="shadow-sm">
@@ -476,11 +482,14 @@ const EnhancedProductDetail = () => {
                       Product Configuration
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>{renderConfigurator()}</CardContent>
+                  <CardContent>
+                    {renderConfigurator()}
+                  </CardContent>
                 </Card>
               </AnimatedSection>
             )}
 
+            {/* Technical Specifications */}
             <AnimatedSection animation="slide-in-right" delay={450}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -490,11 +499,12 @@ const EnhancedProductDetail = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {/* keep your static spec bullets here, or render from DB */}
+                  {/* keep your static spec bullets or render from DB */}
                 </CardContent>
               </Card>
             </AnimatedSection>
 
+            {/* Add to Quote Button */}
             <AnimatedSection animation="slide-in-right" delay={500}>
               <Button
                 onClick={handleAddToQuote}
