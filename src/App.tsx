@@ -1,11 +1,10 @@
-// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { RFQProvider } from "@/contexts/RFQContext"; // ✅ add
+import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 
 import Index from "./pages/Index";
@@ -14,19 +13,20 @@ import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminProductViewer from "./pages/AdminProductViewer";
 
-// New public pages you said should exist
+// Public pages
 import Blog from "./pages/Blog";
 import ProductCatalog from "./pages/ProductCatalog";
 import FloorPlanner from "./pages/FloorPlanner";
 import Contact from "./pages/Contact";
-import RFQCart from "./pages/RFQCart"; // ✅ add this route
+import RFQCart from "./pages/RFQCart";
+import About from "./pages/About"; // ✅ added
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <RFQProvider>{/* ✅ now HeroNavigation/useRFQ is safe everywhere */}
+      <RFQProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -35,11 +35,12 @@ const App = () => (
               {/* Public */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/about" element={<About />} /> {/* ✅ added */}
               <Route path="/products" element={<ProductCatalog />} />
               <Route path="/floor-planner" element={<FloorPlanner />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/contact" element={<Contact />} />
-              <Route path="/rfq-cart" element={<RFQCart />} /> {/* ✅ */}
+              <Route path="/rfq-cart" element={<RFQCart />} />
 
               {/* Admin */}
               <Route path="/admin/auth" element={<AdminAuth />} />
