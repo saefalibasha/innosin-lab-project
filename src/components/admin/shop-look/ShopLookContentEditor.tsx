@@ -1,427 +1,351 @@
 
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Progress } from '@/components/ui/progress';
-import { Upload, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Upload, Save, Loader2, Image, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface ShopLookContent {
-  id?: string;
+  id: string;
   title: string;
   title_highlight: string;
   description: string;
   background_image: string | null;
   background_alt: string;
   is_active: boolean;
-  display_order?: number;
+  display_order: number;
 }
 
-const ShopLookContentEditor = () => {
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const queryClient = useQueryClient();
+const ShopLookContentEditor: React.FC = () => {
+  const [content, setContent] = useState<ShopLookContent | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
 
-  const { data: content, isLoading, error } = useQuery({
-    queryKey: ['shop-look-content'],
-    queryFn: async () => {
-      console.log('Fetching shop look content...');
+  useEffect(() => {
+    fetchContent();
+  }, []);
+
+  const fetchContent = async () => {
+    try {
       const { data, error } = await supabase
         .from('shop_look_content')
         .select('*')
         .eq('is_active', true)
-        .order('display_order')
+        .order('display_order', { ascending: true })
         .limit(1)
-        .maybeSingle();
-      
-      if (error) {
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
         console.error('Error fetching content:', error);
-        throw error;
+        toast({
+          title: "Error",
+          description: "Failed to load content",
+          variant: "destructive",
+        });
+        return;
       }
-      console.log('Fetched content:', data);
-      return data;
-    }
-  });
 
-  const updateContentMutation = useMutation({
-    mutationFn: async (updatedContent: Partial<ShopLookContent>) => {
-      console.log('Updating content with:', updatedContent);
-      
-      if (!content?.id) {
-        // Create new content if none exists
-        const dataToInsert = {
-          title: updatedContent.title || 'Shop The Look',
-          title_highlight: updatedContent.title_highlight || 'Premium Laboratory Solutions',
-          description: updatedContent.description || 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.',
-          background_image: updatedContent.background_image || null,
-          background_alt: updatedContent.background_alt || 'Modern laboratory setup with premium equipment',
-          is_active: updatedContent.is_active ?? true,
-          display_order: updatedContent.display_order ?? 0
-        };
-        
-        const { data, error } = await supabase
-          .from('shop_look_content')
-          .insert(dataToInsert)
-          .select()
-          .single();
-        
-        if (error) {
-          console.error('Error creating content:', error);
-          throw error;
-        }
-        console.log('Created content:', data);
-        return data;
+      if (data) {
+        setContent(data);
       } else {
-        // Update existing content
-        const { data, error } = await supabase
-          .from('shop_look_content')
-          .update(updatedContent)
-          .eq('id', content.id)
-          .select()
-          .single();
-        
-        if (error) {
-          console.error('Error updating content:', error);
-          throw error;
-        }
-        console.log('Updated content:', data);
-        return data;
+        // Create default content if none exists
+        setContent({
+          id: '',
+          title: 'Shop The Look',
+          title_highlight: 'Premium Laboratory Solutions',
+          description: 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.',
+          background_image: null,
+          background_alt: 'Modern laboratory setup with premium equipment',
+          is_active: true,
+          display_order: 0,
+        });
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['shop-look-content'] });
-      toast.success('Content updated successfully');
-    },
-    onError: (error: any) => {
-      console.error('Error updating content:', error);
-      toast.error(`Failed to update content: ${error.message}`);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load content",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  });
-
-  const validateFile = (file: File): string | null => {
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      return 'Please select an image file (JPG, PNG, GIF, WebP)';
-    }
-    
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return 'File size must be less than 10MB';
-    }
-    
-    return null;
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file
-    const validationError = validateFile(file);
-    if (validationError) {
-      toast.error(validationError);
+    // Check authentication
+    if (!user || !isAdmin) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in as an admin to upload images",
+        variant: "destructive",
+      });
       return;
     }
 
-    setUploadingImage(true);
-    setUploadProgress(0);
-    setUploadError(null);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid File Type",
+        description: "Please select an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploading(true);
     try {
-      console.log('Starting image upload:', { name: file.name, size: file.size, type: file.type });
-      
-      // Generate clean filename with timestamp
-      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileExt = file.name.split('.').pop();
       const fileName = `shop-look-bg-${Date.now()}.${fileExt}`;
-      const filePath = `backgrounds/${fileName}`;
-
-      setUploadProgress(25);
-
-      // Check if bucket exists and user has access
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
       
-      if (bucketError) {
-        console.error('Error listing buckets:', bucketError);
-        throw new Error(`Storage access error: ${bucketError.message}`);
-      }
-
-      const shopLookBucket = buckets?.find(bucket => bucket.name === 'shop-look-images');
-      if (!shopLookBucket) {
-        throw new Error('Storage bucket "shop-look-images" not found. Please contact administrator.');
-      }
-
-      console.log('Found bucket:', shopLookBucket);
-      setUploadProgress(40);
-
-      // Upload to Supabase Storage with proper options
+      console.log('Uploading file:', fileName, 'Size:', file.size, 'Type:', file.type);
+      
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('shop-look-images')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: file.type
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: false
         });
 
       if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        
-        // Provide more specific error messages
-        if (uploadError.message?.includes('policy')) {
-          throw new Error('Permission denied. Please ensure you are logged in as an admin and have upload permissions.');
-        } else if (uploadError.message?.includes('size')) {
-          throw new Error('File size too large. Please use an image under 10MB.');
-        } else if (uploadError.message?.includes('duplicate')) {
-          throw new Error('File already exists. Please rename your file or try again.');
-        } else {
-          throw new Error(`Upload failed: ${uploadError.message}`);
-        }
+        console.error('Upload error:', uploadError);
+        throw new Error(uploadError.message);
       }
 
       console.log('Upload successful:', uploadData);
-      setUploadProgress(70);
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('shop-look-images')
-        .getPublicUrl(filePath);
+        .getPublicUrl(fileName);
 
-      const publicUrl = urlData.publicUrl;
-      console.log('Public URL generated:', publicUrl);
-
-      if (!publicUrl) {
-        throw new Error('Failed to generate public URL for uploaded image');
+      if (content) {
+        setContent({ ...content, background_image: urlData.publicUrl });
+        toast({
+          title: "Success",
+          description: "Background image uploaded successfully",
+        });
       }
-
-      setUploadProgress(85);
-
-      // Update content with new background image
-      await updateContentMutation.mutateAsync({
-        background_image: publicUrl
-      });
-
-      setUploadProgress(100);
-      toast.success('Background image uploaded successfully');
-      
-      // Reset file input
-      event.target.value = '';
-      
     } catch (error: any) {
       console.error('Upload error:', error);
-      setUploadError(error.message);
-      
-      // Show user-friendly error message
-      toast.error(error.message || 'Upload failed. Please try again.');
+      toast({
+        title: "Upload Failed", 
+        description: error.message || "Failed to upload image. Please check your permissions.",
+        variant: "destructive",
+      });
     } finally {
-      setUploadingImage(false);
-      setTimeout(() => {
-        setUploadProgress(0);
-        setUploadError(null);
-      }, 3000);
+      setUploading(false);
     }
   };
 
-  const handleContentUpdate = (field: keyof ShopLookContent, value: any) => {
-    updateContentMutation.mutate({
-      [field]: value
-    });
+  const handleSave = async () => {
+    if (!content) return;
+
+    // Check authentication
+    if (!user || !isAdmin) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in as an admin to save changes",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const contentData = {
+        title: content.title,
+        title_highlight: content.title_highlight,
+        description: content.description,
+        background_image: content.background_image,
+        background_alt: content.background_alt,
+        is_active: content.is_active,
+        display_order: content.display_order,
+      };
+
+      if (content.id) {
+        // Update existing content
+        const { error } = await supabase
+          .from('shop_look_content')
+          .update(contentData)
+          .eq('id', content.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new content
+        const { data, error } = await supabase
+          .from('shop_look_content')
+          .insert([contentData])
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setContent({ ...content, id: data.id });
+        }
+      }
+
+      toast({
+        title: "Success",
+        description: "Content saved successfully",
+      });
+    } catch (error: any) {
+      console.error('Save error:', error);
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save content",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="text-muted-foreground">Loading content...</div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <span className="ml-2">Loading content...</span>
+      </div>
     );
   }
 
-  if (error) {
+  if (!user || !isAdmin) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="border border-destructive rounded-lg p-4">
-            <div className="flex items-center gap-2 text-destructive mb-2">
-              <AlertCircle className="w-4 h-4" />
-              <span className="font-medium">Error loading content</span>
-            </div>
-            <p className="text-sm text-muted-foreground">{error.message}</p>
-          </div>
-        </CardContent>
-      </Card>
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Admin authentication required to manage Shop The Look content.
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Eye className="w-5 h-5" />
-          Shop The Look Content Settings
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Title Settings */}
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="title">Main Title</Label>
-            <Input
-              id="title"
-              value={content?.title || 'Shop The Look'}
-              onChange={(e) => handleContentUpdate('title', e.target.value)}
-              placeholder="Shop The Look"
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="title-highlight">Title Highlight</Label>
-            <Input
-              id="title-highlight"
-              value={content?.title_highlight || 'Premium Laboratory Solutions'}
-              onChange={(e) => handleContentUpdate('title_highlight', e.target.value)}
-              placeholder="Premium Laboratory Solutions"
-            />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Shop The Look Content Settings</CardTitle>
+          <CardDescription>
+            Manage the content and background image for the Shop The Look section
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Main Title</Label>
+              <Input
+                id="title"
+                value={content?.title || ''}
+                onChange={(e) => content && setContent({ ...content, title: e.target.value })}
+                placeholder="Shop The Look"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="title_highlight">Title Highlight</Label>
+              <Input
+                id="title_highlight"
+                value={content?.title_highlight || ''}
+                onChange={(e) => content && setContent({ ...content, title_highlight: e.target.value })}
+                placeholder="Premium Laboratory Solutions"
+              />
+            </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={content?.description || 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.'}
-              onChange={(e) => handleContentUpdate('description', e.target.value)}
-              placeholder="Discover our complete range..."
+              value={content?.description || ''}
+              onChange={(e) => content && setContent({ ...content, description: e.target.value })}
+              placeholder="Describe the Shop The Look section"
               rows={3}
             />
           </div>
-        </div>
 
-        {/* Background Image */}
-        <div className="space-y-4">
-          <Label>Background Image</Label>
-          
-          {/* Current Image Preview */}
-          {content?.background_image && (
-            <div className="relative">
-              <img
-                src={content.background_image}
-                alt={content.background_alt || 'Background'}
-                className="w-full h-48 object-cover rounded-lg border"
-                onError={(e) => {
-                  console.error('Failed to load image:', content.background_image);
-                  e.currentTarget.src = '/api/placeholder/800/300';
-                }}
-              />
-              <div className="absolute top-2 right-2">
-                <div className="flex items-center gap-1 bg-black/50 text-white px-2 py-1 rounded text-xs">
-                  <CheckCircle className="w-3 h-3" />
-                  Current
-                </div>
+          <div className="space-y-4">
+            <Label>Background Image</Label>
+            {content?.background_image && (
+              <div className="relative">
+                <img
+                  src={content.background_image}
+                  alt={content.background_alt}
+                  className="w-full h-48 object-cover rounded-md border"
+                />
               </div>
-            </div>
-          )}
-          
-          {/* Upload Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
+            )}
+            
+            <div className="flex items-center gap-4">
               <Button
                 variant="outline"
-                disabled={uploadingImage}
+                disabled={uploading}
                 onClick={() => document.getElementById('background-upload')?.click()}
-                className="flex items-center gap-2"
               >
-                <Upload className="w-4 h-4" />
-                {uploadingImage ? 'Uploading...' : 'Upload New Background'}
+                {uploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Upload className="w-4 h-4 mr-2" />
+                )}
+                {uploading ? 'Uploading...' : 'Upload Background'}
               </Button>
-              
               <input
                 id="background-upload"
                 type="file"
                 accept="image/*"
-                onChange={handleImageUpload}
                 className="hidden"
+                onChange={handleImageUpload}
               />
-              
-              <div className="text-xs text-muted-foreground">
-                Max 10MB • JPG, PNG, GIF, WebP
-              </div>
+              <span className="text-sm text-muted-foreground">
+                Recommended: 1920x1080px or larger
+              </span>
             </div>
-
-            {/* Upload Progress */}
-            {uploadingImage && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span>Uploading image...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} className="h-2" />
-              </div>
-            )}
-
-            {/* Upload Error */}
-            {uploadError && (
-              <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
-                <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                <span>{uploadError}</span>
-              </div>
-            )}
           </div>
 
-          <div>
-            <Label htmlFor="background-alt">Image Alt Text</Label>
+          <div className="space-y-2">
+            <Label htmlFor="background_alt">Background Alt Text</Label>
             <Input
-              id="background-alt"
-              value={content?.background_alt || 'Modern laboratory setup with premium equipment'}
-              onChange={(e) => handleContentUpdate('background_alt', e.target.value)}
-              placeholder="Describe the image for accessibility"
+              id="background_alt"
+              value={content?.background_alt || ''}
+              onChange={(e) => content && setContent({ ...content, background_alt: e.target.value })}
+              placeholder="Describe the background image for accessibility"
             />
           </div>
-        </div>
 
-        {/* Settings */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="flex items-center gap-2">
-            <Switch
-              checked={content?.is_active !== false}
-              onCheckedChange={(checked) => handleContentUpdate('is_active', checked)}
-            />
-            <Label>Active</Label>
-            {content?.is_active !== false ? (
-              <Eye className="w-4 h-4 text-green-600" />
-            ) : (
-              <EyeOff className="w-4 h-4 text-gray-400" />
-            )}
+          <div className="flex justify-end">
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
           </div>
-
-          <div className="text-sm text-muted-foreground">
-            {updateContentMutation.isPending ? 'Saving...' : 'Auto-saved'}
-          </div>
-        </div>
-
-        {/* Instructions for testing */}
-        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <h4 className="font-medium text-blue-900 mb-2">Testing the Interactive Hotspot Editor:</h4>
-          <ol className="text-sm text-blue-800 space-y-1">
-            <li>1. Upload a background image above (this will be your interactive background)</li>
-            <li>2. Once uploaded, navigate to the Hotspot Editor tab</li>
-            <li>3. Click anywhere on the uploaded image to create interactive hotspots</li>
-            <li>4. Fill in product details for each hotspot</li>
-          </ol>
-          <p className="text-xs text-blue-600 mt-2">
-            💡 For best results, use a high-resolution laboratory setup image (1200x800px or larger)
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 

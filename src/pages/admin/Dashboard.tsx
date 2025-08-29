@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import AdminAuthGuard from '@/components/AdminAuthGuard';
+import AdminAuthStatus from '@/components/admin/AdminAuthStatus';
 import { ProductSeriesManager } from '@/components/admin/product-series/ProductSeriesManager';
 import { DataSeeder } from '@/components/admin/DataSeeder';
 import { EnhancedDashboardStats } from '@/components/admin/enhanced-dashboard/EnhancedDashboardStats';
@@ -39,10 +39,13 @@ const Dashboard = () => {
               Manage your product catalog and system settings
             </p>
           </div>
-          <Button onClick={handleRefresh} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Refresh
-          </Button>
+          <div className="flex items-center space-x-4">
+            <AdminAuthStatus />
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
