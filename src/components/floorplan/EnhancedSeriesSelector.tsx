@@ -1,3 +1,4 @@
+// src/components/floorplan/EnhancedSeriesSelector.tsx
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,29 +32,46 @@ interface EnhancedSeriesSelectorProps {
   onProductDrag: (product: any) => void;
   currentTool: string;
   onProductUsed?: (productId: string) => void;
-  /** ✅ NEW: Callback when product is clicked (used by HotspotEditor) */
-  onProductSelect?: (product: Product) => void;
 }
 
 const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   onProductDrag,
   currentTool,
   onProductUsed,
-  onProductSelect,
 }) => {
   const { productSeries, loading, error } = useProductSeries();
 
   const [expandedSeries, setExpandedSeries] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [seriesFilters, setSeriesFilters] = useState<Record<string, any>>({});
+  const [seriesFilters, setSeriesFilters] = useState<
+    Record<
+      string,
+      {
+        finish?: string;
+        orientation?: string;
+        drawerCount?: string; // stores numeric as string
+        doorType?: string;
+        dimensions?: string;
+        category?: string;
+        mountingType?: string;
+        mixingType?: string;
+        handleType?: string;
+        cabinetClass?: string;
+        emergencyShowerType?: string;
+      }
+    >
+  >({});
+
+  // Variant chooser (shown only if multiple choices still remain)
   const [showVariantSelector, setShowVariantSelector] = useState(false);
   const [selectedProductForVariants, setSelectedProductForVariants] =
     useState<Product | null>(null);
 
   const isInteractionDisabled = currentTool !== 'select';
 
-  // Helpers (same as before)...
+  // -------- Drawer helpers (new) --------
   const deriveDrawerCount = (p: Product): number | null => {
+    // 1) explicit field
     const direct =
       (p as any).number_of_drawers ??
       (p as any).drawers ??
@@ -64,6 +82,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       return isNaN(n) ? null : n;
     }
 
+    // 2) parse from product_code / id / name / description
     const hay = [
       (p as any).product_code,
       p.id,
@@ -75,9 +94,11 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       .join(' ')
       .toString();
 
+    // Match DWR8, DWR-8, DWR 8, DRW8, etc.
     let m = hay.match(/\bD[RW]{2}[-\s]?(\d{1,2})\b/i);
     if (m && m[1]) return parseInt(m[1], 10);
 
+    // Match "8 Drawer", "8-Drawers", "8 drawers"
     m = hay.match(/\b(\d{1,2})\s*[- ]?\s*drawers?\b/i);
     if (m && m[1]) return parseInt(m[1], 10);
 
@@ -85,6 +106,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   };
 
   const toDrawerCode = (n: number) => `DWR${n}`;
+
+  // --------------------------------------
 
   const filteredSeries = useMemo(() => {
     if (!searchTerm) return productSeries;
@@ -103,15 +126,103 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     }
   };
 
-  const getFilteredProducts = (seriesId: string, products: Product[]): Product[] => {
+  const handleFilterChange = (
+    seriesId: string,
+    filterKey:
+      | 'finish'
+      | 'orientation'
+      | 'drawerCount'
+      | 'doorType'
+      | 'dimensions'
+      | 'category'
+      | 'mountingType'
+      | 'mixingType'
+      | 'handleType'
+      | 'cabinetClass'
+      | 'emergencyShowerType',
+    value: string
+  ) => {
+    setSeriesFilters((prev) => ({
+      ...prev,
+      [seriesId]: {
+        ...prev[seriesId],
+        [filterKey]: value === 'all' ? undefined : value,
+      },
+    }));
+  };
+
+  const getUniqueValues = (products: Product[], field: keyof Product): string[] => {
+    const values = products
+      .map((p) => {
+        const v = p[field];
+        return typeof v === 'number' || typeof v === 'string' ? String(v) : '';
+      })
+      .filter(Boolean);
+
+    const uniques = [...new Set(values)];
+
+    // dimension sort (volume-ish)
+    if (field === 'dimensions') {
+      const vol = (dim: string) => {
+        const m = dim.match(
+          /(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)\s*[×x]\s*(\d+(?:\.\d+)?)/i
+        );
+        if (!m) return 0;
+        return parseFloat(m[1]) * parseFloat(m[2]) * parseFloat(m[3]);
+      };
+      return uniques.sort((a, b) => vol(a) - vol(b));
+    }
+
+    // door/finish nice-ish sorts
+    if (field === 'door_type') {
+      const order = ['Solid', 'Glass', 'Mesh', 'Open'];
+      return uniques.sort((a, b) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return a.localeCompare(b);
+      });
+    }
+    if (field === 'finish_type') {
+      const order = ['Powder Coat', 'Stainless Steel', 'Epoxy', 'Phenolic'];
+      return uniques.sort((a, b) => {
+        const ia = order.indexOf(a);
+        const ib = order.indexOf(b);
+        if (ia !== -1 && ib !== -1) return ia - ib;
+        if (ia !== -1) return -1;
+        if (ib !== -1) return 1;
+        return a.localeCompare(b);
+      });
+    }
+
+    return uniques.sort();
+  };
+
+  // NEW: unique drawer counts (derived)
+  const getUniqueDrawerCounts = (products: Product[]): number[] => {
+    const counts = products
+      .map((p) => deriveDrawerCount(p))
+      .filter((n): n is number => typeof n === 'number' && n > 0);
+    return [...new Set(counts)].sort((a, b) => a - b);
+  };
+
+  const getFilteredProducts = (
+    seriesId: string,
+    products: Product[]
+  ): Product[] => {
     const f = seriesFilters[seriesId] || {};
     return products.filter((p) => {
       if (f.finish && p.finish_type !== f.finish) return false;
       if (f.orientation && p.orientation !== f.orientation) return false;
+
+      // drawer filter uses derived value
       if (f.drawerCount) {
         const n = deriveDrawerCount(p);
         if (String(n ?? '') !== f.drawerCount) return false;
       }
+
       if (f.doorType && p.door_type !== f.doorType) return false;
       if (f.dimensions && p.dimensions !== f.dimensions) return false;
       if (f.category && p.category !== f.category) return false;
@@ -119,17 +230,74 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       if (f.mixingType && p.mixing_type !== f.mixingType) return false;
       if (f.handleType && p.handle_type !== f.handleType) return false;
       if (f.cabinetClass && p.cabinet_class !== f.cabinetClass) return false;
-      if (f.emergencyShowerType && p.emergency_shower_type !== f.emergencyShowerType) return false;
+      if (
+        f.emergencyShowerType &&
+        p.emergency_shower_type !== f.emergencyShowerType
+      )
+        return false;
       return true;
     });
   };
 
+  const getAvailableFilterOptions = (
+    seriesId: string,
+    products: Product[],
+    field: keyof Product,
+    currentFilters: Record<string, any>
+  ) => {
+    // apply all filters except the one we’re computing options for
+    const other = { ...currentFilters };
+    const mapKey: Record<string, string> = {
+      finish_type: 'finish',
+      orientation: 'orientation',
+      // number_of_drawers is handled by a custom helper below
+      door_type: 'doorType',
+      dimensions: 'dimensions',
+      mounting_type: 'mountingType',
+      mixing_type: 'mixingType',
+      handle_type: 'handleType',
+      cabinet_class: 'cabinetClass',
+      emergency_shower_type: 'emergencyShowerType',
+    };
+    delete other[mapKey[field as string] ?? ''];
+
+    const filtered = products.filter((p) => {
+      if (other.finish && p.finish_type !== other.finish) return false;
+      if (other.orientation && p.orientation !== other.orientation) return false;
+
+      // if drawer filter is set, respect it here too
+      if (other.drawerCount) {
+        const n = deriveDrawerCount(p);
+        if (String(n ?? '') !== other.drawerCount) return false;
+      }
+
+      if (other.doorType && p.door_type !== other.doorType) return false;
+      if (other.dimensions && p.dimensions !== other.dimensions) return false;
+      if (other.mountingType && p.mounting_type !== other.mountingType)
+        return false;
+      if (other.mixingType && p.mixing_type !== other.mixingType) return false;
+      if (other.handleType && p.handle_type !== other.handleType) return false;
+      if (other.cabinetClass && p.cabinet_class !== other.cabinetClass)
+        return false;
+      if (
+        other.emergencyShowerType &&
+        p.emergency_shower_type !== other.emergencyShowerType
+      )
+        return false;
+      return true;
+    });
+
+    return getUniqueValues(filtered, field);
+  };
+
+  // When clicking a product tile:
+  // - if current filters still leave multiple valid variants → open modal
+  // - otherwise skip modal
   const handleProductClick = (seriesId: string, product: Product) => {
     const series = productSeries.find((s) => s.id === seriesId);
     if (!series) return;
 
     const stillValid = getFilteredProducts(seriesId, series.products);
-
     if (stillValid.length > 1) {
       setSelectedProductForVariants(product);
       setShowVariantSelector(true);
@@ -137,14 +305,44 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       setSelectedProductForVariants(null);
       setShowVariantSelector(false);
     }
-
-    // ✅ Notify parent (HotspotEditor)
-    onProductSelect?.(product);
   };
 
   const handleVariantSelect = () => {
     setShowVariantSelector(false);
     setSelectedProductForVariants(null);
+  };
+
+  const getCategoryColor = (category: string): string => {
+    const colors: Record<string, string> = {
+      'Innosin Lab': '#10b981',
+      'Broen-Lab': '#3b82f6',
+      'Hamilton Laboratory Solutions': '#1d4ed8',
+      'Oriental Giken Inc.': '#ef4444',
+    };
+    return colors[category] || '#6b7280';
+  };
+
+  const handleDragStart = (e: React.DragEvent, product: Product) => {
+    const payload = {
+      id: product.id,
+      productId: product.id,
+      name: formatProductName(product.name),
+      product_code: (product as any).product_code || product.id,
+      category: product.category,
+      thumbnail: (product as any).thumbnail_path || (product as any).thumbnail,
+      modelPath: (product as any).model_path || (product as any).modelPath,
+      dimensions: (product as any).dimensions,
+      finish_type: (product as any).finish_type,
+      number_of_drawers: deriveDrawerCount(product), // <-- derived value goes to canvas
+      orientation: (product as any).orientation,
+      door_type: (product as any).door_type,
+      color: getCategoryColor(product.category),
+    };
+
+    e.dataTransfer.setData('application/json', JSON.stringify(payload));
+    e.dataTransfer.effectAllowed = 'copy';
+    onProductUsed?.(product.id);
+    onProductDrag(payload);
   };
 
   if (loading) {
@@ -166,6 +364,12 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
 
   return (
     <div className="h-full flex flex-col">
+      {isInteractionDisabled && (
+        <div className="p-3 bg-warning/10 border border-warning/20 rounded-t text-sm text-warning-foreground">
+          Switch to Select tool to place products
+        </div>
+      )}
+
       <div className="p-4 border-b">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -183,8 +387,10 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
           {filteredSeries.map((series) => {
             const f = seriesFilters[series.id] || {};
             const filtered = getFilteredProducts(series.id, series.products);
+
+            // decide if drawer filter should render at all
             const hasAnyDrawers =
-              series.products.some((p) => deriveDrawerCount(p) !== null);
+              getUniqueDrawerCounts(series.products).length > 0;
 
             return (
               <Collapsible
@@ -214,24 +420,155 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                 </CollapsibleTrigger>
 
                 <CollapsibleContent className="space-y-3 pl-4 mt-2">
-                  {/* Product grid */}
+                  {/* FILTER VARIANTS */}
+                  <div className="space-y-2 p-3 bg-muted/30 rounded-lg border">
+                    <div className="text-xs font-medium text-muted-foreground mb-2">
+                      Filter Variants
+                    </div>
+
+                    {/* Orientation */}
+                    {getUniqueValues(series.products, 'orientation').length > 1 && (
+                      <div>
+                        <label className="text-xs font-medium">Orientation</label>
+                        <Select
+                          value={f.orientation || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'orientation', value)
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Orientations</SelectItem>
+                            {getAvailableFilterOptions(
+                              series.id,
+                              series.products,
+                              'orientation',
+                              f
+                            ).map((orientation) => (
+                              <SelectItem key={orientation} value={orientation}>
+                                {getOrientationDisplayName(orientation)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Drawers (derived; shown right under Orientation) */}
+                    {hasAnyDrawers && (
+                      <div>
+                        <label className="text-xs font-medium">Drawers</label>
+                        <Select
+                          value={f.drawerCount || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'drawerCount', value)
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Drawer Counts</SelectItem>
+                            {(() => {
+                              // compute drawer options with other filters applied (except drawer itself)
+                              const other = { ...f };
+                              delete other.drawerCount;
+                              const subset = series.products.filter((p) => {
+                                if (other.finish && p.finish_type !== other.finish) return false;
+                                if (other.orientation && p.orientation !== other.orientation) return false;
+                                if (other.doorType && p.door_type !== other.doorType) return false;
+                                if (other.dimensions && p.dimensions !== other.dimensions) return false;
+                                if (other.mountingType && p.mounting_type !== other.mountingType) return false;
+                                if (other.mixingType && p.mixing_type !== other.mixingType) return false;
+                                if (other.handleType && p.handle_type !== other.handleType) return false;
+                                if (other.cabinetClass && p.cabinet_class !== other.cabinetClass) return false;
+                                if (other.emergencyShowerType && p.emergency_shower_type !== other.emergencyShowerType) return false;
+                                return true;
+                              });
+                              const counts = getUniqueDrawerCounts(subset);
+                              return counts.map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                  {toDrawerCode(n)}
+                                </SelectItem>
+                              ));
+                            })()}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Size */}
+                    {getUniqueValues(series.products, 'dimensions').length > 1 && (
+                      <div>
+                        <label className="text-xs font-medium">Size</label>
+                        <Select
+                          value={f.dimensions || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'dimensions', value)
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Sizes</SelectItem>
+                            {getUniqueValues(series.products, 'dimensions').map(
+                              (size) => (
+                                <SelectItem key={size} value={size}>
+                                  {size}
+                                </SelectItem>
+                              )
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {/* Finish */}
+                    {getUniqueValues(series.products, 'finish_type').length > 1 && (
+                      <div>
+                        <label className="text-xs font-medium">Finish</label>
+                        <Select
+                          value={f.finish || 'all'}
+                          onValueChange={(value) =>
+                            handleFilterChange(series.id, 'finish', value)
+                          }
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Finishes</SelectItem>
+                            {getAvailableFilterOptions(
+                              series.id,
+                              series.products,
+                              'finish_type',
+                              f
+                            ).map((finish) => (
+                              <SelectItem key={finish} value={finish}>
+                                {formatFinishType(finish)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* PRODUCT GRID (image only + code below) */}
                   <div className="grid grid-cols-2 gap-3">
                     {filtered.map((product) => (
                       <div
                         key={product.id}
                         draggable={!isInteractionDisabled}
-                        onDragStart={(e) => {
-                          const payload = { id: product.id, ...product };
-                          e.dataTransfer.setData('application/json', JSON.stringify(payload));
-                          e.dataTransfer.effectAllowed = 'copy';
-                          onProductUsed?.(product.id);
-                          onProductDrag(payload);
-                        }}
+                        onDragStart={(e) => handleDragStart(e, product)}
                         onClick={() => handleProductClick(series.id, product)}
                         className={`border rounded-lg p-2 transition-all ${
                           isInteractionDisabled
                             ? 'opacity-50 cursor-not-allowed'
-                            : 'cursor-pointer hover:border-primary/60'
+                            : 'cursor-move hover:border-primary/60'
                         }`}
                         title={formatProductName(product.name)}
                       >
@@ -242,6 +579,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                             className="max-w-full max-h-full object-contain"
                           />
                         </div>
+
+                        {/* Product code as caption (does NOT cover image) */}
                         <p className="text-[10px] text-center mt-2 font-medium text-muted-foreground">
                           {(product as any).product_code || product.id}
                         </p>
@@ -261,6 +600,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
         </div>
       </ScrollArea>
 
+      {/* Variant chooser (will appear ONLY if more than one valid variant remains) */}
       <ProductVariantSelector
         product={selectedProductForVariants || undefined}
         isOpen={showVariantSelector}
