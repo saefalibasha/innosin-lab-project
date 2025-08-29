@@ -221,7 +221,7 @@ const HotspotEditor = () => {
     }
   };
 
-  // ✅ new: fetch product details from Supabase products table
+  // ✅ fetch product details from Supabase products table
   const handleProductSelect = async (product: any) => {
     try {
       const { data, error } = await supabase
@@ -237,10 +237,12 @@ const HotspotEditor = () => {
         title: data.name,
         description: data.description || '',
         category: data.category,
-        price: data.price || 'Contact for pricing',
-        image: data.thumbnail || data.image || '',
+        price: (data as any).price ?? 'Contact for pricing',
+        image: (data as any).thumbnail_path ?? (data as any).image ?? '',
         product_link: `/products/${data.id}`,
-        specifications: data.specifications || ['Premium Quality', 'Professional Grade'],
+        specifications: Array.isArray((data as any).specifications)
+          ? (data as any).specifications.map((s: any) => String(s))
+          : ['Premium Quality', 'Professional Grade'],
       }));
     } catch (err: any) {
       console.error('Error fetching product details:', err);
