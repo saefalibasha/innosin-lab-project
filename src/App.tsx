@@ -20,6 +20,7 @@ import FloorPlanner from "./pages/FloorPlanner";
 import Contact from "./pages/Contact";
 import RFQCart from "./pages/RFQCart";
 import About from "./pages/About"; // ✅ added
+import ProductDetail from "./pages/ProductDetail" ;
 
 const queryClient = new QueryClient();
 
