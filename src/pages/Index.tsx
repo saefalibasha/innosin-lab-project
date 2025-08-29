@@ -9,7 +9,7 @@ import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
 import Footer from '@/components/Footer';
-import HeroNavigation from '@/components/HeroNavigation';  // ✅ top nav
+import Navigation from '@/components/Navigation'; // ✅ use this header
 
 const Index = () => {
   const navigate = useNavigate();
@@ -23,11 +23,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* ✅ Render the navigation bar */}
-      <HeroNavigation />
+      {/* Top Navigation */}
+      <Navigation />
 
-      {/* Add top padding so the fixed/sticky header doesn't overlap content */}
-      <main className="flex-grow pt-20">
+      {/* Not fixed, so no extra top padding needed */}
+      <main className="flex-grow">
         {/* Video Hero Section */}
         <VideoHero />
 
