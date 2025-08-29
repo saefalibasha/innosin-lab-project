@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,7 +113,7 @@ const ShopTheLook = () => {
               <img
                 src={shopLookContent.background_image}
                 alt={shopLookContent.background_alt}
-                className="w-full h-auto object-cover"
+                className="w-full max-h-96 object-cover rounded-lg shadow-md"
                 onError={(e) => {
                   e.currentTarget.src = '/api/placeholder/800/600';
                 }}
