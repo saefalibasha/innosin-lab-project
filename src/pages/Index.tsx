@@ -9,7 +9,7 @@ import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
 import Footer from '@/components/Footer';
-import Navigation from '@/components/Navigation'; // ✅ use this header
+import HeroNavigation from '@/components/HeroNavigation'; // ✅ use this header
 
 const Index = () => {
   const navigate = useNavigate();
@@ -24,9 +24,9 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top Navigation */}
-      <Navigation />
+      <HeroNavigation />
 
-      {/* Not fixed, so no extra top padding needed */}
+      {/* If your HeroNavigation is `fixed`, add pt-16 here. If it's `sticky`, padding isn't needed. */}
       <main className="flex-grow">
         {/* Video Hero Section */}
         <VideoHero />
