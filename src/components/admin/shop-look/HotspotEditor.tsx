@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -88,9 +89,31 @@ const HotspotEditor = () => {
   // Create hotspot mutation
   const createHotspotMutation = useMutation({
     mutationFn: async (hotspotData: Partial<Hotspot>) => {
+      // Ensure required fields are present
+      if (!hotspotData.title) {
+        throw new Error('Title is required');
+      }
+      if (hotspotData.x_position === undefined || hotspotData.y_position === undefined) {
+        throw new Error('Position is required');
+      }
+
+      const dataToInsert = {
+        title: hotspotData.title,
+        x_position: hotspotData.x_position,
+        y_position: hotspotData.y_position,
+        description: hotspotData.description || '',
+        price: hotspotData.price || 'Contact for pricing',
+        category: hotspotData.category || 'Laboratory Equipment',
+        image: hotspotData.image || '',
+        product_link: hotspotData.product_link || '/products',
+        specifications: JSON.stringify(hotspotData.specifications || ['Premium Quality', 'Professional Grade', 'Industry Standard']),
+        is_active: hotspotData.is_active ?? true,
+        display_order: hotspotData.display_order ?? 0
+      };
+
       const { data, error } = await supabase
         .from('shop_look_hotspots')
-        .insert([hotspotData])
+        .insert(dataToInsert)
         .select()
         .single();
       
@@ -104,7 +127,7 @@ const HotspotEditor = () => {
     },
     onError: (error) => {
       console.error('Error creating hotspot:', error);
-      toast.error('Failed to create hotspot');
+      toast.error('Failed to create hotspot: ' + error.message);
     }
   });
 
@@ -191,6 +214,11 @@ const HotspotEditor = () => {
   const handleSave = () => {
     if (!formData.title?.trim()) {
       toast.error('Please enter a title for the hotspot');
+      return;
+    }
+
+    if (formData.x_position === undefined || formData.y_position === undefined) {
+      toast.error('Please click on the image to set hotspot position');
       return;
     }
 

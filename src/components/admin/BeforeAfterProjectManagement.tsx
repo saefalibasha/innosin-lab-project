@@ -58,9 +58,26 @@ const BeforeAfterProjectManagement = () => {
 
   const createProjectMutation = useMutation({
     mutationFn: async (projectData: Partial<BeforeAfterProject>) => {
+      // Ensure required fields are present
+      if (!projectData.title) {
+        throw new Error('Title is required');
+      }
+
+      const dataToInsert = {
+        title: projectData.title,
+        description: projectData.description || '',
+        location: projectData.location || '',
+        project_type: projectData.project_type || '',
+        completion_date: projectData.completion_date || null,
+        before_image: projectData.before_image || '',
+        after_image: projectData.after_image || '',
+        is_active: projectData.is_active ?? true,
+        display_order: projectData.display_order ?? 0
+      };
+
       const { data, error } = await supabase
         .from('before_after_projects')
-        .insert([projectData])
+        .insert(dataToInsert)
         .select()
         .single();
       
@@ -74,7 +91,7 @@ const BeforeAfterProjectManagement = () => {
     },
     onError: (error) => {
       console.error('Error creating project:', error);
-      toast.error('Failed to create project');
+      toast.error('Failed to create project: ' + error.message);
     }
   });
 
@@ -141,6 +158,11 @@ const BeforeAfterProjectManagement = () => {
   };
 
   const handleSave = () => {
+    if (!formData.title?.trim()) {
+      toast.error('Please enter a project title');
+      return;
+    }
+
     if (isCreating) {
       createProjectMutation.mutate(formData);
     } else if (editingProject) {
