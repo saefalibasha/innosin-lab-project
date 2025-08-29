@@ -13,14 +13,14 @@ import { Upload, Save, Eye, EyeOff, AlertCircle, CheckCircle } from 'lucide-reac
 import { toast } from 'sonner';
 
 interface ShopLookContent {
-  id: string;
+  id?: string;
   title: string;
   title_highlight: string;
   description: string;
   background_image: string | null;
   background_alt: string;
   is_active: boolean;
-  display_order: number;
+  display_order?: number;
 }
 
 const ShopLookContentEditor = () => {
@@ -56,17 +56,19 @@ const ShopLookContentEditor = () => {
       
       if (!content?.id) {
         // Create new content if none exists
+        const dataToInsert = {
+          title: updatedContent.title || 'Shop The Look',
+          title_highlight: updatedContent.title_highlight || 'Premium Laboratory Solutions',
+          description: updatedContent.description || 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.',
+          background_image: updatedContent.background_image || null,
+          background_alt: updatedContent.background_alt || 'Modern laboratory setup with premium equipment',
+          is_active: updatedContent.is_active ?? true,
+          display_order: updatedContent.display_order ?? 0
+        };
+        
         const { data, error } = await supabase
           .from('shop_look_content')
-          .insert([{
-            title: 'Shop The Look',
-            title_highlight: 'Premium Laboratory Solutions',
-            description: 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.',
-            background_alt: 'Modern laboratory setup with premium equipment',
-            is_active: true,
-            display_order: 0,
-            ...updatedContent
-          }])
+          .insert(dataToInsert)
           .select()
           .single();
         
@@ -136,28 +138,55 @@ const ShopLookContentEditor = () => {
     try {
       console.log('Starting image upload:', { name: file.name, size: file.size, type: file.type });
       
-      // Generate clean filename
-      const fileExt = file.name.split('.').pop();
+      // Generate clean filename with timestamp
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `shop-look-bg-${Date.now()}.${fileExt}`;
       const filePath = `backgrounds/${fileName}`;
 
       setUploadProgress(25);
 
-      // Upload to Supabase Storage
+      // Check if bucket exists and user has access
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      
+      if (bucketError) {
+        console.error('Error listing buckets:', bucketError);
+        throw new Error(`Storage access error: ${bucketError.message}`);
+      }
+
+      const shopLookBucket = buckets?.find(bucket => bucket.name === 'shop-look-images');
+      if (!shopLookBucket) {
+        throw new Error('Storage bucket "shop-look-images" not found. Please contact administrator.');
+      }
+
+      console.log('Found bucket:', shopLookBucket);
+      setUploadProgress(40);
+
+      // Upload to Supabase Storage with proper options
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('shop-look-images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: file.type
         });
 
       if (uploadError) {
         console.error('Storage upload error:', uploadError);
-        throw new Error(`Upload failed: ${uploadError.message}`);
+        
+        // Provide more specific error messages
+        if (uploadError.message?.includes('policy')) {
+          throw new Error('Permission denied. Please ensure you are logged in as an admin and have upload permissions.');
+        } else if (uploadError.message?.includes('size')) {
+          throw new Error('File size too large. Please use an image under 10MB.');
+        } else if (uploadError.message?.includes('duplicate')) {
+          throw new Error('File already exists. Please rename your file or try again.');
+        } else {
+          throw new Error(`Upload failed: ${uploadError.message}`);
+        }
       }
 
       console.log('Upload successful:', uploadData);
-      setUploadProgress(75);
+      setUploadProgress(70);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -165,9 +194,13 @@ const ShopLookContentEditor = () => {
         .getPublicUrl(filePath);
 
       const publicUrl = urlData.publicUrl;
-      console.log('Public URL:', publicUrl);
+      console.log('Public URL generated:', publicUrl);
 
-      setUploadProgress(90);
+      if (!publicUrl) {
+        throw new Error('Failed to generate public URL for uploaded image');
+      }
+
+      setUploadProgress(85);
 
       // Update content with new background image
       await updateContentMutation.mutateAsync({
@@ -184,16 +217,8 @@ const ShopLookContentEditor = () => {
       console.error('Upload error:', error);
       setUploadError(error.message);
       
-      let errorMessage = 'Upload failed';
-      if (error.message?.includes('policy')) {
-        errorMessage = 'Permission denied. Please ensure you are logged in as an admin.';
-      } else if (error.message?.includes('size')) {
-        errorMessage = 'File size too large';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage);
+      // Show user-friendly error message
+      toast.error(error.message || 'Upload failed. Please try again.');
     } finally {
       setUploadingImage(false);
       setTimeout(() => {
@@ -210,18 +235,30 @@ const ShopLookContentEditor = () => {
   };
 
   if (isLoading) {
-    return <div className="p-4">Loading content...</div>;
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="text-muted-foreground">Loading content...</div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (error) {
     return (
-      <div className="p-4 border border-destructive rounded-lg">
-        <div className="flex items-center gap-2 text-destructive mb-2">
-          <AlertCircle className="w-4 h-4" />
-          <span className="font-medium">Error loading content</span>
-        </div>
-        <p className="text-sm text-muted-foreground">{error.message}</p>
-      </div>
+      <Card>
+        <CardContent className="p-6">
+          <div className="border border-destructive rounded-lg p-4">
+            <div className="flex items-center gap-2 text-destructive mb-2">
+              <AlertCircle className="w-4 h-4" />
+              <span className="font-medium">Error loading content</span>
+            </div>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -280,7 +317,8 @@ const ShopLookContentEditor = () => {
                 alt={content.background_alt || 'Background'}
                 className="w-full h-48 object-cover rounded-lg border"
                 onError={(e) => {
-                  e.currentTarget.src = '/placeholder.svg';
+                  console.error('Failed to load image:', content.background_image);
+                  e.currentTarget.src = '/api/placeholder/800/300';
                 }}
               />
               <div className="absolute top-2 right-2">
@@ -331,8 +369,8 @@ const ShopLookContentEditor = () => {
 
             {/* Upload Error */}
             {uploadError && (
-              <div className="flex items-center gap-2 text-destructive text-sm">
-                <AlertCircle className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-destructive text-sm bg-destructive/10 p-3 rounded-lg">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{uploadError}</span>
               </div>
             )}
@@ -367,6 +405,20 @@ const ShopLookContentEditor = () => {
           <div className="text-sm text-muted-foreground">
             {updateContentMutation.isPending ? 'Saving...' : 'Auto-saved'}
           </div>
+        </div>
+
+        {/* Instructions for testing */}
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-2">Testing the Interactive Hotspot Editor:</h4>
+          <ol className="text-sm text-blue-800 space-y-1">
+            <li>1. Upload a background image above (this will be your interactive background)</li>
+            <li>2. Once uploaded, navigate to the Hotspot Editor tab</li>
+            <li>3. Click anywhere on the uploaded image to create interactive hotspots</li>
+            <li>4. Fill in product details for each hotspot</li>
+          </ol>
+          <p className="text-xs text-blue-600 mt-2">
+            💡 For best results, use a high-resolution laboratory setup image (1200x800px or larger)
+          </p>
         </div>
       </CardContent>
     </Card>
