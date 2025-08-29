@@ -57,13 +57,13 @@ const ShopLookContentEditor: React.FC = () => {
       if (data) {
         setContent(data);
       } else {
-        // Create default content if none exists
+        // Create default content with your uploaded background image
         setContent({
           id: '',
           title: 'Shop The Look',
           title_highlight: 'Premium Laboratory Solutions',
           description: 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities.',
-          background_image: null,
+          background_image: '/page-images/home/shop-look.jpg',
           background_alt: 'Modern laboratory setup with premium equipment',
           is_active: true,
           display_order: 0,
@@ -237,7 +237,7 @@ const ShopLookContentEditor: React.FC = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Admin authentication required to manage Shop The Look content.
+          Admin authentication required to manage Shop The Look content. Please go to <a href="/admin/auth" className="underline text-blue-600">Admin Login</a> to authenticate.
         </AlertDescription>
       </Alert>
     );
@@ -308,7 +308,7 @@ const ShopLookContentEditor: React.FC = () => {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                {uploading ? 'Uploading...' : 'Upload Background'}
+                {uploading ? 'Uploading...' : 'Upload New Background'}
               </Button>
               <input
                 id="background-upload"
