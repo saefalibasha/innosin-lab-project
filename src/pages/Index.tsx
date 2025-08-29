@@ -9,6 +9,7 @@ import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
 import Footer from '@/components/Footer';   // ✅ correct footer import
+import HeroNavigation from '@/components/HeroNavigation';  // ✅ import nav
 
 const Index = () => {
   const navigate = useNavigate();
