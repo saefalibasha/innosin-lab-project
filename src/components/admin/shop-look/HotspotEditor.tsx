@@ -49,7 +49,7 @@ const HotspotEditor = () => {
   const [formData, setFormData] = useState<Partial<Hotspot>>({});
   const queryClient = useQueryClient();
 
-  // Fetch shop look content
+  // --- Fetch shop look content ---
   const { data: contentList = [], isLoading: contentLoading } = useQuery({
     queryKey: ['shop-look-content'],
     queryFn: async () => {
@@ -70,7 +70,7 @@ const HotspotEditor = () => {
     },
   });
 
-  // Fetch hotspots
+  // --- Fetch hotspots ---
   const { data: hotspots = [], isLoading: hotspotsLoading } = useQuery({
     queryKey: ['shop-look-hotspots'],
     queryFn: async () => {
@@ -84,7 +84,7 @@ const HotspotEditor = () => {
     },
   });
 
-  // Create hotspot
+  // --- CRUD for hotspots ---
   const createHotspotMutation = useMutation({
     mutationFn: async (hotspotData: Partial<Hotspot>) => {
       if (!hotspotData.title) throw new Error('Title is required');
@@ -127,7 +127,6 @@ const HotspotEditor = () => {
     },
   });
 
-  // Update hotspot
   const updateHotspotMutation = useMutation({
     mutationFn: async ({ id, ...hotspotData }: Partial<Hotspot> & { id: string }) => {
       const { data, error } = await supabase
@@ -150,7 +149,6 @@ const HotspotEditor = () => {
     },
   });
 
-  // Delete hotspot
   const deleteHotspotMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('shop_look_hotspots').delete().eq('id', id);
@@ -165,9 +163,9 @@ const HotspotEditor = () => {
     },
   });
 
+  // --- Image click to place hotspot ---
   const handleImageClick = (event: React.MouseEvent<HTMLImageElement>) => {
     if (!isCreating) return;
-
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 100;
     const y = ((event.clientY - rect.top) / rect.height) * 100;
@@ -199,12 +197,10 @@ const HotspotEditor = () => {
       toast.error('Please select a product for this hotspot');
       return;
     }
-
     if (formData.x_position === undefined || formData.y_position === undefined) {
       toast.error('Please click on the image to set hotspot position');
       return;
     }
-
     if (isCreating && newHotspotPosition) {
       createHotspotMutation.mutate(formData);
     } else if (editingHotspot) {
@@ -225,17 +221,31 @@ const HotspotEditor = () => {
     }
   };
 
-  // ✅ new: handle product selection from EnhancedSeriesSelector
-  const handleProductSelect = (product: any) => {
-    setFormData((prev) => ({
-      ...prev,
-      title: product.name,
-      category: product.category,
-      price: product.price || 'Contact for pricing',
-      image: product.thumbnail || '',
-      product_link: `/products/${product.id}`,
-      specifications: product.specifications || ['Premium Quality', 'Professional Grade'],
-    }));
+  // ✅ new: fetch product details from Supabase products table
+  const handleProductSelect = async (product: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', product.id)
+        .single();
+
+      if (error) throw error;
+
+      setFormData((prev) => ({
+        ...prev,
+        title: data.name,
+        description: data.description || '',
+        category: data.category,
+        price: data.price || 'Contact for pricing',
+        image: data.thumbnail || data.image || '',
+        product_link: `/products/${data.id}`,
+        specifications: data.specifications || ['Premium Quality', 'Professional Grade'],
+      }));
+    } catch (err: any) {
+      console.error('Error fetching product details:', err);
+      toast.error('Failed to load product details from Supabase');
+    }
   };
 
   if (contentLoading || hotspotsLoading) {
@@ -314,12 +324,10 @@ const HotspotEditor = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* EnhancedSeriesSelector replaces manual inputs */}
             <EnhancedSeriesSelector
               onProductDrag={() => {}}
               currentTool="select"
               onProductUsed={(id) => console.log('Product used:', id)}
-              // 🔑 you add this extra prop in EnhancedSeriesSelector
               onProductSelect={handleProductSelect}
             />
 
