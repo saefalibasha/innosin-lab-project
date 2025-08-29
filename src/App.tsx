@@ -1,3 +1,4 @@
+// src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,20 +8,21 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 
+// Public pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import AdminAuth from "./pages/admin/AdminAuth";
-import Dashboard from "./pages/admin/Dashboard";
-import AdminProductViewer from "./pages/AdminProductViewer";
-
-// Public pages
+import About from "./pages/About";
 import Blog from "./pages/Blog";
 import ProductCatalog from "./pages/ProductCatalog";
+import EnhancedProductDetail from "./pages/EnhancedProductDetail";
 import FloorPlanner from "./pages/FloorPlanner";
 import Contact from "./pages/Contact";
 import RFQCart from "./pages/RFQCart";
-import About from "./pages/About"; // ✅ added
-import EnhancedProductDetail from "./pages/EnhancedProductDetail" ;
+
+// Admin pages
+import AdminAuth from "./pages/admin/AdminAuth";
+import Dashboard from "./pages/admin/Dashboard";
+import AdminProductViewer from "./pages/AdminProductViewer";
 
 const queryClient = new QueryClient();
 
@@ -36,10 +38,15 @@ const App = () => (
               {/* Public */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/about" element={<About />} /> {/* ✅ added */}
-              <Route path="/products" element={<ProductCatalog />} />
-              <Route path="/floor-planner" element={<FloorPlanner />} />
+              <Route path="/about" element={<About />} />
               <Route path="/blog" element={<Blog />} />
+
+              {/* Products */}
+              <Route path="/products" element={<ProductCatalog />} />
+              <Route path="/products/:id" element={<EnhancedProductDetail />} />
+
+              {/* Tools / Info */}
+              <Route path="/floor-planner" element={<FloorPlanner />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/rfq-cart" element={<RFQCart />} />
 
