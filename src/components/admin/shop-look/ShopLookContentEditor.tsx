@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Upload, Save, Loader2, Image, AlertCircle } from 'lucide-react';
+import { Upload, Save, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -57,7 +56,7 @@ const ShopLookContentEditor: React.FC = () => {
       if (data) {
         setContent(data);
       } else {
-        // Create default content with your uploaded background image
+        // Default content if nothing exists in DB
         setContent({
           id: '',
           title: 'Shop The Look',
@@ -85,7 +84,6 @@ const ShopLookContentEditor: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Check authentication
     if (!user || !isAdmin) {
       toast({
         title: "Authentication Required",
@@ -95,7 +93,6 @@ const ShopLookContentEditor: React.FC = () => {
       return;
     }
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
         title: "Invalid File Type",
@@ -105,7 +102,6 @@ const ShopLookContentEditor: React.FC = () => {
       return;
     }
 
-    // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "File Too Large",
@@ -119,22 +115,15 @@ const ShopLookContentEditor: React.FC = () => {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `shop-look-bg-${Date.now()}.${fileExt}`;
-      
-      console.log('Uploading file:', fileName, 'Size:', file.size, 'Type:', file.type);
-      
+
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('shop-look-images')
         .upload(fileName, file, {
           contentType: file.type,
-          upsert: false
+          upsert: false,
         });
 
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        throw new Error(uploadError.message);
-      }
-
-      console.log('Upload successful:', uploadData);
+      if (uploadError) throw new Error(uploadError.message);
 
       // Get public URL
       const { data: urlData } = supabase.storage
@@ -151,7 +140,7 @@ const ShopLookContentEditor: React.FC = () => {
     } catch (error: any) {
       console.error('Upload error:', error);
       toast({
-        title: "Upload Failed", 
+        title: "Upload Failed",
         description: error.message || "Failed to upload image. Please check your permissions.",
         variant: "destructive",
       });
@@ -163,7 +152,6 @@ const ShopLookContentEditor: React.FC = () => {
   const handleSave = async () => {
     if (!content) return;
 
-    // Check authentication
     if (!user || !isAdmin) {
       toast({
         title: "Authentication Required",
@@ -186,7 +174,6 @@ const ShopLookContentEditor: React.FC = () => {
       };
 
       if (content.id) {
-        // Update existing content
         const { error } = await supabase
           .from('shop_look_content')
           .update(contentData)
@@ -194,7 +181,6 @@ const ShopLookContentEditor: React.FC = () => {
 
         if (error) throw error;
       } else {
-        // Insert new content
         const { data, error } = await supabase
           .from('shop_look_content')
           .insert([contentData])
@@ -237,7 +223,11 @@ const ShopLookContentEditor: React.FC = () => {
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Admin authentication required to manage Shop The Look content. Please go to <a href="/admin/auth" className="underline text-blue-600">Admin Login</a> to authenticate.
+          Admin authentication required to manage Shop The Look content. Please go to{" "}
+          <a href="/admin/auth" className="underline text-blue-600">
+            Admin Login
+          </a>{" "}
+          to authenticate.
         </AlertDescription>
       </Alert>
     );
@@ -292,11 +282,11 @@ const ShopLookContentEditor: React.FC = () => {
                 <img
                   src={content.background_image}
                   alt={content.background_alt}
-                  className="w-full h-48 object-cover rounded-md border"
+                  className="w-full max-h-96 object-cover rounded-lg border shadow-md"
                 />
               </div>
             )}
-            
+
             <div className="flex items-center gap-4">
               <Button
                 variant="outline"
