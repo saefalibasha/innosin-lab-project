@@ -8,42 +8,26 @@ import ShopTheLook from '@/components/ShopTheLook';
 import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
-import Footer from '@/components/Footer';   // ✅ correct footer import
-import HeroNavigation from '@/components/HeroNavigation';  // ✅ import nav
+import Footer from '@/components/Footer';
+import HeroNavigation from '@/components/HeroNavigation';  // ✅ top nav
 
 const Index = () => {
   const navigate = useNavigate();
 
   const companyData = [
-    {
-      name: 'Broen-Lab',
-      logo: '/brand-logos/broen-lab-logo.png',
-      origin: 'Denmark',
-      link: '/products?company=Broen-Lab'
-    },
-    {
-      name: 'Hamilton Laboratory Solutions',
-      logo: '/brand-logos/hamilton-laboratory-logo.png',
-      origin: 'USA',
-      link: '/products?company=Hamilton Laboratory Solutions'
-    },
-    {
-      name: 'Oriental Giken Inc.',
-      logo: '/brand-logos/oriental-giken-logo.png',
-      origin: 'Japan',
-      link: '/products?company=Oriental Giken Inc.'
-    },
-    {
-      name: 'Innosin Lab',
-      logo: '/brand-logos/innosin-lab-logo.png',
-      origin: 'Malaysia',
-      link: '/products?company=Innosin Lab'
-    }
+    { name: 'Broen-Lab', logo: '/brand-logos/broen-lab-logo.png', origin: 'Denmark', link: '/products?company=Broen-Lab' },
+    { name: 'Hamilton Laboratory Solutions', logo: '/brand-logos/hamilton-laboratory-logo.png', origin: 'USA', link: '/products?company=Hamilton Laboratory Solutions' },
+    { name: 'Oriental Giken Inc.', logo: '/brand-logos/oriental-giken-logo.png', origin: 'Japan', link: '/products?company=Oriental Giken Inc.' },
+    { name: 'Innosin Lab', logo: '/brand-logos/innosin-lab-logo.png', origin: 'Malaysia', link: '/products?company=Innosin Lab' }
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
-      <main className="flex-grow">
+      {/* ✅ Render the navigation bar */}
+      <HeroNavigation />
+
+      {/* Add top padding so the fixed/sticky header doesn't overlap content */}
+      <main className="flex-grow pt-20">
         {/* Video Hero Section */}
         <VideoHero />
 
