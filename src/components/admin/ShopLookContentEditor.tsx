@@ -22,7 +22,8 @@ export const ShopLookContentEditor = () => {
     title: 'Shop The Look',
     title_highlight: 'Premium Laboratory Solutions',
     description: 'Discover our complete range of laboratory equipment and furniture designed for modern research facilities. Click on the interactive points to explore each product in detail.',
-    background_image: 'public/page-images/home/shop-look.jpg',
+    background_image: 'page-images/home/shop-look.jpg',
+    background_alt: 'Modern laboratory setup with premium equipment'
   });
 
   const [isSaving, setIsSaving] = useState(false);
