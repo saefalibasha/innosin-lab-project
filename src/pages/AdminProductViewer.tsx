@@ -1,9 +1,23 @@
 import React, { Suspense } from "react";
 
-// Lazy-load and support both named and default exports
+// Lazy-load and support both named and default exports without TS complaints
 const ProductTableViewer = React.lazy(async () => {
-  const mod = await import("@/components/admin/ProductTableViewer");
-  return { default: (mod as any).ProductTableViewer ?? mod.default };
+  const mod: any = await import("@/components/admin/ProductTableViewer");
+  const Comp = mod.ProductTableViewer ?? mod.default;
+
+  if (!Comp) {
+    const Missing: React.FC = () => (
+      <div className="p-4 rounded border border-red-300 bg-red-50 text-red-700">
+        <strong>ProductTableViewer</strong> not found. Ensure
+        <code className="px-1"> @/components/admin/ProductTableViewer </code>
+        exports either <code className="px-1">default</code> or a named
+        <code className="px-1">ProductTableViewer</code>.
+      </div>
+    );
+    return { default: Missing };
+  }
+
+  return { default: Comp };
 });
 
 const AdminProductViewer: React.FC = () => {
