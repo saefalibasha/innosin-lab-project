@@ -8,6 +8,9 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 
+// ✅ layout path changed
+import SiteLayout from "@/components/SiteLayout";
+
 // Public pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -22,7 +25,7 @@ import RFQCart from "./pages/RFQCart";
 // Admin pages
 import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
-import AdminProductViewer from "./pages/AdminProductViewer";
+import AdminProductViewer from "./pages/admin/AdminProductViewer";
 
 const queryClient = new QueryClient();
 
@@ -35,22 +38,20 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public */}
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/blog" element={<Blog />} />
+              {/* ✅ All public routes wrapped by SiteLayout (nav on top, footer bottom) */}
+              <Route element={<SiteLayout />}>
+                <Route index element={<Index />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/products" element={<ProductCatalog />} />
+                <Route path="/products/:id" element={<EnhancedProductDetail />} />
+                <Route path="/floor-planner" element={<FloorPlanner />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/rfq-cart" element={<RFQCart />} />
+              </Route>
 
-              {/* Products */}
-              <Route path="/products" element={<ProductCatalog />} />
-              <Route path="/products/:id" element={<EnhancedProductDetail />} />
-
-              {/* Tools / Info */}
-              <Route path="/floor-planner" element={<FloorPlanner />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/rfq-cart" element={<RFQCart />} />
-
-              {/* Admin */}
+              {/* Admin (kept separate; add to layout if you want public nav/footer there) */}
               <Route path="/admin/auth" element={<AdminAuth />} />
               <Route
                 path="/admin/dashboard"
@@ -61,9 +62,6 @@ const App = () => (
                 }
               />
               <Route path="/admin/products" element={<AdminProductViewer />} />
-
-              {/* Optional 404 */}
-              {/* <Route path="*" element={<NotFound />} /> */}
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
