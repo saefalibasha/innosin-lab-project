@@ -1,3 +1,4 @@
+
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -45,10 +46,9 @@ const EnhancedProductDetail = () => {
     addItem({
       id: product.id,
       name: product.name,
-      company: product.company,
       quantity: quantity,
       specifications: product.specifications || {},
-      image: product.image
+      image: product.thumbnail || product.images[0] || '/placeholder-product.jpg'
     });
     toast.success(`Added ${product.name} to RFQ cart`);
   };
@@ -71,8 +71,8 @@ const EnhancedProductDetail = () => {
   };
 
   const productImages = [
-    product.image,
-    ...Array(3).fill(null).map((_, i) => `${product.image}?variant=${i + 1}`)
+    product.thumbnail || '/placeholder-product.jpg',
+    ...product.images.slice(0, 3)
   ];
 
   return (
@@ -125,7 +125,7 @@ const EnhancedProductDetail = () => {
                       <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
                         <ambientLight intensity={0.5} />
                         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
-                        <ThreeDModel modelPath={product.model3D} />
+                        <ThreeDModel modelPath={product.modelPath} />
                         <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
                         <Environment preset="studio" />
                       </Canvas>
@@ -160,23 +160,23 @@ const EnhancedProductDetail = () => {
             {/* Right Side - Product Details */}
             <div className="space-y-6">
               <div>
-                <Badge className="mb-2">{product.company}</Badge>
+                <Badge className="mb-2">{product.category}</Badge>
                 <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
                 <p className="text-muted-foreground text-lg">{product.description}</p>
               </div>
 
-              {/* Key Features */}
-              {product.features && product.features.length > 0 && (
+              {/* Key Features - Only show if we have company_tags as features */}
+              {product.company_tags && product.company_tags.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Key Features</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <ul className="space-y-2">
-                      {product.features.map((feature, index) => (
+                      {product.company_tags.map((tag, index) => (
                         <li key={index} className="flex items-start gap-2">
                           <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                          <span>{feature}</span>
+                          <span>{tag}</span>
                         </li>
                       ))}
                     </ul>
@@ -239,7 +239,7 @@ const EnhancedProductDetail = () => {
             <h2 className="text-2xl font-bold mb-6">Related Products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {products
-                .filter(p => p.company === product.company && p.id !== product.id)
+                .filter(p => p.category === product.category && p.id !== product.id)
                 .slice(0, 4)
                 .map((relatedProduct) => (
                   <Card
@@ -250,7 +250,7 @@ const EnhancedProductDetail = () => {
                     <CardContent className="p-4">
                       <div className="aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden">
                         <img
-                          src={relatedProduct.image}
+                          src={relatedProduct.thumbnail || relatedProduct.images[0] || '/placeholder-product.jpg'}
                           alt={relatedProduct.name}
                           className="w-full h-full object-cover"
                           onError={(e) => {

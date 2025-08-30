@@ -1,64 +1,72 @@
-import React, { useState, useMemo } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Search, Filter, Grid, List } from 'lucide-react';
-import { products } from '@/data/products';
+import { useNavigate } from 'react-router-dom';
+import { getProductsAsync, getCategoriesAsync } from '@/data/products';
+import { Product } from '@/types/product';
 import HeroNavigation from '@/components/HeroNavigation';
 import Footer from '@/components/Footer';
 
 const ProductCatalog = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState('all');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
+  const [selectedCategory, setSelectedCategory] = useState('All Categories');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const companyFromUrl = searchParams.get('company');
-
-  React.useEffect(() => {
-    if (companyFromUrl) {
-      setSelectedCompany(companyFromUrl);
-    }
-  }, [companyFromUrl]);
-
-  const filteredAndSortedProducts = useMemo(() => {
-    let filtered = products.filter(product => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCompany = selectedCompany === 'all' || product.company === selectedCompany;
-      const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
-      
-      return matchesSearch && matchesCompany && matchesCategory;
-    });
-
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name);
-        case 'company':
-          return a.company.localeCompare(b.company);
-        case 'category':
-          return a.category.localeCompare(b.category);
-        default:
-          return 0;
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [productsData, categoriesData] = await Promise.all([
+          getProductsAsync(),
+          getCategoriesAsync()
+        ]);
+        setProducts(productsData);
+        setCategories(['All Categories', ...categoriesData]);
+      } catch (error) {
+        console.error('Error loading products:', error);
+        // Fallback to empty arrays if async loading fails
+        setProducts([]);
+        setCategories(['All Categories']);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    return filtered;
-  }, [searchTerm, selectedCompany, selectedCategory, sortBy]);
+    loadData();
+  }, []);
 
-  const companies = [...new Set(products.map(p => p.company))];
-  const categories = [...new Set(products.map(p => p.category))];
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesCategory = selectedCategory === 'All Categories' || 
+                           product.category === selectedCategory;
+    
+    return matchesSearch && matchesCategory;
+  });
 
-  const handleProductClick = (product: any) => {
-    navigate(`/products/${product.id}`);
-  };
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <HeroNavigation />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading products...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -68,147 +76,124 @@ const ProductCatalog = () => {
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-primary mb-2">Product Catalog</h1>
+            <h1 className="text-4xl font-bold mb-2">Product Catalog</h1>
             <p className="text-muted-foreground">
-              Discover our comprehensive range of laboratory equipment and solutions
+              Explore our comprehensive range of laboratory equipment and furniture
             </p>
           </div>
 
-          {/* Filters and Search */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-            <div className="relative lg:col-span-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={selectedCompany} onValueChange={setSelectedCompany}>
-              <SelectTrigger>
-                <SelectValue placeholder="Company" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Companies</SelectItem>
-                {companies.map(company => (
-                  <SelectItem key={company} value={company}>{company}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
+          {/* Search and Filters */}
+          <div className="mb-8 space-y-4">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
+              >
                 {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
                 ))}
-              </SelectContent>
-            </Select>
+              </select>
 
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="company">Company</SelectItem>
-                <SelectItem value="category">Category</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                >
+                  <Grid className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex justify-between items-center mb-6">
-            <p className="text-muted-foreground">
-              Showing {filteredAndSortedProducts.length} of {products.length} products
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-              >
-                <Grid className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-4 w-4" />
-              </Button>
+            {/* Results Summary */}
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredProducts.length} products
+                {selectedCategory !== 'All Categories' && ` in ${selectedCategory}`}
+              </p>
             </div>
           </div>
 
           {/* Products Grid/List */}
-          <div className={viewMode === 'grid' 
-            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            : "space-y-4"
-          }>
-            {filteredAndSortedProducts.map((product) => (
-              <Card 
-                key={product.id} 
-                className="cursor-pointer hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                onClick={() => handleProductClick(product)}
-              >
-                <CardContent className={viewMode === 'grid' ? "p-4" : "p-4 flex items-center space-x-4"}>
-                  <div className={viewMode === 'grid' ? "space-y-3" : "flex-shrink-0"}>
-                    <div className={`bg-gray-100 rounded-lg flex items-center justify-center ${
-                      viewMode === 'grid' ? 'aspect-square' : 'w-24 h-24'
-                    }`}>
-                      <img 
-                        src={product.image} 
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-lg text-muted-foreground mb-4">No products found</p>
+              <p className="text-sm text-muted-foreground">
+                Try adjusting your search terms or category filter
+              </p>
+            </div>
+          ) : (
+            <div className={
+              viewMode === 'grid' 
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                : "space-y-4"
+            }>
+              {filteredProducts.map((product) => (
+                <Card
+                  key={product.id}
+                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
+                  onClick={() => navigate(`/products/${product.id}`)}
+                >
+                  <CardContent className={viewMode === 'grid' ? "p-4" : "p-4 flex gap-4"}>
+                    <div className={
+                      viewMode === 'grid'
+                        ? "aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden"
+                        : "w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0"
+                    }>
+                      <img
+                        src={product.thumbnail || product.images[0] || '/placeholder-product.jpg'}
                         alt={product.name}
-                        className="w-full h-full object-cover rounded-lg"
+                        className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.nextElementSibling!.textContent = 'Image not available';
+                          e.currentTarget.src = '/placeholder-product.jpg';
                         }}
                       />
-                      <span className="text-muted-foreground text-sm hidden">Image not available</span>
                     </div>
-                  </div>
-                  
-                  <div className={viewMode === 'grid' ? "space-y-2" : "flex-grow space-y-1"}>
-                    <h3 className={`font-semibold ${viewMode === 'grid' ? 'text-base' : 'text-lg'}`}>
-                      {product.name}
-                    </h3>
-                    <p className={`text-muted-foreground ${viewMode === 'grid' ? 'text-sm' : 'text-base'}`}>
-                      {product.description}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {product.company}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
+                    
+                    <div className={viewMode === 'grid' ? "" : "flex-1 min-w-0"}>
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className={`font-semibold ${viewMode === 'grid' ? 'text-sm' : 'text-base'} mb-1 truncate`}>
+                          {product.name}
+                        </h3>
+                      </div>
+                      
+                      <Badge variant="secondary" className="text-xs mb-2">
                         {product.category}
                       </Badge>
+                      
+                      <p className={`text-muted-foreground ${viewMode === 'grid' ? 'text-xs' : 'text-sm'} line-clamp-2`}>
+                        {product.description}
+                      </p>
+                      
+                      {product.dimensions && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {product.dimensions}
+                        </p>
+                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {filteredAndSortedProducts.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground text-lg">No products found matching your criteria.</p>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCompany('all');
-                  setSelectedCategory('all');
-                }}
-                className="mt-4"
-              >
-                Clear Filters
-              </Button>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>

@@ -1,32 +1,24 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { 
-  Maximize2, 
-  Minimize2, 
-  Download, 
-  Save, 
-  Upload,
-  RotateCw,
-  Copy,
-  Trash2,
-  Ruler,
-  Grid3X3,
-  Layers,
-  Settings
-} from 'lucide-react';
-import { toast } from 'sonner';
-import jsPDF from 'jspdf';
-import { products } from '@/data/products';
+import { Badge } from "@/components/ui/badge";
+import { Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from "@/hooks/use-toast";
+import {
+  ResizableBox,
+  ResizableBoxProps,
+  ResizeCallbackData,
+} from 'react-resizable';
+import { jsPDF } from 'jspdf';
+import { getProductsAsync } from '@/data/products';
+import { Product } from '@/types/product';
 import HeroNavigation from '@/components/HeroNavigation';
 import Footer from '@/components/Footer';
 
-interface PlacedItem {
+interface FloorItem {
   id: string;
   productId: string;
   name: string;
@@ -35,195 +27,165 @@ interface PlacedItem {
   width: number;
   height: number;
   rotation: number;
-  color: string;
-}
-
-interface FloorPlan {
-  id: string;
-  name: string;
-  width: number;
-  height: number;
-  items: PlacedItem[];
-  createdAt: Date;
-  notes: string;
+  image: string;
 }
 
 const FloorPlanner = () => {
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
-  const [selectedItem, setSelectedItem] = useState<PlacedItem | null>(null);
-  const [draggedItem, setDraggedItem] = useState<PlacedItem | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
-  const [showGrid, setShowGrid] = useState(true);
-  const [planName, setPlanName] = useState('Untitled Floor Plan');
-  const [planNotes, setPlanNotes] = useState('');
-  const [savedPlans, setSavedPlans] = useState<FloorPlan[]>([]);
-  const canvasRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [floorItems, setFloorItems] = useState<FloorItem[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const filteredProducts = products.filter(p => p.category === 'Innosin Lab');
-
-  const handleDragStart = useCallback((product: any) => {
-    const newItem: PlacedItem = {
-      id: `item-${Date.now()}`,
-      productId: product.id,
-      name: product.name,
-      x: 100,
-      y: 100,
-      width: 80,
-      height: 60,
-      rotation: 0,
-      color: '#3b82f6'
-    };
-    setDraggedItem(newItem);
-  }, []);
-
-  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
-    if (!draggedItem) return;
-
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
-
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const newItem = {
-      ...draggedItem,
-      x: x - draggedItem.width / 2,
-      y: y - draggedItem.height / 2
+  React.useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        const productsData = await getProductsAsync();
+        setProducts(productsData);
+      } catch (error) {
+        console.error("Error loading products:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load products",
+          variant: "destructive",
+        });
+        setProducts([]);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setPlacedItems(prev => [...prev, newItem]);
-    setDraggedItem(null);
-    toast.success(`Added ${newItem.name} to floor plan`);
-  }, [draggedItem]);
+    loadProducts();
+  }, [toast]);
 
-  const handleItemClick = useCallback((item: PlacedItem, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedItem(item);
-  }, []);
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const updateSelectedItem = useCallback((updates: Partial<PlacedItem>) => {
-    if (!selectedItem) return;
+  const handleResize = useCallback(
+    (id: string) =>
+      (_: Event, data: ResizeCallbackData) => {
+        setFloorItems((prev) =>
+          prev.map((item) =>
+            item.id === id
+              ? {
+                  ...item,
+                  width: data.size.width,
+                  height: data.size.height,
+                }
+              : item
+          )
+        );
+      },
+    []
+  );
 
-    setPlacedItems(prev => 
-      prev.map(item => 
-        item.id === selectedItem.id ? { ...item, ...updates } : item
+  const handleRotate = (id: string) => {
+    setFloorItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, rotation: item.rotation + 90 } : item
       )
     );
-    setSelectedItem(prev => prev ? { ...prev, ...updates } : null);
-  }, [selectedItem]);
+  };
 
-  const deleteSelectedItem = useCallback(() => {
-    if (!selectedItem) return;
+  const removeItem = (id: string) => {
+    setFloorItems(prev => prev.filter(item => item.id !== id));
+  };
 
-    setPlacedItems(prev => prev.filter(item => item.id !== selectedItem.id));
-    setSelectedItem(null);
-    toast.success('Item deleted');
-  }, [selectedItem]);
-
-  const duplicateSelectedItem = useCallback(() => {
-    if (!selectedItem) return;
-
-    const newItem = {
-      ...selectedItem,
-      id: `item-${Date.now()}`,
-      x: selectedItem.x + 20,
-      y: selectedItem.y + 20
+  const addProductToFloor = (product: Product, x: number, y: number) => {
+    const newItem: FloorItem = {
+      id: Date.now().toString(),
+      productId: product.id,
+      name: product.name,
+      x,
+      y,
+      width: 60,
+      height: 40,
+      rotation: 0,
+      image: product.thumbnail || product.images[0] || '/placeholder-product.jpg'
     };
+    setFloorItems([...floorItems, newItem]);
+  };
 
-    setPlacedItems(prev => [...prev, newItem]);
-    setSelectedItem(newItem);
-    toast.success('Item duplicated');
-  }, [selectedItem]);
-
-  const savePlan = useCallback(() => {
-    const plan: FloorPlan = {
-      id: `plan-${Date.now()}`,
-      name: planName,
-      width: canvasSize.width,
-      height: canvasSize.height,
-      items: placedItems,
-      createdAt: new Date(),
-      notes: planNotes
-    };
-
-    setSavedPlans(prev => [...prev, plan]);
-    localStorage.setItem('floorPlans', JSON.stringify([...savedPlans, plan]));
-    toast.success('Floor plan saved');
-  }, [planName, canvasSize, placedItems, planNotes, savedPlans]);
-
-  const exportToPDF = useCallback(() => {
-    const pdf = new jsPDF('landscape');
-    pdf.text(planName, 20, 20);
-    pdf.text(`Dimensions: ${canvasSize.width} x ${canvasSize.height}`, 20, 30);
+  const exportToPDF = () => {
+    const pdf = new jsPDF();
     
-    if (planNotes) {
-      pdf.text('Notes:', 20, 40);
-      pdf.text(planNotes, 20, 50);
-    }
-
-    placedItems.forEach((item, index) => {
-      const yPos = 70 + (index * 10);
-      pdf.text(`${item.name} - Position: (${Math.round(item.x)}, ${Math.round(item.y)})`, 20, yPos);
+    // Add title
+    pdf.setFontSize(20);
+    pdf.text('Floor Plan Layout', 20, 30);
+    
+    // Add items list
+    pdf.setFontSize(12);
+    let yPos = 50;
+    
+    floorItems.forEach((item, index) => {
+      const product = products.find(p => p.id === item.productId);
+      if (product) {
+        pdf.text(`${index + 1}. ${product.name} - ${product.category || 'Unknown Category'}`, 20, yPos);
+        yPos += 10;
+      }
     });
+    
+    pdf.save('floor-plan.pdf');
+  };
 
-    pdf.save(`${planName}.pdf`);
-    toast.success('Floor plan exported to PDF');
-  }, [planName, canvasSize, placedItems, planNotes]);
-
-  useEffect(() => {
-    const savedPlansData = localStorage.getItem('floorPlans');
-    if (savedPlansData) {
-      setSavedPlans(JSON.parse(savedPlansData));
-    }
-  }, []);
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <HeroNavigation />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>Loading products...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
-      {!isFullscreen && <HeroNavigation />}
-      
-      <main className="flex-grow">
-        <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''} flex h-full`}>
-          {/* Sidebar */}
-          <div className="w-80 border-r bg-gray-50 flex flex-col">
-            <div className="p-4 border-b">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Floor Planner</h2>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsFullscreen(!isFullscreen)}
-                >
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="planName">Plan Name</Label>
-                <Input
-                  id="planName"
-                  value={planName}
-                  onChange={(e) => setPlanName(e.target.value)}
-                  placeholder="Enter plan name"
-                />
-              </div>
-            </div>
+      <HeroNavigation />
 
-            {/* Products Library */}
-            <div className="flex-1 overflow-auto p-4">
-              <h3 className="font-medium mb-3">Product Library</h3>
-              <div className="space-y-2">
-                {filteredProducts.map((product) => (
-                  <Card
-                    key={product.id}
-                    className="cursor-grab hover:shadow-md transition-shadow"
-                    onClick={() => handleDragStart(product)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+      <main className="flex-grow">
+        <div className="container mx-auto px-4 py-8">
+          <h1 className="text-3xl font-bold mb-4">Floor Planner</h1>
+
+          {/* Product Search */}
+          <div className="mb-6">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search for products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Product List */}
+            <div className="md:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Available Products</CardTitle>
+                </CardHeader>
+                <CardContent className="max-h-[400px] overflow-y-auto">
+                  {filteredProducts.map((product) => (
+                    <div
+                      key={product.id}
+                      className="flex items-center justify-between p-2 border rounded-md mb-2 cursor-pointer hover:bg-gray-100"
+                      onClick={() => addProductToFloor(product, 50, 50)}
+                    >
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 rounded-md overflow-hidden mr-2">
                           <img
-                            src={product.image}
+                            src={product.thumbnail || product.images[0] || '/placeholder-product.jpg'}
                             alt={product.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
@@ -231,132 +193,122 @@ const FloorPlanner = () => {
                             }}
                           />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{product.name}</p>
-                          <Badge variant="secondary" className="text-xs mt-1">
-                            {product.company}
+                        <div>
+                          <Label className="text-sm font-medium">{product.name}</Label>
+                          <Badge variant="secondary" className="ml-2 text-xs">
+                            {product.category}
                           </Badge>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Selected Item Properties */}
-            {selectedItem && (
-              <div className="border-t p-4 bg-white">
-                <h3 className="font-medium mb-3">Properties</h3>
-                <div className="space-y-3">
-                  <div>
-                    <Label>Position X</Label>
-                    <Input
-                      type="number"
-                      value={Math.round(selectedItem.x)}
-                      onChange={(e) => updateSelectedItem({ x: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Position Y</Label>
-                    <Input
-                      type="number"
-                      value={Math.round(selectedItem.y)}
-                      onChange={(e) => updateSelectedItem({ y: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Rotation</Label>
-                    <Input
-                      type="number"
-                      value={selectedItem.rotation}
-                      onChange={(e) => updateSelectedItem({ rotation: parseInt(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={duplicateSelectedItem}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => updateSelectedItem({ rotation: selectedItem.rotation + 90 })}>
-                      <RotateCw className="h-4 w-4" />
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={deleteSelectedItem}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+            {/* Floor Plan Area */}
+            <div className="md:col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Floor Plan</CardTitle>
+                </CardHeader>
+                <CardContent className="relative h-[500px] bg-gray-100 overflow-hidden">
+                  {floorItems.map((item) => (
+                    <ResizableBox
+                      key={item.id}
+                      width={item.width}
+                      height={item.height}
+                      x={item.x}
+                      y={item.y}
+                      onResize={handleResize(item.id)}
+                      minConstraints={[50, 50]}
+                      className="absolute shadow-md"
+                      style={{
+                        transform: `rotate(${item.rotation}deg)`,
+                        left: `${item.x}px`,
+                        top: `${item.y}px`,
+                      }}
+                    >
+                      <div className="relative">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                          style={{
+                            transform: `rotate(${-item.rotation}deg)`,
+                          }}
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-product.jpg';
+                          }}
+                        />
+                        <div className="absolute top-1 left-1 flex gap-1">
+                          <Badge variant="secondary">{item.name}</Badge>
+                        </div>
+                        <div className="absolute bottom-1 right-1 flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleRotate(item.id)}
+                            style={{
+                              transform: `rotate(${-item.rotation}deg)`,
+                            }}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M21 15V6H3" />
+                              <path d="M21 12a9 9 0 0 0-9 9" />
+                              <path d="M15 18l3-3-3-3" />
+                            </svg>
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => removeItem(item.id)}
+                            style={{
+                              transform: `rotate(${-item.rotation}deg)`,
+                            }}
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              className="h-4 w-4"
+                            >
+                              <path d="M3 6h18" />
+                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                              <line x1="10" x2="10" y1="11" y2="17" />
+                              <line x1="14" x2="14" y1="11" y2="17" />
+                            </svg>
+                          </Button>
+                        </div>
+                      </div>
+                    </ResizableBox>
+                  ))}
+                </CardContent>
+              </Card>
 
-          {/* Main Canvas Area */}
-          <div className="flex-1 flex flex-col">
-            {/* Toolbar */}
-            <div className="border-b p-4 bg-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setShowGrid(!showGrid)}>
-                    <Grid3X3 className="h-4 w-4 mr-1" />
-                    Grid
-                  </Button>
-                  <Separator orientation="vertical" className="h-6" />
-                  <span className="text-sm text-muted-foreground">
-                    Canvas: {canvasSize.width} × {canvasSize.height}
-                  </span>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={savePlan}>
-                    <Save className="h-4 w-4 mr-1" />
-                    Save
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={exportToPDF}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Export PDF
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Canvas */}
-            <div className="flex-1 overflow-auto bg-gray-100 p-8">
-              <div
-                ref={canvasRef}
-                className="relative bg-white border border-gray-300 mx-auto"
-                style={{ 
-                  width: canvasSize.width, 
-                  height: canvasSize.height,
-                  backgroundImage: showGrid ? 'radial-gradient(circle, #ccc 1px, transparent 1px)' : 'none',
-                  backgroundSize: showGrid ? '20px 20px' : 'auto'
-                }}
-                onClick={handleCanvasClick}
-              >
-                {placedItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className={`absolute border-2 cursor-move flex items-center justify-center text-xs font-medium text-white ${
-                      selectedItem?.id === item.id ? 'border-red-500' : 'border-gray-400'
-                    }`}
-                    style={{
-                      left: item.x,
-                      top: item.y,
-                      width: item.width,
-                      height: item.height,
-                      backgroundColor: item.color,
-                      transform: `rotate(${item.rotation}deg)`
-                    }}
-                    onClick={(e) => handleItemClick(item, e)}
-                  >
-                    <span className="truncate px-1">{item.name.split(' ').slice(0, 2).join(' ')}</span>
-                  </div>
-                ))}
-              </div>
+              <Button className="mt-4" onClick={exportToPDF}>
+                Export to PDF
+              </Button>
             </div>
           </div>
         </div>
       </main>
 
-      {!isFullscreen && <Footer />}
+      <Footer />
     </div>
   );
 };
