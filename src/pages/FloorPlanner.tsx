@@ -7,11 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-import {
-  ResizableBox,
-  ResizableBoxProps,
-  ResizeCallbackData,
-} from 'react-resizable';
+import { ResizableBox } from 'react-resizable';
+import 'react-resizable/css/styles.css';
 import { jsPDF } from 'jspdf';
 import { getProductsAsync } from '@/data/products';
 import { Product } from '@/types/product';
