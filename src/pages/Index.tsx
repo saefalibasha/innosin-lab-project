@@ -8,8 +8,6 @@ import ShopTheLook from '@/components/ShopTheLook';
 import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
-import Footer from '@/components/Footer';
-import HeroNavigation from '@/components/HeroNavigation'; // ✅ use this header
 
 const Index = () => {
   const navigate = useNavigate();
@@ -23,10 +21,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Top Navigation */}
-      <HeroNavigation />
-
-      {/* If your HeroNavigation is `fixed`, add pt-16 here. If it's `sticky`, padding isn't needed. */}
+      {/* Main content only; header & footer are provided by SiteLayout */}
       <main className="flex-grow">
         {/* Video Hero Section */}
         <VideoHero />
@@ -105,9 +100,6 @@ const Index = () => {
           </div>
         </section>
       </main>
-
-      {/* Footer */}
-      <Footer />
     </div>
   );
 };
