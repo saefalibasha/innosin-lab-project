@@ -1,33 +1,35 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, DollarSign, Clock, Headphones, Settings } from 'lucide-react';
+import { ArrowRight, Award, Users, Globe, Target, DollarSign, Clock, Headphones, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Timeline } from '@/components/ui/timeline';
 import LabTransformCTA from '@/components/LabTransformCTA';
 import { aboutPageContent } from '@/data/aboutPageContent';
-import { Reveal } from '@/components/anim';
+import { Reveal, StaggerList } from '@/components/anim';
 
-const About: React.FC = () => {
-  const timelineData =
-    (aboutPageContent?.timeline?.events ?? []).map((event) => ({
-      title: event.year,
-      content: (
-        <div>
-          <h4 className="text-2xl font-bold text-primary mb-4">{event.title}</h4>
-          <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-            {event.description}
-          </p>
-          <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg shadow-lg">
-            <img
-              src={event.image}
-              alt={event.imageAlt}
-              className="w-full h-full object-cover object-center"
-            />
-          </div>
+const About = () => {
+  // Create timeline data from content structure
+  const timelineData = aboutPageContent.timeline.events.map(event => ({
+    title: event.year,
+    content: (
+      <div>
+        <h4 className="text-2xl font-bold text-primary mb-4">
+          {event.title}
+        </h4>
+        <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
+          {event.description}
+        </p>
+        <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg shadow-lg">
+          <img
+            src={event.image}
+            alt={event.imageAlt}
+            className="w-full h-full object-cover object-center"
+          />
         </div>
-      ),
-    }));
+      </div>
+    ),
+  }));
 
   return (
     <div className="min-h-screen bg-background pt-0">
@@ -37,8 +39,7 @@ const About: React.FC = () => {
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
               <h1 className="text-5xl md:text-6xl font-bold text-primary mb-6 tracking-tight">
-                {aboutPageContent.hero.title}{' '}
-                <span className="text-sea">{aboutPageContent.hero.titleHighlight}</span>
+                {aboutPageContent.hero.title} <span className="text-sea">{aboutPageContent.hero.titleHighlight}</span>
               </h1>
             </Reveal>
             <Reveal delay={0.2}>
@@ -48,15 +49,17 @@ const About: React.FC = () => {
             </Reveal>
             <Reveal delay={0.4}>
               <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <Button asChild variant="default" size="lg">
-                  <Link to="/contact">
-                    Get in Touch <ArrowRight className="ml-2 w-5 h-5" />
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="lg">
-                  <Link to="/products">View Our Solutions</Link>
-                </Button>
-              </div>
+              <Button asChild variant="default" size="lg">
+                <Link to="/contact">
+                  Get in Touch <ArrowRight className="ml-2 w-5 h-5" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg">
+                <Link to="/products">
+                  View Our Solutions
+                </Link>
+              </Button>
+            </div>
             </Reveal>
           </div>
         </div>
@@ -88,8 +91,8 @@ const About: React.FC = () => {
             </Reveal>
             <Reveal delay={0.3}>
               <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
-                <video
-                  src={aboutPageContent.mission.video}
+                <video 
+                  src={aboutPageContent.mission.video} 
                   className="w-full h-80 object-cover rounded-lg"
                   controls
                   muted
@@ -109,58 +112,65 @@ const About: React.FC = () => {
         <div className="container-custom">
           <Reveal>
             <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-primary mb-4">Our Precision Advantage</h2>
+              <h2 className="text-4xl font-bold text-primary mb-4">
+                Our Precision Advantage
+              </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Experience the strength of precision manufacturing with unmatched quality and
-                reliability.
+                Experience the strength of precision manufacturing with unmatched quality and reliability.
               </p>
             </div>
           </Reveal>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{ animationDelay: '100ms' }}>
+            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '100ms'}}>
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <DollarSign className="w-8 h-8 text-sea" />
                 </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">Direct Factory Pricing</h3>
+                <h3 className="text-xl font-semibold text-primary mb-3">
+                  Direct Factory Pricing
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Eliminate middlemen costs with competitive pricing directly from our manufacturing
-                  facility
+                  Eliminate middlemen costs with competitive pricing directly from our manufacturing facility
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{ animationDelay: '200ms' }}>
+            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '200ms'}}>
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Clock className="w-8 h-8 text-sea" />
                 </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">Fast Turnaround Times</h3>
+                <h3 className="text-xl font-semibold text-primary mb-3">
+                  Fast Turnaround Times
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
                   Rapid project completion and delivery through optimized manufacturing processes
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{ animationDelay: '300ms' }}>
+            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '300ms'}}>
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Headphones className="w-8 h-8 text-sea" />
                 </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">Exceptional Support</h3>
+                <h3 className="text-xl font-semibold text-primary mb-3">
+                  Exceptional Support
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
                   Comprehensive technical assistance and customer service from design to maintenance
                 </p>
               </CardContent>
             </Card>
 
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{ animationDelay: '400ms' }}>
+            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '400ms'}}>
               <CardContent className="p-6">
                 <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Settings className="w-8 h-8 text-sea" />
                 </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">Precision Manufacturing</h3>
+                <h3 className="text-xl font-semibold text-primary mb-3">
+                  Precision Manufacturing
+                </h3>
                 <p className="text-muted-foreground leading-relaxed">
                   Engineered for accuracy with advanced fabrication techniques and quality materials
                 </p>
@@ -179,8 +189,7 @@ const About: React.FC = () => {
                 Our <span className="text-sea">Story</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                From humble beginnings as a stainless steel kitchen equipment fabricator in 1986 to
-                becoming Asia's trusted partner in precision laboratory solutions today.
+                From humble beginnings as a stainless steel kitchen equipment fabricator in 1986 to becoming Asia's trusted partner in precision laboratory solutions today.
               </p>
             </div>
           </Reveal>
@@ -190,7 +199,7 @@ const About: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* Ready to Transform Your Laboratory CTA */}
       <LabTransformCTA />
     </div>
   );
