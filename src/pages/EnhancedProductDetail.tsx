@@ -20,9 +20,10 @@ import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurato
 import ModularCabinetConfigurator from '@/components/product/ModularCabinetConfigurator';
 import { SpecificProductSelector } from '@/components/floorplan/SpecificProductSelector';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
+import HeroNavigation from '@/components/HeroNavigation';
+import Footer from '@/components/Footer';
 
 const EnhancedProductDetail = () => {
-  // ✅ match router param name: /products/:id
   const { id } = useParams<{ id: string }>();
   const { addItem } = useRFQ();
 
@@ -37,14 +38,12 @@ const EnhancedProductDetail = () => {
   useEffect(() => {
     if (!id) return;
     fetchProductData(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchProductData = async (productId: string) => {
     try {
       setLoading(true);
 
-      // Fetch the main product/series
       const product = await fetchProductById(productId);
       setSeries(product);
 
@@ -56,14 +55,12 @@ const EnhancedProductDetail = () => {
           setSelectedVariantId(variants[0].id);
         }
       } else if (product?.parent_series_id) {
-        // If this is a variant, fetch the parent and all siblings
         try {
           const parentProduct = await fetchProductById(product.parent_series_id);
           const variants = await fetchProductsByParentSeriesId(product.parent_series_id);
           setSeries({ ...parentProduct, variants, is_series_parent: true });
           setSelectedVariantId(product.id);
         } catch {
-          // If parent doesn't exist, treat as standalone product
           setSeries(product);
         }
       }
@@ -80,13 +77,11 @@ const EnhancedProductDetail = () => {
     [series, selectedVariantId]
   );
 
-  // ✅ Single declaration of displayProduct, reused everywhere
   const displayProduct = useMemo(
     () => currentVariant || series,
     [currentVariant, series]
   );
 
-  // Enhanced product type detection
   const getProductType = () => {
     if (!series && !displayProduct) return 'standard';
 
@@ -95,7 +90,6 @@ const EnhancedProductDetail = () => {
     const category = product?.category?.toLowerCase() || '';
     const name = product?.name?.toLowerCase() || '';
 
-    // UNIFLEX Taps
     if (
       productSeries.includes('uniflex') ||
       productSeries.includes('single way taps') ||
@@ -104,14 +98,12 @@ const EnhancedProductDetail = () => {
       product?.handle_type
     ) return 'uniflex';
 
-    // Emergency Shower
     if (
       productSeries.includes('emergency shower') ||
       name.includes('emergency shower') ||
       product?.emergency_shower_type
     ) return 'emergency_shower';
 
-    // Safe Aire II / Fume Hoods
     if (
       productSeries.includes('safe aire') ||
       productSeries.includes('fume hood') ||
@@ -121,12 +113,10 @@ const EnhancedProductDetail = () => {
       product?.mounting_type
     ) return 'fume_hood';
 
-    // Tall Cabinet
     if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
       return 'tall_cabinet';
     }
 
-    // Innosin Lab
     if (
       category.includes('innosin') ||
       productSeries.includes('innosin') ||
@@ -135,17 +125,14 @@ const EnhancedProductDetail = () => {
       productSeries.includes('knee space')
     ) return 'innosin_lab';
 
-    // Open Rack
     if (productSeries.includes('open rack') || name.includes('open rack')) {
       return 'open_rack';
     }
 
-    // Wall Cabinet
     if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) {
       return 'wall_cabinet';
     }
 
-    // Modular Cabinet
     if (
       (productSeries.includes('modular cabinet') || name.includes('modular cabinet')) &&
       !category.includes('innosin')
@@ -158,7 +145,6 @@ const EnhancedProductDetail = () => {
   const hasVariants = Boolean(series?.variants?.length);
   const shouldShowConfigurator = hasVariants || productType !== 'standard';
 
-  // Update assets when variant or finish changes
   useEffect(() => {
     if (currentVariant) {
       setCurrentAssets({
@@ -189,7 +175,6 @@ const EnhancedProductDetail = () => {
   const handleAddToQuote = () => {
     if (!series) return;
 
-    // Modular cabinets
     if (productType === 'modular_cabinet' && selectedModularConfiguration) {
       const finishText = selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
       const itemToAdd = {
@@ -208,7 +193,6 @@ const EnhancedProductDetail = () => {
       return;
     }
 
-    // Other
     const finishText =
       productType === 'open_rack'
         ? selectedFinish === 'PC' ? 'Powder Coat' : 'SS304'
@@ -243,7 +227,6 @@ const EnhancedProductDetail = () => {
   const renderConfigurator = () => {
     if (!shouldShowConfigurator) return null;
 
-    // UNIFLEX / Emergency Shower / Fume Hood → SpecificProductSelector
     if (['uniflex', 'emergency_shower', 'fume_hood'].includes(productType)) {
       const variants = hasVariants ? series.variants : [displayProduct];
       return (
@@ -357,168 +340,171 @@ const EnhancedProductDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      <>
+        <HeroNavigation />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+        <Footer />
+      </>
     );
   }
 
   if (!series) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <Link to="/products">
-            <Button>Back to Catalog</Button>
-          </Link>
+      <>
+        <HeroNavigation />
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+            <Link to="/products">
+              <Button>Back to Catalog</Button>
+            </Link>
+          </div>
         </div>
-      </div>
+        <Footer />
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container-custom py-8 pt-20">
-        {/* Breadcrumb */}
-        <AnimatedSection animation="fade-in" delay={100}>
-          <div className="flex items-center gap-2 mb-8">
-            <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Catalog
-            </Link>
-          </div>
-        </AnimatedSection>
+    <>
+      <HeroNavigation />
+      <div className="min-h-screen bg-background">
+        <div className="container-custom py-8 pt-20">
+          <AnimatedSection animation="fade-in" delay={100}>
+            <div className="flex items-center gap-2 mb-8">
+              <Link to="/products" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Catalog
+              </Link>
+            </div>
+          </AnimatedSection>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Left Column - Photos/3D Model Toggle */}
-          <div className="space-y-6">
-            <AnimatedSection animation="slide-in-left" delay={200}>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
-                  <TabsTrigger value="photos" className="flex items-center gap-2 text-sm font-medium">
-                    <Camera className="w-4 h-4" />
-                    Photos
-                  </TabsTrigger>
-                  <TabsTrigger value="3d" className="flex items-center gap-2 text-sm font-medium">
-                    <Box className="w-4 h-4" />
-                    3D Model
-                  </TabsTrigger>
-                </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="space-y-6">
+              <AnimatedSection animation="slide-in-left" delay={200}>
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
+                    <TabsTrigger value="photos" className="flex items-center gap-2 text-sm font-medium">
+                      <Camera className="w-4 h-4" />
+                      Photos
+                    </TabsTrigger>
+                    <TabsTrigger value="3d" className="flex items-center gap-2 text-sm font-medium">
+                      <Box className="w-4 h-4" />
+                      3D Model
+                    </TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="photos" className="mt-0">
-                  <div className="rounded-xl overflow-hidden border shadow-sm">
-                    <ProductImageGallery
-                      images={getDisplayImages()}
-                      thumbnail={currentAssets?.thumbnail || ''}
-                      productName={series.name}
-                      className="w-full h-96 lg:h-[500px]"
-                    />
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="3d" className="mt-0">
-                  <div className="rounded-xl overflow-hidden border shadow-sm">
-                    {productType === 'innosin_lab' ? (
-                      <Enhanced3DViewerOptimized
-                        modelPath={currentAssets?.model || ''}
+                  <TabsContent value="photos" className="mt-0">
+                    <div className="rounded-xl overflow-hidden border shadow-sm">
+                      <ProductImageGallery
+                        images={getDisplayImages()}
+                        thumbnail={currentAssets?.thumbnail || ''}
+                        productName={series.name}
                         className="w-full h-96 lg:h-[500px]"
-                        productId={id}
-                        preloadModels={(series?.variants || [])
-                          .map((v: any) => v.model_path)
-                          .filter(Boolean)}
                       />
-                    ) : (
-                      <Enhanced3DViewer
-                        modelPath={currentAssets?.model || ''}
-                        className="w-full h-96 lg:h-[500px]"
-                        productId={id}
-                      />
-                    )}
-                  </div>
-                </TabsContent>
-              </Tabs>
-            </AnimatedSection>
-          </div>
+                    </div>
+                  </TabsContent>
 
-          {/* Right Column - Product Info */}
-          <div className="space-y-6">
-            {/* Product Header */}
-            <AnimatedSection animation="slide-in-right" delay={300}>
-              <div className="space-y-4">
-                <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
-                  {series.name}
-                </h1>
-                <Badge variant="outline" className="border-sea text-sea text-base px-4 py-2 font-medium">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  {series.category}
-                </Badge>
-              </div>
-            </AnimatedSection>
+                  <TabsContent value="3d" className="mt-0">
+                    <div className="rounded-xl overflow-hidden border shadow-sm">
+                      {productType === 'innosin_lab' ? (
+                        <Enhanced3DViewerOptimized
+                          modelPath={currentAssets?.model || ''}
+                          className="w-full h-96 lg:h-[500px]"
+                          productId={id}
+                          preloadModels={(series?.variants || [])
+                            .map((v: any) => v.model_path)
+                            .filter(Boolean)}
+                        />
+                      ) : (
+                        <Enhanced3DViewer
+                          modelPath={currentAssets?.model || ''}
+                          className="w-full h-96 lg:h-[500px]"
+                          productId={id}
+                        />
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </AnimatedSection>
+            </div>
 
-            {/* Product Overview */}
-            <AnimatedSection animation="slide-in-right" delay={350}>
-              <Card className="shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Package className="w-5 h-5 text-primary" />
-                    Product Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground leading-relaxed text-base">
-                    {getProductDescription()}
-                  </p>
-                </CardContent>
-              </Card>
-            </AnimatedSection>
+            <div className="space-y-6">
+              <AnimatedSection animation="slide-in-right" delay={300}>
+                <div className="space-y-4">
+                  <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+                    {series.name}
+                  </h1>
+                  <Badge variant="outline" className="border-sea text-sea text-base px-4 py-2 font-medium">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    {series.category}
+                  </Badge>
+                </div>
+              </AnimatedSection>
 
-            {/* Product Configuration */}
-            {shouldShowConfigurator && (
-              <AnimatedSection animation="slide-in-right" delay={400}>
+              <AnimatedSection animation="slide-in-right" delay={350}>
                 <Card className="shadow-sm">
                   <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2 text-xl">
-                      <Settings className="w-5 h-5 text-primary" />
-                      Product Configuration
+                      <Package className="w-5 h-5 text-primary" />
+                      Product Overview
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {renderConfigurator()}
+                    <p className="text-muted-foreground leading-relaxed text-base">
+                      {getProductDescription()}
+                    </p>
                   </CardContent>
                 </Card>
               </AnimatedSection>
-            )}
 
-            {/* Technical Specifications */}
-            <AnimatedSection animation="slide-in-right" delay={450}>
-              <Card className="shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <FileText className="w-5 h-5 text-primary" />
-                    Technical Specifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* keep your static spec bullets or render from DB */}
-                </CardContent>
-              </Card>
-            </AnimatedSection>
+              {shouldShowConfigurator && (
+                <AnimatedSection animation="slide-in-right" delay={400}>
+                  <Card className="shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center gap-2 text-xl">
+                        <Settings className="w-5 h-5 text-primary" />
+                        Product Configuration
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {renderConfigurator()}
+                    </CardContent>
+                  </Card>
+                </AnimatedSection>
+              )}
 
-            {/* Add to Quote Button */}
-            <AnimatedSection animation="slide-in-right" delay={500}>
-              <Button
-                onClick={handleAddToQuote}
-                size="lg"
-                className="w-full h-12 bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-[1.02] text-white font-semibold shadow-lg hover:shadow-xl"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                Add to Quote
-              </Button>
-            </AnimatedSection>
+              <AnimatedSection animation="slide-in-right" delay={450}>
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <FileText className="w-5 h-5 text-primary" />
+                      Technical Specifications
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                  </CardContent>
+                </Card>
+              </AnimatedSection>
+
+              <AnimatedSection animation="slide-in-right" delay={500}>
+                <Button
+                  onClick={handleAddToQuote}
+                  size="lg"
+                  className="w-full h-12 bg-sea hover:bg-sea-dark transition-all duration-300 hover:scale-[1.02] text-white font-semibold shadow-lg hover:shadow-xl"
+                >
+                  <ShoppingCart className="w-5 h-5 mr-2" />
+                  Add to Quote
+                </Button>
+              </AnimatedSection>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      <Footer />
+    </>
   );
 };
 
