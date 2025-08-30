@@ -1,122 +1,184 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Grid, List } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { getProductsAsync, getCategoriesAsync } from '@/data/products';
-import { Product } from '@/types/product';
-import HeroNavigation from '@/components/HeroNavigation';
-import Footer from '@/components/Footer';
+import { Search, Grid, List } from 'lucide-react';
+import { Product as ProductType } from '@/types/product';
+import ProductCard from '@/components/ProductCard';
+import { fetchProductSeriesFromDatabase, fetchCompanyTagsFromDatabase, searchProductSeries, subscribeToProductUpdates } from '@/services/productService';
+import { useToast } from '@/hooks/use-toast';
 
 const ProductCatalog = () => {
-  const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [productSeries, setProductSeries] = useState<ProductType[]>([]);
+  const [companyTags, setCompanyTags] = useState<string[]>([]);
+  const [filteredSeries, setFilteredSeries] = useState<ProductType[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
+  const [selectedCompany, setSelectedCompany] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const { toast } = useToast();
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [seriesData, companyTagsData] = await Promise.all([
+        fetchProductSeriesFromDatabase(),
+        fetchCompanyTagsFromDatabase()
+      ]);
+
+      setProductSeries(seriesData);
+      setCompanyTags(['all', ...companyTagsData]);
+      setFilteredSeries(seriesData);
+    } catch (err) {
+      console.error('Error loading catalog data:', err);
+      setError('Failed to load product catalog');
+      toast({
+        title: "Error",
+        description: "Failed to load product catalog. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [productsData, categoriesData] = await Promise.all([
-          getProductsAsync(),
-          getCategoriesAsync()
-        ]);
-        setProducts(productsData);
-        setCategories(['All Categories', ...categoriesData]);
-      } catch (error) {
-        console.error('Error loading products:', error);
-        // Fallback to empty arrays if async loading fails
-        setProducts([]);
-        setCategories(['All Categories']);
-      } finally {
-        setLoading(false);
+    loadData();
+  }, [loadData]);
+
+  // Handle URL parameters for company filtering
+  useEffect(() => {
+    const companyFromUrl = searchParams.get('company');
+    if (companyFromUrl && companyTags.includes(companyFromUrl)) {
+      setSelectedCompany(companyFromUrl);
+    }
+  }, [searchParams, companyTags]);
+
+  // Set up real-time updates
+  useEffect(() => {
+    const unsubscribe = subscribeToProductUpdates(() => {
+      console.log('Products updated, refreshing...');
+      loadData();
+    });
+
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
       }
     };
+  }, [loadData]);
 
-    loadData();
-  }, []);
+  useEffect(() => {
+    filterSeries();
+  }, [productSeries, searchTerm, selectedCompany]);
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (product.category && product.category.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === 'All Categories' || 
-                           product.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  const filterSeries = async () => {
+    let filtered = productSeries;
+
+    // If there's a search term, use the search function
+    if (searchTerm) {
+      try {
+        filtered = await searchProductSeries(searchTerm);
+      } catch (err) {
+        console.error('Search error:', err);
+        // Fall back to client-side filtering
+        const term = searchTerm.toLowerCase();
+        filtered = productSeries.filter(series =>
+          series.name.toLowerCase().includes(term) ||
+          series.description.toLowerCase().includes(term) ||
+          series.category.toLowerCase().includes(term) ||
+          (series.product_code && series.product_code.toLowerCase().includes(term)) ||
+          (series.product_series && series.product_series.toLowerCase().includes(term))
+        );
+      }
+    }
+
+    // Apply company filter
+    if (selectedCompany !== 'all') {
+      filtered = filtered.filter(series => 
+        series.company_tags && series.company_tags.includes(selectedCompany)
+      );
+    }
+
+    setFilteredSeries(filtered);
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <HeroNavigation />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading products...</p>
-          </div>
-        </main>
-        <Footer />
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+          <span>Loading product series...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-red-500 mb-4">{error}</p>
+            <Button onClick={loadData}>Try Again</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <HeroNavigation />
-      
-      <main className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">Product Catalog</h1>
-            <p className="text-muted-foreground">
-              Explore our comprehensive range of laboratory equipment and furniture
-            </p>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Product Series</h1>
+        <p className="text-muted-foreground">
+          Browse our complete collection of laboratory product series
+        </p>
+      </div>
 
-          {/* Search and Filters */}
-          <div className="mb-8 space-y-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
+      {/* Search and Filter Controls */}
+      <Card className="mb-6">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search product series..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2">
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-3 py-2 border border-input rounded-md bg-background text-foreground"
+                value={selectedCompany}
+                onChange={(e) => setSelectedCompany(e.target.value)}
+                className="px-3 py-2 border border-input rounded-md"
               >
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
+                {companyTags.map(tag => (
+                  <option key={tag} value={tag}>
+                    {tag === 'all' ? 'All Companies' : tag}
                   </option>
                 ))}
               </select>
-
-              <div className="flex gap-2">
+              
+              <div className="flex border rounded-lg">
                 <Button
-                  variant={viewMode === 'grid' ? 'default' : 'outline'}
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
                 >
                   <Grid className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={viewMode === 'list' ? 'default' : 'outline'}
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('list')}
                 >
@@ -124,82 +186,37 @@ const ProductCatalog = () => {
                 </Button>
               </div>
             </div>
-
-            {/* Results Summary */}
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {filteredProducts.length} products
-                {selectedCategory !== 'All Categories' && ` in ${selectedCategory}`}
-              </p>
-            </div>
           </div>
+          
+          <div className="flex items-center justify-between mt-4">
+            <Badge variant="outline">
+              {filteredSeries.length} product series found
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Products Grid/List */}
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-lg text-muted-foreground mb-4">No products found</p>
-              <p className="text-sm text-muted-foreground">
-                Try adjusting your search terms or category filter
-              </p>
-            </div>
-          ) : (
-            <div className={
-              viewMode === 'grid' 
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                : "space-y-4"
-            }>
-              {filteredProducts.map((product) => (
-                <Card
-                  key={product.id}
-                  className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-                  onClick={() => navigate(`/products/${product.id}`)}
-                >
-                  <CardContent className={viewMode === 'grid' ? "p-4" : "p-4 flex gap-4"}>
-                    <div className={
-                      viewMode === 'grid'
-                        ? "aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden"
-                        : "w-24 h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0"
-                    }>
-                      <img
-                        src={product.thumbnail || product.images[0] || '/placeholder-product.jpg'}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = '/placeholder-product.jpg';
-                        }}
-                      />
-                    </div>
-                    
-                    <div className={viewMode === 'grid' ? "" : "flex-1 min-w-0"}>
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className={`font-semibold ${viewMode === 'grid' ? 'text-sm' : 'text-base'} mb-1 truncate`}>
-                          {product.name}
-                        </h3>
-                      </div>
-                      
-                      <Badge variant="secondary" className="text-xs mb-2">
-                        {product.category}
-                      </Badge>
-                      
-                      <p className={`text-muted-foreground ${viewMode === 'grid' ? 'text-xs' : 'text-sm'} line-clamp-2`}>
-                        {product.description}
-                      </p>
-                      
-                      {product.dimensions && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {product.dimensions}
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+      {/* Product Series Display */}
+      {filteredSeries.length === 0 ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">No product series found matching your criteria.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className={viewMode === 'grid' 
+          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+          : "space-y-4"
+        }>
+          {filteredSeries.map((series) => (
+            <ProductCard
+              key={series.id}
+              product={series}
+              variant="series"
+            />
+          ))}
         </div>
-      </main>
-
-      <Footer />
+      )}
     </div>
   );
 };

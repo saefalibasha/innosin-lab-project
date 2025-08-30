@@ -22,7 +22,7 @@ interface RFQContextType {
 
 const RFQContext = createContext<RFQContextType | undefined>(undefined);
 
-export const RFQProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const RFQProvider = ({ children }: { children: ReactNode }) => {
   const [items, setItems] = useState<RFQItem[]>([]);
 
   const addItem = (item: Omit<RFQItem, 'quantity' | 'notes'>) => {

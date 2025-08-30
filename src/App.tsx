@@ -1,29 +1,75 @@
+// src/App.tsx
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { RFQProvider } from "@/contexts/RFQContext";
+import AdminAuthGuard from "@/components/AdminAuthGuard";
 
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { RFQProvider } from '@/contexts/RFQContext';
-import EnhancedProductDetail from '@/pages/EnhancedProductDetail';
+// Public pages
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import About from "./pages/About";
+import Blog from "./pages/Blog";
+import ProductCatalog from "./pages/ProductCatalog";
+import EnhancedProductDetail from "./pages/EnhancedProductDetail";
+import FloorPlanner from "./pages/FloorPlanner";
+import Contact from "./pages/Contact";
+import RFQCart from "./pages/RFQCart";
+
+// Admin pages
+import AdminAuth from "./pages/admin/AdminAuth";
+import Dashboard from "./pages/admin/Dashboard";
+import AdminProductViewer from "./pages/AdminProductViewer";
 
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
       <RFQProvider>
-        <Router>
-          <div className="App">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
             <Routes>
-              <Route path="/" element={<div>Home Page</div>} />
+              {/* Public */}
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/blog" element={<Blog />} />
+
+              {/* Products */}
+              <Route path="/products" element={<ProductCatalog />} />
               <Route path="/products/:id" element={<EnhancedProductDetail />} />
+
+              {/* Tools / Info */}
+              <Route path="/floor-planner" element={<FloorPlanner />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/rfq-cart" element={<RFQCart />} />
+
+              {/* Admin */}
+              <Route path="/admin/auth" element={<AdminAuth />} />
+              <Route
+                path="/admin/dashboard"
+                element={
+                  <AdminAuthGuard>
+                    <Dashboard />
+                  </AdminAuthGuard>
+                }
+              />
+              <Route path="/admin/products" element={<AdminProductViewer />} />
+
+              {/* Optional 404 */}
+              {/* <Route path="*" element={<NotFound />} /> */}
             </Routes>
-            <Toaster />
-          </div>
-        </Router>
+          </BrowserRouter>
+        </TooltipProvider>
       </RFQProvider>
-    </QueryClientProvider>
-  );
-}
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;

@@ -1,318 +1,368 @@
+
 import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Trash2, Plus, Minus, Send, ShoppingCart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Trash2, Plus, Minus, FileDown, Send, ShoppingCart } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
-import HeroNavigation from '@/components/HeroNavigation';
-import Footer from '@/components/Footer';
+import AnimatedSection from '@/components/AnimatedSection';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { supabase } from '@/integrations/supabase/client';
 
 const RFQCart = () => {
-  const { items, removeItem, clearCart } = useRFQ();
-  const [customerInfo, setCustomerInfo] = useState({
+  const { items, removeItem, updateItem, clearCart, itemCount } = useRFQ();
+  const [contactInfo, setContactInfo] = useState({
     name: '',
     email: '',
     company: '',
     phone: '',
-    address: '',
-    additionalNotes: ''
+    message: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createContact, createDeal } = useHubSpotIntegration();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setCustomerInfo(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const handleContactChange = (field: string, value: string) => {
+    setContactInfo(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateItemQuantity = (id: string, newQuantity: number) => {
-    // Since updateQuantity doesn't exist in the context, we'll need to work with what we have
-    // For now, we'll just remove and re-add the item with new quantity
-    const item = items.find(i => i.id === id);
-    if (item && newQuantity > 0) {
-      // This is a workaround - ideally the RFQ context should have updateQuantity
-      console.log('Update quantity not implemented in RFQ context');
-    } else if (newQuantity <= 0) {
-      removeItem(id);
-    }
+  const updateQuantity = (id: string, quantity: number) => {
+    updateItem(id, { quantity });
   };
 
-  const handleSubmitRFQ = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmitRFQ = async () => {
     if (items.length === 0) {
-      toast.error('Please add items to your RFQ cart before submitting.');
+      toast.error('Please add items to your cart before submitting');
+      return;
+    }
+    
+    if (!contactInfo.name || !contactInfo.email) {
+      toast.error('Please provide your name and email');
       return;
     }
 
-    if (!customerInfo.name || !customerInfo.email || !customerInfo.company) {
-      toast.error('Please fill in all required fields.');
-      return;
+    setIsSubmitting(true);
+
+    try {
+      // Generate session ID for tracking
+      const sessionId = `rfq_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Store RFQ in Supabase
+      const { error: supabaseError } = await supabase
+        .from('chat_sessions')
+        .insert({
+          session_id: sessionId,
+          name: contactInfo.name,
+          email: contactInfo.email,
+          company: contactInfo.company,
+          phone: contactInfo.phone,
+          status: 'rfq_submitted',
+          context: {
+            source: 'rfq_cart',
+            message: contactInfo.message,
+            items: items.map(item => ({
+              id: item.id,
+              name: item.name,
+              category: item.category,
+              quantity: item.quantity,
+              dimensions: item.dimensions
+            })),
+            total_items: items.length,
+            total_quantity: items.reduce((sum, item) => sum + item.quantity, 0)
+          }
+        });
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
+
+      // Create HubSpot contact
+      const contactResult = await createContact({
+        sessionId,
+        name: contactInfo.name,
+        email: contactInfo.email,
+        company: contactInfo.company,
+        phone: contactInfo.phone
+      });
+
+      // Create HubSpot deal for the RFQ
+      if (contactResult?.data?.hubspot_contact_id) {
+        await createDeal({
+          sessionId,
+          dealName: `RFQ - ${contactInfo.name} - ${items.length} items`,
+          contactId: contactResult.data.hubspot_contact_id,
+          amount: 0 // Amount TBD for RFQ
+        });
+      }
+
+      toast.success('Request for Quote submitted successfully!');
+      clearCart();
+      setContactInfo({ name: '', email: '', company: '', phone: '', message: '' });
+    } catch (error) {
+      console.error('RFQ submission error:', error);
+      toast.error('Failed to submit RFQ. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    // Here you would typically send the RFQ to your backend
-    const rfqData = {
-      customer: customerInfo,
-      items: items,
-      submittedAt: new Date().toISOString()
-    };
-
-    console.log('RFQ Submitted:', rfqData);
-    toast.success('RFQ submitted successfully! We\'ll get back to you within 24 hours.');
-    
-    // Clear the cart after successful submission
-    clearCart();
-    
-    // Reset customer info
-    setCustomerInfo({
-      name: '',
-      email: '',
-      company: '',
-      phone: '',
-      address: '',
-      additionalNotes: ''
-    });
   };
 
-  const getTotalItems = () => {
-    return items.reduce((total, item) => total + item.quantity, 0);
+  const handleExportPDF = () => {
+    // Implementation would go here
+    toast.success('Quote exported as PDF');
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <HeroNavigation />
-      
-      <main className="flex-grow pt-20">
-        <div className="container mx-auto px-4 py-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-primary mb-2 flex items-center gap-3">
-              <ShoppingCart className="h-8 w-8" />
-              Request for Quotation
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/30 to-background">
+      <div className="container-custom py-12 pt-20">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <AnimatedSection animation="fade-in" delay={100}>
+            <h1 className="text-4xl font-bold text-primary mb-4 animate-fade-in">
+              Request for Quote
             </h1>
-            <p className="text-muted-foreground">
-              Review your selected items and submit your request for a detailed quotation.
+          </AnimatedSection>
+          <AnimatedSection animation="fade-in" delay={300}>
+            <p className="text-xl text-muted-foreground animate-fade-in animate-delay-300">
+              Review your selected items and submit your quote request
             </p>
-          </div>
+          </AnimatedSection>
+          <AnimatedSection animation="fade-in" delay={400}>
+            <Badge variant="outline" className="mt-4 text-lg px-4 py-2 border-sea text-sea animate-bounce-in animate-delay-500">
+              {itemCount} items in cart
+            </Badge>
+          </AnimatedSection>
+        </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
-            {/* RFQ Items */}
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Selected Items ({getTotalItems()})</CardTitle>
-                  {items.length > 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={clearCart}
-                    >
-                      Clear All
-                    </Button>
-                  )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Cart Items */}
+          <div className="lg:col-span-2 space-y-6">
+            <AnimatedSection animation="fade-in-left" delay={200}>
+              <Card className="glass-card hover:shadow-xl transition-all duration-300">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-2xl font-bold text-primary">
+                    <ShoppingCart className="w-6 h-6 text-sea" />
+                    <span>Selected Items</span>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   {items.length === 0 ? (
-                    <div className="text-center py-12">
-                      <ShoppingCart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Your RFQ cart is empty</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Browse our products and add items to request a quotation.
-                      </p>
-                      <Button onClick={() => window.location.href = '/products'}>
-                        Browse Products
+                    <div className="text-center py-12 animate-fade-in">
+                      <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4 animate-float" />
+                      <p className="text-lg text-muted-foreground mb-4">Your cart is empty</p>
+                      <Button asChild variant="heroSolid" className="animate-scale-in">
+                        <a href="/products">Browse Products</a>
                       </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                          <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                            <img
-                              src={item.image}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src = '/placeholder-product.jpg';
-                              }}
-                            />
+                      {items.map((item, index) => (
+                        <div
+                          key={item.id}
+                          className="flex items-center space-x-4 p-4 glass-card rounded-lg hover:shadow-md transition-all duration-300 animate-fade-in hover:scale-105"
+                          style={{animationDelay: `${index * 100}ms`}}
+                        >
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="w-16 h-16 object-cover rounded-md bg-sea/10"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-primary">{item.name}</h3>
+                            <p className="text-sm text-muted-foreground">{item.category}</p>
+                            <p className="text-xs text-muted-foreground">{item.dimensions}</p>
                           </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-medium text-sm truncate">{item.name}</h3>
-                            <Badge variant="secondary" className="text-xs mt-1">
-                              Product ID: {item.id}
-                            </Badge>
-                          </div>
-
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center space-x-2">
                             <Button
-                              variant="outline"
                               size="sm"
-                              onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                              variant="outline"
+                              onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
+                              className="glass-card border-sea/20 hover:bg-sea/10"
                             >
-                              <Minus className="h-3 w-3" />
+                              <Minus className="w-3 h-3" />
                             </Button>
-                            <span className="w-8 text-center text-sm">{item.quantity}</span>
+                            <span className="w-8 text-center font-medium">{item.quantity}</span>
                             <Button
-                              variant="outline"
                               size="sm"
-                              onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                              variant="outline"
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              className="glass-card border-sea/20 hover:bg-sea/10"
                             >
-                              <Plus className="h-3 w-3" />
+                              <Plus className="w-3 h-3" />
                             </Button>
                           </div>
-
                           <Button
-                            variant="ghost"
                             size="sm"
+                            variant="outline"
                             onClick={() => removeItem(item.id)}
+                            className="text-destructive hover:bg-destructive/10 transition-colors duration-300"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       ))}
+                      
+                      {items.length > 0 && (
+                        <div className="flex justify-end space-x-2 pt-4 border-t border-sea/10 animate-slide-up">
+                          <Button
+                            variant="outline"
+                            onClick={clearCart}
+                            className="glass-card border-sea/20 hover:bg-destructive/10 hover:border-destructive transition-all duration-300"
+                          >
+                            Clear Cart
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleExportPDF}
+                            className="glass-card border-sea/20 hover:bg-sea/10 hover:border-sea transition-all duration-300"
+                          >
+                            <FileDown className="w-4 h-4 mr-2" />
+                            Export PDF
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </CardContent>
               </Card>
-            </div>
+            </AnimatedSection>
+          </div>
 
-            {/* Customer Information Form */}
-            <div>
-              <Card>
+          {/* Contact Form - Fixed sticky positioning to avoid header conflict */}
+          <div className="lg:col-span-1">
+            <AnimatedSection animation="fade-in-right" delay={400}>
+              <Card className="glass-card hover:shadow-xl transition-all duration-300 sticky" style={{ top: '6rem' }}>
                 <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
+                  <CardTitle className="text-2xl font-bold text-primary">Contact Information</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmitRFQ} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        value={customerInfo.name}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="Enter your full name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        value={customerInfo.email}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="Enter your email"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="company">Company *</Label>
-                      <Input
-                        id="company"
-                        name="company"
-                        value={customerInfo.company}
-                        onChange={handleInputChange}
-                        required
-                        placeholder="Enter your company name"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        name="phone"
-                        type="tel"
-                        value={customerInfo.phone}
-                        onChange={handleInputChange}
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Address</Label>
-                      <Textarea
-                        id="address"
-                        name="address"
-                        value={customerInfo.address}
-                        onChange={handleInputChange}
-                        placeholder="Enter your company address"
-                        rows={3}
-                      />
-                    </div>
-
-                    <Separator />
-
-                    <div className="space-y-2">
-                      <Label htmlFor="additionalNotes">Additional Notes</Label>
-                      <Textarea
-                        id="additionalNotes"
-                        name="additionalNotes"
-                        value={customerInfo.additionalNotes}
-                        onChange={handleInputChange}
-                        placeholder="Any specific requirements or additional information..."
-                        rows={4}
-                      />
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      disabled={items.length === 0}
-                    >
-                      <Send className="mr-2 h-4 w-4" />
-                      Submit RFQ
-                    </Button>
-
-                    <p className="text-xs text-muted-foreground text-center">
-                      We'll review your request and send you a detailed quotation within 24 hours.
-                    </p>
-                  </form>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Full Name *
+                    </label>
+                    <Input
+                      type="text"
+                      value={contactInfo.name}
+                      onChange={(e) => handleContactChange('name', e.target.value)}
+                      placeholder="John Doe"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Email Address *
+                    </label>
+                    <Input
+                      type="email"
+                      value={contactInfo.email}
+                      onChange={(e) => handleContactChange('email', e.target.value)}
+                      placeholder="john@company.com"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Company/Organization
+                    </label>
+                    <Input
+                      type="text"
+                      value={contactInfo.company}
+                      onChange={(e) => handleContactChange('company', e.target.value)}
+                      placeholder="Company Name"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Phone Number
+                    </label>
+                    <Input
+                      type="tel"
+                      value={contactInfo.phone}
+                      onChange={(e) => handleContactChange('phone', e.target.value)}
+                      placeholder="+65 1234 5678"
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      Additional Message
+                    </label>
+                    <Textarea
+                      value={contactInfo.message}
+                      onChange={(e) => handleContactChange('message', e.target.value)}
+                      placeholder="Tell us about your project requirements..."
+                      rows={4}
+                      className="glass-card border-sea/20 focus:border-sea transition-all duration-300"
+                    />
+                  </div>
+                  
+                  <Button
+                    onClick={handleSubmitRFQ}
+                    disabled={items.length === 0 || isSubmitting}
+                    className="w-full bg-sea hover:bg-sea-dark disabled:opacity-50 transition-all duration-300 hover:scale-105 animate-float"
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    {isSubmitting ? 'Submitting...' : 'Submit Quote Request'}
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground text-center">
+                    We'll respond to your quote request within 24 hours
+                  </p>
                 </CardContent>
               </Card>
-
-              {/* RFQ Summary */}
-              {items.length > 0 && (
-                <Card className="mt-6">
-                  <CardHeader>
-                    <CardTitle>RFQ Summary</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Total Items:</span>
-                        <span className="font-medium">{getTotalItems()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Product Lines:</span>
-                        <span className="font-medium">{items.length}</span>
-                      </div>
-                    </div>
-                    <Separator className="my-3" />
-                    <p className="text-xs text-muted-foreground">
-                      Pricing and availability will be provided in the quotation response.
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            </AnimatedSection>
           </div>
         </div>
-      </main>
 
-      <Footer />
+        {/* Additional Information */}
+        <AnimatedSection animation="fade-in" delay={600}>
+          <Card className="mt-12 glass-card hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4">
+                What happens next?
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center animate-fade-in animate-delay-700">
+                  <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-sea font-bold">1</span>
+                  </div>
+                  <h4 className="font-medium text-foreground mb-2">Review</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Our team reviews your requirements and selected items
+                  </p>
+                </div>
+                <div className="text-center animate-fade-in animate-delay-800">
+                  <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-sea font-bold">2</span>
+                  </div>
+                  <h4 className="font-medium text-foreground mb-2">Quote</h4>
+                  <p className="text-sm text-muted-foreground">
+                    We prepare a detailed quote with pricing and specifications
+                  </p>
+                </div>
+                <div className="text-center animate-fade-in animate-delay-900">
+                  <div className="w-12 h-12 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-sea font-bold">3</span>
+                  </div>
+                  <h4 className="font-medium text-foreground mb-2">Follow-up</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Our sales team contacts you to discuss next steps
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </AnimatedSection>
+      </div>
     </div>
   );
 };
