@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
+import AdminProductViewer from "./pages/admin/AdminProductViewer";
 
 // ✅ layout path changed
 import SiteLayout from "@/components/SiteLayout";
