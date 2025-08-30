@@ -1,88 +1,105 @@
+
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ShoppingCart, Download, Share2, Ruler } from 'lucide-react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment } from '@react-three/drei';
-import { products } from '@/data/products';
-import { useRFQ } from '@/contexts/RFQContext';
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Plus, Minus, ShoppingCart, Download, Eye, Package } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
+import { getProductById } from '@/data/products';
+import ProductImageGallery from '@/components/ProductImageGallery';
 import ProductSpecifications from '@/components/ProductSpecifications';
 import ThreeDModel from '@/components/ThreeDModel';
-import { toast } from 'sonner';
+import { useRFQ } from '@/contexts/RFQContext';
 import HeroNavigation from '@/components/HeroNavigation';
 import Footer from '@/components/Footer';
+import { Product } from '@/types/product';
 
 const EnhancedProductDetail = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addItem } = useRFQ();
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [activeTab, setActiveTab] = useState<'details' | 'specs' | '3d'>('details');
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const { addItem } = useRFQ();
 
-  const product = products.find(p => p.id === id);
+  React.useEffect(() => {
+    if (id) {
+      const foundProduct = getProductById(id);
+      if (foundProduct) {
+        setProduct(foundProduct);
+      }
+      setLoading(false);
+    }
+  }, [id]);
 
-  if (!product) {
+  const handleAddToRFQ = () => {
+    if (!product) return;
+    
+    addItem({
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      dimensions: product.dimensions,
+      image: product.thumbnail || product.images[0] || '/placeholder-product.jpg'
+    });
+
+    toast({
+      title: "Added to RFQ",
+      description: `${product.name} has been added to your request for quotation.`,
+    });
+  };
+
+  const handleViewRFQ = () => {
+    navigate('/rfq');
+  };
+
+  if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <HeroNavigation />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
-            <Button onClick={() => navigate('/products')}>
-              Back to Products
-            </Button>
-          </div>
-        </main>
+        <div className="flex-grow pt-20 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
         <Footer />
       </div>
     );
   }
 
-  const handleAddToRFQ = () => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      specifications: product.specifications || {},
-      image: product.thumbnail || product.images[0] || '/placeholder-product.jpg'
-    });
-    toast.success(`Added ${product.name} to RFQ cart`);
-  };
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <HeroNavigation />
+        <div className="flex-grow pt-20 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Product Not Found</h1>
+            <p className="text-muted-foreground mb-4">The product you're looking for doesn't exist.</p>
+            <Button onClick={() => navigate('/products')}>Browse Products</Button>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: product.description,
-          url: window.location.href
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success('Link copied to clipboard');
-    }
+  const imageUrl = product.thumbnail || product.images[0] || '/placeholder-product.jpg';
+  const fallbackImage = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = '/placeholder-product.jpg';
   };
-
-  const productImages = [
-    product.thumbnail || '/placeholder-product.jpg',
-    ...product.images.slice(0, 3)
-  ];
 
   return (
     <div className="min-h-screen flex flex-col">
       <HeroNavigation />
       
-      <main className="flex-grow">
+      <main className="flex-grow pt-20">
         <div className="container mx-auto px-4 py-8">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/products')}
+          {/* Back Navigation */}
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
             className="mb-6"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -90,179 +107,194 @@ const EnhancedProductDetail = () => {
           </Button>
 
           <div className="grid lg:grid-cols-2 gap-12">
-            {/* Left Side - Images and 3D Model */}
+            {/* Left Column - Images and 3D */}
             <div className="space-y-6">
-              {/* Main Image/3D Viewer */}
-              <div className="aspect-square bg-gray-50 rounded-lg overflow-hidden">
-                <Tabs defaultValue="image" className="h-full">
-                  <TabsList className="absolute top-4 left-4 z-10">
-                    <TabsTrigger value="image">2D</TabsTrigger>
-                    <TabsTrigger value="3d">3D</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="image" className="h-full m-0">
-                    <img
-                      src={productImages[selectedImageIndex]}
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder-product.jpg';
-                      }}
-                    />
-                  </TabsContent>
-                  
-                  <TabsContent value="3d" className="h-full m-0">
-                    <Suspense fallback={
-                      <div className="h-full flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                          <p>Loading 3D Model...</p>
-                        </div>
-                      </div>
-                    }>
-                      <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-                        <ambientLight intensity={0.5} />
-                        <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} />
-                        <ThreeDModel modelPath={product.modelPath} />
-                        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
-                        <Environment preset="studio" />
-                      </Canvas>
-                    </Suspense>
-                  </TabsContent>
-                </Tabs>
+              {/* Tab Navigation */}
+              <div className="flex space-x-1 bg-muted p-1 rounded-lg">
+                <button
+                  onClick={() => setActiveTab('details')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'details' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Eye className="inline mr-2 h-4 w-4" />
+                  Images
+                </button>
+                <button
+                  onClick={() => setActiveTab('3d')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === '3d' 
+                      ? 'bg-background text-foreground shadow-sm' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Package className="inline mr-2 h-4 w-4" />
+                  3D Model
+                </button>
               </div>
 
-              {/* Thumbnail Images */}
-              <div className="grid grid-cols-4 gap-2">
-                {productImages.map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${
-                      selectedImageIndex === index ? 'border-primary' : 'border-transparent'
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`${product.name} view ${index + 1}`}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder-product.jpg';
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Right Side - Product Details */}
-            <div className="space-y-6">
-              <div>
-                <Badge className="mb-2">{product.category}</Badge>
-                <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-                <p className="text-muted-foreground text-lg">{product.description}</p>
-              </div>
-
-              {/* Key Features - Only show if we have company_tags as features */}
-              {product.company_tags && product.company_tags.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Key Features</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2">
-                      {product.company_tags.map((tag, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></span>
-                          <span>{tag}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
+              {/* Content based on active tab */}
+              {activeTab === 'details' && (
+                <ProductImageGallery
+                  thumbnail={product.thumbnail}
+                  images={product.images}
+                  productName={product.name}
+                />
               )}
 
-              {/* RFQ Actions */}
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <label htmlFor="quantity" className="text-sm font-medium">
-                        Quantity:
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        >
-                          -
-                        </Button>
-                        <span className="w-12 text-center">{quantity}</span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setQuantity(quantity + 1)}
-                        >
-                          +
-                        </Button>
-                      </div>
+              {activeTab === '3d' && (
+                <div className="aspect-square bg-muted rounded-lg overflow-hidden">
+                  <Suspense fallback={
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                     </div>
+                  }>
+                    <ThreeDModel modelPath={product.modelPath} />
+                  </Suspense>
+                </div>
+              )}
+            </div>
 
-                    <div className="flex gap-3">
-                      <Button onClick={handleAddToRFQ} className="flex-1">
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Add to RFQ
-                      </Button>
-                      <Button variant="outline" onClick={handleShare}>
-                        <Share2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
+            {/* Right Column - Product Details */}
+            <div className="space-y-6">
+              {/* Product Header */}
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h1 className="text-3xl font-bold text-foreground">{product.name}</h1>
+                    <p className="text-lg text-muted-foreground mt-1">{product.category}</p>
                   </div>
+                  <Badge variant="secondary" className="text-sm">
+                    {product.category}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <Badge variant="outline">ID: {product.id}</Badge>
+                  {product.dimensions && (
+                    <Badge variant="outline">{product.dimensions}</Badge>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Description */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Description</h3>
+                <p className="text-muted-foreground leading-relaxed">
+                  {product.fullDescription || product.description}
+                </p>
+              </div>
+
+              {/* Features */}
+              {product.company_tags && product.company_tags.length > 0 && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Features</h3>
+                  <ul className="space-y-2">
+                    {product.company_tags.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                        <span className="text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Quantity and Actions */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium">Quantity:</label>
+                  <div className="flex items-center border rounded-md">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="px-3 py-1"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="px-4 py-2 min-w-[3rem] text-center">{quantity}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="px-3 py-1"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button 
+                    onClick={handleAddToRFQ}
+                    className="flex-1"
+                    size="lg"
+                  >
+                    <ShoppingCart className="mr-2 h-5 w-5" />
+                    Add to RFQ
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleViewRFQ}
+                    size="lg"
+                  >
+                    View RFQ
+                  </Button>
+                </div>
+
+                <Button variant="outline" className="w-full" size="lg">
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Datasheet
+                </Button>
+              </div>
+
+              <Separator />
+
+              {/* Additional Information */}
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-foreground">Category:</span>
+                  <p className="text-muted-foreground">{product.category}</p>
+                </div>
+                {product.category && (
+                  <div>
+                    <span className="font-medium text-foreground">Company:</span>
+                    <p className="text-muted-foreground">{product.category}</p>
+                  </div>
+                )}
+                {product.dimensions && (
+                  <div>
+                    <span className="font-medium text-foreground">Dimensions:</span>
+                    <p className="text-muted-foreground">{product.dimensions}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Specifications Section */}
+          {activeTab === 'specs' && (
+            <div className="mt-12">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Technical Specifications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ProductSpecifications 
+                    specifications={product.specifications}
+                    image={product.thumbnail || product.images[0] || '/placeholder-product.jpg'}
+                  />
                 </CardContent>
               </Card>
             </div>
-          </div>
-
-          {/* Specifications */}
-          <div className="mt-12">
-            <ProductSpecifications product={product} />
-          </div>
-
-          {/* Related Products */}
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold mb-6">Related Products</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products
-                .filter(p => p.category === product.category && p.id !== product.id)
-                .slice(0, 4)
-                .map((relatedProduct) => (
-                  <Card
-                    key={relatedProduct.id}
-                    className="cursor-pointer hover:shadow-lg transition-shadow"
-                    onClick={() => navigate(`/products/${relatedProduct.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                        <img
-                          src={relatedProduct.thumbnail || relatedProduct.images[0] || '/placeholder-product.jpg'}
-                          alt={relatedProduct.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder-product.jpg';
-                          }}
-                        />
-                      </div>
-                      <h3 className="font-semibold text-sm mb-1">{relatedProduct.name}</h3>
-                      <p className="text-xs text-muted-foreground">{relatedProduct.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-          </div>
+          )}
         </div>
       </main>
 

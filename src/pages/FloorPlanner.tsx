@@ -1,9 +1,9 @@
+
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
@@ -12,8 +12,6 @@ import 'react-resizable/css/styles.css';
 import { jsPDF } from 'jspdf';
 import { getProductsAsync } from '@/data/products';
 import { Product } from '@/types/product';
-import HeroNavigation from '@/components/HeroNavigation';
-import Footer from '@/components/Footer';
 
 interface FloorItem {
   id: string;
@@ -24,42 +22,65 @@ interface FloorItem {
   width: number;
   height: number;
   rotation: number;
-  image: string;
 }
 
 const FloorPlanner = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [floorItems, setFloorItems] = useState<FloorItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [loading, setLoading] = useState(true);
+  const [planName, setPlanName] = useState('');
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   React.useEffect(() => {
-    const loadProducts = async () => {
-      setLoading(true);
-      try {
-        const productsData = await getProductsAsync();
-        setProducts(productsData);
-      } catch (error) {
-        console.error("Error loading products:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load products",
-          variant: "destructive",
-        });
-        setProducts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadProducts();
-  }, [toast]);
+  }, []);
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const loadProducts = async () => {
+    try {
+      const productsData = await getProductsAsync();
+      setProducts(productsData);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const categories = [...new Set(products.map(p => p.category))];
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const addToFloor = (product: Product) => {
+    const newItem: FloorItem = {
+      id: `${product.id}-${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      x: Math.random() * 400,
+      y: Math.random() * 300,
+      width: 100,
+      height: 80,
+      rotation: 0,
+    };
+    setFloorItems(prev => [...prev, newItem]);
+    
+    toast({
+      title: "Item added",
+      description: `${product.name} added to floor plan`,
+    });
+  };
 
   const handleResize = useCallback(
     (id: string) =>
@@ -67,11 +88,7 @@ const FloorPlanner = () => {
         setFloorItems((prev) =>
           prev.map((item) =>
             item.id === id
-              ? {
-                  ...item,
-                  width: data.size.width,
-                  height: data.size.height,
-                }
+              ? { ...item, width: data.size.width, height: data.size.height }
               : item
           )
         );
@@ -79,233 +96,214 @@ const FloorPlanner = () => {
     []
   );
 
-  const handleRotate = (id: string) => {
-    setFloorItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, rotation: item.rotation + 90 } : item
-      )
-    );
-  };
-
-  const removeItem = (id: string) => {
+  const removeFromFloor = (id: string) => {
     setFloorItems(prev => prev.filter(item => item.id !== id));
   };
 
-  const addProductToFloor = (product: Product, x: number, y: number) => {
-    const newItem: FloorItem = {
-      id: Date.now().toString(),
-      productId: product.id,
-      name: product.name,
-      x,
-      y,
-      width: 60,
-      height: 40,
-      rotation: 0,
-      image: product.thumbnail || product.images[0] || '/placeholder-product.jpg'
-    };
-    setFloorItems([...floorItems, newItem]);
+  const rotateItem = (id: string) => {
+    setFloorItems(prev => prev.map(item => 
+      item.id === id ? { ...item, rotation: (item.rotation + 90) % 360 } : item
+    ));
   };
 
   const exportToPDF = () => {
-    const pdf = new jsPDF();
-    
-    // Add title
-    pdf.setFontSize(20);
-    pdf.text('Floor Plan Layout', 20, 30);
-    
-    // Add items list
-    pdf.setFontSize(12);
-    let yPos = 50;
+    const pdf = new jsPDF('landscape');
+    pdf.setFontSize(16);
+    pdf.text(planName || 'Floor Plan', 20, 20);
     
     floorItems.forEach((item, index) => {
-      const product = products.find(p => p.id === item.productId);
-      if (product) {
-        pdf.text(`${index + 1}. ${product.name} - ${product.category || 'Unknown Category'}`, 20, yPos);
-        yPos += 10;
-      }
+      pdf.setFontSize(12);
+      pdf.text(`${index + 1}. ${item.name}`, 20, 40 + index * 10);
     });
     
-    pdf.save('floor-plan.pdf');
+    pdf.save(`${planName || 'floor-plan'}.pdf`);
+    
+    toast({
+      title: "Export successful",
+      description: "Floor plan exported to PDF",
+    });
+  };
+
+  const savePlan = () => {
+    if (!planName.trim()) {
+      toast({
+        title: "Plan name required",
+        description: "Please enter a name for your floor plan",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const planData = {
+      name: planName,
+      items: floorItems,
+      createdAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(`floorplan-${Date.now()}`, JSON.stringify(planData));
+    
+    toast({
+      title: "Plan saved",
+      description: "Your floor plan has been saved locally",
+    });
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <HeroNavigation />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading products...</p>
-          </div>
-        </main>
-        <Footer />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <HeroNavigation />
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-full mx-auto">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Floor Planner</h1>
+          <p className="text-gray-600">Design your laboratory layout by dragging products onto the floor plan</p>
+        </div>
 
-      <main className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold mb-4">Floor Planner</h1>
-
-          {/* Product Search */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                type="text"
-                placeholder="Search for products..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Product List */}
-            <div className="md:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Available Products</CardTitle>
-                </CardHeader>
-                <CardContent className="max-h-[400px] overflow-y-auto">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center justify-between p-2 border rounded-md mb-2 cursor-pointer hover:bg-gray-100"
-                      onClick={() => addProductToFloor(product, 50, 50)}
-                    >
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-md overflow-hidden mr-2">
-                          <img
-                            src={product.thumbnail || product.images[0] || '/placeholder-product.jpg'}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = '/placeholder-product.jpg';
-                            }}
-                          />
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">{product.name}</Label>
-                          <Badge variant="secondary" className="ml-2 text-xs">
-                            {product.category}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Floor Plan Area */}
-            <div className="md:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Floor Plan</CardTitle>
-                </CardHeader>
-                <CardContent className="relative h-[500px] bg-gray-100 overflow-hidden">
-                  {floorItems.map((item) => (
-                    <ResizableBox
-                      key={item.id}
-                      width={item.width}
-                      height={item.height}
-                      x={item.x}
-                      y={item.y}
-                      onResize={handleResize(item.id)}
-                      minConstraints={[50, 50]}
-                      className="absolute shadow-md"
-                      style={{
-                        transform: `rotate(${item.rotation}deg)`,
-                        left: `${item.x}px`,
-                        top: `${item.y}px`,
-                      }}
-                    >
-                      <div className="relative">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          style={{
-                            transform: `rotate(${-item.rotation}deg)`,
-                          }}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Product Library */}
+          <div className="lg:col-span-1">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Product Library</CardTitle>
+                <div className="space-y-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+              </CardHeader>
+              <CardContent className="max-h-96 overflow-y-auto">
+                <div className="space-y-2">
+                  {filteredProducts.map(product => (
+                    <div key={product.id} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={product.thumbnail || product.images[0] || '/placeholder-product.jpg'} 
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded"
                           onError={(e) => {
                             e.currentTarget.src = '/placeholder-product.jpg';
                           }}
                         />
-                        <div className="absolute top-1 left-1 flex gap-1">
-                          <Badge variant="secondary">{item.name}</Badge>
-                        </div>
-                        <div className="absolute bottom-1 right-1 flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleRotate(item.id)}
-                            style={{
-                              transform: `rotate(${-item.rotation}deg)`,
-                            }}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4"
-                            >
-                              <path d="M21 15V6H3" />
-                              <path d="M21 12a9 9 0 0 0-9 9" />
-                              <path d="M15 18l3-3-3-3" />
-                            </svg>
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => removeItem(item.id)}
-                            style={{
-                              transform: `rotate(${-item.rotation}deg)`,
-                            }}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              className="h-4 w-4"
-                            >
-                              <path d="M3 6h18" />
-                              <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-                              <line x1="10" x2="10" y1="11" y2="17" />
-                              <line x1="14" x2="14" y1="11" y2="17" />
-                            </svg>
-                          </Button>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{product.name}</p>
+                          <Badge variant="secondary" className="text-xs">{product.category}</Badge>
                         </div>
                       </div>
-                    </ResizableBox>
+                      <Button 
+                        size="sm" 
+                        className="w-full mt-2"
+                        onClick={() => addToFloor(product)}
+                      >
+                        Add to Floor
+                      </Button>
+                    </div>
                   ))}
-                </CardContent>
-              </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <Button className="mt-4" onClick={exportToPDF}>
-                Export to PDF
-              </Button>
-            </div>
+          {/* Floor Plan Canvas */}
+          <div className="lg:col-span-3">
+            <Card className="h-full">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Floor Plan Canvas</CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      placeholder="Plan name..."
+                      value={planName}
+                      onChange={(e) => setPlanName(e.target.value)}
+                      className="w-48"
+                    />
+                    <Button onClick={savePlan} variant="outline">Save</Button>
+                    <Button onClick={exportToPDF} variant="outline">Export PDF</Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div 
+                  className="relative bg-white border-2 border-dashed border-gray-300 rounded-lg overflow-hidden"
+                  style={{ width: '800px', height: '600px', margin: '0 auto' }}
+                >
+                  {floorItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="absolute border-2 border-blue-500 bg-blue-100 rounded shadow-lg"
+                      style={{ 
+                        left: item.x,
+                        top: item.y,
+                        transform: `rotate(${item.rotation}deg)`,
+                        transformOrigin: 'center center'
+                      }}
+                    >
+                      <ResizableBox
+                        width={item.width}
+                        height={item.height}
+                        onResize={handleResize(item.id)}
+                        minConstraints={[50, 40]}
+                        className="flex items-center justify-center p-2 text-xs font-medium text-blue-800 cursor-move"
+                      >
+                        <div className="text-center truncate w-full">
+                          {item.name}
+                        </div>
+                      </ResizableBox>
+                      <div className="absolute -top-8 right-0 flex space-x-1">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 w-6 p-0"
+                          onClick={() => rotateItem(item.id)}
+                        >
+                          ↻
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-6 w-6 p-0"
+                          onClick={() => removeFromFloor(item.id)}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {floorItems.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center text-gray-500">
+                      <div className="text-center">
+                        <p className="text-lg font-medium mb-2">Your floor plan is empty</p>
+                        <p className="text-sm">Add products from the library to get started</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      </main>
-
-      <Footer />
+      </div>
     </div>
   );
 };
