@@ -1,4 +1,3 @@
-
 import React, { useState, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,6 @@ const EnhancedProductDetail = () => {
     addItem({
       id: product.id,
       name: product.name,
-      quantity: quantity,
       specifications: product.specifications || {},
       image: product.thumbnail || product.images[0] || '/placeholder-product.jpg'
     });

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from "@/hooks/use-toast";
-import { ResizableBox } from 'react-resizable';
+import { ResizableBox, ResizeCallbackData } from 'react-resizable';
 import 'react-resizable/css/styles.css';
 import { jsPDF } from 'jspdf';
 import { getProductsAsync } from '@/data/products';
@@ -63,7 +63,7 @@ const FloorPlanner = () => {
 
   const handleResize = useCallback(
     (id: string) =>
-      (_: Event, data: ResizeCallbackData) => {
+      (e: React.SyntheticEvent, data: ResizeCallbackData) => {
         setFloorItems((prev) =>
           prev.map((item) =>
             item.id === id
