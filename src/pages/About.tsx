@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Award, Users, Globe, Target, DollarSign, Clock, Headphones, Settings } from 'lucide-react';
@@ -7,6 +8,9 @@ import { Timeline } from '@/components/ui/timeline';
 import LabTransformCTA from '@/components/LabTransformCTA';
 import { aboutPageContent } from '@/data/aboutPageContent';
 import { Reveal, StaggerList } from '@/components/anim';
+
+const Index = () => {
+  const navigate = useNavigate();
 
 const About = () => {
   // Create timeline data from content structure
@@ -32,6 +36,10 @@ const About = () => {
   }));
 
   return (
+    <div className="min-h-screen flex flex-col">
+      {/* Top Navigation */}
+      <HeroNavigation />
+      
     <div className="min-h-screen bg-background pt-0">
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-8">
