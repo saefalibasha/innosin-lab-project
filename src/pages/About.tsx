@@ -1,207 +1,132 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Award, Users, Globe, Target, DollarSign, Clock, Headphones, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Timeline } from '@/components/ui/timeline';
-import LabTransformCTA from '@/components/LabTransformCTA';
-import { aboutPageContent } from '@/data/aboutPageContent';
-import { Reveal, StaggerList } from '@/components/anim';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import AnimatedSection from "@/components/AnimatedSection";
+import HeroNavigation from "@/components/HeroNavigation";
+import Footer from "@/components/Footer";
 
 const About = () => {
-  // Create timeline data from content structure
-  const timelineData = aboutPageContent.timeline.events.map(event => ({
-    title: event.year,
-    content: (
-      <div>
-        <h4 className="text-2xl font-bold text-primary mb-4">
-          {event.title}
-        </h4>
-        <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-          {event.description}
-        </p>
-        <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg shadow-lg">
-          <img
-            src={event.image}
-            alt={event.imageAlt}
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-      </div>
-    ),
-  }));
+  const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background pt-0">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-8">
-        <div className="container-custom">
-          <div className="max-w-4xl mx-auto text-center">
-            <Reveal>
-              <h1 className="text-5xl md:text-6xl font-bold text-primary mb-6 tracking-tight">
-                {aboutPageContent.hero.title} <span className="text-sea">{aboutPageContent.hero.titleHighlight}</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
-              <p className="text-xl text-muted-foreground mb-12 leading-relaxed font-light text-justify">
-                {aboutPageContent.hero.description}
-              </p>
-            </Reveal>
-            <Reveal delay={0.4}>
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button asChild variant="default" size="lg">
-                <Link to="/contact">
-                  Get in Touch <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/products">
-                  View Our Solutions
-                </Link>
-              </Button>
-            </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
+    <>
+      <HeroNavigation />
+      <div className="min-h-screen bg-background">
+        <div className="container py-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)} 
+            className="mb-6 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go Back
+          </Button>
 
-      {/* Mission & Vision */}
-      <section className="bg-gradient-to-b from-secondary/30 to-background py-8">
-        <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            <Reveal>
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-4xl font-bold text-primary mb-4">
-                    {aboutPageContent.mission.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {aboutPageContent.mission.description}
-                  </p>
-                </div>
-                <div>
-                  <h2 className="text-4xl font-bold text-primary mb-4">
-                    {aboutPageContent.vision.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {aboutPageContent.vision.description}
-                  </p>
-                </div>
+          
+          <AnimatedSection animation="fade-in">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-16">
+                <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  About Innosin Lab
+                </h1>
+                <p className="text-xl text-muted-foreground leading-relaxed">
+                  Leading the future of laboratory solutions with innovative designs and cutting-edge technology
+                </p>
               </div>
-            </Reveal>
-            <Reveal delay={0.3}>
-              <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
-                <video 
-                  src={aboutPageContent.mission.video} 
-                  className="w-full h-80 object-cover rounded-lg"
-                  controls
-                  muted
-                  loop
-                  playsInline
-                >
-                  Your browser does not support the video tag.
-                </video>
+
+              <div className="grid md:grid-cols-2 gap-12 items-center mb-20">
+                <AnimatedSection animation="slide-in-left" delay={200}>
+                  <div>
+                    <h2 className="text-3xl font-bold mb-6 text-primary">Our Vision</h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed mb-6">
+                      At Innosin Lab, we envision a world where laboratory environments are not just functional, 
+                      but inspiring spaces that foster innovation and discovery. Our commitment to excellence 
+                      drives us to create products that enhance productivity while maintaining the highest 
+                      standards of safety and reliability.
+                    </p>
+                    <p className="text-lg text-muted-foreground leading-relaxed">
+                      We believe that the right laboratory furniture and equipment can transform the way 
+                      scientists work, enabling breakthrough discoveries that benefit humanity.
+                    </p>
+                  </div>
+                </AnimatedSection>
+
+                <AnimatedSection animation="slide-in-right" delay={400}>
+                  <div className="bg-gradient-to-br from-primary/5 to-secondary/10 p-8 rounded-2xl">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-primary mb-2">25+</div>
+                        <div className="text-sm text-muted-foreground">Years of Excellence</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-primary mb-2">500+</div>
+                        <div className="text-sm text-muted-foreground">Products Available</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-primary mb-2">1000+</div>
+                        <div className="text-sm text-muted-foreground">Labs Equipped</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-3xl font-bold text-primary mb-2">50+</div>
+                        <div className="text-sm text-muted-foreground">Countries Served</div>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedSection>
               </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
 
-      {/* Values Section */}
-      <section className="bg-background py-8">
-        <div className="container-custom">
-          <Reveal>
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-primary mb-4">
-                Our Precision Advantage
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Experience the strength of precision manufacturing with unmatched quality and reliability.
-              </p>
+              <AnimatedSection animation="fade-in" delay={600}>
+                <div className="grid md:grid-cols-3 gap-8 mb-16">
+                  <div className="text-center p-6 rounded-xl bg-card border">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">🔬</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3">Innovation</h3>
+                    <p className="text-muted-foreground">
+                      Continuously pushing the boundaries of laboratory furniture design with cutting-edge solutions.
+                    </p>
+                  </div>
+
+                  <div className="text-center p-6 rounded-xl bg-card border">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">🛡️</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3">Quality</h3>
+                    <p className="text-muted-foreground">
+                      Uncompromising quality standards ensure our products meet the highest laboratory requirements.
+                    </p>
+                  </div>
+
+                  <div className="text-center p-6 rounded-xl bg-card border">
+                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="text-2xl">🌍</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3">Sustainability</h3>
+                    <p className="text-muted-foreground">
+                      Committed to environmentally responsible manufacturing and sustainable laboratory solutions.
+                    </p>
+                  </div>
+                </div>
+              </AnimatedSection>
+
+              <AnimatedSection animation="slide-in-up" delay={800}>
+                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 p-8 rounded-2xl text-center">
+                  <h2 className="text-3xl font-bold mb-4 text-primary">Ready to Transform Your Lab?</h2>
+                  <p className="text-lg text-muted-foreground mb-6">
+                    Discover how our innovative solutions can enhance your laboratory environment.
+                  </p>
+                  <Button size="lg" className="bg-primary hover:bg-primary/90">
+                    Explore Our Products
+                  </Button>
+                </div>
+              </AnimatedSection>
             </div>
-          </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '100ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Direct Factory Pricing
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Eliminate middlemen costs with competitive pricing directly from our manufacturing facility
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '200ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Fast Turnaround Times
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Rapid project completion and delivery through optimized manufacturing processes
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '300ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Headphones className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Exceptional Support
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Comprehensive technical assistance and customer service from design to maintenance
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '400ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Settings className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Precision Manufacturing
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Engineered for accuracy with advanced fabrication techniques and quality materials
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+          </AnimatedSection>
         </div>
-      </section>
-
-      {/* Company Timeline */}
-      <section className="bg-gradient-to-b from-secondary/30 to-background py-8">
-        <div className="container-custom">
-          <Reveal>
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-primary mb-4">
-                Our <span className="text-sea">Story</span>
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                From humble beginnings as a stainless steel kitchen equipment fabricator in 1986 to becoming Asia's trusted partner in precision laboratory solutions today.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={0.3}>
-            <Timeline data={timelineData} />
-          </Reveal>
-        </div>
-      </section>
-
-      {/* Ready to Transform Your Laboratory CTA */}
-      <LabTransformCTA />
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 };
 

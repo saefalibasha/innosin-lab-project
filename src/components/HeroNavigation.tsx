@@ -29,22 +29,22 @@ const HeroNavigation = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-20 items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
             <img 
               src="/branding/hero-logo.png" 
               alt="Innosin Lab" 
-              className="h-8 w-auto"
+              className="h-12 w-auto"
             />
           </Link>
           
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
+                className={`text-lg font-semibold transition-colors hover:text-primary ${
                   isActive(item.href)
                     ? "text-primary"
                     : "text-muted-foreground"
@@ -83,7 +83,7 @@ const HeroNavigation = () => {
                     key={item.href}
                     to={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-lg font-semibold transition-colors hover:text-primary ${
                       isActive(item.href)
                         ? "text-primary"
                         : "text-muted-foreground"
