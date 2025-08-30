@@ -9,7 +9,6 @@ import { ArrowLeft, Plus, Minus, ShoppingCart, Download, Eye, Package } from 'lu
 import { useToast } from "@/hooks/use-toast";
 import { getProductById } from '@/data/products';
 import ProductImageGallery from '@/components/ProductImageGallery';
-import ProductSpecifications from '@/components/ProductSpecifications';
 import ThreeDModel from '@/components/ThreeDModel';
 import { useRFQ } from '@/contexts/RFQContext';
 import HeroNavigation from '@/components/HeroNavigation';
@@ -279,18 +278,22 @@ const EnhancedProductDetail = () => {
             </div>
           </div>
 
-          {/* Specifications Section */}
-          {activeTab === 'specs' && (
+          {/* Specifications Section - Only show if we have specifications */}
+          {product.specifications && product.specifications.length > 0 && (
             <div className="mt-12">
               <Card>
                 <CardHeader>
                   <CardTitle>Technical Specifications</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ProductSpecifications 
-                    specifications={product.specifications}
-                    image={product.thumbnail || product.images[0] || '/placeholder-product.jpg'}
-                  />
+                  <div className="space-y-2">
+                    {product.specifications.map((spec: any, index: number) => (
+                      <div key={index} className="flex justify-between">
+                        <span className="font-medium">{spec.name || spec.key}:</span>
+                        <span className="text-muted-foreground">{spec.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>

@@ -1,22 +1,11 @@
-// src/main.tsx
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
-import { MotionProvider } from './components/anim'
-import { RFQProvider } from '@/contexts/RFQContext'   // 👈 add this
 
-const container = document.getElementById("root");
-if (!container) {
-  throw new Error("Root element not found");
-}
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-createRoot(container).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <RFQProvider>               {/* 👈 wrap everything */}
-      <MotionProvider>
-        <App />
-      </MotionProvider>
-    </RFQProvider>
-  </React.StrictMode>
+    <App />
+  </React.StrictMode>,
 );

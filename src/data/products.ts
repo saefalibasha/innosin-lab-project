@@ -1,3 +1,4 @@
+
 import { Product } from '@/types/product';
 import productService from '@/services/productService';
 
@@ -19,4 +20,10 @@ export const getProductsSync = (): Product[] => {
 export const getCategories = (): string[] => {
   console.warn('getCategories is deprecated. Use getCategoriesAsync instead.');
   return [];
+};
+
+// Add the missing getProductById function
+export const getProductById = (id: string): Product | null => {
+  console.warn('getProductById is deprecated. This function returns null as products are now loaded from database.');
+  return null;
 };
