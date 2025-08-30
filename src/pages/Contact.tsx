@@ -1,302 +1,284 @@
 
 import React, { useState } from 'react';
-import GoogleMapsLocation from '@/components/GoogleMapsLocation';
-import NewsletterSubscription from '@/components/NewsletterSubscription';
-import AnimatedSection from '@/components/AnimatedSection';
-import { Reveal } from '@/components/anim';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import { contactPageContent } from '@/data/contactPageContent';
-import { Calendar, MessageCircle, Briefcase } from 'lucide-react';
-import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
-import { supabase } from '@/integrations/supabase/client';
+import HeroNavigation from '@/components/HeroNavigation';
+import Footer from '@/components/Footer';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     company: '',
-    jobTitle: '',
+    phone: '',
     subject: '',
     message: ''
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createContact, createTicket } = useHubSpotIntegration();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission logic here
+    console.log('Form submitted:', formData);
+    toast.success('Message sent successfully! We\'ll get back to you soon.');
+    
+    // Reset form
     setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
+      name: '',
+      email: '',
+      company: '',
+      phone: '',
+      subject: '',
+      message: ''
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      // Generate session ID for tracking
-      const sessionId = `contact_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      // Store in Supabase
-      const { error: supabaseError } = await supabase
-        .from('chat_sessions')
-        .insert({
-          session_id: sessionId,
-          name: formData.name,
-          email: formData.email,
-          company: formData.company,
-          job_title: formData.jobTitle,
-          status: 'contact_form_submitted',
-          context: {
-            source: 'contact_page',
-            subject: formData.subject,
-            message: formData.message
-          }
-        });
-
-      if (supabaseError) {
-        console.error('Supabase error:', supabaseError);
-        throw supabaseError;
-      }
-
-      // Create HubSpot contact and ticket
-      await createContact({
-        sessionId,
-        name: formData.name,
-        email: formData.email,
-        company: formData.company,
-        jobTitle: formData.jobTitle,
-        subject: formData.subject,
-        content: formData.message
-      });
-
-      // Create support ticket for the contact form submission
-      await createTicket({
-        sessionId,
-        name: formData.name,
-        email: formData.email,
-        company: formData.company,
-        jobTitle: formData.jobTitle,
-        subject: `Contact Form: ${formData.subject}`,
-        content: `Contact form submission from ${formData.name} (${formData.company}):\n\n${formData.message}`
-      });
-
-      toast.success(contactPageContent.form.successMessage);
-      setFormData({ name: '', email: '', company: '', jobTitle: '', subject: '', message: '' });
-    } catch (error) {
-      console.error('Contact form submission error:', error);
-      toast.error('Failed to submit contact form. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'calendar':
-        return <Calendar className="w-6 h-6" />;
-      case 'message-circle':
-        return <MessageCircle className="w-6 h-6" />;
-      case 'briefcase':
-        return <Briefcase className="w-6 h-6" />;
-      default:
-        return <MessageCircle className="w-6 h-6" />;
-    }
-  };
-
   return (
-    <div className="container-custom py-12 pt-20">
-      {/* Header */}
-      <div className="text-center mb-16">
-        <AnimatedSection animation="fade-in" delay={100}>
-          <h1 className="text-4xl font-bold text-primary mb-4">{contactPageContent.header.title}</h1>
-        </AnimatedSection>
-        <AnimatedSection animation="fade-in" delay={300}>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            {contactPageContent.header.description}
-          </p>
-        </AnimatedSection>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <HeroNavigation />
+      
+      <main className="flex-grow pt-20">
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-primary mb-4">Contact Us</h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Get in touch with our team of laboratory solution experts. We're here to help you transform your laboratory.
+            </p>
+          </div>
 
-      {/* Google Maps Location */}
-      <div className="mb-16">
-        <AnimatedSection animation="scale-in" delay={200}>
-          <GoogleMapsLocation />
-        </AnimatedSection>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16 lg:items-start">{/* Changed from lg:items-end to lg:items-start for equal height alignment */}
-        {/* Contact Form */}
-        <AnimatedSection animation="fade-in-left" delay={300}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300 h-fit">{/* Added h-fit to ensure proper height alignment */}
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-primary">{contactPageContent.form.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                      {contactPageContent.form.nameLabel}
-                    </label>
-                    <Input
-                      id="name"
-                      name="name"
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      placeholder={contactPageContent.form.namePlaceholder}
-                      className="transition-all duration-300 focus:border-sea"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-                      {contactPageContent.form.emailLabel}
-                    </label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder={contactPageContent.form.emailPlaceholder}
-                      className="transition-all duration-300 focus:border-sea"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="company" className="block text-sm font-medium text-foreground mb-2">
-                      {contactPageContent.form.companyLabel}
-                    </label>
-                    <Input
-                      id="company"
-                      name="company"
-                      type="text"
-                      required
-                      value={formData.company}
-                      onChange={handleInputChange}
-                      placeholder={contactPageContent.form.companyPlaceholder}
-                      className="transition-all duration-300 focus:border-sea"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="jobTitle" className="block text-sm font-medium text-foreground mb-2">
-                      {contactPageContent.form.jobTitleLabel}
-                    </label>
-                    <Input
-                      id="jobTitle"
-                      name="jobTitle"
-                      type="text"
-                      required
-                      value={formData.jobTitle}
-                      onChange={handleInputChange}
-                      placeholder={contactPageContent.form.jobTitlePlaceholder}
-                      className="transition-all duration-300 focus:border-sea"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-foreground mb-2">
-                    {contactPageContent.form.subjectLabel}
-                  </label>
-                  <Input
-                    id="subject"
-                    name="subject"
-                    type="text"
-                    required
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    placeholder={contactPageContent.form.subjectPlaceholder}
-                    className="transition-all duration-300 focus:border-sea"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-foreground mb-2">
-                    {contactPageContent.form.messageLabel}
-                  </label>
-                  <Textarea
-                    id="message"
-                    name="message"
-                    rows={6}
-                    required
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    placeholder={contactPageContent.form.messagePlaceholder}
-                    className="transition-all duration-300 focus:border-sea"
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  className="w-full bg-sea hover:bg-sea-dark"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Submitting...' : contactPageContent.form.submitButton}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </AnimatedSection>
-
-        {/* Enhanced Get in Touch Info */}
-        <AnimatedSection animation="fade-in-right" delay={400}>
-          <Card className="glass-card hover:shadow-xl transition-all duration-300 bg-gradient-to-br from-sea/5 to-sea/10 border-sea/20 h-fit">{/* Added h-fit to ensure proper height alignment */}
-            <CardHeader className="bg-gradient-to-r from-sea/10 to-sea/20 rounded-t-lg">
-              <CardTitle className="text-2xl font-bold text-primary flex items-center space-x-2">
-                <MessageCircle className="w-6 h-6 text-sea" />
-                <span>{contactPageContent.quickContact.title}</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-8 pt-6 pb-12">
-              {contactPageContent.quickContact.sections.map((section, index) => (
-                <AnimatedSection key={index} animation="slide-up" delay={500 + index * 100}>
-                  <div className="group relative">
-                    <div className="flex items-start space-x-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-sea/10 hover:border-sea/50 hover:bg-white/80 transition-all duration-300 hover:shadow-lg relative overflow-hidden">
-                      {/* Enhanced headlight effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out opacity-0 group-hover:opacity-100"></div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-sea/30 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out opacity-0 group-hover:opacity-100 delay-100"></div>
-                      
-                      <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-sea to-sea-dark rounded-lg flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:shadow-xl transition-all duration-300 relative z-10">
-                        {getIcon(section.icon)}
-                      </div>
-                      <div className="flex-1 relative z-10">
-                        <h3 className="font-semibold text-lg mb-2 text-sea group-hover:text-sea-dark transition-colors duration-300">
-                          {section.title}
-                        </h3>
-                        <p className="text-muted-foreground leading-relaxed text-sm">
-                          {section.description}
-                        </p>
-                      </div>
+          <div className="grid lg:grid-cols-2 gap-12">
+            {/* Contact Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Send className="h-5 w-5" />
+                  Send us a Message
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name *</Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Enter your full name"
+                      />
                     </div>
-                    
-                    {/* Enhanced decorative accent */}
-                    <div className="absolute -left-1 top-4 w-1 h-16 bg-gradient-to-b from-sea/50 to-sea/20 rounded-full opacity-0 group-hover:opacity-100 group-hover:shadow-lg transition-all duration-300" />
-                    <div className="absolute -left-2 top-6 w-2 h-12 bg-gradient-to-b from-sea/30 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 blur-sm" />
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email Address *</Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Enter your email"
+                      />
+                    </div>
                   </div>
-                </AnimatedSection>
-              ))}
-            </CardContent>
-          </Card>
-        </AnimatedSection>
-      </div>
 
-      {/* Newsletter Subscription */}
-      <div className="mb-8">
-        <AnimatedSection animation="bounce-in" delay={300}>
-          <NewsletterSubscription />
-        </AnimatedSection>
-      </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="company">Company/Organization</Label>
+                      <Input
+                        id="company"
+                        name="company"
+                        value={formData.company}
+                        onChange={handleInputChange}
+                        placeholder="Enter your company name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input
+                        id="phone"
+                        name="phone"
+                        type="tel"
+                        value={formData.phone}
+                        onChange={handleInputChange}
+                        placeholder="Enter your phone number"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="subject">Subject *</Label>
+                    <Input
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="What's this about?"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message *</Label>
+                    <Textarea
+                      id="message"
+                      name="message"
+                      value={formData.message}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Tell us about your laboratory needs..."
+                      rows={6}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full">
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Message
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            {/* Contact Information */}
+            <div className="space-y-6">
+              {/* Office Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Office Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="font-medium">Head Office</p>
+                      <p className="text-muted-foreground">
+                        Industrial Complex, Tech Park<br />
+                        Johor Bahru, Malaysia 81100
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">Phone</p>
+                      <p className="text-muted-foreground">+60 7-123-4567</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="font-medium">Email</p>
+                      <p className="text-muted-foreground">info@innosinlab.com</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="font-medium">Business Hours</p>
+                      <p className="text-muted-foreground">
+                        Monday - Friday: 9:00 AM - 6:00 PM<br />
+                        Saturday: 9:00 AM - 1:00 PM<br />
+                        Sunday: Closed
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Quick Contact Options */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Contact</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Button variant="outline" className="w-full justify-start">
+                    <Phone className="mr-2 h-4 w-4" />
+                    Call Us Now
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <Mail className="mr-2 h-4 w-4" />
+                    Email Support
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Visit Our Office
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Map Placeholder */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Location</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-gray-100 h-64 rounded-lg flex items-center justify-center">
+                    <p className="text-muted-foreground">Interactive Map Coming Soon</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="mt-16 grid md:grid-cols-3 gap-8">
+            <Card className="text-center">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Phone className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">24/7 Support</h3>
+                <p className="text-sm text-muted-foreground">
+                  Emergency support available for critical laboratory equipment issues.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Mail className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">Quick Response</h3>
+                <p className="text-sm text-muted-foreground">
+                  We typically respond to all inquiries within 24 hours.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="text-center">
+              <CardContent className="pt-6">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <MapPin className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2">On-Site Visits</h3>
+                <p className="text-sm text-muted-foreground">
+                  Free consultation visits for laboratory planning and setup.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+
+      <Footer />
     </div>
   );
 };

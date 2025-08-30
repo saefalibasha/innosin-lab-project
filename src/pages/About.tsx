@@ -1,206 +1,109 @@
+
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Award, Users, Globe, Target, DollarSign, Clock, Headphones, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Timeline } from '@/components/ui/timeline';
-import LabTransformCTA from '@/components/LabTransformCTA';
-import { aboutPageContent } from '@/data/aboutPageContent';
-import { Reveal, StaggerList } from '@/components/anim';
+import HeroNavigation from '@/components/HeroNavigation';
+import Footer from '@/components/Footer';
 
 const About = () => {
-  // Create timeline data from content structure
-  const timelineData = aboutPageContent.timeline.events.map(event => ({
-    title: event.year,
-    content: (
-      <div>
-        <h4 className="text-2xl font-bold text-primary mb-4">
-          {event.title}
-        </h4>
-        <p className="text-muted-foreground text-sm md:text-base font-normal mb-8 leading-relaxed">
-          {event.description}
-        </p>
-        <div className="w-full h-64 md:h-80 overflow-hidden rounded-lg shadow-lg">
-          <img
-            src={event.image}
-            alt={event.imageAlt}
-            className="w-full h-full object-cover object-center"
-          />
-        </div>
-      </div>
-    ),
-  }));
-
   return (
-    <div className="min-h-screen bg-background pt-0">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-8">
-        <div className="container-custom">
-          <div className="max-w-4xl mx-auto text-center">
-            <Reveal>
-              <h1 className="text-5xl md:text-6xl font-bold text-primary mb-6 tracking-tight">
-                {aboutPageContent.hero.title} <span className="text-sea">{aboutPageContent.hero.titleHighlight}</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={0.2}>
-              <p className="text-xl text-muted-foreground mb-12 leading-relaxed font-light text-justify">
-                {aboutPageContent.hero.description}
-              </p>
-            </Reveal>
-            <Reveal delay={0.4}>
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Button asChild variant="default" size="lg">
-                <Link to="/contact">
-                  Get in Touch <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <Link to="/products">
-                  View Our Solutions
-                </Link>
-              </Button>
-            </div>
-            </Reveal>
+    <div className="min-h-screen flex flex-col">
+      <HeroNavigation />
+      
+      <main className="flex-grow">
+        {/* Hero Section */}
+        <section className="bg-gradient-to-r from-primary to-primary/80 text-white py-24">
+          <div className="container mx-auto px-4 text-center">
+            <h1 className="text-5xl font-bold mb-6">About Innosin Lab</h1>
+            <p className="text-xl max-w-3xl mx-auto">
+              Leading the way in innovative laboratory solutions across Southeast Asia
+            </p>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Mission & Vision */}
-      <section className="bg-gradient-to-b from-secondary/30 to-background py-8">
-        <div className="container-custom">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-            <Reveal>
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-4xl font-bold text-primary mb-4">
-                    {aboutPageContent.mission.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {aboutPageContent.mission.description}
-                  </p>
-                </div>
-                <div>
-                  <h2 className="text-4xl font-bold text-primary mb-4">
-                    {aboutPageContent.vision.title}
-                  </h2>
-                  <p className="text-lg text-muted-foreground leading-relaxed">
-                    {aboutPageContent.vision.description}
-                  </p>
-                </div>
+        {/* Company Overview */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-3xl font-bold mb-6 text-primary">Our Story</h2>
+                <p className="text-lg text-muted-foreground mb-6">
+                  Founded with a vision to revolutionize laboratory environments, Innosin Lab has been at the forefront of providing cutting-edge laboratory solutions for over a decade.
+                </p>
+                <p className="text-lg text-muted-foreground mb-6">
+                  We specialize in comprehensive laboratory design, equipment supply, and installation services, ensuring that research facilities across Southeast Asia have access to world-class laboratory infrastructure.
+                </p>
               </div>
-            </Reveal>
-            <Reveal delay={0.3}>
-              <div className="bg-gradient-to-br from-sea/10 to-sea/5 p-8 rounded-2xl">
-                <video 
-                  src={aboutPageContent.mission.video} 
-                  className="w-full h-80 object-cover rounded-lg"
-                  controls
-                  muted
-                  loop
-                  playsInline
-                >
-                  Your browser does not support the video tag.
-                </video>
+              <div className="bg-gray-100 h-96 rounded-lg flex items-center justify-center">
+                <p className="text-muted-foreground">Company Image Placeholder</p>
               </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* Values Section */}
-      <section className="bg-background py-8">
-        <div className="container-custom">
-          <Reveal>
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-primary mb-4">
-                Our Precision Advantage
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                Experience the strength of precision manufacturing with unmatched quality and reliability.
-              </p>
             </div>
-          </Reveal>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '100ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <DollarSign className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Direct Factory Pricing
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Eliminate middlemen costs with competitive pricing directly from our manufacturing facility
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '200ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Fast Turnaround Times
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Rapid project completion and delivery through optimized manufacturing processes
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '300ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Headphones className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Exceptional Support
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Comprehensive technical assistance and customer service from design to maintenance
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="text-center border-2 border-transparent hover:border-sea/20 transition-all duration-300 animate-bounce-in" style={{animationDelay: '400ms'}}>
-              <CardContent className="p-6">
-                <div className="w-16 h-16 bg-sea/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Settings className="w-8 h-8 text-sea" />
-                </div>
-                <h3 className="text-xl font-semibold text-primary mb-3">
-                  Precision Manufacturing
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Engineered for accuracy with advanced fabrication techniques and quality materials
-                </p>
-              </CardContent>
-            </Card>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Company Timeline */}
-      <section className="bg-gradient-to-b from-secondary/30 to-background py-8">
-        <div className="container-custom">
-          <Reveal>
-            <div className="text-center mb-10">
-              <h2 className="text-4xl font-bold text-primary mb-4">
-                Our <span className="text-sea">Story</span>
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                From humble beginnings as a stainless steel kitchen equipment fabricator in 1986 to becoming Asia's trusted partner in precision laboratory solutions today.
-              </p>
+        {/* Values Section */}
+        <section className="py-20 bg-gray-50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12 text-primary">Our Values</h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">🔬</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Innovation</h3>
+                <p className="text-muted-foreground">
+                  Continuously pushing the boundaries of laboratory technology and design.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">⚡</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Excellence</h3>
+                <p className="text-muted-foreground">
+                  Delivering the highest quality products and services to our clients.
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-2xl">🤝</span>
+                </div>
+                <h3 className="text-xl font-semibold mb-3">Partnership</h3>
+                <p className="text-muted-foreground">
+                  Building lasting relationships with clients and suppliers worldwide.
+                </p>
+              </div>
             </div>
-          </Reveal>
-          <Reveal delay={0.3}>
-            <Timeline data={timelineData} />
-          </Reveal>
-        </div>
-      </section>
+          </div>
+        </section>
 
-      {/* Ready to Transform Your Laboratory CTA */}
-      <LabTransformCTA />
+        {/* Team Section */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold text-center mb-12 text-primary">Our Leadership Team</h2>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4"></div>
+                <h3 className="text-xl font-semibold">Dr. Sarah Chen</h3>
+                <p className="text-primary mb-2">Chief Executive Officer</p>
+                <p className="text-sm text-muted-foreground">20+ years in laboratory design and management</p>
+              </div>
+              <div className="text-center">
+                <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4"></div>
+                <h3 className="text-xl font-semibold">Michael Wong</h3>
+                <p className="text-primary mb-2">Chief Technology Officer</p>
+                <p className="text-sm text-muted-foreground">Expert in laboratory equipment and automation</p>
+              </div>
+              <div className="text-center">
+                <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4"></div>
+                <h3 className="text-xl font-semibold">Dr. Raj Patel</h3>
+                <p className="text-primary mb-2">Head of Design</p>
+                <p className="text-sm text-muted-foreground">Specialist in laboratory space optimization</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <Footer />
     </div>
   );
 };

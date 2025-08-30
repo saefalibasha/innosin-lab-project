@@ -1,749 +1,362 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { 
-  Save, 
+  Maximize2, 
+  Minimize2, 
   Download, 
-  Upload, 
-  Trash2, 
-  Info,
-  RotateCcw,
+  Save, 
+  Upload,
+  RotateCw,
   Copy,
-  Maximize2,
-  Home,
+  Trash2,
+  Ruler,
+  Grid3X3,
+  Layers,
+  Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Point,
-  PlacedProduct,
-  Door,
-  TextAnnotation,
-  WallSegment,
-  Room,
-  FloorPlanState,
-  DrawingMode
-} from '@/types/floorPlanTypes';
-import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
-import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
-import { formatMeasurement, canvasToMm, GRID_SIZES, MeasurementUnit } from '@/utils/measurements';
-import SeriesSelector from '@/components/floorplan/SeriesSelector';
-import ProductStatistics from '@/components/floorplan/ProductStatistics';
-import QuickHelp from '@/components/floorplan/QuickHelp';
-import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';
-import EnhancedSeriesSelector from '@/components/floorplan/EnhancedSeriesSelector';
-import EnhancedCanvasWorkspace from '@/components/canvas/EnhancedCanvasWorkspace';
-import MeasurementInput from '@/components/canvas/MeasurementInput';
-import RoomCreator from '@/components/canvas/RoomCreator';
-import SegmentedUnitSelector from '@/components/SegmentedUnitSelector';
-import ExportModal from '@/components/ExportModal';
-import WallEditor from '@/components/floorplan/WallEditor';
-import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
-import ProductRotationControl from '@/components/floorplan/ProductRotationControl';
-import { ContactGateModal } from '@/components/ContactGateModal';
-import { useAuth } from '@/contexts/AuthContext';
+import jsPDF from 'jspdf';
+import { products } from '@/data/products';
+import HeroNavigation from '@/components/HeroNavigation';
+import Footer from '@/components/Footer';
+
+interface PlacedItem {
+  id: string;
+  productId: string;
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  color: string;
+}
+
+interface FloorPlan {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  items: PlacedItem[];
+  createdAt: Date;
+  notes: string;
+}
 
 const FloorPlanner = () => {
-  const { user, isAdmin, loading } = useAuth();
-  
-  // Access control state
-  const [hasAccess, setHasAccess] = useState(false);
-  const [showContactGate, setShowContactGate] = useState(true);
-  
-  // Check for admin access or existing session
-  useEffect(() => {
-    const checkAccess = () => {
-      const contactInfo = sessionStorage.getItem('contactInfo');
-      if (user && isAdmin) {
-        setHasAccess(true);
-        setShowContactGate(false);
-        return;
-      }
-      if (contactInfo) {
-        setHasAccess(true);
-        setShowContactGate(false);
-      }
-    };
-    checkAccess();
-  }, [user, isAdmin, loading]);
-
-  // Canvas and drawing state
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
-  const [roomPoints, setRoomPoints] = useState<Point[]>([]);
-  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
-  const [doors, setDoors] = useState<Door[]>([]);
-  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>([]);
-  const [wallSegments, setWallSegments] = useState<WallSegment[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [draggedProduct, setDraggedProduct] = useState<any>(null);
-  const [showRoomCreator, setShowRoomCreator] = useState(false);
-  const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
-
-  // Room-aware measurement system with intelligent scaling for large rooms
-  const [scale, setScale] = useState(0.08); // 0.08 px/mm = 80px/m (supports ~20x20m rooms)
-  const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
-  const [showGrid, setShowGrid] = useState(true);
-  const [showMeasurements, setShowMeasurements] = useState(true);
-  const [showProducts, setShowProducts] = useState(true);
-  const [measurementUnit, setMeasurementUnit] = useState<MeasurementUnit>('mm');
-  
-  // UI state
-  const [projectName, setProjectName] = useState('Untitled Floor Plan');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  
-  // Usage tracking
-  const { trackProductPlacement } = useProductUsageTracking();
-  
-  // History management
-  const initialState: FloorPlanState = {
-    roomPoints: [],
-    placedProducts: [],
-    doors: [],
-    textAnnotations: [],
-    wallSegments: [],
-    rooms: []
-  };
-  
-  const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
+  const [placedItems, setPlacedItems] = useState<PlacedItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<PlacedItem | null>(null);
+  const [draggedItem, setDraggedItem] = useState<PlacedItem | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+  const [showGrid, setShowGrid] = useState(true);
+  const [planName, setPlanName] = useState('Untitled Floor Plan');
+  const [planNotes, setPlanNotes] = useState('');
+  const [savedPlans, setSavedPlans] = useState<FloorPlan[]>([]);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Canvas dimensions
-  const CANVAS_WIDTH = 2000;
-  const CANVAS_HEIGHT = 1400;
+  const filteredProducts = products.filter(p => p.category === 'Innosin Lab');
 
-  // Product management — all variant (drawer) picking happens inside EnhancedSeriesSelector now
-  const handleProductDrag = useCallback((product: any) => {
-    // Expect product to already include selected variant info (e.g., drawerCount, configuration, dimensions, etc.)
-    setDraggedProduct(product);
-  }, []);
-
-  const handleDeleteSelected = useCallback(() => {
-    setPlacedProducts(prev => prev.filter(product => !selectedProducts.includes(product.id)));
-    setSelectedProducts([]);
-    toast.success('Deleted selected products');
-  }, [selectedProducts]);
-
-  const handleClearSelection = useCallback(() => {
-    setSelectedProducts([]);
-  }, []);
-
-  const handleRotateSelected = useCallback(() => {
-    setPlacedProducts(prev => prev.map(product => 
-      selectedProducts.includes(product.id)
-        ? { ...product, rotation: (product.rotation || 0) + Math.PI / 2 }
-        : product
-    ));
-    toast.success(`Rotated ${selectedProducts.length} product(s)`);
-  }, [selectedProducts]);
-
-  const handleRotateCounterClockwise = useCallback(() => {
-    setPlacedProducts(prev => prev.map(product => 
-      selectedProducts.includes(product.id)
-        ? { ...product, rotation: (product.rotation || 0) - Math.PI / 2 }
-        : product
-    ));
-  }, [selectedProducts]);
-
-  const handleRotateToAngle = useCallback((angle: number) => {
-    setPlacedProducts(prev => prev.map(product => 
-      selectedProducts.includes(product.id)
-        ? { ...product, rotation: angle }
-        : product
-    ));
-  }, [selectedProducts]);
-
-  // Wall management handlers
-  const handleWallUpdate = useCallback((updatedWall: WallSegment) => {
-    setWallSegments(prev => prev.map(wall => 
-      wall.id === updatedWall.id ? updatedWall : wall
-    ));
-    setSelectedWall(updatedWall);
-    
-    // Save state for undo/redo
-    saveState({
-      roomPoints,
-      placedProducts,
-      doors,
-      textAnnotations,
-      wallSegments: wallSegments.map(wall => 
-        wall.id === updatedWall.id ? updatedWall : wall
-      ),
-      rooms
-    });
-  }, [wallSegments, roomPoints, placedProducts, doors, textAnnotations, rooms, saveState]);
-
-  const handleWallDelete = useCallback((wallId: string) => {
-    setWallSegments(prev => prev.filter(wall => wall.id !== wallId));
-    setSelectedWall(null);
-  }, []);
-
-  // View controls
-  const handleToggleGrid = useCallback(() => setShowGrid(prev => !prev), []);
-  const handleToggleMeasurements = useCallback(() => setShowMeasurements(prev => !prev), []);
-  const handleUnitChange = useCallback((unit: MeasurementUnit) => setMeasurementUnit(unit), []);
-  const handleScaleChange = useCallback((newScale: number) => setScale(newScale), []);
-  const handleToggleFullscreen = useCallback(() => setIsFullscreen(prev => !prev), []);
-
-  // Room creation
-  const handleRoomCreate = useCallback((room: Room) => {
-    setRooms(prev => [...prev, room]);
-    setRoomPoints(room.points);
-    setShowRoomCreator(false);
-    toast.success(`Room "${room.name}" created successfully`);
-  }, []);
-
-  const handleStartRoomCreation = useCallback(() => {
-    setCurrentMode('room');
-    setShowRoomCreator(false);
-    toast.info('Click on canvas to start drawing room perimeter');
-  }, []);
-
-  // Tool change handler
-  const handleToolChange = useCallback((tool: string) => {
-    setCurrentMode(tool as DrawingMode);
-    if (tool === 'room') {
-      setShowRoomCreator(true);
-    }
-  }, []);
-
-  // File operations
-  const handleSave = useCallback(() => {
-    const floorPlanData = {
-      name: projectName,
-      roomPoints,
-      placedProducts,
-      doors,
-      textAnnotations,
-      wallSegments,
-      rooms,
-      scale,
-      gridSize,
-      measurementUnit,
-      settings: {
-        showGrid,
-        showMeasurements,
-        showProducts
-      }
+  const handleDragStart = useCallback((product: any) => {
+    const newItem: PlacedItem = {
+      id: `item-${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      x: 100,
+      y: 100,
+      width: 80,
+      height: 60,
+      rotation: 0,
+      color: '#3b82f6'
     };
-    
-    const dataStr = JSON.stringify(floorPlanData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${projectName.replace(/\s+/g, '_')}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success('Floor plan saved successfully');
-  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, measurementUnit, showGrid, showMeasurements, showProducts]);
-
-  const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const data = JSON.parse(event.target?.result as string);
-        setProjectName(data.name || 'Loaded Floor Plan');
-        setRoomPoints(data.roomPoints || []);
-        setPlacedProducts(data.placedProducts || []);
-        setDoors(data.doors || []);
-        setTextAnnotations(data.textAnnotations || []);
-        setWallSegments(data.wallSegments || []);
-        setRooms(data.rooms || []);
-        setScale(data.scale || 0.2);
-        setGridSize(data.gridSize || GRID_SIZES.standard);
-        setMeasurementUnit(data.measurementUnit || 'mm');
-        
-        if (data.settings) {
-          setShowGrid(data.settings.showGrid ?? true);
-          setShowMeasurements(data.settings.showMeasurements ?? true);
-          setShowProducts(data.settings.showProducts ?? true);
-        }
-        toast.success('Floor plan loaded successfully');
-      } catch {
-        toast.error('Failed to load floor plan');
-      }
-    };
-    reader.readAsText(file);
+    setDraggedItem(newItem);
   }, []);
 
-  const handleClear = useCallback(() => {
-    setRoomPoints([]);
-    setPlacedProducts([]);
-    setDoors([]);
-    setTextAnnotations([]);
-    setWallSegments([]);
-    setRooms([]);
-    setSelectedProducts([]);
-    setScale(0.2);
-    setGridSize(GRID_SIZES.standard);
-    setMeasurementUnit('mm');
-    toast.success('Floor plan cleared');
-  }, []);
+  const handleCanvasClick = useCallback((e: React.MouseEvent) => {
+    if (!draggedItem) return;
 
-  // Undo/Redo handlers
-  const handleUndo = useCallback(() => {
-    const previousState = undo();
-    if (previousState) {
-      setRoomPoints(previousState.roomPoints);
-      setPlacedProducts(previousState.placedProducts);
-      setDoors(previousState.doors);
-      setTextAnnotations(previousState.textAnnotations);
-      setWallSegments(previousState.wallSegments);
-      setRooms(previousState.rooms);
-    }
-  }, [undo]);
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect) return;
 
-  const handleRedo = useCallback(() => {
-    const nextState = redo();
-    if (nextState) {
-      setRoomPoints(nextState.roomPoints);
-      setPlacedProducts(nextState.placedProducts);
-      setDoors(nextState.doors);
-      setTextAnnotations(nextState.textAnnotations);
-      setWallSegments(nextState.wallSegments);
-      setRooms(nextState.rooms);
-    }
-  }, [redo]);
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'z':
-            e.preventDefault();
-            if (e.shiftKey) handleRedo();
-            else handleUndo();
-            break;
-          case 's':
-            e.preventDefault();
-            handleSave();
-            break;
-          case 'a':
-            e.preventDefault();
-            setSelectedProducts(placedProducts.map(p => p.id));
-            break;
-          case 'g':
-            e.preventDefault();
-            handleToggleGrid();
-            break;
-          case 'm':
-            e.preventDefault();
-            handleToggleMeasurements();
-            break;
-        }
-      }
-      switch (e.key) {
-        case 'Delete':
-        case 'Backspace':
-          if (selectedProducts.length > 0) handleDeleteSelected();
-          break;
-        case 'r':
-        case 'R':
-          if (selectedProducts.length > 0) handleRotateSelected();
-          else toast.info('Select products first, then press R to rotate');
-          break;
-        case 'Escape':
-          setSelectedProducts([]);
-          setShowRoomCreator(false);
-          setCurrentMode('select');
-          break;
-        case 'F11':
-          e.preventDefault();
-          handleToggleFullscreen();
-          break;
-        case 'v': setCurrentMode('select'); break;
-        case 'w': setCurrentMode('wall'); break;
-        case 'i': setCurrentMode('interior-wall'); break;
-        case 'm': setCurrentMode('move'); break;
-        case 'q': setCurrentMode('room'); break;
-        case 'd': setCurrentMode('door'); break;
-        case 't': setCurrentMode('text'); break;
-      }
+    const newItem = {
+      ...draggedItem,
+      x: x - draggedItem.width / 2,
+      y: y - draggedItem.height / 2
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [
-    handleUndo, handleRedo, handleSave,
-    selectedProducts, placedProducts,
-    handleDeleteSelected, handleRotateSelected,
-    handleToggleGrid, handleToggleMeasurements,
-    handleToggleFullscreen
-  ]);
+    setPlacedItems(prev => [...prev, newItem]);
+    setDraggedItem(null);
+    toast.success(`Added ${newItem.name} to floor plan`);
+  }, [draggedItem]);
 
-  // Room stats
-  const roomStatistics = useMemo(() => {
-    if (rooms.length === 0) return null;
-    const totalArea = rooms.reduce((sum, room) => sum + room.area, 0);
-    const totalPerimeter = rooms.reduce((sum, room) => sum + room.perimeter, 0);
-    return {
-      totalArea,
-      totalPerimeter,
-      roomCount: rooms.length,
-      averageRoomSize: totalArea / rooms.length
-    };
-  }, [rooms]);
-
-  const handleContactSuccess = useCallback(() => {
-    setHasAccess(true);
-    setShowContactGate(false);
+  const handleItemClick = useCallback((item: PlacedItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedItem(item);
   }, []);
 
-  const handleContactCancel = useCallback(() => {
-    window.location.href = '/';
-  }, []);
+  const updateSelectedItem = useCallback((updates: Partial<PlacedItem>) => {
+    if (!selectedItem) return;
 
-  const containerClass = isFullscreen 
-    ? "fixed inset-0 z-50 bg-background" 
-    : "min-h-screen bg-background";
-
-  if (!hasAccess) {
-    return (
-      <>
-        <ContactGateModal
-          isOpen={showContactGate}
-          onSuccess={handleContactSuccess}
-          onCancel={handleContactCancel}
-        />
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold mb-4">Access Required</h1>
-            <p className="text-muted-foreground">Please provide your contact details to access the Floor Planner.</p>
-          </div>
-        </div>
-      </>
+    setPlacedItems(prev => 
+      prev.map(item => 
+        item.id === selectedItem.id ? { ...item, ...updates } : item
+      )
     );
-  }
+    setSelectedItem(prev => prev ? { ...prev, ...updates } : null);
+  }, [selectedItem]);
+
+  const deleteSelectedItem = useCallback(() => {
+    if (!selectedItem) return;
+
+    setPlacedItems(prev => prev.filter(item => item.id !== selectedItem.id));
+    setSelectedItem(null);
+    toast.success('Item deleted');
+  }, [selectedItem]);
+
+  const duplicateSelectedItem = useCallback(() => {
+    if (!selectedItem) return;
+
+    const newItem = {
+      ...selectedItem,
+      id: `item-${Date.now()}`,
+      x: selectedItem.x + 20,
+      y: selectedItem.y + 20
+    };
+
+    setPlacedItems(prev => [...prev, newItem]);
+    setSelectedItem(newItem);
+    toast.success('Item duplicated');
+  }, [selectedItem]);
+
+  const savePlan = useCallback(() => {
+    const plan: FloorPlan = {
+      id: `plan-${Date.now()}`,
+      name: planName,
+      width: canvasSize.width,
+      height: canvasSize.height,
+      items: placedItems,
+      createdAt: new Date(),
+      notes: planNotes
+    };
+
+    setSavedPlans(prev => [...prev, plan]);
+    localStorage.setItem('floorPlans', JSON.stringify([...savedPlans, plan]));
+    toast.success('Floor plan saved');
+  }, [planName, canvasSize, placedItems, planNotes, savedPlans]);
+
+  const exportToPDF = useCallback(() => {
+    const pdf = new jsPDF('landscape');
+    pdf.text(planName, 20, 20);
+    pdf.text(`Dimensions: ${canvasSize.width} x ${canvasSize.height}`, 20, 30);
+    
+    if (planNotes) {
+      pdf.text('Notes:', 20, 40);
+      pdf.text(planNotes, 20, 50);
+    }
+
+    placedItems.forEach((item, index) => {
+      const yPos = 70 + (index * 10);
+      pdf.text(`${item.name} - Position: (${Math.round(item.x)}, ${Math.round(item.y)})`, 20, yPos);
+    });
+
+    pdf.save(`${planName}.pdf`);
+    toast.success('Floor plan exported to PDF');
+  }, [planName, canvasSize, placedItems, planNotes]);
+
+  useEffect(() => {
+    const savedPlansData = localStorage.getItem('floorPlans');
+    if (savedPlansData) {
+      setSavedPlans(JSON.parse(savedPlansData));
+    }
+  }, []);
 
   return (
-    <div className={containerClass}>
-      <div className="container mx-auto p-4">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Enhanced Floor Planner</h1>
-              <p className="text-muted-foreground">Design your laboratory layout with room-based precision</p>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <SegmentedUnitSelector
-                selectedUnit={measurementUnit}
-                onUnitChange={handleUnitChange}
-              />
-              <Input
-                value={projectName}
-                onChange={(e) => setProjectName(e.target.value)}
-                className="w-64"
-                placeholder="Project name"
-              />
-              <Button onClick={handleSave} variant="outline">
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-              <ExportModal
-                canvasRef={canvasRef}
-                roomPoints={roomPoints}
-                placedProducts={placedProducts}
-              >
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Export
+    <div className="min-h-screen flex flex-col">
+      {!isFullscreen && <HeroNavigation />}
+      
+      <main className="flex-grow">
+        <div className={`${isFullscreen ? 'fixed inset-0 z-50 bg-white' : ''} flex h-full`}>
+          {/* Sidebar */}
+          <div className="w-80 border-r bg-gray-50 flex flex-col">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold">Floor Planner</h2>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                >
+                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
                 </Button>
-              </ExportModal>
-              <Button onClick={handleToggleFullscreen} variant="outline">
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-          
-          {/* Stats */}
-          <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-            <span>Rooms: {rooms.length}</span>
-            <span>Products: {placedProducts.length}</span>
-            <span>Walls: {wallSegments.length}</span>
-            <span>Doors: {doors.length}</span>
-            <span>Scale: {scale.toFixed(4)} px/mm</span>
-            {roomStatistics && (
-              <>
-                <span>Total Area: {formatMeasurement(roomStatistics.totalArea, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</span>
-                <span>Total Perimeter: {formatMeasurement(roomStatistics.totalPerimeter, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white rounded-lg border shadow-sm">
-              <div className="p-4 border-b">
-                <h2 className="text-lg font-semibold">Product Library</h2>
-                <p className="text-sm text-muted-foreground">Select products to place on your floor plan</p>
               </div>
-              <div className="p-4">
-                <EnhancedSeriesSelector
-                  onProductDrag={handleProductDrag}
-                  currentTool={currentMode}
-                  onProductUsed={(productId) => console.log('Product used:', productId)}
-                  // Any new props you add to EnhancedSeriesSelector for drawer/variant filtering can be passed here
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-4">
-            <PlacedProductsBar
-              placedProducts={placedProducts}
-              selectedProducts={selectedProducts}
-              onProductSelect={(productId, multiSelect) => {
-                if (multiSelect) {
-                  setSelectedProducts(prev => 
-                    prev.includes(productId) 
-                      ? prev.filter(id => id !== productId)
-                      : [...prev, productId]
-                  );
-                } else {
-                  setSelectedProducts([productId]);
-                }
-              }}
-              onDeleteSelected={handleDeleteSelected}
-              onRotateSelected={handleRotateSelected}
-              onClearSelection={handleClearSelection}
-            />
-
-            <HorizontalToolbar
-              currentTool={currentMode}
-              onToolChange={handleToolChange}
-              selectedProducts={selectedProducts}
-              onClearSelection={handleClearSelection}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onToggleGrid={handleToggleGrid}
-              showGrid={showGrid}
-              scale={scale}
-              onScaleChange={handleScaleChange}
-            />
-
-            {showRoomCreator && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <RoomCreator
-                  onRoomCreate={handleRoomCreate}
-                  onCancel={() => setShowRoomCreator(false)}
-                  scale={scale}
-                />
-              </div>
-            )}
-
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
-                  
-                  <div className="flex items-center space-x-2">
-                    <div className="bg-muted rounded-md p-1">
-                      <Button
-                        variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setMeasurementUnit('mm')}
-                        className="h-8 px-3 text-xs"
-                      >
-                        MM
-                      </Button>
-                      <Button
-                        variant={measurementUnit === 'm' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setMeasurementUnit('m')}
-                        className="h-8 px-3 text-xs"
-                      >
-                        M
-                      </Button>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      {gridSize}mm grid
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {(1/scale).toFixed(2)}mm/px
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Mode: {currentMode}
-                    </Badge>
-                    <Button variant="outline" size="sm" asChild>
-                      <label>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Load
-                        <input
-                          type="file"
-                          accept=".json"
-                          onChange={handleLoad}
-                          className="hidden"
-                        />
-                      </label>
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={handleClear}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Clear
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
               
-              <CardContent>
-                <div className="w-full h-[700px]">
-                  <EnhancedCanvasWorkspace
-                    roomPoints={roomPoints}
-                    setRoomPoints={setRoomPoints}
-                    wallSegments={wallSegments}
-                    setWallSegments={setWallSegments}
-                    placedProducts={placedProducts}
-                    setPlacedProducts={setPlacedProducts}
-                    doors={doors}
-                    setDoors={setDoors}
-                    textAnnotations={textAnnotations}
-                    setTextAnnotations={setTextAnnotations}
-                    rooms={rooms}
-                    setRooms={setRooms}
-                    scale={scale}
-                    currentMode={currentMode}
-                    showGrid={showGrid}
-                    showMeasurements={showMeasurements}
-                    gridSize={gridSize}
-                    measurementUnit={measurementUnit}
-                    canvasWidth={CANVAS_WIDTH}
-                    canvasHeight={CANVAS_HEIGHT}
-                    onClearAll={handleClear}
-                    selectedProducts={selectedProducts}
-                    onProductSelect={setSelectedProducts}
-                    onWallUpdate={handleWallUpdate}
-                  />
-                  
-                  <ProductRotationControl
-                    selectedProducts={selectedProducts}
-                    onRotateClockwise={handleRotateSelected}
-                    onRotateCounterClockwise={handleRotateCounterClockwise}
-                    onRotateToAngle={handleRotateToAngle}
-                  />
-                  
-                  {selectedWall && (
-                    <WallEditor
-                      selectedWall={selectedWall}
-                      onWallUpdate={handleWallUpdate}
-                      onWallDelete={handleWallDelete}
-                      onClose={() => setSelectedWall(null)}
-                      scale={scale}
-                      measurementUnit={measurementUnit}
-                    />
-                  )}
-                </div>
-                
-                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Mode: {currentMode}</span>
-                  <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
-                  <span>Grid: {gridSize}mm</span>
-                  <span>Rooms: {rooms.length}</span>
-                  <span>{selectedProducts.length > 0 && `${selectedProducts.length} selected`}</span>
-                </div>
-              </CardContent>
-            </Card>
+              <div className="space-y-2">
+                <Label htmlFor="planName">Plan Name</Label>
+                <Input
+                  id="planName"
+                  value={planName}
+                  onChange={(e) => setPlanName(e.target.value)}
+                  placeholder="Enter plan name"
+                />
+              </div>
+            </div>
 
-            {rooms.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    Room Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {rooms.map((room) => (
-                      <div key={room.id} className="border rounded p-3 space-y-2">
-                        <div className="font-medium">{room.name}</div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div>Area: {formatMeasurement(room.area, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
-                          <div>Perimeter: {formatMeasurement(room.perimeter, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
-                          <div>Points: {room.points.length}</div>
+            {/* Products Library */}
+            <div className="flex-1 overflow-auto p-4">
+              <h3 className="font-medium mb-3">Product Library</h3>
+              <div className="space-y-2">
+                {filteredProducts.map((product) => (
+                  <Card
+                    key={product.id}
+                    className="cursor-grab hover:shadow-md transition-shadow"
+                    onClick={() => handleDragStart(product)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gray-200 rounded flex-shrink-0 overflow-hidden">
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-product.jpg';
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{product.name}</p>
+                          <Badge variant="secondary" className="text-xs mt-1">
+                            {product.company}
+                          </Badge>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
 
-            {selectedProducts.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Selection ({selectedProducts.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
+            {/* Selected Item Properties */}
+            {selectedItem && (
+              <div className="border-t p-4 bg-white">
+                <h3 className="font-medium mb-3">Properties</h3>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Position X</Label>
+                    <Input
+                      type="number"
+                      value={Math.round(selectedItem.x)}
+                      onChange={(e) => updateSelectedItem({ x: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Position Y</Label>
+                    <Input
+                      type="number"
+                      value={Math.round(selectedItem.y)}
+                      onChange={(e) => updateSelectedItem({ y: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Rotation</Label>
+                    <Input
+                      type="number"
+                      value={selectedItem.rotation}
+                      onChange={(e) => updateSelectedItem({ rotation: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={handleRotateSelected}
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Rotate
+                    <Button size="sm" variant="outline" onClick={duplicateSelectedItem}>
+                      <Copy className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy
+                    <Button size="sm" variant="outline" onClick={() => updateSelectedItem({ rotation: selectedItem.rotation + 90 })}>
+                      <RotateCw className="h-4 w-4" />
+                    </Button>
+                    <Button size="sm" variant="destructive" onClick={deleteSelectedItem}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                  
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={handleDeleteSelected}
-                  >
-                    <Trash2 className="h-3 w-3 mr-2" />
-                    Delete
-                  </Button>
-                  
-                  {selectedProducts.length === 1 && (
-                    <div className="space-y-2 pt-2 border-t">
-                      <span className="text-xs font-medium">Properties:</span>
-                      {(() => {
-                        const product = placedProducts.find(p => p.id === selectedProducts[0]);
-                        if (!product) return null;
-                        return (
-                          <div className="space-y-1 text-xs">
-                            <div><strong>Name:</strong> {product.name}</div>
-                            <div><strong>Category:</strong> {product.category}</div>
-                            <div><strong>Dimensions:</strong> {product.dimensions.length}×{product.dimensions.width}mm</div>
-                            <div>
-                              <strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm
-                            </div>
-                            <div><strong>Rotation:</strong> {Math.round((product.rotation || 0) * 180 / Math.PI)}°</div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             )}
           </div>
+
+          {/* Main Canvas Area */}
+          <div className="flex-1 flex flex-col">
+            {/* Toolbar */}
+            <div className="border-b p-4 bg-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setShowGrid(!showGrid)}>
+                    <Grid3X3 className="h-4 w-4 mr-1" />
+                    Grid
+                  </Button>
+                  <Separator orientation="vertical" className="h-6" />
+                  <span className="text-sm text-muted-foreground">
+                    Canvas: {canvasSize.width} × {canvasSize.height}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={savePlan}>
+                    <Save className="h-4 w-4 mr-1" />
+                    Save
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={exportToPDF}>
+                    <Download className="h-4 w-4 mr-1" />
+                    Export PDF
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Canvas */}
+            <div className="flex-1 overflow-auto bg-gray-100 p-8">
+              <div
+                ref={canvasRef}
+                className="relative bg-white border border-gray-300 mx-auto"
+                style={{ 
+                  width: canvasSize.width, 
+                  height: canvasSize.height,
+                  backgroundImage: showGrid ? 'radial-gradient(circle, #ccc 1px, transparent 1px)' : 'none',
+                  backgroundSize: showGrid ? '20px 20px' : 'auto'
+                }}
+                onClick={handleCanvasClick}
+              >
+                {placedItems.map((item) => (
+                  <div
+                    key={item.id}
+                    className={`absolute border-2 cursor-move flex items-center justify-center text-xs font-medium text-white ${
+                      selectedItem?.id === item.id ? 'border-red-500' : 'border-gray-400'
+                    }`}
+                    style={{
+                      left: item.x,
+                      top: item.y,
+                      width: item.width,
+                      height: item.height,
+                      backgroundColor: item.color,
+                      transform: `rotate(${item.rotation}deg)`
+                    }}
+                    onClick={(e) => handleItemClick(item, e)}
+                  >
+                    <span className="truncate px-1">{item.name.split(' ').slice(0, 2).join(' ')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      {!isFullscreen && <Footer />}
     </div>
   );
 };
