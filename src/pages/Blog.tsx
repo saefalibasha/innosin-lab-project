@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,23 +23,24 @@ const Blog = () => {
         .select('*')
         .eq('is_published', true)
         .order('publish_date', { ascending: false });
-      
+
       if (error) throw error;
       return data;
     },
   });
 
-  // Get unique categories and tags from the posts
   const categories = ['all', ...new Set(blogPosts?.map(post => post.category).filter(Boolean) || [])];
   const allTags = ['all', ...new Set(blogPosts?.flatMap(post => post.tags || []) || [])];
 
   const filteredPosts = blogPosts?.filter(post => {
-    const matchesSearch = post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.excerpt?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         post.author.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.excerpt?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      post.author.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesCategory = selectedCategory === 'all' || post.category === selectedCategory;
     const matchesTag = selectedTag === 'all' || (post.tags && post.tags.includes(selectedTag));
-    
+
     return matchesSearch && matchesCategory && matchesTag;
   }) || [];
 
@@ -70,7 +72,7 @@ const Blog = () => {
                   className="pl-10 border-gray-300"
                 />
               </div>
-              
+
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger className="border-gray-300">
                   <Filter className="w-4 h-4 mr-2" />
@@ -141,9 +143,7 @@ const Blog = () => {
                 </div>
                 <div className="md:w-1/2 p-8">
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                    <Badge className="bg-sea text-white">
-                      {featuredPost.category}
-                    </Badge>
+                    <Badge className="bg-sea text-white">{featuredPost.category}</Badge>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       {featuredPost.publish_date ? new Date(featuredPost.publish_date).toLocaleDateString() : 'Draft'}
@@ -153,15 +153,11 @@ const Blog = () => {
                       {featuredPost.read_time} min read
                     </span>
                   </div>
-                  
-                  <h3 className="text-2xl font-bold text-sea mb-4">
-                    {featuredPost.title}
-                  </h3>
-                  
-                  <p className="text-gray-700 mb-6 line-clamp-3">
-                    {featuredPost.excerpt}
-                  </p>
-                  
+
+                  <h3 className="text-2xl font-bold text-sea mb-4">{featuredPost.title}</h3>
+
+                  <p className="text-gray-700 mb-6 line-clamp-3">{featuredPost.excerpt}</p>
+
                   <div className="flex flex-wrap gap-2 mb-6">
                     {featuredPost.tags?.slice(0, 3).map(tag => (
                       <Badge key={tag} variant="outline" className="text-xs border-sea text-sea">
@@ -169,15 +165,17 @@ const Blog = () => {
                       </Badge>
                     ))}
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">{featuredPost.author}</span>
                     </div>
-                    <Button className="bg-sea hover:bg-sea/90 text-white">
-                      Read Article <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
+                    <Link href={`/blog/${featuredPost.slug || featuredPost.id}`}>
+                      <Button className="bg-sea hover:bg-sea/90 text-white">
+                        Read Article <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -190,7 +188,10 @@ const Blog = () => {
           <StaggerList
             items={regularPosts}
             renderItem={(post) => (
-              <Card key={post.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-gray-200">
+              <Card
+                key={post.id}
+                className="overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border-gray-200"
+              >
                 <div className="aspect-video overflow-hidden">
                   <img
                     src={post.featured_image || 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=600&h=400&fit=crop'}
@@ -198,28 +199,24 @@ const Blog = () => {
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                
+
                 <CardHeader className="pb-2">
                   <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                    <Badge variant="outline" className="text-xs text-sea border-sea">
-                      {post.category}
-                    </Badge>
+                    <Badge variant="outline" className="text-xs text-sea border-sea">{post.category}</Badge>
                     <span className="flex items-center gap-1">
                       <Calendar className="w-3 h-3" />
                       {post.publish_date ? new Date(post.publish_date).toLocaleDateString() : 'Draft'}
                     </span>
                   </div>
-                  
+
                   <CardTitle className="text-lg leading-tight text-sea hover:text-sea/80 transition-colors">
                     {post.title}
                   </CardTitle>
                 </CardHeader>
-                
+
                 <CardContent className="pt-0">
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-                  
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">{post.excerpt}</p>
+
                   <div className="flex flex-wrap gap-1 mb-4">
                     {post.tags?.slice(0, 2).map(tag => (
                       <Badge key={tag} variant="secondary" className="text-xs bg-sea/10 text-sea">
@@ -227,7 +224,7 @@ const Blog = () => {
                       </Badge>
                     ))}
                   </div>
-                  
+
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-gray-600">
                       <User className="w-3 h-3" />
@@ -235,10 +232,16 @@ const Blog = () => {
                     </div>
                     <span className="text-xs text-gray-500">{post.read_time} min read</span>
                   </div>
-                  
-                  <Button variant="outline" size="sm" className="w-full mt-4 border-sea text-sea hover:bg-sea hover:text-white">
-                    Read Full Article
-                  </Button>
+
+                  <Link href={`/blog/${post.slug || post.id}`} className="w-full">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full mt-4 border-sea text-sea hover:bg-sea hover:text-white"
+                    >
+                      Read Full Article
+                    </Button>
+                  </Link>
                 </CardContent>
               </Card>
             )}
@@ -252,7 +255,8 @@ const Blog = () => {
             <CardContent className="p-8 text-center">
               <h3 className="text-2xl font-bold mb-4">Never Miss an Update</h3>
               <p className="mb-6 text-white/80 max-w-2xl mx-auto">
-                Subscribe to our newsletter and get the latest laboratory insights, technical guides, and industry news delivered directly to your inbox every month.
+                Subscribe to our newsletter and get the latest laboratory insights, technical guides, and industry news
+                delivered directly to your inbox every month.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
                 <Input
@@ -264,9 +268,7 @@ const Blog = () => {
                   Subscribe Now
                 </Button>
               </div>
-              <p className="text-xs text-white/70 mt-4">
-                Join 2,500+ laboratory professionals who trust our insights
-              </p>
+              <p className="text-xs text-white/70 mt-4">Join 2,500+ laboratory professionals who trust our insights</p>
             </CardContent>
           </Card>
         </div>
