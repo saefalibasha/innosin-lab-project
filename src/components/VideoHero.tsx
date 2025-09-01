@@ -29,10 +29,13 @@ const VideoHero = () => {
   }, []);
 
   return (
-    <>     
+    <>
+      {/* White region at top for header */}
+      <div className="h-8 bg-white"></div>
+      
       <section className="relative overflow-hidden">
         {/* Hero Carousel with Enhanced Design */}
-        <div className="px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="px-4 sm:px-6 lg:px-8 pt-2">
           <div className="max-w-7xl mx-auto">
             <Carousel 
               className="w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden shadow-2xl"
