@@ -22,7 +22,7 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Main content only; header & footer are provided by SiteLayout */}
-      <main className="flex-grow pt-16">
+      <main className="flex-grow pt-2">
         {/* Video Hero Section */}
         <VideoHero />
 
