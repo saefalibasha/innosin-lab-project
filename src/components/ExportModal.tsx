@@ -1,29 +1,19 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Download, Image as ImageIcon, FileText, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
-import { supabase } from '@/integrations/supabase/client';
-
-type ExportFormat = 'png' | 'jpg';
+import { Download, Mail, Building2 } from 'lucide-react';
+import { PlacedProduct, Point } from '@/types/floorPlanTypes';
 
 interface ExportModalProps {
-  canvasRef: React.RefObject<HTMLDivElement | HTMLCanvasElement>; // allow either
-  roomPoints: Array<{ x: number; y: number }>;
-  placedProducts: any[]; // keep as-is for now
+  canvasRef: React.RefObject<HTMLCanvasElement>;
+  roomPoints: Point[];
+  placedProducts: PlacedProduct[];
   children: React.ReactNode;
-}
-
-interface ExportFormData {
-  fullName: string;
-  email: string;
-  companyName: string;
-  contactNumber: string;
-  projectDescription: string;
 }
 
 const ExportModal: React.FC<ExportModalProps> = ({
@@ -32,259 +22,238 @@ const ExportModal: React.FC<ExportModalProps> = ({
   placedProducts,
   children
 }) => {
-  const [isExporting, setIsExporting] = useState(false);
-  const [exportFormat, setExportFormat] = useState<ExportFormat>('png'); // images only
-  const [mainDialogOpen, setMainDialogOpen] = useState(false);
-  const { createContact, createDeal } = useHubSpotIntegration();
+  const [isOpen, setIsOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState({
+    name: '',
+    email: '',
+    company: '',
+    phone: '',
+    notes: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const validateUserInfo = () => {
+    if (!userInfo.name.trim()) {
+      toast.error('Name is required');
+      return false;
+    }
+    if (!userInfo.email.trim() || !/\S+@\S+\.\S+/.test(userInfo.email)) {
+      toast.error('Valid email is required');
+      return false;
+    }
+    if (!userInfo.company.trim()) {
+      toast.error('Company name is required');
+      return false;
+    }
+    return true;
+  };
+
+  const handleExport = async (format: 'pdf' | 'png' | 'json') => {
+    if (!validateUserInfo()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      // Store user information for session
+      sessionStorage.setItem('exportUserInfo', JSON.stringify({
+        ...userInfo,
+        lastExport: new Date().toISOString()
+      }));
+
+      // Export logic based on format
+      if (format === 'pdf') {
+        await exportToPDF();
+      } else if (format === 'png') {
+        await exportToPNG();
+      } else if (format === 'json') {
+        await exportToJSON();
+      }
+
+      toast.success(`Floor plan exported as ${format.toUpperCase()} successfully!`);
+      setIsOpen(false);
+    } catch (error) {
+      toast.error(`Failed to export as ${format.toUpperCase()}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const exportToPDF = async () => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const imgData = canvas.toDataURL('image/png');
+    
+    // Create PDF with user info and floor plan
+    const { jsPDF } = await import('jspdf');
+    const pdf = new jsPDF();
+    
+    // Add user information header
+    pdf.setFontSize(16);
+    pdf.text('Floor Plan Export', 20, 20);
+    pdf.setFontSize(10);
+    pdf.text(`Exported by: ${userInfo.name}`, 20, 35);
+    pdf.text(`Company: ${userInfo.company}`, 20, 42);
+    pdf.text(`Email: ${userInfo.email}`, 20, 49);
+    pdf.text(`Date: ${new Date().toLocaleDateString()}`, 20, 56);
+    
+    if (userInfo.notes) {
+      pdf.text(`Notes: ${userInfo.notes}`, 20, 63);
+    }
+    
+    // Add floor plan image
+    const imgWidth = 170;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 20, 75, imgWidth, imgHeight);
+    
+    // Add product summary
+    const yPos = 75 + imgHeight + 20;
+    pdf.text('Products Summary:', 20, yPos);
+    placedProducts.forEach((product, index) => {
+      pdf.text(`${index + 1}. ${product.name} - ${product.category}`, 25, yPos + 10 + (index * 7));
+    });
+    
+    pdf.save(`floor-plan-${userInfo.company.replace(/\s+/g, '-')}-${Date.now()}.pdf`);
+  };
+
+  const exportToPNG = async () => {
+    if (!canvasRef.current) return;
+    
+    const canvas = canvasRef.current;
+    const link = document.createElement('a');
+    link.download = `floor-plan-${userInfo.company.replace(/\s+/g, '-')}-${Date.now()}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  };
+
+  const exportToJSON = async () => {
+    const floorPlanData = {
+      userInfo,
+      exportDate: new Date().toISOString(),
+      roomPoints,
+      placedProducts,
+      summary: {
+        totalProducts: placedProducts.length,
+        categories: [...new Set(placedProducts.map(p => p.category))],
+        roomArea: calculateRoomArea()
+      }
+    };
+    
+    const dataStr = JSON.stringify(floorPlanData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `floor-plan-${userInfo.company.replace(/\s+/g, '-')}-${Date.now()}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const calculateRoomArea = (): number => {
     if (roomPoints.length < 3) return 0;
-
-    // polygon area (shoelace). If your canvas uses a visual scale (px per meter),
-    // adjust "scale" accordingly so the result is in m².
-    const scale = 40; // px per meter (example – make sure this matches your canvas)
+    
     let area = 0;
     for (let i = 0; i < roomPoints.length; i++) {
       const j = (i + 1) % roomPoints.length;
       area += roomPoints[i].x * roomPoints[j].y;
       area -= roomPoints[j].x * roomPoints[i].y;
     }
-    area = Math.abs(area) / 2;
-    return area / (scale * scale);
+    return Math.abs(area / 2);
   };
-
-  const syncToHubSpot = async (formData: ExportFormData, exportedAs: 'png' | 'jpg' | 'pdf') => {
-    // This function can receive 'pdf' because it’s decoupled from image export types.
-    const sessionId = `export_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-
-    const { error: supabaseError } = await supabase
-      .from('chat_sessions')
-      .insert({
-        session_id: sessionId,
-        name: formData.fullName,
-        email: formData.email,
-        company: formData.companyName,
-        phone: formData.contactNumber,
-        status: 'floor_plan_exported',
-        context: {
-          source: 'floor_planner_export',
-          export_format: exportedAs,
-          project_description: formData.projectDescription,
-          floor_plan_data: {
-            room_points: roomPoints.length,
-            placed_products: placedProducts.length,
-            room_area: calculateRoomArea()
-          }
-        }
-      });
-
-    if (supabaseError) {
-      console.error('Supabase error:', supabaseError);
-      throw supabaseError;
-    }
-
-    const contactResult = await createContact({
-      sessionId,
-      name: formData.fullName,
-      email: formData.email,
-      company: formData.companyName,
-      phone: formData.contactNumber
-    });
-
-    if (contactResult?.data?.hubspot_contact_id) {
-      await createDeal({
-        sessionId,
-        dealName: `Floor Plan Export - ${formData.fullName}`,
-        contactId: contactResult.data.hubspot_contact_id,
-        amount: 0
-      });
-    }
-
-    toast.success('Contact information synced to HubSpot successfully');
-  };
-
-  const getCanvasElement = (): HTMLElement | null => {
-    // Support either a wrapping DIV or a CANVAS element as the export target
-    const node = canvasRef.current as unknown as HTMLElement | null;
-    return node ?? null;
-  };
-
-  const exportAsImage = async (format: ExportFormat) => {
-    const node = getCanvasElement();
-    if (!node) {
-      toast.error('Canvas not found');
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      const canvas = await html2canvas(node, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true
-      });
-
-      const link = document.createElement('a');
-      const date = new Date().toISOString().split('T')[0];
-      if (format === 'png') {
-        link.download = `floor-plan-${date}.png`;
-        link.href = canvas.toDataURL('image/png');
-      } else {
-        link.download = `floor-plan-${date}.jpg`;
-        link.href = canvas.toDataURL('image/jpeg', 0.9);
-      }
-      link.click();
-      toast.success(`Floor plan exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export floor plan');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  const exportAsPDF = async () => {
-    const node = getCanvasElement();
-    if (!node) {
-      toast.error('Canvas not found');
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      const canvas = await html2canvas(node, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        useCORS: true
-      });
-
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: canvas.width > canvas.height ? 'landscape' : 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`floor-plan-${new Date().toISOString().split('T')[0]}.pdf`);
-      toast.success('Floor plan exported as PDF');
-    } catch (error) {
-      console.error('Export error:', error);
-      toast.error('Failed to export floor plan');
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
-  // If/when you want to require a form before exporting, call this with the form data you collect elsewhere.
-  const handleFormSubmit = async (formData: ExportFormData) => {
-    try {
-      await syncToHubSpot(formData, exportFormat); // 'png' | 'jpg'
-      await exportAsImage(exportFormat);
-      toast.success('Export completed! Contact information has been saved.');
-    } catch (error) {
-      console.error('Export process error:', error);
-      toast.error('Export process failed');
-      throw error;
-    }
-  };
-
-  // Same idea for PDF path, but never send 'pdf' into exportAsImage:
-  const handleFormSubmitPDF = async (formData: ExportFormData) => {
-    try {
-      await syncToHubSpot(formData, 'pdf');
-      await exportAsPDF();
-      toast.success('PDF export completed! Contact information has been saved.');
-    } catch (error) {
-      console.error('PDF export process error:', error);
-      toast.error('PDF export process failed');
-      throw error;
-    }
-  };
-
-  const handleExportRequest = (format: ExportFormat) => {
-    setExportFormat(format);
-    exportAsImage(format); // direct export (no form)
-    setMainDialogOpen(false);
-  };
-
-  const handlePDFExport = () => {
-    exportAsPDF(); // direct export (no form)
-    setMainDialogOpen(false);
-  };
-
-  const calculateStats = () => {
-    const area =
-      roomPoints.length >= 3 ? `${calculateRoomArea().toFixed(2)} m²` : 'Not available';
-    return {
-      roomPoints: roomPoints.length,
-      products: placedProducts.length,
-      roomArea: area
-    };
-  };
-
-  const stats = calculateStats();
 
   return (
-    <Dialog open={mainDialogOpen} onOpenChange={setMainDialogOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-2">
-            <Download className="w-5 h-5" />
-            <span>Export Floor Plan</span>
+          <DialogTitle className="flex items-center gap-2">
+            <Download className="h-5 w-5" />
+            Export Floor Plan
           </DialogTitle>
         </DialogHeader>
-
+        
         <div className="space-y-4">
-          {/* Plan Statistics */}
-          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-            <h4 className="font-medium text-sm">Plan Summary</h4>
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="outline">{stats.roomPoints} Wall Points</Badge>
-              <Badge variant="outline">{stats.products} Products</Badge>
-              <Badge variant="outline">Area: {stats.roomArea}</Badge>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={userInfo.name}
+                onChange={(e) => setUserInfo(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="John Doe"
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={userInfo.email}
+                onChange={(e) => setUserInfo(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="john@company.com"
+              />
             </div>
           </div>
-
-          {/* Export Format Selection */}
-          <div className="space-y-3">
-            <h4 className="font-medium text-sm">Export Format</h4>
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={() => handleExportRequest('png')}
-                disabled={isExporting}
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>PNG Image</span>
-              </Button>
-              <Button
-                variant="outline"
-                className="flex items-center space-x-2"
-                onClick={() => handleExportRequest('jpg')}
-                disabled={isExporting}
-              >
-                <ImageIcon className="w-4 h-4" />
-                <span>JPG Image</span>
-              </Button>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="company">Company *</Label>
+              <Input
+                id="company"
+                value={userInfo.company}
+                onChange={(e) => setUserInfo(prev => ({ ...prev, company: e.target.value }))}
+                placeholder="Company Name"
+              />
             </div>
-
-            {/* PDF Export */}
-            <div className="pt-2 border-t">
-              <Button onClick={handlePDFExport} disabled={isExporting} className="w-full" variant="outline">
-                {isExporting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Exporting...
-                  </>
-                ) : (
-                  <>
-                    <FileText className="w-4 h-4 mr-2" />
-                    Export as PDF
-                  </>
-                )}
+            <div>
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={userInfo.phone}
+                onChange={(e) => setUserInfo(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="Optional"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label htmlFor="notes">Project Notes</Label>
+            <Textarea
+              id="notes"
+              value={userInfo.notes}
+              onChange={(e) => setUserInfo(prev => ({ ...prev, notes: e.target.value }))}
+              placeholder="Optional project details or requirements"
+              rows={3}
+            />
+          </div>
+          
+          <div className="flex flex-col gap-2 pt-4">
+            <Button 
+              onClick={() => handleExport('pdf')} 
+              disabled={isSubmitting}
+              className="w-full"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export as PDF
+            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => handleExport('png')} 
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                Export PNG
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => handleExport('json')} 
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                Export JSON
               </Button>
             </div>
           </div>

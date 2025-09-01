@@ -209,36 +209,6 @@ const FloorPlanner = () => {
   }, []);
 
   // File operations
-  const handleSave = useCallback(() => {
-    const floorPlanData = {
-      name: projectName,
-      roomPoints,
-      placedProducts,
-      doors,
-      textAnnotations,
-      wallSegments,
-      rooms,
-      scale,
-      gridSize,
-      measurementUnit,
-      settings: {
-        showGrid,
-        showMeasurements,
-        showProducts
-      }
-    };
-    
-    const dataStr = JSON.stringify(floorPlanData, null, 2);
-    const dataBlob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(dataBlob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${projectName.replace(/\s+/g, '_')}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    toast.success('Floor plan saved successfully');
-  }, [projectName, roomPoints, placedProducts, doors, textAnnotations, wallSegments, rooms, scale, gridSize, measurementUnit, showGrid, showMeasurements, showProducts]);
-
   const handleLoad = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -319,10 +289,6 @@ const FloorPlanner = () => {
             if (e.shiftKey) handleRedo();
             else handleUndo();
             break;
-          case 's':
-            e.preventDefault();
-            handleSave();
-            break;
           case 'a':
             e.preventDefault();
             setSelectedProducts(placedProducts.map(p => p.id));
@@ -369,7 +335,7 @@ const FloorPlanner = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [
-    handleUndo, handleRedo, handleSave,
+    handleUndo, handleRedo,
     selectedProducts, placedProducts,
     handleDeleteSelected, handleRotateSelected,
     handleToggleGrid, handleToggleMeasurements,
@@ -428,7 +394,7 @@ const FloorPlanner = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-bold text-foreground">Enhanced Floor Planner</h1>
-              <p className="text-muted-foreground">Design your laboratory layout with room-based precision</p>
+              <p className="text-muted-foreground">Design your laboratory layout with precision snapping and collision detection</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -442,16 +408,12 @@ const FloorPlanner = () => {
                 className="w-64"
                 placeholder="Project name"
               />
-              <Button onClick={handleSave} variant="outline">
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
               <ExportModal
                 canvasRef={canvasRef}
                 roomPoints={roomPoints}
                 placedProducts={placedProducts}
               >
-                <Button variant="outline">
+                <Button>
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
@@ -546,7 +508,7 @@ const FloorPlanner = () => {
             <Card>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Room-Based Design</CardTitle>
+                  <CardTitle className="text-lg">Canvas - Enhanced Precision Layout</CardTitle>
                   
                   <div className="flex items-center space-x-2">
                     <div className="bg-muted rounded-md p-1">
@@ -568,10 +530,10 @@ const FloorPlanner = () => {
                       </Button>
                     </div>
                     <Badge variant="outline" className="text-xs">
-                      {gridSize}mm grid
+                      Enhanced Snapping
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      {(1/scale).toFixed(2)}mm/px
+                      {gridSize}mm grid
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       Mode: {currentMode}

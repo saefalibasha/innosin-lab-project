@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Point, PlacedProduct } from '@/types/floorPlanTypes';
-import { useCollisionDetection, CollisionResult } from './useCollisionDetection';
+import { useEnhancedCollisionDetection } from './useEnhancedCollisionDetection';
 
 interface DragState {
   isDragging: boolean;
@@ -9,6 +9,7 @@ interface DragState {
   dragOffset: Point;
   currentPosition: Point;
   isValid: boolean;
+  snapResult?: any;
 }
 
 export const useSmoothDragging = (
@@ -28,9 +29,8 @@ export const useSmoothDragging = (
 
   const animationFrameRef = useRef<number>();
   const lastMousePos = useRef<Point>({ x: 0, y: 0 });
-  const velocity = useRef<Point>({ x: 0, y: 0 });
 
-  const { checkProductCollision } = useCollisionDetection(
+  const { checkProductCollision, checkFurnitureSnap } = useEnhancedCollisionDetection(
     wallSegments,
     placedProducts,
     canvasWidth,
@@ -53,46 +53,50 @@ export const useSmoothDragging = (
     });
 
     lastMousePos.current = mousePos;
-    velocity.current = { x: 0, y: 0 };
   }, []);
 
   const updateDrag = useCallback((mousePos: Point) => {
     if (!dragState.isDragging || !dragState.draggedProduct) return;
 
-    // Calculate smooth movement with momentum
+    // Calculate target position
     const targetPos = {
       x: mousePos.x - dragState.dragOffset.x,
       y: mousePos.y - dragState.dragOffset.y
     };
 
-    // Add smooth interpolation
-    const smoothFactor = 0.8;
-    const newPos = {
-      x: dragState.currentPosition.x + (targetPos.x - dragState.currentPosition.x) * smoothFactor,
-      y: dragState.currentPosition.y + (targetPos.y - dragState.currentPosition.y) * smoothFactor
-    };
-
-    // Check collision at new position
-    const collisionResult = checkProductCollision(dragState.draggedProduct, newPos);
+    // Check for furniture snapping first (higher priority)
+    const snapResult = checkFurnitureSnap(dragState.draggedProduct, targetPos);
     
-    // If collision detected, try to find valid nearby position
-    const finalPos = collisionResult.hasCollision ? 
-      findValidNearbyPosition(newPos, dragState.draggedProduct, collisionResult) : 
-      newPos;
+    let finalPos = targetPos;
+    let isValid = true;
+
+    if (snapResult.snapped) {
+      // Use snapped position
+      finalPos = snapResult.position;
+      
+      // Verify the snapped position doesn't cause collisions
+      const collisionResult = checkProductCollision(dragState.draggedProduct, finalPos);
+      isValid = !collisionResult.hasCollision;
+    } else {
+      // No snap, check for collisions at target position
+      const collisionResult = checkProductCollision(dragState.draggedProduct, targetPos);
+      
+      if (collisionResult.hasCollision) {
+        // Try to find a valid nearby position
+        finalPos = findValidNearbyPosition(targetPos, dragState.draggedProduct) || dragState.draggedProduct.position;
+        isValid = false;
+      }
+    }
 
     setDragState(prev => ({
       ...prev,
       currentPosition: finalPos,
-      isValid: !collisionResult.hasCollision
+      isValid,
+      snapResult: snapResult.snapped ? snapResult : undefined
     }));
 
-    // Update velocity for momentum
-    velocity.current = {
-      x: mousePos.x - lastMousePos.current.x,
-      y: mousePos.y - lastMousePos.current.y
-    };
     lastMousePos.current = mousePos;
-  }, [dragState, checkProductCollision]);
+  }, [dragState, checkProductCollision, checkFurnitureSnap]);
 
   const endDrag = useCallback((): Point | null => {
     if (!dragState.isDragging || !dragState.draggedProduct) return null;
@@ -112,14 +116,13 @@ export const useSmoothDragging = (
 
   const findValidNearbyPosition = (
     position: Point,
-    product: PlacedProduct,
-    collision: CollisionResult
-  ): Point => {
+    product: PlacedProduct
+  ): Point | null => {
     // Try positions in a small radius around the target
-    const searchRadius = 20;
-    const steps = 8;
+    const searchRadius = 30;
+    const steps = 16;
 
-    for (let radius = 10; radius <= searchRadius; radius += 5) {
+    for (let radius = 5; radius <= searchRadius; radius += 5) {
       for (let i = 0; i < steps; i++) {
         const angle = (i / steps) * Math.PI * 2;
         const testPos = {
@@ -134,8 +137,7 @@ export const useSmoothDragging = (
       }
     }
 
-    // If no valid position found, return original position
-    return product.position;
+    return null;
   };
 
   // Cleanup animation frame on unmount
