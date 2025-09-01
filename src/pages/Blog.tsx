@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -171,7 +172,7 @@ const Blog = () => {
                       <User className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">{featuredPost.author}</span>
                     </div>
-                    <Link href={`/blog/${featuredPost.slug || featuredPost.id}`}>
+                    <Link to={`/blog/${featuredPost.id}`}>
                       <Button className="bg-sea hover:bg-sea/90 text-white">
                         Read Article <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
@@ -233,7 +234,7 @@ const Blog = () => {
                     <span className="text-xs text-gray-500">{post.read_time} min read</span>
                   </div>
 
-                  <Link href={`/blog/${post.slug || post.id}`} className="w-full">
+                  <Link to={`/blog/${post.id}`} className="w-full">
                     <Button
                       variant="outline"
                       size="sm"

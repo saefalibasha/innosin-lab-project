@@ -1,3 +1,4 @@
+
 // src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -16,6 +17,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import ProductCatalog from "./pages/ProductCatalog";
 import EnhancedProductDetail from "./pages/EnhancedProductDetail";
 import FloorPlanner from "./pages/FloorPlanner";
@@ -44,6 +46,7 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:id" element={<BlogPost />} />
                 <Route path="/products" element={<ProductCatalog />} />
                 <Route path="/products/:id" element={<EnhancedProductDetail />} />
                 <Route path="/floor-planner" element={<FloorPlanner />} />
