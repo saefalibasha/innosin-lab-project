@@ -30,16 +30,20 @@ export const FloorPlanner3D = () => {
   const { currentState } = useFloorPlanHistory(initialFloorPlanState);
 
   const [roomPoints, setRoomPoints] = useState<Point[]>(currentState.roomPoints);
-  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(currentState.placedProducts);
+  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(
+    currentState.placedProducts
+  );
   const [doors, setDoors] = useState<Door[]>(currentState.doors);
-  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(currentState.textAnnotations);
-  
-  const [wallSegments, setWallSegments] = useState<WallSegment[]>(currentState.wallSegments); // ✅ FIXED
-  
+  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(
+    currentState.textAnnotations
+  );
+  const [wallSegments, setWallSegments] = useState<WallSegment[]>(
+    currentState.wallSegments
+  );
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  // ✅ Log wall segments once after mount
+  // ✅ Add a console.log to inspect wall segments
   useEffect(() => {
     console.log('wallSegments:', wallSegments);
   }, [wallSegments]);
