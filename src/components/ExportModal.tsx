@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Download, Mail, Building2 } from 'lucide-react';
 import { PlacedProduct, Point } from '@/types/floorPlanTypes';
+import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 
 interface ExportModalProps {
   canvasRef: React.RefObject<HTMLCanvasElement>;
@@ -31,6 +32,8 @@ const ExportModal: React.FC<ExportModalProps> = ({
     notes: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { createContact, createInquiry, loading: hubSpotLoading } = useHubSpotIntegration();
 
   const validateUserInfo = () => {
     if (!userInfo.name.trim()) {
@@ -46,6 +49,65 @@ const ExportModal: React.FC<ExportModalProps> = ({
       return false;
     }
     return true;
+  };
+
+  const createHubSpotInquiry = async () => {
+    try {
+      const sessionId = Date.now().toString();
+      
+      // Create contact first
+      const contactResult = await createContact({
+        sessionId,
+        email: userInfo.email,
+        name: userInfo.name,
+        company: userInfo.company,
+        jobTitle: '', // Optional
+        phone: userInfo.phone
+      });
+
+      // Create product summary for the inquiry
+      const productSummary = placedProducts.map(p => 
+        `${p.name} (${p.category}) - ${p.dimensions.length}x${p.dimensions.width}mm`
+      ).join('\n');
+
+      const inquiryContent = `
+Floor Plan Export Request
+
+User Information:
+- Name: ${userInfo.name}
+- Email: ${userInfo.email}
+- Company: ${userInfo.company}
+- Phone: ${userInfo.phone || 'Not provided'}
+
+Floor Plan Details:
+- Total Products: ${placedProducts.length}
+- Room Points: ${roomPoints.length}
+
+Products Placed:
+${productSummary}
+
+Additional Notes:
+${userInfo.notes || 'None provided'}
+
+Export Date: ${new Date().toLocaleString()}
+      `;
+
+      // Create inquiry ticket
+      await createInquiry({
+        sessionId,
+        subject: `Floor Plan Export - ${userInfo.company}`,
+        content: inquiryContent,
+        contactId: contactResult?.contactId,
+        priority: 'MEDIUM'
+      });
+
+      toast.success('Floor plan exported and inquiry sent to our team successfully!');
+      return true;
+    } catch (error) {
+      console.error('Error creating HubSpot inquiry:', error);
+      toast.error('Export completed but failed to send inquiry. Please contact us directly.');
+      return false;
+    }
   };
 
   const handleExport = async (format: 'pdf' | 'png' | 'json') => {
@@ -69,7 +131,9 @@ const ExportModal: React.FC<ExportModalProps> = ({
         await exportToJSON();
       }
 
-      toast.success(`Floor plan exported as ${format.toUpperCase()} successfully!`);
+      // Create HubSpot inquiry after successful export
+      await createHubSpotInquiry();
+
       setIsOpen(false);
     } catch (error) {
       toast.error(`Failed to export as ${format.toUpperCase()}`);
@@ -175,6 +239,13 @@ const ExportModal: React.FC<ExportModalProps> = ({
         </DialogHeader>
         
         <div className="space-y-4">
+          <div className="bg-blue-50 p-3 rounded-md">
+            <p className="text-sm text-blue-800">
+              <Mail className="h-4 w-4 inline mr-1" />
+              Your floor plan and contact details will be sent to our team for follow-up support.
+            </p>
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="name">Full Name *</Label>
@@ -224,7 +295,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
               id="notes"
               value={userInfo.notes}
               onChange={(e) => setUserInfo(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Optional project details or requirements"
+              placeholder="Tell us about your project requirements or any questions you have"
               rows={3}
             />
           </div>
@@ -232,17 +303,17 @@ const ExportModal: React.FC<ExportModalProps> = ({
           <div className="flex flex-col gap-2 pt-4">
             <Button 
               onClick={() => handleExport('pdf')} 
-              disabled={isSubmitting}
+              disabled={isSubmitting || hubSpotLoading}
               className="w-full"
             >
               <Download className="h-4 w-4 mr-2" />
-              Export as PDF
+              {isSubmitting ? 'Exporting & Sending...' : 'Export PDF & Send Inquiry'}
             </Button>
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
                 onClick={() => handleExport('png')} 
-                disabled={isSubmitting}
+                disabled={isSubmitting || hubSpotLoading}
                 className="flex-1"
               >
                 Export PNG
@@ -250,7 +321,7 @@ const ExportModal: React.FC<ExportModalProps> = ({
               <Button 
                 variant="outline" 
                 onClick={() => handleExport('json')} 
-                disabled={isSubmitting}
+                disabled={isSubmitting || hubSpotLoading}
                 className="flex-1"
               >
                 Export JSON

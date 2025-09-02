@@ -1,191 +1,178 @@
+
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { X, Package } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
-/** Matches the DB shape you shared previously (subset used here) */
-type DBProduct = {
+interface ProductVariant {
   id: string;
   name: string;
-  dimensions?: string; // e.g. "500×500×650 mm"
-  description?: string;
-  product_code?: string;
-};
-
-export interface ProductVariant {
-  id: string;
-  name: string;
-  dimensions: string;
-  description: string;
+  dimensions: {
+    length: number;
+    width: number;
+    height: number;
+  };
   drawerCount?: number;
   configuration?: string;
+  artNumber: string;
+  price?: number;
+}
+
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  series: string;
+  variants: ProductVariant[];
+  imageUrl: string;
+  description?: string;
 }
 
 interface ProductVariantSelectorProps {
-  product: DBProduct | Record<string, any>; // tolerate older callers
-  isOpen: boolean;
-  onClose: () => void;
-  onVariantSelect: (variant: ProductVariant) => void;
+  product: Product;
+  onVariantSelect: (product: Product, variant: ProductVariant) => void;
+  onProductDrag: (productWithVariant: any) => void;
 }
 
-const fallbackDimensions = '500×500×650 mm';
-
-const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
+export const ProductVariantSelector: React.FC<ProductVariantSelectorProps> = ({
   product,
-  isOpen,
-  onClose,
   onVariantSelect,
+  onProductDrag
 }) => {
-  const [selectedVariant, setSelectedVariant] = useState<string>('');
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant>(product.variants[0]);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  if (!isOpen) return null;
-
-  // Normalize product fields safely
-  const productName: string = (product?.name ?? 'Product').toString();
-  const productCode: string = (product?.product_code ?? '').toString();
-  const productDims: string = (product?.dimensions ?? fallbackDimensions).toString();
-  const baseId = productCode || productName.replace(/\s+/g, '-').toLowerCase();
-
-  const getProductVariants = (pName: string, pCode: string, dims: string): ProductVariant[] => {
-    const nameLC = pName.toLowerCase();
-    const codeLC = pCode.toLowerCase();
-
-    const isMobileCabinet =
-      nameLC.includes('mobile cabinet') || codeLC.startsWith('mc-');
-
-    const isModularCabinet =
-      nameLC.includes('modular cabinet') || codeLC.startsWith('mcc-');
-
-    const variants: ProductVariant[] = [];
-
-    // Always include a Standard/default option
-    variants.push({
-      id: `${baseId}-standard`,
-      name: `${pName} - Standard`,
-      dimensions: dims,
-      description: 'Standard configuration',
-      configuration: 'Standard',
-    });
-
-    if (isMobileCabinet || isModularCabinet) {
-      // Drawer-count variants
-      const drawerDefs = [
-        { drawers: 2, suffix: 'DWR2', description: '2 Drawers' },
-        { drawers: 3, suffix: 'DWR3', description: '3 Drawers' },
-        { drawers: 4, suffix: 'DWR4', description: '4 Drawers' },
-        { drawers: 6, suffix: 'DWR6', description: '6 Drawers' },
-        { drawers: 8, suffix: 'DWR8', description: '8 Drawers' },
-      ];
-
-      drawerDefs.forEach((d) =>
-        variants.push({
-          id: `${baseId}-${d.suffix}`,
-          name: `${pName} - ${d.description}`,
-          dimensions: dims,
-          description: d.description,
-          drawerCount: d.drawers,
-          configuration: d.suffix,
-        })
-      );
-
-      // Handedness variants
-      const handDefs = [
-        { hand: 'LH', description: 'Left Hand' },
-        { hand: 'RH', description: 'Right Hand' },
-      ];
-
-      handDefs.forEach((h) =>
-        variants.push({
-          id: `${baseId}-${h.hand}`,
-          name: `${pName} - ${h.description}`,
-          dimensions: dims,
-          description: h.description,
-          configuration: h.hand,
-        })
-      );
-    }
-
-    return variants;
+  const handleVariantChange = (variant: ProductVariant) => {
+    setSelectedVariant(variant);
+    onVariantSelect(product, variant);
   };
 
-  const variants = getProductVariants(productName, productCode, productDims);
-
-  const handleVariantSelect = () => {
-    const variant = variants.find((v) => v.id === selectedVariant);
-    if (variant) {
-      onVariantSelect(variant);
-      onClose();
-    }
+  const handleDragStart = (e: React.DragEvent) => {
+    const productWithVariant = {
+      ...product,
+      ...selectedVariant,
+      originalId: product.id,
+      variantId: selectedVariant.id,
+      dimensions: selectedVariant.dimensions,
+      drawerCount: selectedVariant.drawerCount,
+      configuration: selectedVariant.configuration,
+      artNumber: selectedVariant.artNumber
+    };
+    
+    onProductDrag(productWithVariant);
+    e.dataTransfer.setData('application/json', JSON.stringify(productWithVariant));
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <Card className="w-full max-w-md mx-4">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Package className="h-5 w-5" />
-              Select Product Variant
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="text-sm text-muted-foreground">{productName}</p>
-        </CardHeader>
+    <Card className="mb-4 hover:shadow-md transition-shadow">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium">{product.name}</CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-6 w-6 p-0"
+          >
+            {isExpanded ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
+      </CardHeader>
 
-        <CardContent className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Choose Configuration:</label>
-            <Select value={selectedVariant} onValueChange={setSelectedVariant}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a variant" />
-              </SelectTrigger>
-              <SelectContent>
-                {variants.map((variant) => (
-                  <SelectItem key={variant.id} value={variant.id}>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{variant.description}</span>
-                      <span className="text-xs text-muted-foreground">{variant.dimensions}</span>
+      <CardContent className="pt-0">
+        {/* Product Image */}
+        <div 
+          className="relative mb-3 cursor-move border-2 border-dashed border-gray-200 rounded-lg p-2 hover:border-blue-400 transition-colors"
+          draggable
+          onDragStart={handleDragStart}
+        >
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="w-full h-24 object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder-product.png';
+            }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 bg-black bg-opacity-50 rounded-lg transition-opacity">
+            <span className="text-white text-xs font-medium">Drag to place</span>
+          </div>
+        </div>
+
+        {/* Selected Variant Info */}
+        <div className="space-y-2 mb-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium">Selected:</span>
+            <Badge variant="outline" className="text-xs">
+              {selectedVariant.name}
+            </Badge>
+          </div>
+          
+          <div className="text-xs text-gray-600">
+            <div>Dimensions: {selectedVariant.dimensions.length} × {selectedVariant.dimensions.width} × {selectedVariant.dimensions.height}mm</div>
+            <div>Art#: {selectedVariant.artNumber}</div>
+            {selectedVariant.drawerCount && (
+              <div>Drawers: {selectedVariant.drawerCount}</div>
+            )}
+            {selectedVariant.configuration && (
+              <div>Config: {selectedVariant.configuration}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Variant Options */}
+        {isExpanded && product.variants.length > 1 && (
+          <div className="space-y-2 border-t pt-3">
+            <span className="text-xs font-medium text-gray-700">Available Variants:</span>
+            <div className="grid gap-2">
+              {product.variants.map((variant) => (
+                <Button
+                  key={variant.id}
+                  variant={selectedVariant.id === variant.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleVariantChange(variant)}
+                  className="w-full justify-start text-xs h-auto py-2"
+                >
+                  <div className="text-left">
+                    <div className="font-medium">{variant.name}</div>
+                    <div className="text-xs opacity-70">
+                      {variant.dimensions.length}×{variant.dimensions.width}mm
+                      {variant.drawerCount && ` • ${variant.drawerCount} drawers`}
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {selectedVariant && (() => {
-            const v = variants.find((vv) => vv.id === selectedVariant);
-            if (!v) return null;
-            return (
-              <div className="p-3 bg-muted rounded-lg">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    {v.configuration && <Badge variant="secondary">{v.configuration}</Badge>}
-                    {typeof v.drawerCount === 'number' && (
-                      <Badge variant="outline">{v.drawerCount} Drawers</Badge>
-                    )}
                   </div>
-                  <p className="text-sm text-muted-foreground">{v.description}</p>
-                  <p className="text-xs font-mono">{v.dimensions}</p>
-                </div>
-              </div>
-            );
-          })()}
-
-          <div className="flex gap-2 pt-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={handleVariantSelect} disabled={!selectedVariant} className="flex-1">
-              Select Variant
-            </Button>
+                </Button>
+              ))}
+            </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+
+        {/* Quick Actions */}
+        <div className="flex gap-2 mt-3 pt-2 border-t">
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 text-xs h-7"
+            onClick={() => {
+              const productWithVariant = {
+                ...product,
+                ...selectedVariant,
+                originalId: product.id,
+                variantId: selectedVariant.id,
+                dimensions: selectedVariant.dimensions
+              };
+              onProductDrag(productWithVariant);
+            }}
+          >
+            Select
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

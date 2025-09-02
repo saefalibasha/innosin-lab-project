@@ -13,6 +13,8 @@ import {
   Copy,
   Maximize2,
   Home,
+  ZoomIn,
+  ZoomOut,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -82,6 +84,12 @@ const FloorPlanner = () => {
   const [showRoomCreator, setShowRoomCreator] = useState(false);
   const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
 
+  // Zoom state
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const MIN_ZOOM = 0.25;
+  const MAX_ZOOM = 3;
+
   // Room-aware measurement system with intelligent scaling for large rooms
   const [scale, setScale] = useState(0.08); // 0.08 px/mm = 80px/m (supports ~20x20m rooms)
   const [gridSize, setGridSize] = useState(GRID_SIZES.standard);
@@ -109,9 +117,63 @@ const FloorPlanner = () => {
   
   const { saveState, undo, redo, canUndo, canRedo } = useFloorPlanHistory(initialState);
 
-  // Canvas dimensions
+  // Canvas dimensions (fixed)
   const CANVAS_WIDTH = 2000;
   const CANVAS_HEIGHT = 1400;
+
+  // Zoom functions
+  const handleZoomIn = useCallback(() => {
+    setZoomLevel(prev => Math.min(MAX_ZOOM, prev * 1.2));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setZoomLevel(prev => Math.max(MIN_ZOOM, prev / 1.2));
+  }, []);
+
+  const handleZoomReset = useCallback(() => {
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
+
+  const handleZoomToFit = useCallback(() => {
+    if (placedProducts.length === 0 && roomPoints.length === 0) return;
+    
+    // Calculate bounds of all content
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    [...roomPoints, ...placedProducts.map(p => p.position)].forEach(point => {
+      minX = Math.min(minX, point.x);
+      minY = Math.min(minY, point.y);
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
+    });
+    
+    if (minX === Infinity) return;
+    
+    const contentWidth = maxX - minX;
+    const contentHeight = maxY - minY;
+    const padding = 100; // 100px padding
+    
+    const scaleX = (window.innerWidth - padding * 2) / contentWidth;
+    const scaleY = (window.innerHeight - padding * 2) / contentHeight;
+    const newZoom = Math.min(scaleX, scaleY, MAX_ZOOM);
+    
+    setZoomLevel(newZoom);
+    setPanOffset({
+      x: -(minX + contentWidth / 2) * newZoom + window.innerWidth / 2,
+      y: -(minY + contentHeight / 2) * newZoom + window.innerHeight / 2
+    });
+  }, [placedProducts, roomPoints]);
+
+  // Mouse wheel zoom handler
+  const handleWheel = useCallback((e: WheelEvent) => {
+    if (!e.ctrlKey && !e.metaKey) return;
+    
+    e.preventDefault();
+    const delta = e.deltaY * -0.001;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomLevel * (1 + delta)));
+    setZoomLevel(newZoom);
+  }, [zoomLevel]);
 
   // Product management — all variant (drawer) picking happens inside EnhancedSeriesSelector now
   const handleProductDrag = useCallback((product: any) => {
@@ -251,6 +313,8 @@ const FloorPlanner = () => {
     setScale(0.2);
     setGridSize(GRID_SIZES.standard);
     setMeasurementUnit('mm');
+    setZoomLevel(1);
+    setPanOffset({ x: 0, y: 0 });
     toast.success('Floor plan cleared');
   }, []);
 
@@ -301,6 +365,19 @@ const FloorPlanner = () => {
             e.preventDefault();
             handleToggleMeasurements();
             break;
+          case '=':
+          case '+':
+            e.preventDefault();
+            handleZoomIn();
+            break;
+          case '-':
+            e.preventDefault();
+            handleZoomOut();
+            break;
+          case '0':
+            e.preventDefault();
+            handleZoomReset();
+            break;
         }
       }
       switch (e.key) {
@@ -332,14 +409,22 @@ const FloorPlanner = () => {
       }
     };
 
+    const handleWheelEvent = (e: WheelEvent) => handleWheel(e);
+    
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleWheelEvent, { passive: false });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleWheelEvent);
+    };
   }, [
     handleUndo, handleRedo,
     selectedProducts, placedProducts,
     handleDeleteSelected, handleRotateSelected,
     handleToggleGrid, handleToggleMeasurements,
-    handleToggleFullscreen
+    handleToggleFullscreen, handleZoomIn, handleZoomOut, 
+    handleZoomReset, handleWheel
   ]);
 
   // Room stats
@@ -431,6 +516,7 @@ const FloorPlanner = () => {
             <span>Walls: {wallSegments.length}</span>
             <span>Doors: {doors.length}</span>
             <span>Scale: {scale.toFixed(4)} px/mm</span>
+            <span>Zoom: {Math.round(zoomLevel * 100)}%</span>
             {roomStatistics && (
               <>
                 <span>Total Area: {formatMeasurement(roomStatistics.totalArea, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</span>
@@ -453,7 +539,6 @@ const FloorPlanner = () => {
                   onProductDrag={handleProductDrag}
                   currentTool={currentMode}
                   onProductUsed={(productId) => console.log('Product used:', productId)}
-                  // Any new props you add to EnhancedSeriesSelector for drawer/variant filtering can be passed here
                 />
               </div>
             </div>
@@ -511,6 +596,47 @@ const FloorPlanner = () => {
                   <CardTitle className="text-lg">Canvas - Enhanced Precision Layout</CardTitle>
                   
                   <div className="flex items-center space-x-2">
+                    {/* Zoom Controls */}
+                    <div className="flex items-center space-x-1 bg-muted rounded-md p-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomOut}
+                        disabled={zoomLevel <= MIN_ZOOM}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ZoomOut className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs px-2 min-w-[60px] text-center">
+                        {Math.round(zoomLevel * 100)}%
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomIn}
+                        disabled={zoomLevel >= MAX_ZOOM}
+                        className="h-8 w-8 p-0"
+                      >
+                        <ZoomIn className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomToFit}
+                        className="h-8 px-2 text-xs"
+                      >
+                        Fit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleZoomReset}
+                        className="h-8 px-2 text-xs"
+                      >
+                        Reset
+                      </Button>
+                    </div>
+                    
                     <div className="bg-muted rounded-md p-1">
                       <Button
                         variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
@@ -563,33 +689,41 @@ const FloorPlanner = () => {
               </CardHeader>
               
               <CardContent>
-                <div className="w-full h-[700px]">
-                  <EnhancedCanvasWorkspace
-                    roomPoints={roomPoints}
-                    setRoomPoints={setRoomPoints}
-                    wallSegments={wallSegments}
-                    setWallSegments={setWallSegments}
-                    placedProducts={placedProducts}
-                    setPlacedProducts={setPlacedProducts}
-                    doors={doors}
-                    setDoors={setDoors}
-                    textAnnotations={textAnnotations}
-                    setTextAnnotations={setTextAnnotations}
-                    rooms={rooms}
-                    setRooms={setRooms}
-                    scale={scale}
-                    currentMode={currentMode}
-                    showGrid={showGrid}
-                    showMeasurements={showMeasurements}
-                    gridSize={gridSize}
-                    measurementUnit={measurementUnit}
-                    canvasWidth={CANVAS_WIDTH}
-                    canvasHeight={CANVAS_HEIGHT}
-                    onClearAll={handleClear}
-                    selectedProducts={selectedProducts}
-                    onProductSelect={setSelectedProducts}
-                    onWallUpdate={handleWallUpdate}
-                  />
+                <div className="w-full h-[700px] relative overflow-hidden">
+                  <div 
+                    style={{
+                      transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+                      transformOrigin: '0 0',
+                      transition: 'transform 0.1s ease-out'
+                    }}
+                  >
+                    <EnhancedCanvasWorkspace
+                      roomPoints={roomPoints}
+                      setRoomPoints={setRoomPoints}
+                      wallSegments={wallSegments}
+                      setWallSegments={setWallSegments}
+                      placedProducts={placedProducts}
+                      setPlacedProducts={setPlacedProducts}
+                      doors={doors}
+                      setDoors={setDoors}
+                      textAnnotations={textAnnotations}
+                      setTextAnnotations={setTextAnnotations}
+                      rooms={rooms}
+                      setRooms={setRooms}
+                      scale={scale}
+                      currentMode={currentMode}
+                      showGrid={showGrid}
+                      showMeasurements={showMeasurements}
+                      gridSize={gridSize}
+                      measurementUnit={measurementUnit}
+                      canvasWidth={CANVAS_WIDTH}
+                      canvasHeight={CANVAS_HEIGHT}
+                      onClearAll={handleClear}
+                      selectedProducts={selectedProducts}
+                      onProductSelect={setSelectedProducts}
+                      onWallUpdate={handleWallUpdate}
+                    />
+                  </div>
                   
                   <ProductRotationControl
                     selectedProducts={selectedProducts}
@@ -615,6 +749,7 @@ const FloorPlanner = () => {
                   <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
                   <span>Grid: {gridSize}mm</span>
                   <span>Rooms: {rooms.length}</span>
+                  <span>Zoom: Ctrl+Wheel, Ctrl+Plus/Minus</span>
                   <span>{selectedProducts.length > 0 && `${selectedProducts.length} selected`}</span>
                 </div>
               </CardContent>

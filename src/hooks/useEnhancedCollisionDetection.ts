@@ -28,7 +28,8 @@ export const useEnhancedCollisionDetection = (
 ) => {
   const FURNITURE_SNAP_THRESHOLD = mmToCanvas(15, scale); // 15mm for furniture snapping
   const WALL_COLLISION_BUFFER = mmToCanvas(50, scale); // 50mm buffer from walls
-  const FURNITURE_COLLISION_BUFFER = mmToCanvas(2, scale); // 2mm between furniture pieces
+  const FURNITURE_COLLISION_BUFFER = mmToCanvas(15, scale); // Increased to 15mm between furniture pieces
+  const SEAMLESS_SNAP_DISTANCE = mmToCanvas(5, scale); // 5mm for seamless snapping
 
   const getRotatedBounds = useCallback((product: PlacedProduct, position: Point) => {
     const width = mmToCanvas(product.dimensions.length, scale);
@@ -82,52 +83,49 @@ export const useEnhancedCollisionDetection = (
       
       const targetBounds = getRotatedBounds(product, product.position);
       
-      // Check for edge-to-edge snapping
-      const snapChecks = [
-        // Right edge of target to left edge of dragged
+      // Check for seamless edge-to-edge snapping (0mm gap)
+      const seamlessSnapChecks = [
+        // Right edge of target to left edge of dragged (seamless)
         {
           targetEdge: targetBounds.right,
           draggedEdge: draggedBounds.left,
-          axis: 'x',
           offset: targetBounds.right - draggedBounds.left,
           snapPos: { x: position.x + (targetBounds.right - draggedBounds.left), y: position.y },
           type: 'edge-to-edge' as const
         },
-        // Left edge of target to right edge of dragged
+        // Left edge of target to right edge of dragged (seamless)
         {
           targetEdge: targetBounds.left,
           draggedEdge: draggedBounds.right,
-          axis: 'x',
           offset: targetBounds.left - draggedBounds.right,
           snapPos: { x: position.x + (targetBounds.left - draggedBounds.right), y: position.y },
           type: 'edge-to-edge' as const
         },
-        // Bottom edge of target to top edge of dragged
+        // Bottom edge of target to top edge of dragged (seamless)
         {
           targetEdge: targetBounds.bottom,
           draggedEdge: draggedBounds.top,
-          axis: 'y',
           offset: targetBounds.bottom - draggedBounds.top,
           snapPos: { x: position.x, y: position.y + (targetBounds.bottom - draggedBounds.top) },
           type: 'edge-to-edge' as const
         },
-        // Top edge of target to bottom edge of dragged
+        // Top edge of target to bottom edge of dragged (seamless)
         {
           targetEdge: targetBounds.top,
           draggedEdge: draggedBounds.bottom,
-          axis: 'y',
           offset: targetBounds.top - draggedBounds.bottom,
           snapPos: { x: position.x, y: position.y + (targetBounds.top - draggedBounds.bottom) },
           type: 'edge-to-edge' as const
         }
       ];
 
-      for (const check of snapChecks) {
+      for (const check of seamlessSnapChecks) {
         const distance = Math.abs(check.offset);
         
-        if (distance < FURNITURE_SNAP_THRESHOLD && distance < bestSnap.gap) {
+        if (distance < SEAMLESS_SNAP_DISTANCE && distance < bestSnap.gap) {
           // Check if there's sufficient overlap on the perpendicular axis
-          const overlapCheck = check.axis === 'x' 
+          const overlapCheck = check.offset === (targetBounds.right - draggedBounds.left) || 
+                              check.offset === (targetBounds.left - draggedBounds.right)
             ? (draggedBounds.bottom > targetBounds.top && draggedBounds.top < targetBounds.bottom)
             : (draggedBounds.right > targetBounds.left && draggedBounds.left < targetBounds.right);
           
@@ -137,43 +135,69 @@ export const useEnhancedCollisionDetection = (
               position: check.snapPos,
               snapType: check.type,
               target: product,
-              gap: distance
+              gap: 0 // Seamless snap
             };
           }
         }
       }
 
-      // Check for alignment snapping (center-to-center)
-      const centerDistance = {
-        x: Math.abs(position.x - product.position.x),
-        y: Math.abs(position.y - product.position.y)
-      };
-
-      // Horizontal alignment
-      if (centerDistance.y < FURNITURE_SNAP_THRESHOLD && centerDistance.y < bestSnap.gap) {
-        bestSnap = {
-          snapped: true,
-          position: { x: position.x, y: product.position.y },
-          snapType: 'alignment',
-          target: product,
-          gap: centerDistance.y
-        };
+      // Regular snapping with small gap if seamless didn't work
+      if (!bestSnap.snapped) {
+        for (const check of seamlessSnapChecks) {
+          const distance = Math.abs(check.offset);
+          
+          if (distance < FURNITURE_SNAP_THRESHOLD && distance < bestSnap.gap) {
+            const overlapCheck = check.offset === (targetBounds.right - draggedBounds.left) || 
+                                check.offset === (targetBounds.left - draggedBounds.right)
+              ? (draggedBounds.bottom > targetBounds.top && draggedBounds.top < targetBounds.bottom)
+              : (draggedBounds.right > targetBounds.left && draggedBounds.left < targetBounds.right);
+            
+            if (overlapCheck) {
+              bestSnap = {
+                snapped: true,
+                position: check.snapPos,
+                snapType: check.type,
+                target: product,
+                gap: distance
+              };
+            }
+          }
+        }
       }
 
-      // Vertical alignment
-      if (centerDistance.x < FURNITURE_SNAP_THRESHOLD && centerDistance.x < bestSnap.gap) {
-        bestSnap = {
-          snapped: true,
-          position: { x: product.position.x, y: position.y },
-          snapType: 'alignment',
-          target: product,
-          gap: centerDistance.x
+      // Check for alignment snapping (center-to-center)
+      if (!bestSnap.snapped) {
+        const centerDistance = {
+          x: Math.abs(position.x - product.position.x),
+          y: Math.abs(position.y - product.position.y)
         };
+
+        // Horizontal alignment
+        if (centerDistance.y < FURNITURE_SNAP_THRESHOLD && centerDistance.y < bestSnap.gap) {
+          bestSnap = {
+            snapped: true,
+            position: { x: position.x, y: product.position.y },
+            snapType: 'alignment',
+            target: product,
+            gap: centerDistance.y
+          };
+        }
+
+        // Vertical alignment
+        if (centerDistance.x < FURNITURE_SNAP_THRESHOLD && centerDistance.x < bestSnap.gap) {
+          bestSnap = {
+            snapped: true,
+            position: { x: product.position.x, y: position.y },
+            snapType: 'alignment',
+            target: product,
+            gap: centerDistance.x
+          };
+        }
       }
     }
 
     return bestSnap;
-  }, [placedProducts, getRotatedBounds, FURNITURE_SNAP_THRESHOLD]);
+  }, [placedProducts, getRotatedBounds, FURNITURE_SNAP_THRESHOLD, SEAMLESS_SNAP_DISTANCE]);
 
   const checkProductCollision = useCallback((
     draggedProduct: PlacedProduct,
@@ -195,7 +219,7 @@ export const useEnhancedCollisionDetection = (
       }
     }
 
-    // Check furniture collisions with minimal buffer
+    // Check furniture collisions with increased buffer to prevent overlap
     for (const product of placedProducts) {
       if (product.id === draggedProduct.id) continue;
       
