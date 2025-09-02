@@ -1,8 +1,8 @@
-
 import React, { Suspense, useRef } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Box3, Vector3, Group } from 'three';
+import * as THREE from 'three';
+import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
 interface IsometricProductsProps {
@@ -23,7 +23,7 @@ const ProductModel = ({
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
-  const groupRef = useRef<Group>(null);
+  const meshRef = useRef<Mesh>(null); // Fixed: Use Mesh here instead of Group
   
   const handleClick = (e: any) => {
     e.stopPropagation();
@@ -42,10 +42,9 @@ const ProductModel = ({
     0
   ];
 
-  // Fallback box if no model available
   const fallbackGeometry = (
     <mesh
-      ref={groupRef}
+      ref={meshRef}
       position={position}
       rotation={rotation}
       onClick={handleClick}
@@ -54,7 +53,7 @@ const ProductModel = ({
       <boxGeometry 
         args={[
           product.dimensions.length * scale * 0.001,
-          0.85, // Standard cabinet height
+          0.85,
           product.dimensions.width * scale * 0.001
         ]} 
       />
@@ -80,7 +79,6 @@ const ProductModel = ({
     </mesh>
   );
 
-  // Try to load 3D model if available
   if (product.modelPath) {
     return (
       <Suspense fallback={fallbackGeometry}>
@@ -115,67 +113,50 @@ const ProductGLTF = ({
   scale: number;
 }) => {
   const groupRef = useRef<Group>(null);
-  
-  try {
-    const gltf = useLoader(GLTFLoader, modelPath);
-    
-    React.useEffect(() => {
-      if (gltf && groupRef.current) {
-        const box = new Box3().setFromObject(gltf.scene);
-        const center = box.getCenter(new Vector3());
-        const size = box.getSize(new Vector3());
-        
-        // Center the model
-        gltf.scene.position.sub(center);
-        
-        // Scale appropriately
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-          const targetScale = 1 / maxDim;
-          gltf.scene.scale.setScalar(targetScale);
-        }
-      }
-    }, [gltf]);
 
-    return (
-      <group
-        ref={groupRef}
-        position={position}
-        rotation={rotation}
-        onClick={onClick}
-      >
-        <primitive 
-          object={gltf.scene} 
-          castShadow
-          receiveShadow
-        />
-        {isSelected && (
-          <mesh>
-            <boxGeometry args={[1.2, 1.2, 1.2]} />
-            <meshBasicMaterial 
-              color="#ff0000" 
-              wireframe 
-              transparent 
-              opacity={0.5}
-            />
-          </mesh>
-        )}
-      </group>
-    );
-  } catch (error) {
-    console.warn('Failed to load 3D model:', modelPath, error);
-    return (
-      <mesh
-        position={position}
-        rotation={rotation}
-        onClick={onClick}
+  const gltf = useLoader(GLTFLoader, modelPath);
+  
+  React.useEffect(() => {
+    if (gltf && groupRef.current) {
+      const box = new Box3().setFromObject(gltf.scene);
+      const center = box.getCenter(new Vector3());
+      const size = box.getSize(new Vector3());
+
+      gltf.scene.position.sub(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      if (maxDim > 0) {
+        const targetScale = 1 / maxDim;
+        gltf.scene.scale.setScalar(targetScale);
+      }
+    }
+  }, [gltf]);
+
+  return (
+    <group
+      ref={groupRef}
+      position={position}
+      rotation={rotation}
+      onClick={onClick}
+    >
+      <primitive 
+        object={gltf.scene} 
         castShadow
-      >
-        <boxGeometry args={[1, 0.85, 0.6]} />
-        <meshLambertMaterial color={isSelected ? '#ff6b6b' : '#8b5cf6'} />
-      </mesh>
-    );
-  }
+        receiveShadow
+      />
+      {isSelected && (
+        <mesh>
+          <boxGeometry args={[1.2, 1.2, 1.2]} />
+          <meshBasicMaterial 
+            color="#ff0000" 
+            wireframe 
+            transparent 
+            opacity={0.5}
+          />
+        </mesh>
+      )}
+    </group>
+  );
 };
 
 export const IsometricProducts: React.FC<IsometricProductsProps> = ({ 
