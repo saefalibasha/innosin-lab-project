@@ -40,6 +40,7 @@ export const FloorPlanner3D = () => {
   );
   const [wallSegments, setWallSegments] = useState<WallSegment[]>(
     currentState.wallSegments
+  console.log('wallSegments:', wallSegments);
   );
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
