@@ -34,7 +34,7 @@ const About = () => {
   return (
     <div className="min-h-screen bg-background pt-0">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-4">
+      <section className="bg-gradient-to-br from-sea/10 via-background to-secondary/20 relative overflow-hidden py-8">
         <div className="container-custom">
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
