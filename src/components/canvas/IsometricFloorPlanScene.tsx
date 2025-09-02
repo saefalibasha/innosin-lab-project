@@ -1,19 +1,13 @@
-import React, { useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+
+import React, { useRef, useCallback, useMemo } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
-import { Group } from 'three';
-import {
-  Point,
-  WallSegment,
-  PlacedProduct,
-  Door,
-  Room,
-} from '@/types/floorPlanTypes';
+import { Vector3, Euler, Group } from 'three';
+import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { IsometricFloor } from './IsometricFloor';
 import { IsometricDoors } from './IsometricDoors';
-import { Button } from '@/components/ui/button'; // ✅ Make sure this path is correct
 
 interface IsometricFloorPlanSceneProps {
   wallSegments: WallSegment[];
@@ -36,7 +30,7 @@ const IsometricScene = ({
   onProductClick,
   onWallClick,
   selectedProducts,
-  showGrid,
+  showGrid
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
@@ -44,7 +38,7 @@ const IsometricScene = ({
     <group ref={groupRef}>
       {/* Floor */}
       <IsometricFloor rooms={rooms} scale={scale} />
-
+      
       {/* Grid */}
       {showGrid && (
         <Grid
@@ -60,21 +54,24 @@ const IsometricScene = ({
           fadeStrength={1}
         />
       )}
-
+      
       {/* Walls */}
-      <IsometricWalls
-        wallSegments={wallSegments}
-        scale={scale}
+      <IsometricWalls 
+        wallSegments={wallSegments} 
+        scale={scale} 
         onWallClick={onWallClick}
       />
-
+      
       {/* Doors */}
-      <IsometricDoors doors={doors} scale={scale} />
-
-      {/* Products */}
-      <IsometricProducts
-        placedProducts={placedProducts}
+      <IsometricDoors 
+        doors={doors} 
         scale={scale}
+      />
+      
+      {/* Products */}
+      <IsometricProducts 
+        placedProducts={placedProducts} 
+        scale={scale} 
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
       />
@@ -83,30 +80,18 @@ const IsometricScene = ({
 };
 
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
-  const handleLogWalls = () => {
-    console.log('✅ Wall Segments:', props.wallSegments);
-  };
-
   return (
-    <div className="w-full h-full relative">
-      {/* ✅ Button positioned in top-right */}
-      <Button
-        className="absolute top-4 right-4 z-50"
-        onClick={handleLogWalls}
-      >
-        Log Walls
-      </Button>
-
+    <div className="w-full h-full">
       <Canvas shadows>
         {/* Isometric Camera Setup */}
-        <PerspectiveCamera
+        <PerspectiveCamera 
           makeDefault
           position={[20, 20, 20]}
           fov={50}
           near={0.1}
           far={1000}
         />
-
+        
         {/* Lighting */}
         <ambientLight intensity={0.3} />
         <directionalLight
@@ -121,8 +106,11 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           shadow-camera-top={25}
           shadow-camera-bottom={-25}
         />
-        <directionalLight position={[-10, 10, -5]} intensity={0.3} />
-
+        <directionalLight
+          position={[-10, 10, -5]}
+          intensity={0.3}
+        />
+        
         {/* Controls */}
         <OrbitControls
           enablePan={true}
@@ -132,7 +120,7 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           maxDistance={100}
           target={[0, 0, 0]}
         />
-
+        
         {/* Scene Content */}
         <IsometricScene {...props} />
       </Canvas>
