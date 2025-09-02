@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
 import EnhancedCanvasWorkspace3D from '../canvas/EnhancedCanvasWorkspace3D';
 
@@ -13,6 +13,8 @@ import {
 } from '@/types/floorPlanTypes';
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { MeasurementUnit } from '@/utils/measurements';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
 export const FloorPlanner3D = () => {
@@ -28,21 +30,19 @@ export const FloorPlanner3D = () => {
   const { currentState } = useFloorPlanHistory(initialFloorPlanState);
 
   const [roomPoints, setRoomPoints] = useState<Point[]>(currentState.roomPoints);
-  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(
-    currentState.placedProducts
-  );
+  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(currentState.placedProducts);
   const [doors, setDoors] = useState<Door[]>(currentState.doors);
-  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(
-    currentState.textAnnotations
-  );
-  const [wallSegments, setWallSegments] = useState<WallSegment[]>(
-    currentState.wallSegments
-  );
+  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(currentState.textAnnotations);
+  
+  const [wallSegments, setWallSegments] = useState<WallSegment[]>(currentState.wallSegments); // ✅ FIXED
+  
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  // ✅ Debugging output (moved outside the hook)
-  console.log('wallSegments:', wallSegments);
+  // ✅ Log wall segments once after mount
+  useEffect(() => {
+    console.log('wallSegments:', wallSegments);
+  }, [wallSegments]);
 
   // Canvas settings
   const [currentMode] = useState<DrawingMode>('select');
@@ -51,12 +51,12 @@ export const FloorPlanner3D = () => {
   const [gridSize] = useState(100); // mm
   const [measurementUnit] = useState<MeasurementUnit>('mm');
 
-  // Canvas pixel dimensions
+  // Canvas pixel dimensions (internal drawing surface)
   const [canvasWidth] = useState(1200);
   const [canvasHeight] = useState(800);
 
   // Room-aware scale (px per mm)
-  const scale = 0.08; // try increasing to 0.5 or 1 for debugging
+  const scale = 0.08; // 80 px per meter
 
   const handleProductDrag = useCallback((product: any) => {
     console.log('Product dragged:', product);
