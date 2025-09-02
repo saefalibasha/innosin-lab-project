@@ -1,3 +1,4 @@
+
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Environment, ContactShadows } from '@react-three/drei';
@@ -45,20 +46,27 @@ const Model = ({
       groupRef.current.clear();
 
       const modelClone = gltf.scene.clone();
+      
+      // Calculate bounding box and center
       const box = new Box3().setFromObject(modelClone);
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
-      modelClone.position.sub(center);
+      // Center the model at origin for proper rotation
+      modelClone.position.set(-center.x, -center.y, -center.z);
 
+      // Scale the model to fit viewport
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
-        const containerSize = Math.min(viewport.width, viewport.height) * 0.8;
+        const containerSize = Math.min(viewport.width, viewport.height) * 0.7;
         const scale = containerSize / maxDim;
         modelClone.scale.setScalar(scale);
       }
 
-      groupRef.current.add(modelClone);
+      // Create a wrapper group for the centered model
+      const wrapper = new THREE.Group();
+      wrapper.add(modelClone);
+      groupRef.current.add(wrapper);
 
       setModelLoaded(true);
       onLoaded?.();
@@ -73,7 +81,7 @@ const Model = ({
 
   useFrame(() => {
     if (groupRef.current && modelLoaded) {
-      groupRef.current.rotation.y += 0.003;
+      groupRef.current.rotation.y += 0.005;
     }
   });
 
@@ -197,7 +205,7 @@ const Enhanced3DViewerV2 = ({
           alpha: true,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 0.8,
         }}
         onCreated={({ gl }) => {
           gl.shadowMap.enabled = true;
@@ -205,21 +213,31 @@ const Enhanced3DViewerV2 = ({
         }}
       >
         <PerspectiveCamera makeDefault position={[0, 0, 3]} />
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 10, 5]} intensity={1.2} castShadow shadow-mapSize={[1024, 1024]} />
-        <directionalLight position={[-10, 5, 5]} intensity={0.8} />
-        <directionalLight position={[0, 10, 0]} intensity={0.6} />
-        <directionalLight position={[5, -5, 5]} intensity={0.4} />
-        <pointLight position={[5, 5, 5]} intensity={0.5} />
-        <pointLight position={[-5, -5, 5]} intensity={0.3} />
+        
+        {/* Simplified, balanced lighting */}
+        <ambientLight intensity={0.4} />
+        <directionalLight 
+          position={[5, 5, 5]} 
+          intensity={0.8} 
+          castShadow 
+          shadow-mapSize={[1024, 1024]} 
+        />
+        <directionalLight 
+          position={[-5, 3, 5]} 
+          intensity={0.4} 
+        />
 
         <Suspense fallback={null}>
-          <Environment preset="studio" background={false} environmentIntensity={0.8} />
+          <Environment 
+            preset="studio" 
+            background={false} 
+            environmentIntensity={0.5} 
+          />
         </Suspense>
 
         <ContactShadows
           position={[0, -1.5, 0]}
-          opacity={0.2}
+          opacity={0.15}
           scale={3}
           blur={2}
           far={2}

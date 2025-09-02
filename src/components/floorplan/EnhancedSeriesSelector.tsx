@@ -1,14 +1,9 @@
+
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import {
   Collapsible,
   CollapsibleContent,
@@ -18,20 +13,16 @@ import { Package, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { useProductSeries } from '@/hooks/useProductSeries';
 import { Product } from '@/types/product';
 import ProductVariantSelector from './ProductVariantSelector';
+import VariantFilterControls from './VariantFilterControls';
 import {
   formatSeriesName,
   formatProductName,
 } from '@/utils/seriesNameFormatter';
-import {
-  getOrientationDisplayName,
-  formatFinishType,
-} from '@/utils/productTerminology';
 
 interface EnhancedSeriesSelectorProps {
   onProductDrag: (product: any) => void;
   currentTool: string;
   onProductUsed?: (productId: string) => void;
-  /** ✅ NEW: Callback when product is clicked (used by HotspotEditor) */
   onProductSelect?: (product: Product) => void;
 }
 
@@ -52,7 +43,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
 
   const isInteractionDisabled = currentTool !== 'select';
 
-  // Helpers (same as before)...
+  // Helper functions
   const deriveDrawerCount = (p: Product): number | null => {
     const direct =
       (p as any).number_of_drawers ??
@@ -84,8 +75,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     return null;
   };
 
-  const toDrawerCode = (n: number) => `DWR${n}`;
-
   const filteredSeries = useMemo(() => {
     if (!searchTerm) return productSeries;
     const term = searchTerm.toLowerCase();
@@ -103,6 +92,23 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     }
   };
 
+  const handleFilterChange = (seriesId: string, filterKey: string, value: string | null) => {
+    setSeriesFilters((prev) => ({
+      ...prev,
+      [seriesId]: {
+        ...prev[seriesId],
+        [filterKey]: value,
+      },
+    }));
+  };
+
+  const handleClearFilters = (seriesId: string) => {
+    setSeriesFilters((prev) => ({
+      ...prev,
+      [seriesId]: {},
+    }));
+  };
+
   const getFilteredProducts = (seriesId: string, products: Product[]): Product[] => {
     const f = seriesFilters[seriesId] || {};
     return products.filter((p) => {
@@ -114,14 +120,66 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       }
       if (f.doorType && p.door_type !== f.doorType) return false;
       if (f.dimensions && p.dimensions !== f.dimensions) return false;
-      if (f.category && p.category !== f.category) return false;
       if (f.mountingType && p.mounting_type !== f.mountingType) return false;
       if (f.mixingType && p.mixing_type !== f.mixingType) return false;
       if (f.handleType && p.handle_type !== f.handleType) return false;
       if (f.cabinetClass && p.cabinet_class !== f.cabinetClass) return false;
-      if (f.emergencyShowerType && p.emergency_shower_type !== f.emergencyShowerType) return false;
       return true;
     });
+  };
+
+  const getAvailableVariants = (products: Product[]) => {
+    const variants = {
+      finishes: [] as string[],
+      orientations: [] as string[],
+      drawerCounts: [] as number[],
+      doorTypes: [] as string[],
+      dimensions: [] as string[],
+      mountingTypes: [] as string[],
+      mixingTypes: [] as string[],
+      handleTypes: [] as string[],
+      cabinetClasses: [] as string[],
+    };
+
+    products.forEach((p) => {
+      if (p.finish_type && !variants.finishes.includes(p.finish_type)) {
+        variants.finishes.push(p.finish_type);
+      }
+      if (p.orientation && !variants.orientations.includes(p.orientation)) {
+        variants.orientations.push(p.orientation);
+      }
+      const drawerCount = deriveDrawerCount(p);
+      if (drawerCount && !variants.drawerCounts.includes(drawerCount)) {
+        variants.drawerCounts.push(drawerCount);
+      }
+      if (p.door_type && !variants.doorTypes.includes(p.door_type)) {
+        variants.doorTypes.push(p.door_type);
+      }
+      if (p.dimensions && !variants.dimensions.includes(p.dimensions)) {
+        variants.dimensions.push(p.dimensions);
+      }
+      if (p.mounting_type && !variants.mountingTypes.includes(p.mounting_type)) {
+        variants.mountingTypes.push(p.mounting_type);
+      }
+      if (p.mixing_type && !variants.mixingTypes.includes(p.mixing_type)) {
+        variants.mixingTypes.push(p.mixing_type);
+      }
+      if (p.handle_type && !variants.handleTypes.includes(p.handle_type)) {
+        variants.handleTypes.push(p.handle_type);
+      }
+      if (p.cabinet_class && !variants.cabinetClasses.includes(p.cabinet_class)) {
+        variants.cabinetClasses.push(p.cabinet_class);
+      }
+    });
+
+    // Sort arrays
+    variants.finishes.sort();
+    variants.orientations.sort();
+    variants.drawerCounts.sort((a, b) => a - b);
+    variants.doorTypes.sort();
+    variants.dimensions.sort();
+
+    return variants;
   };
 
   const handleProductClick = (seriesId: string, product: Product) => {
@@ -138,7 +196,6 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       setShowVariantSelector(false);
     }
 
-    // ✅ Notify parent (HotspotEditor)
     onProductSelect?.(product);
   };
 
@@ -181,10 +238,9 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-2">
           {filteredSeries.map((series) => {
-            const f = seriesFilters[series.id] || {};
             const filtered = getFilteredProducts(series.id, series.products);
-            const hasAnyDrawers =
-              series.products.some((p) => deriveDrawerCount(p) !== null);
+            const availableVariants = getAvailableVariants(series.products);
+            const hasVariants = Object.values(availableVariants).some(arr => arr.length > 1);
 
             return (
               <Collapsible
@@ -201,8 +257,13 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                       <div className="font-medium text-sm leading-tight">
                         {formatSeriesName(series.name)}
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {series.products.length} variants
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <span>{series.products.length} variants</span>
+                        {hasVariants && (
+                          <Badge variant="secondary" className="text-[10px] h-4 px-1">
+                            Filterable
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     {expandedSeries === series.id ? (
@@ -214,6 +275,16 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
                 </CollapsibleTrigger>
 
                 <CollapsibleContent className="space-y-3 pl-4 mt-2">
+                  {/* Variant Filter Controls */}
+                  {hasVariants && (
+                    <VariantFilterControls
+                      availableVariants={availableVariants}
+                      activeFilters={seriesFilters[series.id] || {}}
+                      onFilterChange={(key, value) => handleFilterChange(series.id, key, value)}
+                      onClearFilters={() => handleClearFilters(series.id)}
+                    />
+                  )}
+
                   {/* Product grid */}
                   <div className="grid grid-cols-2 gap-3">
                     {filtered.map((product) => (
