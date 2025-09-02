@@ -43,10 +43,10 @@ export const FloorPlanner3D = () => {
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
 
-  // ✅ Add a console.log to inspect wall segments
-  useEffect(() => {
-    console.log('wallSegments:', wallSegments);
-  }, [wallSegments]);
+  // ✅ Add a console.log to inspect wall segments on demand
+  const handleLogWalls = () => {
+    console.log('✅ Current Wall Segments:', wallSegments);
+  };
 
   // Canvas settings
   const [currentMode] = useState<DrawingMode>('select');
@@ -55,11 +55,8 @@ export const FloorPlanner3D = () => {
   const [gridSize] = useState(100); // mm
   const [measurementUnit] = useState<MeasurementUnit>('mm');
 
-  // Canvas pixel dimensions (internal drawing surface)
   const [canvasWidth] = useState(1200);
   const [canvasHeight] = useState(800);
-
-  // Room-aware scale (px per mm)
   const scale = 0.08; // 80 px per meter
 
   const handleProductDrag = useCallback((product: any) => {
@@ -97,6 +94,14 @@ export const FloorPlanner3D = () => {
 
       {/* Canvas area */}
       <div className="flex-1 relative">
+        {/* ✅ Log Wall Button */}
+        <Button
+          className="absolute top-4 right-4 z-50"
+          onClick={handleLogWalls}
+        >
+          Log Walls
+        </Button>
+
         <div className="w-full h-full">
           <EnhancedCanvasWorkspace3D
             placedProducts={placedProducts}
