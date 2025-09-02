@@ -1,4 +1,3 @@
-
 import React, { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader, Vector3, Shape, ExtrudeGeometry } from 'three';
@@ -23,7 +22,7 @@ const Wall = ({ wall, scale, onWallClick }: {
     const perpendicular = new Vector3(-direction.z, 0, direction.x);
     
     const thickness = (wall.thickness || 100) * scale * 0.0005;
-    const height = 2.4; // 2.4m wall height
+    const height = 2400 * scale * 0.001; // Fixed: scaled + converted to meters
     
     // Create wall shape
     const shape = new Shape();
