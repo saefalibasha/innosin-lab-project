@@ -45,6 +45,7 @@ import PlacedProductsBar from '@/components/floorplan/PlacedProductsBar';
 import ProductRotationControl from '@/components/floorplan/ProductRotationControl';
 import { ContactGateModal } from '@/components/ContactGateModal';
 import { useAuth } from '@/contexts/AuthContext';
+import EnhancedCanvasWorkspace3D from '@/components/canvas/EnhancedCanvasWorkspace3D';
 
 const FloorPlanner = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -453,6 +454,9 @@ const FloorPlanner = () => {
     ? "fixed inset-0 z-50 bg-background" 
     : "min-h-screen bg-background";
 
+  // Add view mode state
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+
   if (!hasAccess) {
     return (
       <>
@@ -483,6 +487,26 @@ const FloorPlanner = () => {
             </div>
             
             <div className="flex items-center space-x-2">
+              {/* View Mode Toggle */}
+              <div className="bg-muted rounded-md p-1">
+                <Button
+                  variant={viewMode === '2d' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('2d')}
+                  className="h-8 px-3 text-xs"
+                >
+                  2D View
+                </Button>
+                <Button
+                  variant={viewMode === '3d' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('3d')}
+                  className="h-8 px-3 text-xs"
+                >
+                  3D Isometric
+                </Button>
+              </div>
+              
               <SegmentedUnitSelector
                 selectedUnit={measurementUnit}
                 onUnitChange={handleUnitChange}
@@ -511,6 +535,7 @@ const FloorPlanner = () => {
           
           {/* Stats */}
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+            <span>View: {viewMode.toUpperCase()}</span>
             <span>Rooms: {rooms.length}</span>
             <span>Products: {placedProducts.length}</span>
             <span>Walls: {wallSegments.length}</span>
@@ -565,139 +590,199 @@ const FloorPlanner = () => {
               onClearSelection={handleClearSelection}
             />
 
-            <HorizontalToolbar
-              currentTool={currentMode}
-              onToolChange={handleToolChange}
-              selectedProducts={selectedProducts}
-              onClearSelection={handleClearSelection}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              canUndo={canUndo}
-              canRedo={canRedo}
-              onToggleGrid={handleToggleGrid}
-              showGrid={showGrid}
-              scale={scale}
-              onScaleChange={handleScaleChange}
-            />
-
-            {showRoomCreator && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <RoomCreator
-                  onRoomCreate={handleRoomCreate}
-                  onCancel={() => setShowRoomCreator(false)}
+            {viewMode === '2d' && (
+              <>
+                <HorizontalToolbar
+                  currentTool={currentMode}
+                  onToolChange={handleToolChange}
+                  selectedProducts={selectedProducts}
+                  onClearSelection={handleClearSelection}
+                  onUndo={handleUndo}
+                  onRedo={handleRedo}
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  onToggleGrid={handleToggleGrid}
+                  showGrid={showGrid}
                   scale={scale}
+                  onScaleChange={handleScaleChange}
                 />
-              </div>
+
+                {showRoomCreator && (
+                  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <RoomCreator
+                      onRoomCreate={handleRoomCreate}
+                      onCancel={() => setShowRoomCreator(false)}
+                      scale={scale}
+                    />
+                  </div>
+                )}
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Canvas - Enhanced Precision Layout (2D)</CardTitle>
+                      
+                      <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1 bg-muted rounded-md p-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomOut}
+                            disabled={zoomLevel <= MIN_ZOOM}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ZoomOut className="h-4 w-4" />
+                          </Button>
+                          <span className="text-xs px-2 min-w-[60px] text-center">
+                            {Math.round(zoomLevel * 100)}%
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomIn}
+                            disabled={zoomLevel >= MAX_ZOOM}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ZoomIn className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomToFit}
+                            className="h-8 px-2 text-xs"
+                          >
+                            Fit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleZoomReset}
+                            className="h-8 px-2 text-xs"
+                          >
+                            Reset
+                          </Button>
+                        </div>
+                        
+                        <div className="bg-muted rounded-md p-1">
+                          <Button
+                            variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setMeasurementUnit('mm')}
+                            className="h-8 px-3 text-xs"
+                          >
+                            MM
+                          </Button>
+                          <Button
+                            variant={measurementUnit === 'm' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setMeasurementUnit('m')}
+                            className="h-8 px-3 text-xs"
+                          >
+                            M
+                          </Button>
+                        </div>
+                        <Badge variant="outline" className="text-xs">
+                          Enhanced Snapping
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {gridSize}mm grid
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Mode: {currentMode}
+                        </Badge>
+                        <Button variant="outline" size="sm" asChild>
+                          <label>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Load
+                            <input
+                              type="file"
+                              accept=".json"
+                              onChange={handleLoad}
+                              className="hidden"
+                            />
+                          </label>
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={handleClear}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent>
+                    <div className="w-full h-[700px] relative overflow-hidden">
+                      <div 
+                        style={{
+                          transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
+                          transformOrigin: '0 0',
+                          transition: 'transform 0.1s ease-out'
+                        }}
+                      >
+                        <EnhancedCanvasWorkspace
+                          roomPoints={roomPoints}
+                          setRoomPoints={setRoomPoints}
+                          wallSegments={wallSegments}
+                          setWallSegments={setWallSegments}
+                          placedProducts={placedProducts}
+                          setPlacedProducts={setPlacedProducts}
+                          doors={doors}
+                          setDoors={setDoors}
+                          textAnnotations={textAnnotations}
+                          setTextAnnotations={setTextAnnotations}
+                          rooms={rooms}
+                          setRooms={setRooms}
+                          scale={scale}
+                          currentMode={currentMode}
+                          showGrid={showGrid}
+                          showMeasurements={showMeasurements}
+                          gridSize={gridSize}
+                          measurementUnit={measurementUnit}
+                          canvasWidth={CANVAS_WIDTH}
+                          canvasHeight={CANVAS_HEIGHT}
+                          onClearAll={handleClear}
+                          selectedProducts={selectedProducts}
+                          onProductSelect={setSelectedProducts}
+                          onWallUpdate={handleWallUpdate}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
 
-            <Card>
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Canvas - Enhanced Precision Layout</CardTitle>
-                  
-                  <div className="flex items-center space-x-2">
-                    {/* Zoom Controls */}
-                    <div className="flex items-center space-x-1 bg-muted rounded-md p-1">
-                      <Button
-                        variant="ghost"
+            {viewMode === '3d' && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Canvas - 3D Isometric View</CardTitle>
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs">
+                        3D Isometric
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        WebGL Rendering
+                      </Badge>
+                      <Button 
+                        variant="destructive" 
                         size="sm"
-                        onClick={handleZoomOut}
-                        disabled={zoomLevel <= MIN_ZOOM}
-                        className="h-8 w-8 p-0"
+                        onClick={handleClear}
                       >
-                        <ZoomOut className="h-4 w-4" />
-                      </Button>
-                      <span className="text-xs px-2 min-w-[60px] text-center">
-                        {Math.round(zoomLevel * 100)}%
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomIn}
-                        disabled={zoomLevel >= MAX_ZOOM}
-                        className="h-8 w-8 p-0"
-                      >
-                        <ZoomIn className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomToFit}
-                        className="h-8 px-2 text-xs"
-                      >
-                        Fit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleZoomReset}
-                        className="h-8 px-2 text-xs"
-                      >
-                        Reset
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear
                       </Button>
                     </div>
-                    
-                    <div className="bg-muted rounded-md p-1">
-                      <Button
-                        variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setMeasurementUnit('mm')}
-                        className="h-8 px-3 text-xs"
-                      >
-                        MM
-                      </Button>
-                      <Button
-                        variant={measurementUnit === 'm' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setMeasurementUnit('m')}
-                        className="h-8 px-3 text-xs"
-                      >
-                        M
-                      </Button>
-                    </div>
-                    <Badge variant="outline" className="text-xs">
-                      Enhanced Snapping
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      {gridSize}mm grid
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Mode: {currentMode}
-                    </Badge>
-                    <Button variant="outline" size="sm" asChild>
-                      <label>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Load
-                        <input
-                          type="file"
-                          accept=".json"
-                          onChange={handleLoad}
-                          className="hidden"
-                        />
-                      </label>
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      size="sm"
-                      onClick={handleClear}
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Clear
-                    </Button>
                   </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent>
-                <div className="w-full h-[700px] relative overflow-hidden">
-                  <div 
-                    style={{
-                      transform: `scale(${zoomLevel}) translate(${panOffset.x}px, ${panOffset.y}px)`,
-                      transformOrigin: '0 0',
-                      transition: 'transform 0.1s ease-out'
-                    }}
-                  >
-                    <EnhancedCanvasWorkspace
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="w-full h-[700px]">
+                    <EnhancedCanvasWorkspace3D
                       roomPoints={roomPoints}
                       setRoomPoints={setRoomPoints}
                       wallSegments={wallSegments}
@@ -725,35 +810,34 @@ const FloorPlanner = () => {
                     />
                   </div>
                   
-                  <ProductRotationControl
-                    selectedProducts={selectedProducts}
-                    onRotateClockwise={handleRotateSelected}
-                    onRotateCounterClockwise={handleRotateCounterClockwise}
-                    onRotateToAngle={handleRotateToAngle}
-                  />
-                  
-                  {selectedWall && (
-                    <WallEditor
-                      selectedWall={selectedWall}
-                      onWallUpdate={handleWallUpdate}
-                      onWallDelete={handleWallDelete}
-                      onClose={() => setSelectedWall(null)}
-                      scale={scale}
-                      measurementUnit={measurementUnit}
-                    />
-                  )}
-                </div>
-                
-                <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Mode: {currentMode}</span>
-                  <span>Canvas: {CANVAS_WIDTH} × {CANVAS_HEIGHT}</span>
-                  <span>Grid: {gridSize}mm</span>
-                  <span>Rooms: {rooms.length}</span>
-                  <span>Zoom: Ctrl+Wheel, Ctrl+Plus/Minus</span>
-                  <span>{selectedProducts.length > 0 && `${selectedProducts.length} selected`}</span>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Mode: 3D Isometric</span>
+                    <span>Renderer: WebGL</span>
+                    <span>Models: {placedProducts.filter(p => p.modelPath).length}/{placedProducts.length}</span>
+                    <span>Performance: Real-time 3D</span>
+                    <span>{selectedProducts.length > 0 && `${selectedProducts.length} selected`}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <ProductRotationControl
+              selectedProducts={selectedProducts}
+              onRotateClockwise={handleRotateSelected}
+              onRotateCounterClockwise={handleRotateCounterClockwise}
+              onRotateToAngle={handleRotateToAngle}
+            />
+            
+            {selectedWall && (
+              <WallEditor
+                selectedWall={selectedWall}
+                onWallUpdate={handleWallUpdate}
+                onWallDelete={handleWallDelete}
+                onClose={() => setSelectedWall(null)}
+                scale={scale}
+                measurementUnit={measurementUnit}
+              />
+            )}
 
             {rooms.length > 0 && (
               <Card>
