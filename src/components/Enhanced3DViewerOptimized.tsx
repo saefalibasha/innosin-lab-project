@@ -1,12 +1,14 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import {
   OrbitControls as DreiOrbitControls,
   PerspectiveCamera,
   Environment,
+  useBounds,
+  Html,
 } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Box3, Vector3, DoubleSide } from 'three';
+import { Box3, Vector3, DoubleSide, Mesh, PlaneGeometry, MeshStandardMaterial } from 'three';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import type { OrbitControls as ThreeOrbitControls } from 'three-stdlib';
 
@@ -20,6 +22,15 @@ interface Enhanced3DViewerOptimizedProps {
 }
 
 const modelCache = new Map();
+
+const GroundShadow = () => {
+  return (
+    <mesh receiveShadow rotation-x={-Math.PI / 2} position={[0, -1.25, 0]}>
+      <planeGeometry args={[10, 10]} />
+      <shadowMaterial opacity={0.3} />
+    </mesh>
+  );
+};
 
 const Model = ({
   url,
@@ -38,47 +49,47 @@ const Model = ({
 }) => {
   const meshRef = useRef<any>();
   const gltf = useLoader(GLTFLoader, url);
+  const { camera } = useThree();
   const [modelLoaded, setModelLoaded] = useState(false);
 
   useEffect(() => {
     if (!gltf || !meshRef.current) return;
 
     const scene = gltf.scene;
-
-    // Compute bounding box
     const box = new Box3().setFromObject(scene);
     const center = box.getCenter(new Vector3());
     const size = box.getSize(new Vector3());
 
-    // Center the model
     scene.position.sub(center);
 
-    // Normalize scale
     const maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim > 0) {
-      const scale = 2.5 / maxDim;
-      scene.scale.setScalar(scale);
-    }
+    const scale = 2.5 / maxDim;
+    scene.scale.setScalar(scale);
 
-    // Ensure double-sided rendering
     scene.traverse((child: any) => {
       if (child.isMesh && child.material) {
+        child.castShadow = true;
+        child.receiveShadow = true;
         child.material.side = DoubleSide;
         child.material.needsUpdate = true;
       }
     });
 
-    // ✅ Center camera rotation axis
     if (controlsRef.current) {
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
     }
 
+    // Autofit camera
+    const newSize = size.multiplyScalar(scale);
+    const distance = newSize.length() * 0.75;
+    camera.position.set(0, 0, distance);
+    camera.lookAt(0, 0, 0);
+
     setModelLoaded(true);
     onLoaded?.();
     modelCache.set(url, gltf);
-    console.log('✅ 3D model loaded and centered:', url);
-  }, [gltf, onLoaded, url, controlsRef]);
+  }, [gltf, onLoaded, url, controlsRef, camera]);
 
   useFrame(() => {
     if (meshRef.current && modelLoaded) {
@@ -149,7 +160,7 @@ const Enhanced3DViewerOptimized = ({
 
   return (
     <div className={`relative ${className}`}>
-      <Canvas>
+      <Canvas shadows>
         <PerspectiveCamera makeDefault position={[0, 0, 4.5]} />
         <DreiOrbitControls
           ref={controlsRef}
@@ -164,10 +175,17 @@ const Enhanced3DViewerOptimized = ({
         />
 
         {/* Lighting */}
-        <ambientLight intensity={1.5} />
-        <directionalLight position={[5, 5, 5]} intensity={2.5} />
-        <directionalLight position={[-5, -5, -5]} intensity={1.8} />
-        <directionalLight position={[0, 10, 0]} intensity={1.5} />
+        <ambientLight intensity={1.2} />
+        <directionalLight
+          position={[5, 10, 5]}
+          intensity={2.5}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+        />
+
+        {/* Shadow catcher */}
+        <GroundShadow />
 
         {/* Environment */}
         <Suspense fallback={null}>
