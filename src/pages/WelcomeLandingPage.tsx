@@ -1,15 +1,15 @@
 "use client";
 
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button"; // Assuming shadcn/ui or your own button
+import { Button } from "@/components/ui/button";
 
-// Inline RetroGrid component
+// 🎯 Inline RetroGrid Component with Custom Colors
 function RetroGrid({
   angle = 65,
   cellSize = 60,
   opacity = 0.5,
-  lightLineColor = "gray",
-  darkLineColor = "gray",
+  lightLineColor = "#CBD5E0",  // cool gray for light mode
+  darkLineColor = "#2D3748",   // blue-gray for dark mode
 }: {
   angle?: number;
   cellSize?: number;
@@ -38,7 +38,7 @@ function RetroGrid({
   );
 }
 
-// Main welcome page
+// 🚀 Welcome Page Component
 export default function WelcomeLandingPage() {
   const navigate = useNavigate();
 
@@ -48,12 +48,10 @@ export default function WelcomeLandingPage() {
         angle={75}
         cellSize={80}
         opacity={0.15}
-        lightLineColor="#FFD319"
-        darkLineColor="#FF2975"
       />
 
       <div className="relative z-10 text-center px-6">
-        <h1 className="text-5xl sm:text-7xl font-bold text-transparent bg-gradient-to-b from-yellow-400 via-pink-500 to-purple-700 bg-clip-text drop-shadow-md">
+        <h1 className="text-5xl sm:text-7xl font-bold text-transparent bg-gradient-to-b from-sky-300 via-blue-500 to-blue-700 bg-clip-text drop-shadow-md">
           Welcome to Innosin Lab
         </h1>
 
@@ -62,7 +60,7 @@ export default function WelcomeLandingPage() {
         </p>
 
         <Button
-          className="mt-8 px-6 py-4 text-lg rounded-full bg-[#ff2975] hover:bg-[#d82063] text-white shadow-xl"
+          className="mt-8 px-6 py-4 text-lg rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl"
           onClick={() => navigate("/home")}
         >
           Enter Site →
