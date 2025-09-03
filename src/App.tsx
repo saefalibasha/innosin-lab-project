@@ -1,4 +1,3 @@
-
 // src/App.tsx
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -29,6 +28,9 @@ import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminProductViewer from "./pages/AdminProductViewer";
 
+// ✅ NEW: Import Welcome Landing Page
+import WelcomeLandingPage from "./pages/WelcomeLandingPage";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -40,7 +42,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* ✅ All public routes wrapped by SiteLayout (nav on top, footer bottom) */}
+              {/* ✅ All public routes wrapped by SiteLayout */}
               <Route element={<SiteLayout />}>
                 <Route index element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
@@ -54,7 +56,10 @@ const App = () => (
                 <Route path="/rfq-cart" element={<RFQCart />} />
               </Route>
 
-              {/* Admin (kept separate; add to layout if you want public nav/footer there) */}
+              {/* ✅ Welcome Page — No layout, full-screen custom landing */}
+              <Route path="/welcome" element={<WelcomeLandingPage />} />
+
+              {/* Admin pages */}
               <Route path="/admin/auth" element={<AdminAuth />} />
               <Route
                 path="/admin/dashboard"
