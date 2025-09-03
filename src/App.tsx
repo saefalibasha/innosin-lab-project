@@ -8,9 +8,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 
+// Layout
 import SiteLayout from "@/components/SiteLayout";
 
 // Public pages
+import WelcomeLandingPage from "./pages/WelcomeLandingPage";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import About from "./pages/About";
@@ -27,9 +29,6 @@ import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminProductViewer from "./pages/AdminProductViewer";
 
-// ✅ Welcome landing page
-import WelcomeLandingPage from "./pages/WelcomeLandingPage";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -41,13 +40,13 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* ✅ Redirect root `/` to `/welcome` so it's always first */}
-              <Route path="/" element={<Navigate to="/welcome" />} />
+              {/* ✅ Redirect / to /welcome */}
+              <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-              {/* ✅ Standalone welcome page (no layout) */}
+              {/* ✅ Welcome landing page (no layout) */}
               <Route path="/welcome" element={<WelcomeLandingPage />} />
 
-              {/* ✅ All other public routes wrapped in SiteLayout */}
+              {/* ✅ Public routes with layout */}
               <Route element={<SiteLayout />}>
                 <Route path="/home" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
@@ -61,7 +60,7 @@ const App = () => (
                 <Route path="/rfq-cart" element={<RFQCart />} />
               </Route>
 
-              {/* ✅ Admin routes (no public layout) */}
+              {/* ✅ Admin routes (protected and without layout) */}
               <Route path="/admin/auth" element={<AdminAuth />} />
               <Route
                 path="/admin/dashboard"
