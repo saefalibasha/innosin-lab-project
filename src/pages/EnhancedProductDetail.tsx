@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, ShoppingCart, Package, Camera, Box, FileText, Building2, Settings } from 'lucide-react';
 import { useRFQ } from '@/contexts/RFQContext';
 import { toast } from 'sonner';
-import Enhanced3DViewer from '@/components/Enhanced3DViewer';
 import Enhanced3DViewerOptimized from '@/components/Enhanced3DViewerOptimized';
 import InnosinLabConfigurator from '@/components/product/InnosinLabConfigurator';
 import ProductImageGallery from '@/components/ProductImageGallery';
@@ -22,7 +21,6 @@ import { SpecificProductSelector } from '@/components/floorplan/SpecificProductS
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
 
 const EnhancedProductDetail = () => {
-  // ✅ match router param name: /products/:id
   const { id } = useParams<{ id: string }>();
   const { addItem } = useRFQ();
 
@@ -43,27 +41,20 @@ const EnhancedProductDetail = () => {
   const fetchProductData = async (productId: string) => {
     try {
       setLoading(true);
-
-      // Fetch the main product/series
       const product = await fetchProductById(productId);
       setSeries(product);
 
       if (product?.is_series_parent) {
         const variants = await fetchProductsByParentSeriesId(productId);
         setSeries({ ...product, variants });
-
-        if (variants?.length > 0) {
-          setSelectedVariantId(variants[0].id);
-        }
+        if (variants?.length > 0) setSelectedVariantId(variants[0].id);
       } else if (product?.parent_series_id) {
-        // If this is a variant, fetch the parent and all siblings
         try {
           const parentProduct = await fetchProductById(product.parent_series_id);
           const variants = await fetchProductsByParentSeriesId(product.parent_series_id);
           setSeries({ ...parentProduct, variants, is_series_parent: true });
           setSelectedVariantId(product.id);
         } catch {
-          // If parent doesn't exist, treat as standalone product
           setSeries(product);
         }
       }
@@ -80,22 +71,15 @@ const EnhancedProductDetail = () => {
     [series, selectedVariantId]
   );
 
-  // ✅ Single declaration of displayProduct, reused everywhere
-  const displayProduct = useMemo(
-    () => currentVariant || series,
-    [currentVariant, series]
-  );
+  const displayProduct = useMemo(() => currentVariant || series, [currentVariant, series]);
 
-  // Enhanced product type detection
   const getProductType = () => {
     if (!series && !displayProduct) return 'standard';
-
     const product = displayProduct || series;
     const productSeries = product?.product_series?.toLowerCase() || '';
     const category = product?.category?.toLowerCase() || '';
     const name = product?.name?.toLowerCase() || '';
 
-    // UNIFLEX Taps
     if (
       productSeries.includes('uniflex') ||
       productSeries.includes('single way taps') ||
@@ -104,14 +88,12 @@ const EnhancedProductDetail = () => {
       product?.handle_type
     ) return 'uniflex';
 
-    // Emergency Shower
     if (
       productSeries.includes('emergency shower') ||
       name.includes('emergency shower') ||
       product?.emergency_shower_type
     ) return 'emergency_shower';
 
-    // Safe Aire II / Fume Hoods
     if (
       productSeries.includes('safe aire') ||
       productSeries.includes('fume hood') ||
@@ -121,12 +103,8 @@ const EnhancedProductDetail = () => {
       product?.mounting_type
     ) return 'fume_hood';
 
-    // Tall Cabinet
-    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) {
-      return 'tall_cabinet';
-    }
+    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) return 'tall_cabinet';
 
-    // Innosin Lab
     if (
       category.includes('innosin') ||
       productSeries.includes('innosin') ||
@@ -135,17 +113,10 @@ const EnhancedProductDetail = () => {
       productSeries.includes('knee space')
     ) return 'innosin_lab';
 
-    // Open Rack
-    if (productSeries.includes('open rack') || name.includes('open rack')) {
-      return 'open_rack';
-    }
+    if (productSeries.includes('open rack') || name.includes('open rack')) return 'open_rack';
 
-    // Wall Cabinet
-    if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) {
-      return 'wall_cabinet';
-    }
+    if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) return 'wall_cabinet';
 
-    // Modular Cabinet
     if (
       (productSeries.includes('modular cabinet') || name.includes('modular cabinet')) &&
       !category.includes('innosin')
@@ -158,7 +129,6 @@ const EnhancedProductDetail = () => {
   const hasVariants = Boolean(series?.variants?.length);
   const shouldShowConfigurator = hasVariants || productType !== 'standard';
 
-  // Update assets when variant or finish changes
   useEffect(() => {
     if (currentVariant) {
       setCurrentAssets({
@@ -177,19 +147,14 @@ const EnhancedProductDetail = () => {
 
   const handleModularConfigurationSelect = (configuration: any) => {
     setSelectedModularConfiguration(configuration);
-    if (configuration?.variants?.length > 0) {
-      setSelectedVariantId(configuration.variants[0].id);
-    }
+    if (configuration?.variants?.length > 0) setSelectedVariantId(configuration.variants[0].id);
   };
 
-  const handleVariantSelect = (variant: any) => {
-    setSelectedVariantId(variant.id);
-  };
+  const handleVariantSelect = (variant: any) => setSelectedVariantId(variant.id);
 
   const handleAddToQuote = () => {
     if (!series) return;
 
-    // Modular cabinets
     if (productType === 'modular_cabinet' && selectedModularConfiguration) {
       const finishText = selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
       const itemToAdd = {
@@ -208,7 +173,6 @@ const EnhancedProductDetail = () => {
       return;
     }
 
-    // Other
     const finishText =
       productType === 'open_rack'
         ? selectedFinish === 'PC' ? 'Powder Coat' : 'SS304'
@@ -243,7 +207,6 @@ const EnhancedProductDetail = () => {
   const renderConfigurator = () => {
     if (!shouldShowConfigurator) return null;
 
-    // UNIFLEX / Emergency Shower / Fume Hood → SpecificProductSelector
     if (['uniflex', 'emergency_shower', 'fume_hood'].includes(productType)) {
       const variants = hasVariants ? series.variants : [displayProduct];
       return (
@@ -317,9 +280,7 @@ const EnhancedProductDetail = () => {
             additional_images: v.additional_images || [],
           }))}
           onConfigurationSelect={(config: any) => {
-            if (config?.variants?.length > 0) {
-              setSelectedVariantId(config.variants[0].id);
-            }
+            if (config?.variants?.length > 0) setSelectedVariantId(config.variants[0].id);
           }}
         />
       );
@@ -418,22 +379,14 @@ const EnhancedProductDetail = () => {
 
                 <TabsContent value="3d" className="mt-0">
                   <div className="rounded-xl overflow-hidden border shadow-sm">
-                    {productType === 'innosin_lab' ? (
-                      <Enhanced3DViewerOptimized
-                        modelPath={currentAssets?.model || ''}
-                        className="w-full h-96 lg:h-[500px]"
-                        productId={id}
-                        preloadModels={(series?.variants || [])
-                          .map((v: any) => v.model_path)
-                          .filter(Boolean)}
-                      />
-                    ) : (
-                      <Enhanced3DViewer
-                        modelPath={currentAssets?.model || ''}
-                        className="w-full h-96 lg:h-[500px]"
-                        productId={id}
-                      />
-                    )}
+                    <Enhanced3DViewerOptimized
+                      modelPath={currentAssets?.model || ''}
+                      className="w-full h-96 lg:h-[500px]"
+                      productId={id}
+                      preloadModels={(series?.variants || [])
+                        .map((v: any) => v.model_path)
+                        .filter(Boolean)}
+                    />
                   </div>
                 </TabsContent>
               </Tabs>
@@ -442,7 +395,6 @@ const EnhancedProductDetail = () => {
 
           {/* Right Column - Product Info */}
           <div className="space-y-6">
-            {/* Product Header */}
             <AnimatedSection animation="slide-in-right" delay={300}>
               <div className="space-y-4">
                 <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
@@ -455,7 +407,6 @@ const EnhancedProductDetail = () => {
               </div>
             </AnimatedSection>
 
-            {/* Product Overview */}
             <AnimatedSection animation="slide-in-right" delay={350}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -472,7 +423,6 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {/* Product Configuration */}
             {shouldShowConfigurator && (
               <AnimatedSection animation="slide-in-right" delay={400}>
                 <Card className="shadow-sm">
@@ -489,7 +439,6 @@ const EnhancedProductDetail = () => {
               </AnimatedSection>
             )}
 
-            {/* Technical Specifications */}
             <AnimatedSection animation="slide-in-right" delay={450}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -504,7 +453,6 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {/* Add to Quote Button */}
             <AnimatedSection animation="slide-in-right" delay={500}>
               <Button
                 onClick={handleAddToQuote}
