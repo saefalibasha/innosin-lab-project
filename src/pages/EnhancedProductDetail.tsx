@@ -35,7 +35,6 @@ const EnhancedProductDetail = () => {
   useEffect(() => {
     if (!id) return;
     fetchProductData(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchProductData = async (productId: string) => {
@@ -73,7 +72,61 @@ const EnhancedProductDetail = () => {
 
   const displayProduct = useMemo(() => currentVariant || series, [currentVariant, series]);
 
+  const getProductType = () => {
+    if (!series && !displayProduct) return 'standard';
+    const product = displayProduct || series;
+    const productSeries = product?.product_series?.toLowerCase() || '';
+    const category = product?.category?.toLowerCase() || '';
+    const name = product?.name?.toLowerCase() || '';
+
+    if (
+      productSeries.includes('uniflex') ||
+      productSeries.includes('single way taps') ||
+      name.includes('uniflex') ||
+      product?.mixing_type ||
+      product?.handle_type
+    ) return 'uniflex';
+
+    if (
+      productSeries.includes('emergency shower') ||
+      name.includes('emergency shower') ||
+      product?.emergency_shower_type
+    ) return 'emergency_shower';
+
+    if (
+      productSeries.includes('safe aire') ||
+      productSeries.includes('fume hood') ||
+      category.includes('fume') ||
+      name.includes('fume hood') ||
+      name.includes('safe aire') ||
+      product?.mounting_type
+    ) return 'fume_hood';
+
+    if (productSeries.includes('tall cabinet') || name.includes('tall cabinet')) return 'tall_cabinet';
+
+    if (
+      category.includes('innosin') ||
+      productSeries.includes('innosin') ||
+      product?.company_tags?.includes('Innosin Lab') ||
+      category === 'innosin lab' ||
+      productSeries.includes('knee space')
+    ) return 'innosin_lab';
+
+    if (productSeries.includes('open rack') || name.includes('open rack')) return 'open_rack';
+
+    if (productSeries.includes('wall cabinet') || name.includes('wall cabinet')) return 'wall_cabinet';
+
+    if (
+      (productSeries.includes('modular cabinet') || name.includes('modular cabinet')) &&
+      !category.includes('innosin')
+    ) return 'modular_cabinet';
+
+    return 'standard';
+  };
+
+  const productType = getProductType();
   const hasVariants = Boolean(series?.variants?.length);
+  const shouldShowConfigurator = hasVariants || productType !== 'standard';
 
   useEffect(() => {
     if (currentVariant) {
@@ -91,12 +144,38 @@ const EnhancedProductDetail = () => {
     }
   }, [currentVariant, selectedFinish, series]);
 
+  const handleModularConfigurationSelect = (configuration: any) => {
+    setSelectedModularConfiguration(configuration);
+    if (configuration?.variants?.length > 0) setSelectedVariantId(configuration.variants[0].id);
+  };
+
   const handleVariantSelect = (variant: any) => setSelectedVariantId(variant.id);
 
   const handleAddToQuote = () => {
     if (!series) return;
 
-    const finishText = selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
+    if (productType === 'modular_cabinet' && selectedModularConfiguration) {
+      const finishText = selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
+      const itemToAdd = {
+        id: selectedModularConfiguration.variants?.[0]?.id || series.id,
+        name: `${series.name} - ${selectedModularConfiguration.name} - ${finishText}`,
+        category: series.category,
+        dimensions: selectedModularConfiguration.dimensions || '',
+        image:
+          selectedModularConfiguration.variants?.[0]?.thumbnail_path ||
+          currentAssets?.thumbnail ||
+          series.series_thumbnail_path ||
+          series.thumbnail_path,
+      };
+      addItem(itemToAdd);
+      toast.success(`${itemToAdd.name} added to quote`);
+      return;
+    }
+
+    const finishText =
+      productType === 'open_rack'
+        ? selectedFinish === 'PC' ? 'Powder Coat' : 'SS304'
+        : selectedFinish === 'PC' ? 'Powder Coat' : 'Stainless Steel';
 
     const itemToAdd = {
       id: currentVariant ? currentVariant.id : series.id,
@@ -123,6 +202,139 @@ const EnhancedProductDetail = () => {
     if (series?.description) return series.description;
     return 'High-quality laboratory furniture designed for professional environments, offering durability and functionality for modern laboratory applications.';
   };
+
+  const renderConfigurator = () => {
+    if (!shouldShowConfigurator) return null;
+
+    if (['uniflex', 'emergency_shower', 'fume_hood'].includes(productType)) {
+      const variants = hasVariants ? series.variants : [displayProduct];
+      return (
+        <SpecificProductSelector
+          products={variants}
+          selectedProduct={currentVariant || displayProduct}
+          onProductSelect={handleVariantSelect}
+        />
+      );
+    }
+
+    if (productType === 'modular_cabinet' && Array.isArray(series?.variants)) {
+      return (
+        <ModularCabinetConfigurator
+          variants={series.variants.map((v: any) => ({
+            id: v.id,
+            name: v.name,
+            product_code: v.product_code,
+            dimensions: v.dimensions,
+            finish_type: v.finish_type,
+            orientation: v.orientation || 'None',
+            door_type: v.door_type || '',
+            drawer_count: v.drawer_count || 0,
+            thumbnail_path: v.thumbnail_path,
+            model_path: v.model_path,
+            additional_images: v.additional_images || [],
+          }))}
+          selectedConfiguration={selectedModularConfiguration}
+          onConfigurationSelect={handleModularConfigurationSelect}
+        />
+      );
+    }
+
+    if (productType === 'tall_cabinet' && Array.isArray(series?.variants)) {
+      return (
+        <TallCabinetConfigurator
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+        />
+      );
+    }
+
+    if (productType === 'open_rack' && Array.isArray(series?.variants)) {
+      return (
+        <OpenRackConfigurator
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+        />
+      );
+    }
+
+    if (productType === 'wall_cabinet' && Array.isArray(series?.variants)) {
+      return (
+        <WallCabinetConfigurator
+          variants={series.variants.map((v: any) => ({
+            id: v.id,
+            product_code: v.product_code,
+            name: v.name,
+            dimensions: v.dimensions,
+            finish_type: v.finish_type,
+            orientation: v.orientation || 'None',
+            door_type: v.door_type,
+            thumbnail_path: v.thumbnail_path,
+            model_path: v.model_path,
+            additional_images: v.additional_images || [],
+          }))}
+          onConfigurationSelect={(config: any) => {
+            if (config?.variants?.length > 0) setSelectedVariantId(config.variants[0].id);
+          }}
+        />
+      );
+    }
+
+    if (productType === 'innosin_lab' && Array.isArray(series?.variants)) {
+      return (
+        <InnosinLabConfigurator
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+          seriesName={series.product_series}
+        />
+      );
+    }
+
+    if (hasVariants && Array.isArray(series?.variants)) {
+      return (
+        <VariantSelector
+          variants={series.variants}
+          selectedVariantId={selectedVariantId}
+          onVariantChange={setSelectedVariantId}
+          selectedFinish={selectedFinish}
+          onFinishChange={setSelectedFinish}
+          seriesSlug={series.series_slug}
+          seriesName={series.product_series}
+        />
+      );
+    }
+
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!series) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
+          <Link to="/products">
+            <Button>Back to Catalog</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,13 +382,7 @@ const EnhancedProductDetail = () => {
                       modelPath={currentAssets?.model || ''}
                       className="w-full h-96 lg:h-[500px]"
                       productId={id}
-                      preloadModels={
-                        currentVariant?.model_path
-                          ? [currentVariant.model_path]
-                          : currentAssets?.model
-                          ? [currentAssets.model]
-                          : []
-                      }
+                      preloadModels={currentAssets?.model ? [currentAssets.model] : []}
                     />
                   </div>
                 </TabsContent>
@@ -186,7 +392,6 @@ const EnhancedProductDetail = () => {
 
           {/* Right Column - Product Info */}
           <div className="space-y-6">
-            {/* Product Header */}
             <AnimatedSection animation="slide-in-right" delay={300}>
               <div className="space-y-4">
                 <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
@@ -199,7 +404,6 @@ const EnhancedProductDetail = () => {
               </div>
             </AnimatedSection>
 
-            {/* Product Overview */}
             <AnimatedSection animation="slide-in-right" delay={350}>
               <Card className="shadow-sm">
                 <CardHeader className="pb-4">
@@ -216,8 +420,23 @@ const EnhancedProductDetail = () => {
               </Card>
             </AnimatedSection>
 
-            {/* Add to Quote Button */}
-            <AnimatedSection animation="slide-in-right" delay={400}>
+            {shouldShowConfigurator && (
+              <AnimatedSection animation="slide-in-right" delay={400}>
+                <Card className="shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Settings className="w-5 h-5 text-primary" />
+                      Product Configuration
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {renderConfigurator()}
+                  </CardContent>
+                </Card>
+              </AnimatedSection>
+            )}
+
+            <AnimatedSection animation="slide-in-right" delay={500}>
               <Button
                 onClick={handleAddToQuote}
                 size="lg"
