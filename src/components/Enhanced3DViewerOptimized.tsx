@@ -1,8 +1,8 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Box3, Vector3 } from 'three';
+import { Box3, Vector3, DoubleSide } from 'three';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface Enhanced3DViewerOptimizedProps {
@@ -30,7 +30,7 @@ const Model = ({
   onLoaded?: () => void;
 }) => {
   const meshRef = useRef<any>();
-  const { camera, controls } = useThree();
+  const { controls } = useThree();
   const gltf = useLoader(GLTFLoader, url);
   const [modelLoaded, setModelLoaded] = useState(false);
 
@@ -40,24 +40,35 @@ const Model = ({
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
+      // Center the model
       gltf.scene.position.sub(center);
 
+      // Scale the model
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
-        const scale = 2.5 / maxDim; // Slightly larger scale
+        const scale = 2.5 / maxDim;
         gltf.scene.scale.setScalar(scale);
       }
 
-      // Adjust camera to look at center
+      // Force materials to be double-sided for better visibility
+      gltf.scene.traverse((child: any) => {
+        if (child.isMesh && child.material) {
+          child.material.side = DoubleSide;
+          child.material.needsUpdate = true;
+        }
+      });
+
+      // Set rotation point to center
       if (controls) {
-        controls.target.copy(new Vector3(0, 0, 0));
+        controls.target.set(0, 0, 0);
         controls.update();
       }
 
       setModelLoaded(true);
       onLoaded?.();
+
       modelCache.set(url, gltf);
-      console.log('3D model loaded and centered:', url);
+      console.log('✅ 3D model loaded and centered:', url);
     }
   }, [gltf, onLoaded, url, controls]);
 
@@ -141,11 +152,16 @@ const Enhanced3DViewerOptimized = ({
           dampingFactor={0.05}
         />
 
-        {/* 🔆 Brighter lighting setup */}
-        <ambientLight intensity={1.2} />
-        <directionalLight position={[5, 5, 5]} intensity={1.5} />
-        <directionalLight position={[-5, -5, -5]} intensity={1.2} />
-        <directionalLight position={[0, 10, 0]} intensity={1} />
+        {/* 🔆 Enhanced lighting */}
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[5, 5, 5]} intensity={2.5} />
+        <directionalLight position={[-5, -5, -5]} intensity={1.8} />
+        <directionalLight position={[0, 10, 0]} intensity={1.5} />
+
+        {/* 🌍 Ambient bounce via environment lighting */}
+        <Suspense fallback={null}>
+          <Environment preset="city" background={false} />
+        </Suspense>
 
         <Suspense fallback={<LoadingFallback />}>
           <Model
@@ -176,7 +192,7 @@ const Enhanced3DViewerOptimized = ({
         </div>
       )}
 
-      {/* 🕹️ Control hint */}
+      {/* 🕹️ Controls help */}
       <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
         Drag to rotate • Scroll to zoom
       </div>
