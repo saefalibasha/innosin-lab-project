@@ -1,9 +1,14 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
 import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Environment } from '@react-three/drei';
+import {
+  OrbitControls as DreiOrbitControls,
+  PerspectiveCamera,
+  Environment,
+} from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Box3, Vector3, DoubleSide } from 'three';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import type { OrbitControls as ThreeOrbitControls } from 'three-stdlib';
 
 interface Enhanced3DViewerOptimizedProps {
   modelPath: string;
@@ -22,15 +27,16 @@ const Model = ({
   onMissingModel,
   productId,
   onLoaded,
+  controlsRef,
 }: {
   url: string;
   onError?: () => void;
   onMissingModel?: (modelPath: string, productId?: string) => void;
   productId?: string;
   onLoaded?: () => void;
+  controlsRef: React.RefObject<ThreeOrbitControls>;
 }) => {
   const meshRef = useRef<any>();
-  const { controls } = useThree();
   const gltf = useLoader(GLTFLoader, url);
   const [modelLoaded, setModelLoaded] = useState(false);
 
@@ -40,17 +46,15 @@ const Model = ({
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
-      // Center the model
       gltf.scene.position.sub(center);
 
-      // Scale the model
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
         const scale = 2.5 / maxDim;
         gltf.scene.scale.setScalar(scale);
       }
 
-      // Force materials to be double-sided for better visibility
+      // Force double-sided materials
       gltf.scene.traverse((child: any) => {
         if (child.isMesh && child.material) {
           child.material.side = DoubleSide;
@@ -58,19 +62,18 @@ const Model = ({
         }
       });
 
-      // Set rotation point to center
-      if (controls) {
-        controls.target.set(0, 0, 0);
-        controls.update();
+      // Center orbit controls
+      if (controlsRef.current) {
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
       }
 
       setModelLoaded(true);
       onLoaded?.();
-
       modelCache.set(url, gltf);
       console.log('✅ 3D model loaded and centered:', url);
     }
-  }, [gltf, onLoaded, url, controls]);
+  }, [gltf, onLoaded, url, controlsRef]);
 
   useFrame(() => {
     if (meshRef.current && modelLoaded) {
@@ -99,6 +102,8 @@ const Enhanced3DViewerOptimized = ({
   const [loadError, setLoadError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  const controlsRef = useRef<ThreeOrbitControls>(null);
 
   const handleError = useCallback(() => {
     setLoadError(true);
@@ -141,7 +146,8 @@ const Enhanced3DViewerOptimized = ({
     <div className={`relative ${className}`}>
       <Canvas>
         <PerspectiveCamera makeDefault position={[0, 0, 4.5]} />
-        <OrbitControls
+        <DreiOrbitControls
+          ref={controlsRef}
           enableZoom
           enablePan
           enableRotate
@@ -152,13 +158,13 @@ const Enhanced3DViewerOptimized = ({
           dampingFactor={0.05}
         />
 
-        {/* 🔆 Enhanced lighting */}
+        {/* Lighting */}
         <ambientLight intensity={1.5} />
         <directionalLight position={[5, 5, 5]} intensity={2.5} />
         <directionalLight position={[-5, -5, -5]} intensity={1.8} />
         <directionalLight position={[0, 10, 0]} intensity={1.5} />
 
-        {/* 🌍 Ambient bounce via environment lighting */}
+        {/* Environment lighting for reflections */}
         <Suspense fallback={null}>
           <Environment preset="city" background={false} />
         </Suspense>
@@ -170,11 +176,12 @@ const Enhanced3DViewerOptimized = ({
             onMissingModel={onMissingModel}
             productId={productId}
             onLoaded={handleLoaded}
+            controlsRef={controlsRef}
           />
         </Suspense>
       </Canvas>
 
-      {/* ⏳ Loading overlay */}
+      {/* Loader overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <div className="text-center space-y-3">
@@ -192,7 +199,7 @@ const Enhanced3DViewerOptimized = ({
         </div>
       )}
 
-      {/* 🕹️ Controls help */}
+      {/* Controls tooltip */}
       <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
         Drag to rotate • Scroll to zoom
       </div>
