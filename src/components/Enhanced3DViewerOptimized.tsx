@@ -1,5 +1,5 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import {
   OrbitControls as DreiOrbitControls,
   PerspectiveCamera,
@@ -40,26 +40,30 @@ const Model = ({
   const groupRef = useRef<Group>(null);
   const gltf = useLoader(GLTFLoader, url);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const { camera } = useThree();
 
   useEffect(() => {
     if (!gltf || !groupRef.current) return;
 
     const scene = gltf.scene;
-
     const box = new Box3().setFromObject(scene);
     const center = box.getCenter(new Vector3());
     const size = box.getSize(new Vector3());
 
+    // Center model and scale it
     scene.position.sub(center);
-
     const maxDim = Math.max(size.x, size.y, size.z);
-    if (maxDim > 0) {
-      const scale = 2.5 / maxDim;
-      scene.scale.setScalar(scale);
-    }
+    const scale = 2.5 / maxDim;
+    scene.scale.setScalar(scale);
 
+    // Auto-fit camera
+    const distance = maxDim * 2;
+    camera.position.set(center.x, center.y, distance);
+    camera.lookAt(0, 0, 0);
+
+    // Shadows and double-sided materials
     scene.traverse((child: any) => {
-      if (child.isMesh && child.material) {
+      if (child.isMesh) {
         child.material.side = DoubleSide;
         child.material.needsUpdate = true;
         child.castShadow = true;
@@ -76,7 +80,7 @@ const Model = ({
     onLoaded?.();
     modelCache.set(url, gltf);
     console.log('✅ 3D model loaded and centered:', url);
-  }, [gltf, onLoaded, url, controlsRef]);
+  }, [gltf, onLoaded, url, controlsRef, camera]);
 
   useFrame(() => {
     if (groupRef.current && modelLoaded) {
@@ -84,7 +88,7 @@ const Model = ({
     }
   });
 
-  return <group ref={groupRef}>{<primitive object={gltf.scene} />}</group>;
+  return <group ref={groupRef}><primitive object={gltf.scene} /></group>;
 };
 
 const LoadingFallback = () => (
@@ -162,9 +166,21 @@ const Enhanced3DViewerOptimized = ({
         />
 
         <ambientLight intensity={1.5} />
-        <directionalLight position={[10, 10, 10]} intensity={2.5} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
+        <directionalLight
+          position={[10, 10, 10]}
+          intensity={2.5}
+          castShadow
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+        />
 
-        <ContactShadows position={[0, -1.25, 0]} opacity={0.4} scale={10} blur={1.5} far={10} />
+        <ContactShadows
+          position={[0, -1.25, 0]}
+          opacity={0.4}
+          scale={10}
+          blur={1.5}
+          far={10}
+        />
 
         <Suspense fallback={null}>
           <Environment preset="city" background={false} />
