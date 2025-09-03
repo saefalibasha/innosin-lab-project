@@ -18,17 +18,17 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
     const offsetX = isGlobal ? 0 : room.points[0].x;
     const offsetY = isGlobal ? 0 : room.points[0].y;
 
-    // Convert mm to meters and apply scale
-    const moveToX = (room.points[0].x - offsetX) * scale * 0.001;
-    const moveToZ = (room.points[0].y - offsetY) * scale * 0.001;
+    // Convert to consistent scale with walls/products
+    const moveToX = (room.points[0].x - offsetX) * scale * 0.1;
+    const moveToZ = (room.points[0].y - offsetY) * scale * 0.1;
 
     shape.moveTo(moveToX, moveToZ);
 
     for (let i = 1; i < room.points.length; i++) {
       const point = room.points[i];
       shape.lineTo(
-        (point.x - offsetX) * scale * 0.001,
-        (point.y - offsetY) * scale * 0.001
+        (point.x - offsetX) * scale * 0.1,
+        (point.y - offsetY) * scale * 0.1
       );
     }
 
@@ -66,15 +66,7 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
 export const IsometricFloor: React.FC<IsometricFloorProps> = ({ rooms, scale }) => {
   return (
     <group>
-      {/* Default fallback floor */}
-      {rooms.length === 0 && (
-        <mesh position={[0, -0.005, 0]} receiveShadow>
-          <planeGeometry args={[50, 50]} />
-          <meshLambertMaterial color="#f5f5f5" />
-        </mesh>
-      )}
-
-      {/* Room floor shapes */}
+      {/* Room floor shapes only */}
       {rooms.map((room) => (
         <RoomFloor
           key={room.id}

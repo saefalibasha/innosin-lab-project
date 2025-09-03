@@ -18,22 +18,15 @@ const ProductRotationControl: React.FC<ProductRotationControlProps> = ({
 }) => {
   if (selectedProducts.length === 0) return null;
 
-  const rotationAngles = [0, 45, 90, 135, 180, 225, 270, 315];
-
   return (
-    <Card className="absolute top-4 right-4 z-10">
-      <CardContent className="p-3">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-sm font-medium">Rotate Products</span>
-          <span className="text-xs text-muted-foreground">({selectedProducts.length} selected)</span>
-        </div>
-        
-        <div className="flex gap-1 mb-3">
+    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="bg-background/95 backdrop-blur-sm border rounded-lg p-2 shadow-lg">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={onRotateCounterClockwise}
-            className="p-2"
+            className="h-8 w-8 p-0"
             title="Rotate 90° Counter-Clockwise"
           >
             <RotateCcw className="h-4 w-4" />
@@ -42,29 +35,17 @@ const ProductRotationControl: React.FC<ProductRotationControlProps> = ({
             variant="outline"
             size="sm"
             onClick={onRotateClockwise}
-            className="p-2"
+            className="h-8 w-8 p-0"
             title="Rotate 90° Clockwise"
           >
             <RotateCw className="h-4 w-4" />
           </Button>
+          <span className="text-xs text-muted-foreground px-2">
+            {selectedProducts.length} selected
+          </span>
         </div>
-        
-        <div className="grid grid-cols-4 gap-1">
-          {rotationAngles.map(angle => (
-            <Button
-              key={angle}
-              variant="outline"
-              size="sm"
-              onClick={() => onRotateToAngle((angle * Math.PI) / 180)}
-              className="text-xs h-8"
-              title={`Rotate to ${angle}°`}
-            >
-              {angle}°
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

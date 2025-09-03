@@ -15,14 +15,14 @@ const Wall = ({ wall, scale, onWallClick }: {
   onWallClick?: (wallId: string) => void;
 }) => {
   const wallGeometry = useMemo(() => {
-    const start = new Vector3(wall.start.x * scale * 0.01, 0, wall.start.y * scale * 0.01);
-    const end = new Vector3(wall.end.x * scale * 0.01, 0, wall.end.y * scale * 0.01);
+    const start = new Vector3(wall.start.x * scale * 0.1, 0, wall.start.y * scale * 0.1);
+    const end = new Vector3(wall.end.x * scale * 0.1, 0, wall.end.y * scale * 0.1);
     
     const direction = new Vector3().subVectors(end, start).normalize();
     const perpendicular = new Vector3(-direction.z, 0, direction.x);
     
-    const thickness = (wall.thickness || 100) * scale * 0.005;
-    const height = 2400 * scale * 0.01; // Fixed: scaled + converted to meters
+    const thickness = (wall.thickness || 100) * scale * 0.1;
+    const height = 2.4; // Standard room height in meters
     
     // Create wall shape
     const shape = new Shape();
@@ -61,10 +61,11 @@ const Wall = ({ wall, scale, onWallClick }: {
       onClick={handleClick}
       castShadow
       receiveShadow
+      name="wall"
     >
       <meshLambertMaterial 
-        color={wall.color || '#ffffff'} 
-        transparent={wall.color?.includes('rgba')}
+        color={wall.type === 'interior' ? '#f0f0f0' : '#e8e8e8'} 
+        transparent={false}
       />
     </mesh>
   );

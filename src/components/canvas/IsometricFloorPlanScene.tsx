@@ -17,6 +17,7 @@ interface IsometricFloorPlanSceneProps {
   scale: number;
   onProductClick?: (productId: string) => void;
   onWallClick?: (wallId: string) => void;
+  onSceneClick?: (e: any) => void;
   selectedProducts: string[];
   showGrid: boolean;
 }
@@ -29,6 +30,7 @@ const IsometricScene = ({
   scale,
   onProductClick,
   onWallClick,
+  onSceneClick,
   selectedProducts,
   showGrid
 }: IsometricFloorPlanSceneProps) => {
@@ -120,6 +122,18 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           maxDistance={100}
           target={[0, 0, 0]}
         />
+        
+        {/* Click handler for scene */}
+        {props.onSceneClick && (
+          <mesh 
+            position={[0, -0.1, 0]} 
+            onClick={props.onSceneClick}
+            visible={false}
+          >
+            <planeGeometry args={[100, 100]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        )}
         
         {/* Scene Content */}
         <IsometricScene {...props} />

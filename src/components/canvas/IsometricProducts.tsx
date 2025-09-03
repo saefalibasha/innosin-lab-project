@@ -31,9 +31,9 @@ const ProductModel = ({
   };
 
   const position: [number, number, number] = [
-    product.position.x * scale * 0.01,
+    product.position.x * scale * 0.1,
     0,
-    product.position.y * scale * 0.01
+    product.position.y * scale * 0.1
   ];
 
   const rotation: [number, number, number] = [
@@ -49,12 +49,13 @@ const ProductModel = ({
       rotation={rotation}
       onClick={handleClick}
       castShadow
+      name="product"
     >
       <boxGeometry 
         args={[
-          product.dimensions.length * scale * 0.01,
+          product.dimensions.length * scale * 0.1,
           0.85,
-          product.dimensions.width * scale * 0.01
+          product.dimensions.width * scale * 0.1
         ]} 
       />
       <meshLambertMaterial 
@@ -67,11 +68,11 @@ const ProductModel = ({
           <edgesGeometry 
             args={[
               new THREE.BoxGeometry(
-                product.dimensions.length * scale * 0.01,
+                product.dimensions.length * scale * 0.1,
                 0.85,
-                product.dimensions.width * scale * 0.01
+                product.dimensions.width * scale * 0.1
               )
-            ]} 
+            ]}
           />
           <lineBasicMaterial color="#ff0000" linewidth={2} />
         </lineSegments>
@@ -138,6 +139,7 @@ const ProductGLTF = ({
       position={position}
       rotation={rotation}
       onClick={onClick}
+      name="product"
     >
       <primitive 
         object={gltf.scene} 

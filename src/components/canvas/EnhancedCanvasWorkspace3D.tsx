@@ -79,6 +79,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     }
   }, [currentMode, wallSegments, onWallUpdate]);
 
+  const handleSceneClick = useCallback((e: any) => {
+    // Clear selection when clicking on empty space
+    if (e.object.name !== 'product' && e.object.name !== 'wall') {
+      onProductSelect([]);
+    }
+  }, [onProductSelect]);
+
   const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const productData = e.dataTransfer.getData('product');
@@ -139,6 +146,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         scale={scale}
         onProductClick={handleProductClick}
         onWallClick={handleWallClick}
+        onSceneClick={handleSceneClick}
         selectedProducts={selectedProducts}
         showGrid={showGrid}
       />

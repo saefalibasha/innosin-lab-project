@@ -11,7 +11,6 @@ import { X } from 'lucide-react';
 
 interface VariantFilterControlsProps {
   availableVariants: {
-    finishes: string[];
     orientations: string[];
     drawerCounts: number[];
     doorTypes: string[];
@@ -52,24 +51,6 @@ const VariantFilterControls: React.FC<VariantFilterControlsProps> = ({
       </div>
 
       <div className="grid grid-cols-1 gap-2 text-xs">
-        {availableVariants.finishes.length > 0 && (
-          <Select
-            value={activeFilters.finish || ""}
-            onValueChange={(value) => onFilterChange('finish', value || null)}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue placeholder="Finish" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableVariants.finishes.map((finish) => (
-                <SelectItem key={finish} value={finish}>
-                  {finish}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-
         {availableVariants.orientations.length > 0 && (
           <Select
             value={activeFilters.orientation || ""}
