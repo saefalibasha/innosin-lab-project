@@ -3,12 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 
-// ✅ layout path changed
 import SiteLayout from "@/components/SiteLayout";
 
 // Public pages
@@ -28,7 +27,7 @@ import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminProductViewer from "./pages/AdminProductViewer";
 
-// ✅ NEW: Import Welcome Landing Page
+// ✅ Welcome landing page
 import WelcomeLandingPage from "./pages/WelcomeLandingPage";
 
 const queryClient = new QueryClient();
@@ -42,9 +41,15 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* ✅ All public routes wrapped by SiteLayout */}
+              {/* ✅ Redirect root `/` to `/welcome` so it's always first */}
+              <Route path="/" element={<Navigate to="/welcome" />} />
+
+              {/* ✅ Standalone welcome page (no layout) */}
+              <Route path="/welcome" element={<WelcomeLandingPage />} />
+
+              {/* ✅ All other public routes wrapped in SiteLayout */}
               <Route element={<SiteLayout />}>
-                <Route index element={<Index />} />
+                <Route path="/home" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/blog" element={<Blog />} />
@@ -56,10 +61,7 @@ const App = () => (
                 <Route path="/rfq-cart" element={<RFQCart />} />
               </Route>
 
-              {/* ✅ Welcome Page — No layout, full-screen custom landing */}
-              <Route path="/welcome" element={<WelcomeLandingPage />} />
-
-              {/* Admin pages */}
+              {/* ✅ Admin routes (no public layout) */}
               <Route path="/admin/auth" element={<AdminAuth />} />
               <Route
                 path="/admin/dashboard"
