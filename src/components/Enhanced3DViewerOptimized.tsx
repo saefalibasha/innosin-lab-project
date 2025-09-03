@@ -1,9 +1,9 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Box3, Vector3 } from 'three';
-import { AlertCircle, Box, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface Enhanced3DViewerOptimizedProps {
   modelPath: string;
@@ -11,74 +11,63 @@ interface Enhanced3DViewerOptimizedProps {
   onError?: () => void;
   onMissingModel?: (modelPath: string, productId?: string) => void;
   productId?: string;
-  preloadModels?: string[]; // For preloading variant models
+  preloadModels?: string[];
 }
 
-// Model cache for performance
 const modelCache = new Map();
-const loadingPromises = new Map();
 
-const Model = ({ 
-  url, 
-  onError, 
-  onMissingModel, 
+const Model = ({
+  url,
+  onError,
+  onMissingModel,
   productId,
-  onLoaded 
-}: { 
-  url: string; 
-  onError?: () => void; 
+  onLoaded,
+}: {
+  url: string;
+  onError?: () => void;
   onMissingModel?: (modelPath: string, productId?: string) => void;
   productId?: string;
   onLoaded?: () => void;
 }) => {
   const meshRef = useRef<any>();
+  const { camera, controls } = useThree();
+  const gltf = useLoader(GLTFLoader, url);
   const [modelLoaded, setModelLoaded] = useState(false);
-  
-  try {
-    const gltf = useLoader(GLTFLoader, url);
-    
-    useEffect(() => {
-      if (gltf && meshRef.current) {
-        // Auto-center and scale the model
-        const box = new Box3().setFromObject(gltf.scene);
-        const center = box.getCenter(new Vector3());
-        const size = box.getSize(new Vector3());
-        
-        // Center the model
-        gltf.scene.position.sub(center);
-        
-        // Scale the model to fit in a reasonable size
-        const maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-          const scale = 2 / maxDim;
-          gltf.scene.scale.setScalar(scale);
-        }
-        
-        setModelLoaded(true);
-        onLoaded?.();
-        
-        // Cache the loaded model
-        modelCache.set(url, gltf);
-        console.log('3D model loaded and cached:', url);
-      }
-    }, [gltf, onLoaded, url]);
 
-    useFrame((state) => {
-      if (meshRef.current && modelLoaded) {
-        // Subtle rotation animation
-        meshRef.current.rotation.y += 0.005;
-      }
-    });
+  useEffect(() => {
+    if (gltf && meshRef.current) {
+      const box = new Box3().setFromObject(gltf.scene);
+      const center = box.getCenter(new Vector3());
+      const size = box.getSize(new Vector3());
 
-    return <primitive ref={meshRef} object={gltf.scene} />;
-  } catch (error) {
-    console.error('Failed to load 3D model:', url, error);
-    if (onMissingModel) {
-      onMissingModel(url, productId);
+      gltf.scene.position.sub(center);
+
+      const maxDim = Math.max(size.x, size.y, size.z);
+      if (maxDim > 0) {
+        const scale = 2.5 / maxDim; // Slightly larger scale
+        gltf.scene.scale.setScalar(scale);
+      }
+
+      // Adjust camera to look at center
+      if (controls) {
+        controls.target.copy(new Vector3(0, 0, 0));
+        controls.update();
+      }
+
+      setModelLoaded(true);
+      onLoaded?.();
+      modelCache.set(url, gltf);
+      console.log('3D model loaded and centered:', url);
     }
-    if (onError) onError();
-    return null;
-  }
+  }, [gltf, onLoaded, url, controls]);
+
+  useFrame(() => {
+    if (meshRef.current && modelLoaded) {
+      meshRef.current.rotation.y += 0.005;
+    }
+  });
+
+  return <primitive ref={meshRef} object={gltf.scene} />;
 };
 
 const LoadingFallback = () => (
@@ -88,13 +77,13 @@ const LoadingFallback = () => (
   </mesh>
 );
 
-const Enhanced3DViewerOptimized = ({ 
-  modelPath, 
-  className = '', 
-  onError, 
-  onMissingModel, 
+const Enhanced3DViewerOptimized = ({
+  modelPath,
+  className = '',
+  onError,
+  onMissingModel,
   productId,
-  preloadModels = []
+  preloadModels = [],
 }: Enhanced3DViewerOptimizedProps) => {
   const [loadError, setLoadError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,9 +92,7 @@ const Enhanced3DViewerOptimized = ({
   const handleError = useCallback(() => {
     setLoadError(true);
     setIsLoading(false);
-    if (onMissingModel) {
-      onMissingModel(modelPath, productId);
-    }
+    if (onMissingModel) onMissingModel(modelPath, productId);
     if (onError) onError();
   }, [modelPath, productId, onMissingModel, onError]);
 
@@ -114,105 +101,13 @@ const Enhanced3DViewerOptimized = ({
     setLoadingProgress(100);
   }, []);
 
-  // Enhanced model path resolution optimized for Supabase
   const getModelPath = useCallback((path: string): string => {
     if (!path) return '';
-    
-    // Already a full URL (Supabase storage)
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    // Supabase storage pattern detection
-    if (path.includes('supabase.co/storage') || path.includes('/storage/v1/object/')) {
-      return path.startsWith('/') ? path : `/${path}`;
-    }
-    
-    // Local file paths
-    if (path.startsWith('/')) {
-      return path;
-    }
-    
-    // Default: treat as relative path from public/products/
-    if (path.startsWith('products/')) {
-      return `/${path}`;
-    }
-    
+    if (path.startsWith('http') || path.startsWith('/')) return path;
     return `/products/${path}`;
   }, []);
 
-  // Preload models for better performance
-  useEffect(() => {
-    const preloadModel = async (path: string) => {
-      const resolvedPath = getModelPath(path);
-      if (!resolvedPath || modelCache.has(resolvedPath) || loadingPromises.has(resolvedPath)) {
-        return;
-      }
-
-      const promise = fetch(resolvedPath, { method: 'HEAD' })
-        .then(response => {
-          if (response.ok) {
-            console.log('Preloaded model available:', resolvedPath);
-          }
-        })
-        .catch(error => {
-          console.warn('Preload failed for:', resolvedPath, error);
-        })
-        .finally(() => {
-          loadingPromises.delete(resolvedPath);
-        });
-
-      loadingPromises.set(resolvedPath, promise);
-      return promise;
-    };
-
-    // Preload variant models in background
-    preloadModels.forEach(modelPath => {
-      if (modelPath && modelPath !== modelPath) {
-        preloadModel(modelPath);
-      }
-    });
-  }, [preloadModels, getModelPath, modelPath]);
-
   const resolvedModelPath = getModelPath(modelPath);
-
-  useEffect(() => {
-    if (resolvedModelPath) {
-      setIsLoading(true);
-      setLoadError(false);
-      setLoadingProgress(10);
-      
-      // Check if model is cached
-      if (modelCache.has(resolvedModelPath)) {
-        setIsLoading(false);
-        setLoadingProgress(100);
-        return;
-      }
-      
-      // Test if the model file exists with optimized timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // Reduced timeout
-      
-      setLoadingProgress(30);
-      
-      fetch(resolvedModelPath, { 
-        method: 'HEAD',
-        signal: controller.signal
-      })
-        .then(response => {
-          clearTimeout(timeoutId);
-          setLoadingProgress(60);
-          if (!response.ok && response.status !== 0) {
-            throw new Error(`Model not found: ${response.status}`);
-          }
-        })
-        .catch(error => {
-          clearTimeout(timeoutId);
-          console.warn('Model file check failed:', resolvedModelPath, error);
-          // Don't set error immediately - let the loader handle it
-        });
-    }
-  }, [resolvedModelPath]);
 
   if (!resolvedModelPath || loadError) {
     return (
@@ -224,9 +119,7 @@ const Enhanced3DViewerOptimized = ({
             {resolvedModelPath ? `Path: ${resolvedModelPath}` : 'No model path provided'}
           </p>
           {onMissingModel && (
-            <p className="text-xs text-muted-foreground mt-2">
-              Model request logged for upload
-            </p>
+            <p className="text-xs text-muted-foreground mt-2">Model request logged for upload</p>
           )}
         </div>
       </div>
@@ -236,36 +129,36 @@ const Enhanced3DViewerOptimized = ({
   return (
     <div className={`relative ${className}`}>
       <Canvas>
-        <PerspectiveCamera makeDefault position={[0, 0, 5]} />
-        <OrbitControls 
-          enableZoom={true}
-          enablePan={true}
-          enableRotate={true}
+        <PerspectiveCamera makeDefault position={[0, 0, 4.5]} />
+        <OrbitControls
+          enableZoom
+          enablePan
+          enableRotate
           maxDistance={10}
           minDistance={1}
           autoRotate={false}
-          enableDamping={true}
+          enableDamping
           dampingFactor={0.05}
         />
-        
-        {/* Optimized Lighting Setup */}
-        <ambientLight intensity={0.4} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-        <directionalLight position={[0, 10, 0]} intensity={0.3} />
-        
+
+        {/* 🔆 Brighter lighting setup */}
+        <ambientLight intensity={1.2} />
+        <directionalLight position={[5, 5, 5]} intensity={1.5} />
+        <directionalLight position={[-5, -5, -5]} intensity={1.2} />
+        <directionalLight position={[0, 10, 0]} intensity={1} />
+
         <Suspense fallback={<LoadingFallback />}>
-          <Model 
-            url={resolvedModelPath} 
-            onError={handleError} 
+          <Model
+            url={resolvedModelPath}
+            onError={handleError}
             onMissingModel={onMissingModel}
             productId={productId}
             onLoaded={handleLoaded}
           />
         </Suspense>
       </Canvas>
-      
-      {/* Enhanced loading indicator with progress */}
+
+      {/* ⏳ Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <div className="text-center space-y-3">
@@ -274,7 +167,7 @@ const Enhanced3DViewerOptimized = ({
               <span className="text-sm">Loading 3D model...</span>
             </div>
             <div className="w-32 h-1 bg-muted rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-primary transition-all duration-300 ease-out"
                 style={{ width: `${loadingProgress}%` }}
               />
@@ -282,8 +175,8 @@ const Enhanced3DViewerOptimized = ({
           </div>
         </div>
       )}
-      
-      {/* Controls indicator */}
+
+      {/* 🕹️ Control hint */}
       <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
         Drag to rotate • Scroll to zoom
       </div>
