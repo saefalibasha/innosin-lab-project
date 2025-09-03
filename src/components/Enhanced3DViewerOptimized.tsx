@@ -1,5 +1,5 @@
 import React, { Suspense, useRef, useEffect, useState, useCallback } from 'react';
-import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
 import {
   OrbitControls as DreiOrbitControls,
   PerspectiveCamera,
@@ -41,38 +41,43 @@ const Model = ({
   const [modelLoaded, setModelLoaded] = useState(false);
 
   useEffect(() => {
-    if (gltf && meshRef.current) {
-      const box = new Box3().setFromObject(gltf.scene);
-      const center = box.getCenter(new Vector3());
-      const size = box.getSize(new Vector3());
+    if (!gltf || !meshRef.current) return;
 
-      gltf.scene.position.sub(center);
+    const scene = gltf.scene;
 
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 0) {
-        const scale = 2.5 / maxDim;
-        gltf.scene.scale.setScalar(scale);
-      }
+    // Compute bounding box
+    const box = new Box3().setFromObject(scene);
+    const center = box.getCenter(new Vector3());
+    const size = box.getSize(new Vector3());
 
-      // Force double-sided materials
-      gltf.scene.traverse((child: any) => {
-        if (child.isMesh && child.material) {
-          child.material.side = DoubleSide;
-          child.material.needsUpdate = true;
-        }
-      });
+    // Center the model
+    scene.position.sub(center);
 
-      // Center orbit controls
-      if (controlsRef.current) {
-        controlsRef.current.target.set(0, 0, 0);
-        controlsRef.current.update();
-      }
-
-      setModelLoaded(true);
-      onLoaded?.();
-      modelCache.set(url, gltf);
-      console.log('✅ 3D model loaded and centered:', url);
+    // Normalize scale
+    const maxDim = Math.max(size.x, size.y, size.z);
+    if (maxDim > 0) {
+      const scale = 2.5 / maxDim;
+      scene.scale.setScalar(scale);
     }
+
+    // Ensure double-sided rendering
+    scene.traverse((child: any) => {
+      if (child.isMesh && child.material) {
+        child.material.side = DoubleSide;
+        child.material.needsUpdate = true;
+      }
+    });
+
+    // ✅ Center camera rotation axis
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
+    }
+
+    setModelLoaded(true);
+    onLoaded?.();
+    modelCache.set(url, gltf);
+    console.log('✅ 3D model loaded and centered:', url);
   }, [gltf, onLoaded, url, controlsRef]);
 
   useFrame(() => {
@@ -164,7 +169,7 @@ const Enhanced3DViewerOptimized = ({
         <directionalLight position={[-5, -5, -5]} intensity={1.8} />
         <directionalLight position={[0, 10, 0]} intensity={1.5} />
 
-        {/* Environment lighting for reflections */}
+        {/* Environment */}
         <Suspense fallback={null}>
           <Environment preset="city" background={false} />
         </Suspense>
@@ -181,7 +186,7 @@ const Enhanced3DViewerOptimized = ({
         </Suspense>
       </Canvas>
 
-      {/* Loader overlay */}
+      {/* Loader */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <div className="text-center space-y-3">
@@ -199,7 +204,7 @@ const Enhanced3DViewerOptimized = ({
         </div>
       )}
 
-      {/* Controls tooltip */}
+      {/* Tooltip */}
       <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
         Drag to rotate • Scroll to zoom
       </div>
