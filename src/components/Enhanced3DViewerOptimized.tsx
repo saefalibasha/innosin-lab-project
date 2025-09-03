@@ -6,7 +6,7 @@ import {
   Environment,
 } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { Box3, Vector3, DoubleSide, Group } from 'three';
+import { Box3, Vector3, DoubleSide } from 'three';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import type { OrbitControls as ThreeOrbitControls } from 'three-stdlib';
 
@@ -36,19 +36,21 @@ const Model = ({
   onLoaded?: () => void;
   controlsRef: React.RefObject<ThreeOrbitControls>;
 }) => {
-  const groupRef = useRef<Group>(null);
+  const meshRef = useRef<any>();
   const gltf = useLoader(GLTFLoader, url);
   const [modelLoaded, setModelLoaded] = useState(false);
 
   useEffect(() => {
-    if (!gltf || !groupRef.current) return;
+    if (!gltf || !meshRef.current) return;
 
-    const scene = gltf.scene.clone();
+    const scene = gltf.scene;
+
+    // Compute bounding box
     const box = new Box3().setFromObject(scene);
     const center = box.getCenter(new Vector3());
     const size = box.getSize(new Vector3());
 
-    // Center the scene geometry
+    // Center the model
     scene.position.sub(center);
 
     // Normalize scale
@@ -58,17 +60,15 @@ const Model = ({
       scene.scale.setScalar(scale);
     }
 
+    // Ensure double-sided rendering
     scene.traverse((child: any) => {
       if (child.isMesh && child.material) {
         child.material.side = DoubleSide;
-        child.castShadow = true;
-        child.receiveShadow = true;
+        child.material.needsUpdate = true;
       }
     });
 
-    groupRef.current.clear();
-    groupRef.current.add(scene);
-
+    // ✅ Center camera rotation axis
     if (controlsRef.current) {
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
@@ -81,12 +81,12 @@ const Model = ({
   }, [gltf, onLoaded, url, controlsRef]);
 
   useFrame(() => {
-    if (groupRef.current && modelLoaded) {
-      groupRef.current.rotation.y += 0.005;
+    if (meshRef.current && modelLoaded) {
+      meshRef.current.rotation.y += 0.005;
     }
   });
 
-  return <group ref={groupRef} />;
+  return <primitive ref={meshRef} object={gltf.scene} />;
 };
 
 const LoadingFallback = () => (
@@ -149,7 +149,7 @@ const Enhanced3DViewerOptimized = ({
 
   return (
     <div className={`relative ${className}`}>
-      <Canvas shadows>
+      <Canvas>
         <PerspectiveCamera makeDefault position={[0, 0, 4.5]} />
         <DreiOrbitControls
           ref={controlsRef}
@@ -163,15 +163,13 @@ const Enhanced3DViewerOptimized = ({
           dampingFactor={0.05}
         />
 
+        {/* Lighting */}
         <ambientLight intensity={1.5} />
-        <directionalLight
-          position={[5, 5, 5]}
-          intensity={2.5}
-          castShadow
-          shadow-mapSize-width={1024}
-          shadow-mapSize-height={1024}
-        />
+        <directionalLight position={[5, 5, 5]} intensity={2.5} />
+        <directionalLight position={[-5, -5, -5]} intensity={1.8} />
+        <directionalLight position={[0, 10, 0]} intensity={1.5} />
 
+        {/* Environment */}
         <Suspense fallback={null}>
           <Environment preset="city" background={false} />
         </Suspense>
@@ -188,6 +186,7 @@ const Enhanced3DViewerOptimized = ({
         </Suspense>
       </Canvas>
 
+      {/* Loader */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
           <div className="text-center space-y-3">
@@ -205,6 +204,7 @@ const Enhanced3DViewerOptimized = ({
         </div>
       )}
 
+      {/* Tooltip */}
       <div className="absolute top-4 right-4 text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded">
         Drag to rotate • Scroll to zoom
       </div>
