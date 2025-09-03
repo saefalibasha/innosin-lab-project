@@ -1,9 +1,9 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button"; // Keep this import if using shadcn/ui
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button"; // Assuming shadcn/ui or your own button
 
-// Inline RetroGrid component inside this file
+// Inline RetroGrid component
 function RetroGrid({
   angle = 65,
   cellSize = 60,
@@ -38,13 +38,12 @@ function RetroGrid({
   );
 }
 
-// Main Welcome Landing Page
+// Main welcome page
 export default function WelcomeLandingPage() {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <div className="relative flex h-screen w-full flex-col items-center justify-center overflow-hidden bg-background">
-      {/* RetroGrid directly included here */}
       <RetroGrid
         angle={75}
         cellSize={80}
@@ -53,7 +52,6 @@ export default function WelcomeLandingPage() {
         darkLineColor="#FF2975"
       />
 
-      {/* Foreground content */}
       <div className="relative z-10 text-center px-6">
         <h1 className="text-5xl sm:text-7xl font-bold text-transparent bg-gradient-to-b from-yellow-400 via-pink-500 to-purple-700 bg-clip-text drop-shadow-md">
           Welcome to Innosin Lab
@@ -65,7 +63,7 @@ export default function WelcomeLandingPage() {
 
         <Button
           className="mt-8 px-6 py-4 text-lg rounded-full bg-[#ff2975] hover:bg-[#d82063] text-white shadow-xl"
-          onClick={() => router.push("/home")}
+          onClick={() => navigate("/home")}
         >
           Enter Site →
         </Button>
