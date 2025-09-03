@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Select,
@@ -52,7 +51,7 @@ const VariantFilterControls: React.FC<VariantFilterControlsProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-xs">
+      <div className="grid grid-cols-1 gap-2 text-xs">
         {availableVariants.finishes.length > 0 && (
           <Select
             value={activeFilters.finish || ""}
@@ -137,6 +136,78 @@ const VariantFilterControls: React.FC<VariantFilterControlsProps> = ({
               {availableVariants.dimensions.map((dimension) => (
                 <SelectItem key={dimension} value={dimension}>
                   {dimension}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {availableVariants.mountingTypes?.length > 0 && (
+          <Select
+            value={activeFilters.mountingType || ""}
+            onValueChange={(value) => onFilterChange('mountingType', value || null)}
+          >
+            <SelectTrigger className="h-8">
+              <SelectValue placeholder="Mounting" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableVariants.mountingTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {availableVariants.mixingTypes?.length > 0 && (
+          <Select
+            value={activeFilters.mixingType || ""}
+            onValueChange={(value) => onFilterChange('mixingType', value || null)}
+          >
+            <SelectTrigger className="h-8">
+              <SelectValue placeholder="Mixing" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableVariants.mixingTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {availableVariants.handleTypes?.length > 0 && (
+          <Select
+            value={activeFilters.handleType || ""}
+            onValueChange={(value) => onFilterChange('handleType', value || null)}
+          >
+            <SelectTrigger className="h-8">
+              <SelectValue placeholder="Handle" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableVariants.handleTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
+        {availableVariants.cabinetClasses?.length > 0 && (
+          <Select
+            value={activeFilters.cabinetClass || ""}
+            onValueChange={(value) => onFilterChange('cabinetClass', value || null)}
+          >
+            <SelectTrigger className="h-8">
+              <SelectValue placeholder="Cabinet Class" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableVariants.cabinetClasses.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -82,7 +82,7 @@ const IsometricScene = ({
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
   return (
     <div className="w-full h-full">
-      <Canvas shadows>
+      <Canvas shadows style={{ background: 'transparent' }}>
         {/* Isometric Camera Setup */}
         <PerspectiveCamera 
           makeDefault

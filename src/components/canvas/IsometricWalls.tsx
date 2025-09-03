@@ -15,14 +15,14 @@ const Wall = ({ wall, scale, onWallClick }: {
   onWallClick?: (wallId: string) => void;
 }) => {
   const wallGeometry = useMemo(() => {
-    const start = new Vector3(wall.start.x * scale * 0.001, 0, wall.start.y * scale * 0.001);
-    const end = new Vector3(wall.end.x * scale * 0.001, 0, wall.end.y * scale * 0.001);
+    const start = new Vector3(wall.start.x * scale * 0.01, 0, wall.start.y * scale * 0.01);
+    const end = new Vector3(wall.end.x * scale * 0.01, 0, wall.end.y * scale * 0.01);
     
     const direction = new Vector3().subVectors(end, start).normalize();
     const perpendicular = new Vector3(-direction.z, 0, direction.x);
     
-    const thickness = (wall.thickness || 100) * scale * 0.0005;
-    const height = 2400 * scale * 0.001; // Fixed: scaled + converted to meters
+    const thickness = (wall.thickness || 100) * scale * 0.005;
+    const height = 2400 * scale * 0.01; // Fixed: scaled + converted to meters
     
     // Create wall shape
     const shape = new Shape();
