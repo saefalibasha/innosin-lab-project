@@ -1,9 +1,10 @@
 import React, { useRef, useCallback } from 'react';
-import * as THREE from 'three';
 import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
+import * as THREE from 'three';
+import { useThree } from '@react-three/fiber';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -80,7 +81,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   }, [currentMode, wallSegments, onWallUpdate]);
 
   const handleSceneClick = useCallback((e: any) => {
-    // Clear selection when clicking on empty space
     if (e.object.name !== 'product' && e.object.name !== 'wall') {
       onProductSelect([]);
     }
@@ -96,25 +96,25 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       const rect = sceneRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      // --- Raycasting to floor plane ---
+      // Setup raycaster
       const mouse = new THREE.Vector2(
         ((e.clientX - rect.left) / rect.width) * 2 - 1,
         -((e.clientY - rect.top) / rect.height) * 2 + 1
       );
 
-      const raycaster = new THREE.Raycaster();
-      const camera = (window as any).__R3FRoot?.getState().camera as THREE.Camera; // grab R3F camera
+      const camera = (window as any).__threeCamera as THREE.Camera; // Expose camera from IsometricFloorPlanScene
       if (!camera) {
-        console.warn('No camera found for raycasting');
+        console.error("No camera found for raycasting");
         return;
       }
 
+      const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, camera);
 
-      // Intersect with XZ floor plane (y=0)
+      // Floor plane at y = 0
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-      const intersection = new THREE.Vector3();
-      raycaster.ray.intersectPlane(plane, intersection);
+      const point = new THREE.Vector3();
+      raycaster.ray.intersectPlane(plane, point);
 
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
@@ -122,8 +122,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         name: product.name,
         category: product.category || 'Unknown',
         position: {
-          x: intersection.x * 100, // match walls’ units
-          y: intersection.z * 100
+          x: point.x,
+          y: point.z // store z as y for 2D compatibility
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -143,7 +143,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [setPlacedProducts]);
+  }, [setPlacedProducts, onProductSelect]);
 
   return (
     <div
