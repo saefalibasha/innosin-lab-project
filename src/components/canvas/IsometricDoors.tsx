@@ -1,5 +1,6 @@
 import React from 'react';
 import { Door } from '@/types/floorPlanTypes';
+import { getWallAngle } from '@/utils/collisionDetection';
 
 interface IsometricDoorsProps {
   doors: Door[];
@@ -7,30 +8,30 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  const doorWidthMeters = (door.width || 800) * scale * 0.001;
-  const doorHeightMeters = 2; // 2 meters tall
-  const doorThickness = 0.05; // 5cm
+  const doorWidth = (door.width || 800) * scale * 0.001; // mm to m
+  const doorHeight = 2 * scale; // 2 meters
+  const doorThickness = 0.05; // in meters
 
-  // Convert 2D (x, y) into 3D (x, z)
-  const x = door.position.x * scale * 0.001;
-  const z = door.position.y * scale * 0.001;
+  const posX = door.position.x * scale * 0.001;
+  const posZ = door.position.y * scale * 0.001;
 
-  // Default position (we will adjust based on rotation later)
-  const position: [number, number, number] = [x, doorHeightMeters / 2, z];
-
-  // Rotation based on door facing
-  const rotationY = door.facing === 'vertical' ? Math.PI / 2 : 0;
+  const rotationY = door.facing === 'vertical'
+    ? Math.PI / 2
+    : 0;
 
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Door panel */}
+    <group position={[posX, doorHeight / 2, posZ]} rotation={[0, rotationY, 0]}>
+      {/* Door Panel */}
       <mesh castShadow>
-        <boxGeometry args={[doorWidthMeters, doorHeightMeters, doorThickness]} />
+        <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
 
-      {/* Handle - add a small bump to door front */}
-      <mesh position={[doorWidthMeters / 4, 0, doorThickness / 2 + 0.01]}>
+      {/* Handle */}
+      <mesh
+        position={[doorWidth / 2 - 0.1, 0, doorThickness / 2 + 0.01]}
+        castShadow
+      >
         <sphereGeometry args={[0.02]} />
         <meshLambertMaterial color="#FFD700" />
       </mesh>
