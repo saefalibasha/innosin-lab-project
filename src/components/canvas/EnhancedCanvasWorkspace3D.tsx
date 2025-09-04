@@ -4,6 +4,7 @@ import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
+import { checkProductWallClash } from '@/utils/collisionDetection';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -58,8 +59,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onProductSelect,
   onWallUpdate
 }) => {
-  const htmlRef = useRef<HTMLDivElement>(null); // HTML container
-  const sceneRef3D = useRef<any>(null); // Will hold camera, scene, gl
+  const htmlRef = useRef<HTMLDivElement>(null);
+  const sceneRef3D = useRef<any>(null);
 
   const handleProductClick = useCallback((productId: string) => {
     if (currentMode === 'select') {
@@ -141,13 +142,18 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         variants: product.variants
       };
 
+      if (checkProductWallClash(newProduct, wallSegments, scale)) {
+        toast.error('Product cannot be placed inside or overlapping a wall');
+        return;
+      }
+
       setPlacedProducts(prev => [...prev, newProduct]);
       toast.success(`Added ${product.name} to floor plan`);
     } catch (error) {
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [setPlacedProducts]);
+  }, [setPlacedProducts, wallSegments, scale]);
 
   return (
     <div
@@ -157,7 +163,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
-        ref={sceneRef3D} // ✅ For raycasting
+        ref={sceneRef3D}
         wallSegments={wallSegments}
         placedProducts={placedProducts}
         doors={doors}
@@ -170,12 +176,10 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         showGrid={showGrid}
       />
 
-      {/* Mode indicator */}
       <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
         Mode: {currentMode}
       </div>
 
-      {/* Stats */}
       <div className="absolute top-4 right-4 bg-background/90 rounded-md px-3 py-2 text-xs space-y-1">
         <div>Products: {placedProducts.length}</div>
         <div>Walls: {wallSegments.length}</div>
@@ -185,7 +189,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         )}
       </div>
 
-      {/* Instructions */}
       <div className="absolute bottom-4 left-4 bg-background/90 rounded-md px-3 py-2 text-xs text-muted-foreground">
         <div>• Drag to rotate view</div>
         <div>• Scroll to zoom</div>
