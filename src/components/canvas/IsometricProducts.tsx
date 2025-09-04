@@ -4,7 +4,6 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
-import { canvasTo3D } from '@/utils/coordinateTransform';
 
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
@@ -24,32 +23,31 @@ const ProductModel = ({
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
-  const meshRef = useRef<Mesh>(null); // Fixed: Use Mesh here instead of Group
-  
+  const meshRef = useRef<Mesh>(null);
+
   const handleClick = (e: any) => {
     e.stopPropagation();
     onProductClick?.(product.id);
   };
 
-  // Convert 2D position to 3D world coordinates using unified coordinate system
-  const [worldX, , worldZ] = canvasTo3D(product.position);
-  
+  // Position mapped to X/Z plane, Y handled separately
   const position: [number, number, number] = [
-    worldX,
-    0.01, // Place products slightly above floor level
-    worldZ
+    product.position.x * scale * 0.1,
+    0,
+    product.position.y * scale * 0.1,
   ];
 
   const rotation: [number, number, number] = [
     0,
     product.rotation || 0,
-    0
+    0,
   ];
 
+  // Fallback simple box if no GLTF model
   const fallbackGeometry = (
     <mesh
       ref={meshRef}
-      position={position}
+      position={[position[0], 0.425, position[2]]} // ✅ lift by half height
       rotation={rotation}
       onClick={handleClick}
       castShadow
@@ -57,9 +55,9 @@ const ProductModel = ({
     >
       <boxGeometry 
         args={[
-          product.dimensions.length * 0.01,
+          product.dimensions.length * scale * 0.1,
           0.85,
-          product.dimensions.width * 0.01
+          product.dimensions.width * scale * 0.1,
         ]} 
       />
       <meshLambertMaterial 
@@ -72,9 +70,9 @@ const ProductModel = ({
           <edgesGeometry 
             args={[
               new THREE.BoxGeometry(
-                product.dimensions.length * 0.01,
+                product.dimensions.length * scale * 0.1,
                 0.85,
-                product.dimensions.width * 0.01
+                product.dimensions.width * scale * 0.1
               )
             ]}
           />
@@ -127,8 +125,13 @@ const ProductGLTF = ({
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
+      // Center model
       gltf.scene.position.sub(center);
 
+      // ✅ Move bottom of model to Y=0 (floor plane)
+      gltf.scene.position.y += size.y / 2;
+
+      // Normalize scale
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
         const targetScale = 1 / maxDim;
