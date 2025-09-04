@@ -4,7 +4,6 @@ import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
-import { useThree } from '@react-three/fiber';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -59,12 +58,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onProductSelect,
   onWallUpdate
 }) => {
-  const sceneRef = useRef<HTMLDivElement>(null);
+  const htmlRef = useRef<HTMLDivElement>(null); // HTML wrapper div
+  const sceneRef3D = useRef<any>(null); // gets camera, scene, gl from IsometricFloorPlanScene
 
   const handleProductClick = useCallback((productId: string) => {
     if (currentMode === 'select') {
-      onProductSelect(prev =>
-        prev.includes(productId)
+      onProductSelect(prev => 
+        prev.includes(productId) 
           ? prev.filter(id => id !== productId)
           : [...prev, productId]
       );
@@ -88,42 +88,46 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
   const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     const productData = e.dataTransfer.getData('product');
     if (!productData) return;
 
     try {
       const product = JSON.parse(productData);
-      const rect = sceneRef.current?.getBoundingClientRect();
-      if (!rect) return;
 
-      // Setup raycaster
-      const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1
-      );
+      const { camera, scene, gl } = sceneRef3D.current;
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
 
-      const camera = (window as any).__threeCamera as THREE.Camera; // Expose camera from IsometricFloorPlanScene
-      if (!camera) {
-        console.error("No camera found for raycasting");
+      const rect = gl.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+
+      const floor = scene.children.find(obj => obj.name === 'floor-drop-plane');
+      if (!floor) {
+        toast.error('Drop target not found');
         return;
       }
 
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(floor);
+      if (intersects.length === 0) {
+        toast.error('Cannot place item outside of floor');
+        return;
+      }
 
-      // Floor plane at y = 0
-      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-      const point = new THREE.Vector3();
-      raycaster.ray.intersectPlane(plane, point);
+      const point = intersects[0].point;
 
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',
-        position: {
+        position: { 
           x: point.x,
-          y: point.z // store z as y for 2D compatibility
+          y: 0, // Ground height
+          z: point.z
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -143,16 +147,17 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [setPlacedProducts, onProductSelect]);
+  }, [setPlacedProducts]);
 
   return (
     <div
-      ref={sceneRef}
+      ref={htmlRef}
       className="relative w-full h-full bg-gray-50"
       onDrop={handleCanvasDrop}
       onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
+        ref={sceneRef3D}
         wallSegments={wallSegments}
         placedProducts={placedProducts}
         doors={doors}
