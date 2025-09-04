@@ -58,13 +58,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onProductSelect,
   onWallUpdate
 }) => {
-  const htmlRef = useRef<HTMLDivElement>(null); // HTML wrapper div
-  const sceneRef3D = useRef<any>(null); // gets camera, scene, gl from IsometricFloorPlanScene
+  const htmlRef = useRef<HTMLDivElement>(null); // HTML container
+  const sceneRef3D = useRef<any>(null); // Will hold camera, scene, gl
 
   const handleProductClick = useCallback((productId: string) => {
     if (currentMode === 'select') {
-      onProductSelect(prev => 
-        prev.includes(productId) 
+      onProductSelect(prev =>
+        prev.includes(productId)
           ? prev.filter(id => id !== productId)
           : [...prev, productId]
       );
@@ -124,9 +124,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',
-        position: { 
+        position: {
           x: point.x,
-          y: 0, // Ground height
+          y: 0,
           z: point.z
         },
         rotation: 0,
@@ -157,7 +157,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
-        ref={sceneRef3D}
+        ref={sceneRef3D} // ✅ For raycasting
         wallSegments={wallSegments}
         placedProducts={placedProducts}
         doors={doors}
