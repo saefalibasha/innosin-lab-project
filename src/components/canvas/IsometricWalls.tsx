@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { TextureLoader, Vector3, Shape, ExtrudeGeometry } from 'three';
 import { WallSegment } from '@/types/floorPlanTypes';
+import { canvasTo3D } from '@/utils/coordinateTransform';
 
 interface IsometricWallsProps {
   wallSegments: WallSegment[];
@@ -15,13 +16,17 @@ const Wall = ({ wall, scale, onWallClick }: {
   onWallClick?: (wallId: string) => void;
 }) => {
   const wallGeometry = useMemo(() => {
-    const start = new Vector3(wall.start.x * scale * 0.001, 0, wall.start.y * scale * 0.001);
-    const end = new Vector3(wall.end.x * scale * 0.001, 0, wall.end.y * scale * 0.001);
+    // Convert to 3D coordinates using unified coordinate system
+    const [startX, , startZ] = canvasTo3D(wall.start);
+    const [endX, , endZ] = canvasTo3D(wall.end);
+    
+    const start = new Vector3(startX, 0, startZ);
+    const end = new Vector3(endX, 0, endZ);
     
     const direction = new Vector3().subVectors(end, start).normalize();
     const perpendicular = new Vector3(-direction.z, 0, direction.x);
     
-    const thickness = (wall.thickness || 100) * scale * 0.001;
+    const thickness = (wall.thickness || 100) * 0.01;
     const height = 2.4; // Standard room height in meters
     
     // Create wall shape

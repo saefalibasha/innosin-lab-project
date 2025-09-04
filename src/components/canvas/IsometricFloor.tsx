@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Shape, ExtrudeGeometry } from 'three';
 import { Room } from '@/types/floorPlanTypes';
+import { canvasTo3D } from '@/utils/coordinateTransform';
 
 interface IsometricFloorProps {
   rooms: Room[];
@@ -13,27 +14,17 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
 
     const shape = new Shape();
 
-    // Determine if offset is needed (e.g., local coordinates)
-    const isGlobal = room.points.some(p => p.x > 5000 || p.y > 5000);
-    const offsetX = isGlobal ? 0 : room.points[0].x;
-    const offsetY = isGlobal ? 0 : room.points[0].y;
-
-    // Convert to consistent scale with walls/products
-    const moveToX = (room.points[0].x - offsetX) * scale * 0.001;
-    const moveToZ = (room.points[0].y - offsetY) * scale * 0.001;
-
-    shape.moveTo(moveToX, moveToZ);
+    // Convert all points using unified coordinate system
+    const [firstX, , firstZ] = canvasTo3D(room.points[0]);
+    shape.moveTo(firstX, firstZ);
 
     for (let i = 1; i < room.points.length; i++) {
-      const point = room.points[i];
-      shape.lineTo(
-        (point.x - offsetX) * scale * 0.001,
-        (point.y - offsetY) * scale * 0.001
-      );
+      const [pointX, , pointZ] = canvasTo3D(room.points[i]);
+      shape.lineTo(pointX, pointZ);
     }
 
     // Close the shape
-    shape.lineTo(moveToX, moveToZ);
+    shape.lineTo(firstX, firstZ);
 
     const extrudeSettings = {
       depth: 0.02, // Make floor slightly thicker

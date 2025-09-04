@@ -8,7 +8,7 @@ import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { IsometricFloor } from './IsometricFloor';
 import { IsometricDoors } from './IsometricDoors';
-import { getAllScenePoints, calculateBounds } from '@/utils/coordinateTransform';
+import { getAllScenePoints, calculateBounds, canvasTo3D, COORDINATE_SCALE } from '@/utils/coordinateTransform';
 
 interface IsometricFloorPlanSceneProps {
   wallSegments: WallSegment[];
@@ -83,32 +83,29 @@ const IsometricScene = ({
 };
 
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
+  // Calculate optimal camera distance based on scene content
+  const cameraDistance = useMemo(() => {
+    const allPoints = getAllScenePoints(props.wallSegments, props.rooms, props.placedProducts);
+    if (allPoints.length === 0) return 20;
+
+    const bounds = calculateBounds(allPoints);
+    const sceneWidth = (bounds.max.x - bounds.min.x) * COORDINATE_SCALE;
+    const sceneHeight = (bounds.max.y - bounds.min.y) * COORDINATE_SCALE;
+    const maxDimension = Math.max(sceneWidth, sceneHeight);
+    
+    // Calculate distance to fit the scene in view
+    return Math.max(maxDimension * 2, 10);
+  }, [props.wallSegments, props.rooms, props.placedProducts]);
+
   // Calculate scene center for camera positioning
   const sceneCenter = useMemo(() => {
     const allPoints = getAllScenePoints(props.wallSegments, props.rooms, props.placedProducts);
     if (allPoints.length === 0) return [0, 0, 0];
-    
-    const bounds = calculateBounds(allPoints);
-    return [
-      bounds.center.x * props.scale * 0.001,
-      0,
-      bounds.center.y * props.scale * 0.001
-    ];
-  }, [props.wallSegments, props.rooms, props.placedProducts, props.scale]);
 
-  // Calculate optimal camera distance based on scene size
-  const cameraDistance = useMemo(() => {
-    const allPoints = getAllScenePoints(props.wallSegments, props.rooms, props.placedProducts);
-    if (allPoints.length === 0) return 20;
-    
     const bounds = calculateBounds(allPoints);
-    const maxDimension = Math.max(
-      Math.abs(bounds.max.x - bounds.min.x),
-      Math.abs(bounds.max.y - bounds.min.y)
-    ) * props.scale * 0.001;
-    
-    return Math.max(10, maxDimension * 2);
-  }, [props.wallSegments, props.rooms, props.placedProducts, props.scale]);
+    const [centerX, , centerZ] = canvasTo3D(bounds.center);
+    return [centerX, 0, centerZ];
+  }, [props.wallSegments, props.rooms, props.placedProducts]);
 
   return (
     <div className="w-full h-full">

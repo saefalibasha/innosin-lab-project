@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
+import { canvasTo3D } from '@/utils/coordinateTransform';
 
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
@@ -30,10 +31,13 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
+  // Convert 2D position to 3D world coordinates using unified coordinate system
+  const [worldX, , worldZ] = canvasTo3D(product.position);
+  
   const position: [number, number, number] = [
-    product.position.x * scale * 0.001,
-    0.01, // Place products on floor level
-    product.position.y * scale * 0.001
+    worldX,
+    0.01, // Place products slightly above floor level
+    worldZ
   ];
 
   const rotation: [number, number, number] = [
@@ -53,9 +57,9 @@ const ProductModel = ({
     >
       <boxGeometry 
         args={[
-          product.dimensions.length * scale * 0.001,
+          product.dimensions.length * 0.01,
           0.85,
-          product.dimensions.width * scale * 0.001
+          product.dimensions.width * 0.01
         ]} 
       />
       <meshLambertMaterial 
@@ -68,9 +72,9 @@ const ProductModel = ({
           <edgesGeometry 
             args={[
               new THREE.BoxGeometry(
-                product.dimensions.length * scale * 0.001,
+                product.dimensions.length * 0.01,
                 0.85,
-                product.dimensions.width * scale * 0.001
+                product.dimensions.width * 0.01
               )
             ]}
           />

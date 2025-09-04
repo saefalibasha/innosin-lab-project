@@ -6,27 +6,29 @@
 import { Point } from '@/types/floorPlanTypes';
 
 // Standard coordinate transformation for 3D scene
-export const COORDINATE_SCALE = 0.001; // Convert mm to meters for 3D
+// Adjusted scale to make rooms appropriately sized
+export const COORDINATE_SCALE = 0.01; // Convert canvas units to 3D world units
 export const ROOM_HEIGHT = 2.4; // Standard room height in meters
 
 /**
  * Convert 2D canvas coordinates to 3D world coordinates
+ * This maintains 1:1 coordinate mapping between 2D and 3D views
  */
-export const canvasTo3D = (point: Point, scale: number): [number, number, number] => {
+export const canvasTo3D = (point: Point): [number, number, number] => {
   return [
-    point.x * scale * COORDINATE_SCALE,
+    point.x * COORDINATE_SCALE,
     0, // Y will be set by specific components (floor, products)
-    point.y * scale * COORDINATE_SCALE
+    point.y * COORDINATE_SCALE
   ];
 };
 
 /**
  * Convert 3D world coordinates back to 2D canvas coordinates
  */
-export const threeDToCanvas = (x: number, z: number, scale: number): Point => {
+export const threeDToCanvas = (x: number, z: number): Point => {
   return {
-    x: x / (scale * COORDINATE_SCALE),
-    y: z / (scale * COORDINATE_SCALE)
+    x: x / COORDINATE_SCALE,
+    y: z / COORDINATE_SCALE
   };
 };
 

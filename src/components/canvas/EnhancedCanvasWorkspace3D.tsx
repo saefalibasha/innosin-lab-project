@@ -96,21 +96,20 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       const rect = sceneRef.current?.getBoundingClientRect();
       if (!rect) return;
 
-      // Convert screen coordinates to 3D world coordinates
-      // This is a simplified approach - in a real implementation,
-      // you'd use raycasting to get the exact 3D position
-      const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
-      const z = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
+      // Convert screen coordinates to canvas coordinates (maintain same coordinate system as 2D)
+      // Map screen coordinates to a reasonable canvas coordinate range
+      const canvasWidth = 1000; // Same as 2D canvas width
+      const canvasHeight = 600; // Same as 2D canvas height
+      
+      const x = ((e.clientX - rect.left) / rect.width) * canvasWidth;
+      const y = ((e.clientY - rect.top) / rect.height) * canvasHeight;
 
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',
-        position: { 
-          x: x / scale * 1000, // Convert back to canvas coordinates 
-          y: z / scale * 1000 
-        },
+        position: { x, y }, // Use canvas coordinates directly
         rotation: 0,
         dimensions: product.dimensions,
         color: product.color,
@@ -129,7 +128,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [scale, setPlacedProducts]);
+  }, [setPlacedProducts]);
 
   return (
     <div
