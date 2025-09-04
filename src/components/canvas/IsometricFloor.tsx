@@ -14,6 +14,7 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
 
     const shape = new Shape();
 
+    // Convert all points using unified coordinate system
     const [firstX, , firstZ] = canvasTo3D(room.points[0]);
     shape.moveTo(firstX, firstZ);
 
@@ -22,10 +23,11 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
       shape.lineTo(pointX, pointZ);
     }
 
+    // Close the shape
     shape.lineTo(firstX, firstZ);
 
     const extrudeSettings = {
-      depth: 0.02,
+      depth: 0.02, // Make floor slightly thicker
       bevelEnabled: false,
     };
 
@@ -40,9 +42,8 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
   return (
     <mesh
       geometry={floorGeometry}
-      position={[0, -0.005, 0]}
+      position={[0, -0.005, 0]} // slight offset to avoid z-fighting
       receiveShadow
-      name="floor-drop-plane" // ✅ Key addition
     >
       <meshLambertMaterial
         color={room.color || '#f8f8f8'}
@@ -56,8 +57,13 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
 export const IsometricFloor: React.FC<IsometricFloorProps> = ({ rooms, scale }) => {
   return (
     <group>
+      {/* Room floor shapes only */}
       {rooms.map((room) => (
-        <RoomFloor key={room.id} room={room} scale={scale} />
+        <RoomFloor
+          key={room.id}
+          room={room}
+          scale={scale}
+        />
       ))}
     </group>
   );
