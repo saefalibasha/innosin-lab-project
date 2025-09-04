@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from 'react';
-import { useFrame } from '@react-three/fiber';
+import React, { useMemo } from 'react';
 import { Door } from '@/types/floorPlanTypes';
+import * as THREE from 'three';
 
 interface IsometricDoorsProps {
   doors: Door[];
@@ -8,43 +8,38 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  const doorWidth = (door.width || 800) * scale * 0.001;
-  const doorHeight = 2100 * scale * 0.001;
-  const doorThickness = 0.05;
+  const doorWidth = (door.width || 800) * scale * 0.1; // mm to meters
+  const doorHeight = 2; // meters
+  const doorThickness = 0.05; // meters
 
-  const groupRef = useRef<THREE.Group>(null);
-  const doorRef = useRef<THREE.Mesh>(null);
+  // Position mapped using same coordinate system as IsometricWalls
+  const x = door.position.x * scale * 0.1;
+  const z = -door.position.y * scale * 0.1;
 
-  const position: [number, number, number] = [
-    door.position.x * scale * 0.001,
-    doorHeight / 2,
-    door.position.y * scale * 0.001
-  ];
-
+  // Rotation logic based on facing
   const rotationY = door.facing === 'vertical' ? Math.PI / 2 : 0;
 
-  useFrame((state, delta) => {
-    if (groupRef.current) {
-      const time = state.clock.getElapsedTime();
-      groupRef.current.rotation.y = rotationY + Math.sin(time * 2) * 0.2; // Swing effect
-    }
-  });
+  // Center the door mesh to align flush with wall segment
+  const offsetX = door.facing === 'vertical' ? 0 : 0;
+  const offsetZ = door.facing === 'vertical' ? 0 : 0;
+
+  // Memoized geometry (optional for performance)
+  const geometry = useMemo(() => {
+    const geo = new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness);
+    return geo;
+  }, [doorWidth]);
 
   return (
-    <group ref={groupRef} position={position} rotation={[0, rotationY, 0]}>
-      {/* Door frame inside wall thickness */}
-      <mesh
-        ref={doorRef}
-        castShadow
-        name="door"
-        position={[0, 0, -doorThickness / 2]} // Embedded halfway into wall
-      >
-        <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
+    <group
+      position={[x + offsetX, doorHeight / 2, z + offsetZ]}
+      rotation={[0, rotationY, 0]}
+    >
+      <mesh geometry={geometry} castShadow receiveShadow>
         <meshLambertMaterial color="#8B4513" />
       </mesh>
 
-      {/* Door handle */}
-      <mesh position={[doorWidth * 0.4, 0, doorThickness / 2 + 0.01]} castShadow>
+      {/* Handle */}
+      <mesh position={[doorWidth / 4, 0, doorThickness / 2 + 0.01]}>
         <sphereGeometry args={[0.02]} />
         <meshLambertMaterial color="#FFD700" />
       </mesh>
@@ -54,7 +49,7 @@ const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
 
 export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale }) => {
   return (
-    <group name="doors">
+    <group>
       {doors.map((door) => (
         <DoorModel key={door.id} door={door} scale={scale} />
       ))}
