@@ -43,6 +43,10 @@ export const doesProductOverlapWall = (product: PlacedProduct, wall: WallSegment
   return corners.some(corner => distancePointToLineSegment(corner, wall.start, wall.end) < wallThickness / 2);
 };
 
+export const checkProductWallClash = (product: PlacedProduct, wallSegments: WallSegment[], scale: number): boolean => {
+  return wallSegments.some(wall => doesProductOverlapWall(product, wall, scale));
+};
+
 export const distancePointToLineSegment = (point: Point, lineStart: Point, lineEnd: Point): number => {
   const A = point.x - lineStart.x;
   const B = point.y - lineStart.y;
