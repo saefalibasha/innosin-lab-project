@@ -1,13 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import {
-  Point,
-  PlacedProduct,
-  Door,
-  TextAnnotation,
-  WallSegment,
-  Room,
-  DrawingMode
-} from '@/types/floorPlanTypes';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
@@ -67,11 +59,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onWallUpdate
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
-  const sceneRef3D = useRef<{
-    camera: THREE.PerspectiveCamera;
-    scene: THREE.Scene;
-    gl: THREE.WebGLRenderer;
-  } | null>(null);
+  const sceneRef3D = useRef<any>(null);
 
   const handleSceneReady = useCallback((context: {
     camera: THREE.PerspectiveCamera;
@@ -115,13 +103,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     try {
       const product = JSON.parse(productData);
 
-      const ref = sceneRef3D.current;
-      if (!ref) {
-        toast.error('Scene not ready');
-        return;
-      }
-
-      const { camera, scene, gl } = ref;
+      const { camera, scene, gl } = sceneRef3D.current;
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
 
@@ -152,7 +134,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         category: product.category || 'Unknown',
         position: {
           x: point.x,
-          y: point.z // ✅ Removed invalid `z` field (this is 2D Point)
+          y: point.z
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -182,6 +164,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
+        onSceneReady={handleSceneReady}
         wallSegments={wallSegments}
         placedProducts={placedProducts}
         doors={doors}
@@ -192,7 +175,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         onSceneClick={handleSceneClick}
         selectedProducts={selectedProducts}
         showGrid={showGrid}
-        onSceneReady={handleSceneReady} // ✅ now passed correctly
       />
 
       <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
