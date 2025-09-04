@@ -1,16 +1,10 @@
-import React, { useRef, useCallback } from "react";
-import {
-  Point,
-  PlacedProduct,
-  Door,
-  TextAnnotation,
-  WallSegment,
-  Room,
-  DrawingMode,
-} from "@/types/floorPlanTypes";
-import { MeasurementUnit } from "@/utils/measurements";
-import IsometricFloorPlanScene from "./IsometricFloorPlanScene";
-import { toast } from "sonner";
+import React, { useRef, useCallback } from 'react';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
+import { MeasurementUnit } from '@/utils/measurements';
+import IsometricFloorPlanScene from './IsometricFloorPlanScene';
+import { toast } from 'sonner';
+import * as THREE from 'three';
+import { useThree } from '@react-three/fiber';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -63,93 +57,91 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onClearAll,
   selectedProducts,
   onProductSelect,
-  onWallUpdate,
+  onWallUpdate
 }) => {
   const sceneRef = useRef<HTMLDivElement>(null);
 
-  /** Handle product selection */
-  const handleProductClick = useCallback(
-    (productId: string) => {
-      if (currentMode === "select") {
-        onProductSelect((prev) =>
-          prev.includes(productId)
-            ? prev.filter((id) => id !== productId)
-            : [...prev, productId]
-        );
+  const handleProductClick = useCallback((productId: string) => {
+    if (currentMode === 'select') {
+      onProductSelect(prev =>
+        prev.includes(productId)
+          ? prev.filter(id => id !== productId)
+          : [...prev, productId]
+      );
+    }
+  }, [currentMode, onProductSelect]);
+
+  const handleWallClick = useCallback((wallId: string) => {
+    if (currentMode === 'select') {
+      const wall = wallSegments.find(w => w.id === wallId);
+      if (wall && onWallUpdate) {
+        onWallUpdate(wall);
       }
-    },
-    [currentMode, onProductSelect]
-  );
+    }
+  }, [currentMode, wallSegments, onWallUpdate]);
 
-  /** Handle wall selection */
-  const handleWallClick = useCallback(
-    (wallId: string) => {
-      if (currentMode === "select") {
-        const wall = wallSegments.find((w) => w.id === wallId);
-        if (wall && onWallUpdate) {
-          onWallUpdate(wall);
-        }
+  const handleSceneClick = useCallback((e: any) => {
+    if (e.object.name !== 'product' && e.object.name !== 'wall') {
+      onProductSelect([]);
+    }
+  }, [onProductSelect]);
+
+  const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const productData = e.dataTransfer.getData('product');
+    if (!productData) return;
+
+    try {
+      const product = JSON.parse(productData);
+      const rect = sceneRef.current?.getBoundingClientRect();
+      if (!rect) return;
+
+      // Raycast into the scene to find ground intersection
+      const mouse = new THREE.Vector2(
+        ((e.clientX - rect.left) / rect.width) * 2 - 1,
+        -((e.clientY - rect.top) / rect.height) * 2 + 1
+      );
+
+      const raycaster = new THREE.Raycaster();
+      const camera = (window as any).__threeCamera as THREE.Camera; // Provided by Canvas
+      if (!camera) {
+        console.warn('No camera found for raycasting');
+        return;
       }
-    },
-    [currentMode, wallSegments, onWallUpdate]
-  );
 
-  /** Clear selection when clicking empty space */
-  const handleSceneClick = useCallback(
-    (e: any) => {
-      if (e.object.name !== "product" && e.object.name !== "wall") {
-        onProductSelect([]);
-      }
-    },
-    [onProductSelect]
-  );
+      raycaster.setFromCamera(mouse, camera);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // y=0 plane
+      const intersection = new THREE.Vector3();
+      raycaster.ray.intersectPlane(plane, intersection);
 
-  /** Handle product drop */
-  const handleCanvasDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const productData = e.dataTransfer.getData("product");
-      if (!productData) return;
+      const newProduct: PlacedProduct = {
+        id: `product-${Date.now()}`,
+        productId: product.id,
+        name: product.name,
+        category: product.category || 'Unknown',
+        position: {
+          x: intersection.x * (100 / scale),
+          y: intersection.z * (100 / scale),
+        },
+        rotation: 0,
+        dimensions: product.dimensions,
+        color: product.color,
+        scale: 1,
+        modelPath: product.modelPath,
+        thumbnail: product.thumbnail,
+        description: product.description,
+        specifications: product.specifications,
+        finishes: product.finishes,
+        variants: product.variants,
+      };
 
-      try {
-        const product = JSON.parse(productData);
-        const rect = sceneRef.current?.getBoundingClientRect();
-        if (!rect) return;
-
-        // Convert screen coords to approximate 3D plane coords
-        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
-        const z = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
-
-        const newProduct: PlacedProduct = {
-          id: `product-${Date.now()}`,
-          productId: product.id,
-          name: product.name,
-          category: product.category || "Unknown",
-          position: {
-            x: x / scale * 1000,
-            y: z / scale * 1000,
-          },
-          rotation: 0,
-          dimensions: product.dimensions,
-          color: product.color,
-          scale: 1,
-          modelPath: product.modelPath,
-          thumbnail: product.thumbnail,
-          description: product.description,
-          specifications: product.specifications,
-          finishes: product.finishes,
-          variants: product.variants,
-        };
-
-        setPlacedProducts((prev) => [...prev, newProduct]);
-        toast.success(`Added ${product.name} to floor plan`);
-      } catch (error) {
-        console.error("Error parsing dropped product:", error);
-        toast.error("Failed to add product");
-      }
-    },
-    [scale, setPlacedProducts]
-  );
+      setPlacedProducts(prev => [...prev, newProduct]);
+      toast.success(`Added ${product.name} to floor plan`);
+    } catch (error) {
+      console.error('Error parsing dropped product:', error);
+      toast.error('Failed to add product');
+    }
+  }, [scale, setPlacedProducts]);
 
   return (
     <div
@@ -182,9 +174,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         <div>Walls: {wallSegments.length}</div>
         <div>Rooms: {rooms.length}</div>
         {selectedProducts.length > 0 && (
-          <div className="text-primary">
-            Selected: {selectedProducts.length}
-          </div>
+          <div className="text-primary">Selected: {selectedProducts.length}</div>
         )}
       </div>
 
