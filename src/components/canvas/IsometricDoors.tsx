@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Door } from '@/types/floorPlanTypes';
 import * as THREE from 'three';
 
@@ -8,27 +8,27 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  const width = (door.width || 900) * scale * 0.001; // convert mm to meters
-  const height = 2.1; // 2.1m standard door height
-  const thickness = 0.05;
+  const doorWidth = (door.width || 900) * scale * 0.001; // 900mm default width
+  const doorHeight = 2100 * scale * 0.001; // 2.1m standard height
+  const doorThickness = 100 * scale * 0.001; // 100mm door depth
 
-  // Convert from 2D (X, Y) to 3D (X, 0, -Y)
-  const position: [number, number, number] = [
-    door.position.x * scale * 0.001,
-    height / 2,
-    -door.position.y * scale * 0.001
-  ];
+  // ✅ Convert 2D (x, y) → 3D (x, y, -z)
+  const x = door.position.x * scale * 0.001;
+  const y = doorHeight / 2; // Center vertically
+  const z = -door.position.y * scale * 0.001;
 
-  // Rotate around Y-axis (convert degrees to radians)
-  const rotationY = THREE.MathUtils.degToRad(door.rotation || 0);
+  const rotation = (door.rotation || 0) * (Math.PI / 180); // Degrees to radians
 
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
+    <group position={[x, y, z]} rotation={[0, rotation, 0]}>
+      {/* Door panel */}
       <mesh castShadow>
-        <boxGeometry args={[width, height, thickness]} />
+        <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
-      <mesh position={[width / 3, 0, thickness / 2 + 0.01]}>
+
+      {/* Door handle */}
+      <mesh position={[doorWidth / 2 - 0.1, 1, doorThickness / 2 + 0.01]} castShadow>
         <sphereGeometry args={[0.02]} />
         <meshLambertMaterial color="#FFD700" />
       </mesh>
