@@ -1,7 +1,15 @@
+// 2D Point (used for walls, rooms, annotations, etc.)
 export interface Point {
   x: number;
   y: number;
 }
+
+// 3D Position (used for product placement)
+export type Position3D = {
+  x: number;
+  y: number;
+  z: number;
+};
 
 export enum WallType {
   INTERIOR = 'interior',
@@ -15,7 +23,7 @@ export interface PlacedProduct {
   productId: string;
   name: string;
   category: string;
-  position: Point;
+  position: Position3D; // ✅ now supports 3D coordinates
   rotation: number;
   dimensions: {
     length: number;
