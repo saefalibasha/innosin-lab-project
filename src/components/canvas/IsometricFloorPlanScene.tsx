@@ -1,8 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import React, { useRef } from 'react';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
-import { Group, WebGLRenderer, Scene, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
-import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
+import * as THREE from 'three';
+import { Group } from 'three';
+import { WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { IsometricFloor } from './IsometricFloor';
@@ -19,23 +20,6 @@ interface IsometricFloorPlanSceneProps {
   onSceneClick?: (e: any) => void;
   selectedProducts: string[];
   showGrid: boolean;
-  onSceneReady?: (context: {
-    camera: ThreePerspectiveCamera;
-    scene: Scene;
-    gl: WebGLRenderer;
-  }) => void;
-}
-
-function SceneReadyCallback({ onSceneReady }: { onSceneReady?: IsometricFloorPlanSceneProps['onSceneReady'] }) {
-  const { camera, gl, scene } = useThree();
-
-  useEffect(() => {
-    if (onSceneReady) {
-      onSceneReady({ camera: camera as ThreePerspectiveCamera, scene, gl });
-    }
-  }, [onSceneReady, camera, scene, gl]);
-
-  return null;
 }
 
 const IsometricScene = ({
@@ -49,13 +33,15 @@ const IsometricScene = ({
   onSceneClick,
   selectedProducts,
   showGrid,
-}: Omit<IsometricFloorPlanSceneProps, 'onSceneReady'>) => {
+}: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
+      {/* Floor */}
       <IsometricFloor rooms={rooms} scale={scale} />
 
+      {/* Grid */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -71,45 +57,47 @@ const IsometricScene = ({
         />
       )}
 
-      <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
+      {/* Walls */}
+      <IsometricWalls
+        wallSegments={wallSegments}
+        scale={scale}
+        onWallClick={onWallClick}
+      />
 
+      {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
 
+      {/* Products */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
       />
-
-      {/* Drop target */}
-      {onSceneClick && (
-        <mesh
-          name="floor-drop-plane"
-          position={[0, -0.0001, 0]}
-          onClick={onSceneClick}
-          visible={true}
-        >
-          <planeGeometry args={[100, 100]} />
-          <meshBasicMaterial transparent opacity={0} />
-        </mesh>
-      )}
     </group>
   );
 };
 
-const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
+const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (
+  props
+) => {
   return (
     <div className="w-full h-full">
       <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Perspective Camera */}
-        <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
-
-        {/* Expose camera on window (optional) */}
-        <CameraExporter />
-
-        {/* Expose scene, gl, camera for drop raycasting */}
-        <SceneReadyCallback onSceneReady={props.onSceneReady} />
+        {/* Isometric Camera Setup */}
+        <PerspectiveCamera
+          makeDefault
+          position={[20, 20, 20]}
+          fov={50}
+          near={0.1}
+          far={1000}
+          ref={(camera) => {
+            if (camera) {
+              // ✅ Store camera globally for raycasting in drop logic
+              (window as any).__threeCamera = camera;
+            }
+          }}
+        />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />
@@ -129,15 +117,27 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 
         {/* Controls */}
         <OrbitControls
-          enablePan
-          enableZoom
-          enableRotate
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
           minDistance={5}
           maxDistance={100}
           target={[0, 0, 0]}
         />
 
-        {/* Scene */}
+        {/* Click handler for scene */}
+        {props.onSceneClick && (
+          <mesh
+            position={[0, -0.1, 0]}
+            onClick={props.onSceneClick}
+            visible={false}
+          >
+            <planeGeometry args={[100, 100]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        )}
+
+        {/* Scene Content */}
         <IsometricScene {...props} />
       </Canvas>
     </div>
@@ -145,17 +145,3 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 };
 
 export default IsometricFloorPlanScene;
-
-/** Optional camera export to window for debugging */
-function CameraExporter() {
-  const { camera } = useThree();
-  useEffect(() => {
-    (window as any).__threeCamera = camera;
-    return () => {
-      if ((window as any).__threeCamera === camera) {
-        delete (window as any).__threeCamera;
-      }
-    };
-  }, [camera]);
-  return null;
-}
