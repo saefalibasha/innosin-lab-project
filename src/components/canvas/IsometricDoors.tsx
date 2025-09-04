@@ -1,6 +1,5 @@
 import React from 'react';
 import { Door } from '@/types/floorPlanTypes';
-import { getWallAngle } from '@/utils/collisionDetection';
 
 interface IsometricDoorsProps {
   doors: Door[];
@@ -8,30 +7,27 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  const doorWidth = (door.width || 800) * scale * 0.001; // mm to m
-  const doorHeight = 2 * scale; // 2 meters
-  const doorThickness = 0.05; // in meters
+  const doorWidth = (door.width || 800) * scale * 0.001;
+  const doorHeight = 2100 * scale * 0.001; // Standard door height
+  const doorThickness = 0.05; // In meters
 
-  const posX = door.position.x * scale * 0.001;
-  const posZ = door.position.y * scale * 0.001;
-
-  const rotationY = door.facing === 'vertical'
-    ? Math.PI / 2
-    : 0;
+  // Convert position from mm to meters, mapped to X/Z
+  const position: [number, number, number] = [
+    door.position.x * scale * 0.001,
+    doorHeight / 2, // Center door vertically
+    - door.position.y * scale * 0.001
+  ];
 
   return (
-    <group position={[posX, doorHeight / 2, posZ]} rotation={[0, rotationY, 0]}>
-      {/* Door Panel */}
+    <group position={position}>
+      {/* Door frame */}
       <mesh castShadow>
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
 
-      {/* Handle */}
-      <mesh
-        position={[doorWidth / 2 - 0.1, 0, doorThickness / 2 + 0.01]}
-        castShadow
-      >
+      {/* Door handle */}
+      <mesh position={[doorWidth * 0.4, 0, doorThickness / 2 + 0.01]} castShadow>
         <sphereGeometry args={[0.02]} />
         <meshLambertMaterial color="#FFD700" />
       </mesh>
@@ -43,7 +39,11 @@ export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale }) 
   return (
     <group>
       {doors.map((door) => (
-        <DoorModel key={door.id} door={door} scale={scale} />
+        <DoorModel
+          key={door.id}
+          door={door}
+          scale={scale}
+        />
       ))}
     </group>
   );
