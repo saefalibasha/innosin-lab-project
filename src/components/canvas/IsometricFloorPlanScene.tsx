@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
+import * as THREE from 'three';
 import { Group } from 'three';
-import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
+import { WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { IsometricFloor } from './IsometricFloor';
@@ -19,8 +20,6 @@ interface IsometricFloorPlanSceneProps {
   onSceneClick?: (e: any) => void;
   selectedProducts: string[];
   showGrid: boolean;
-  // ✅ NEW: let parent access camera
-  onReady?: (state: { camera: THREE.Camera }) => void;
 }
 
 const IsometricScene = ({
@@ -33,16 +32,16 @@ const IsometricScene = ({
   onWallClick,
   onSceneClick,
   selectedProducts,
-  showGrid
+  showGrid,
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
-      {/* Floor at y=0 on XZ plane */}
+      {/* Floor */}
       <IsometricFloor rooms={rooms} scale={scale} />
 
-      {/* Grid on XZ plane, y=0 */}
+      {/* Grid */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -58,9 +57,17 @@ const IsometricScene = ({
         />
       )}
 
-      {/* Walls / Doors / Products */}
-      <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
+      {/* Walls */}
+      <IsometricWalls
+        wallSegments={wallSegments}
+        scale={scale}
+        onWallClick={onWallClick}
+      />
+
+      {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
+
+      {/* Products */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
@@ -71,17 +78,26 @@ const IsometricScene = ({
   );
 };
 
-const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
+const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (
+  props
+) => {
   return (
     <div className="w-full h-full">
-      <Canvas
-        shadows
-        style={{ background: 'transparent' }}
-        // ✅ hand camera back to parent
-        onCreated={(state) => props.onReady?.({ camera: state.camera })}
-      >
-        {/* Camera (Y-up) */}
-        <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
+      <Canvas shadows style={{ background: 'transparent' }}>
+        {/* Isometric Camera Setup */}
+        <PerspectiveCamera
+          makeDefault
+          position={[20, 20, 20]}
+          fov={50}
+          near={0.1}
+          far={1000}
+          ref={(camera) => {
+            if (camera) {
+              // ✅ Store camera globally for raycasting in drop logic
+              (window as any).__threeCamera = camera;
+            }
+          }}
+        />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />
@@ -100,22 +116,28 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
         <directionalLight position={[-10, 10, -5]} intensity={0.3} />
 
         {/* Controls */}
-        <OrbitControls enablePan enableZoom enableRotate minDistance={5} maxDistance={100} target={[0, 0, 0]} />
+        <OrbitControls
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
+          minDistance={5}
+          maxDistance={100}
+          target={[0, 0, 0]}
+        />
 
-        {/* ✅ Click-catcher plane on the ground (XZ), raycastable even if transparent */}
+        {/* Click handler for scene */}
         {props.onSceneClick && (
           <mesh
-            position={[0, 0.001, 0]}
-            rotation-x={-Math.PI / 2}
+            position={[0, -0.1, 0]}
             onClick={props.onSceneClick}
-            visible={true}
+            visible={false}
           >
             <planeGeometry args={[100, 100]} />
             <meshBasicMaterial transparent opacity={0} />
           </mesh>
         )}
 
-        {/* Scene */}
+        {/* Scene Content */}
         <IsometricScene {...props} />
       </Canvas>
     </div>
