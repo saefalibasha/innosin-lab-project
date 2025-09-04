@@ -8,6 +8,7 @@ import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { IsometricFloor } from './IsometricFloor';
 import { IsometricDoors } from './IsometricDoors';
+import { getAllScenePoints, calculateBounds } from '@/utils/coordinateTransform';
 
 interface IsometricFloorPlanSceneProps {
   wallSegments: WallSegment[];
@@ -82,22 +83,53 @@ const IsometricScene = ({
 };
 
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
+  // Calculate scene center for camera positioning
+  const sceneCenter = useMemo(() => {
+    const allPoints = getAllScenePoints(props.wallSegments, props.rooms, props.placedProducts);
+    if (allPoints.length === 0) return [0, 0, 0];
+    
+    const bounds = calculateBounds(allPoints);
+    return [
+      bounds.center.x * props.scale * 0.001,
+      0,
+      bounds.center.y * props.scale * 0.001
+    ];
+  }, [props.wallSegments, props.rooms, props.placedProducts, props.scale]);
+
+  // Calculate optimal camera distance based on scene size
+  const cameraDistance = useMemo(() => {
+    const allPoints = getAllScenePoints(props.wallSegments, props.rooms, props.placedProducts);
+    if (allPoints.length === 0) return 20;
+    
+    const bounds = calculateBounds(allPoints);
+    const maxDimension = Math.max(
+      Math.abs(bounds.max.x - bounds.min.x),
+      Math.abs(bounds.max.y - bounds.min.y)
+    ) * props.scale * 0.001;
+    
+    return Math.max(10, maxDimension * 2);
+  }, [props.wallSegments, props.rooms, props.placedProducts, props.scale]);
+
   return (
     <div className="w-full h-full">
       <Canvas shadows style={{ background: 'transparent' }}>
         {/* Isometric Camera Setup */}
         <PerspectiveCamera 
           makeDefault
-          position={[20, 20, 20]}
+          position={[
+            sceneCenter[0] + cameraDistance * 0.7,
+            cameraDistance * 0.8,
+            sceneCenter[2] + cameraDistance * 0.7
+          ]}
           fov={50}
           near={0.1}
           far={1000}
         />
         
-        {/* Lighting */}
-        <ambientLight intensity={0.3} />
+        {/* Enhanced Lighting */}
+        <ambientLight intensity={0.4} />
         <directionalLight
-          position={[10, 20, 15]}
+          position={[sceneCenter[0] + 10, 20, sceneCenter[2] + 15]}
           intensity={0.8}
           castShadow
           shadow-mapSize-width={2048}
@@ -109,8 +141,8 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           shadow-camera-bottom={-25}
         />
         <directionalLight
-          position={[-10, 10, -5]}
-          intensity={0.3}
+          position={[sceneCenter[0] - 10, 10, sceneCenter[2] - 5]}
+          intensity={0.4}
         />
         
         {/* Controls */}
@@ -118,9 +150,9 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           enablePan={true}
           enableZoom={true}
           enableRotate={true}
-          minDistance={5}
-          maxDistance={100}
-          target={[0, 0, 0]}
+          minDistance={cameraDistance * 0.3}
+          maxDistance={cameraDistance * 3}
+          target={sceneCenter as [number, number, number]}
         />
         
         {/* Click handler for scene */}

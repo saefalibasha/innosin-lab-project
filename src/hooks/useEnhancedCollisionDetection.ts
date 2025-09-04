@@ -27,7 +27,6 @@ export const useEnhancedCollisionDetection = (
   scale: number
 ) => {
   const FURNITURE_SNAP_THRESHOLD = mmToCanvas(15, scale); // 15mm for furniture snapping
-  const WALL_COLLISION_BUFFER = mmToCanvas(50, scale); // 50mm buffer from walls
   const FURNITURE_COLLISION_BUFFER = mmToCanvas(15, scale); // Increased to 15mm between furniture pieces
   const SEAMLESS_SNAP_DISTANCE = mmToCanvas(5, scale); // 5mm for seamless snapping
 
@@ -238,17 +237,20 @@ export const useEnhancedCollisionDetection = (
   ): boolean => {
     const bounds = getRotatedBounds(product, position);
     const wallThickness = mmToCanvas(wall.thickness || 100, scale);
+    
+    // Allow products within interior walls, stricter for exterior walls
+    const buffer = wall.type === 'interior' ? mmToCanvas(10, scale) : mmToCanvas(50, scale);
 
     // Check if any corner of the rotated product is too close to the wall
     for (const corner of bounds.corners) {
       const distance = distanceToLineSegment(corner, wall.start, wall.end);
-      if (distance < wallThickness / 2 + WALL_COLLISION_BUFFER) {
+      if (distance < wallThickness / 2 + buffer) {
         return true;
       }
     }
 
     return false;
-  }, [getRotatedBounds, scale, WALL_COLLISION_BUFFER]);
+  }, [getRotatedBounds, scale]);
 
   const checkRotatedProductCollision = useCallback((
     product1: PlacedProduct,

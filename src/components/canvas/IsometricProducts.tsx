@@ -31,9 +31,9 @@ const ProductModel = ({
   };
 
   const position: [number, number, number] = [
-    product.position.x * scale * 0.1,
-    0,
-    product.position.y * scale * 0.1
+    product.position.x * scale * 0.001,
+    0.01, // Place products on floor level
+    product.position.y * scale * 0.001
   ];
 
   const rotation: [number, number, number] = [
@@ -53,9 +53,9 @@ const ProductModel = ({
     >
       <boxGeometry 
         args={[
-          product.dimensions.length * scale * 0.1,
+          product.dimensions.length * scale * 0.001,
           0.85,
-          product.dimensions.width * scale * 0.1
+          product.dimensions.width * scale * 0.001
         ]} 
       />
       <meshLambertMaterial 
@@ -68,9 +68,9 @@ const ProductModel = ({
           <edgesGeometry 
             args={[
               new THREE.BoxGeometry(
-                product.dimensions.length * scale * 0.1,
+                product.dimensions.length * scale * 0.001,
                 0.85,
-                product.dimensions.width * scale * 0.1
+                product.dimensions.width * scale * 0.001
               )
             ]}
           />

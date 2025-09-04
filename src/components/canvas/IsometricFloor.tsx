@@ -19,16 +19,16 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
     const offsetY = isGlobal ? 0 : room.points[0].y;
 
     // Convert to consistent scale with walls/products
-    const moveToX = (room.points[0].x - offsetX) * scale * 0.1;
-    const moveToZ = (room.points[0].y - offsetY) * scale * 0.1;
+    const moveToX = (room.points[0].x - offsetX) * scale * 0.001;
+    const moveToZ = (room.points[0].y - offsetY) * scale * 0.001;
 
     shape.moveTo(moveToX, moveToZ);
 
     for (let i = 1; i < room.points.length; i++) {
       const point = room.points[i];
       shape.lineTo(
-        (point.x - offsetX) * scale * 0.1,
-        (point.y - offsetY) * scale * 0.1
+        (point.x - offsetX) * scale * 0.001,
+        (point.y - offsetY) * scale * 0.001
       );
     }
 
@@ -36,7 +36,7 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
     shape.lineTo(moveToX, moveToZ);
 
     const extrudeSettings = {
-      depth: 0.01,
+      depth: 0.02, // Make floor slightly thicker
       bevelEnabled: false,
     };
 
@@ -55,9 +55,9 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
       receiveShadow
     >
       <meshLambertMaterial
-        color={room.color || '#f0f0f0'}
-        transparent
-        opacity={0.8}
+        color={room.color || '#f8f8f8'}
+        transparent={false}
+        opacity={1}
       />
     </mesh>
   );
