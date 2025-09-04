@@ -1,9 +1,8 @@
-import React, { useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
+import React, { useRef, useEffect } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
-import * as THREE from 'three';
 import { Group } from 'three';
-import { WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
+import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { IsometricFloor } from './IsometricFloor';
@@ -22,6 +21,20 @@ interface IsometricFloorPlanSceneProps {
   showGrid: boolean;
 }
 
+/** Exposes the active R3F camera on window for external raycasting */
+function CameraExporter() {
+  const { camera } = useThree();
+  useEffect(() => {
+    (window as any).__threeCamera = camera;
+    return () => {
+      if ((window as any).__threeCamera === camera) {
+        delete (window as any).__threeCamera;
+      }
+    };
+  }, [camera]);
+  return null;
+}
+
 const IsometricScene = ({
   wallSegments,
   placedProducts,
@@ -38,10 +51,10 @@ const IsometricScene = ({
 
   return (
     <group ref={groupRef}>
-      {/* Floor */}
+      {/* Floor (y = 0) */}
       <IsometricFloor rooms={rooms} scale={scale} />
 
-      {/* Grid */}
+      {/* Optional grid helper (also at y = 0) */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -57,47 +70,38 @@ const IsometricScene = ({
         />
       )}
 
-      {/* Walls */}
-      <IsometricWalls
-        wallSegments={wallSegments}
-        scale={scale}
-        onWallClick={onWallClick}
-      />
+      {/* Walls (constructed around y=0 plane) */}
+      <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
 
       {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
 
-      {/* Products */}
+      {/* Products (placed on y=0 plane) */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
       />
+
+      {/* Invisible click-catcher if you still want onSceneClick */}
+      {onSceneClick && (
+        <mesh position={[0, -0.0001, 0]} onClick={onSceneClick} visible={false}>
+          <planeGeometry args={[100, 100]} />
+          <meshBasicMaterial transparent opacity={0} />
+        </mesh>
+      )}
     </group>
   );
 };
 
-const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (
-  props
-) => {
+const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
   return (
     <div className="w-full h-full">
       <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Isometric Camera Setup */}
-        <PerspectiveCamera
-          makeDefault
-          position={[20, 20, 20]}
-          fov={50}
-          near={0.1}
-          far={1000}
-          ref={(camera) => {
-            if (camera) {
-              // ✅ Store camera globally for raycasting in drop logic
-              (window as any).__threeCamera = camera;
-            }
-          }}
-        />
+        {/* Camera */}
+        <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
+        <CameraExporter />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />
@@ -117,27 +121,15 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (
 
         {/* Controls */}
         <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
+          enablePan
+          enableZoom
+          enableRotate
           minDistance={5}
           maxDistance={100}
           target={[0, 0, 0]}
         />
 
-        {/* Click handler for scene */}
-        {props.onSceneClick && (
-          <mesh
-            position={[0, -0.1, 0]}
-            onClick={props.onSceneClick}
-            visible={false}
-          >
-            <planeGeometry args={[100, 100]} />
-            <meshBasicMaterial transparent opacity={0} />
-          </mesh>
-        )}
-
-        {/* Scene Content */}
+        {/* Scene */}
         <IsometricScene {...props} />
       </Canvas>
     </div>
