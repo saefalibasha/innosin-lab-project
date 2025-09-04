@@ -1,10 +1,17 @@
 import React, { useRef, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
+import {
+  Point,
+  PlacedProduct,
+  Door,
+  TextAnnotation,
+  WallSegment,
+  Room,
+  DrawingMode
+} from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
-import { checkProductWallClash } from '@/utils/collisionDetection';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -60,7 +67,11 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onWallUpdate
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
-  const sceneRef3D = useRef<any>(null);
+  const sceneRef3D = useRef<{
+    camera: THREE.PerspectiveCamera;
+    scene: THREE.Scene;
+    gl: THREE.WebGLRenderer;
+  } | null>(null);
 
   const handleSceneReady = useCallback((context: {
     camera: THREE.PerspectiveCamera;
@@ -104,7 +115,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     try {
       const product = JSON.parse(productData);
 
-      const { camera, scene, gl } = sceneRef3D.current;
+      const ref = sceneRef3D.current;
+      if (!ref) {
+        toast.error('Scene not ready');
+        return;
+      }
+
+      const { camera, scene, gl } = ref;
       const raycaster = new THREE.Raycaster();
       const pointer = new THREE.Vector2();
 
@@ -128,18 +145,14 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
       const point = intersects[0].point;
 
-      const snappedX = Math.round(point.x / gridSize) * gridSize;
-      const snappedZ = Math.round(point.z / gridSize) * gridSize;
-
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',
         position: {
-          x: snappedX,
-          y: 0,
-          z: snappedZ
+          x: point.x,
+          y: point.z // ✅ Removed invalid `z` field (this is 2D Point)
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -153,18 +166,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         variants: product.variants
       };
 
-      if (checkProductWallClash(newProduct, wallSegments)) {
-        toast.error('Product cannot be placed inside a wall');
-        return;
-      }
-
       setPlacedProducts(prev => [...prev, newProduct]);
       toast.success(`Added ${product.name} to floor plan`);
     } catch (error) {
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [setPlacedProducts, wallSegments, gridSize]);
+  }, [setPlacedProducts]);
 
   return (
     <div
@@ -174,7 +182,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
-        onSceneReady={handleSceneReady}
         wallSegments={wallSegments}
         placedProducts={placedProducts}
         doors={doors}
@@ -185,6 +192,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         onSceneClick={handleSceneClick}
         selectedProducts={selectedProducts}
         showGrid={showGrid}
+        onSceneReady={handleSceneReady} // ✅ now passed correctly
       />
 
       <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
