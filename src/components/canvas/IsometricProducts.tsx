@@ -1,188 +1,110 @@
-import React, { Suspense, useRef } from 'react';
-import { useLoader } from '@react-three/fiber';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import * as THREE from 'three';
-import { Box3, Vector3, Group, Mesh } from 'three';
-import { PlacedProduct } from '@/types/floorPlanTypes';
+import React, { useMemo } from 'react';
+import { Vector3, Shape, ExtrudeGeometry } from 'three';
+import { WallSegment } from '@/types/floorPlanTypes';
 
-interface IsometricProductsProps {
-  placedProducts: PlacedProduct[];
+interface IsometricWallsProps {
+  wallSegments: WallSegment[];
   scale: number;
-  onProductClick?: (productId: string) => void;
-  selectedProducts: string[];
+  onWallClick?: (wallId: string) => void;
 }
 
-const ProductModel = ({ 
-  product, 
-  scale, 
-  onProductClick, 
-  isSelected 
-}: { 
-  product: PlacedProduct; 
-  scale: number; 
-  onProductClick?: (productId: string) => void;
-  isSelected: boolean;
+/**
+ * NOTE ON UNITS:
+ * Your products use: position = [x * scale * 0.1, 0, y * scale * 0.1]
+ * To match that, we use the SAME factor everywhere (positions, thickness, height).
+ * If your wall data is in millimeters and 1 scene unit ≈ 0.1 of whatever you chose,
+ * keep MM2U = scale * 0.1. If you prefer meters, set MM2U = scale * 0.001 and
+ * update products to match.
+ */
+const mmToWorld = (scale: number) => scale * 0.1; // keep consistent with your products
+
+const Wall = ({
+  wall,
+  scale,
+  onWallClick,
+}: {
+  wall: WallSegment;
+  scale: number;
+  onWallClick?: (wallId: string) => void;
 }) => {
-  const meshRef = useRef<Mesh>(null);
+  const wallGeometry = useMemo(() => {
+    const U = mmToWorld(scale);
+
+    // Positions on ground plane (X,Z), Y = up
+    const start = new Vector3(wall.start.x * U, 0, wall.start.y * U);
+    const end = new Vector3(wall.end.x * U, 0, wall.end.y * U);
+
+    // Direction along the wall (in XZ)
+    const direction = new Vector3().subVectors(end, start).normalize();
+    // Perpendicular to the wall on the ground plane (XZ)
+    const perpendicular = new Vector3(-direction.z, 0, direction.x);
+
+    // Thickness & height in the SAME units as positions
+    const thicknessMM = wall.thickness ?? 100;   // default 100 mm if missing
+    const heightMM = wall.height ?? 2400;        // default 2400 mm if missing
+
+    const thickness = thicknessMM * U;
+    const height = heightMM * U;
+
+    // Build a 2D shape in the XZ plane (we'll use x,z as the 2D coords)
+    const halfT = thickness / 2;
+    const c1 = start.clone().add(perpendicular.clone().multiplyScalar(halfT));
+    const c2 = start.clone().sub(perpendicular.clone().multiplyScalar(halfT));
+    const c3 = end.clone().sub(perpendicular.clone().multiplyScalar(halfT));
+    const c4 = end.clone().add(perpendicular.clone().multiplyScalar(halfT));
+
+    const shape = new Shape();
+    shape.moveTo(c1.x, c1.z);
+    shape.lineTo(c2.x, c2.z);
+    shape.lineTo(c3.x, c3.z);
+    shape.lineTo(c4.x, c4.z);
+    shape.lineTo(c1.x, c1.z);
+
+    // Extrude along +Z, then rotate so that +Z becomes +Y (height)
+    const extrudeSettings = { depth: height, bevelEnabled: false };
+    const geometry = new ExtrudeGeometry(shape, extrudeSettings);
+
+    // Rotate the wall so "depth" goes up (Y axis)
+    geometry.rotateX(-Math.PI / 2);
+
+    // After rotation, the bottom of the wall sits at Y=0 and rises to Y=height
+    // (no translation needed). Return the final geometry.
+    return geometry;
+  }, [wall, scale]);
 
   const handleClick = (e: any) => {
     e.stopPropagation();
-    onProductClick?.(product.id);
+    onWallClick?.(wall.id);
   };
 
-  // Position mapped to X/Z plane, Y handled separately
-  const position: [number, number, number] = [
-    product.position.x * scale * 0.1,
-    0,
-    product.position.y * scale * 0.1,
-  ];
-
-  const rotation: [number, number, number] = [
-    0,
-    product.rotation || 0,
-    0,
-  ];
-
-  // Fallback simple box if no GLTF model
-  const fallbackGeometry = (
+  return (
     <mesh
-      ref={meshRef}
-      position={[position[0], 0.425, position[2]]} // ✅ lift by half height
-      rotation={rotation}
+      geometry={wallGeometry}
       onClick={handleClick}
       castShadow
-      name="product"
+      receiveShadow
+      name="wall"
     >
-      <boxGeometry 
-        args={[
-          product.dimensions.length * scale * 0.1,
-          0.85,
-          product.dimensions.width * scale * 0.1,
-        ]} 
+      <meshLambertMaterial
+        color={wall.type === 'interior' ? '#f0f0f0' : '#e8e8e8'}
       />
-      <meshLambertMaterial 
-        color={isSelected ? '#ff6b6b' : (product.color || '#8b5cf6')}
-        transparent={isSelected}
-        opacity={isSelected ? 0.8 : 1}
-      />
-      {isSelected && (
-        <lineSegments>
-          <edgesGeometry 
-            args={[
-              new THREE.BoxGeometry(
-                product.dimensions.length * scale * 0.1,
-                0.85,
-                product.dimensions.width * scale * 0.1
-              )
-            ]}
-          />
-          <lineBasicMaterial color="#ff0000" linewidth={2} />
-        </lineSegments>
-      )}
     </mesh>
   );
-
-  if (product.modelPath) {
-    return (
-      <Suspense fallback={fallbackGeometry}>
-        <ProductGLTF 
-          modelPath={product.modelPath}
-          position={position}
-          rotation={rotation}
-          onClick={handleClick}
-          isSelected={isSelected}
-          scale={scale}
-        />
-      </Suspense>
-    );
-  }
-
-  return fallbackGeometry;
 };
 
-const ProductGLTF = ({ 
-  modelPath, 
-  position, 
-  rotation, 
-  onClick, 
-  isSelected,
-  scale
-}: {
-  modelPath: string;
-  position: [number, number, number];
-  rotation: [number, number, number];
-  onClick: (e: any) => void;
-  isSelected: boolean;
-  scale: number;
-}) => {
-  const groupRef = useRef<Group>(null);
-
-  const gltf = useLoader(GLTFLoader, modelPath);
-  
-  React.useEffect(() => {
-    if (gltf && groupRef.current) {
-      const box = new Box3().setFromObject(gltf.scene);
-      const center = box.getCenter(new Vector3());
-      const size = box.getSize(new Vector3());
-
-      // Center model
-      gltf.scene.position.sub(center);
-
-      // ✅ Move bottom of model to Y=0 (floor plane)
-      gltf.scene.position.y += size.y / 2;
-
-      // Normalize scale
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 0) {
-        const targetScale = 1 / maxDim;
-        gltf.scene.scale.setScalar(targetScale);
-      }
-    }
-  }, [gltf]);
-
-  return (
-    <group
-      ref={groupRef}
-      position={position}
-      rotation={rotation}
-      onClick={onClick}
-      name="product"
-    >
-      <primitive 
-        object={gltf.scene} 
-        castShadow
-        receiveShadow
-      />
-      {isSelected && (
-        <mesh>
-          <boxGeometry args={[1.2, 1.2, 1.2]} />
-          <meshBasicMaterial 
-            color="#ff0000" 
-            wireframe 
-            transparent 
-            opacity={0.5}
-          />
-        </mesh>
-      )}
-    </group>
-  );
-};
-
-export const IsometricProducts: React.FC<IsometricProductsProps> = ({ 
-  placedProducts, 
-  scale, 
-  onProductClick, 
-  selectedProducts 
+export const IsometricWalls: React.FC<IsometricWallsProps> = ({
+  wallSegments,
+  scale,
+  onWallClick,
 }) => {
   return (
     <group>
-      {placedProducts.map((product) => (
-        <ProductModel
-          key={product.id}
-          product={product}
+      {wallSegments.map((wall) => (
+        <Wall
+          key={wall.id}
+          wall={wall}
           scale={scale}
-          onProductClick={onProductClick}
-          isSelected={selectedProducts.includes(product.id)}
+          onWallClick={onWallClick}
         />
       ))}
     </group>
