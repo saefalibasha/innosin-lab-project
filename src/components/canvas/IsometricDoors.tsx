@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import { useFrame } from '@react-three/fiber';
 import { Door } from '@/types/floorPlanTypes';
 
 interface IsometricDoorsProps {
@@ -8,20 +9,36 @@ interface IsometricDoorsProps {
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
   const doorWidth = (door.width || 800) * scale * 0.001;
-  const doorHeight = 2100 * scale * 0.001; // Standard door height
-  const doorThickness = 0.05; // In meters
+  const doorHeight = 2100 * scale * 0.001;
+  const doorThickness = 0.05;
 
-  // Convert position from mm to meters, mapped to X/Z
+  const groupRef = useRef<THREE.Group>(null);
+  const doorRef = useRef<THREE.Mesh>(null);
+
   const position: [number, number, number] = [
     door.position.x * scale * 0.001,
-    doorHeight / 2, // Center door vertically
+    doorHeight / 2,
     door.position.y * scale * 0.001
   ];
 
+  const rotationY = door.facing === 'vertical' ? Math.PI / 2 : 0;
+
+  useFrame((state, delta) => {
+    if (groupRef.current) {
+      const time = state.clock.getElapsedTime();
+      groupRef.current.rotation.y = rotationY + Math.sin(time * 2) * 0.2; // Swing effect
+    }
+  });
+
   return (
-    <group position={position}>
-      {/* Door frame */}
-      <mesh castShadow>
+    <group ref={groupRef} position={position} rotation={[0, rotationY, 0]}>
+      {/* Door frame inside wall thickness */}
+      <mesh
+        ref={doorRef}
+        castShadow
+        name="door"
+        position={[0, 0, -doorThickness / 2]} // Embedded halfway into wall
+      >
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
@@ -37,13 +54,9 @@ const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
 
 export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale }) => {
   return (
-    <group>
+    <group name="doors">
       {doors.map((door) => (
-        <DoorModel
-          key={door.id}
-          door={door}
-          scale={scale}
-        />
+        <DoorModel key={door.id} door={door} scale={scale} />
       ))}
     </group>
   );
