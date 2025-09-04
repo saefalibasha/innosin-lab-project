@@ -1,10 +1,17 @@
 import React, { useRef, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
+import {
+  Point,
+  PlacedProduct,
+  Door,
+  TextAnnotation,
+  WallSegment,
+  Room,
+  DrawingMode
+} from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
-import { useThree } from '@react-three/fiber';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -59,7 +66,20 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onProductSelect,
   onWallUpdate
 }) => {
-  const sceneRef = useRef<HTMLDivElement>(null);
+  const htmlRef = useRef<HTMLDivElement>(null);
+  const sceneRef3D = useRef<{
+    camera: THREE.PerspectiveCamera;
+    scene: THREE.Scene;
+    gl: THREE.WebGLRenderer;
+  } | null>(null);
+
+  const handleSceneReady = useCallback((context: {
+    camera: THREE.PerspectiveCamera;
+    scene: THREE.Scene;
+    gl: THREE.WebGLRenderer;
+  }) => {
+    sceneRef3D.current = context;
+  }, []);
 
   const handleProductClick = useCallback((productId: string) => {
     if (currentMode === 'select') {
@@ -88,33 +108,42 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
   const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+
     const productData = e.dataTransfer.getData('product');
     if (!productData) return;
 
     try {
       const product = JSON.parse(productData);
-      const rect = sceneRef.current?.getBoundingClientRect();
-      if (!rect) return;
 
-      // Setup raycaster
-      const mouse = new THREE.Vector2(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1
-      );
-
-      const camera = (window as any).__threeCamera as THREE.Camera; // Expose camera from IsometricFloorPlanScene
-      if (!camera) {
-        console.error("No camera found for raycasting");
+      const ref = sceneRef3D.current;
+      if (!ref) {
+        toast.error('Scene not ready');
         return;
       }
 
+      const { camera, scene, gl } = ref;
       const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
+      const pointer = new THREE.Vector2();
 
-      // Floor plane at y = 0
-      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-      const point = new THREE.Vector3();
-      raycaster.ray.intersectPlane(plane, point);
+      const rect = gl.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+
+      const floor = scene.children.find(obj => obj.name === 'floor-drop-plane');
+      if (!floor) {
+        toast.error('Drop target not found');
+        return;
+      }
+
+      const intersects = raycaster.intersectObject(floor);
+      if (intersects.length === 0) {
+        toast.error('Cannot place item outside of floor');
+        return;
+      }
+
+      const point = intersects[0].point;
 
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
@@ -123,7 +152,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         category: product.category || 'Unknown',
         position: {
           x: point.x,
-          y: point.z // store z as y for 2D compatibility
+          y: point.z // ✅ Removed invalid `z` field (this is 2D Point)
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -143,11 +172,11 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [setPlacedProducts, onProductSelect]);
+  }, [setPlacedProducts]);
 
   return (
     <div
-      ref={sceneRef}
+      ref={htmlRef}
       className="relative w-full h-full bg-gray-50"
       onDrop={handleCanvasDrop}
       onDragOver={(e) => e.preventDefault()}
@@ -163,14 +192,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         onSceneClick={handleSceneClick}
         selectedProducts={selectedProducts}
         showGrid={showGrid}
+        onSceneReady={handleSceneReady} // ✅ now passed correctly
       />
 
-      {/* Mode indicator */}
       <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
         Mode: {currentMode}
       </div>
 
-      {/* Stats */}
       <div className="absolute top-4 right-4 bg-background/90 rounded-md px-3 py-2 text-xs space-y-1">
         <div>Products: {placedProducts.length}</div>
         <div>Walls: {wallSegments.length}</div>
@@ -180,7 +208,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         )}
       </div>
 
-      {/* Instructions */}
       <div className="absolute bottom-4 left-4 bg-background/90 rounded-md px-3 py-2 text-xs text-muted-foreground">
         <div>• Drag to rotate view</div>
         <div>• Scroll to zoom</div>
