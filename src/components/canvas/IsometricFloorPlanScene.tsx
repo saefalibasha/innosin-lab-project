@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
-import { Group, Scene, WebGLRenderer, PerspectiveCamera as ThreeCamera } from 'three';
+import { Group } from 'three';
 import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
@@ -19,31 +19,20 @@ interface IsometricFloorPlanSceneProps {
   onSceneClick?: (e: any) => void;
   selectedProducts: string[];
   showGrid: boolean;
-
-  // ✅ New refs for raycasting
-  sceneRef?: React.MutableRefObject<Scene | null>;
-  cameraRef?: React.MutableRefObject<ThreeCamera | null>;
-  rendererRef?: React.MutableRefObject<WebGLRenderer | null>;
+  onSceneReady?: (params: { camera: any; scene: any; gl: any }) => void;
 }
 
-/** Expose three.js internals via parent refs */
-function SceneConnector({
-  sceneRef,
-  cameraRef,
-  rendererRef,
-}: {
-  sceneRef?: React.MutableRefObject<Scene | null>;
-  cameraRef?: React.MutableRefObject<ThreeCamera | null>;
-  rendererRef?: React.MutableRefObject<WebGLRenderer | null>;
-}) {
-  const { scene, camera, gl } = useThree();
-
+/** Exposes the active R3F camera on window for external raycasting */
+function CameraExporter() {
+  const { camera } = useThree();
   useEffect(() => {
-    if (sceneRef) sceneRef.current = scene;
-    if (cameraRef) cameraRef.current = camera as ThreeCamera;
-    if (rendererRef) rendererRef.current = gl;
-  }, [scene, camera, gl, sceneRef, cameraRef, rendererRef]);
-
+    (window as any).__threeCamera = camera;
+    return () => {
+      if ((window as any).__threeCamera === camera) {
+        delete (window as any).__threeCamera;
+      }
+    };
+  }, [camera]);
   return null;
 }
 
@@ -62,11 +51,11 @@ const IsometricScene = ({
   const groupRef = useRef<Group>(null);
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} name="scene-root">
       {/* Floor (y = 0) */}
       <IsometricFloor rooms={rooms} scale={scale} />
 
-      {/* Optional grid */}
+      {/* Optional grid helper (also at y = 0) */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -82,13 +71,13 @@ const IsometricScene = ({
         />
       )}
 
-      {/* Walls */}
+      {/* Walls (constructed around y=0 plane) */}
       <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
 
       {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
 
-      {/* Products */}
+      {/* Products (placed on y=0 plane) */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
@@ -96,7 +85,7 @@ const IsometricScene = ({
         selectedProducts={selectedProducts}
       />
 
-      {/* Click Catcher Plane */}
+      {/* Invisible click-catcher if you still want onSceneClick */}
       {onSceneClick && (
         <mesh position={[0, -0.0001, 0]} onClick={onSceneClick} visible={false} name="floor-drop-plane">
           <planeGeometry args={[100, 100]} />
@@ -108,22 +97,24 @@ const IsometricScene = ({
 };
 
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
-  const { sceneRef, cameraRef, rendererRef } = props;
+  const sceneRef = useRef<any>(null);
 
   return (
     <div className="w-full h-full">
-      <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Export internal refs */}
-        <SceneConnector
-          sceneRef={sceneRef}
-          cameraRef={cameraRef}
-          rendererRef={rendererRef}
-        />
-
+      <Canvas
+        shadows
+        style={{ background: 'transparent' }}
+        onCreated={({ camera, scene, gl }) => {
+          if (props.onSceneReady) {
+            props.onSceneReady({ camera, scene, gl });
+          }
+        }}
+      >
         {/* Camera */}
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
+        <CameraExporter />
 
-        {/* Lights */}
+        {/* Lighting */}
         <ambientLight intensity={0.3} />
         <directionalLight
           position={[10, 20, 15]}
@@ -149,7 +140,7 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           target={[0, 0, 0]}
         />
 
-        {/* Scene contents */}
+        {/* Scene */}
         <IsometricScene {...props} />
       </Canvas>
     </div>
