@@ -19,7 +19,6 @@ interface IsometricFloorPlanSceneProps {
   onSceneClick?: (e: any) => void;
   selectedProducts: string[];
   showGrid: boolean;
-  onSceneReady?: (params: { camera: any; scene: any; gl: any }) => void;
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -51,11 +50,11 @@ const IsometricScene = ({
   const groupRef = useRef<Group>(null);
 
   return (
-    <group ref={groupRef} name="scene-root">
-      {/* Floor (y = 0) */}
+    <group ref={groupRef}>
+      {/* Floor */}
       <IsometricFloor rooms={rooms} scale={scale} />
 
-      {/* Optional grid helper (also at y = 0) */}
+      {/* Grid */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -71,13 +70,13 @@ const IsometricScene = ({
         />
       )}
 
-      {/* Walls (constructed around y=0 plane) */}
+      {/* Walls */}
       <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
 
       {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
 
-      {/* Products (placed on y=0 plane) */}
+      {/* Products */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
@@ -85,9 +84,14 @@ const IsometricScene = ({
         selectedProducts={selectedProducts}
       />
 
-      {/* Invisible click-catcher if you still want onSceneClick */}
+      {/* ✅ Drop plane for raycasting */}
       {onSceneClick && (
-        <mesh position={[0, -0.0001, 0]} onClick={onSceneClick} visible={false} name="floor-drop-plane">
+        <mesh
+          name="floor-drop-plane" // ✅ Name used for raycasting
+          position={[0, -0.0001, 0]}
+          onClick={onSceneClick}
+          visible={true} // ✅ Must be visible for raycasting
+        >
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
@@ -97,19 +101,9 @@ const IsometricScene = ({
 };
 
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
-  const sceneRef = useRef<any>(null);
-
   return (
     <div className="w-full h-full">
-      <Canvas
-        shadows
-        style={{ background: 'transparent' }}
-        onCreated={({ camera, scene, gl }) => {
-          if (props.onSceneReady) {
-            props.onSceneReady({ camera, scene, gl });
-          }
-        }}
-      >
+      <Canvas shadows style={{ background: 'transparent' }}>
         {/* Camera */}
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
         <CameraExporter />
