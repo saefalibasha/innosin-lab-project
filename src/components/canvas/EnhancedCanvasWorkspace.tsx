@@ -297,6 +297,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const CANVAS_HEIGHT = canvasHeight;
 
   useEffect(() => setSelectedItems(selectedProducts || []), [selectedProducts]);
+};
 
 /* ---------- Helpers ---------- */
 const getCanvasPoint = useCallback(
@@ -1252,6 +1253,7 @@ return (
     )}
   </div>
 );
+
 };
 
 export default EnhancedCanvasWorkspace;
