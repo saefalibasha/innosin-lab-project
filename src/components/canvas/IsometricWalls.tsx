@@ -4,7 +4,7 @@ import { WallSegment } from '@/types/floorPlanTypes';
 
 interface IsometricWallsProps {
   wallSegments: WallSegment[];
-  scale: number; // scaling factor to convert mm → scene units
+  scale: number;
   onWallClick?: (wallId: string) => void;
 }
 
@@ -14,56 +14,57 @@ const Wall = ({ wall, scale, onWallClick }: {
   onWallClick?: (wallId: string) => void;
 }) => {
   const wallGeometry = useMemo(() => {
-    // Convert mm to scene coords with scale
-    const start = new Vector3(wall.start.x / scale, 0, wall.start.y / scale);
-    const end = new Vector3(wall.end.x / scale, 0, wall.end.y / scale);
-
-    // Wall direction + perpendicular
+    const start = new Vector3(wall.start.x * scale * 0.1, 0, wall.start.y * scale * 0.1);
+    const end = new Vector3(wall.end.x * scale * 0.1, 0, wall.end.y * scale * 0.1);
+    
     const direction = new Vector3().subVectors(end, start).normalize();
     const perpendicular = new Vector3(-direction.z, 0, direction.x);
-
-    const thickness = (wall.thickness ?? 200) / scale; // default 200mm thick
-    const height = (wall.height ?? 2400) / scale; // default 2.4m high
-
-    // 4 corners of the wall footprint
-    const half = thickness / 2;
-    const c1 = start.clone().addScaledVector(perpendicular, half);
-    const c2 = start.clone().addScaledVector(perpendicular, -half);
-    const c3 = end.clone().addScaledVector(perpendicular, -half);
-    const c4 = end.clone().addScaledVector(perpendicular, half);
-
-    // Build shape in XZ plane
+    
+    const thickness = (wall.thickness || 100) * scale * 0.1;
+    const height = (wall.height || 2400) * 0.001; // ✅ use wall.height or default 2400mm → convert to meters
+    
+    // Create wall shape
     const shape = new Shape();
-    shape.moveTo(c1.x, c1.z);
-    shape.lineTo(c2.x, c2.z);
-    shape.lineTo(c3.x, c3.z);
-    shape.lineTo(c4.x, c4.z);
-    shape.lineTo(c1.x, c1.z);
-
-    const geometry = new ExtrudeGeometry(shape, {
-      depth: height,
+    const halfThickness = thickness / 2;
+    
+    const corner1 = start.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
+    const corner2 = start.clone().sub(perpendicular.clone().multiplyScalar(halfThickness));
+    const corner3 = end.clone().sub(perpendicular.clone().multiplyScalar(halfThickness));
+    const corner4 = end.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
+    
+    shape.moveTo(corner1.x, corner1.z);
+    shape.lineTo(corner2.x, corner2.z);
+    shape.lineTo(corner3.x, corner3.z);
+    shape.lineTo(corner4.x, corner4.z);
+    shape.lineTo(corner1.x, corner1.z);
+    
+    const extrudeSettings = {
+      depth: height, // ✅ dynamic height
       bevelEnabled: false,
-    });
-
-    // Rotate so it extrudes upward along Y
+    };
+    
+    const geometry = new ExtrudeGeometry(shape, extrudeSettings);
     geometry.rotateX(-Math.PI / 2);
-
+    
     return geometry;
   }, [wall, scale]);
 
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    onWallClick?.(wall.id);
+  };
+
   return (
-    <mesh
+    <mesh 
       geometry={wallGeometry}
-      onClick={(e) => {
-        e.stopPropagation();
-        onWallClick?.(wall.id);
-      }}
+      onClick={handleClick}
       castShadow
       receiveShadow
       name="wall"
     >
       <meshLambertMaterial 
-        color={wall.type === 'interior' ? '#dddddd' : '#bbbbbb'} 
+        color={wall.type === 'interior' ? '#f0f0f0' : '#e8e8e8'} 
+        transparent={false}
       />
     </mesh>
   );
@@ -73,15 +74,17 @@ export const IsometricWalls: React.FC<IsometricWallsProps> = ({
   wallSegments, 
   scale, 
   onWallClick 
-}) => (
-  <group>
-    {wallSegments.map((wall) => (
-      <Wall 
-        key={wall.id} 
-        wall={wall} 
-        scale={scale} 
-        onWallClick={onWallClick} 
-      />
-    ))}
-  </group>
-);
+}) => {
+  return (
+    <group>
+      {wallSegments.map((wall) => (
+        <Wall
+          key={wall.id}
+          wall={wall}
+          scale={scale}
+          onWallClick={onWallClick}
+        />
+      ))}
+    </group>
+  );
+};
