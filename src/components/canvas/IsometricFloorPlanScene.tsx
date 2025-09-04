@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
-import { Group } from 'three';
+import { Group, WebGLRenderer, Scene, PerspectiveCamera as ThreePerspectiveCamera } from 'three';
 import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
@@ -19,19 +19,22 @@ interface IsometricFloorPlanSceneProps {
   onSceneClick?: (e: any) => void;
   selectedProducts: string[];
   showGrid: boolean;
+  onSceneReady?: (context: {
+    camera: ThreePerspectiveCamera;
+    scene: Scene;
+    gl: WebGLRenderer;
+  }) => void;
 }
 
-/** Exposes the active R3F camera on window for external raycasting */
-function CameraExporter() {
-  const { camera } = useThree();
+function SceneReadyCallback({ onSceneReady }: { onSceneReady?: IsometricFloorPlanSceneProps['onSceneReady'] }) {
+  const { camera, gl, scene } = useThree();
+
   useEffect(() => {
-    (window as any).__threeCamera = camera;
-    return () => {
-      if ((window as any).__threeCamera === camera) {
-        delete (window as any).__threeCamera;
-      }
-    };
-  }, [camera]);
+    if (onSceneReady) {
+      onSceneReady({ camera: camera as ThreePerspectiveCamera, scene, gl });
+    }
+  }, [onSceneReady, camera, scene, gl]);
+
   return null;
 }
 
@@ -46,15 +49,13 @@ const IsometricScene = ({
   onSceneClick,
   selectedProducts,
   showGrid,
-}: IsometricFloorPlanSceneProps) => {
+}: Omit<IsometricFloorPlanSceneProps, 'onSceneReady'>) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
-      {/* Floor */}
       <IsometricFloor rooms={rooms} scale={scale} />
 
-      {/* Grid */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -70,13 +71,10 @@ const IsometricScene = ({
         />
       )}
 
-      {/* Walls */}
       <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
 
-      {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
 
-      {/* Products */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
@@ -84,13 +82,13 @@ const IsometricScene = ({
         selectedProducts={selectedProducts}
       />
 
-      {/* ✅ Drop plane for raycasting */}
+      {/* Drop target */}
       {onSceneClick && (
         <mesh
-          name="floor-drop-plane" // ✅ Name used for raycasting
+          name="floor-drop-plane"
           position={[0, -0.0001, 0]}
           onClick={onSceneClick}
-          visible={true} // ✅ Must be visible for raycasting
+          visible={true}
         >
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
@@ -104,9 +102,14 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
   return (
     <div className="w-full h-full">
       <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Camera */}
+        {/* Perspective Camera */}
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
+
+        {/* Expose camera on window (optional) */}
         <CameraExporter />
+
+        {/* Expose scene, gl, camera for drop raycasting */}
+        <SceneReadyCallback onSceneReady={props.onSceneReady} />
 
         {/* Lighting */}
         <ambientLight intensity={0.3} />
@@ -142,3 +145,17 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 };
 
 export default IsometricFloorPlanScene;
+
+/** Optional camera export to window for debugging */
+function CameraExporter() {
+  const { camera } = useThree();
+  useEffect(() => {
+    (window as any).__threeCamera = camera;
+    return () => {
+      if ((window as any).__threeCamera === camera) {
+        delete (window as any).__threeCamera;
+      }
+    };
+  }, [camera]);
+  return null;
+}
