@@ -11,8 +11,6 @@ import {
 import { MeasurementUnit } from "@/utils/measurements";
 import IsometricFloorPlanScene from "./IsometricFloorPlanScene";
 import { toast } from "sonner";
-import { useThree } from "@react-three/fiber";
-import * as THREE from "three";
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -69,6 +67,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 }) => {
   const sceneRef = useRef<HTMLDivElement>(null);
 
+  /** Handle product selection */
   const handleProductClick = useCallback(
     (productId: string) => {
       if (currentMode === "select") {
@@ -82,6 +81,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     [currentMode, onProductSelect]
   );
 
+  /** Handle wall selection */
   const handleWallClick = useCallback(
     (wallId: string) => {
       if (currentMode === "select") {
@@ -94,9 +94,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     [currentMode, wallSegments, onWallUpdate]
   );
 
+  /** Clear selection when clicking empty space */
   const handleSceneClick = useCallback(
     (e: any) => {
-      // Clear selection when clicking on empty space
       if (e.object.name !== "product" && e.object.name !== "wall") {
         onProductSelect([]);
       }
@@ -104,7 +104,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     [onProductSelect]
   );
 
-  // ✅ React-way: drop handler using raycasting
+  /** Handle product drop */
   const handleCanvasDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault();
@@ -116,19 +116,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         const rect = sceneRef.current?.getBoundingClientRect();
         if (!rect) return;
 
-        // Get normalized device coordinates (NDC)
-        const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-        // Access camera & scene using useThree
-        const { camera, scene } = useThree.getState();
-
-        // Raycast onto a ground plane at y=0
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
-        const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-        const hitPoint = new THREE.Vector3();
-        raycaster.ray.intersectPlane(groundPlane, hitPoint);
+        // Convert screen coords to approximate 3D plane coords
+        const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20;
+        const z = ((e.clientY - rect.top) / rect.height - 0.5) * 20;
 
         const newProduct: PlacedProduct = {
           id: `product-${Date.now()}`,
@@ -136,8 +126,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           name: product.name,
           category: product.category || "Unknown",
           position: {
-            x: hitPoint.x * 1000, // store in "canvas coordinates"
-            y: hitPoint.z * 1000,
+            x: x / scale * 1000,
+            y: z / scale * 1000,
           },
           rotation: 0,
           dimensions: product.dimensions,
@@ -158,7 +148,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         toast.error("Failed to add product");
       }
     },
-    [setPlacedProducts]
+    [scale, setPlacedProducts]
   );
 
   return (
