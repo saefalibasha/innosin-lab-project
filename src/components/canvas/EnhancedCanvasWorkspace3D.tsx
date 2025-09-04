@@ -4,6 +4,7 @@ import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
+import { checkProductWallClash } from '@/utils/collisionDetection';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -127,14 +128,18 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
       const point = intersects[0].point;
 
+      const snappedX = Math.round(point.x / gridSize) * gridSize;
+      const snappedZ = Math.round(point.z / gridSize) * gridSize;
+
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',
         position: {
-          x: point.x,
-          y: point.z
+          x: snappedX,
+          y: 0,
+          z: snappedZ
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -148,13 +153,18 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         variants: product.variants
       };
 
+      if (checkProductWallClash(newProduct, wallSegments)) {
+        toast.error('Product cannot be placed inside a wall');
+        return;
+      }
+
       setPlacedProducts(prev => [...prev, newProduct]);
       toast.success(`Added ${product.name} to floor plan`);
     } catch (error) {
       console.error('Error parsing dropped product:', error);
       toast.error('Failed to add product');
     }
-  }, [setPlacedProducts]);
+  }, [setPlacedProducts, wallSegments, gridSize]);
 
   return (
     <div
