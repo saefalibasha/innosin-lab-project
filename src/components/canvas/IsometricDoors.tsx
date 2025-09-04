@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Door } from '@/types/floorPlanTypes';
+import * as THREE from 'three';
 
 interface IsometricDoorsProps {
   doors: Door[];
@@ -7,30 +8,38 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  const doorWidthMeters = (door.width || 800) * scale * 0.001;
-  const doorHeightMeters = 2; // 2 meters tall
-  const doorThickness = 0.05; // 5cm
+  const doorWidth = (door.width || 800) * scale * 0.1; // mm to meters
+  const doorHeight = 2; // meters
+  const doorThickness = 0.05; // meters
 
-  // Convert 2D (x, y) into 3D (x, z)
-  const x = door.position.x * scale * 0.001;
-  const z = door.position.y * scale * 0.001;
+  // Position mapped using same coordinate system as IsometricWalls
+  const x = door.position.x * scale * 0.1;
+  const z = -door.position.y * scale * 0.1;
 
-  // Default position (we will adjust based on rotation later)
-  const position: [number, number, number] = [x, doorHeightMeters / 2, z];
-
-  // Rotation based on door facing
+  // Rotation logic based on facing
   const rotationY = door.facing === 'vertical' ? Math.PI / 2 : 0;
 
+  // Center the door mesh to align flush with wall segment
+  const offsetX = door.facing === 'vertical' ? 0 : 0;
+  const offsetZ = door.facing === 'vertical' ? 0 : 0;
+
+  // Memoized geometry (optional for performance)
+  const geometry = useMemo(() => {
+    const geo = new THREE.BoxGeometry(doorWidth, doorHeight, doorThickness);
+    return geo;
+  }, [doorWidth]);
+
   return (
-    <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Door panel */}
-      <mesh castShadow>
-        <boxGeometry args={[doorWidthMeters, doorHeightMeters, doorThickness]} />
+    <group
+      position={[x + offsetX, doorHeight / 2, z + offsetZ]}
+      rotation={[0, rotationY, 0]}
+    >
+      <mesh geometry={geometry} castShadow receiveShadow>
         <meshLambertMaterial color="#8B4513" />
       </mesh>
 
-      {/* Handle - add a small bump to door front */}
-      <mesh position={[doorWidthMeters / 4, 0, doorThickness / 2 + 0.01]}>
+      {/* Handle */}
+      <mesh position={[doorWidth / 4, 0, doorThickness / 2 + 0.01]}>
         <sphereGeometry args={[0.02]} />
         <meshLambertMaterial color="#FFD700" />
       </mesh>
