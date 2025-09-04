@@ -1,4 +1,3 @@
-
 export interface Point {
   x: number;
   y: number;
@@ -8,7 +7,7 @@ export enum WallType {
   INTERIOR = 'interior',
   EXTERIOR = 'exterior',
   PARTITION = 'partition',
-  LOAD_BEARING = 'load_bearing'
+  LOAD_BEARING = 'load_bearing',
 }
 
 export interface PlacedProduct {
@@ -80,6 +79,8 @@ export interface WallSegment {
   thickness: number;
   color: string;
   type: WallType;
+  height?: number;       // ✅ Added: wall height (mm, optional)
+  material?: string;     // ✅ Optional: material name for styling later
 }
 
 export interface Room {
@@ -127,5 +128,19 @@ export interface FloorPlanState {
   rooms: Room[];
 }
 
-export type DrawingMode = 'select' | 'move' | 'wall' | 'interior-wall' | 'door' | 'room' | 'text' | 'measure' | 'pan' | 'line' | 'freehand' | 'eraser' | 'rotate';
+export type DrawingMode =
+  | 'select'
+  | 'move'
+  | 'wall'
+  | 'interior-wall'
+  | 'door'
+  | 'room'
+  | 'text'
+  | 'measure'
+  | 'pan'
+  | 'line'
+  | 'freehand'
+  | 'eraser'
+  | 'rotate';
+
 export type DrawingTool = DrawingMode;
