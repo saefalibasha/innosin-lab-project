@@ -16,7 +16,18 @@ export const useEnhanced3DDragging = (
   wallSegments: any[],
   placedProducts: PlacedProduct[],
   scale: number,
-  onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void
+  onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void,
+  {
+    applyProductSeriesRules = false,
+    enableModularConnections = false,
+    allowSinkTabletopAttachment = false,
+    supportWallMountCabinets = false
+  }: {
+    applyProductSeriesRules?: boolean;
+    enableModularConnections?: boolean;
+    allowSinkTabletopAttachment?: boolean;
+    supportWallMountCabinets?: boolean;
+  } = {}
 ) => {
   const [dragState, setDragState] = useState<DragState3D>({
     isDragging: false,
@@ -69,21 +80,18 @@ export const useEnhanced3DDragging = (
     let targetPosition: [number, number, number];
 
     if (intersectionPoint) {
-      // Use direct intersection point
       targetPosition = [
         intersectionPoint[0] - dragState.dragOffset[0],
         intersectionPoint[1] - dragState.dragOffset[1],
         intersectionPoint[2] - dragState.dragOffset[2]
       ];
     } else {
-      // Fallback to screen-space movement
       if (!dragStartRef.current) return;
-      
+
       const deltaX = pointer.x - dragStartRef.current.x;
       const deltaY = pointer.y - dragStartRef.current.y;
-      
-      // Convert screen movement to world movement
-      const worldDelta = deltaX * 0.01; // Adjust sensitivity
+
+      const worldDelta = deltaX * 0.01;
       targetPosition = [
         dragState.initialPosition[0] + worldDelta,
         dragState.initialPosition[1],
@@ -91,36 +99,50 @@ export const useEnhanced3DDragging = (
       ];
     }
 
-    // Apply snapping
+    let finalPosition: [number, number, number];
     const snapResult = snapToPosition(
       targetPosition,
       dragState.draggedProduct,
       ['wall', 'product', 'grid']
     );
 
-    const finalPosition = snapResult.snapped ? 
-      [snapResult.position[0], snapResult.position[1], snapResult.position[2]] as [number, number, number] :
-      targetPosition;
+    if (snapResult.snapped) {
+      finalPosition = [snapResult.position[0], snapResult.position[1], snapResult.position[2]];
+    } else {
+      finalPosition = targetPosition;
+    }
+
+    // Apply product series rules
+    if (applyProductSeriesRules) {
+      if (supportWallMountCabinets && dragState.draggedProduct.category === 'Wall Cabinet') {
+        finalPosition[1] = 1.5; // Raise wall cabinets
+      }
+      if (allowSinkTabletopAttachment && dragState.draggedProduct.name.toLowerCase().includes('sink')) {
+        // Logic for sink tabletop
+        console.log('Attach sink to surface');
+      }
+      if (enableModularConnections && dragState.draggedProduct.name.toLowerCase().includes('modular')) {
+        console.log('Snapping to nearby modulars');
+      }
+    }
 
     setDragState(prev => ({
       ...prev,
       currentPosition: finalPosition,
-      isValid: true // Enhanced collision detection can be added here
+      isValid: true
     }));
 
-    // Update snap guides
     if (snapResult.snapped) {
       updateSnapGuides(snapResult);
     } else {
       clearSnapGuides();
     }
-  }, [dragState, snapToPosition, updateSnapGuides, clearSnapGuides]);
+  }, [dragState, snapToPosition, updateSnapGuides, clearSnapGuides, applyProductSeriesRules, enableModularConnections, allowSinkTabletopAttachment, supportWallMountCabinets]);
 
   const endDrag = useCallback(() => {
     if (!dragState.isDragging || !dragState.draggedProduct) return;
 
     if (dragState.isValid) {
-      // Convert 3D position back to 2D canvas coordinates
       const canvasPosition = worldTo2DCanvas(
         dragState.currentPosition[0],
         dragState.currentPosition[2],
@@ -132,7 +154,6 @@ export const useEnhanced3DDragging = (
       });
     }
 
-    // Clear drag state and snap guides
     setDragState({
       isDragging: false,
       draggedProduct: null,
