@@ -92,14 +92,14 @@ const IsometricScene = ({
         placedProducts={placedProducts}
         wallSegments={wallSegments}
         scale={scale}
-        onProductUpdate={(productId, position) => {
+        onProductUpdate={(productId, updates) => {
           // This will be handled by the parent component
-          console.log('Product update:', productId, position);
+          console.log('Product update:', productId, updates);
         }}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
         }}
-        selectedProducts={selectedProducts}
+        selectedProductId={selectedProducts[0]}
       />
 
       {/* ✅ Drop plane for raycasting */}
@@ -144,12 +144,13 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 
         {/* Controls */}
         <OrbitControls
-          enablePan
-          enableZoom
-          enableRotate
-          minDistance={5}
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
+          minDistance={2}
           maxDistance={100}
-          target={[0, 0, 0]}
+          enableDamping
+          dampingFactor={0.05}
         />
 
         {/* Scene */}

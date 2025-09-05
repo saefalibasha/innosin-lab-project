@@ -16,6 +16,7 @@ import { MeasurementUnit } from '@/utils/measurements';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { WallControlPanel } from '@/components/ui/WallControlPanel';
 
 export const FloorPlanner3D = () => {
   const initialFloorPlanState = {
@@ -42,6 +43,7 @@ export const FloorPlanner3D = () => {
   );
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
 
   // ✅ Add a console.log to inspect wall segments on demand
   const handleLogWalls = () => {
@@ -71,7 +73,25 @@ export const FloorPlanner3D = () => {
     setWallSegments([]);
     setRooms([]);
     setSelectedProducts([]);
+    setSelectedWall(null);
   }, []);
+
+  const handleWallUpdate = (wallId: string, updates: Partial<WallSegment>) => {
+    setWallSegments(prev => prev.map(wall => 
+      wall.id === wallId ? { ...wall, ...updates } : wall
+    ));
+  };
+
+  const handleWallSelect = (wallId: string) => {
+    const wall = wallSegments.find(w => w.id === wallId);
+    setSelectedWall(wall || null);
+  };
+
+  const handleWallVisibilityToggle = (wallId: string) => {
+    setWallSegments(prev => prev.map(wall => 
+      wall.id === wallId ? { ...wall, visible: wall.visible !== false ? false : true } : wall
+    ));
+  };
 
   return (
     <div className="h-screen flex">
@@ -101,6 +121,14 @@ export const FloorPlanner3D = () => {
         >
           Log Walls
         </Button>
+
+        {/* Wall Control Panel */}
+        <WallControlPanel
+          selectedWall={selectedWall}
+          onWallUpdate={handleWallUpdate}
+          onClose={() => setSelectedWall(null)}
+          onVisibilityToggle={handleWallVisibilityToggle}
+        />
 
         <div className="w-full h-full">
           <EnhancedCanvasWorkspace3D

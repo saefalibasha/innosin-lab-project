@@ -75,6 +75,11 @@ const Wall = ({
     onWallClick?.(wall.id);
   };
 
+  // Don't render if wall is hidden
+  if (wall.visible === false) {
+    return null;
+  }
+
   return (
     <mesh
       geometry={wallGeometry}

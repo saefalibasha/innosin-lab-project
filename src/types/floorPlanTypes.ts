@@ -81,6 +81,7 @@ export interface WallSegment {
   type: WallType;
   height?: number;       // ✅ Added: wall height (mm, optional)
   material?: string;     // ✅ Optional: material name for styling later
+  visible?: boolean;     // ✅ Added: wall visibility toggle
 }
 
 export interface Room {
