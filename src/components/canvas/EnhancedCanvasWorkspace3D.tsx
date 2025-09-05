@@ -40,7 +40,7 @@ interface EnhancedCanvasWorkspace3DProps {
   canvasWidth: number;
   canvasHeight: number;
   onClearAll: () => void;
-  onWallUpdate?: (updatedWall: WallSegment) => void; // ✅ Added
+  onWallUpdate?: (updatedWall: WallSegment) => void;
 }
 
 export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
@@ -54,7 +54,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
   scale,
   showGrid,
   onClearAll,
-  onWallUpdate, // ✅ Added
+  onWallUpdate,
 }) => {
   const [showSnapGrid, setShowSnapGrid] = useState(true);
   const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([10, 8, 10]);
@@ -108,8 +108,8 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
             near={0.1}
             far={1000}
           />
-          
-          {/* Enhanced lighting setup */}
+
+          {/* Lighting */}
           <ambientLight intensity={0.4} />
           <directionalLight
             position={[20, 20, 10]}
@@ -122,12 +122,9 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
             shadow-camera-top={20}
             shadow-camera-bottom={-20}
           />
-          <directionalLight
-            position={[-10, 10, -5]}
-            intensity={0.5}
-          />
+          <directionalLight position={[-10, 10, -5]} intensity={0.5} />
 
-          {/* Enhanced orbit controls - Free movement */}
+          {/* Orbit controls */}
           <OrbitControls
             ref={controlsRef}
             enablePan={true}
@@ -141,6 +138,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
             minPolarAngle={0}
           />
 
+          {/* Scene */}
           <IsometricFloorPlanScene
             wallSegments={wallSegments}
             placedProducts={placedProducts}
@@ -152,7 +150,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
             selectedProducts={selectedProducts}
             showSnapGrid={showSnapGrid}
             onProductUpdate={handleProductUpdate}
-            onWallUpdate={onWallUpdate} // ✅ Forwarded
+            onWallUpdate={onWallUpdate}
           />
         </Canvas>
       </div>
@@ -169,39 +167,19 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
           <CardContent className="space-y-4">
             {/* Camera Controls */}
             <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCameraPreset('isometric')}
-              >
+              <Button variant="outline" size="sm" onClick={() => setCameraPreset('isometric')}>
                 Isometric View
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCameraPreset('top')}
-              >
+              <Button variant="outline" size="sm" onClick={() => setCameraPreset('top')}>
                 Top View
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCameraPreset('side')}
-              >
+              <Button variant="outline" size="sm" onClick={() => setCameraPreset('side')}>
                 Side View
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setCameraPreset('front')}
-              >
+              <Button variant="outline" size="sm" onClick={() => setCameraPreset('front')}>
                 Front View
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={resetCamera}
-              >
+              <Button variant="outline" size="sm" onClick={resetCamera}>
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset Camera
               </Button>
@@ -210,7 +188,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
             {/* View Controls */}
             <div className="flex flex-wrap gap-2">
               <Button
-                variant={showSnapGrid ? "default" : "outline"}
+                variant={showSnapGrid ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setShowSnapGrid(!showSnapGrid)}
               >
@@ -218,11 +196,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
                 {showSnapGrid ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 Snap Grid
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={onClearAll}
-              >
+              <Button variant="destructive" size="sm" onClick={onClearAll}>
                 Clear All
               </Button>
             </div>
