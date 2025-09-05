@@ -1,21 +1,17 @@
-import { useState, useCallback, useMemo } from 'react';
-import { Point, PlacedProduct, WallSegment } from '@/types/floorPlanTypes';
-import { canvasTo3D, threeDToCanvas } from '@/utils/coordinateTransform';
-import { getProductBehavior, canProductsConnect, calculateOptimalSnapDistance } from '@/utils/productBehaviors';
-import * as THREE from 'three';
+import { useState, useCallback } from 'react';
+import { PlacedProduct, WallSegment } from '@/types/floorPlanTypes';
 
+// Enhanced snap result with better type safety
 interface Enhanced3DSnapResult {
   snapped: boolean;
-  position: Point;
-  snapType: 'wall' | 'floor' | 'product' | 'grid' | 'stack' | null;
-  target?: PlacedProduct | WallSegment;
-  snapHeight?: number; // For wall-mounted items
-  stackTarget?: PlacedProduct; // For stacking
-  confidence: number; // 0-1, how confident we are in this snap
+  position: [number, number, number];
+  snapType: 'wall' | 'product' | 'grid' | null;
+  confidence: number;
 }
 
+// Enhanced visual snap guides
 interface SnapGuide3D {
-  type: 'line' | 'point' | 'grid' | 'surface';
+  type: 'line' | 'point' | 'ring';
   position: [number, number, number];
   direction?: [number, number, number];
   color: string;
@@ -33,71 +29,60 @@ export const useEnhanced3DSnapping = (
   const snapToPosition = useCallback((
     position3D: [number, number, number],
     draggedProduct: PlacedProduct,
-    allowedSnapTypes: string[] = ['wall', 'product', 'floor', 'grid']
+    allowedSnapTypes: string[] = ['wall', 'product', 'grid']
   ): Enhanced3DSnapResult => {
-    const [x, y, z] = position3D;
-    const position2D = threeDToCanvas(x, z);
-    const behavior = getProductBehavior(draggedProduct);
-    const snapDistance = calculateOptimalSnapDistance(draggedProduct);
-    const snapRadius = snapDistance * scale * 0.001;
-
+    const snapDistance = 0.2; // 200mm snap distance
     let bestSnap: Enhanced3DSnapResult = {
       snapped: false,
-      position: position2D,
+      position: position3D,
       snapType: null,
       confidence: 0
     };
 
-    // 1. Wall Snapping (highest priority for floor items)
-    if (allowedSnapTypes.includes('wall') && behavior.snapToWalls) {
+    // Priority 1: Wall snapping
+    if (allowedSnapTypes.includes('wall')) {
       for (const wall of wallSegments) {
-        const wallStart = canvasTo3D(wall.start);
-        const wallEnd = canvasTo3D(wall.end);
-        
-        const lineVec = new THREE.Vector3(
-          wallEnd[0] - wallStart[0], 
-          0, 
-          wallEnd[2] - wallStart[2]
-        );
-        const pointVec = new THREE.Vector3(x - wallStart[0], 0, z - wallStart[2]);
-        
-        const lineLength = lineVec.length();
-        if (lineLength === 0) continue;
-        
-        const t = Math.max(0, Math.min(1, pointVec.dot(lineVec) / (lineLength * lineLength)));
-        const closestPoint = new THREE.Vector3(
-          wallStart[0] + t * lineVec.x,
+        if (!wall.visible) continue;
+
+        // Convert wall coordinates to 3D
+        const wallStart = [
+          wall.start.x * scale * 0.001,
           0,
-          wallStart[2] + t * lineVec.z
-        );
+          wall.start.y * scale * 0.001
+        ] as [number, number, number];
         
-        const distance = new THREE.Vector3(x, 0, z).distanceTo(closestPoint);
+        const wallEnd = [
+          wall.end.x * scale * 0.001,
+          0,
+          wall.end.y * scale * 0.001
+        ] as [number, number, number];
+
+        // Calculate distance to wall line
+        const distance = distanceToLineSegment3D(position3D, wallStart, wallEnd);
         
-        if (distance <= snapRadius) {
-          const wallNormal = new THREE.Vector3(-lineVec.z, 0, lineVec.x).normalize();
-          const productWidth = (draggedProduct.dimensions?.width || 600) * scale * 0.001 / 2;
+        if (distance < snapDistance) {
+          // Snap to wall with offset based on product dimensions
+          const productOffset = (draggedProduct.dimensions?.width || 400) * 0.001 * 0.5;
+          const wallVector = [
+            wallEnd[0] - wallStart[0],
+            0,
+            wallEnd[2] - wallStart[2]
+          ];
+          const wallLength = Math.sqrt(wallVector[0] ** 2 + wallVector[2] ** 2);
+          const wallNormal = [-wallVector[2] / wallLength, 0, wallVector[0] / wallLength];
           
-          let snapPos: THREE.Vector3;
-          let snapHeight = 0;
-          
-          if (behavior.canMountOnWall) {
-            // Wall-mounted: position against wall at mount height
-            snapPos = closestPoint.clone().add(wallNormal.multiplyScalar(0.05)); // 5cm from wall
-            snapHeight = behavior.defaultMountHeight;
-          } else {
-            // Floor-based: offset from wall by product width
-            snapPos = closestPoint.clone().add(wallNormal.multiplyScalar(productWidth + 0.05));
-            snapHeight = 0;
-          }
-          
-          const confidence = 1 - (distance / snapRadius);
+          const snapPos = [
+            position3D[0] + wallNormal[0] * productOffset,
+            position3D[1],
+            position3D[2] + wallNormal[2] * productOffset
+          ] as [number, number, number];
+
+          const confidence = 1 - (distance / snapDistance);
           if (confidence > bestSnap.confidence) {
             bestSnap = {
               snapped: true,
-              position: threeDToCanvas(snapPos.x, snapPos.z),
+              position: snapPos,
               snapType: 'wall',
-              target: wall,
-              snapHeight,
               confidence
             };
           }
@@ -105,62 +90,50 @@ export const useEnhanced3DSnapping = (
       }
     }
 
-    // 2. Product-to-Product Snapping
-    if (allowedSnapTypes.includes('product') && behavior.snapToProducts) {
+    // Priority 2: Product-to-product snapping
+    if (allowedSnapTypes.includes('product') && bestSnap.confidence < 0.8) {
       for (const product of placedProducts) {
         if (product.id === draggedProduct.id) continue;
-        
-        const productPos = canvasTo3D(product.position);
-        const productCenter = new THREE.Vector3(productPos[0], 0, productPos[2]);
-        const currentPos = new THREE.Vector3(x, 0, z);
-        const distance = currentPos.distanceTo(productCenter);
-        
-        const productBehavior = getProductBehavior(product);
-        const productWidth = (product.dimensions?.width || 600) * scale * 0.001;
-        const productLength = (product.dimensions?.length || 600) * scale * 0.001;
-        const draggedWidth = (draggedProduct.dimensions?.width || 600) * scale * 0.001;
-        const draggedLength = (draggedProduct.dimensions?.length || 600) * scale * 0.001;
-        
-        // Edge-to-edge snapping
-        const snapDistanceX = (productWidth + draggedWidth) / 2 + 0.02; // 2cm gap
-        const snapDistanceZ = (productLength + draggedLength) / 2 + 0.02;
-        
-        // Check for side-by-side alignment
-        if (Math.abs(distance - snapDistanceX) <= snapRadius) {
-          const direction = currentPos.clone().sub(productCenter).normalize();
-          const snapPos = productCenter.clone().add(direction.multiplyScalar(snapDistanceX));
+
+        const productPos = [
+          product.position.x * scale * 0.001,
+          0,
+          product.position.y * scale * 0.001
+        ] as [number, number, number];
+
+        const distance = Math.sqrt(
+          (position3D[0] - productPos[0]) ** 2 +
+          (position3D[2] - productPos[2]) ** 2
+        );
+
+        if (distance < snapDistance * 1.5) {
+          // Edge-to-edge snapping
+          const productWidth = (product.dimensions?.width || 400) * 0.001;
+          const draggedWidth = (draggedProduct.dimensions?.width || 400) * 0.001;
           
-          const confidence = 1 - (Math.abs(distance - snapDistanceX) / snapRadius);
+          const snapDistance2D = productWidth * 0.5 + draggedWidth * 0.5;
           
-          // Bonus confidence for same-series products
-          if (canProductsConnect(draggedProduct, product)) {
-            confidence * 1.2;
-          }
+          // Snap to product edge
+          const direction = [
+            position3D[0] - productPos[0],
+            0,
+            position3D[2] - productPos[2]
+          ];
+          const dirLength = Math.sqrt(direction[0] ** 2 + direction[2] ** 2);
           
-          if (confidence > bestSnap.confidence) {
-            bestSnap = {
-              snapped: true,
-              position: threeDToCanvas(snapPos.x, snapPos.z),
-              snapType: 'product',
-              target: product,
-              confidence
-            };
-          }
-        }
-        
-        // Stacking (for modular cabinets)
-        if (behavior.allowStacking && productBehavior.allowStacking && 
-            canProductsConnect(draggedProduct, product)) {
-          if (distance <= snapRadius * 0.5) { // Closer tolerance for stacking
-            const confidence = 1 - (distance / (snapRadius * 0.5));
+          if (dirLength > 0) {
+            const snapPos = [
+              productPos[0] + (direction[0] / dirLength) * snapDistance2D,
+              position3D[1],
+              productPos[2] + (direction[2] / dirLength) * snapDistance2D
+            ] as [number, number, number];
+
+            const confidence = 1 - (distance / (snapDistance * 1.5));
             if (confidence > bestSnap.confidence) {
               bestSnap = {
                 snapped: true,
-                position: threeDToCanvas(productCenter.x, productCenter.z),
-                snapType: 'stack',
-                target: product,
-                stackTarget: product,
-                snapHeight: (product.dimensions?.height || 850) * scale * 0.001,
+                position: snapPos,
+                snapType: 'product',
                 confidence
               };
             }
@@ -169,87 +142,73 @@ export const useEnhanced3DSnapping = (
       }
     }
 
-    // 3. Floor Grid Snapping (lowest priority)
-    if (allowedSnapTypes.includes('grid') && behavior.snapToFloor) {
-      const gridSize = 0.5; // 500mm grid in 3D units
-      const snappedX = Math.round(x / gridSize) * gridSize;
-      const snappedZ = Math.round(z / gridSize) * gridSize;
+    // Priority 3: Grid snapping
+    if (allowedSnapTypes.includes('grid') && bestSnap.confidence < 0.6) {
+      const gridSize = 0.5; // 500mm grid
+      const gridX = Math.round(position3D[0] / gridSize) * gridSize;
+      const gridZ = Math.round(position3D[2] / gridSize) * gridSize;
       
-      const gridDistance = Math.sqrt((x - snappedX) ** 2 + (z - snappedZ) ** 2);
-      const confidence = 1 - (gridDistance / snapRadius);
-      
-      if (gridDistance <= snapRadius && confidence > bestSnap.confidence * 0.5) {
-        bestSnap = {
-          snapped: true,
-          position: threeDToCanvas(snappedX, snappedZ),
-          snapType: 'grid',
-          confidence: confidence * 0.5 // Lower priority
-        };
-      }
-    }
+      const gridDistance = Math.sqrt(
+        (position3D[0] - gridX) ** 2 + (position3D[2] - gridZ) ** 2
+      );
 
-    // 4. Default floor placement
-    if (!bestSnap.snapped && behavior.snapToFloor) {
-      bestSnap = {
-        snapped: true,
-        position: position2D,
-        snapType: 'floor',
-        confidence: 0.1
-      };
+      if (gridDistance < snapDistance * 0.5) {
+        const confidence = 1 - (gridDistance / (snapDistance * 0.5));
+        if (confidence > bestSnap.confidence) {
+          bestSnap = {
+            snapped: true,
+            position: [gridX, position3D[1], gridZ],
+            snapType: 'grid',
+            confidence
+          };
+        }
+      }
     }
 
     return bestSnap;
   }, [wallSegments, placedProducts, scale]);
 
   const updateSnapGuides = useCallback((snapResult: Enhanced3DSnapResult) => {
-    const guides: SnapGuide3D[] = [];
-    
-    if (snapResult.snapped) {
-      const pos3D = canvasTo3D(snapResult.position);
-      const height = snapResult.snapHeight || 0;
-      
-      switch (snapResult.snapType) {
-        case 'wall':
-          guides.push({
-            type: 'line',
-            position: [pos3D[0], height * 0.001, pos3D[2]],
-            direction: [0, 1, 0],
-            color: '#ff6b6b',
-            opacity: 0.8
-          });
-          break;
-          
-        case 'product':
-          guides.push({
-            type: 'point',
-            position: [pos3D[0], 0.1, pos3D[2]],
-            color: '#4ecdc4',
-            opacity: 0.9
-          });
-          break;
-          
-        case 'stack':
-          guides.push({
-            type: 'surface',
-            position: [pos3D[0], height * 0.001, pos3D[2]],
-            color: '#f39c12',
-            opacity: 0.7
-          });
-          break;
-          
-        case 'grid':
-          guides.push({
-            type: 'grid',
-            position: pos3D,
-            color: '#95a5a6',
-            opacity: 0.4
-          });
-          break;
-      }
-    }
-    
-    setSnapGuides(guides);
     setActiveSnap(snapResult);
+    
+    if (!snapResult.snapped) {
+      setSnapGuides([]);
+      return;
+    }
+
+    const guides: SnapGuide3D[] = [];
+
+    switch (snapResult.snapType) {
+      case 'wall':
+        guides.push({
+          type: 'line',
+          position: snapResult.position,
+          direction: [0, 1, 0],
+          color: '#00ff00',
+          opacity: 0.8
+        });
+        break;
+      
+      case 'product':
+        guides.push({
+          type: 'ring',
+          position: snapResult.position,
+          color: '#ffff00',
+          opacity: 0.6
+        });
+        break;
+      
+      case 'grid':
+        guides.push({
+          type: 'point',
+          position: snapResult.position,
+          color: '#00ffff',
+          opacity: 0.4
+        });
+        break;
+    }
+
+    setSnapGuides(guides);
   }, []);
 
   const clearSnapGuides = useCallback(() => {
@@ -265,3 +224,34 @@ export const useEnhanced3DSnapping = (
     clearSnapGuides
   };
 };
+
+// Helper function for distance to line segment in 3D
+function distanceToLineSegment3D(
+  point: [number, number, number],
+  lineStart: [number, number, number],
+  lineEnd: [number, number, number]
+): number {
+  const dx = lineEnd[0] - lineStart[0];
+  const dz = lineEnd[2] - lineStart[2];
+  const length = Math.sqrt(dx * dx + dz * dz);
+  
+  if (length === 0) {
+    return Math.sqrt(
+      (point[0] - lineStart[0]) ** 2 + (point[2] - lineStart[2]) ** 2
+    );
+  }
+  
+  const t = Math.max(0, Math.min(1, 
+    ((point[0] - lineStart[0]) * dx + (point[2] - lineStart[2]) * dz) / (length * length)
+  ));
+  
+  const projection = [
+    lineStart[0] + t * dx,
+    lineStart[1],
+    lineStart[2] + t * dz
+  ];
+  
+  return Math.sqrt(
+    (point[0] - projection[0]) ** 2 + (point[2] - projection[2]) ** 2
+  );
+}

@@ -20,7 +20,8 @@ interface IsometricFloorPlanSceneProps {
   onSceneClick?: (e: any) => void;
   onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
-  showGrid: boolean;
+  showSnapGrid: boolean;
+  onProductUpdate?: (productId: string, updates: Partial<PlacedProduct>) => void;
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -48,24 +49,25 @@ const IsometricScene = ({
   onSceneClick,
   onSceneReady,
   selectedProducts,
-  showGrid,
+  showSnapGrid,
+  onProductUpdate,
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
       {/* Enhanced Floor with snap grid */}
-      <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showGrid} />
+      <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showSnapGrid} />
 
-      {/* Grid */}
-      {showGrid && (
+      {/* Grid - Only show outside room areas */}
+      {showSnapGrid && (
         <Grid
           args={[100, 100]}
           position={[0, 0, 0]}
-          cellSize={1}
+          cellSize={0.5}
           cellThickness={0.5}
           cellColor="#e0e0e0"
-          sectionSize={10}
+          sectionSize={5}
           sectionThickness={1}
           sectionColor="#c0c0c0"
           fadeDistance={50}
@@ -92,10 +94,9 @@ const IsometricScene = ({
         placedProducts={placedProducts}
         wallSegments={wallSegments}
         scale={scale}
-        onProductUpdate={(productId, updates) => {
-          // This will be handled by the parent component
+        onProductUpdate={onProductUpdate || ((productId, updates) => {
           console.log('Product update:', productId, updates);
-        }}
+        })}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
         }}
@@ -161,3 +162,4 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 };
 
 export default IsometricFloorPlanScene;
+export { IsometricFloorPlanScene };
