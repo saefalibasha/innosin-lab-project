@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
+import { Grid } from '@react-three/drei';
 import { Group } from 'three';
-import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
+import { WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { Enhanced3DFloor } from './Enhanced3DFloor';
@@ -22,7 +22,7 @@ interface IsometricFloorPlanSceneProps {
   selectedProducts: string[];
   showSnapGrid: boolean;
   onProductUpdate?: (productId: string, updates: Partial<PlacedProduct>) => void;
-  onWallUpdate?: (updatedWall: WallSegment) => void; // ✅ Added this line
+  onWallUpdate?: (updatedWall: WallSegment) => void;
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -39,7 +39,7 @@ function CameraExporter() {
   return null;
 }
 
-const IsometricScene = ({
+const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
   wallSegments,
   placedProducts,
   doors,
@@ -48,20 +48,21 @@ const IsometricScene = ({
   onProductClick,
   onWallClick,
   onSceneClick,
-  onSceneReady,
   selectedProducts,
   showSnapGrid,
   onProductUpdate,
-  onWallUpdate, // ✅ Destructured
-}: IsometricFloorPlanSceneProps) => {
+  onWallUpdate,
+}) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
+      <CameraExporter />
+
       {/* Enhanced Floor with snap grid */}
       <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showSnapGrid} />
 
-      {/* Grid - Only show outside room areas */}
+      {/* Grid */}
       {showSnapGrid && (
         <Grid
           args={[100, 100]}
@@ -91,7 +92,7 @@ const IsometricScene = ({
         selectedProducts={selectedProducts}
       />
 
-      {/* Enhanced 3D Controls for direct manipulation */}
+      {/* Enhanced 3D Controls */}
       <Enhanced3DControls
         placedProducts={placedProducts}
         wallSegments={wallSegments}
@@ -99,9 +100,7 @@ const IsometricScene = ({
         onProductUpdate={onProductUpdate || ((productId, updates) => {
           console.log('Product update:', productId, updates);
         })}
-        onWallUpdate={onWallUpdate || ((wall) => {
-          console.log('Wall updated:', wall);
-        })} // ✅ Forwarded here
+        onWallUpdate={onWallUpdate}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
         }}
@@ -121,48 +120,6 @@ const IsometricScene = ({
         </mesh>
       )}
     </group>
-  );
-};
-
-const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
-  return (
-    <div className="w-full h-full">
-      <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Camera */}
-        <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
-        <CameraExporter />
-
-        {/* Lighting */}
-        <ambientLight intensity={0.3} />
-        <directionalLight
-          position={[10, 20, 15]}
-          intensity={0.8}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-          shadow-camera-far={50}
-          shadow-camera-left={-25}
-          shadow-camera-right={25}
-          shadow-camera-top={25}
-          shadow-camera-bottom={-25}
-        />
-        <directionalLight position={[-10, 10, -5]} intensity={0.3} />
-
-        {/* Controls */}
-        <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={2}
-          maxDistance={100}
-          enableDamping
-          dampingFactor={0.05}
-        />
-
-        {/* Scene */}
-        <IsometricScene {...props} />
-      </Canvas>
-    </div>
   );
 };
 
