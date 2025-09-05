@@ -18,7 +18,6 @@ interface IsometricFloorPlanSceneProps {
   onProductClick?: (productId: string) => void;
   onWallClick?: (wallId: string) => void;
   onSceneClick?: (e: any) => void;
-  onSceneReady?: (context: { camera: any; scene: any; gl: any }) => void;
   selectedProducts: string[];
   showSnapGrid: boolean;
   onProductUpdate?: (productId: string, updates: Partial<PlacedProduct>) => void;
@@ -27,15 +26,19 @@ interface IsometricFloorPlanSceneProps {
 
 /** Exposes the active R3F camera on window for external raycasting */
 function CameraExporter() {
-  const { camera } = useThree();
+  const { camera, scene, gl } = useThree();
   useEffect(() => {
     (window as any).__threeCamera = camera;
+    (window as any).__threeScene = scene;
+    (window as any).__threeRenderer = gl;
     return () => {
       if ((window as any).__threeCamera === camera) {
         delete (window as any).__threeCamera;
+        delete (window as any).__threeScene;
+        delete (window as any).__threeRenderer;
       }
     };
-  }, [camera]);
+  }, [camera, scene, gl]);
   return null;
 }
 
@@ -59,10 +62,9 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
     <group ref={groupRef}>
       <CameraExporter />
 
-      {/* Enhanced Floor with snap grid */}
+      {/* Floor with optional snap grid */}
       <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showSnapGrid} />
 
-      {/* Grid */}
       {showSnapGrid && (
         <Grid
           args={[100, 100]}
@@ -92,14 +94,17 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
         selectedProducts={selectedProducts}
       />
 
-      {/* Enhanced 3D Controls */}
+      {/* 3D Controls for dragging & snapping */}
       <Enhanced3DControls
         placedProducts={placedProducts}
         wallSegments={wallSegments}
         scale={scale}
-        onProductUpdate={onProductUpdate || ((productId, updates) => {
-          console.log('Product update:', productId, updates);
-        })}
+        onProductUpdate={
+          onProductUpdate ||
+          ((productId, updates) => {
+            console.log('Product update:', productId, updates);
+          })
+        }
         onWallUpdate={onWallUpdate}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
@@ -107,7 +112,7 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
         selectedProductId={selectedProducts[0]}
       />
 
-      {/* Drop plane for raycasting */}
+      {/* Drop plane for deselecting / raycasting */}
       {onSceneClick && (
         <mesh
           name="floor-drop-plane"
