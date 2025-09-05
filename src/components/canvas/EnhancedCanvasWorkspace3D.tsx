@@ -164,7 +164,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
-        onSceneReady={handleSceneReady}
         wallSegments={wallSegments}
         placedProducts={placedProducts}
         doors={doors}

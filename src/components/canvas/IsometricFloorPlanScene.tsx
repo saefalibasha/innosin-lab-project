@@ -5,8 +5,9 @@ import { Group } from 'three';
 import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
-import { IsometricFloor } from './IsometricFloor';
+import { Enhanced3DFloor } from './Enhanced3DFloor';
 import { IsometricDoors } from './IsometricDoors';
+import { Enhanced3DControls } from './Enhanced3DControls';
 
 interface IsometricFloorPlanSceneProps {
   wallSegments: WallSegment[];
@@ -17,6 +18,7 @@ interface IsometricFloorPlanSceneProps {
   onProductClick?: (productId: string) => void;
   onWallClick?: (wallId: string) => void;
   onSceneClick?: (e: any) => void;
+  onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
   showGrid: boolean;
 }
@@ -44,6 +46,7 @@ const IsometricScene = ({
   onProductClick,
   onWallClick,
   onSceneClick,
+  onSceneReady,
   selectedProducts,
   showGrid,
 }: IsometricFloorPlanSceneProps) => {
@@ -51,8 +54,8 @@ const IsometricScene = ({
 
   return (
     <group ref={groupRef}>
-      {/* Floor */}
-      <IsometricFloor rooms={rooms} scale={scale} />
+      {/* Enhanced Floor with snap grid */}
+      <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showGrid} />
 
       {/* Grid */}
       {showGrid && (
@@ -81,6 +84,21 @@ const IsometricScene = ({
         placedProducts={placedProducts}
         scale={scale}
         onProductClick={onProductClick}
+        selectedProducts={selectedProducts}
+      />
+
+      {/* Enhanced 3D Controls for direct manipulation */}
+      <Enhanced3DControls
+        placedProducts={placedProducts}
+        wallSegments={wallSegments}
+        scale={scale}
+        onProductUpdate={(productId, position) => {
+          // This will be handled by the parent component
+          console.log('Product update:', productId, position);
+        }}
+        onProductSelect={(productId) => {
+          if (onProductClick) onProductClick(productId);
+        }}
         selectedProducts={selectedProducts}
       />
 
