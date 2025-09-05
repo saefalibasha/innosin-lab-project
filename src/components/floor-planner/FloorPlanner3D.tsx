@@ -112,10 +112,25 @@ export const FloorPlanner3D = () => {
         </div>
       </div>
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col">
-        {/* Canvas area */}
-        <div className="flex-1 relative">
+      {/* Canvas area */}
+      <div className="flex-1 relative">
+        {/* ✅ Log Wall Button */}
+        <Button
+          className="absolute top-4 right-4 z-50"
+          onClick={handleLogWalls}
+        >
+          Log Walls
+        </Button>
+
+        {/* Wall Control Panel */}
+        <WallControlPanel
+          selectedWall={selectedWall}
+          onWallUpdate={handleWallUpdate}
+          onClose={() => setSelectedWall(null)}
+          onVisibilityToggle={handleWallVisibilityToggle}
+        />
+
+        <div className="w-full h-full">
           <EnhancedCanvasWorkspace3D
             placedProducts={placedProducts}
             setPlacedProducts={setPlacedProducts}
@@ -141,42 +156,6 @@ export const FloorPlanner3D = () => {
             canvasHeight={canvasHeight}
             onClearAll={handleClearAll}
           />
-        </div>
-
-        {/* External Controls Section */}
-        <div className="border-t bg-muted/30 p-4">
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Wall Controls */}
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogWalls}
-              >
-                Debug Walls
-              </Button>
-              <Button
-                variant={selectedWall ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedWall(selectedWall ? null : wallSegments[0] || null)}
-                disabled={wallSegments.length === 0}
-              >
-                Wall Controls
-              </Button>
-            </div>
-
-            {/* Wall Control Panel - External */}
-            {selectedWall && (
-              <div className="flex-1">
-                <WallControlPanel
-                  selectedWall={selectedWall}
-                  onWallUpdate={handleWallUpdate}
-                  onClose={() => setSelectedWall(null)}
-                  onVisibilityToggle={handleWallVisibilityToggle}
-                />
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </div>

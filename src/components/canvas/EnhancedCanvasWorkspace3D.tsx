@@ -1,36 +1,23 @@
-import React, { useState, useRef } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
-import IsometricFloorPlanScene from './IsometricFloorPlanScene';
-import { 
-  PlacedProduct, 
-  Point, 
-  Door, 
-  TextAnnotation, 
-  WallSegment, 
-  Room, 
-  DrawingMode 
-} from '@/types/floorPlanTypes';
+import React, { useRef, useCallback } from 'react';
+import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, RotateCcw, Grid3X3, Move3D } from 'lucide-react';
+import IsometricFloorPlanScene from './IsometricFloorPlanScene';
+import { toast } from 'sonner';
+import * as THREE from 'three';
 
 interface EnhancedCanvasWorkspace3DProps {
-  placedProducts: PlacedProduct[];
-  setPlacedProducts: (products: PlacedProduct[]) => void;
-  selectedProducts: string[];
-  onProductSelect: (productIds: string[]) => void;
   roomPoints: Point[];
-  setRoomPoints: (points: Point[]) => void;
-  doors: Door[];
-  setDoors: (doors: Door[]) => void;
-  textAnnotations: TextAnnotation[];
-  setTextAnnotations: (annotations: TextAnnotation[]) => void;
+  setRoomPoints: React.Dispatch<React.SetStateAction<Point[]>>;
   wallSegments: WallSegment[];
-  setWallSegments: (segments: WallSegment[]) => void;
+  setWallSegments: React.Dispatch<React.SetStateAction<WallSegment[]>>;
+  placedProducts: PlacedProduct[];
+  setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
+  doors: Door[];
+  setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
+  textAnnotations: TextAnnotation[];
+  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
   rooms: Room[];
-  setRooms: (rooms: Room[]) => void;
+  setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
   scale: number;
   currentMode: DrawingMode;
   showGrid: boolean;
@@ -40,175 +27,173 @@ interface EnhancedCanvasWorkspace3DProps {
   canvasWidth: number;
   canvasHeight: number;
   onClearAll: () => void;
-  onWallUpdate?: (updatedWall: WallSegment) => void;
+  selectedProducts: string[];
+  onProductSelect: React.Dispatch<React.SetStateAction<string[]>>;
+  onWallUpdate?: (wall: WallSegment) => void;
 }
 
-export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
+const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
+  roomPoints,
+  setRoomPoints,
+  wallSegments,
+  setWallSegments,
   placedProducts,
   setPlacedProducts,
+  doors,
+  setDoors,
+  textAnnotations,
+  setTextAnnotations,
+  rooms,
+  setRooms,
+  scale,
+  currentMode,
+  showGrid,
+  showMeasurements,
+  gridSize,
+  measurementUnit,
+  canvasWidth,
+  canvasHeight,
+  onClearAll,
   selectedProducts,
   onProductSelect,
-  doors,
-  wallSegments,
-  rooms,
-  scale,
-  showGrid,
-  onClearAll,
-  onWallUpdate,
+  onWallUpdate
 }) => {
-  const [showSnapGrid, setShowSnapGrid] = useState(true);
-  const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([10, 8, 10]);
-  const controlsRef = useRef<any>();
+  const htmlRef = useRef<HTMLDivElement>(null);
+  const sceneRef3D = useRef<any>(null);
 
-  const handleProductClick = (productId: string) => {
-    onProductSelect([productId]);
-  };
+  const handleSceneReady = useCallback((context: {
+    camera: THREE.PerspectiveCamera;
+    scene: THREE.Scene;
+    gl: THREE.WebGLRenderer;
+  }) => {
+    sceneRef3D.current = context;
+  }, []);
 
-  const handleSceneClick = () => {
-    onProductSelect([]);
-  };
-
-  const handleProductUpdate = (productId: string, updates: Partial<PlacedProduct>) => {
-    setPlacedProducts(
-      placedProducts.map(product =>
-        product.id === productId ? { ...product, ...updates } : product
-      )
-    );
-  };
-
-  const resetCamera = () => {
-    if (controlsRef.current) {
-      controlsRef.current.reset();
+  const handleProductClick = useCallback((productId: string) => {
+    if (currentMode === 'select') {
+      onProductSelect(prev =>
+        prev.includes(productId)
+          ? prev.filter(id => id !== productId)
+          : [...prev, productId]
+      );
     }
-  };
+  }, [currentMode, onProductSelect]);
 
-  const setCameraPreset = (preset: 'isometric' | 'top' | 'side' | 'front') => {
-    const presets = {
-      isometric: [10, 8, 10] as [number, number, number],
-      top: [0, 15, 0.1] as [number, number, number],
-      side: [15, 5, 0] as [number, number, number],
-      front: [0, 5, 15] as [number, number, number],
-    };
-    setCameraPosition(presets[preset]);
-  };
+  const handleWallClick = useCallback((wallId: string) => {
+    if (currentMode === 'select') {
+      const wall = wallSegments.find(w => w.id === wallId);
+      if (wall && onWallUpdate) {
+        onWallUpdate(wall);
+      }
+    }
+  }, [currentMode, wallSegments, onWallUpdate]);
+
+  const handleSceneClick = useCallback((e: any) => {
+    if (e.object.name !== 'product' && e.object.name !== 'wall') {
+      onProductSelect([]);
+    }
+  }, [onProductSelect]);
+
+  const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+
+    const productData = e.dataTransfer.getData('product');
+    if (!productData) return;
+
+    try {
+      const product = JSON.parse(productData);
+
+      const { camera, scene, gl } = sceneRef3D.current;
+      const raycaster = new THREE.Raycaster();
+      const pointer = new THREE.Vector2();
+
+      const rect = gl.domElement.getBoundingClientRect();
+      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+
+      const floor = scene.children.find(obj => obj.name === 'floor-drop-plane');
+      if (!floor) {
+        toast.error('Drop target not found');
+        return;
+      }
+
+      const intersects = raycaster.intersectObject(floor);
+      if (intersects.length === 0) {
+        toast.error('Cannot place item outside of floor');
+        return;
+      }
+
+      const point = intersects[0].point;
+
+      const newProduct: PlacedProduct = {
+        id: `product-${Date.now()}`,
+        productId: product.id,
+        name: product.name,
+        category: product.category || 'Unknown',
+        position: {
+          x: point.x,
+          y: point.z
+        },
+        rotation: 0,
+        dimensions: product.dimensions,
+        color: product.color,
+        scale: 1,
+        modelPath: product.modelPath,
+        thumbnail: product.thumbnail,
+        description: product.description,
+        specifications: product.specifications,
+        finishes: product.finishes,
+        variants: product.variants
+      };
+
+      setPlacedProducts(prev => [...prev, newProduct]);
+      toast.success(`Added ${product.name} to floor plan`);
+    } catch (error) {
+      console.error('Error parsing dropped product:', error);
+      toast.error('Failed to add product');
+    }
+  }, [setPlacedProducts]);
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* 3D Canvas */}
-      <div className="flex-1 relative">
-        <Canvas
-          shadows
-          camera={{ position: cameraPosition, fov: 60 }}
-          style={{ background: 'linear-gradient(to bottom, #e3f2fd 0%, #bbdefb 100%)' }}
-        >
-          <PerspectiveCamera
-            makeDefault
-            position={cameraPosition}
-            fov={60}
-            near={0.1}
-            far={1000}
-          />
+    <div
+      ref={htmlRef}
+      className="relative w-full h-full bg-gray-50"
+      onDrop={handleCanvasDrop}
+      onDragOver={(e) => e.preventDefault()}
+    >
+      <IsometricFloorPlanScene
+        wallSegments={wallSegments}
+        placedProducts={placedProducts}
+        doors={doors}
+        rooms={rooms}
+        scale={scale}
+        onProductClick={handleProductClick}
+        onWallClick={handleWallClick}
+        onSceneClick={handleSceneClick}
+        selectedProducts={selectedProducts}
+        showGrid={showGrid}
+      />
 
-          {/* Lighting */}
-          <ambientLight intensity={0.4} />
-          <directionalLight
-            position={[20, 20, 10]}
-            intensity={1}
-            castShadow
-            shadow-mapSize={[2048, 2048]}
-            shadow-camera-far={50}
-            shadow-camera-left={-20}
-            shadow-camera-right={20}
-            shadow-camera-top={20}
-            shadow-camera-bottom={-20}
-          />
-          <directionalLight position={[-10, 10, -5]} intensity={0.5} />
-
-          {/* Orbit controls */}
-          <OrbitControls
-            ref={controlsRef}
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            enableDamping={true}
-            dampingFactor={0.05}
-            minDistance={2}
-            maxDistance={50}
-            maxPolarAngle={Math.PI}
-            minPolarAngle={0}
-          />
-
-          {/* Scene */}
-          <IsometricFloorPlanScene
-            wallSegments={wallSegments}
-            placedProducts={placedProducts}
-            doors={doors}
-            rooms={rooms}
-            scale={scale}
-            onProductClick={handleProductClick}
-            onSceneClick={handleSceneClick}
-            selectedProducts={selectedProducts}
-            showSnapGrid={showSnapGrid}
-            onProductUpdate={handleProductUpdate}
-            onWallUpdate={onWallUpdate}
-          />
-        </Canvas>
+      <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
+        Mode: {currentMode}
       </div>
 
-      {/* Control Panel Below Canvas */}
-      <div className="bg-background border-t p-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Move3D className="w-4 h-4" />
-              3D Floor Planner Controls
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Camera Controls */}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" size="sm" onClick={() => setCameraPreset('isometric')}>
-                Isometric View
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setCameraPreset('top')}>
-                Top View
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setCameraPreset('side')}>
-                Side View
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setCameraPreset('front')}>
-                Front View
-              </Button>
-              <Button variant="outline" size="sm" onClick={resetCamera}>
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset Camera
-              </Button>
-            </div>
+      <div className="absolute top-4 right-4 bg-background/90 rounded-md px-3 py-2 text-xs space-y-1">
+        <div>Products: {placedProducts.length}</div>
+        <div>Walls: {wallSegments.length}</div>
+        <div>Rooms: {rooms.length}</div>
+        {selectedProducts.length > 0 && (
+          <div className="text-primary">Selected: {selectedProducts.length}</div>
+        )}
+      </div>
 
-            {/* View Controls */}
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={showSnapGrid ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setShowSnapGrid(!showSnapGrid)}
-              >
-                <Grid3X3 className="w-4 h-4 mr-2" />
-                {showSnapGrid ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                Snap Grid
-              </Button>
-              <Button variant="destructive" size="sm" onClick={onClearAll}>
-                Clear All
-              </Button>
-            </div>
-
-            {/* Instructions */}
-            <div className="text-xs text-muted-foreground">
-              <p><strong>Controls:</strong> Left click + drag to rotate • Right click + drag to pan • Scroll to zoom</p>
-              <p><strong>Selection:</strong> Click products to select • Click empty space to deselect</p>
-              <p><strong>Dragging:</strong> Drag products directly in 3D space • Products snap to walls and grid</p>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="absolute bottom-4 left-4 bg-background/90 rounded-md px-3 py-2 text-xs text-muted-foreground">
+        <div>• Drag to rotate view</div>
+        <div>• Scroll to zoom</div>
+        <div>• Click objects to select</div>
+        <div>• Drag products from library</div>
       </div>
     </div>
   );

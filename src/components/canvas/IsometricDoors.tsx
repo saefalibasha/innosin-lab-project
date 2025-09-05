@@ -8,10 +8,9 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  // Fixed door dimensions - convert mm to meters properly
-  const doorWidth = (door.width || 800) * 0.001; // Convert mm to meters directly
-  const doorHeight = 2.1; // Standard 2100mm door height in meters
-  const doorThickness = 0.08; // Realistic door thickness
+  const doorWidth = (door.width || 800) * scale * 0.001;
+  const doorHeight = 2100 * scale * 0.001; // Standard door height
+  const doorThickness = 0.05; // In meters
 
   // Use enhanced coordinate transform for accurate positioning
   const { position, rotation } = calculateDoorTransform(door, scale);

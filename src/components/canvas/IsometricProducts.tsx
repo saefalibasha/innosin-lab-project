@@ -30,11 +30,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // Position mapped to X/Z plane, Y handled separately - Fixed coordinate mapping
+  // Position mapped to X/Z plane, Y handled separately
   const position: [number, number, number] = [
-    product.position.x * scale * 0.001, // Convert mm to meters
+    product.position.x * scale * 0.1,
     0,
-    product.position.y * scale * 0.001, // Convert mm to meters
+    product.position.y * scale * 0.1,
   ];
 
   const rotation: [number, number, number] = [
@@ -43,22 +43,22 @@ const ProductModel = ({
     0,
   ];
 
-  // Fallback simple box if no GLTF model - Fixed dimensions and selection box
-  const productHeight = (product.dimensions.height || 850) * 0.001; // Convert mm to meters
-  const productLength = product.dimensions.length * 0.001; // Convert mm to meters  
-  const productWidth = product.dimensions.width * 0.001; // Convert mm to meters
-  
+  // Fallback simple box if no GLTF model
   const fallbackGeometry = (
     <mesh
       ref={meshRef}
-      position={[position[0], productHeight / 2, position[2]]} // Position on floor
+      position={[position[0], 0.425, position[2]]} // ✅ lift by half height
       rotation={rotation}
       onClick={handleClick}
       castShadow
       name="product"
     >
       <boxGeometry 
-        args={[productLength, productHeight, productWidth]} 
+        args={[
+          product.dimensions.length * scale * 0.1,
+          0.85,
+          product.dimensions.width * scale * 0.1,
+        ]} 
       />
       <meshLambertMaterial 
         color={isSelected ? '#ff6b6b' : (product.color || '#8b5cf6')}
@@ -69,10 +69,14 @@ const ProductModel = ({
         <lineSegments>
           <edgesGeometry 
             args={[
-              new THREE.BoxGeometry(productLength, productHeight, productWidth)
+              new THREE.BoxGeometry(
+                product.dimensions.length * scale * 0.1,
+                0.85,
+                product.dimensions.width * scale * 0.1
+              )
             ]}
           />
-          <lineBasicMaterial color="#ff0000" linewidth={3} />
+          <lineBasicMaterial color="#ff0000" linewidth={2} />
         </lineSegments>
       )}
     </mesh>
@@ -112,7 +116,6 @@ const ProductGLTF = ({
   scale: number;
 }) => {
   const groupRef = useRef<Group>(null);
-  const [modelBounds, setModelBounds] = React.useState<{ size: Vector3; center: Vector3 } | null>(null);
 
   const gltf = useLoader(GLTFLoader, modelPath);
   
@@ -122,18 +125,17 @@ const ProductGLTF = ({
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
-      // Store bounds for accurate selection box
-      setModelBounds({ size, center });
+      // Center model
+      gltf.scene.position.sub(center);
 
-      // Center model horizontally but keep on floor
-      gltf.scene.position.set(-center.x, -box.min.y, -center.z);
+      // ✅ Move bottom of model to Y=0 (floor plane)
+      gltf.scene.position.y += size.y / 2;
 
-      // Scale model appropriately - maintain realistic proportions
-      const targetSize = 1.0; // 1 meter max dimension
+      // Normalize scale
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
-        const modelScale = targetSize / maxDim;
-        gltf.scene.scale.setScalar(modelScale);
+        const targetScale = 1 / maxDim;
+        gltf.scene.scale.setScalar(targetScale);
       }
     }
   }, [gltf]);
@@ -151,18 +153,14 @@ const ProductGLTF = ({
         castShadow
         receiveShadow
       />
-      {isSelected && modelBounds && (
-        <mesh position={[0, modelBounds.size.y / 2, 0]}>
-          <boxGeometry args={[
-            modelBounds.size.x * 1.1, 
-            modelBounds.size.y * 1.1, 
-            modelBounds.size.z * 1.1
-          ]} />
+      {isSelected && (
+        <mesh>
+          <boxGeometry args={[1.2, 1.2, 1.2]} />
           <meshBasicMaterial 
             color="#ff0000" 
             wireframe 
             transparent 
-            opacity={0.8}
+            opacity={0.5}
           />
         </mesh>
       )}

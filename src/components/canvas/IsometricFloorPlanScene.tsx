@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
-import { useThree } from '@react-three/fiber';
-import { Grid } from '@react-three/drei';
+import { Canvas, useThree } from '@react-three/fiber';
+import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import { Group } from 'three';
-import { WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
+import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { Enhanced3DFloor } from './Enhanced3DFloor';
@@ -18,31 +18,26 @@ interface IsometricFloorPlanSceneProps {
   onProductClick?: (productId: string) => void;
   onWallClick?: (wallId: string) => void;
   onSceneClick?: (e: any) => void;
+  onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
-  showSnapGrid: boolean;
-  onProductUpdate?: (productId: string, updates: Partial<PlacedProduct>) => void;
-  onWallUpdate?: (updatedWall: WallSegment) => void;
+  showGrid: boolean;
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
 function CameraExporter() {
-  const { camera, scene, gl } = useThree();
+  const { camera } = useThree();
   useEffect(() => {
     (window as any).__threeCamera = camera;
-    (window as any).__threeScene = scene;
-    (window as any).__threeRenderer = gl;
     return () => {
       if ((window as any).__threeCamera === camera) {
         delete (window as any).__threeCamera;
-        delete (window as any).__threeScene;
-        delete (window as any).__threeRenderer;
       }
     };
-  }, [camera, scene, gl]);
+  }, [camera]);
   return null;
 }
 
-const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
+const IsometricScene = ({
   wallSegments,
   placedProducts,
   doors,
@@ -51,28 +46,26 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
   onProductClick,
   onWallClick,
   onSceneClick,
+  onSceneReady,
   selectedProducts,
-  showSnapGrid,
-  onProductUpdate,
-  onWallUpdate,
-}) => {
+  showGrid,
+}: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
-      <CameraExporter />
+      {/* Enhanced Floor with snap grid */}
+      <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showGrid} />
 
-      {/* Floor with optional snap grid */}
-      <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showSnapGrid} />
-
-      {showSnapGrid && (
+      {/* Grid */}
+      {showGrid && (
         <Grid
           args={[100, 100]}
           position={[0, 0, 0]}
-          cellSize={0.5}
+          cellSize={1}
           cellThickness={0.5}
           cellColor="#e0e0e0"
-          sectionSize={5}
+          sectionSize={10}
           sectionThickness={1}
           sectionColor="#c0c0c0"
           fadeDistance={50}
@@ -94,31 +87,28 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
         selectedProducts={selectedProducts}
       />
 
-      {/* 3D Controls for dragging & snapping */}
+      {/* Enhanced 3D Controls for direct manipulation */}
       <Enhanced3DControls
         placedProducts={placedProducts}
         wallSegments={wallSegments}
         scale={scale}
-        onProductUpdate={
-          onProductUpdate ||
-          ((productId, updates) => {
-            console.log('Product update:', productId, updates);
-          })
-        }
-        onWallUpdate={onWallUpdate}
+        onProductUpdate={(productId, updates) => {
+          // This will be handled by the parent component
+          console.log('Product update:', productId, updates);
+        }}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
         }}
         selectedProductId={selectedProducts[0]}
       />
 
-      {/* Drop plane for deselecting / raycasting */}
+      {/* ✅ Drop plane for raycasting */}
       {onSceneClick && (
         <mesh
-          name="floor-drop-plane"
+          name="floor-drop-plane" // ✅ Name used for raycasting
           position={[0, -0.0001, 0]}
           onClick={onSceneClick}
-          visible={true}
+          visible={true} // ✅ Must be visible for raycasting
         >
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
@@ -128,5 +118,46 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = ({
   );
 };
 
+const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
+  return (
+    <div className="w-full h-full">
+      <Canvas shadows style={{ background: 'transparent' }}>
+        {/* Camera */}
+        <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
+        <CameraExporter />
+
+        {/* Lighting */}
+        <ambientLight intensity={0.3} />
+        <directionalLight
+          position={[10, 20, 15]}
+          intensity={0.8}
+          castShadow
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-far={50}
+          shadow-camera-left={-25}
+          shadow-camera-right={25}
+          shadow-camera-top={25}
+          shadow-camera-bottom={-25}
+        />
+        <directionalLight position={[-10, 10, -5]} intensity={0.3} />
+
+        {/* Controls */}
+        <OrbitControls
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
+          minDistance={2}
+          maxDistance={100}
+          enableDamping
+          dampingFactor={0.05}
+        />
+
+        {/* Scene */}
+        <IsometricScene {...props} />
+      </Canvas>
+    </div>
+  );
+};
+
 export default IsometricFloorPlanScene;
-export { IsometricFloorPlanScene };

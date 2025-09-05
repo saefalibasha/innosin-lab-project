@@ -75,28 +75,26 @@ const FloorWithGrid = ({ room, scale, showSnapGrid }: {
 
   return (
     <group>
-      {/* Floor surface - Automatic grey flooring for enclosed rooms */}
+      {/* Floor surface - Grey flooring for enclosed rooms */}
       <mesh
         geometry={floorGeometry}
-        position={[0, -0.01, 0]}
+        position={[0, -0.005, 0]}
         receiveShadow
-        name="room-floor"
       >
-        <meshStandardMaterial
-          color="#606060"
-          roughness={0.8}
-          metalness={0.1}
+        <meshLambertMaterial
+          color="#808080"
           transparent={false}
+          opacity={1}
         />
       </mesh>
 
-      {/* Snap grid - Only show when enabled and not inside room boundaries */}
+      {/* Snap grid - Only show outside room boundaries */}
       {gridGeometry && showSnapGrid && (
-        <lineSegments geometry={gridGeometry} position={[0, 0.001, 0]}>
+        <lineSegments geometry={gridGeometry}>
           <lineBasicMaterial 
-            color="#999999" 
+            color="#cccccc" 
             transparent 
-            opacity={0.3}
+            opacity={0.2}
             linewidth={1}
           />
         </lineSegments>

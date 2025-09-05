@@ -1,113 +1,100 @@
+/**
+ * Unified coordinate transformation system for 2D-to-3D mapping
+ * Ensures consistent scaling and positioning across all 3D components
+ */
+
 import { Point } from '@/types/floorPlanTypes';
 
-// Enhanced coordinate transformation utilities
-export const COORDINATE_SCALE = 0.001; // Convert mm to meters
+// Standard coordinate transformation for 3D scene
+// Adjusted scale to make rooms appropriately sized
+export const COORDINATE_SCALE = 0.01; // Convert canvas units to 3D world units
+export const ROOM_HEIGHT = 2.4; // Standard room height in meters
 
-// Convert 2D canvas coordinates to 3D world coordinates
-export const canvasTo3D = (
-  point: Point, 
-  scale: number = 1,
-  yPosition: number = 0
-): [number, number, number] => {
+/**
+ * Convert 2D canvas coordinates to 3D world coordinates
+ * This maintains 1:1 coordinate mapping between 2D and 3D views
+ */
+export const canvasTo3D = (point: Point | undefined): [number, number, number] => {
+  if (!point || point.x === undefined || point.y === undefined) {
+    console.warn('canvasTo3D received invalid point:', point);
+    return [0, 0, 0];
+  }
   return [
-    point.x * COORDINATE_SCALE, // X axis (left-right)
-    yPosition,                  // Y axis (up-down) 
-    point.y * COORDINATE_SCALE  // Z axis (forward-back, canvas Y becomes world Z)
+    point.x * COORDINATE_SCALE,
+    0, // Y will be set by specific components (floor, products)
+    point.y * COORDINATE_SCALE
   ];
 };
 
-// Convert 3D world coordinates back to 2D canvas coordinates
-export const worldTo2DCanvas = (
-  x: number, 
-  z: number, 
-  scale: number = 1
-): Point => {
+/**
+ * Convert 3D world coordinates back to 2D canvas coordinates
+ */
+export const threeDToCanvas = (x: number | undefined, z: number | undefined): Point => {
+  if (x === undefined || z === undefined || isNaN(x) || isNaN(z)) {
+    console.warn('threeDToCanvas received invalid coordinates:', { x, z });
+    return { x: 0, y: 0 };
+  }
   return {
     x: x / COORDINATE_SCALE,
     y: z / COORDINATE_SCALE
   };
 };
 
-// Alias for backward compatibility
-export const threeDToCanvas = worldTo2DCanvas;
-
-// Enhanced door positioning calculation
-export const calculateDoorTransform = (door: any, scale: number) => {
-  if (!door.wallId || !door.position) {
-    return { 
-      position: [0, 0, 0] as [number, number, number], 
-      rotation: [0, 0, 0] as [number, number, number] 
-    };
+/**
+ * Calculate the bounding box of a set of points
+ */
+export const calculateBounds = (points: Point[]): { min: Point; max: Point; center: Point } => {
+  if (!points || points.length === 0) {
+    return { min: { x: 0, y: 0 }, max: { x: 0, y: 0 }, center: { x: 0, y: 0 } };
   }
 
-  // Convert door position to 3D world coordinates
-  const [x, y, z] = canvasTo3D(door.position, scale);
-  
-  // Calculate rotation based on wall orientation
-  const rotation = door.rotation || 0;
-  
-  return {
-    position: [x, 1.05, z] as [number, number, number], // Position door at half height
-    rotation: [0, rotation, 0] as [number, number, number]
+  const validPoints = points.filter(p => p && typeof p.x === 'number' && typeof p.y === 'number');
+  if (validPoints.length === 0) {
+    return { min: { x: 0, y: 0 }, max: { x: 0, y: 0 }, center: { x: 0, y: 0 } };
+  }
+
+  const xs = validPoints.map(p => p.x);
+  const ys = validPoints.map(p => p.y);
+
+  const min = { x: Math.min(...xs), y: Math.min(...ys) };
+  const max = { x: Math.max(...xs), y: Math.max(...ys) };
+  const center = { 
+    x: (min.x + max.x) / 2, 
+    y: (min.y + max.y) / 2 
   };
+
+  return { min, max, center };
 };
 
-// Enhanced product positioning for consistent 2D-3D mapping
-export const calculateProductTransform = (
-  product: any, 
-  scale: number
-): { position: [number, number, number]; rotation: [number, number, number] } => {
-  const [x, y, z] = canvasTo3D(product.position, scale);
-  
-  return {
-    position: [x, 0, z],
-    rotation: [0, product.rotation || 0, 0]
-  };
-};
+/**
+ * Get all points from walls, rooms, and products for scene centering
+ */
+export const getAllScenePoints = (
+  wallSegments: any[] = [],
+  rooms: any[] = [],
+  placedProducts: any[] = []
+): Point[] => {
+  const points: Point[] = [];
 
-// Room boundary detection for floor rendering
-export const isPointInRoom = (point: Point, roomPoints: Point[]): boolean => {
-  if (roomPoints.length < 3) return false;
-  
-  let inside = false;
-  let j = roomPoints.length - 1;
-  
-  for (let i = 0; i < roomPoints.length; i++) {
-    const xi = roomPoints[i].x;
-    const yi = roomPoints[i].y;
-    const xj = roomPoints[j].x;
-    const yj = roomPoints[j].y;
-    
-    if (((yi > point.y) !== (yj > point.y)) && 
-        (point.x < (xj - xi) * (point.y - yi) / (yj - yi) + xi)) {
-      inside = !inside;
+  // Add wall points
+  wallSegments.forEach(wall => {
+    if (wall?.start) points.push(wall.start);
+    if (wall?.end) points.push(wall.end);
+  });
+
+  // Add room points
+  rooms.forEach(room => {
+    if (room?.points && Array.isArray(room.points)) {
+      points.push(...room.points.filter(p => p && typeof p.x === 'number' && typeof p.y === 'number'));
     }
-    j = i;
-  }
-  
-  return inside;
-};
+  });
 
-// Calculate room bounds for grid generation
-export const calculateRoomBounds = (roomPoints: Point[]) => {
-  if (roomPoints.length === 0) {
-    return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-  }
-  
-  const bounds = roomPoints.reduce(
-    (acc, point) => ({
-      minX: Math.min(acc.minX, point.x),
-      maxX: Math.max(acc.maxX, point.x),
-      minY: Math.min(acc.minY, point.y),
-      maxY: Math.max(acc.maxY, point.y),
-    }),
-    { 
-      minX: roomPoints[0].x, 
-      maxX: roomPoints[0].x, 
-      minY: roomPoints[0].y, 
-      maxY: roomPoints[0].y 
+  // Add product positions
+  placedProducts.forEach(product => {
+    if (product?.position) {
+      points.push(product.position);
     }
-  );
-  
-  return bounds;
+  });
+
+  return points;
 };
