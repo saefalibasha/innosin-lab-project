@@ -18,10 +18,11 @@ interface IsometricFloorPlanSceneProps {
   onProductClick?: (productId: string) => void;
   onWallClick?: (wallId: string) => void;
   onSceneClick?: (e: any) => void;
-  onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
+  onSceneReady?: (context: { camera: any; scene: any; gl: any }) => void;
   selectedProducts: string[];
   showSnapGrid: boolean;
   onProductUpdate?: (productId: string, updates: Partial<PlacedProduct>) => void;
+  onWallUpdate?: (updatedWall: WallSegment) => void; // ✅ Added this line
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -51,6 +52,7 @@ const IsometricScene = ({
   selectedProducts,
   showSnapGrid,
   onProductUpdate,
+  onWallUpdate, // ✅ Destructured
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
@@ -97,19 +99,22 @@ const IsometricScene = ({
         onProductUpdate={onProductUpdate || ((productId, updates) => {
           console.log('Product update:', productId, updates);
         })}
+        onWallUpdate={onWallUpdate || ((wall) => {
+          console.log('Wall updated:', wall);
+        })} // ✅ Forwarded here
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
         }}
         selectedProductId={selectedProducts[0]}
       />
 
-      {/* ✅ Drop plane for raycasting */}
+      {/* Drop plane for raycasting */}
       {onSceneClick && (
         <mesh
-          name="floor-drop-plane" // ✅ Name used for raycasting
+          name="floor-drop-plane"
           position={[0, -0.0001, 0]}
           onClick={onSceneClick}
-          visible={true} // ✅ Must be visible for raycasting
+          visible={true}
         >
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
