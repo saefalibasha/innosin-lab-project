@@ -12,6 +12,10 @@ interface Enhanced3DControlsProps {
   onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void;
   onProductSelect: (productId: string) => void;
   selectedProductId?: string;
+  applyProductSeriesRules?: boolean;
+  enableModularConnections?: boolean;
+  allowSinkTabletopAttachment?: boolean;
+  supportWallMountCabinets?: boolean;
 }
 
 const DragGizmo: React.FC<{
@@ -30,23 +34,20 @@ const DragGizmo: React.FC<{
 
   const handlePointerDown = useCallback((event: any) => {
     event.stopPropagation();
-    
+
     if (!isDragging) {
-      // Start new drag operation
       onSelect();
-      
-      // Calculate intersection point with floor
+
       const rect = gl.domElement.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      
+
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-      
-      // Raycast against floor plane
+
       const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const intersection = new THREE.Vector3();
       raycaster.ray.intersectPlane(floorPlane, intersection);
-      
+
       if (intersection) {
         onDragStart(product, [intersection.x, intersection.y, intersection.z], event);
         dragStartRef.current = { x: event.clientX, y: event.clientY };
@@ -57,21 +58,20 @@ const DragGizmo: React.FC<{
   const handlePointerMove = useCallback((event: any) => {
     if (!isDragging) return;
 
-    // Calculate intersection with floor plane
     const rect = gl.domElement.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-    
+
     raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-    
+
     const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     const intersection = new THREE.Vector3();
     const hasIntersection = raycaster.ray.intersectPlane(floorPlane, intersection);
-    
+
     const intersectionPoint = hasIntersection ? 
       [intersection.x, intersection.y, intersection.z] as [number, number, number] : 
       null;
-    
+
     onDragUpdate(intersectionPoint, camera, { x: event.clientX, y: event.clientY });
   }, [isDragging, onDragUpdate, camera, raycaster, gl.domElement]);
 
@@ -88,7 +88,7 @@ const DragGizmo: React.FC<{
       canvas.addEventListener('pointermove', handlePointerMove);
       canvas.addEventListener('pointerup', handlePointerUp);
       canvas.addEventListener('pointercancel', handlePointerUp);
-      
+
       return () => {
         canvas.removeEventListener('pointermove', handlePointerMove);
         canvas.removeEventListener('pointerup', handlePointerUp);
@@ -101,7 +101,6 @@ const DragGizmo: React.FC<{
 
   return (
     <group position={position3D}>
-      {/* Invisible interaction sphere */}
       <mesh
         ref={meshRef}
         onPointerDown={handlePointerDown}
@@ -110,17 +109,13 @@ const DragGizmo: React.FC<{
         <sphereGeometry args={[0.5]} />
         <meshBasicMaterial />
       </mesh>
-      
-      {/* Visual gizmo for selected products */}
+
       {isSelected && (
         <>
-          {/* Selection outline */}
           <mesh position={[0, 0.1, 0]}>
             <ringGeometry args={[0.8, 1.0, 16]} />
             <meshBasicMaterial color="#4ecdc4" transparent opacity={0.7} side={THREE.DoubleSide} />
           </mesh>
-          
-          {/* Drag handles */}
           <mesh position={[1, 0.1, 0]}>
             <sphereGeometry args={[0.1]} />
             <meshBasicMaterial color="#ff6b6b" />
@@ -188,13 +183,23 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   scale,
   onProductUpdate,
   onProductSelect,
-  selectedProductId
+  selectedProductId,
+  applyProductSeriesRules,
+  enableModularConnections,
+  allowSinkTabletopAttachment,
+  supportWallMountCabinets,
 }) => {
   const { dragState, snapGuides, startDrag, updateDrag, endDrag } = useEnhanced3DDragging(
     wallSegments,
     placedProducts,
     scale,
-    onProductUpdate
+    onProductUpdate,
+    {
+      applyProductSeriesRules,
+      enableModularConnections,
+      allowSinkTabletopAttachment,
+      supportWallMountCabinets,
+    }
   );
 
   const handleProductSelect = useCallback((productId: string) => {
@@ -203,10 +208,7 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
 
   return (
     <group>
-      {/* Snap guides */}
       <SnapGuides guides={snapGuides} />
-      
-      {/* Interactive gizmos for each product */}
       {placedProducts.map((product) => (
         <DragGizmo
           key={product.id}
