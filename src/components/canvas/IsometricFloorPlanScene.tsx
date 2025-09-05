@@ -1,3 +1,5 @@
+// ✅ Updated: IsometricFloorPlanScene now handles product series behavior (Phase 8)
+
 import React, { useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
@@ -21,9 +23,14 @@ interface IsometricFloorPlanSceneProps {
   onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
   showGrid: boolean;
+
+  // ✅ Phase 8 Props
+  enableModularConnections?: boolean;
+  allowSinkTabletopAttachment?: boolean;
+  supportWallMountCabinets?: boolean;
+  applyProductSeriesRules?: boolean;
 }
 
-/** Exposes the active R3F camera on window for external raycasting */
 function CameraExporter() {
   const { camera } = useThree();
   useEffect(() => {
@@ -46,18 +53,19 @@ const IsometricScene = ({
   onProductClick,
   onWallClick,
   onSceneClick,
-  onSceneReady,
   selectedProducts,
   showGrid,
+  enableModularConnections,
+  allowSinkTabletopAttachment,
+  supportWallMountCabinets,
+  applyProductSeriesRules
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
   return (
     <group ref={groupRef}>
-      {/* Enhanced Floor with snap grid */}
       <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showGrid} />
 
-      {/* Grid */}
       {showGrid && (
         <Grid
           args={[100, 100]}
@@ -73,42 +81,41 @@ const IsometricScene = ({
         />
       )}
 
-      {/* Walls */}
       <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
 
-      {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
 
-      {/* Products */}
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
+        applyProductSeriesRules={applyProductSeriesRules} // ✅ NEW
+        enableModularConnections={enableModularConnections} // ✅ NEW
+        allowSinkTabletopAttachment={allowSinkTabletopAttachment} // ✅ NEW
+        supportWallMountCabinets={supportWallMountCabinets} // ✅ NEW
       />
 
-      {/* Enhanced 3D Controls for direct manipulation */}
       <Enhanced3DControls
         placedProducts={placedProducts}
         wallSegments={wallSegments}
         scale={scale}
         onProductUpdate={(productId, updates) => {
-          // This will be handled by the parent component
           console.log('Product update:', productId, updates);
         }}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);
         }}
         selectedProductId={selectedProducts[0]}
+        applyProductSeriesRules={applyProductSeriesRules} // ✅ NEW
       />
 
-      {/* ✅ Drop plane for raycasting */}
       {onSceneClick && (
         <mesh
-          name="floor-drop-plane" // ✅ Name used for raycasting
+          name="floor-drop-plane"
           position={[0, -0.0001, 0]}
           onClick={onSceneClick}
-          visible={true} // ✅ Must be visible for raycasting
+          visible={true}
         >
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
@@ -122,11 +129,9 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
   return (
     <div className="w-full h-full">
       <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Camera */}
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
         <CameraExporter />
 
-        {/* Lighting */}
         <ambientLight intensity={0.3} />
         <directionalLight
           position={[10, 20, 15]}
@@ -142,7 +147,6 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
         />
         <directionalLight position={[-10, 10, -5]} intensity={0.3} />
 
-        {/* Controls */}
         <OrbitControls
           enablePan={true}
           enableZoom={true}
@@ -153,7 +157,6 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           dampingFactor={0.05}
         />
 
-        {/* Scene */}
         <IsometricScene {...props} />
       </Canvas>
     </div>
