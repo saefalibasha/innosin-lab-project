@@ -1,5 +1,6 @@
 import React from 'react';
 import { Door } from '@/types/floorPlanTypes';
+import { calculateDoorTransform } from '@/utils/coordinateUtils';
 
 interface IsometricDoorsProps {
   doors: Door[];
@@ -7,17 +8,23 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  const doorWidth = (door.width || 800) * scale * 0.1; // Match wall scaling
+  // Match wall scale: scale * 0.1
+  const doorWidth = (door.width || 800) * scale * 0.1 / 1000; // width in meters
   const doorHeight = 2.1; // meters
-  const doorThickness = 0.05;
+  const doorThickness = 0.05; // meters
 
-  // Convert 2D to 3D position (flip y → -z)
-  const x = door.x * scale * 0.1;
-  const z = -door.y * scale * 0.1;
-  const rotationY = (door.rotation ?? 0) * (Math.PI / 180); // Convert degrees to radians
+  // Safe transform fallback
+  const transform = calculateDoorTransform?.(door, scale);
+
+  if (!transform || !transform.position || !transform.rotation) {
+    console.warn('Invalid transform for door:', door);
+    return null;
+  }
+
+  const { position, rotation } = transform;
 
   return (
-    <group position={[x, 0, z]} rotation={[0, rotationY, 0]}>
+    <group position={position} rotation={rotation}>
       {/* Door frame */}
       <mesh castShadow position={[0, doorHeight / 2, 0]}>
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
@@ -26,8 +33,8 @@ const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
 
       {/* Door handle */}
       <mesh
-        castShadow
         position={[doorWidth * 0.4, doorHeight / 2, doorThickness / 2 + 0.01]}
+        castShadow
       >
         <sphereGeometry args={[0.02]} />
         <meshLambertMaterial color="#FFD700" />
