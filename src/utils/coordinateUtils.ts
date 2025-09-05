@@ -29,21 +29,51 @@ export function worldTo2DCanvas(x: number, z: number, scale: number): Point {
  * Calculate door position and rotation from wall segment
  */
 export function calculateDoorTransform(door: any, scale: number) {
+  // Add null checks to prevent undefined errors
+  if (!door || !door.wallStart || !door.wallEnd) {
+    console.warn('calculateDoorTransform received invalid door data:', door);
+    return {
+      position: [0, 0, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number]
+    };
+  }
+
+  // Ensure wallStart and wallEnd have x,y properties
+  if (typeof door.wallStart.x !== 'number' || typeof door.wallStart.y !== 'number' ||
+      typeof door.wallEnd.x !== 'number' || typeof door.wallEnd.y !== 'number') {
+    console.warn('calculateDoorTransform received invalid wall coordinates:', door);
+    return {
+      position: [0, 0, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number]
+    };
+  }
+
   const wallVector = {
     x: door.wallEnd.x - door.wallStart.x,
     y: door.wallEnd.y - door.wallStart.y
   };
   
   const wallLength = Math.sqrt(wallVector.x ** 2 + wallVector.y ** 2);
+  
+  // Prevent division by zero
+  if (wallLength === 0) {
+    console.warn('calculateDoorTransform: wall has zero length');
+    return {
+      position: canvasTo3DWorld(door.wallStart, scale),
+      rotation: [0, 0, 0] as [number, number, number]
+    };
+  }
+
   const normalizedWall = {
     x: wallVector.x / wallLength,
     y: wallVector.y / wallLength
   };
   
   // Position door at specified wall position (0-1 along wall)
+  const wallPosition = typeof door.wallPosition === 'number' ? door.wallPosition : 0.5;
   const doorPosition = {
-    x: door.wallStart.x + normalizedWall.x * wallLength * door.wallPosition,
-    y: door.wallStart.y + normalizedWall.y * wallLength * door.wallPosition
+    x: door.wallStart.x + normalizedWall.x * wallLength * wallPosition,
+    y: door.wallStart.y + normalizedWall.y * wallLength * wallPosition
   };
   
   // Calculate rotation to align door with wall
