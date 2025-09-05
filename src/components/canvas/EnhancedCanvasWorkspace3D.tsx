@@ -113,7 +113,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
       raycaster.setFromCamera(pointer, camera);
 
-      const floor = scene.getObjectByName('floor-drop-plane');
+      const floor = scene.children.find(obj => obj.name === 'floor-drop-plane');
       if (!floor) {
         toast.error('Drop target not found');
         return;
@@ -157,80 +157,43 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   }, [setPlacedProducts]);
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex flex-1 overflow-hidden">
-        <aside className="w-[280px] bg-muted border-r">Sidebar</aside>
+    <div
+      ref={htmlRef}
+      className="relative w-full h-full bg-gray-50"
+      onDrop={handleCanvasDrop}
+      onDragOver={(e) => e.preventDefault()}
+    >
+      <IsometricFloorPlanScene
+        wallSegments={wallSegments}
+        placedProducts={placedProducts}
+        doors={doors}
+        rooms={rooms}
+        scale={scale}
+        onProductClick={handleProductClick}
+        onWallClick={handleWallClick}
+        onSceneClick={handleSceneClick}
+        selectedProducts={selectedProducts}
+        showGrid={showGrid}
+      />
 
-        <div
-          ref={htmlRef}
-          className="relative flex-1 bg-gray-50"
-          onDrop={handleCanvasDrop}
-          onDragOver={(e) => e.preventDefault()}
-        >
-          <IsometricFloorPlanScene
-            wallSegments={wallSegments}
-            placedProducts={placedProducts}
-            doors={doors}
-            rooms={rooms}
-            scale={scale}
-            onProductClick={handleProductClick}
-            onWallClick={handleWallClick}
-            onSceneClick={handleSceneClick}
-            selectedProducts={selectedProducts}
-            showGrid={showGrid}
-            enableRealDoorScale
-            enableDoorWallAlignment
-            showDoorSwingArc
-            useDynamicProductBounds
-            alignSelectionToModel
-            mapCoordinatesAccurately
-            detectClosedRooms
-            applyFloorTexture
-            hideGridInsideRooms
-            extrudeWallFromCenterline
-            showWallThicknessDirection
-            enableWallProductCollisionDetection
-            enable3DDragging
-            showSnapGuides
-            useSnappingRaycast
-            wallSurfaceSnapping
-            snapOffsetControl
-            edgeToEdgeSnapping
-            gridSnapEnabled
-            prioritizedSnapSystem
-            enableModularConnections // ✅ Phase 8: Cabinet series logic
-            allowSinkTabletopAttachment // ✅ Phase 8: Sink/Table top rules
-            supportWallMountCabinets // ✅ Phase 8: Z-axis wall mount
-            applyProductSeriesRules // ✅ Phase 8: Rules per product type
-          />
-
-          <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
-            Mode: {currentMode}
-          </div>
-
-          <div className="absolute top-4 right-4 bg-background/90 rounded-md px-3 py-2 text-xs space-y-1">
-            <div>Products: {placedProducts.length}</div>
-            <div>Walls: {wallSegments.length}</div>
-            <div>Rooms: {rooms.length}</div>
-            {selectedProducts.length > 0 && (
-              <div className="text-primary">Selected: {selectedProducts.length}</div>
-            )}
-          </div>
-        </div>
-
-        <aside className="w-[280px] bg-muted border-l px-4 py-6">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-sm font-semibold">Wall Controls</h2>
-            <button className="text-xs underline">Toggle</button>
-          </div>
-        </aside>
+      <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
+        Mode: {currentMode}
       </div>
 
-      <div className="w-full bg-background/90 border-t py-2 px-4 text-xs text-muted-foreground flex justify-center gap-4">
-        <span>• Drag to rotate view</span>
-        <span>• Scroll to zoom</span>
-        <span>• Click objects to select</span>
-        <span>• Drag products from library</span>
+      <div className="absolute top-4 right-4 bg-background/90 rounded-md px-3 py-2 text-xs space-y-1">
+        <div>Products: {placedProducts.length}</div>
+        <div>Walls: {wallSegments.length}</div>
+        <div>Rooms: {rooms.length}</div>
+        {selectedProducts.length > 0 && (
+          <div className="text-primary">Selected: {selectedProducts.length}</div>
+        )}
+      </div>
+
+      <div className="absolute bottom-4 left-4 bg-background/90 rounded-md px-3 py-2 text-xs text-muted-foreground">
+        <div>• Drag to rotate view</div>
+        <div>• Scroll to zoom</div>
+        <div>• Click objects to select</div>
+        <div>• Drag products from library</div>
       </div>
     </div>
   );

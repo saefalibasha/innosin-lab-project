@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Point, PlacedProduct, WallSegment } from '@/types/floorPlanTypes';
-import { canvasTo3D } from '@/utils/coordinateTransform';
+import { canvasTo3D, threeDToCanvas } from '@/utils/coordinateTransform';
 import { useEnhanced3DDragging } from '@/hooks/useEnhanced3DDragging';
 import * as THREE from 'three';
 
@@ -12,7 +12,6 @@ interface Enhanced3DControlsProps {
   onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void;
   onProductSelect: (productId: string) => void;
   selectedProductId?: string;
-  highlightInvalidPlacement?: boolean; // ✅ NEW PROP
 }
 
 const DragGizmo: React.FC<{
@@ -24,50 +23,30 @@ const DragGizmo: React.FC<{
   onSelect: () => void;
   isSelected: boolean;
   isDragging: boolean;
-  isValid: boolean; // ✅ NEW PROP
-}> = ({
-  product,
-  scale,
-  onDragStart,
-  onDragUpdate,
-  onDragEnd,
-  onSelect,
-  isSelected,
-  isDragging,
-  isValid
-}) => {
+}> = ({ product, scale, onDragStart, onDragUpdate, onDragEnd, onSelect, isSelected, isDragging }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const { camera, raycaster, gl } = useThree();
 
-  const rawPosition = canvasTo3D(product.position);
-  const [interpolatedPosition, setInterpolatedPosition] = useState<[number, number, number]>(rawPosition);
-
-  useFrame(() => {
-    if (isDragging) {
-      const target = canvasTo3D(product.position);
-      const lerped: [number, number, number] = [
-        THREE.MathUtils.lerp(interpolatedPosition[0], target[0], 0.25),
-        THREE.MathUtils.lerp(interpolatedPosition[1], target[1], 0.25),
-        THREE.MathUtils.lerp(interpolatedPosition[2], target[2], 0.25)
-      ];
-      setInterpolatedPosition(lerped);
-    } else {
-      setInterpolatedPosition(rawPosition);
-    }
-  });
-
   const handlePointerDown = useCallback((event: any) => {
     event.stopPropagation();
+    
     if (!isDragging) {
+      // Start new drag operation
       onSelect();
+      
+      // Calculate intersection point with floor
       const rect = gl.domElement.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+      
+      // Raycast against floor plane
       const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const intersection = new THREE.Vector3();
       raycaster.ray.intersectPlane(floorPlane, intersection);
+      
       if (intersection) {
         onDragStart(product, [intersection.x, intersection.y, intersection.z], event);
         dragStartRef.current = { x: event.clientX, y: event.clientY };
@@ -77,16 +56,22 @@ const DragGizmo: React.FC<{
 
   const handlePointerMove = useCallback((event: any) => {
     if (!isDragging) return;
+
+    // Calculate intersection with floor plane
     const rect = gl.domElement.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    
     raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+    
     const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     const intersection = new THREE.Vector3();
     const hasIntersection = raycaster.ray.intersectPlane(floorPlane, intersection);
-    const intersectionPoint = hasIntersection ?
-      [intersection.x, intersection.y, intersection.z] as [number, number, number] :
+    
+    const intersectionPoint = hasIntersection ? 
+      [intersection.x, intersection.y, intersection.z] as [number, number, number] : 
       null;
+    
     onDragUpdate(intersectionPoint, camera, { x: event.clientX, y: event.clientY });
   }, [isDragging, onDragUpdate, camera, raycaster, gl.domElement]);
 
@@ -103,6 +88,7 @@ const DragGizmo: React.FC<{
       canvas.addEventListener('pointermove', handlePointerMove);
       canvas.addEventListener('pointerup', handlePointerUp);
       canvas.addEventListener('pointercancel', handlePointerUp);
+      
       return () => {
         canvas.removeEventListener('pointermove', handlePointerMove);
         canvas.removeEventListener('pointerup', handlePointerUp);
@@ -111,8 +97,11 @@ const DragGizmo: React.FC<{
     }
   }, [isDragging, handlePointerMove, handlePointerUp, gl.domElement]);
 
+  const position3D = canvasTo3D(product.position);
+
   return (
-    <group position={interpolatedPosition}>
+    <group position={position3D}>
+      {/* Invisible interaction sphere */}
       <mesh
         ref={meshRef}
         onPointerDown={handlePointerDown}
@@ -121,77 +110,77 @@ const DragGizmo: React.FC<{
         <sphereGeometry args={[0.5]} />
         <meshBasicMaterial />
       </mesh>
-
+      
+      {/* Visual gizmo for selected products */}
       {isSelected && (
         <>
+          {/* Selection outline */}
           <mesh position={[0, 0.1, 0]}>
             <ringGeometry args={[0.8, 1.0, 16]} />
             <meshBasicMaterial color="#4ecdc4" transparent opacity={0.7} side={THREE.DoubleSide} />
           </mesh>
-
-          {/* Drag Handles */}
-          {[1, -1].map((x) => (
-            <mesh key={`x-${x}`} position={[x, 0.1, 0]}>
-              <sphereGeometry args={[0.1]} />
-              <meshBasicMaterial color="#ff6b6b" />
-            </mesh>
-          ))}
-          {[1, -1].map((z) => (
-            <mesh key={`z-${z}`} position={[0, 0.1, z]}>
-              <sphereGeometry args={[0.1]} />
-              <meshBasicMaterial color="#ff6b6b" />
-            </mesh>
-          ))}
-
-          {/* 🔴 Red Glow for Invalid Placement */}
-          {isDragging && !isValid && (
-            <mesh position={[0, 0.05, 0]}>
-              <ringGeometry args={[1.1, 1.4, 32]} />
-              <meshBasicMaterial color="#ff0000" transparent opacity={0.4} />
-            </mesh>
-          )}
+          
+          {/* Drag handles */}
+          <mesh position={[1, 0.1, 0]}>
+            <sphereGeometry args={[0.1]} />
+            <meshBasicMaterial color="#ff6b6b" />
+          </mesh>
+          <mesh position={[-1, 0.1, 0]}>
+            <sphereGeometry args={[0.1]} />
+            <meshBasicMaterial color="#ff6b6b" />
+          </mesh>
+          <mesh position={[0, 0.1, 1]}>
+            <sphereGeometry args={[0.1]} />
+            <meshBasicMaterial color="#ff6b6b" />
+          </mesh>
+          <mesh position={[0, 0.1, -1]}>
+            <sphereGeometry args={[0.1]} />
+            <meshBasicMaterial color="#ff6b6b" />
+          </mesh>
         </>
       )}
     </group>
   );
 };
 
-const SnapGuides = ({ guides }: { guides: any[] }) => (
-  <group>
-    {guides.map((guide, index) => (
-      <group key={index}>
-        {guide.type === 'line' && (
-          <line>
-            <bufferGeometry>
-              <bufferAttribute
-                attach="attributes-position"
-                count={2}
-                array={new Float32Array([
-                  guide.position[0], 0, guide.position[2],
-                  guide.position[0], 2, guide.position[2]
-                ])}
-                itemSize={3}
-              />
-            </bufferGeometry>
-            <lineBasicMaterial color={guide.color} linewidth={2} />
-          </line>
-        )}
-        {guide.type === 'point' && (
-          <mesh position={guide.position}>
-            <sphereGeometry args={[0.05]} />
-            <meshBasicMaterial color={guide.color} />
-          </mesh>
-        )}
-        {guide.type === 'grid' && (
-          <mesh position={guide.position} rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[0.2, 0.3, 8]} />
-            <meshBasicMaterial color={guide.color} transparent opacity={0.6} />
-          </mesh>
-        )}
-      </group>
-    ))}
-  </group>
-);
+const SnapGuides = ({ guides }: { guides: any[] }) => {
+  return (
+    <group>
+      {guides.map((guide, index) => (
+        <group key={index}>
+          {guide.type === 'line' && (
+            <line>
+              <bufferGeometry>
+                <bufferAttribute
+                  attach="attributes-position"
+                  count={2}
+                  array={new Float32Array([
+                    guide.position[0], 0, guide.position[2],
+                    guide.position[0], 2, guide.position[2]
+                  ])}
+                  itemSize={3}
+                />
+              </bufferGeometry>
+              <lineBasicMaterial color={guide.color} linewidth={2} />
+            </line>
+          )}
+          {guide.type === 'point' && (
+            <mesh position={guide.position}>
+              <sphereGeometry args={[0.05]} />
+              <meshBasicMaterial color={guide.color} />
+            </mesh>
+          )}
+          {guide.type === 'grid' && (
+            <mesh position={guide.position} rotation={[-Math.PI / 2, 0, 0]}>
+              <ringGeometry args={[0.2, 0.3, 8]} />
+              <meshBasicMaterial color={guide.color} transparent opacity={0.6} />
+            </mesh>
+          )}
+        </group>
+      ))}
+    </group>
+  );
+};
 
 export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   placedProducts,
@@ -199,16 +188,9 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   scale,
   onProductUpdate,
   onProductSelect,
-  selectedProductId,
-  highlightInvalidPlacement = true // ✅ default to true
+  selectedProductId
 }) => {
-  const {
-    dragState,
-    snapGuides,
-    startDrag,
-    updateDrag,
-    endDrag
-  } = useEnhanced3DDragging(
+  const { dragState, snapGuides, startDrag, updateDrag, endDrag } = useEnhanced3DDragging(
     wallSegments,
     placedProducts,
     scale,
@@ -221,7 +203,10 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
 
   return (
     <group>
+      {/* Snap guides */}
       <SnapGuides guides={snapGuides} />
+      
+      {/* Interactive gizmos for each product */}
       {placedProducts.map((product) => (
         <DragGizmo
           key={product.id}
@@ -233,7 +218,6 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
           onSelect={() => handleProductSelect(product.id)}
           isSelected={product.id === selectedProductId}
           isDragging={dragState.isDragging && dragState.draggedProduct?.id === product.id}
-          isValid={!highlightInvalidPlacement || dragState.isValid}
         />
       ))}
     </group>
