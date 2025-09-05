@@ -40,6 +40,7 @@ interface EnhancedCanvasWorkspace3DProps {
   canvasWidth: number;
   canvasHeight: number;
   onClearAll: () => void;
+  onWallUpdate?: (updatedWall: WallSegment) => void; // ✅ Added
 }
 
 export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
@@ -53,6 +54,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
   scale,
   showGrid,
   onClearAll,
+  onWallUpdate, // ✅ Added
 }) => {
   const [showSnapGrid, setShowSnapGrid] = useState(true);
   const [cameraPosition, setCameraPosition] = useState<[number, number, number]>([10, 8, 10]);
@@ -150,6 +152,7 @@ export const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps>
             selectedProducts={selectedProducts}
             showSnapGrid={showSnapGrid}
             onProductUpdate={handleProductUpdate}
+            onWallUpdate={onWallUpdate} // ✅ Forwarded
           />
         </Canvas>
       </div>
