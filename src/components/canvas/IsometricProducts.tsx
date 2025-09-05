@@ -10,18 +10,32 @@ interface IsometricProductsProps {
   scale: number;
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
+
+  // ✅ Phase 8 props
+  applyProductSeriesRules?: boolean;
+  enableModularConnections?: boolean;
+  allowSinkTabletopAttachment?: boolean;
+  supportWallMountCabinets?: boolean;
 }
 
 const ProductModel = ({ 
   product, 
   scale, 
   onProductClick, 
-  isSelected 
+  isSelected,
+  applyProductSeriesRules,
+  enableModularConnections,
+  allowSinkTabletopAttachment,
+  supportWallMountCabinets
 }: { 
   product: PlacedProduct; 
   scale: number; 
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
+  applyProductSeriesRules?: boolean;
+  enableModularConnections?: boolean;
+  allowSinkTabletopAttachment?: boolean;
+  supportWallMountCabinets?: boolean;
 }) => {
   const meshRef = useRef<Mesh>(null);
 
@@ -31,7 +45,7 @@ const ProductModel = ({
   };
 
   // Position mapped to X/Z plane, Y handled separately
-  const position: [number, number, number] = [
+  let position: [number, number, number] = [
     product.position.x * scale * 0.1,
     0,
     product.position.y * scale * 0.1,
@@ -43,11 +57,25 @@ const ProductModel = ({
     0,
   ];
 
-  // Fallback simple box if no GLTF model
+  // ✅ Apply mounting logic
+  if (applyProductSeriesRules) {
+    if (supportWallMountCabinets && product.category === 'Wall Cabinet') {
+      position[1] = 1.6; // Mount 1.6m above floor
+    }
+    if (allowSinkTabletopAttachment && product.category === 'Sink Cabinet') {
+      // In real logic, this would snap a tabletop
+      console.log('Attach sink tabletop for:', product.id);
+    }
+    if (enableModularConnections && product.category === 'Modular Cabinet') {
+      // In real logic, this would check for neighboring cabinets to snap to
+      console.log('Enable modular snapping for:', product.id);
+    }
+  }
+
   const fallbackGeometry = (
     <mesh
       ref={meshRef}
-      position={[position[0], 0.425, position[2]]} // ✅ lift by half height
+      position={[position[0], 0.425 + position[1], position[2]]}
       rotation={rotation}
       onClick={handleClick}
       castShadow
@@ -118,20 +146,16 @@ const ProductGLTF = ({
   const groupRef = useRef<Group>(null);
 
   const gltf = useLoader(GLTFLoader, modelPath);
-  
+
   React.useEffect(() => {
     if (gltf && groupRef.current) {
       const box = new Box3().setFromObject(gltf.scene);
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
-      // Center model
       gltf.scene.position.sub(center);
-
-      // ✅ Move bottom of model to Y=0 (floor plane)
       gltf.scene.position.y += size.y / 2;
 
-      // Normalize scale
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
         const targetScale = 1 / maxDim;
@@ -172,7 +196,11 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   placedProducts, 
   scale, 
   onProductClick, 
-  selectedProducts 
+  selectedProducts,
+  applyProductSeriesRules,
+  enableModularConnections,
+  allowSinkTabletopAttachment,
+  supportWallMountCabinets
 }) => {
   return (
     <group>
@@ -183,6 +211,10 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           scale={scale}
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
+          applyProductSeriesRules={applyProductSeriesRules}
+          enableModularConnections={enableModularConnections}
+          allowSinkTabletopAttachment={allowSinkTabletopAttachment}
+          supportWallMountCabinets={supportWallMountCabinets}
         />
       ))}
     </group>
