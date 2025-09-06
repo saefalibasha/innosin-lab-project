@@ -30,6 +30,7 @@ interface EnhancedCanvasWorkspace3DProps {
   selectedProducts: string[];
   onProductSelect: React.Dispatch<React.SetStateAction<string[]>>;
   onWallUpdate?: (wall: WallSegment) => void;
+  onWallSelect?: (wallId: string) => void;
 }
 
 const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
@@ -56,7 +57,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onClearAll,
   selectedProducts,
   onProductSelect,
-  onWallUpdate
+  onWallUpdate,
+  onWallSelect
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
   const sceneRef3D = useRef<any>(null);
@@ -81,12 +83,11 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
   const handleWallClick = useCallback((wallId: string) => {
     if (currentMode === 'select') {
-      const wall = wallSegments.find(w => w.id === wallId);
-      if (wall && onWallUpdate) {
-        onWallUpdate(wall);
+      if (onWallSelect) {
+        onWallSelect(wallId);
       }
     }
-  }, [currentMode, wallSegments, onWallUpdate]);
+  }, [currentMode, onWallSelect]);
 
   const handleSceneClick = useCallback((e: any) => {
     if (e.object.name !== 'product' && e.object.name !== 'wall') {
@@ -127,14 +128,15 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
       const point = intersects[0].point;
 
+      // Convert 3D world coordinates back to 2D canvas coordinates for storage
       const newProduct: PlacedProduct = {
         id: `product-${Date.now()}`,
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',
         position: {
-          x: point.x,
-          y: point.z
+          x: point.x * 1000, // Convert back to mm
+          y: point.z * 1000  // Convert back to mm
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -189,12 +191,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         )}
       </div>
 
-      <div className="absolute bottom-4 left-4 bg-background/90 rounded-md px-3 py-2 text-xs text-muted-foreground">
-        <div>• Drag to rotate view</div>
-        <div>• Scroll to zoom</div>
-        <div>• Click objects to select</div>
-        <div>• Drag products from library</div>
-      </div>
     </div>
   );
 };

@@ -8,8 +8,8 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  // Match wall scale: scale * 0.1
-  const doorWidth = (door.width || 800) * scale * 0.1 / 1000; // width in meters
+  // Use proper real-world dimensions
+  const doorWidth = (door.width || 800) * 0.001; // Convert mm to meters
   const doorHeight = 2.1; // meters
   const doorThickness = 0.05; // meters
 

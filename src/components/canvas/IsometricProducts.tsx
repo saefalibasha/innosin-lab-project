@@ -30,11 +30,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // Position mapped to X/Z plane, Y handled separately
+  // Use proper coordinate transformation
   const position: [number, number, number] = [
-    product.position.x * scale * 0.1,
+    product.position.x * 0.001,
     0,
-    product.position.y * scale * 0.1,
+    product.position.y * 0.001,
   ];
 
   const rotation: [number, number, number] = [
@@ -55,9 +55,9 @@ const ProductModel = ({
     >
       <boxGeometry 
         args={[
-          product.dimensions.length * scale * 0.1,
+          product.dimensions.length * 0.001,
           0.85,
-          product.dimensions.width * scale * 0.1,
+          product.dimensions.width * 0.001,
         ]} 
       />
       <meshLambertMaterial 
@@ -70,9 +70,9 @@ const ProductModel = ({
           <edgesGeometry 
             args={[
               new THREE.BoxGeometry(
-                product.dimensions.length * scale * 0.1,
+                product.dimensions.length * 0.001,
                 0.85,
-                product.dimensions.width * scale * 0.1
+                product.dimensions.width * 0.001
               )
             ]}
           />

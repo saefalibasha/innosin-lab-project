@@ -94,68 +94,110 @@ export const FloorPlanner3D = () => {
   };
 
   return (
-    <div className="h-screen flex">
-      {/* Left sidebar */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold">Product Library</h2>
-          <p className="text-sm text-muted-foreground">
-            Drag products to place on canvas
-          </p>
-          <Badge variant="outline" className="mt-2">3D Isometric View</Badge>
+    <div className="h-screen flex flex-col">
+      {/* Main content area with sidebar and canvas */}
+      <div className="flex-1 flex">
+        {/* Left sidebar */}
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
+          <div className="p-4 border-b">
+            <h2 className="text-lg font-semibold">Product Library</h2>
+            <p className="text-sm text-muted-foreground">
+              Drag products to place on canvas
+            </p>
+            <Badge variant="outline" className="mt-2">3D Isometric View</Badge>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <EnhancedSeriesSelector
+              onProductDrag={handleProductDrag}
+              currentTool="select"
+            />
+          </div>
         </div>
-        <div className="flex-1 overflow-hidden">
-          <EnhancedSeriesSelector
-            onProductDrag={handleProductDrag}
-            currentTool="select"
-          />
+
+        {/* Canvas area */}
+        <div className="flex-1 relative">
+          <div className="w-full h-full">
+            <EnhancedCanvasWorkspace3D
+              placedProducts={placedProducts}
+              setPlacedProducts={setPlacedProducts}
+              selectedProducts={selectedProducts}
+              onProductSelect={setSelectedProducts}
+              roomPoints={roomPoints}
+              setRoomPoints={setRoomPoints}
+              doors={doors}
+              setDoors={setDoors}
+              textAnnotations={textAnnotations}
+              setTextAnnotations={setTextAnnotations}
+              wallSegments={wallSegments}
+              setWallSegments={setWallSegments}
+              rooms={rooms}
+              setRooms={setRooms}
+              scale={scale}
+              currentMode={currentMode}
+              showGrid={showGrid}
+              showMeasurements={showMeasurements}
+              gridSize={gridSize}
+              measurementUnit={measurementUnit}
+              canvasWidth={canvasWidth}
+              canvasHeight={canvasHeight}
+              onClearAll={handleClearAll}
+              onWallSelect={handleWallSelect}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Canvas area */}
-      <div className="flex-1 relative">
-        {/* ✅ Log Wall Button */}
-        <Button
-          className="absolute top-4 right-4 z-50"
-          onClick={handleLogWalls}
-        >
-          Log Walls
-        </Button>
-
+      {/* Bottom controls section */}
+      <div className="h-32 border-t bg-white flex items-center justify-between px-6">
+        <div className="flex items-center space-x-4">
+          <Button onClick={handleLogWalls} variant="outline" size="sm">
+            Debug Walls
+          </Button>
+          <Button onClick={handleClearAll} variant="outline" size="sm">
+            Clear All
+          </Button>
+        </div>
+        
         {/* Wall Control Panel */}
-        <WallControlPanel
-          selectedWall={selectedWall}
-          onWallUpdate={handleWallUpdate}
-          onClose={() => setSelectedWall(null)}
-          onVisibilityToggle={handleWallVisibilityToggle}
-        />
-
-        <div className="w-full h-full">
-          <EnhancedCanvasWorkspace3D
-            placedProducts={placedProducts}
-            setPlacedProducts={setPlacedProducts}
-            selectedProducts={selectedProducts}
-            onProductSelect={setSelectedProducts}
-            roomPoints={roomPoints}
-            setRoomPoints={setRoomPoints}
-            doors={doors}
-            setDoors={setDoors}
-            textAnnotations={textAnnotations}
-            setTextAnnotations={setTextAnnotations}
-            wallSegments={wallSegments}
-            setWallSegments={setWallSegments}
-            rooms={rooms}
-            setRooms={setRooms}
-            scale={scale}
-            currentMode={currentMode}
-            showGrid={showGrid}
-            showMeasurements={showMeasurements}
-            gridSize={gridSize}
-            measurementUnit={measurementUnit}
-            canvasWidth={canvasWidth}
-            canvasHeight={canvasHeight}
-            onClearAll={handleClearAll}
-          />
+        {selectedWall && (
+          <Card className="flex-1 max-w-md mx-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Wall Controls</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Thickness:</span>
+                <span className="text-xs font-mono">{selectedWall.thickness}mm</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">Height:</span>
+                <span className="text-xs font-mono">{selectedWall.height}mm</span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={() => handleWallVisibilityToggle(selectedWall.id)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  {selectedWall.visible !== false ? 'Hide' : 'Show'}
+                </Button>
+                <Button
+                  onClick={() => setSelectedWall(null)}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                >
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        <div className="text-xs text-muted-foreground space-y-1">
+          <div>• Drag to rotate view • Scroll to zoom</div>
+          <div>• Click objects to select • Drag products from library</div>
         </div>
       </div>
     </div>

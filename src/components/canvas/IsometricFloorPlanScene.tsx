@@ -93,8 +93,7 @@ const IsometricScene = ({
         wallSegments={wallSegments}
         scale={scale}
         onProductUpdate={(productId, updates) => {
-          // This will be handled by the parent component
-          console.log('Product update:', productId, updates);
+          console.log('Product update in scene:', productId, updates);
         }}
         onProductSelect={(productId) => {
           if (onProductClick) onProductClick(productId);

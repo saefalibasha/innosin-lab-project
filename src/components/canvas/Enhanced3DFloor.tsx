@@ -1,8 +1,7 @@
 import React, { useMemo } from 'react';
-import { Shape, ExtrudeGeometry, BufferGeometry } from 'three';
+import { Shape, ExtrudeGeometry, Vector2 } from 'three';
 import { Room } from '@/types/floorPlanTypes';
-import { canvasTo3D } from '@/utils/coordinateTransform';
-import * as THREE from 'three';
+import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 
 interface Enhanced3DFloorProps {
   rooms: Room[];
@@ -10,105 +9,78 @@ interface Enhanced3DFloorProps {
   showSnapGrid?: boolean;
 }
 
-const FloorWithGrid = ({ room, scale, showSnapGrid }: { 
-  room: Room; 
-  scale: number;
-  showSnapGrid?: boolean;
-}) => {
-  const { floorGeometry, gridGeometry } = useMemo(() => {
-    if (room.points.length < 3) return { floorGeometry: null, gridGeometry: null };
+const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
+  const floorGeometry = useMemo(() => {
+    if (room.points.length < 3) return null;
 
-    // Create floor shape
     const shape = new Shape();
-    const [firstX, , firstZ] = canvasTo3D(room.points[0]);
+
+    // Convert all points using unified coordinate system
+    const [firstX, , firstZ] = canvasTo3DWorld(room.points[0]);
     shape.moveTo(firstX, firstZ);
 
     for (let i = 1; i < room.points.length; i++) {
-      const [pointX, , pointZ] = canvasTo3D(room.points[i]);
+      const [pointX, , pointZ] = canvasTo3DWorld(room.points[i]);
       shape.lineTo(pointX, pointZ);
     }
+
+    // Close the shape
     shape.lineTo(firstX, firstZ);
 
     const extrudeSettings = {
-      depth: 0.02,
+      depth: 0.02, // Make floor slightly thicker
       bevelEnabled: false,
     };
 
-    const floorGeo = new ExtrudeGeometry(shape, extrudeSettings);
-    floorGeo.rotateX(-Math.PI / 2);
+    const geometry = new ExtrudeGeometry(shape, extrudeSettings);
+    geometry.rotateX(-Math.PI / 2);
 
-    // Create snap grid geometry
-    let gridGeo = null;
-    if (showSnapGrid) {
-      // Calculate room bounds
-      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
-      room.points.forEach(point => {
-        const [x, , z] = canvasTo3D(point);
-        minX = Math.min(minX, x);
-        maxX = Math.max(maxX, x);
-        minZ = Math.min(minZ, z);
-        maxZ = Math.max(maxZ, z);
-      });
-
-      // Create grid lines
-      const gridSize = 0.5; // 500mm grid
-      const gridLines = [];
-      
-      // Vertical lines
-      for (let x = Math.ceil(minX / gridSize) * gridSize; x <= maxX; x += gridSize) {
-        gridLines.push(x, 0.001, minZ, x, 0.001, maxZ);
-      }
-      
-      // Horizontal lines
-      for (let z = Math.ceil(minZ / gridSize) * gridSize; z <= maxZ; z += gridSize) {
-        gridLines.push(minX, 0.001, z, maxX, 0.001, z);
-      }
-
-      gridGeo = new BufferGeometry();
-      gridGeo.setAttribute('position', new THREE.Float32BufferAttribute(gridLines, 3));
-    }
-
-    return { floorGeometry: floorGeo, gridGeometry: gridGeo };
-  }, [room.points, scale, showSnapGrid]);
+    return geometry;
+  }, [room.points, scale]);
 
   if (!floorGeometry) return null;
 
   return (
+    <mesh
+      geometry={floorGeometry}
+      position={[0, -0.005, 0]} // slight offset to avoid z-fighting
+      receiveShadow
+    >
+      <meshLambertMaterial
+        color="#e0e0e0" // Default grey floor color
+        transparent={false}
+        opacity={1}
+      />
+    </mesh>
+  );
+};
+
+// Automatic grey floor detection for closed rooms
+const AutoFloor = ({ rooms, scale }: { rooms: Room[]; scale: number }) => {
+  const closedRooms = useMemo(() => {
+    return rooms.filter(room => {
+      if (room.points.length < 3) return false;
+      
+      // Check if room is closed (first and last points are same or very close)
+      const first = room.points[0];
+      const last = room.points[room.points.length - 1];
+      const distance = Math.sqrt(
+        Math.pow(first.x - last.x, 2) + Math.pow(first.y - last.y, 2)
+      );
+      
+      return distance < 50; // Tolerance for closure
+    });
+  }, [rooms]);
+
+  return (
     <group>
-      {/* Floor surface - Grey flooring for enclosed rooms */}
-      <mesh
-        geometry={floorGeometry}
-        position={[0, -0.005, 0]}
-        receiveShadow
-      >
-        <meshLambertMaterial
-          color="#808080"
-          transparent={false}
-          opacity={1}
+      {closedRooms.map((room) => (
+        <RoomFloor
+          key={room.id}
+          room={room}
+          scale={scale}
         />
-      </mesh>
-
-      {/* Snap grid - Only show outside room boundaries */}
-      {gridGeometry && showSnapGrid && (
-        <lineSegments geometry={gridGeometry}>
-          <lineBasicMaterial 
-            color="#cccccc" 
-            transparent 
-            opacity={0.2}
-            linewidth={1}
-          />
-        </lineSegments>
-      )}
-
-      {/* Floor interaction plane for raycasting */}
-      <mesh
-        position={[0, 0, 0]}
-        visible={false}
-        name="floor-interaction"
-      >
-        <planeGeometry args={[100, 100]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
+      ))}
     </group>
   );
 };
@@ -116,16 +88,19 @@ const FloorWithGrid = ({ room, scale, showSnapGrid }: {
 export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({ 
   rooms, 
   scale, 
-  showSnapGrid = true 
+  showSnapGrid = false 
 }) => {
   return (
     <group>
+      {/* Automatic grey floor for closed rooms */}
+      <AutoFloor rooms={rooms} scale={scale} />
+      
+      {/* Room floor shapes only */}
       {rooms.map((room) => (
-        <FloorWithGrid
+        <RoomFloor
           key={room.id}
           room={room}
           scale={scale}
-          showSnapGrid={showSnapGrid}
         />
       ))}
     </group>
