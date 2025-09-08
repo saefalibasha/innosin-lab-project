@@ -2,7 +2,13 @@ import React, { useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import { Group } from 'three';
-import { Point, WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
+import {
+  WallSegment,
+  PlacedProduct,
+  Door,
+  Room,
+} from '@/types/floorPlanTypes';
+
 import { IsometricWalls } from './IsometricWalls';
 import { IsometricProducts } from './IsometricProducts';
 import { Enhanced3DFloor } from './Enhanced3DFloor';
@@ -18,12 +24,12 @@ interface IsometricFloorPlanSceneProps {
   onProductClick?: (productId: string) => void;
   onWallClick?: (wallId: string) => void;
   onSceneClick?: (e: any) => void;
-  onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
+  onSceneReady?: (context: { camera: any; scene: any; gl: any }) => void;
   selectedProducts: string[];
   showGrid: boolean;
+  origin?: { minX: number; minY: number }; // ✅ optional origin support
 }
 
-/** Exposes the active R3F camera on window for external raycasting */
 function CameraExporter() {
   const { camera } = useThree();
   useEffect(() => {
@@ -49,21 +55,21 @@ const IsometricScene = ({
   onSceneReady,
   selectedProducts,
   showGrid,
+  origin,
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
-  // ✅ Calculate origin for alignment
-  const allPoints = wallSegments.flatMap(w => [w.start, w.end]);
-  const minX = Math.min(...allPoints.map(p => p.x));
-  const minY = Math.min(...allPoints.map(p => p.y));
-  const origin = { minX, minY };
-
   return (
     <group ref={groupRef}>
-      {/* Enhanced Floor with snap grid */}
-      <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showGrid} />
+      {/* Floor */}
+      <Enhanced3DFloor
+        rooms={rooms}
+        scale={scale}
+        showSnapGrid={showGrid}
+        origin={origin}
+      />
 
-      {/* Grid - Only show if no rooms exist */}
+      {/* Grid if no rooms */}
       {showGrid && rooms.length === 0 && (
         <Grid
           args={[100, 100]}
@@ -83,8 +89,8 @@ const IsometricScene = ({
       <IsometricWalls
         wallSegments={wallSegments}
         scale={scale}
-        origin={origin}
         onWallClick={onWallClick}
+        origin={origin}
       />
 
       {/* Doors */}
@@ -96,6 +102,7 @@ const IsometricScene = ({
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
+        origin={origin}
       />
 
       {/* Controls */}
@@ -132,8 +139,13 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
   return (
     <div className="w-full h-full">
       <Canvas shadows style={{ background: 'transparent' }}>
-        {/* Camera */}
-        <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
+        <PerspectiveCamera
+          makeDefault
+          position={[20, 20, 20]}
+          fov={50}
+          near={0.1}
+          far={1000}
+        />
         <CameraExporter />
 
         {/* Lighting */}
@@ -163,7 +175,7 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
           dampingFactor={0.05}
         />
 
-        {/* Scene */}
+        {/* Main scene */}
         <IsometricScene {...props} />
       </Canvas>
     </div>
