@@ -10,7 +10,7 @@ interface IsometricProductsProps {
   scale: number;
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
-  origin?: { minX: number; minY: number }; // ✅ NEW
+  origin?: { minX: number; minY: number }; // ✅ Optional origin shift
 }
 
 const ProductModel = ({
@@ -24,7 +24,7 @@ const ProductModel = ({
   scale: number;
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
-  origin?: { minX: number; minY: number }; // ✅ NEW
+  origin?: { minX: number; minY: number };
 }) => {
   const meshRef = useRef<Mesh>(null);
 
@@ -40,7 +40,7 @@ const ProductModel = ({
   const position: [number, number, number] = [
     (product.position.x - offsetX) * scale * 0.1,
     0,
-    -(product.position.y - offsetY) * scale * 0.1
+    (product.position.y - offsetY) * scale * 0.1 // ✅ FIXED: no negation
   ];
 
   const rotation: [number, number, number] = [
@@ -71,9 +71,7 @@ const ProductModel = ({
       />
       {isSelected && (
         <lineSegments>
-          <edgesGeometry
-            args={[new THREE.BoxGeometry(length, height, width)]}
-          />
+          <edgesGeometry args={[new THREE.BoxGeometry(length, height, width)]} />
           <lineBasicMaterial color="#ff0000" linewidth={2} />
         </lineSegments>
       )}
@@ -122,9 +120,11 @@ const ProductGLTF = ({
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
+      // Center and place model on floor
       gltf.scene.position.sub(center);
       gltf.scene.position.y += size.y / 2;
 
+      // Normalize size
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
         const targetScale = 1 / maxDim;
@@ -173,7 +173,7 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           scale={scale}
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
-          origin={origin} // ✅ PASS DOWN ORIGIN
+          origin={origin}
         />
       ))}
     </group>
