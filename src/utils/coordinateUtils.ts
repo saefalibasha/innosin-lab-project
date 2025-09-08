@@ -1,13 +1,36 @@
+import { Point } from '@/types/floorPlanTypes';
+
+// Enhanced coordinate system utilities for consistent 2D/3D mapping
+export const COORDINATE_SCALE = 0.001; // mm to meters conversion
+
+/**
+ * Convert 2D canvas coordinates to 3D world coordinates
+ * Maps X axis to X axis, Y axis to Z axis (floor plane)
+ * Applies scale consistently
+ */
+export function canvasTo3DWorld(point: Point, scale: number = 1): [number, number, number] {
+  return [
+    point.x * scale * COORDINATE_SCALE,
+    0,
+    -point.y * scale * COORDINATE_SCALE
+  ];
+}
+
+/**
+ * Convert 3D world coordinates back to 2D canvas coordinates
+ */
+export function worldTo2DCanvas(x: number, z: number, scale: number): Point {
+  return {
+    x: x / (scale * COORDINATE_SCALE),
+    y: -z / (scale * COORDINATE_SCALE)
+  };
+}
+
 /**
  * Calculate door position and rotation from wall segment
- * Uses consistent coordinate system with walls and optional origin shift
+ * Uses consistent coordinate system with walls
  */
-export function calculateDoorTransform(
-  door: any,
-  scale: number,
-  origin: { minX: number; minY: number } = { minX: 0, minY: 0 }
-) {
-  // Add null checks to prevent undefined errors
+export function calculateDoorTransform(door: any, scale: number) {
   if (!door || !door.wallStart || !door.wallEnd) {
     console.warn('calculateDoorTransform received invalid door data:', door);
     return {
@@ -16,27 +39,28 @@ export function calculateDoorTransform(
     };
   }
 
-  const wallStart = {
-    x: door.wallStart.x - origin.minX,
-    y: door.wallStart.y - origin.minY
-  };
-
-  const wallEnd = {
-    x: door.wallEnd.x - origin.minX,
-    y: door.wallEnd.y - origin.minY
-  };
+  if (
+    typeof door.wallStart.x !== 'number' || typeof door.wallStart.y !== 'number' ||
+    typeof door.wallEnd.x !== 'number' || typeof door.wallEnd.y !== 'number'
+  ) {
+    console.warn('calculateDoorTransform received invalid wall coordinates:', door);
+    return {
+      position: [0, 0, 0] as [number, number, number],
+      rotation: [0, 0, 0] as [number, number, number]
+    };
+  }
 
   const wallVector = {
-    x: wallEnd.x - wallStart.x,
-    y: wallEnd.y - wallStart.y
+    x: door.wallEnd.x - door.wallStart.x,
+    y: door.wallEnd.y - door.wallStart.y
   };
 
   const wallLength = Math.sqrt(wallVector.x ** 2 + wallVector.y ** 2);
-  
+
   if (wallLength === 0) {
     console.warn('calculateDoorTransform: wall has zero length');
     return {
-      position: canvasTo3DWorld(wallStart, scale),
+      position: canvasTo3DWorld(door.wallStart, scale),
       rotation: [0, 0, 0] as [number, number, number]
     };
   }
@@ -48,8 +72,8 @@ export function calculateDoorTransform(
 
   const wallPosition = typeof door.wallPosition === 'number' ? door.wallPosition : 0.5;
   const doorPosition = {
-    x: wallStart.x + normalizedWall.x * wallLength * wallPosition,
-    y: wallStart.y + normalizedWall.y * wallLength * wallPosition
+    x: door.wallStart.x + normalizedWall.x * wallLength * wallPosition,
+    y: door.wallStart.y + normalizedWall.y * wallLength * wallPosition
   };
 
   const rotation = Math.atan2(-normalizedWall.y, normalizedWall.x);
@@ -58,4 +82,81 @@ export function calculateDoorTransform(
     position: canvasTo3DWorld(doorPosition, scale),
     rotation: [0, rotation, 0] as [number, number, number]
   };
+}
+
+/**
+ * Check if a product position is valid (within bounds, no collisions)
+ */
+export function validateProductPosition(
+  product: any,
+  position: Point,
+  allProducts: any[],
+  wallSegments: any[],
+  rooms: any[],
+  scale: number
+): { valid: boolean; reason?: string } {
+  if (rooms.length > 0) {
+    const isInsideAnyRoom = rooms.some(room => isPointInPolygon(position, room.points));
+    if (!isInsideAnyRoom) {
+      return { valid: false, reason: 'Outside room bounds' };
+    }
+  }
+
+  const productBounds = getProductBounds(product, position, scale);
+  for (const wall of wallSegments) {
+    if (isProductCollidingWithWall(productBounds, wall, scale)) {
+      return { valid: false, reason: 'Colliding with wall' };
+    }
+  }
+
+  for (const otherProduct of allProducts) {
+    if (otherProduct.id === product.id) continue;
+    const otherBounds = getProductBounds(otherProduct, otherProduct.position, scale);
+    if (isProductCollidingWithProduct(productBounds, otherBounds)) {
+      return { valid: false, reason: 'Colliding with another product' };
+    }
+  }
+
+  return { valid: true };
+}
+
+function getProductBounds(product: any, position: Point, scale: number) {
+  const width = (product.dimensions?.width || 600) * scale;
+  const depth = (product.dimensions?.length || 600) * scale;
+
+  return {
+    left: position.x - width / 2,
+    right: position.x + width / 2,
+    top: position.y - depth / 2,
+    bottom: position.y + depth / 2
+  };
+}
+
+function isPointInPolygon(point: Point, polygon: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i].x, yi = polygon[i].y;
+    const xj = polygon[j].x, yj = polygon[j].y;
+
+    const intersect =
+      yi > point.y !== yj > point.y &&
+      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi;
+
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function isProductCollidingWithWall(productBounds: any, wall: any, scale: number): boolean {
+  // TODO: Implement wall collision detection (currently a placeholder)
+  return false;
+}
+
+function isProductCollidingWithProduct(bounds1: any, bounds2: any): boolean {
+  return !(
+    bounds1.right < bounds2.left ||
+    bounds1.left > bounds2.right ||
+    bounds1.bottom < bounds2.top ||
+    bounds1.top > bounds2.bottom
+  );
 }
