@@ -21,6 +21,7 @@ interface IsometricFloorPlanSceneProps {
   onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
   showGrid: boolean;
+  origin: { minX: number; minY: number }; // <-- ✅ Added origin prop
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -46,37 +47,11 @@ const IsometricScene = ({
   onProductClick,
   onWallClick,
   onSceneClick,
-  onSceneReady,
   selectedProducts,
   showGrid,
+  origin,
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
-
-  // Calculate origin bounds from rooms or walls
-  const origin = React.useMemo(() => {
-    let allPoints: Point[] = [];
-    
-    if (rooms.length > 0) {
-      // Use room points if available
-      rooms.forEach(room => {
-        allPoints.push(...room.points);
-      });
-    } else if (wallSegments.length > 0) {
-      // Fallback to wall points
-      wallSegments.forEach(wall => {
-        allPoints.push(wall.start, wall.end);
-      });
-    }
-    
-    if (allPoints.length === 0) {
-      return { minX: 0, minY: 0 };
-    }
-    
-    const minX = Math.min(...allPoints.map(p => p.x));
-    const minY = Math.min(...allPoints.map(p => p.y));
-    
-    return { minX, minY };
-  }, [rooms, wallSegments]);
 
   return (
     <group ref={groupRef}>
@@ -109,9 +84,9 @@ const IsometricScene = ({
       <IsometricProducts
         placedProducts={placedProducts}
         scale={scale}
-        origin={origin}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
+        origin={origin} // ✅ Pass origin to fix position offset
       />
 
       {/* Enhanced 3D Controls for direct manipulation */}
@@ -131,10 +106,10 @@ const IsometricScene = ({
       {/* ✅ Drop plane for raycasting */}
       {onSceneClick && (
         <mesh
-          name="floor-drop-plane" // ✅ Name used for raycasting
+          name="floor-drop-plane"
           position={[0, -0.0001, 0]}
           onClick={onSceneClick}
-          visible={true} // ✅ Must be visible for raycasting
+          visible={true}
         >
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
