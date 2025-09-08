@@ -8,9 +8,9 @@ import { PlacedProduct } from '@/types/floorPlanTypes';
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
   scale: number;
-  origin?: { minX: number; minY: number };
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
+  origin: { minX: number; minY: number }; // ✅ NEW
 }
 
 const ProductModel = ({
@@ -22,7 +22,7 @@ const ProductModel = ({
 }: {
   product: PlacedProduct;
   scale: number;
-  origin?: { minX: number; minY: number };
+  origin: { minX: number; minY: number }; // ✅ NEW
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
@@ -33,11 +33,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Apply origin shift and scale
+  // ✅ Adjust product position by origin offset
   const position: [number, number, number] = [
-    (product.position.x - (origin?.minX || 0)) * scale * 0.001,
+    (product.position.x - origin.minX) * scale * 0.001,
     0,
-    -(product.position.y - (origin?.minY || 0)) * scale * 0.001
+    -(product.position.y - origin.minY) * scale * 0.001
   ];
 
   const rotation: [number, number, number] = [
@@ -140,7 +140,12 @@ const ProductGLTF = ({
       {isSelected && (
         <mesh>
           <boxGeometry args={[1.2, 1.2, 1.2]} />
-          <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.5} />
+          <meshBasicMaterial
+            color="#ff0000"
+            wireframe
+            transparent
+            opacity={0.5}
+          />
         </mesh>
       )}
     </group>
@@ -150,9 +155,9 @@ const ProductGLTF = ({
 export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   placedProducts,
   scale,
-  origin,
   onProductClick,
-  selectedProducts
+  selectedProducts,
+  origin
 }) => {
   return (
     <group>
@@ -161,7 +166,7 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           key={product.id}
           product={product}
           scale={scale}
-          origin={origin}
+          origin={origin} // ✅ PASS TO CHILD
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
         />
