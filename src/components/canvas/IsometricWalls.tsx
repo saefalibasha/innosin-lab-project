@@ -5,34 +5,35 @@ import { WallSegment } from '@/types/floorPlanTypes';
 interface IsometricWallsProps {
   wallSegments: WallSegment[];
   scale: number;
-  origin: { minX: number; minY: number }; // ✅ Added origin
   onWallClick?: (wallId: string) => void;
+  origin?: { minX: number; minY: number }; // ✅ NEW
 }
 
 const Wall = ({
   wall,
   scale,
-  origin,
   onWallClick,
+  origin,
 }: {
   wall: WallSegment;
   scale: number;
-  origin: { minX: number; minY: number };
   onWallClick?: (wallId: string) => void;
+  origin?: { minX: number; minY: number }; // ✅ NEW
 }) => {
   const wallGeometry = useMemo(() => {
-    const offsetX = origin.minX * scale * 0.1;
-    const offsetZ = -origin.minY * scale * 0.1;
+    const offsetX = origin?.minX || 0;
+    const offsetY = origin?.minY || 0;
 
+    // ✅ Flip y → -z and apply origin offset
     const start = new Vector3(
-      wall.start.x * scale * 0.1 - offsetX,
+      (wall.start.x - offsetX) * scale * 0.1,
       0,
-      -wall.start.y * scale * 0.1 - offsetZ
+      -(wall.start.y - offsetY) * scale * 0.1
     );
     const end = new Vector3(
-      wall.end.x * scale * 0.1 - offsetX,
+      (wall.end.x - offsetX) * scale * 0.1,
       0,
-      -wall.end.y * scale * 0.1 - offsetZ
+      -(wall.end.y - offsetY) * scale * 0.1
     );
 
     const direction = new Vector3().subVectors(end, start).normalize();
@@ -92,8 +93,8 @@ const Wall = ({
 export const IsometricWalls: React.FC<IsometricWallsProps> = ({
   wallSegments,
   scale,
-  origin,
   onWallClick,
+  origin,
 }) => {
   return (
     <group>
@@ -102,8 +103,8 @@ export const IsometricWalls: React.FC<IsometricWallsProps> = ({
           key={wall.id}
           wall={wall}
           scale={scale}
-          origin={origin} // ✅ Passed down
           onWallClick={onWallClick}
+          origin={origin} // ✅ Pass it down
         />
       ))}
     </group>
