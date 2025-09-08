@@ -21,7 +21,7 @@ interface IsometricFloorPlanSceneProps {
   onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
   showGrid: boolean;
-  origin: { minX: number; minY: number }; // <-- ✅ Added origin prop
+  origin: { minX: number; minY: number }; // ✅ NEW
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -47,9 +47,10 @@ const IsometricScene = ({
   onProductClick,
   onWallClick,
   onSceneClick,
+  onSceneReady,
   selectedProducts,
   showGrid,
-  origin,
+  origin, // ✅ NEW
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
@@ -75,7 +76,12 @@ const IsometricScene = ({
       )}
 
       {/* Walls */}
-      <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} />
+      <IsometricWalls
+        wallSegments={wallSegments}
+        scale={scale}
+        onWallClick={onWallClick}
+        origin={origin} // ✅ NEW
+      />
 
       {/* Doors */}
       <IsometricDoors doors={doors} scale={scale} />
@@ -86,7 +92,7 @@ const IsometricScene = ({
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
-        origin={origin} // ✅ Pass origin to fix position offset
+        origin={origin} // ✅ NEW
       />
 
       {/* Enhanced 3D Controls for direct manipulation */}
@@ -145,9 +151,9 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 
         {/* Controls */}
         <OrbitControls
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
+          enablePan
+          enableZoom
+          enableRotate
           minDistance={2}
           maxDistance={100}
           enableDamping
