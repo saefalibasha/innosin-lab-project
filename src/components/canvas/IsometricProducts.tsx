@@ -5,9 +5,15 @@ import * as THREE from 'three';
 import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
+interface OriginOffset {
+  minX: number;
+  minY: number;
+}
+
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
   scale: number;
+  origin: OriginOffset;
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
 }
@@ -15,11 +21,13 @@ interface IsometricProductsProps {
 const ProductModel = ({
   product,
   scale,
+  origin,
   onProductClick,
   isSelected
 }: {
   product: PlacedProduct;
   scale: number;
+  origin: OriginOffset;
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
@@ -30,11 +38,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Correct position transformation using wall convention
+  // ✅ Correct position transformation using wall convention + origin offset
   const position: [number, number, number] = [
-    product.position.x * scale * 0.1,
+    (product.position.x - origin.minX) * scale * 0.1,
     0,
-    -product.position.y * scale * 0.1
+    -(product.position.y - origin.minY) * scale * 0.1
   ];
 
   const rotation: [number, number, number] = [
@@ -48,7 +56,6 @@ const ProductModel = ({
   const height = (product.dimensions.height || 850) * scale * 0.1;
   const halfHeight = height / 2;
 
-  // ✅ Fallback geometry when no modelPath is defined
   const fallbackGeometry = (
     <mesh
       ref={meshRef}
@@ -117,13 +124,9 @@ const ProductGLTF = ({
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
-      // ✅ Center model
       gltf.scene.position.sub(center);
-
-      // ✅ Place on floor plane
       gltf.scene.position.y += size.y / 2;
 
-      // ✅ Normalize scale
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
         const targetScale = 1 / maxDim;
@@ -159,6 +162,7 @@ const ProductGLTF = ({
 export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   placedProducts,
   scale,
+  origin,
   onProductClick,
   selectedProducts
 }) => {
@@ -169,6 +173,7 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           key={product.id}
           product={product}
           scale={scale}
+          origin={origin}
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
         />
