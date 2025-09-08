@@ -21,7 +21,6 @@ interface IsometricFloorPlanSceneProps {
   onSceneReady?: (context: { camera: any; scene: any; gl: any; }) => void;
   selectedProducts: string[];
   showGrid: boolean;
-  origin: { minX: number; minY: number }; // ✅ NEW
 }
 
 /** Exposes the active R3F camera on window for external raycasting */
@@ -50,9 +49,14 @@ const IsometricScene = ({
   onSceneReady,
   selectedProducts,
   showGrid,
-  origin, // ✅ NEW
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
+
+  // ✅ Calculate origin for alignment
+  const allPoints = wallSegments.flatMap(w => [w.start, w.end]);
+  const minX = Math.min(...allPoints.map(p => p.x));
+  const minY = Math.min(...allPoints.map(p => p.y));
+  const origin = { minX, minY };
 
   return (
     <group ref={groupRef}>
@@ -79,8 +83,8 @@ const IsometricScene = ({
       <IsometricWalls
         wallSegments={wallSegments}
         scale={scale}
+        origin={origin}
         onWallClick={onWallClick}
-        origin={origin} // ✅ NEW
       />
 
       {/* Doors */}
@@ -92,10 +96,9 @@ const IsometricScene = ({
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
-        origin={origin} // ✅ NEW
       />
 
-      {/* Enhanced 3D Controls for direct manipulation */}
+      {/* Controls */}
       <Enhanced3DControls
         placedProducts={placedProducts}
         wallSegments={wallSegments}
@@ -109,7 +112,7 @@ const IsometricScene = ({
         selectedProductId={selectedProducts[0]}
       />
 
-      {/* ✅ Drop plane for raycasting */}
+      {/* Drop plane for raycasting */}
       {onSceneClick && (
         <mesh
           name="floor-drop-plane"
