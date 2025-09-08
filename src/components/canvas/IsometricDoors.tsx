@@ -5,16 +5,23 @@ import { calculateDoorTransform } from '@/utils/coordinateUtils';
 interface IsometricDoorsProps {
   doors: Door[];
   scale: number;
+  origin?: { minX: number; minY: number }; // ✅ added for consistent positioning
 }
 
-const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  // Use proper real-world dimensions
-  const doorWidth = (door.width || 800) * 0.001; // Convert mm to meters (800mm = 0.8m)
-  const doorHeight = 2.1; // 2.1 meters standard door height
-  const doorThickness = 0.05; // 5cm door thickness
+const DoorModel = ({
+  door,
+  scale,
+  origin
+}: {
+  door: Door;
+  scale: number;
+  origin?: { minX: number; minY: number };
+}) => {
+  const doorWidth = (door.width || 800) * 0.001;
+  const doorHeight = 2.1;
+  const doorThickness = 0.05;
 
-  // Safe transform fallback
-  const transform = calculateDoorTransform?.(door, scale);
+  const transform = calculateDoorTransform?.(door, scale, origin); // ✅ pass origin to transform
 
   if (!transform || !transform.position || !transform.rotation) {
     console.warn('Invalid transform for door:', door);
@@ -25,13 +32,11 @@ const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
 
   return (
     <group position={position} rotation={rotation}>
-      {/* Door frame */}
       <mesh castShadow position={[0, doorHeight / 2, 0]}>
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
         <meshLambertMaterial color="#8B4513" />
       </mesh>
 
-      {/* Door handle */}
       <mesh
         position={[doorWidth * 0.4, doorHeight / 2, doorThickness / 2 + 0.01]}
         castShadow
@@ -43,11 +48,15 @@ const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
   );
 };
 
-export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale }) => {
+export const IsometricDoors: React.FC<IsometricDoorsProps> = ({
+  doors,
+  scale,
+  origin
+}) => {
   return (
     <group>
       {doors.map((door) => (
-        <DoorModel key={door.id} door={door} scale={scale} />
+        <DoorModel key={door.id} door={door} scale={scale} origin={origin} />
       ))}
     </group>
   );
