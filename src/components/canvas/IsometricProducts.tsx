@@ -1,25 +1,33 @@
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef, useEffect, useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
+interface OriginOffset {
+  minX: number;
+  minY: number;
+}
+
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
   scale: number;
-  onProductClick?: (productId: string) => void;
   selectedProducts: string[];
+  onProductClick?: (productId: string) => void;
+  origin: OriginOffset; // ✅ pass same origin used in wall alignment
 }
 
 const ProductModel = ({
   product,
   scale,
+  origin,
   onProductClick,
   isSelected
 }: {
   product: PlacedProduct;
   scale: number;
+  origin: OriginOffset;
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
@@ -30,11 +38,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Use direct product coordinates with y→-z flip, no origin offset
+  // ✅ Corrected position with origin alignment
   const position: [number, number, number] = [
-    product.position.x * scale * 0.1,
+    (product.position.x - origin.minX) * scale * 0.1,
     0,
-    -product.position.y * scale * 0.1
+    -(product.position.y - origin.minY) * scale * 0.1
   ];
 
   const rotation: [number, number, number] = [
@@ -154,8 +162,9 @@ const ProductGLTF = ({
 export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   placedProducts,
   scale,
+  selectedProducts,
   onProductClick,
-  selectedProducts
+  origin
 }) => {
   return (
     <group>
@@ -164,6 +173,7 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           key={product.id}
           product={product}
           scale={scale}
+          origin={origin}
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
         />
