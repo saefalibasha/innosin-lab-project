@@ -1,4 +1,4 @@
-import React, { Suspense, useRef } from 'react';
+import React, { Suspense, useRef, useEffect } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
@@ -12,14 +12,14 @@ interface IsometricProductsProps {
   selectedProducts: string[];
 }
 
-const ProductModel = ({ 
-  product, 
-  scale, 
-  onProductClick, 
-  isSelected 
-}: { 
-  product: PlacedProduct; 
-  scale: number; 
+const ProductModel = ({
+  product,
+  scale,
+  onProductClick,
+  isSelected
+}: {
+  product: PlacedProduct;
+  scale: number;
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
@@ -30,51 +30,44 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // Use proper coordinate transformation
+  // ✅ Correct position transformation using wall convention
   const position: [number, number, number] = [
-    product.position.x * 0.001, // Convert mm to meters
+    product.position.x * scale * 0.1,
     0,
-    -product.position.y * 0.001, // Flip Y to -Z and convert mm to meters
+    -product.position.y * scale * 0.1
   ];
 
   const rotation: [number, number, number] = [
     0,
     product.rotation || 0,
-    0,
+    0
   ];
 
-  // Fallback simple box if no GLTF model
+  const length = product.dimensions.length * scale * 0.1;
+  const width = product.dimensions.width * scale * 0.1;
+  const height = (product.dimensions.height || 850) * scale * 0.1;
+  const halfHeight = height / 2;
+
+  // ✅ Fallback geometry when no modelPath is defined
   const fallbackGeometry = (
     <mesh
       ref={meshRef}
-      position={[position[0], 0.425, position[2]]} // ✅ lift by half height
+      position={[position[0], halfHeight, position[2]]}
       rotation={rotation}
       onClick={handleClick}
       castShadow
       name="product"
     >
-      <boxGeometry 
-        args={[
-          product.dimensions.length * 0.001, // Convert mm to meters
-          product.dimensions.height * 0.001 || 0.85, // Use actual height or default
-          product.dimensions.width * 0.001, // Convert mm to meters
-        ]} 
-      />
-      <meshLambertMaterial 
+      <boxGeometry args={[length, height, width]} />
+      <meshLambertMaterial
         color={isSelected ? '#ff6b6b' : (product.color || '#8b5cf6')}
         transparent={isSelected}
         opacity={isSelected ? 0.8 : 1}
       />
       {isSelected && (
         <lineSegments>
-          <edgesGeometry 
-            args={[
-              new THREE.BoxGeometry(
-                product.dimensions.length * 0.001,
-                0.85,
-                product.dimensions.width * 0.001
-              )
-            ]}
+          <edgesGeometry
+            args={[new THREE.BoxGeometry(length, height, width)]}
           />
           <lineBasicMaterial color="#ff0000" linewidth={2} />
         </lineSegments>
@@ -85,7 +78,7 @@ const ProductModel = ({
   if (product.modelPath) {
     return (
       <Suspense fallback={fallbackGeometry}>
-        <ProductGLTF 
+        <ProductGLTF
           modelPath={product.modelPath}
           position={position}
           rotation={rotation}
@@ -100,11 +93,11 @@ const ProductModel = ({
   return fallbackGeometry;
 };
 
-const ProductGLTF = ({ 
-  modelPath, 
-  position, 
-  rotation, 
-  onClick, 
+const ProductGLTF = ({
+  modelPath,
+  position,
+  rotation,
+  onClick,
   isSelected,
   scale
 }: {
@@ -116,22 +109,21 @@ const ProductGLTF = ({
   scale: number;
 }) => {
   const groupRef = useRef<Group>(null);
-
   const gltf = useLoader(GLTFLoader, modelPath);
-  
-  React.useEffect(() => {
+
+  useEffect(() => {
     if (gltf && groupRef.current) {
       const box = new Box3().setFromObject(gltf.scene);
       const center = box.getCenter(new Vector3());
       const size = box.getSize(new Vector3());
 
-      // Center model
+      // ✅ Center model
       gltf.scene.position.sub(center);
 
-      // ✅ Move bottom of model to Y=0 (floor plane)
+      // ✅ Place on floor plane
       gltf.scene.position.y += size.y / 2;
 
-      // Normalize scale
+      // ✅ Normalize scale
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
         const targetScale = 1 / maxDim;
@@ -148,18 +140,14 @@ const ProductGLTF = ({
       onClick={onClick}
       name="product"
     >
-      <primitive 
-        object={gltf.scene} 
-        castShadow
-        receiveShadow
-      />
+      <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
         <mesh>
           <boxGeometry args={[1.2, 1.2, 1.2]} />
-          <meshBasicMaterial 
-            color="#ff0000" 
-            wireframe 
-            transparent 
+          <meshBasicMaterial
+            color="#ff0000"
+            wireframe
+            transparent
             opacity={0.5}
           />
         </mesh>
@@ -168,11 +156,11 @@ const ProductGLTF = ({
   );
 };
 
-export const IsometricProducts: React.FC<IsometricProductsProps> = ({ 
-  placedProducts, 
-  scale, 
-  onProductClick, 
-  selectedProducts 
+export const IsometricProducts: React.FC<IsometricProductsProps> = ({
+  placedProducts,
+  scale,
+  onProductClick,
+  selectedProducts
 }) => {
   return (
     <group>
