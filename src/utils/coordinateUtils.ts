@@ -6,13 +6,13 @@ export const COORDINATE_SCALE = 0.001; // mm to meters conversion
 /**
  * Convert 2D canvas coordinates to 3D world coordinates
  * Maps X axis to X axis, Y axis to Z axis (floor plane)
- * Fixed scaling to ensure proper door and product positioning
+ * Uses consistent scaling with wall geometry: scale * 0.1
  */
 export function canvasTo3DWorld(point: Point, scale: number = 1): [number, number, number] {
   return [
-    point.x * COORDINATE_SCALE,
+    point.x * scale * 0.1,
     0, // Y is always 0 for floor placement
-    point.y * COORDINATE_SCALE
+    -point.y * scale * 0.1 // Flip Y to -Z to match wall coordinate system
   ];
 }
 
@@ -28,7 +28,7 @@ export function worldTo2DCanvas(x: number, z: number, scale: number): Point {
 
 /**
  * Calculate door position and rotation from wall segment
- * Fixed to use proper scaling and positioning
+ * Uses consistent coordinate system with walls
  */
 export function calculateDoorTransform(door: any, scale: number) {
   // Add null checks to prevent undefined errors
@@ -61,7 +61,7 @@ export function calculateDoorTransform(door: any, scale: number) {
   if (wallLength === 0) {
     console.warn('calculateDoorTransform: wall has zero length');
     return {
-      position: canvasTo3DWorld(door.wallStart),
+      position: canvasTo3DWorld(door.wallStart, scale),
       rotation: [0, 0, 0] as [number, number, number]
     };
   }
@@ -78,11 +78,11 @@ export function calculateDoorTransform(door: any, scale: number) {
     y: door.wallStart.y + normalizedWall.y * wallLength * wallPosition
   };
   
-  // Calculate rotation to align door with wall
-  const rotation = Math.atan2(normalizedWall.y, normalizedWall.x);
+  // Calculate rotation to align door with wall (flip Y for 3D)
+  const rotation = Math.atan2(-normalizedWall.y, normalizedWall.x);
   
   return {
-    position: canvasTo3DWorld(doorPosition),
+    position: canvasTo3DWorld(doorPosition, scale),
     rotation: [0, rotation, 0] as [number, number, number]
   };
 }

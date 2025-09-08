@@ -147,57 +147,75 @@ export const FloorPlanner3D = () => {
         </div>
       </div>
 
-      {/* Bottom controls section */}
-      <div className="h-32 border-t bg-white flex items-center justify-between px-6">
-        <div className="flex items-center space-x-4">
-          <Button onClick={handleLogWalls} variant="outline" size="sm">
-            Debug Walls
-          </Button>
-          <Button onClick={handleClearAll} variant="outline" size="sm">
-            Clear All
-          </Button>
-        </div>
-        
-        {/* Wall Control Panel */}
-        {selectedWall && (
-          <Card className="flex-1 max-w-md mx-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Wall Controls</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Thickness:</span>
-                <span className="text-xs font-mono">{selectedWall.thickness}mm</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Height:</span>
-                <span className="text-xs font-mono">{selectedWall.height}mm</span>
-              </div>
-              <div className="flex space-x-2">
+      {/* Bottom controls section - Enhanced UI Layout */}
+      <div className="border-t bg-background">
+        {/* Control Sections */}
+        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* View Controls */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">View Controls</h3>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">Reset View</Button>
+              <Button variant="outline" size="sm">Fit to View</Button>
+            </div>
+          </div>
+          
+          {/* Product Controls */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Product Controls</h3>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" disabled={selectedProducts.length === 0}>
+                Rotate Selected
+              </Button>
+              <Button variant="outline" size="sm" disabled={selectedProducts.length === 0}>
+                Delete Selected
+              </Button>
+            </div>
+          </div>
+          
+          {/* Wall Controls */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Wall Controls</h3>
+            <div className="flex gap-2">
+              <Button onClick={handleLogWalls} variant="outline" size="sm">
+                Debug Walls
+              </Button>
+              {selectedWall && (
                 <Button
                   onClick={() => handleWallVisibilityToggle(selectedWall.id)}
                   variant="outline"
                   size="sm"
-                  className="flex-1"
                 >
-                  {selectedWall.visible !== false ? 'Hide' : 'Show'}
+                  {selectedWall.visible !== false ? 'Hide Wall' : 'Show Wall'}
                 </Button>
-                <Button
-                  onClick={() => setSelectedWall(null)}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  Close
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              )}
+            </div>
+          </div>
+          
+          {/* Export Controls */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Project</h3>
+            <div className="flex gap-2">
+              <Button onClick={handleClearAll} variant="outline" size="sm">
+                Clear All
+              </Button>
+              <Button variant="outline" size="sm">
+                Export 3D
+              </Button>
+            </div>
+          </div>
+        </div>
         
-        <div className="text-xs text-muted-foreground space-y-1">
-          <div>• Drag to rotate view • Scroll to zoom</div>
-          <div>• Click objects to select • Drag products from library</div>
+        {/* Scene Statistics */}
+        <div className="px-4 pb-4">
+          <div className="p-3 bg-muted/30 rounded-lg">
+            <div className="text-sm text-muted-foreground flex justify-between">
+              <span>Products: {placedProducts.length}</span>
+              <span>Walls: {wallSegments.length}</span>
+              <span>Rooms: {rooms.length}</span>
+              <span>Selected: {selectedProducts.length}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

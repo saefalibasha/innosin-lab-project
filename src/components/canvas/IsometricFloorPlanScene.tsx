@@ -57,8 +57,8 @@ const IsometricScene = ({
       {/* Enhanced Floor with snap grid */}
       <Enhanced3DFloor rooms={rooms} scale={scale} showSnapGrid={showGrid} />
 
-      {/* Grid */}
-      {showGrid && (
+      {/* Grid - Only show if no rooms exist */}
+      {showGrid && rooms.length === 0 && (
         <Grid
           args={[100, 100]}
           position={[0, 0, 0]}

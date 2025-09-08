@@ -8,10 +8,10 @@ interface IsometricDoorsProps {
 }
 
 const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
-  // Use proper real-world dimensions
-  const doorWidth = (door.width || 800) * 0.001; // Convert mm to meters
-  const doorHeight = 2.1; // meters
-  const doorThickness = 0.05; // meters
+  // Use proper real-world dimensions with consistent scaling
+  const doorWidth = (door.width || 800) * scale * 0.0001; // Convert mm to scaled meters
+  const doorHeight = 2.1 * scale * 0.1; // Scale height consistently
+  const doorThickness = 0.05 * scale * 0.1; // Scale thickness consistently
 
   // Safe transform fallback
   const transform = calculateDoorTransform?.(door, scale);
