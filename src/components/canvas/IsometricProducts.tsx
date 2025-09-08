@@ -5,15 +5,9 @@ import * as THREE from 'three';
 import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
-interface OriginOffset {
-  minX: number;
-  minY: number;
-}
-
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
   scale: number;
-  origin: OriginOffset;
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
 }
@@ -21,13 +15,11 @@ interface IsometricProductsProps {
 const ProductModel = ({
   product,
   scale,
-  origin,
   onProductClick,
   isSelected
 }: {
   product: PlacedProduct;
   scale: number;
-  origin: OriginOffset;
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
 }) => {
@@ -38,11 +30,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Correct position transformation using wall convention + origin offset
+  // ✅ Use direct product coordinates with y→-z flip, no origin offset
   const position: [number, number, number] = [
-    (product.position.x - origin.minX) * scale * 0.1,
+    product.position.x * scale * 0.1,
     0,
-    -(product.position.y - origin.minY) * scale * 0.1
+    -product.position.y * scale * 0.1
   ];
 
   const rotation: [number, number, number] = [
@@ -162,7 +154,6 @@ const ProductGLTF = ({
 export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   placedProducts,
   scale,
-  origin,
   onProductClick,
   selectedProducts
 }) => {
@@ -173,7 +164,6 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           key={product.id}
           product={product}
           scale={scale}
-          origin={origin}
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
         />
