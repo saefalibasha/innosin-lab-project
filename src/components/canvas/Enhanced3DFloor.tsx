@@ -1,34 +1,49 @@
 import React, { useMemo } from 'react';
-import { Shape, ExtrudeGeometry, Vector2 } from 'three';
-import { Room } from '@/types/floorPlanTypes';
+import { Shape, ExtrudeGeometry } from 'three';
+import { Room, Point } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 
 interface Enhanced3DFloorProps {
   rooms: Room[];
   scale: number;
   showSnapGrid?: boolean;
+  origin?: { minX: number; minY: number }; // ✅ Add origin
 }
 
-const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
+const RoomFloor = ({
+  room,
+  scale,
+  origin,
+}: {
+  room: Room;
+  scale: number;
+  origin?: { minX: number; minY: number };
+}) => {
   const floorGeometry = useMemo(() => {
     if (room.points.length < 3) return null;
 
-    const shape = new Shape();
+    const shift = origin || { minX: 0, minY: 0 };
 
-    // Convert all points using unified coordinate system with proper scaling
-    const [firstX, , firstZ] = canvasTo3DWorld(room.points[0], scale);
+    const transformPoint = (point: Point) => ({
+      x: point.x - shift.minX,
+      y: point.y - shift.minY,
+    });
+
+    const shape = new Shape();
+    const first = transformPoint(room.points[0]);
+    const [firstX, , firstZ] = canvasTo3DWorld(first, scale);
     shape.moveTo(firstX, firstZ);
 
     for (let i = 1; i < room.points.length; i++) {
-      const [pointX, , pointZ] = canvasTo3DWorld(room.points[i], scale);
-      shape.lineTo(pointX, pointZ);
+      const p = transformPoint(room.points[i]);
+      const [x, , z] = canvasTo3DWorld(p, scale);
+      shape.lineTo(x, z);
     }
 
-    // Close the shape
-    shape.lineTo(firstX, firstZ);
+    shape.lineTo(firstX, firstZ); // close shape
 
     const extrudeSettings = {
-      depth: 0.02, // Make floor slightly thicker
+      depth: 0.02,
       bevelEnabled: false,
     };
 
@@ -36,39 +51,38 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
     geometry.rotateX(-Math.PI / 2);
 
     return geometry;
-  }, [room.points, scale]);
+  }, [room.points, scale, origin]);
 
   if (!floorGeometry) return null;
 
   return (
     <mesh
       geometry={floorGeometry}
-      position={[0, -0.005, 0]} // slight offset to avoid z-fighting
+      position={[0, -0.005, 0]}
       receiveShadow
     >
-      <meshLambertMaterial
-        color="#e0e0e0" // Default grey floor color
-        transparent={false}
-        opacity={1}
-      />
+      <meshLambertMaterial color="#e0e0e0" />
     </mesh>
   );
 };
 
-// Automatic grey floor detection for closed rooms
-const AutoFloor = ({ rooms, scale }: { rooms: Room[]; scale: number }) => {
+const AutoFloor = ({
+  rooms,
+  scale,
+  origin,
+}: {
+  rooms: Room[];
+  scale: number;
+  origin?: { minX: number; minY: number };
+}) => {
   const closedRooms = useMemo(() => {
-    return rooms.filter(room => {
+    return rooms.filter((room) => {
       if (room.points.length < 3) return false;
-      
-      // Check if room is closed (first and last points are same or very close)
+
       const first = room.points[0];
       const last = room.points[room.points.length - 1];
-      const distance = Math.sqrt(
-        Math.pow(first.x - last.x, 2) + Math.pow(first.y - last.y, 2)
-      );
-      
-      return distance < 50; // Tolerance for closure
+      const dist = Math.hypot(first.x - last.x, first.y - last.y);
+      return dist < 50;
     });
   }, [rooms]);
 
@@ -79,23 +93,25 @@ const AutoFloor = ({ rooms, scale }: { rooms: Room[]; scale: number }) => {
           key={room.id}
           room={room}
           scale={scale}
+          origin={origin} // ✅ pass origin to each room
         />
       ))}
     </group>
   );
 };
 
-export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({ 
-  rooms, 
-  scale, 
-  showSnapGrid = false 
+export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
+  rooms,
+  scale,
+  showSnapGrid = false,
+  origin,
 }) => {
   return (
     <group>
-      {/* Automatic grey floor for closed rooms */}
-      <AutoFloor rooms={rooms} scale={scale} />
-      
-      {/* Invisible drop plane for product placement */}
+      {/* Auto-filled floor */}
+      <AutoFloor rooms={rooms} scale={scale} origin={origin} />
+
+      {/* Snap plane */}
       <mesh
         position={[0, -0.001, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
