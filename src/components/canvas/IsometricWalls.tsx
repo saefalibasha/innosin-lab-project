@@ -6,47 +6,38 @@ interface IsometricWallsProps {
   wallSegments: WallSegment[];
   scale: number;
   onWallClick?: (wallId: string) => void;
+  origin: { minX: number; minY: number }; // ✅ NEW
 }
-
-const getOriginOffset = (wallSegments: WallSegment[]) => {
-  const allX = wallSegments.flatMap(w => [w.start.x, w.end.x]);
-  const allY = wallSegments.flatMap(w => [w.start.y, w.end.y]);
-  return {
-    minX: Math.min(...allX),
-    minY: Math.min(...allY)
-  };
-};
 
 const Wall = ({
   wall,
   scale,
-  offset,
+  origin,
   onWallClick,
 }: {
   wall: WallSegment;
   scale: number;
-  offset: { minX: number; minY: number };
+  origin: { minX: number; minY: number }; // ✅ NEW
   onWallClick?: (wallId: string) => void;
 }) => {
   const wallGeometry = useMemo(() => {
-    const { minX, minY } = offset;
+    const thickness = (wall.thickness || 100) * scale * 0.001;
+    const height = wall.height ?? 2.4;
 
+    // ✅ Adjusted for origin
     const start = new Vector3(
-      (wall.start.x - minX) * scale * 0.1,
+      (wall.start.x - origin.minX) * scale * 0.001,
       0,
-      -(wall.start.y - minY) * scale * 0.1
+      -(wall.start.y - origin.minY) * scale * 0.001
     );
     const end = new Vector3(
-      (wall.end.x - minX) * scale * 0.1,
+      (wall.end.x - origin.minX) * scale * 0.001,
       0,
-      -(wall.end.y - minY) * scale * 0.1
+      -(wall.end.y - origin.minY) * scale * 0.001
     );
 
     const direction = new Vector3().subVectors(end, start).normalize();
     const perpendicular = new Vector3(-direction.z, 0, direction.x);
-
-    const thickness = (wall.thickness || 100) * scale * 0.1;
-    const height = wall.height ?? 2.4;
 
     const shape = new Shape();
     const halfThickness = thickness / 2;
@@ -71,7 +62,7 @@ const Wall = ({
     geometry.rotateX(-Math.PI / 2);
 
     return geometry;
-  }, [wall, scale, offset]);
+  }, [wall, scale, origin]);
 
   const handleClick = (e: any) => {
     e.stopPropagation();
@@ -99,10 +90,9 @@ const Wall = ({
 export const IsometricWalls: React.FC<IsometricWallsProps> = ({
   wallSegments,
   scale,
+  origin,
   onWallClick,
 }) => {
-  const offset = useMemo(() => getOriginOffset(wallSegments), [wallSegments]);
-
   return (
     <group>
       {wallSegments.map((wall) => (
@@ -110,7 +100,7 @@ export const IsometricWalls: React.FC<IsometricWallsProps> = ({
           key={wall.id}
           wall={wall}
           scale={scale}
-          offset={offset}
+          origin={origin} // ✅ PASS TO CHILD
           onWallClick={onWallClick}
         />
       ))}
