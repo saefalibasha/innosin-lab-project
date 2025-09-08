@@ -10,21 +10,21 @@ interface IsometricProductsProps {
   scale: number;
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
-  origin: { minX: number; minY: number }; // ✅ NEW
+  origin?: { minX: number; minY: number }; // ✅ NEW
 }
 
 const ProductModel = ({
   product,
   scale,
-  origin,
   onProductClick,
-  isSelected
+  isSelected,
+  origin
 }: {
   product: PlacedProduct;
   scale: number;
-  origin: { minX: number; minY: number }; // ✅ NEW
   onProductClick?: (productId: string) => void;
   isSelected: boolean;
+  origin?: { minX: number; minY: number }; // ✅ NEW
 }) => {
   const meshRef = useRef<Mesh>(null);
 
@@ -33,11 +33,14 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Adjust product position by origin offset
+  // ✅ Apply origin offset if provided
+  const offsetX = origin?.minX || 0;
+  const offsetY = origin?.minY || 0;
+
   const position: [number, number, number] = [
-    (product.position.x - origin.minX) * scale * 0.001,
+    (product.position.x - offsetX) * scale * 0.1,
     0,
-    -(product.position.y - origin.minY) * scale * 0.001
+    -(product.position.y - offsetY) * scale * 0.1
   ];
 
   const rotation: [number, number, number] = [
@@ -46,9 +49,9 @@ const ProductModel = ({
     0
   ];
 
-  const length = product.dimensions.length * scale * 0.001;
-  const width = product.dimensions.width * scale * 0.001;
-  const height = (product.dimensions.height || 850) * scale * 0.001;
+  const length = product.dimensions.length * scale * 0.1;
+  const width = product.dimensions.width * scale * 0.1;
+  const height = (product.dimensions.height || 850) * scale * 0.1;
   const halfHeight = height / 2;
 
   const fallbackGeometry = (
@@ -68,7 +71,9 @@ const ProductModel = ({
       />
       {isSelected && (
         <lineSegments>
-          <edgesGeometry args={[new THREE.BoxGeometry(length, height, width)]} />
+          <edgesGeometry
+            args={[new THREE.BoxGeometry(length, height, width)]}
+          />
           <lineBasicMaterial color="#ff0000" linewidth={2} />
         </lineSegments>
       )}
@@ -166,9 +171,9 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           key={product.id}
           product={product}
           scale={scale}
-          origin={origin} // ✅ PASS TO CHILD
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
+          origin={origin} // ✅ PASS DOWN ORIGIN
         />
       ))}
     </group>
