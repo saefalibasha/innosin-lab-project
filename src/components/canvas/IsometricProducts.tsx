@@ -8,25 +8,23 @@ import { PlacedProduct } from '@/types/floorPlanTypes';
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
   scale: number;
+  origin?: { minX: number; minY: number };
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
-  origin: { minX: number; minY: number }; // ✅ origin from wall bounds
 }
 
-interface ProductModelProps {
-  product: PlacedProduct;
-  scale: number;
-  onProductClick?: (productId: string) => void;
-  isSelected: boolean;
-  origin: { minX: number; minY: number }; // ✅ used for aligning positions
-}
-
-const ProductModel: React.FC<ProductModelProps> = ({
+const ProductModel = ({
   product,
   scale,
+  origin,
   onProductClick,
-  isSelected,
-  origin
+  isSelected
+}: {
+  product: PlacedProduct;
+  scale: number;
+  origin?: { minX: number; minY: number };
+  onProductClick?: (productId: string) => void;
+  isSelected: boolean;
 }) => {
   const meshRef = useRef<Mesh>(null);
 
@@ -35,11 +33,12 @@ const ProductModel: React.FC<ProductModelProps> = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Translate coordinates relative to origin and convert to meters
-  const px = (product.position.x - origin.minX) * scale * 0.1 * 0.001;
-  const py = (product.position.y - origin.minY) * scale * 0.1 * 0.001;
-
-  const position: [number, number, number] = [px, 0, -py];
+  // ✅ Apply origin shift and scale
+  const position: [number, number, number] = [
+    (product.position.x - (origin?.minX || 0)) * scale * 0.001,
+    0,
+    -(product.position.y - (origin?.minY || 0)) * scale * 0.001
+  ];
 
   const rotation: [number, number, number] = [
     0,
@@ -47,9 +46,9 @@ const ProductModel: React.FC<ProductModelProps> = ({
     0
   ];
 
-  const length = product.dimensions.length * scale * 0.1 * 0.001;
-  const width = product.dimensions.width * scale * 0.1 * 0.001;
-  const height = (product.dimensions.height || 850) * scale * 0.1 * 0.001;
+  const length = product.dimensions.length * scale * 0.001;
+  const width = product.dimensions.width * scale * 0.001;
+  const height = (product.dimensions.height || 850) * scale * 0.001;
   const halfHeight = height / 2;
 
   const fallbackGeometry = (
@@ -85,6 +84,7 @@ const ProductModel: React.FC<ProductModelProps> = ({
           rotation={rotation}
           onClick={handleClick}
           isSelected={isSelected}
+          scale={scale}
         />
       </Suspense>
     );
@@ -93,20 +93,20 @@ const ProductModel: React.FC<ProductModelProps> = ({
   return fallbackGeometry;
 };
 
-interface ProductGLTFProps {
+const ProductGLTF = ({
+  modelPath,
+  position,
+  rotation,
+  onClick,
+  isSelected,
+  scale
+}: {
   modelPath: string;
   position: [number, number, number];
   rotation: [number, number, number];
   onClick: (e: any) => void;
   isSelected: boolean;
-}
-
-const ProductGLTF: React.FC<ProductGLTFProps> = ({
-  modelPath,
-  position,
-  rotation,
-  onClick,
-  isSelected
+  scale: number;
 }) => {
   const groupRef = useRef<Group>(null);
   const gltf = useLoader(GLTFLoader, modelPath);
@@ -122,7 +122,8 @@ const ProductGLTF: React.FC<ProductGLTFProps> = ({
 
       const maxDim = Math.max(size.x, size.y, size.z);
       if (maxDim > 0) {
-        gltf.scene.scale.setScalar(1 / maxDim);
+        const targetScale = 1 / maxDim;
+        gltf.scene.scale.setScalar(targetScale);
       }
     }
   }, [gltf]);
@@ -139,12 +140,7 @@ const ProductGLTF: React.FC<ProductGLTFProps> = ({
       {isSelected && (
         <mesh>
           <boxGeometry args={[1.2, 1.2, 1.2]} />
-          <meshBasicMaterial
-            color="#ff0000"
-            wireframe
-            transparent
-            opacity={0.5}
-          />
+          <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.5} />
         </mesh>
       )}
     </group>
@@ -154,9 +150,9 @@ const ProductGLTF: React.FC<ProductGLTFProps> = ({
 export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   placedProducts,
   scale,
+  origin,
   onProductClick,
-  selectedProducts,
-  origin
+  selectedProducts
 }) => {
   return (
     <group>
@@ -165,9 +161,9 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
           key={product.id}
           product={product}
           scale={scale}
+          origin={origin}
           onProductClick={onProductClick}
           isSelected={selectedProducts.includes(product.id)}
-          origin={origin} // ✅ required for position alignment
         />
       ))}
     </group>
