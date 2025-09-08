@@ -95,14 +95,16 @@ export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
       {/* Automatic grey floor for closed rooms */}
       <AutoFloor rooms={rooms} scale={scale} />
       
-      {/* Room floor shapes only */}
-      {rooms.map((room) => (
-        <RoomFloor
-          key={room.id}
-          room={room}
-          scale={scale}
-        />
-      ))}
+      {/* Invisible drop plane for product placement */}
+      <mesh
+        position={[0, -0.001, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        visible={false}
+        name="floor-drop-plane"
+      >
+        <planeGeometry args={[100, 100]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
     </group>
   );
 };

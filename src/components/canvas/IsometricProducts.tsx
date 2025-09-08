@@ -30,11 +30,11 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // Use proper coordinate transformation consistent with walls
+  // Use proper coordinate transformation
   const position: [number, number, number] = [
-    product.position.x * scale * 0.1,
+    product.position.x * 0.001, // Convert mm to meters
     0,
-    -product.position.y * scale * 0.1, // Flip Y to -Z
+    -product.position.y * 0.001, // Flip Y to -Z and convert mm to meters
   ];
 
   const rotation: [number, number, number] = [
@@ -55,9 +55,9 @@ const ProductModel = ({
     >
       <boxGeometry 
         args={[
-          product.dimensions.length * scale * 0.0001, // Consistent scaling
-          0.85 * scale * 0.1, // Scale height
-          product.dimensions.width * scale * 0.0001, // Consistent scaling
+          product.dimensions.length * 0.001, // Convert mm to meters
+          product.dimensions.height * 0.001 || 0.85, // Use actual height or default
+          product.dimensions.width * 0.001, // Convert mm to meters
         ]} 
       />
       <meshLambertMaterial 

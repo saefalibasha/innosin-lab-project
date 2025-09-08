@@ -810,12 +810,74 @@ const FloorPlanner = () => {
                     />
                   </div>
                   
-                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Mode: 3D Isometric</span>
-                    <span>Renderer: WebGL</span>
-                    <span>Models: {placedProducts.filter(p => p.modelPath).length}/{placedProducts.length}</span>
-                    <span>Performance: Real-time 3D</span>
-                    <span>{selectedProducts.length > 0 && `${selectedProducts.length} selected`}</span>
+                  {/* 3D Controls Below Canvas */}
+                  <div className="mt-4 border-t pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      {/* View Controls */}
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">View Controls</h3>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">Reset View</Button>
+                          <Button variant="outline" size="sm">Fit to View</Button>
+                        </div>
+                      </div>
+                      
+                      {/* Product Controls */}
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Product Controls</h3>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={selectedProducts.length === 0}
+                            onClick={handleRotateSelected}
+                          >
+                            Rotate Selected
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={selectedProducts.length === 0}
+                            onClick={handleDeleteSelected}
+                          >
+                            Delete Selected
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Wall Controls */}
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Wall Controls</h3>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            Debug Walls
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Export Controls */}
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium">Project</h3>
+                        <div className="flex gap-2">
+                          <Button onClick={handleClear} variant="outline" size="sm">
+                            Clear All
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            Export 3D
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Scene Statistics */}
+                    <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                      <div className="text-sm text-muted-foreground flex justify-between">
+                        <span>Products: {placedProducts.length}</span>
+                        <span>Walls: {wallSegments.length}</span>
+                        <span>Rooms: {rooms.length}</span>
+                        <span>Selected: {selectedProducts.length}</span>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

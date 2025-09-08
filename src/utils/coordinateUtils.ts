@@ -6,13 +6,13 @@ export const COORDINATE_SCALE = 0.001; // mm to meters conversion
 /**
  * Convert 2D canvas coordinates to 3D world coordinates
  * Maps X axis to X axis, Y axis to Z axis (floor plane)
- * Uses consistent scaling with wall geometry: scale * 0.1
+ * Simplified conversion for consistency
  */
 export function canvasTo3DWorld(point: Point, scale: number = 1): [number, number, number] {
   return [
-    point.x * scale * 0.1,
+    point.x * 0.001, // Convert mm to meters
     0, // Y is always 0 for floor placement
-    -point.y * scale * 0.1 // Flip Y to -Z to match wall coordinate system
+    -point.y * 0.001 // Flip Y to -Z and convert mm to meters
   ];
 }
 

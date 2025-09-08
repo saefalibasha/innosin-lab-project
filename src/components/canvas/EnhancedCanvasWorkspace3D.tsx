@@ -135,8 +135,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         name: product.name,
         category: product.category || 'Unknown',
         position: {
-          x: point.x * 1000, // Convert back to mm
-          y: point.z * 1000  // Convert back to mm
+          x: point.x * 1000, // Convert meters back to mm
+          y: -point.z * 1000  // Convert meters back to mm and flip Z to Y
         },
         rotation: 0,
         dimensions: product.dimensions,

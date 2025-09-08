@@ -205,18 +205,6 @@ export const FloorPlanner3D = () => {
             </div>
           </div>
         </div>
-        
-        {/* Scene Statistics */}
-        <div className="px-4 pb-4">
-          <div className="p-3 bg-muted/30 rounded-lg">
-            <div className="text-sm text-muted-foreground flex justify-between">
-              <span>Products: {placedProducts.length}</span>
-              <span>Walls: {wallSegments.length}</span>
-              <span>Rooms: {rooms.length}</span>
-              <span>Selected: {selectedProducts.length}</span>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
