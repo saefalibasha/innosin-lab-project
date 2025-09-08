@@ -1,5 +1,13 @@
 import React, { useRef, useCallback } from 'react';
-import { Point, PlacedProduct, Door, TextAnnotation, WallSegment, Room, DrawingMode } from '@/types/floorPlanTypes';
+import {
+  Point,
+  PlacedProduct,
+  Door,
+  TextAnnotation,
+  WallSegment,
+  Room,
+  DrawingMode
+} from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
@@ -57,7 +65,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onClearAll,
   selectedProducts,
   onProductSelect,
-  onWallUpdate,
   onWallSelect
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
@@ -83,9 +90,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
   const handleWallClick = useCallback((wallId: string) => {
     if (currentMode === 'select') {
-      if (onWallSelect) {
-        onWallSelect(wallId);
-      }
+      onWallSelect?.(wallId);
     }
   }, [currentMode, onWallSelect]);
 
@@ -158,6 +163,12 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     }
   }, [setPlacedProducts]);
 
+  // ✅ Compute wall-based origin offset
+  const allWallPoints = wallSegments.flatMap(w => [w.start, w.end]);
+  const minX = Math.min(...allWallPoints.map(p => p.x));
+  const minY = Math.min(...allWallPoints.map(p => p.y));
+  const origin = { minX, minY };
+
   return (
     <div
       ref={htmlRef}
@@ -176,6 +187,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         onSceneClick={handleSceneClick}
         selectedProducts={selectedProducts}
         showGrid={showGrid}
+        origin={origin} // ✅ Pass origin to fix product position offset
       />
 
       <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
@@ -190,7 +202,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           <div className="text-primary">Selected: {selectedProducts.length}</div>
         )}
       </div>
-
     </div>
   );
 };
