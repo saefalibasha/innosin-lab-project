@@ -5,14 +5,24 @@ import { calculateDoorTransform } from '@/utils/coordinateUtils';
 interface IsometricDoorsProps {
   doors: Door[];
   scale: number;
+  origin?: { minX: number; minY: number };
 }
 
-const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
+const DoorModel = ({ 
+  door, 
+  scale, 
+  origin 
+}: { 
+  door: Door; 
+  scale: number; 
+  origin?: { minX: number; minY: number };
+}) => {
+  // Use real-world door dimensions in meters
   const doorWidth = (door.width || 800) * 0.001; // Convert mm to meters
   const doorHeight = 2.1; // 2.1 meters standard
   const doorThickness = 0.05; // 5cm
 
-  const transform = calculateDoorTransform(door, scale);
+  const transform = calculateDoorTransform(door, scale, origin);
 
   if (!transform || !transform.position || !transform.rotation) {
     console.warn('Invalid transform for door:', door);
@@ -41,11 +51,11 @@ const DoorModel = ({ door, scale }: { door: Door; scale: number }) => {
   );
 };
 
-export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale }) => {
+export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale, origin }) => {
   return (
     <group>
       {doors.map((door) => (
-        <DoorModel key={door.id} door={door} scale={scale} />
+        <DoorModel key={door.id} door={door} scale={scale} origin={origin} />
       ))}
     </group>
   );

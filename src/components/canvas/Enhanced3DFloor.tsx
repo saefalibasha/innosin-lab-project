@@ -1,13 +1,15 @@
 import React, { useMemo } from 'react';
 import { Shape, ExtrudeGeometry } from 'three';
-import { Room, Point } from '@/types/floorPlanTypes';
+import { Room, Point, WallSegment } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
+import { detectFloorsFromWalls } from '@/utils/floorDetection';
 
 interface Enhanced3DFloorProps {
   rooms: Room[];
+  wallSegments?: WallSegment[];
   scale: number;
   showSnapGrid?: boolean;
-  origin?: { minX: number; minY: number }; // ✅ Add origin
+  origin?: { minX: number; minY: number };
 }
 
 const RoomFloor = ({
@@ -68,32 +70,35 @@ const RoomFloor = ({
 
 const AutoFloor = ({
   rooms,
+  wallSegments,
   scale,
   origin,
 }: {
   rooms: Room[];
+  wallSegments?: WallSegment[];
   scale: number;
   origin?: { minX: number; minY: number };
 }) => {
-  const closedRooms = useMemo(() => {
-    return rooms.filter((room) => {
-      if (room.points.length < 3) return false;
+  const allFloors = useMemo(() => {
+    // Combine explicit rooms with auto-detected floors from walls
+    const explicitRooms = rooms.filter(room => room.points.length >= 3);
+    
+    // Auto-detect floors from walls if no explicit rooms
+    const autoFloors = explicitRooms.length === 0 && wallSegments 
+      ? detectFloorsFromWalls(wallSegments)
+      : [];
 
-      const first = room.points[0];
-      const last = room.points[room.points.length - 1];
-      const dist = Math.hypot(first.x - last.x, first.y - last.y);
-      return dist < 50;
-    });
-  }, [rooms]);
+    return [...explicitRooms, ...autoFloors];
+  }, [rooms, wallSegments]);
 
   return (
     <group>
-      {closedRooms.map((room) => (
+      {allFloors.map((room) => (
         <RoomFloor
           key={room.id}
           room={room}
           scale={scale}
-          origin={origin} // ✅ pass origin to each room
+          origin={origin}
         />
       ))}
     </group>
@@ -102,14 +107,20 @@ const AutoFloor = ({
 
 export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
   rooms,
+  wallSegments,
   scale,
   showSnapGrid = false,
   origin,
 }) => {
   return (
     <group>
-      {/* Auto-filled floor */}
-      <AutoFloor rooms={rooms} scale={scale} origin={origin} />
+      {/* Auto-filled floor with wall detection */}
+      <AutoFloor 
+        rooms={rooms} 
+        wallSegments={wallSegments}
+        scale={scale} 
+        origin={origin} 
+      />
 
       {/* Snap plane */}
       <mesh

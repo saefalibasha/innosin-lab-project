@@ -883,106 +883,111 @@ const FloorPlanner = () => {
               </Card>
             )}
 
-            <ProductRotationControl
-              selectedProducts={selectedProducts}
-              onRotateClockwise={handleRotateSelected}
-              onRotateCounterClockwise={handleRotateCounterClockwise}
-              onRotateToAngle={handleRotateToAngle}
-            />
-            
-            {selectedWall && (
-              <WallEditor
-                selectedWall={selectedWall}
-                onWallUpdate={handleWallUpdate}
-                onWallDelete={handleWallDelete}
-                onClose={() => setSelectedWall(null)}
-                scale={scale}
-                measurementUnit={measurementUnit}
-              />
-            )}
+            {/* Only show these controls in 2D mode */}
+            {viewMode === '2d' && (
+              <>
+                <ProductRotationControl
+                  selectedProducts={selectedProducts}
+                  onRotateClockwise={handleRotateSelected}
+                  onRotateCounterClockwise={handleRotateCounterClockwise}
+                  onRotateToAngle={handleRotateToAngle}
+                />
+                
+                {selectedWall && (
+                  <WallEditor
+                    selectedWall={selectedWall}
+                    onWallUpdate={handleWallUpdate}
+                    onWallDelete={handleWallDelete}
+                    onClose={() => setSelectedWall(null)}
+                    scale={scale}
+                    measurementUnit={measurementUnit}
+                  />
+                )}
 
-            {rooms.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Home className="h-4 w-4" />
-                    Room Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {rooms.map((room) => (
-                      <div key={room.id} className="border rounded p-3 space-y-2">
-                        <div className="font-medium">{room.name}</div>
-                        <div className="text-sm text-gray-600 space-y-1">
-                          <div>Area: {formatMeasurement(room.area, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
-                          <div>Perimeter: {formatMeasurement(room.perimeter, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
-                          <div>Points: {room.points.length}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {selectedProducts.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Info className="h-4 w-4" />
-                    Selection ({selectedProducts.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={handleRotateSelected}
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Rotate
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Copy className="h-3 w-3 mr-1" />
-                      Copy
-                    </Button>
-                  </div>
-                  
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={handleDeleteSelected}
-                  >
-                    <Trash2 className="h-3 w-3 mr-2" />
-                    Delete
-                  </Button>
-                  
-                  {selectedProducts.length === 1 && (
-                    <div className="space-y-2 pt-2 border-t">
-                      <span className="text-xs font-medium">Properties:</span>
-                      {(() => {
-                        const product = placedProducts.find(p => p.id === selectedProducts[0]);
-                        if (!product) return null;
-                        return (
-                          <div className="space-y-1 text-xs">
-                            <div><strong>Name:</strong> {product.name}</div>
-                            <div><strong>Category:</strong> {product.category}</div>
-                            <div><strong>Dimensions:</strong> {product.dimensions.length}×{product.dimensions.width}mm</div>
-                            <div>
-                              <strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm
+                {rooms.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Home className="h-4 w-4" />
+                        Room Information
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {rooms.map((room) => (
+                          <div key={room.id} className="border rounded p-3 space-y-2">
+                            <div className="font-medium">{room.name}</div>
+                            <div className="text-sm text-gray-600 space-y-1">
+                              <div>Area: {formatMeasurement(room.area, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
+                              <div>Perimeter: {formatMeasurement(room.perimeter, measurementUnit, measurementUnit === 'mm' ? 0 : 2)}</div>
+                              <div>Points: {room.points.length}</div>
                             </div>
-                            <div><strong>Rotation:</strong> {Math.round((product.rotation || 0) * 180 / Math.PI)}°</div>
                           </div>
-                        );
-                      })()}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {selectedProducts.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Info className="h-4 w-4" />
+                        Selection ({selectedProducts.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="flex-1"
+                          onClick={handleRotateSelected}
+                        >
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Rotate
+                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Copy className="h-3 w-3 mr-1" />
+                          Copy
+                        </Button>
+                      </div>
+                      
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={handleDeleteSelected}
+                      >
+                        <Trash2 className="h-3 w-3 mr-2" />
+                        Delete
+                      </Button>
+                      
+                      {selectedProducts.length === 1 && (
+                        <div className="space-y-2 pt-2 border-t">
+                          <span className="text-xs font-medium">Properties:</span>
+                          {(() => {
+                            const product = placedProducts.find(p => p.id === selectedProducts[0]);
+                            if (!product) return null;
+                            return (
+                              <div className="space-y-1 text-xs">
+                                <div><strong>Name:</strong> {product.name}</div>
+                                <div><strong>Category:</strong> {product.category}</div>
+                                <div><strong>Dimensions:</strong> {product.dimensions.length}×{product.dimensions.width}mm</div>
+                                <div>
+                                  <strong>Position:</strong> {canvasToMm(product.position.x, scale).toFixed(0)}, {canvasToMm(product.position.y, scale).toFixed(0)}mm
+                                </div>
+                                <div><strong>Rotation:</strong> {Math.round((product.rotation || 0) * 180 / Math.PI)}°</div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -190,18 +190,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         origin={origin} // ✅ Pass origin to fix product position offset
       />
 
-      <div className="absolute top-4 left-4 bg-background/90 rounded-md px-3 py-2 text-sm font-medium">
-        Mode: {currentMode}
-      </div>
-
-      <div className="absolute top-4 right-4 bg-background/90 rounded-md px-3 py-2 text-xs space-y-1">
-        <div>Products: {placedProducts.length}</div>
-        <div>Walls: {wallSegments.length}</div>
-        <div>Rooms: {rooms.length}</div>
-        {selectedProducts.length > 0 && (
-          <div className="text-primary">Selected: {selectedProducts.length}</div>
-        )}
-      </div>
+      {/* Clean UI - moved stats to controls below */}
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useMemo } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import { Group } from 'three';
@@ -59,14 +59,34 @@ const IsometricScene = ({
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
+  // Calculate origin if not provided
+  const calculatedOrigin = useMemo(() => {
+    if (origin) return origin;
+    
+    // Calculate bounds from all elements
+    const allPoints = [
+      ...wallSegments.flatMap(w => [w.start, w.end]),
+      ...rooms.flatMap(r => r.points),
+      ...placedProducts.map(p => p.position)
+    ];
+    
+    if (allPoints.length === 0) return { minX: 0, minY: 0 };
+    
+    const minX = Math.min(...allPoints.map(p => p.x));
+    const minY = Math.min(...allPoints.map(p => p.y));
+    
+    return { minX, minY };
+  }, [wallSegments, rooms, placedProducts, origin]);
+
   return (
     <group ref={groupRef}>
       {/* Floor */}
       <Enhanced3DFloor
         rooms={rooms}
+        wallSegments={wallSegments}
         scale={scale}
         showSnapGrid={showGrid}
-        origin={origin}
+        origin={calculatedOrigin}
       />
 
       {/* Grid if no rooms */}
@@ -90,11 +110,11 @@ const IsometricScene = ({
         wallSegments={wallSegments}
         scale={scale}
         onWallClick={onWallClick}
-        origin={origin}
+        origin={calculatedOrigin}
       />
 
       {/* Doors */}
-      <IsometricDoors doors={doors} scale={scale} />
+      <IsometricDoors doors={doors} scale={scale} origin={calculatedOrigin} />
 
       {/* Products */}
       <IsometricProducts
@@ -102,7 +122,7 @@ const IsometricScene = ({
         scale={scale}
         onProductClick={onProductClick}
         selectedProducts={selectedProducts}
-        origin={origin}
+        origin={calculatedOrigin}
       />
 
       {/* Controls */}

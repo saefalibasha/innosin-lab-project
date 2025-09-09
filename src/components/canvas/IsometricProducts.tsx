@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
 import { Box3, Vector3, Group, Mesh } from 'three';
 import { PlacedProduct } from '@/types/floorPlanTypes';
+import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 
 interface IsometricProductsProps {
   placedProducts: PlacedProduct[];
@@ -33,15 +34,18 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // ✅ Apply origin offset if provided
+  // Apply origin offset if provided
   const offsetX = origin?.minX || 0;
   const offsetY = origin?.minY || 0;
 
-  const position: [number, number, number] = [
-    (product.position.x - offsetX) * scale * 0.1,
-    0,
-    (product.position.y - offsetY) * scale * 0.1 // ✅ FIXED: no negation
-  ];
+  // Convert to 3D coordinates using consistent transformation
+  const adjustedPoint = {
+    x: product.position.x - offsetX,
+    y: product.position.y - offsetY
+  };
+  
+  const [x, y, z] = canvasTo3DWorld(adjustedPoint);
+  const position: [number, number, number] = [x, y, z];
 
   const rotation: [number, number, number] = [
     0,
@@ -49,9 +53,10 @@ const ProductModel = ({
     0
   ];
 
-  const length = product.dimensions.length * scale * 0.1;
-  const width = product.dimensions.width * scale * 0.1;
-  const height = (product.dimensions.height || 850) * scale * 0.1;
+  // Convert dimensions from mm to meters for proper 3D scaling
+  const length = product.dimensions.length * 0.001;
+  const width = product.dimensions.width * 0.001;
+  const height = (product.dimensions.height || 850) * 0.001;
   const halfHeight = height / 2;
 
   const fallbackGeometry = (
