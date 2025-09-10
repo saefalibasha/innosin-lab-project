@@ -10,10 +10,10 @@ export const SCALE_2D_TO_3D = 0.08; // Consistent with 2D scale (0.08 px/mm)
  * Scale factor is handled separately in components
  */
 export function canvasTo3DWorld(point: Point, scale: number = 1): [number, number, number] {
-  // Direct conversion from 2D pixels to 3D meters using consistent scale
-  // 2D uses 0.08 px/mm, so we convert mm to meters for 3D
-  const worldX = point.x * 0.08 * COORDINATE_SCALE; // Convert px -> mm -> meters
-  const worldZ = point.y * 0.08 * COORDINATE_SCALE; // Y becomes Z in 3D
+  // Direct 1:1 conversion from 2D pixels to 3D meters
+  // Scale of 0.08 means 80px = 1000mm = 1m, so 1px = 12.5mm = 0.0125m
+  const worldX = point.x * 0.0125; // Direct px to meters conversion (1px = 12.5mm)
+  const worldZ = point.y * 0.0125; // Y becomes Z in 3D floor plane
   
   return [worldX, 0, worldZ];
 }
@@ -45,14 +45,17 @@ export function calculateDoorTransform(
     };
   }
 
-  // Apply origin offset to door position
-  const offsetX = origin?.minX || 0;
-  const offsetY = origin?.minY || 0;
-
+  // Use door's exact 2D coordinates without origin offset
   const doorPosition = {
-    x: door.position.x - offsetX,
-    y: door.position.y - offsetY
+    x: door.position.x,
+    y: door.position.y
   };
+
+  console.log('Door position calculation:', {
+    doorId: door.id,
+    originalPosition: door.position,
+    finalPosition: doorPosition
+  });
 
   // Convert door position directly from 2D to 3D coordinates
   const [x, y, z] = canvasTo3DWorld(doorPosition);
@@ -64,6 +67,12 @@ export function calculateDoorTransform(
   } else if (door.facing === 'vertical') {
     rotation = Math.PI / 2; // Door along Z axis (90 degrees)
   }
+
+  console.log('Door 3D transform:', {
+    doorId: door.id,
+    position: [x, y, z],
+    rotation: [0, rotation, 0]
+  });
 
   return {
     position: [x, y, z] as [number, number, number],

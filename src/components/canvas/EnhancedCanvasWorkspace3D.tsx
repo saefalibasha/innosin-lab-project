@@ -140,8 +140,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         name: product.name,
         category: product.category || 'Unknown',
         position: {
-          x: point.x * 1000, // Convert meters back to mm
-          y: -point.z * 1000  // Convert meters back to mm and flip Z to Y
+          x: point.x / 0.0125, // Convert meters back to pixels (1px = 0.0125m)
+          y: point.z / 0.0125  // Convert meters back to pixels, Z becomes Y
         },
         rotation: 0,
         dimensions: product.dimensions,
@@ -163,11 +163,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     }
   }, [setPlacedProducts]);
 
-  // ✅ Compute wall-based origin offset
-  const allWallPoints = wallSegments.flatMap(w => [w.start, w.end]);
-  const minX = Math.min(...allWallPoints.map(p => p.x));
-  const minY = Math.min(...allWallPoints.map(p => p.y));
-  const origin = { minX, minY };
+  // Remove origin calculation for direct 1:1 coordinate mapping
+  const origin = { minX: 0, minY: 0 };
 
   return (
     <div

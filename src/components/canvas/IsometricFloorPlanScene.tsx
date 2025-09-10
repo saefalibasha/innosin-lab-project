@@ -59,24 +59,8 @@ const IsometricScene = ({
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
-  // Calculate origin if not provided
-  const calculatedOrigin = useMemo(() => {
-    if (origin) return origin;
-    
-    // Calculate bounds from all elements
-    const allPoints = [
-      ...wallSegments.flatMap(w => [w.start, w.end]),
-      ...rooms.flatMap(r => r.points),
-      ...placedProducts.map(p => p.position)
-    ];
-    
-    if (allPoints.length === 0) return { minX: 0, minY: 0 };
-    
-    const minX = Math.min(...allPoints.map(p => p.x));
-    const minY = Math.min(...allPoints.map(p => p.y));
-    
-    return { minX, minY };
-  }, [wallSegments, rooms, placedProducts, origin]);
+  // Remove origin calculation - use direct 1:1 coordinate mapping
+  const calculatedOrigin = { minX: 0, minY: 0 };
 
   return (
     <group ref={groupRef}>

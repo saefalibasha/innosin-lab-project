@@ -147,10 +147,9 @@ export const FloorPlanner3D = () => {
         </div>
       </div>
 
-      {/* Bottom controls section - Enhanced UI Layout */}
+      {/* Clean UI Controls */}
       <div className="border-t bg-background">
-        {/* Control Sections */}
-        <div className="p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* View Controls */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">View Controls</h3>
@@ -169,38 +168,6 @@ export const FloorPlanner3D = () => {
               </Button>
               <Button variant="outline" size="sm" disabled={selectedProducts.length === 0}>
                 Delete Selected
-              </Button>
-            </div>
-          </div>
-          
-          {/* Wall Controls */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Wall Controls</h3>
-            <div className="flex gap-2">
-              <Button onClick={handleLogWalls} variant="outline" size="sm">
-                Debug Walls
-              </Button>
-              {selectedWall && (
-                <Button
-                  onClick={() => handleWallVisibilityToggle(selectedWall.id)}
-                  variant="outline"
-                  size="sm"
-                >
-                  {selectedWall.visible !== false ? 'Hide Wall' : 'Show Wall'}
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {/* Export Controls */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium">Project</h3>
-            <div className="flex gap-2">
-              <Button onClick={handleClearAll} variant="outline" size="sm">
-                Clear All
-              </Button>
-              <Button variant="outline" size="sm">
-                Export 3D
               </Button>
             </div>
           </div>
