@@ -6,15 +6,16 @@ export const SCALE_2D_TO_3D = 0.08; // Consistent with 2D scale (0.08 px/mm)
 
 /**
  * Convert 2D canvas coordinates to 3D world coordinates
- * Maps X axis to X axis, Y axis to Z axis (floor plane)
- * Uses consistent scale factor
+ * Direct 1:1 mapping: X axis to X axis, Y axis to Z axis (floor plane)
+ * Scale factor is handled separately in components
  */
 export function canvasTo3DWorld(point: Point, scale: number = 1): [number, number, number] {
-  return [
-    point.x * COORDINATE_SCALE,
-    0,
-    point.y * COORDINATE_SCALE  // No negation - keep Y as Z directly
-  ];
+  // Direct conversion from 2D pixels to 3D meters using consistent scale
+  // 2D uses 0.08 px/mm, so we convert mm to meters for 3D
+  const worldX = point.x * 0.08 * COORDINATE_SCALE; // Convert px -> mm -> meters
+  const worldZ = point.y * 0.08 * COORDINATE_SCALE; // Y becomes Z in 3D
+  
+  return [worldX, 0, worldZ];
 }
 
 /**
@@ -28,15 +29,15 @@ export function worldTo2DCanvas(x: number, z: number, scale: number): Point {
 }
 
 /**
- * Calculate door position and rotation from wall segment
- * Uses consistent coordinate system with walls and applies origin offset
+ * Calculate door position and rotation from door data
+ * Uses direct 2D position mapping for 1:1 coordinate matching
  */
 export function calculateDoorTransform(
   door: any, 
   scale: number, 
   origin?: { minX: number; minY: number }
 ) {
-  if (!door || !door.wallStart || !door.wallEnd) {
+  if (!door || !door.position) {
     console.warn('calculateDoorTransform received invalid door data:', door);
     return {
       position: [0, 0, 0] as [number, number, number],
@@ -44,62 +45,28 @@ export function calculateDoorTransform(
     };
   }
 
-  if (
-    typeof door.wallStart.x !== 'number' || typeof door.wallStart.y !== 'number' ||
-    typeof door.wallEnd.x !== 'number' || typeof door.wallEnd.y !== 'number'
-  ) {
-    console.warn('calculateDoorTransform received invalid wall coordinates:', door);
-    return {
-      position: [0, 0, 0] as [number, number, number],
-      rotation: [0, 0, 0] as [number, number, number]
-    };
-  }
-
-  // Apply origin offset
+  // Apply origin offset to door position
   const offsetX = origin?.minX || 0;
   const offsetY = origin?.minY || 0;
 
-  const wallStart = {
-    x: door.wallStart.x - offsetX,
-    y: door.wallStart.y - offsetY
-  };
-  
-  const wallEnd = {
-    x: door.wallEnd.x - offsetX,
-    y: door.wallEnd.y - offsetY
+  const doorPosition = {
+    x: door.position.x - offsetX,
+    y: door.position.y - offsetY
   };
 
-  const wallVector = {
-    x: wallEnd.x - wallStart.x,
-    y: wallEnd.y - wallStart.y
-  };
+  // Convert door position directly from 2D to 3D coordinates
+  const [x, y, z] = canvasTo3DWorld(doorPosition);
 
-  const wallLength = Math.sqrt(wallVector.x ** 2 + wallVector.y ** 2);
-
-  if (wallLength === 0) {
-    console.warn('calculateDoorTransform: wall has zero length');
-    return {
-      position: canvasTo3DWorld(wallStart),
-      rotation: [0, 0, 0] as [number, number, number]
-    };
+  // Calculate rotation based on facing direction
+  let rotation = 0;
+  if (door.facing === 'horizontal') {
+    rotation = 0; // Door along X axis
+  } else if (door.facing === 'vertical') {
+    rotation = Math.PI / 2; // Door along Z axis (90 degrees)
   }
 
-  const normalizedWall = {
-    x: wallVector.x / wallLength,
-    y: wallVector.y / wallLength
-  };
-
-  const wallPosition = typeof door.wallPosition === 'number' ? door.wallPosition : 0.5;
-  const doorPosition = {
-    x: wallStart.x + normalizedWall.x * wallLength * wallPosition,
-    y: wallStart.y + normalizedWall.y * wallLength * wallPosition
-  };
-
-  // Calculate rotation to align with wall direction
-  const rotation = Math.atan2(normalizedWall.y, normalizedWall.x);
-
   return {
-    position: canvasTo3DWorld(doorPosition),
+    position: [x, y, z] as [number, number, number],
     rotation: [0, rotation, 0] as [number, number, number]
   };
 }

@@ -38,7 +38,7 @@ const ProductModel = ({
   const offsetX = origin?.minX || 0;
   const offsetY = origin?.minY || 0;
 
-  // Convert to 3D coordinates using consistent transformation
+  // Convert to 3D coordinates using 1:1 mapping from 2D
   const adjustedPoint = {
     x: product.position.x - offsetX,
     y: product.position.y - offsetY
@@ -53,10 +53,11 @@ const ProductModel = ({
     0
   ];
 
-  // Convert dimensions from mm to meters for proper 3D scaling
-  const length = product.dimensions.length * 0.001;
-  const width = product.dimensions.width * 0.001;
-  const height = (product.dimensions.height || 850) * 0.001;
+  // Convert dimensions: 2D uses mm directly, convert to meters for 3D
+  // Use the 2D scale factor (0.08 px/mm) to maintain proportions
+  const length = product.dimensions.length * 0.001; // mm to meters
+  const width = product.dimensions.width * 0.001;   // mm to meters
+  const height = (product.dimensions.height || 850) * 0.001; // mm to meters
   const halfHeight = height / 2;
 
   const fallbackGeometry = (

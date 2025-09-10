@@ -17,10 +17,11 @@ const DoorModel = ({
   scale: number; 
   origin?: { minX: number; minY: number };
 }) => {
-  // Use real-world door dimensions in meters
-  const doorWidth = (door.width || 800) * 0.001; // Convert mm to meters
-  const doorHeight = 2.1; // 2.1 meters standard
-  const doorThickness = 0.05; // 5cm
+  // Convert door width from 2D pixels to proper 3D meters
+  // Door width in pixels from 2D * 0.08 (px/mm scale) * 0.001 (mm to meters)
+  const doorWidth = (door.width || 80) * 0.08 * 0.001; 
+  const doorHeight = 2.0; // Standard door height in meters
+  const doorThickness = 0.05; // 5cm thick door
 
   const transform = calculateDoorTransform(door, scale, origin);
 
