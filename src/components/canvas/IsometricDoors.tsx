@@ -19,8 +19,8 @@ const DoorModel = ({
 }) => {
   // Real-world door dimensions (in meters)
   const doorWidth = 0.9; // Standard 900mm door width
-  const doorHeight = 2.0; // Standard door height
-  const doorThickness = 0.05; // 5cm thick door
+  const doorHeight = 2.0; // Standard door height  
+  const doorThickness = 0.08; // 8cm thick door for visibility
 
   const transform = calculateDoorTransform(door, scale);
 

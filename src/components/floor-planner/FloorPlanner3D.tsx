@@ -147,15 +147,39 @@ export const FloorPlanner3D = () => {
         </div>
       </div>
 
-      {/* Clean UI Controls */}
+      {/* Functional 3D Controls */}
       <div className="border-t bg-background">
-        <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* View Controls */}
           <div className="space-y-2">
             <h3 className="text-sm font-medium">View Controls</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">Reset View</Button>
-              <Button variant="outline" size="sm">Fit to View</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  const camera = (window as any).__threeCamera;
+                  if (camera) {
+                    camera.position.set(20, 20, 20);
+                    camera.lookAt(0, 0, 0);
+                  }
+                }}
+              >
+                Reset View
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  // Fit view to content
+                  const camera = (window as any).__threeCamera;
+                  if (camera) {
+                    camera.position.set(10, 15, 10);
+                  }
+                }}
+              >
+                Fit View
+              </Button>
             </div>
           </div>
           
@@ -163,11 +187,51 @@ export const FloorPlanner3D = () => {
           <div className="space-y-2">
             <h3 className="text-sm font-medium">Product Controls</h3>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" disabled={selectedProducts.length === 0}>
-                Rotate Selected
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={selectedProducts.length === 0}
+                onClick={() => {
+                  if (selectedProducts.length > 0) {
+                    // Rotate selected product 90 degrees
+                    const productId = selectedProducts[0];
+                    const product = placedProducts.find(p => p.id === productId);
+                    if (product) {
+                      const newRotation = (product.rotation || 0) + 90;
+                      setPlacedProducts(prev => prev.map(p => 
+                        p.id === productId ? { ...p, rotation: newRotation % 360 } : p
+                      ));
+                    }
+                  }
+                }}
+              >
+                Rotate 90°
               </Button>
-              <Button variant="outline" size="sm" disabled={selectedProducts.length === 0}>
-                Delete Selected
+              <Button 
+                variant="outline" 
+                size="sm" 
+                disabled={selectedProducts.length === 0}
+                onClick={() => {
+                  if (selectedProducts.length > 0) {
+                    setPlacedProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
+                    setSelectedProducts([]);
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </div>
+
+          {/* Snapping Controls */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium">Snapping</h3>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                {showGrid ? 'Grid On' : 'Grid Off'}
+              </Button>
+              <Button variant="outline" size="sm">
+                Auto-Snap
               </Button>
             </div>
           </div>

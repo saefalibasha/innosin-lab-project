@@ -1,111 +1,131 @@
 import { PlacedProduct } from '@/types/floorPlanTypes';
 
-export enum ProductSeries {
-  SINK_CABINET = 'Sink Cabinet Series',
-  MODULAR_CABINET = 'Modular Cabinet Series', 
-  WALL_CABINET = 'Wall Cabinet Series',
-  OTHER = 'Other'
-}
-
-export interface ProductBehavior {
-  canAttachTableTop: boolean;
-  canMountOnWall: boolean;
-  defaultMountHeight: number; // mm from floor
-  snapToFloor: boolean;
+interface ProductBehavior {
   snapToWalls: boolean;
   snapToProducts: boolean;
+  snapToFloor: boolean;
+  canMountOnWall: boolean;
   allowStacking: boolean;
-  stackHeight?: number;
+  defaultMountHeight: number; // in mm
+  series: string;
+  category: string;
 }
 
-const DEFAULT_BEHAVIORS: ProductBehavior = {
-  canAttachTableTop: false,
-  canMountOnWall: false,
-  defaultMountHeight: 0,
-  snapToFloor: true,
-  snapToWalls: true,
-  snapToProducts: true,
-  allowStacking: false
-};
-
-const SERIES_BEHAVIORS: Record<ProductSeries, ProductBehavior> = {
-  [ProductSeries.SINK_CABINET]: {
-    canAttachTableTop: true,
-    canMountOnWall: false,
-    defaultMountHeight: 0,
-    snapToFloor: true,
-    snapToWalls: true,
-    snapToProducts: true,
-    allowStacking: false
-  },
-  [ProductSeries.MODULAR_CABINET]: {
-    canAttachTableTop: true,
-    canMountOnWall: false,
-    defaultMountHeight: 0,
-    snapToFloor: true,
-    snapToWalls: true,
-    snapToProducts: true,
-    allowStacking: true,
-    stackHeight: 850 // Standard cabinet height
-  },
-  [ProductSeries.WALL_CABINET]: {
-    canAttachTableTop: false,
-    canMountOnWall: true,
-    defaultMountHeight: 1500, // 1.5m from floor
-    snapToFloor: false,
-    snapToWalls: true,
-    snapToProducts: true,
-    allowStacking: false
-  },
-  [ProductSeries.OTHER]: DEFAULT_BEHAVIORS
-};
-
-export function getProductSeries(product: PlacedProduct): ProductSeries {
-  const category = product.category?.toLowerCase() || '';
-  const name = product.name?.toLowerCase() || '';
-  
-  if (category.includes('sink') || name.includes('sink')) {
-    return ProductSeries.SINK_CABINET;
-  }
-  if (category.includes('modular') || name.includes('modular')) {
-    return ProductSeries.MODULAR_CABINET;
-  }
-  if (category.includes('wall') || name.includes('wall')) {
-    return ProductSeries.WALL_CABINET;
-  }
-  
-  return ProductSeries.OTHER;
-}
-
+/**
+ * Get behavior configuration for a product
+ */
 export function getProductBehavior(product: PlacedProduct): ProductBehavior {
-  const series = getProductSeries(product);
-  return SERIES_BEHAVIORS[series];
-}
-
-export function canProductsConnect(product1: PlacedProduct, product2: PlacedProduct): boolean {
-  const series1 = getProductSeries(product1);
-  const series2 = getProductSeries(product2);
+  const productId = product.productId || '';
+  const name = product.name?.toLowerCase() || '';
+  const category = product.category?.toLowerCase() || '';
   
-  // Products from the same series can connect
-  return series1 === series2 && series1 !== ProductSeries.OTHER;
+  // Detect series from productId, name, or category for Innosin products
+  if (productId.includes('mc-pc') || name.includes('mobile cabinet') || category.includes('mobile')) {
+    return {
+      snapToWalls: true,
+      snapToProducts: true,
+      snapToFloor: true,
+      canMountOnWall: false,
+      allowStacking: false,
+      defaultMountHeight: 0,
+      series: 'mobile-cabinet',
+      category: 'mobile'
+    };
+  }
+  
+  if (productId.includes('mcc-pc') || name.includes('combination cabinet') || category.includes('modular')) {
+    return {
+      snapToWalls: true,
+      snapToProducts: true,
+      snapToFloor: true,
+      canMountOnWall: false,
+      allowStacking: true,
+      defaultMountHeight: 0,
+      series: 'modular-cabinet',
+      category: 'modular'
+    };
+  }
+  
+  if (productId.includes('wcg-pc') || name.includes('wall cabinet') || category.includes('wall')) {
+    return {
+      snapToWalls: true,
+      snapToProducts: true,
+      snapToFloor: false,
+      canMountOnWall: true,
+      allowStacking: false,
+      defaultMountHeight: 1200,
+      series: 'wall-cabinet',
+      category: 'wall'
+    };
+  }
+  
+  if (productId.includes('tcg-pc') || name.includes('tall cabinet') || category.includes('tall')) {
+    return {
+      snapToWalls: true,
+      snapToProducts: true,
+      snapToFloor: true,
+      canMountOnWall: false,
+      allowStacking: false,
+      defaultMountHeight: 0,
+      series: 'tall-cabinet',
+      category: 'tall'
+    };
+  }
+  
+  // Default behavior for unknown products
+  return {
+    snapToWalls: true,
+    snapToProducts: true,
+    snapToFloor: true,
+    canMountOnWall: false,
+    allowStacking: false,
+    defaultMountHeight: 0,
+    series: 'unknown',
+    category: 'general'
+  };
 }
 
+/**
+ * Check if two products can connect/snap together
+ */
+export function canProductsConnect(product1: PlacedProduct, product2: PlacedProduct): boolean {
+  const behavior1 = getProductBehavior(product1);
+  const behavior2 = getProductBehavior(product2);
+  
+  // Same series products can always connect
+  if (behavior1.series === behavior2.series) {
+    return true;
+  }
+  
+  // Mobile cabinets can connect to each other
+  if (behavior1.category === 'mobile' && behavior2.category === 'mobile') {
+    return true;
+  }
+  
+  // Modular cabinets can stack and connect
+  if (behavior1.category === 'modular' && behavior2.category === 'modular') {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Calculate optimal snap distance for a product
+ */
 export function calculateOptimalSnapDistance(product: PlacedProduct): number {
   const behavior = getProductBehavior(product);
-  const series = getProductSeries(product);
   
-  switch (series) {
-    case ProductSeries.WALL_CABINET:
-      return 100; // Tighter snapping for wall-mounted items
-    case ProductSeries.MODULAR_CABINET:
-    case ProductSeries.SINK_CABINET:
-      return 200; // Standard snapping distance
+  switch (behavior.category) {
+    case 'mobile':
+      return 200; // 200mm snap distance for mobile cabinets
+    case 'modular':
+      return 150; // 150mm for modular cabinets (tighter snapping)
+    case 'wall':
+      return 100; // 100mm for wall cabinets
+    case 'tall':
+      return 250; // 250mm for tall cabinets
     default:
-      return 150;
+      return 200;
   }
-}
-
-export function getDefaultPlacementHeight(product: PlacedProduct): number {
-  const behavior = getProductBehavior(product);
-  return behavior.defaultMountHeight;
 }

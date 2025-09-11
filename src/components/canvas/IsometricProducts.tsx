@@ -34,19 +34,14 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // Use product's exact 2D coordinates without origin offset
+  // Use product's exact 2D coordinates from the canvas
   const productPoint = {
     x: product.position.x,
     y: product.position.y
   };
-
-  console.log('Product position calculation:', {
-    productId: product.id,
-    originalPosition: product.position,
-    finalPosition: productPoint
-  });
   
-  const [x, y, z] = canvasTo3DWorld(productPoint);
+  // Convert to 3D world coordinates using proper scale
+  const [x, y, z] = canvasTo3DWorld(productPoint, scale);
   const position: [number, number, number] = [x, y, z];
 
   const rotation: [number, number, number] = [

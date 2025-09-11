@@ -1,8 +1,6 @@
 import React, { useMemo } from 'react';
-import { Shape, ExtrudeGeometry } from 'three';
-import { Room, Point, WallSegment } from '@/types/floorPlanTypes';
+import { WallSegment, Room } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
-import { detectFloorsFromWalls } from '@/utils/floorDetection';
 
 interface Enhanced3DFloorProps {
   rooms: Room[];
@@ -12,96 +10,93 @@ interface Enhanced3DFloorProps {
   origin?: { minX: number; minY: number };
 }
 
-const RoomFloor = ({
-  room,
-  scale,
-  origin,
-}: {
-  room: Room;
+// Generate floor from wall segments automatically
+const WallFloor = ({ wallSegments, scale, origin }: {
+  wallSegments: WallSegment[];
   scale: number;
   origin?: { minX: number; minY: number };
 }) => {
   const floorGeometry = useMemo(() => {
-    if (room.points.length < 3) return null;
+    if (wallSegments.length === 0) return null;
 
-    const shift = origin || { minX: 0, minY: 0 };
+    // Find bounding box of all wall points
+    const wallPoints = wallSegments.flatMap(wall => [wall.start, wall.end]);
+    
+    if (wallPoints.length < 3) return null;
 
-    const transformPoint = (point: Point) => ({
-      x: point.x - shift.minX,
-      y: point.y - shift.minY,
-    });
+    const minX = Math.min(...wallPoints.map(p => p.x));
+    const maxX = Math.max(...wallPoints.map(p => p.x));
+    const minY = Math.min(...wallPoints.map(p => p.y));
+    const maxY = Math.max(...wallPoints.map(p => p.y));
 
-    const shape = new Shape();
-    const first = transformPoint(room.points[0]);
-    const [firstX, , firstZ] = canvasTo3DWorld(first, scale);
-    shape.moveTo(firstX, firstZ);
+    // Convert to 3D coordinates
+    const corner1 = canvasTo3DWorld({ x: minX, y: minY }, scale);
+    const corner2 = canvasTo3DWorld({ x: maxX, y: maxY }, scale);
 
-    for (let i = 1; i < room.points.length; i++) {
-      const p = transformPoint(room.points[i]);
-      const [x, , z] = canvasTo3DWorld(p, scale);
-      shape.lineTo(x, z);
-    }
+    const width = Math.abs(corner2[0] - corner1[0]);
+    const depth = Math.abs(corner2[2] - corner1[2]);
+    const centerX = (corner1[0] + corner2[0]) / 2;
+    const centerZ = (corner1[2] + corner2[2]) / 2;
 
-    shape.lineTo(firstX, firstZ); // close shape
-
-    const extrudeSettings = {
-      depth: 0.02,
-      bevelEnabled: false,
+    return {
+      width,
+      depth,
+      position: [centerX, -0.01, centerZ] as [number, number, number]
     };
-
-    const geometry = new ExtrudeGeometry(shape, extrudeSettings);
-    geometry.rotateX(-Math.PI / 2);
-
-    return geometry;
-  }, [room.points, scale, origin]);
+  }, [wallSegments, scale]);
 
   if (!floorGeometry) return null;
 
   return (
     <mesh
-      geometry={floorGeometry}
-      position={[0, -0.005, 0]}
+      position={floorGeometry.position}
       receiveShadow
+      rotation={[-Math.PI / 2, 0, 0]}
     >
-      <meshLambertMaterial color="#e0e0e0" />
+      <planeGeometry args={[floorGeometry.width, floorGeometry.depth]} />
+      <meshLambertMaterial color="#f5f5f5" />
     </mesh>
   );
 };
 
-const AutoFloor = ({
-  rooms,
-  wallSegments,
-  scale,
-  origin,
-}: {
-  rooms: Room[];
-  wallSegments?: WallSegment[];
-  scale: number;
-  origin?: { minX: number; minY: number };
-}) => {
-  const allFloors = useMemo(() => {
-    // Combine explicit rooms with auto-detected floors from walls
-    const explicitRooms = rooms.filter(room => room.points.length >= 3);
-    
-    // Auto-detect floors from walls if no explicit rooms
-    const autoFloors = explicitRooms.length === 0 && wallSegments 
-      ? detectFloorsFromWalls(wallSegments)
-      : [];
+// Room floor component for explicit rooms
+const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
+  const floorGeometry = useMemo(() => {
+    if (!room.points || room.points.length < 3) return null;
 
-    return [...explicitRooms, ...autoFloors];
-  }, [rooms, wallSegments]);
+    // Convert room points to 3D
+    const points3D = room.points.map(point => canvasTo3DWorld(point, scale));
+    
+    // Calculate room center and bounds
+    const centerX = points3D.reduce((sum, p) => sum + p[0], 0) / points3D.length;
+    const centerZ = points3D.reduce((sum, p) => sum + p[2], 0) / points3D.length;
+    
+    const minX = Math.min(...points3D.map(p => p[0]));
+    const maxX = Math.max(...points3D.map(p => p[0]));
+    const minZ = Math.min(...points3D.map(p => p[2]));
+    const maxZ = Math.max(...points3D.map(p => p[2]));
+    
+    const width = maxX - minX;
+    const depth = maxZ - minZ;
+
+    return {
+      width,
+      depth,
+      position: [centerX, -0.01, centerZ] as [number, number, number]
+    };
+  }, [room.points, scale]);
+
+  if (!floorGeometry) return null;
 
   return (
-    <group>
-      {allFloors.map((room) => (
-        <RoomFloor
-          key={room.id}
-          room={room}
-          scale={scale}
-          origin={origin}
-        />
-      ))}
-    </group>
+    <mesh
+      position={floorGeometry.position}
+      receiveShadow
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <planeGeometry args={[floorGeometry.width, floorGeometry.depth]} />
+      <meshLambertMaterial color="#f0f0f0" />
+    </mesh>
   );
 };
 
@@ -114,24 +109,23 @@ export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
 }) => {
   return (
     <group>
-      {/* Auto-filled floor with wall detection */}
-      <AutoFloor 
-        rooms={rooms} 
-        wallSegments={wallSegments}
-        scale={scale} 
-        origin={origin} 
-      />
+      {/* Generate floor from wall segments when no rooms exist */}
+      {(!rooms || rooms.length === 0) && wallSegments && wallSegments.length > 0 && (
+        <WallFloor wallSegments={wallSegments} scale={scale} origin={origin} />
+      )}
 
-      {/* Snap plane */}
-      <mesh
-        position={[0, -0.001, 0]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        visible={false}
-        name="floor-drop-plane"
-      >
-        <planeGeometry args={[100, 100]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
+      {/* Render explicit room floors */}
+      {rooms && rooms.map((room) => (
+        <RoomFloor key={room.id} room={room} scale={scale} />
+      ))}
+
+      {/* Snap grid overlay */}
+      {showSnapGrid && (
+        <gridHelper
+          args={[50, 50, "#e0e0e0", "#f0f0f0"]}
+          position={[0, 0, 0]}
+        />
+      )}
     </group>
   );
 };

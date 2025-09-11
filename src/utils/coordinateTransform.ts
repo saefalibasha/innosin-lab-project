@@ -1,44 +1,21 @@
-/**
- * Unified coordinate transformation system for 2D-to-3D mapping
- * Ensures consistent scaling and positioning across all 3D components
- */
-
 import { Point } from '@/types/floorPlanTypes';
-
-// Standard coordinate transformation for 3D scene
-// Adjusted scale to make rooms appropriately sized
-export const COORDINATE_SCALE = 0.01; // Convert canvas units to 3D world units
-export const ROOM_HEIGHT = 2.4; // Standard room height in meters
+import { canvasTo3DWorld, worldTo2DCanvas } from './coordinateUtils';
 
 /**
  * Convert 2D canvas coordinates to 3D world coordinates
- * This maintains 1:1 coordinate mapping between 2D and 3D views
+ * This is a wrapper around canvasTo3DWorld for compatibility
  */
-export const canvasTo3D = (point: Point | undefined): [number, number, number] => {
-  if (!point || point.x === undefined || point.y === undefined) {
-    console.warn('canvasTo3D received invalid point:', point);
-    return [0, 0, 0];
-  }
-  return [
-    point.x * COORDINATE_SCALE,
-    0, // Y will be set by specific components (floor, products)
-    point.y * COORDINATE_SCALE
-  ];
-};
+export function canvasTo3D(point: Point, scale: number = 0.08): [number, number, number] {
+  return canvasTo3DWorld(point, scale);
+}
 
 /**
  * Convert 3D world coordinates back to 2D canvas coordinates
+ * This is a wrapper around worldTo2DCanvas for compatibility
  */
-export const threeDToCanvas = (x: number | undefined, z: number | undefined): Point => {
-  if (x === undefined || z === undefined || isNaN(x) || isNaN(z)) {
-    console.warn('threeDToCanvas received invalid coordinates:', { x, z });
-    return { x: 0, y: 0 };
-  }
-  return {
-    x: x / COORDINATE_SCALE,
-    y: z / COORDINATE_SCALE
-  };
-};
+export function threeDToCanvas(x: number, z: number, scale: number = 0.08): Point {
+  return worldTo2DCanvas(x, z, scale);
+}
 
 /**
  * Calculate the bounding box of a set of points

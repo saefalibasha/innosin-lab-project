@@ -6,14 +6,14 @@ export const SCALE_2D_TO_3D = 0.08; // Consistent with 2D scale (0.08 px/mm)
 
 /**
  * Convert 2D canvas coordinates to 3D world coordinates
- * Direct 1:1 mapping: X axis to X axis, Y axis to Z axis (floor plane)
- * Scale factor is handled separately in components
+ * Direct 1:1 mapping with proper mm to meters conversion
  */
-export function canvasTo3DWorld(point: Point, scale: number = 1): [number, number, number] {
-  // Direct 1:1 conversion from 2D pixels to 3D meters
-  // Scale of 0.08 means 80px = 1000mm = 1m, so 1px = 12.5mm = 0.0125m
-  const worldX = point.x * 0.0125; // Direct px to meters conversion (1px = 12.5mm)
-  const worldZ = point.y * 0.0125; // Y becomes Z in 3D floor plane
+export function canvasTo3DWorld(point: Point, scale: number = 0.08): [number, number, number] {
+  // Convert from 2D pixels to 3D meters using scale
+  // scale = 0.08 means 80px = 1000mm, so 1px = 12.5mm = 0.0125m
+  const pixelsPerMeter = scale * 1000; // px per 1000mm
+  const worldX = point.x / pixelsPerMeter; // Convert px to meters
+  const worldZ = point.y / pixelsPerMeter; // Y becomes Z in 3D floor plane
   
   return [worldX, 0, worldZ];
 }
@@ -21,10 +21,11 @@ export function canvasTo3DWorld(point: Point, scale: number = 1): [number, numbe
 /**
  * Convert 3D world coordinates back to 2D canvas coordinates
  */
-export function worldTo2DCanvas(x: number, z: number, scale: number): Point {
+export function worldTo2DCanvas(x: number, z: number, scale: number = 0.08): Point {
+  const pixelsPerMeter = scale * 1000; // px per 1000mm
   return {
-    x: x / (scale * COORDINATE_SCALE),
-    y: -z / (scale * COORDINATE_SCALE)
+    x: x * pixelsPerMeter,
+    y: z * pixelsPerMeter
   };
 }
 
@@ -34,7 +35,7 @@ export function worldTo2DCanvas(x: number, z: number, scale: number): Point {
  */
 export function calculateDoorTransform(
   door: any, 
-  scale: number, 
+  scale: number = 0.08, 
   origin?: { minX: number; minY: number }
 ) {
   if (!door || !door.position) {
@@ -45,20 +46,14 @@ export function calculateDoorTransform(
     };
   }
 
-  // Use door's exact 2D coordinates without origin offset
+  // Use door's exact 2D coordinates from the wall system
   const doorPosition = {
     x: door.position.x,
     y: door.position.y
   };
 
-  console.log('Door position calculation:', {
-    doorId: door.id,
-    originalPosition: door.position,
-    finalPosition: doorPosition
-  });
-
-  // Convert door position directly from 2D to 3D coordinates
-  const [x, y, z] = canvasTo3DWorld(doorPosition);
+  // Convert door position directly from 2D to 3D coordinates using proper scale
+  const [x, y, z] = canvasTo3DWorld(doorPosition, scale);
 
   // Calculate rotation based on facing direction
   let rotation = 0;
@@ -67,12 +62,6 @@ export function calculateDoorTransform(
   } else if (door.facing === 'vertical') {
     rotation = Math.PI / 2; // Door along Z axis (90 degrees)
   }
-
-  console.log('Door 3D transform:', {
-    doorId: door.id,
-    position: [x, y, z],
-    rotation: [0, rotation, 0]
-  });
 
   return {
     position: [x, y, z] as [number, number, number],
