@@ -6,12 +6,13 @@ import {
   TextAnnotation,
   WallSegment,
   Room,
-  DrawingMode
+  DrawingMode,
 } from '@/types/floorPlanTypes';
 import { MeasurementUnit } from '@/utils/measurements';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
+import { worldTo2DCanvas } from '@/utils/coordinateUtils';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -65,7 +66,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   onClearAll,
   selectedProducts,
   onProductSelect,
-  onWallSelect
+  onWallSelect,
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
   const sceneRef3D = useRef<any>(null);
@@ -78,101 +79,109 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     sceneRef3D.current = context;
   }, []);
 
-  const handleProductClick = useCallback((productId: string) => {
-    if (currentMode === 'select') {
-      onProductSelect(prev =>
-        prev.includes(productId)
-          ? prev.filter(id => id !== productId)
-          : [...prev, productId]
-      );
-    }
-  }, [currentMode, onProductSelect]);
-
-  const handleWallClick = useCallback((wallId: string) => {
-    if (currentMode === 'select') {
-      onWallSelect?.(wallId);
-    }
-  }, [currentMode, onWallSelect]);
-
-  const handleSceneClick = useCallback((e: any) => {
-    if (e.object.name !== 'product' && e.object.name !== 'wall') {
-      onProductSelect([]);
-    }
-  }, [onProductSelect]);
-
-  const handleCanvasDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-
-    const productData = e.dataTransfer.getData('product');
-    if (!productData) return;
-
-    try {
-      const product = JSON.parse(productData);
-
-      const { camera, scene, gl } = sceneRef3D.current;
-      const raycaster = new THREE.Raycaster();
-      const pointer = new THREE.Vector2();
-
-      const rect = gl.domElement.getBoundingClientRect();
-      pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-
-      raycaster.setFromCamera(pointer, camera);
-
-      const floor = scene.children.find(obj => obj.name === 'floor-drop-plane');
-      if (!floor) {
-        toast.error('Drop target not found');
-        return;
+  const handleProductClick = useCallback(
+    (productId: string) => {
+      if (currentMode === 'select') {
+        onProductSelect((prev) => (prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]));
       }
+    },
+    [currentMode, onProductSelect]
+  );
 
-      const intersects = raycaster.intersectObject(floor);
-      if (intersects.length === 0) {
-        toast.error('Cannot place item outside of floor');
-        return;
+  const handleWallClick = useCallback(
+    (wallId: string) => {
+      if (currentMode === 'select') {
+        onWallSelect?.(wallId);
       }
+    },
+    [currentMode, onWallSelect]
+  );
 
-      const point = intersects[0].point;
+  const handleSceneClick = useCallback(
+    (e: any) => {
+      if (e.object.name !== 'product' && e.object.name !== 'wall') {
+        onProductSelect([]);
+      }
+    },
+    [onProductSelect]
+  );
 
-      // Convert 3D world coordinates back to 2D canvas coordinates for storage
-      const newProduct: PlacedProduct = {
-        id: `product-${Date.now()}`,
-        productId: product.id,
-        name: product.name,
-        category: product.category || 'Unknown',
-        position: {
-          x: point.x / 0.0125, // Convert meters back to pixels (1px = 0.0125m)
-          y: point.z / 0.0125  // Convert meters back to pixels, Z becomes Y
-        },
-        rotation: 0,
-        dimensions: product.dimensions,
-        color: product.color,
-        scale: 1,
-        modelPath: product.modelPath,
-        thumbnail: product.thumbnail,
-        description: product.description,
-        specifications: product.specifications,
-        finishes: product.finishes,
-        variants: product.variants
-      };
+  const handleCanvasDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
 
-      setPlacedProducts(prev => [...prev, newProduct]);
-      toast.success(`Added ${product.name} to floor plan`);
-    } catch (error) {
-      console.error('Error parsing dropped product:', error);
-      toast.error('Failed to add product');
-    }
-  }, [setPlacedProducts]);
+      const productData = e.dataTransfer.getData('product');
+      if (!productData) return;
 
-  // Remove origin calculation for direct 1:1 coordinate mapping
+      try {
+        const product = JSON.parse(productData);
+
+        const { camera, scene, gl } = sceneRef3D.current;
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        const rect = gl.domElement.getBoundingClientRect();
+        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+        raycaster.setFromCamera(pointer, camera);
+
+        const floor = scene.children.find((obj: any) => obj.name === 'floor-drop-plane');
+        if (!floor) {
+          toast.error('Drop target not found');
+          return;
+        }
+
+        const intersects = raycaster.intersectObject(floor);
+        if (intersects.length === 0) {
+          toast.error('Cannot place item outside of floor');
+          return;
+        }
+
+        const point = intersects[0].point; // meters
+
+        const canvasPos = worldTo2DCanvas(point.x, point.z, scale);
+
+        const newProduct: PlacedProduct = {
+          id: `product-${Date.now()}`,
+          productId: product.id,
+          name: product.name,
+          category: product.category || 'Unknown',
+          position: canvasPos,
+          rotation: 0,
+          dimensions: product.dimensions,
+          color: product.color,
+          scale: 1,
+          modelPath: product.modelPath,
+          thumbnail: product.thumbnail,
+          description: product.description,
+          specifications: product.specifications,
+          finishes: product.finishes,
+          variants: product.variants,
+        };
+
+        setPlacedProducts((prev) => [...prev, newProduct]);
+        toast.success(`Added ${product.name} to floor plan`);
+      } catch (error) {
+        console.error('Error parsing dropped product:', error);
+        toast.error('Failed to add product');
+      }
+    },
+    [setPlacedProducts, scale]
+  );
+
+  // Update function for drag actions in scene
+  const handleProductUpdate = useCallback(
+    (productId: string, updates: Partial<PlacedProduct>) => {
+      setPlacedProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, ...updates } : p)));
+    },
+    [setPlacedProducts]
+  );
+
   const origin = { minX: 0, minY: 0 };
 
   return (
-    <div
-      ref={htmlRef}
-      className="relative w-full h-full bg-gray-50"
-      onDrop={handleCanvasDrop}
-      onDragOver={(e) => e.preventDefault()}
-    >
+    <div ref={htmlRef} className="relative w-full h-full bg-gray-50" onDrop={handleCanvasDrop} onDragOver={(e) => e.preventDefault()}>
       <IsometricFloorPlanScene
         wallSegments={wallSegments}
         placedProducts={placedProducts}
@@ -184,7 +193,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         onSceneClick={handleSceneClick}
         selectedProducts={selectedProducts}
         showGrid={showGrid}
-        origin={origin} // ✅ Pass origin to fix product position offset
+        origin={origin}
+        onProductUpdate={handleProductUpdate}
       />
 
       {/* Clean UI - moved stats to controls below */}

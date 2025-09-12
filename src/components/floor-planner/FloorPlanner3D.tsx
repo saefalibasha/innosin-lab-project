@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
 import EnhancedCanvasWorkspace3D from '../canvas/EnhancedCanvasWorkspace3D';
 
@@ -14,9 +14,7 @@ import {
 import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { MeasurementUnit } from '@/utils/measurements';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { WallControlPanel } from '@/components/ui/WallControlPanel';
 
 export const FloorPlanner3D = () => {
   const initialFloorPlanState = {
@@ -31,24 +29,12 @@ export const FloorPlanner3D = () => {
   const { currentState } = useFloorPlanHistory(initialFloorPlanState);
 
   const [roomPoints, setRoomPoints] = useState<Point[]>(currentState.roomPoints);
-  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(
-    currentState.placedProducts
-  );
+  const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>(currentState.placedProducts);
   const [doors, setDoors] = useState<Door[]>(currentState.doors);
-  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(
-    currentState.textAnnotations
-  );
-  const [wallSegments, setWallSegments] = useState<WallSegment[]>(
-    currentState.wallSegments
-  );
+  const [textAnnotations, setTextAnnotations] = useState<TextAnnotation[]>(currentState.textAnnotations);
+  const [wallSegments, setWallSegments] = useState<WallSegment[]>(currentState.wallSegments);
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [selectedWall, setSelectedWall] = useState<WallSegment | null>(null);
-
-  // ✅ Add a console.log to inspect wall segments on demand
-  const handleLogWalls = () => {
-    console.log('✅ Current Wall Segments:', wallSegments);
-  };
 
   // Canvas settings
   const [currentMode] = useState<DrawingMode>('select');
@@ -59,7 +45,7 @@ export const FloorPlanner3D = () => {
 
   const [canvasWidth] = useState(1200);
   const [canvasHeight] = useState(800);
-  const scale = 0.08; // 80 px per meter
+  const scale = 0.08; // 0.08 px per mm (80 px / meter)
 
   const handleProductDrag = useCallback((product: any) => {
     console.log('Product dragged:', product);
@@ -73,49 +59,26 @@ export const FloorPlanner3D = () => {
     setWallSegments([]);
     setRooms([]);
     setSelectedProducts([]);
-    setSelectedWall(null);
   }, []);
-
-  const handleWallUpdate = (wallId: string, updates: Partial<WallSegment>) => {
-    setWallSegments(prev => prev.map(wall => 
-      wall.id === wallId ? { ...wall, ...updates } : wall
-    ));
-  };
-
-  const handleWallSelect = (wallId: string) => {
-    const wall = wallSegments.find(w => w.id === wallId);
-    setSelectedWall(wall || null);
-  };
-
-  const handleWallVisibilityToggle = (wallId: string) => {
-    setWallSegments(prev => prev.map(wall => 
-      wall.id === wallId ? { ...wall, visible: wall.visible !== false ? false : true } : wall
-    ));
-  };
 
   return (
     <div className="h-screen flex flex-col">
       {/* Main content area with sidebar and canvas */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Left sidebar */}
         <div className="w-80 bg-white border-r border-gray-200 flex flex-col h-full">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Product Library</h2>
-            <p className="text-sm text-muted-foreground">
-              Drag products to place on canvas
-            </p>
+            <p className="text-sm text-muted-foreground">Drag products to place on canvas</p>
             <Badge variant="outline" className="mt-2">3D Isometric View</Badge>
           </div>
           <div className="flex-1 overflow-hidden">
-            <EnhancedSeriesSelector
-              onProductDrag={handleProductDrag}
-              currentTool="select"
-            />
+            <EnhancedSeriesSelector onProductDrag={handleProductDrag} currentTool="select" />
           </div>
         </div>
 
         {/* Canvas area */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0">
           <div className="w-full h-full">
             <EnhancedCanvasWorkspace3D
               placedProducts={placedProducts}
@@ -141,21 +104,21 @@ export const FloorPlanner3D = () => {
               canvasWidth={canvasWidth}
               canvasHeight={canvasHeight}
               onClearAll={handleClearAll}
-              onWallSelect={handleWallSelect}
+              onWallSelect={() => {}}
             />
           </div>
         </div>
       </div>
 
-      {/* Functional 3D Controls */}
+      {/* Functional 3D Controls - responsive, no overlap */}
       <div className="border-t bg-background">
-        <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* View Controls */}
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <h3 className="text-sm font-medium">View Controls</h3>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => {
                   const camera = (window as any).__threeCamera;
@@ -167,11 +130,10 @@ export const FloorPlanner3D = () => {
               >
                 Reset View
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={() => {
-                  // Fit view to content
                   const camera = (window as any).__threeCamera;
                   if (camera) {
                     camera.position.set(10, 15, 10);
@@ -182,38 +144,35 @@ export const FloorPlanner3D = () => {
               </Button>
             </div>
           </div>
-          
+
           {/* Product Controls */}
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <h3 className="text-sm font-medium">Product Controls</h3>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                size="sm"
                 disabled={selectedProducts.length === 0}
                 onClick={() => {
                   if (selectedProducts.length > 0) {
-                    // Rotate selected product 90 degrees
                     const productId = selectedProducts[0];
-                    const product = placedProducts.find(p => p.id === productId);
+                    const product = placedProducts.find((p) => p.id === productId);
                     if (product) {
                       const newRotation = (product.rotation || 0) + 90;
-                      setPlacedProducts(prev => prev.map(p => 
-                        p.id === productId ? { ...p, rotation: newRotation % 360 } : p
-                      ));
+                      setPlacedProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, rotation: newRotation % 360 } : p)));
                     }
                   }
                 }}
               >
                 Rotate 90°
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 disabled={selectedProducts.length === 0}
                 onClick={() => {
                   if (selectedProducts.length > 0) {
-                    setPlacedProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
+                    setPlacedProducts((prev) => prev.filter((p) => !selectedProducts.includes(p.id)));
                     setSelectedProducts([]);
                   }
                 }}
@@ -223,16 +182,20 @@ export const FloorPlanner3D = () => {
             </div>
           </div>
 
-          {/* Snapping Controls */}
-          <div className="space-y-2">
+          {/* Snapping */}
+          <div className="space-y-2 min-w-0">
             <h3 className="text-sm font-medium">Snapping</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                {showGrid ? 'Grid On' : 'Grid Off'}
-              </Button>
-              <Button variant="outline" size="sm">
-                Auto-Snap
-              </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm">Grid On</Button>
+              <Button variant="outline" size="sm">Auto-Snap</Button>
+            </div>
+          </div>
+
+          {/* Project */}
+          <div className="space-y-2 min-w-0">
+            <h3 className="text-sm font-medium">Project</h3>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={handleClearAll}>Clear All</Button>
             </div>
           </div>
         </div>

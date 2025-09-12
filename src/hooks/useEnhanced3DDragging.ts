@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { PlacedProduct, Point } from '@/types/floorPlanTypes';
+import { PlacedProduct } from '@/types/floorPlanTypes';
 import { useEnhanced3DSnapping } from './useEnhanced3DSnapping';
 import { canvasTo3DWorld, worldTo2DCanvas } from '@/utils/coordinateUtils';
 
@@ -24,103 +24,97 @@ export const useEnhanced3DDragging = (
     dragOffset: [0, 0, 0],
     initialPosition: [0, 0, 0],
     currentPosition: [0, 0, 0],
-    isValid: true
+    isValid: true,
   });
 
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const { snapToPosition, snapGuides, updateSnapGuides, clearSnapGuides } = useEnhanced3DSnapping(
     wallSegments,
-    placedProducts.filter(p => p.id !== dragState.draggedProduct?.id),
+    placedProducts.filter((p) => p.id !== dragState.draggedProduct?.id),
     scale
   );
 
-  const startDrag = useCallback((
-    product: PlacedProduct,
-    intersectionPoint: [number, number, number],
-    pointerEvent: any
-  ) => {
-    const productPosition = canvasTo3DWorld(product.position, scale);
-    const offset: [number, number, number] = [
-      intersectionPoint[0] - productPosition[0],
-      intersectionPoint[1] - productPosition[1],
-      intersectionPoint[2] - productPosition[2]
-    ];
-
-    dragStartRef.current = { x: pointerEvent.clientX, y: pointerEvent.clientY };
-
-    setDragState({
-      isDragging: true,
-      draggedProduct: product,
-      dragOffset: offset,
-      initialPosition: productPosition,
-      currentPosition: productPosition,
-      isValid: true
-    });
-  }, [scale]);
-
-  const updateDrag = useCallback((
-    intersectionPoint: [number, number, number] | null,
-    camera: any,
-    pointer: { x: number; y: number }
-  ) => {
-    if (!dragState.isDragging || !dragState.draggedProduct) return;
-
-    let targetPosition: [number, number, number];
-
-    if (intersectionPoint) {
-      // Use direct intersection point
-      targetPosition = [
-        intersectionPoint[0] - dragState.dragOffset[0],
-        intersectionPoint[1] - dragState.dragOffset[1],
-        intersectionPoint[2] - dragState.dragOffset[2]
+  const startDrag = useCallback(
+    (product: PlacedProduct, intersectionPoint: [number, number, number], pointerEvent: any) => {
+      const productPosition = canvasTo3DWorld(product.position, scale);
+      const offset: [number, number, number] = [
+        intersectionPoint[0] - productPosition[0],
+        intersectionPoint[1] - productPosition[1],
+        intersectionPoint[2] - productPosition[2],
       ];
-    } else {
-      // Fallback to screen-space movement
-      if (!dragStartRef.current) return;
-      
-      const deltaX = pointer.x - dragStartRef.current.x;
-      const deltaY = pointer.y - dragStartRef.current.y;
-      
-      // Convert screen movement to world movement
-      const worldDelta = deltaX * 0.01; // Adjust sensitivity
-      targetPosition = [
-        dragState.initialPosition[0] + worldDelta,
-        dragState.initialPosition[1],
-        dragState.initialPosition[2]
-      ];
-    }
 
-    // Apply snapping
-    const snapResult = snapToPosition(
-      targetPosition,
-      dragState.draggedProduct,
-      ['wall', 'product', 'grid']
-    );
+      dragStartRef.current = { x: pointerEvent.clientX, y: pointerEvent.clientY };
 
-    const finalPosition = snapResult.snapped ? 
-      [snapResult.position[0], snapResult.position[1], snapResult.position[2]] as [number, number, number] :
-      targetPosition;
+      setDragState({
+        isDragging: true,
+        draggedProduct: product,
+        dragOffset: offset,
+        initialPosition: productPosition,
+        currentPosition: productPosition,
+        isValid: true,
+      });
+    },
+    [scale]
+  );
 
-    setDragState(prev => ({
-      ...prev,
-      currentPosition: finalPosition,
-      isValid: true // Enhanced collision detection can be added here
-    }));
+  const updateDrag = useCallback(
+    (
+      intersectionPoint: [number, number, number] | null,
+      camera: any,
+      pointer: { x: number; y: number }
+    ) => {
+      if (!dragState.isDragging || !dragState.draggedProduct) return;
 
-    // Update snap guides
-    if (snapResult.snapped) {
-      updateSnapGuides(snapResult);
-    } else {
-      clearSnapGuides();
-    }
-  }, [dragState, snapToPosition, updateSnapGuides, clearSnapGuides]);
+      let targetPosition: [number, number, number];
+
+      if (intersectionPoint) {
+        targetPosition = [
+          intersectionPoint[0] - dragState.dragOffset[0],
+          intersectionPoint[1] - dragState.dragOffset[1],
+          intersectionPoint[2] - dragState.dragOffset[2],
+        ];
+      } else {
+        if (!dragStartRef.current) return;
+        const deltaX = pointer.x - dragStartRef.current.x;
+        const worldDelta = deltaX * 0.01; // simple fallback
+        targetPosition = [
+          dragState.initialPosition[0] + worldDelta,
+          dragState.initialPosition[1],
+          dragState.initialPosition[2],
+        ];
+      }
+
+      // Apply snapping
+      const snapResult = snapToPosition(targetPosition, dragState.draggedProduct, [
+        'wall',
+        'product',
+        'grid',
+      ]);
+
+      const finalPosition = snapResult.snapped
+        ? canvasTo3DWorld({ x: snapResult.position.x, y: snapResult.position.y }, scale)
+        : targetPosition;
+
+      setDragState((prev) => ({
+        ...prev,
+        currentPosition: finalPosition,
+        isValid: true,
+      }));
+
+      if (snapResult.snapped) {
+        updateSnapGuides(snapResult);
+      } else {
+        clearSnapGuides();
+      }
+    },
+    [dragState, snapToPosition, updateSnapGuides, clearSnapGuides, scale]
+  );
 
   const endDrag = useCallback(() => {
     if (!dragState.isDragging || !dragState.draggedProduct) return;
 
     if (dragState.isValid) {
-      // Convert 3D position back to 2D canvas coordinates
       const canvasPosition = worldTo2DCanvas(
         dragState.currentPosition[0],
         dragState.currentPosition[2],
@@ -128,18 +122,17 @@ export const useEnhanced3DDragging = (
       );
 
       onProductUpdate(dragState.draggedProduct.id, {
-        position: canvasPosition
+        position: canvasPosition,
       });
     }
 
-    // Clear drag state and snap guides
     setDragState({
       isDragging: false,
       draggedProduct: null,
       dragOffset: [0, 0, 0],
       initialPosition: [0, 0, 0],
       currentPosition: [0, 0, 0],
-      isValid: true
+      isValid: true,
     });
 
     clearSnapGuides();
@@ -153,7 +146,7 @@ export const useEnhanced3DDragging = (
       dragOffset: [0, 0, 0],
       initialPosition: [0, 0, 0],
       currentPosition: [0, 0, 0],
-      isValid: true
+      isValid: true,
     });
 
     clearSnapGuides();
@@ -166,6 +159,6 @@ export const useEnhanced3DDragging = (
     startDrag,
     updateDrag,
     endDrag,
-    cancelDrag
+    cancelDrag,
   };
 };

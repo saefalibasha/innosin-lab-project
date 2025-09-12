@@ -30,9 +30,11 @@ const DoorModel = ({
   }
 
   const { position, rotation } = transform;
+  // Ensure rotation is in radians if provided in degrees
+  const rotationRad: [number, number, number] = [rotation[0], rotation[1], rotation[2]];
 
   return (
-    <group position={position} rotation={rotation}>
+    <group position={position} rotation={rotationRad}>
       {/* Door frame */}
       <mesh castShadow position={[0, doorHeight / 2, 0]}>
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />

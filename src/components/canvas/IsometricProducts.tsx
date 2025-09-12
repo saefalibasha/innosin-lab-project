@@ -11,15 +11,18 @@ interface IsometricProductsProps {
   scale: number;
   onProductClick?: (productId: string) => void;
   selectedProducts: string[];
-  origin?: { minX: number; minY: number }; // ✅ Optional origin shift
+  origin?: { minX: number; minY: number }; // optional origin shift
 }
+
+const toMeters = (mm?: number) => (mm || 0) * 0.001;
+const degToRad = (deg?: number) => ((deg || 0) * Math.PI) / 180;
 
 const ProductModel = ({
   product,
   scale,
   onProductClick,
   isSelected,
-  origin
+  origin,
 }: {
   product: PlacedProduct;
   scale: number;
@@ -34,28 +37,17 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  // Use product's exact 2D coordinates from the canvas
-  const productPoint = {
-    x: product.position.x,
-    y: product.position.y
-  };
-  
-  // Convert to 3D world coordinates using proper scale
-  const [x, y, z] = canvasTo3DWorld(productPoint, scale);
+  const [x, y, z] = canvasTo3DWorld(product.position, scale);
   const position: [number, number, number] = [x, y, z];
 
-  const rotation: [number, number, number] = [
-    0,
-    product.rotation || 0,
-    0
-  ];
+  const rotationRad = degToRad(product.rotation || 0);
+  const rotation: [number, number, number] = [0, rotationRad, 0];
 
-  // Convert dimensions: 2D uses mm directly, convert to meters for 3D
-  // Use the 2D scale factor (0.08 px/mm) to maintain proportions
-  const length = product.dimensions.length * 0.001; // mm to meters
-  const width = product.dimensions.width * 0.001;   // mm to meters
-  const height = (product.dimensions.height || 850) * 0.001; // mm to meters
-  const halfHeight = height / 2;
+  // Physical size in meters
+  const lengthM = toMeters(product.dimensions.length);
+  const widthM = toMeters(product.dimensions.width);
+  const heightM = toMeters(product.dimensions.height || 850);
+  const halfHeight = heightM / 2;
 
   const fallbackGeometry = (
     <mesh
@@ -65,16 +57,13 @@ const ProductModel = ({
       onClick={handleClick}
       castShadow
       name="product"
+      userData={{ productId: product.id }}
     >
-      <boxGeometry args={[length, height, width]} />
-      <meshLambertMaterial
-        color={isSelected ? '#ff6b6b' : (product.color || '#8b5cf6')}
-        transparent={isSelected}
-        opacity={isSelected ? 0.8 : 1}
-      />
+      <boxGeometry args={[lengthM, heightM, widthM]} />
+      <meshLambertMaterial color={isSelected ? '#ff6b6b' : product.color || '#8b5cf6'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
       {isSelected && (
         <lineSegments>
-          <edgesGeometry args={[new THREE.BoxGeometry(length, height, width)]} />
+          <edgesGeometry args={[new THREE.BoxGeometry(lengthM, heightM, widthM)]} />
           <lineBasicMaterial color="#ff0000" linewidth={2} />
         </lineSegments>
       )}
@@ -86,11 +75,12 @@ const ProductModel = ({
       <Suspense fallback={fallbackGeometry}>
         <ProductGLTF
           modelPath={product.modelPath}
+          productId={product.id}
+          targetSize={[lengthM, heightM, widthM]}
           position={position}
           rotation={rotation}
           onClick={handleClick}
           isSelected={isSelected}
-          scale={scale}
         />
       </Suspense>
     );
@@ -101,59 +91,57 @@ const ProductModel = ({
 
 const ProductGLTF = ({
   modelPath,
+  productId,
+  targetSize,
   position,
   rotation,
   onClick,
   isSelected,
-  scale
 }: {
   modelPath: string;
+  productId: string;
+  targetSize: [number, number, number];
   position: [number, number, number];
   rotation: [number, number, number];
   onClick: (e: any) => void;
   isSelected: boolean;
-  scale: number;
 }) => {
   const groupRef = useRef<Group>(null);
   const gltf = useLoader(GLTFLoader, modelPath);
 
   useEffect(() => {
-    if (gltf && groupRef.current) {
-      const box = new Box3().setFromObject(gltf.scene);
-      const center = box.getCenter(new Vector3());
-      const size = box.getSize(new Vector3());
+    if (!gltf || !groupRef.current) return;
 
-      // Center and place model on floor
-      gltf.scene.position.sub(center);
-      gltf.scene.position.y += size.y / 2;
+    // Compute current model bounds
+    const box = new Box3().setFromObject(gltf.scene);
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
 
-      // Normalize size
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim > 0) {
-        const targetScale = 1 / maxDim;
-        gltf.scene.scale.setScalar(targetScale);
-      }
-    }
-  }, [gltf]);
+    // Center and place model on floor
+    gltf.scene.position.sub(center);
+    gltf.scene.position.y += size.y / 2;
+
+    // Scale to match target physical dimensions
+    const [tx, ty, tz] = targetSize;
+    const sx = size.x > 0 ? tx / size.x : 1;
+    const sy = size.y > 0 ? ty / size.y : 1;
+    const sz = size.z > 0 ? tz / size.z : 1;
+    gltf.scene.scale.set(sx, sy, sz);
+
+    // Ensure raycasting recognizes product
+    groupRef.current.traverse((child: any) => {
+      child.userData = { ...(child.userData || {}), productId };
+      if (!child.name) child.name = 'product';
+    });
+  }, [gltf, productId, targetSize]);
 
   return (
-    <group
-      ref={groupRef}
-      position={position}
-      rotation={rotation}
-      onClick={onClick}
-      name="product"
-    >
+    <group ref={groupRef} position={position} rotation={rotation} onClick={onClick} name="product" userData={{ productId }}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
         <mesh>
-          <boxGeometry args={[1.2, 1.2, 1.2]} />
-          <meshBasicMaterial
-            color="#ff0000"
-            wireframe
-            transparent
-            opacity={0.5}
-          />
+          <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
+          <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
         </mesh>
       )}
     </group>
@@ -165,7 +153,7 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
   scale,
   onProductClick,
   selectedProducts,
-  origin
+  origin,
 }) => {
   return (
     <group>

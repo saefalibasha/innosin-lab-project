@@ -59,8 +59,8 @@ const Wall = ({
       name="wall"
     >
       <boxGeometry args={[transform.length, transform.heightMeters, transform.thicknessMeters]} />
-      <meshLambertMaterial
-        color={wall.type === 'interior' ? '#f0f0f0' : '#e8e8e8'}
+       <meshLambertMaterial
+        color={wall.type === 'interior' ? '#9ca3af' : '#a3a3a3'}
         transparent={false}
       />
     </mesh>
