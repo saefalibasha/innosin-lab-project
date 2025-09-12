@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Vector3, Shape, ExtrudeGeometry } from 'three';
+import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 import { WallSegment } from '@/types/floorPlanTypes';
 
 interface IsometricWallsProps {
@@ -20,52 +20,27 @@ const Wall = ({
   onWallClick?: (wallId: string) => void;
   origin?: { minX: number; minY: number }; // ✅ NEW
 }) => {
-  const wallGeometry = useMemo(() => {
-    const offsetX = origin?.minX || 0;
-    const offsetY = origin?.minY || 0;
+  const transform = useMemo(() => {
+    // Convert 2D canvas points to 3D world (meters)
+    const start3D = canvasTo3DWorld(wall.start, scale);
+    const end3D = canvasTo3DWorld(wall.end, scale);
 
-    // ✅ Flip y → -z and apply origin offset
-    const start = new Vector3(
-      (wall.start.x - offsetX) * scale * 0.1,
+    const dx = end3D[0] - start3D[0];
+    const dz = end3D[2] - start3D[2];
+    const length = Math.sqrt(dx * dx + dz * dz);
+
+    const mid: [number, number, number] = [
+      (start3D[0] + end3D[0]) / 2,
       0,
-      -(wall.start.y - offsetY) * scale * 0.1
-    );
-    const end = new Vector3(
-      (wall.end.x - offsetX) * scale * 0.1,
-      0,
-      -(wall.end.y - offsetY) * scale * 0.1
-    );
+      (start3D[2] + end3D[2]) / 2
+    ];
 
-    const direction = new Vector3().subVectors(end, start).normalize();
-    const perpendicular = new Vector3(-direction.z, 0, direction.x);
+    const thicknessMeters = (wall.thickness ?? 100) * 0.001; // mm -> m
+    const heightMeters = (wall.height ?? 2400) * 0.001; // mm -> m
+    const rotationY = Math.atan2(dz, dx);
 
-    const thickness = (wall.thickness || 100) * scale * 0.1;
-    const height = wall.height ?? 2.4;
-
-    const shape = new Shape();
-    const halfThickness = thickness / 2;
-
-    const corner1 = start.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
-    const corner2 = start.clone().sub(perpendicular.clone().multiplyScalar(halfThickness));
-    const corner3 = end.clone().sub(perpendicular.clone().multiplyScalar(halfThickness));
-    const corner4 = end.clone().add(perpendicular.clone().multiplyScalar(halfThickness));
-
-    shape.moveTo(corner1.x, corner1.z);
-    shape.lineTo(corner2.x, corner2.z);
-    shape.lineTo(corner3.x, corner3.z);
-    shape.lineTo(corner4.x, corner4.z);
-    shape.lineTo(corner1.x, corner1.z);
-
-    const extrudeSettings = {
-      depth: height,
-      bevelEnabled: false,
-    };
-
-    const geometry = new ExtrudeGeometry(shape, extrudeSettings);
-    geometry.rotateX(-Math.PI / 2);
-
-    return geometry;
-  }, [wall, scale, origin]);
+    return { mid, length, thicknessMeters, heightMeters, rotationY };
+  }, [wall, scale]);
 
   const handleClick = (e: any) => {
     e.stopPropagation();
@@ -76,12 +51,14 @@ const Wall = ({
 
   return (
     <mesh
-      geometry={wallGeometry}
+      position={[transform.mid[0], transform.heightMeters / 2, transform.mid[2]]}
+      rotation={[0, transform.rotationY, 0]}
       onClick={handleClick}
       castShadow
       receiveShadow
       name="wall"
     >
+      <boxGeometry args={[transform.length, transform.heightMeters, transform.thicknessMeters]} />
       <meshLambertMaterial
         color={wall.type === 'interior' ? '#f0f0f0' : '#e8e8e8'}
         transparent={false}
