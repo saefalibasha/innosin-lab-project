@@ -10,7 +10,7 @@ const SiteLayout: React.FC = () => {
       <HeroNavigation />
 
       {/* Push content below sticky header (adjust if header height changes) */}
-      <main className="flex-grow pt-16">
+      <main className="flex-grow pt-20">
         <Outlet />
       </main>
 

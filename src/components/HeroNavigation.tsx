@@ -28,13 +28,13 @@ const HeroNavigation = () => {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white border-b">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container flex h-20 items-center justify-between px-4">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2">
             <img 
               src="/branding/hero-logo.png" 
               alt="Innosin Lab" 
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
           
