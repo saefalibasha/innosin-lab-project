@@ -31,6 +31,7 @@ import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { useProductUsageTracking } from '@/hooks/useProductUsageTracking';
 import { formatMeasurement, canvasToMm, GRID_SIZES, MeasurementUnit } from '@/utils/measurements';
 import SeriesSelector from '@/components/floorplan/SeriesSelector';
+import FloorPlanner3D from '@/components/floor-planner/FloorPlanner3D';
 import ProductStatistics from '@/components/floorplan/ProductStatistics';
 import QuickHelp from '@/components/floorplan/QuickHelp';
 import HorizontalToolbar from '@/components/floorplan/HorizontalToolbar';

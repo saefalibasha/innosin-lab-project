@@ -41,23 +41,24 @@ const ProductModel = ({
   const finalPosition = useMemo(() => {
     const basePos = canvasTo3DWorld(product.position, scale);
     // Proper height offset for wall-mounted products (typical wall cabinet height: 150cm)
-    const heightOffset = product.mountType === 'wall' ? 1.5 : 0;
+    // For now, assume all products are floor-mounted since mountType doesn't exist in PlacedProduct
+    const heightOffset = 0; // product.mountType === 'wall' ? 1.5 : 0;
     return [basePos[0], basePos[1] + heightOffset, basePos[2]] as [number, number, number];
-  }, [product.position, product.mountType, scale]);
+  }, [product.position, scale]);
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {
-    // Use actual product dimensions from the product data
-    const width = product.width || 600; // Default 600mm
-    const height = product.height || 850; // Default 850mm
-    const depth = product.depth || 600; // Default 600mm
+    // Use dimensions from the dimensions object in PlacedProduct
+    const width = product.dimensions?.width || 600; // Default 600mm
+    const height = product.dimensions?.height || 850; // Default 850mm
+    const depth = product.dimensions?.length || 600; // Use length for depth, default 600mm
     
     return {
       width: width * 0.001, // mm to meters
       height: height * 0.001,
       depth: depth * 0.001
     };
-  }, [product.width, product.height, product.depth]);
+  }, [product.dimensions?.width, product.dimensions?.height, product.dimensions?.length]);
 
   const rotationRad = degToRad(product.rotation || 0);
   const rotation: [number, number, number] = [0, rotationRad, 0];

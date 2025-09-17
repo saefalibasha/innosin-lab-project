@@ -93,7 +93,7 @@ export const useEnhanced3DDragging = (
       ]);
 
       const finalPosition = snapResult.snapped
-        ? canvasTo3DWorld({ x: snapResult.position.x, y: snapResult.position.y }, scale)
+        ? canvasTo3DWorld({ x: snapResult.position[0], y: snapResult.position[2] }, scale)
         : targetPosition;
 
       setDragState((prev) => ({

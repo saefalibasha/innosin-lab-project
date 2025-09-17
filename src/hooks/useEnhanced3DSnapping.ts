@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { PlacedProduct, WallSegment } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld, worldTo2DCanvas } from '@/utils/coordinateUtils';
-import { wallsToPolygon, pointInPolygon } from '@/utils/polygonUtils';
 import * as THREE from 'three';
 
 interface Enhanced3DSnapResult {
@@ -27,39 +26,28 @@ export const useEnhanced3DSnapping = (
   const [snapGuides, setSnapGuides] = useState<SnapGuide3D[]>([]);
   const [activeSnap, setActiveSnap] = useState<Enhanced3DSnapResult | null>(null);
 
-  const snapToProducts = (
+  const snapToProducts = useCallback((
     position3D: [number, number, number],
     draggedProduct: PlacedProduct,
     products: PlacedProduct[]
   ): { snapped: boolean; position: [number, number, number]; type: string; confidence: number } => {
-    const PRODUCT_SNAP_DISTANCE = 0.3;
+    const PRODUCT_SNAP_DISTANCE = 0.3; // 30cm in 3D world units
     let bestSnap = { snapped: false, position: position3D, type: 'none', confidence: 0 };
 
-    // Simplified product snapping for now
+    // Get dimensions of dragged product from the dimensions object
+    const draggedWidth = (draggedProduct.dimensions?.width || 600) * 0.001; // mm to meters
+    const draggedDepth = (draggedProduct.dimensions?.length || 600) * 0.001; // use length for depth
+    const draggedRotation = draggedProduct.rotation || 0;
+
     products.forEach(product => {
       if (product.id === draggedProduct.id) return;
-      
+
+      // Convert product position to 3D
       const productPos3D = canvasTo3DWorld(product.position, scale);
-      const distance = Math.sqrt(
-        Math.pow(position3D[0] - productPos3D[0], 2) +
-        Math.pow(position3D[2] - productPos3D[2], 2)
-      );
-
-      if (distance < PRODUCT_SNAP_DISTANCE) {
-        const confidence = 1 - (distance / PRODUCT_SNAP_DISTANCE);
-        if (confidence > bestSnap.confidence) {
-          bestSnap = {
-            snapped: true,
-            position: [productPos3D[0] + 0.6, position3D[1], productPos3D[2]],
-            type: 'product-edge',
-            confidence
-          };
-        }
-      }
-    });
-
-    return bestSnap;
-  };
+      
+      // Get existing product dimensions
+      const productWidth = (product.dimensions?.width || 600) * 0.001;
+      const productDepth = (product.dimensions?.length || 600) * 0.001;
       const productRotation = product.rotation || 0;
       
       // Calculate distance
@@ -141,15 +129,7 @@ export const useEnhanced3DSnapping = (
     });
 
     return bestSnap;
-  };
-
-export const useEnhanced3DSnapping = (
-  wallSegments: WallSegment[],
-  placedProducts: PlacedProduct[],
-  scale: number
-) => {
-  const [snapGuides, setSnapGuides] = useState<SnapGuide3D[]>([]);
-  const [activeSnap, setActiveSnap] = useState<Enhanced3DSnapResult | null>(null);
+  }, [scale]);
 
   const snapToPosition = useCallback((
     position3D: [number, number, number],
@@ -201,17 +181,27 @@ export const useEnhanced3DSnapping = (
     }
 
     return bestSnap;
-  }, [placedProducts, scale]);
+  }, [placedProducts, snapToProducts]);
 
   const updateSnapGuides = useCallback((snapResult: Enhanced3DSnapResult) => {
     const guides: SnapGuide3D[] = [];
     if (snapResult.snapped) {
       switch (snapResult.snapType) {
         case 'product':
-          guides.push({ type: 'point', position: [snapResult.position[0], 0.1, snapResult.position[2]], color: '#4ecdc4', opacity: 0.9 });
+          guides.push({ 
+            type: 'point', 
+            position: [snapResult.position[0], 0.1, snapResult.position[2]], 
+            color: '#4ecdc4', 
+            opacity: 0.9 
+          });
           break;
         case 'grid':
-          guides.push({ type: 'grid', position: snapResult.position, color: '#95a5a6', opacity: 0.4 });
+          guides.push({ 
+            type: 'grid', 
+            position: snapResult.position, 
+            color: '#95a5a6', 
+            opacity: 0.4 
+          });
           break;
       }
     }

@@ -13,6 +13,7 @@ import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { toast } from 'sonner';
 import * as THREE from 'three';
 import { worldTo2DCanvas } from '@/utils/coordinateUtils';
+import { wallsToPolygon, rectInsidePolygon } from '@/utils/polygonUtils';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
