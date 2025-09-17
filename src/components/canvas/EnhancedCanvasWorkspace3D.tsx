@@ -78,72 +78,93 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
       e.preventDefault();
       if (!htmlRef.current) return;
 
-      // Handle both 'application/json' and 'product' data types
-      const jsonData = e.dataTransfer.getData('application/json');
-      const productData = e.dataTransfer.getData('product');
-      const data = jsonData || productData;
+      // Handle multiple data transfer formats
+      const dataTransfer = e.dataTransfer;
+      let productData = null;
       
-      if (!data) {
-        toast.error('No product data found');
+      // Try different data formats
+      try {
+        productData = dataTransfer.getData('application/json');
+        if (!productData) {
+          productData = dataTransfer.getData('product');
+        }
+        if (!productData) {
+          productData = dataTransfer.getData('text/plain');
+        }
+      } catch (error) {
+        console.error('Error reading drag data:', error);
+      }
+      
+      if (!productData) {
+        toast.error('No product data found in drop');
         return;
       }
 
       try {
-        const product = JSON.parse(data);
-        console.log('Dropped product data:', product);
+        const product = typeof productData === 'string' ? JSON.parse(productData) : productData;
+        console.log('3D Drop - Product data:', product);
 
-        // Get canvas position relative to the drop area
+        // Get accurate canvas position
         const rect = htmlRef.current.getBoundingClientRect();
+        const relativeX = e.clientX - rect.left;
+        const relativeY = e.clientY - rect.top;
+        
+        // Convert to proportional coordinates (0-1 range)
+        const normalizedX = relativeX / rect.width;
+        const normalizedY = relativeY / rect.height;
+        
+        // Convert to canvas coordinates 
         const canvasPos = {
-          x: (e.clientX - rect.left),
-          y: (e.clientY - rect.top)
+          x: normalizedX * 800, // Assuming 800px canvas width
+          y: normalizedY * 600  // Assuming 600px canvas height
         };
 
-        console.log('Canvas position:', canvasPos);
+        console.log('3D Canvas position:', canvasPos, 'from client:', {x: relativeX, y: relativeY});
 
-        // Basic validation if walls exist
+        // Simplified validation - only check if walls exist and form a valid polygon
         if (wallSegments.length > 0) {
           const polygon = wallsToPolygon(wallSegments);
           if (polygon.length >= 3) {
-            const productWidth = (product.width || 600);
-            const productDepth = (product.depth || 600);
+            // Use consistent dimension mapping
+            const productWidthMm = product.width || product.dimensions?.length || 600;
+            const productDepthMm = product.depth || product.dimensions?.width || 600;
             
             const isInside = rectInsidePolygon(
               canvasPos,
-              productWidth * scale,
-              productDepth * scale,
+              productWidthMm * scale,
+              productDepthMm * scale,
               0,
               polygon
             );
             
             if (!isInside) {
-              toast.error('Product must be placed within the walls');
-              return;
+              console.warn('Product outside walls, allowing placement anyway for 3D');
+              // Allow placement in 3D even if outside walls for better UX
             }
           }
         }
 
-        // Create new product with proper dimensions
-        const productWidth = product.width || 600;
-        const productDepth = product.depth || 600;
-        const productHeight = product.height || 850;
+        // Create product with consistent dimension mapping
+        const productWidthMm = product.width || product.dimensions?.length || 600;
+        const productDepthMm = product.depth || product.dimensions?.width || 600;
+        const productHeightMm = product.height || product.dimensions?.height || 850;
 
         const newProduct: PlacedProduct = {
-          id: `product-${Date.now()}`,
-          productId: product.id,
-          name: product.name,
-          category: product.category || 'Unknown',
+          id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          productId: product.id || product.productId || `unknown-${Date.now()}`,
+          name: product.name || 'Unknown Product',
+          category: product.category || 'Cabinet',
           position: canvasPos,
           rotation: 0,
           dimensions: {
-            length: productWidth,
-            width: productDepth,
-            height: productHeight
+            length: productWidthMm,  // width maps to length
+            width: productDepthMm,   // depth maps to width  
+            height: productHeightMm
           },
           originalDimensions: {
-            length: productWidth,
-            width: productDepth,
-            height: productHeight
+            length: productWidthMm,
+            width: productDepthMm,
+            height: productHeightMm
           },
           color: product.color || '#4caf50',
           scale: 1,
@@ -156,10 +177,10 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         };
 
         setPlacedProducts((prev) => [...prev, newProduct]);
-        toast.success(`Added ${product.name} to floor plan`);
+        toast.success(`Added ${product.name} to 3D floor plan`);
       } catch (error) {
-        console.error('Error parsing dropped product:', error);
-        toast.error('Failed to add product');
+        console.error('Error parsing dropped product in 3D:', error);
+        toast.error('Failed to parse product data');
       }
     },
     [setPlacedProducts, wallSegments, scale]

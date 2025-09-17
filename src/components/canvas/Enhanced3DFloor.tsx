@@ -24,7 +24,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     // Get the polygon outline from walls
     const polygon = wallsToPolygon(wallSegments);
     if (polygon.length < 3) {
-      // Fallback: create floor from wall extents
+      // Enhanced fallback: create floor from wall extents
       if (wallSegments.length > 0) {
         const xs = wallSegments.flatMap(w => [w.start.x, w.end.x]);
         const ys = wallSegments.flatMap(w => [w.start.y, w.end.y]);
@@ -34,15 +34,28 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         const maxY = Math.max(...ys);
         
         const shape = new THREE.Shape();
-        const padding = 200; // Add some padding
-        shape.moveTo(minX - padding, minY - padding);
-        shape.lineTo(maxX + padding, minY - padding);
-        shape.lineTo(maxX + padding, maxY + padding);
-        shape.lineTo(minX - padding, maxY + padding);
+        const padding = 100; // Reduced padding for better fit
+        const [x1, , z1] = canvasTo3DWorld({x: minX - padding, y: minY - padding}, scale);
+        const [x2, , z2] = canvasTo3DWorld({x: maxX + padding, y: minY - padding}, scale);
+        const [x3, , z3] = canvasTo3DWorld({x: maxX + padding, y: maxY + padding}, scale);
+        const [x4, , z4] = canvasTo3DWorld({x: minX - padding, y: maxY + padding}, scale);
+        
+        shape.moveTo(x1, z1);
+        shape.lineTo(x2, z2);
+        shape.lineTo(x3, z3);
+        shape.lineTo(x4, z4);
         shape.closePath();
         return shape;
       }
-      return null;
+      
+      // Ultimate fallback: create a basic rectangular floor
+      const shape = new THREE.Shape();
+      shape.moveTo(-5, -5);
+      shape.lineTo(5, -5);
+      shape.lineTo(5, 5);
+      shape.lineTo(-5, 5);
+      shape.closePath();
+      return shape;
     }
 
     // Convert to 3D coordinates and create shape

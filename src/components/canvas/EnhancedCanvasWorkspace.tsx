@@ -264,11 +264,16 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   // Helper functions inside component scope
   const snapToWallMidpoint = useCallback(
     (point: Point): Point => {
-      // For interior-wall mode, always snap to closest midpoint regardless of distance
-      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, Infinity);
+      // For interior-wall mode, always snap to closest midpoint without distance threshold
+      if (currentMode === 'interior-wall') {
+        const closestMidpoint = findClosestWallMidpoint(point, wallSegments, Infinity);
+        return closestMidpoint ? closestMidpoint.point : point;
+      }
+      // For other modes, use standard distance threshold
+      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40);
       return closestMidpoint ? closestMidpoint.point : point;
     },
-    [wallSegments]
+    [wallSegments, currentMode]
   );
 
   const snapProductToProducts = useCallback(
@@ -381,7 +386,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const rectOutsideWalls = useCallback(
     (prod:PlacedProduct): boolean => {
       const poly = outerPolygon();
-      if (!poly || poly.length < 3) return false; // if we can't deduce valid polygon, don't block
+      // Allow placement when no valid polygon exists (no walls or invalid wall configuration)
+      if (!poly || poly.length < 3) return false;
       // require center and all corners be inside polygon
       if (!pointInPolygon(prod.position, poly)) return true;
       const corners = productCorners(prod);

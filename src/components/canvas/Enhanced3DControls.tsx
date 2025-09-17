@@ -36,33 +36,34 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   const handlePointerDown = useCallback((event: any) => {
     setIsPointerDown(true);
     
-    // Manual raycasting for more reliable product detection
+    // Improved raycasting with better scene traversal
     raycaster.setFromCamera(pointer, camera);
     
-    // Create array of all 3D objects in the scene to check intersections
-    const sceneObjects: THREE.Object3D[] = [];
-    camera.parent?.traverse((obj) => {
-      if (obj.visible && obj !== camera) {
-        sceneObjects.push(obj);
-      }
-    });
+    // Get the entire scene for intersection testing
+    const scene = camera.parent;
+    if (!scene) return;
     
-    const intersections = raycaster.intersectObjects(sceneObjects, true);
+    const intersections = raycaster.intersectObjects(scene.children, true);
     
     if (intersections.length > 0) {
-      const intersection = intersections[0];
-      let object = intersection.object;
-      
-      // Walk up the hierarchy to find the product root
-      while (object && !object.userData?.productId) {
-        object = object.parent!;
-      }
-      
-      if (object?.userData?.productId) {
-        const product = placedProducts.find(p => p.id === object.userData.productId);
-        if (product) {
-          startDrag(product, [intersection.point.x, intersection.point.y, intersection.point.z] as [number, number, number], event);
-          onProductSelect(product.id);
+      // Find the first intersection with a product
+      for (const intersection of intersections) {
+        let object = intersection.object;
+        
+        // Walk up the hierarchy to find the product root
+        while (object && !object.userData?.productId) {
+          object = object.parent!;
+          if (!object) break;
+        }
+        
+        if (object?.userData?.productId) {
+          const product = placedProducts.find(p => p.id === object.userData.productId);
+          if (product) {
+            console.log('Starting drag for product:', product.name);
+            startDrag(product, [intersection.point.x, intersection.point.y, intersection.point.z] as [number, number, number], event);
+            onProductSelect(product.id);
+            return; // Exit after finding first valid product
+          }
         }
       }
     }
