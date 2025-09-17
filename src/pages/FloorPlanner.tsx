@@ -75,6 +75,10 @@ const FloorPlanner = () => {
   // Canvas and drawing state
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [currentMode, setCurrentMode] = useState<DrawingMode>('select');
+
+// Define view mode type and state
+type ViewMode = '2d' | '3d';
+const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const [roomPoints, setRoomPoints] = useState<Point[]>([]);
   const [placedProducts, setPlacedProducts] = useState<PlacedProduct[]>([]);
   const [doors, setDoors] = useState<Door[]>([]);
@@ -455,9 +459,7 @@ const FloorPlanner = () => {
     ? "fixed inset-0 z-50 bg-background" 
     : "min-h-screen bg-background";
 
-  // Add view mode state
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
-
+  
   if (!hasAccess) {
     return (
       <>
@@ -568,7 +570,7 @@ const FloorPlanner = () => {
               onClearSelection={handleClearSelection}
             />
 
-            {viewMode === '2d' && (
+            {viewMode === "2d" && (
               <>
                 <HorizontalToolbar
                   currentTool={currentMode}
@@ -642,17 +644,17 @@ const FloorPlanner = () => {
                         
                         <div className="bg-muted rounded-md p-1">
                           <Button
-                             variant={viewMode === '2d' ? 'default' : 'ghost'}
+                            variant={viewMode === ("2d" as ViewMode) ? "default" : "ghost"}
                             size="sm"
-                             onClick={() => setViewMode('2d')}
+                            onClick={() => setViewMode("2d" as ViewMode)}
                             className="h-8 px-3 text-xs"
                           >
                             2D
                           </Button>
                           <Button
-                            variant={viewMode === '3d' ? 'default' : 'ghost'}
+                            variant={viewMode === ("3d" as ViewMode) ? "default" : "ghost"}
                             size="sm"
-                             onClick={() => setViewMode('3d')}
+                            onClick={() => setViewMode("3d" as ViewMode)}
                             className="h-8 px-3 text-xs"
                           >
                             3D
@@ -724,7 +726,7 @@ const FloorPlanner = () => {
               </>
             )}
 
-            {viewMode === '3d' && (
+            {viewMode === "3d" && (
               <Card>
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
@@ -829,7 +831,7 @@ const FloorPlanner = () => {
             )}
 
             {/* Only show these controls in 2D mode */}
-            {viewMode === '2d' && (
+            {viewMode === "2d" && (
               <>
                 <ProductRotationControl
                   selectedProducts={selectedProducts}
