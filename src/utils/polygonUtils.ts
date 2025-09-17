@@ -98,17 +98,9 @@ export function wallsToPolygon(wallSegments: WallSegment[]): Point[] {
  */
 export function isValidFloorPolygon(wallSegments: WallSegment[]): boolean {
   const polygon = wallsToPolygon(wallSegments);
-  
-  if (polygon.length < 3) return false;
-  
-  // Check if polygon is closed (first and last points are close)
-  const first = polygon[0];
-  const last = polygon[polygon.length - 1];
-  const distance = Math.sqrt(
-    Math.pow(first.x - last.x, 2) + Math.pow(first.y - last.y, 2)
-  );
-  
-  return distance < 10; // Allow small gap for closure
+  // We consider a polygon valid if it has 3 or more vertices; it does not
+  // need to repeat the starting point at the end for ray-casting or area calc
+  return polygon.length >= 3;
 }
 
 /**
