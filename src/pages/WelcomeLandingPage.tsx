@@ -37,13 +37,13 @@ export default function WelcomeLandingPage() {
       
       {/* Navigation */}
       <nav className="relative z-10 flex justify-between items-center px-8 py-6">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-4">
           <img 
             src="/brand-logos/innosin-lab-logo.png" 
             alt="Innosin Lab" 
-            className="h-8 w-auto"
+            className="h-12 w-auto"
           />
-          <span className="text-lg font-medium text-sea">Innosin Lab</span>
+          <span className="text-2xl font-semibold text-sea">Innosin Lab</span>
         </div>
         <Button 
           variant="ghost" 
