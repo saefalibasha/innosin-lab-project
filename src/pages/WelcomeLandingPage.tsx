@@ -61,8 +61,8 @@ export default function WelcomeLandingPage() {
         }`}>
           
           {/* Main Headline */}
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-light mb-8 leading-tight tracking-tight">
-            <span className="text-sea">Innovation.</span>
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl mb-8 leading-tight tracking-tight">
+            <span className="font-semibold text-sea">Innovation.</span>
             <br />
             <span className="font-semibold text-sea-dark">Redefined.</span>
           </h1>
