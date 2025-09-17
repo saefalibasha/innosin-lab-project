@@ -813,7 +813,7 @@ const FloorPlanner = () => {
                   
                   {/* 3D Controls Below Canvas */}
                   <div className="mt-4 border-t pt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* View Controls */}
                       <div className="space-y-2">
                         <h3 className="text-sm font-medium">View Controls</h3>
@@ -842,29 +842,6 @@ const FloorPlanner = () => {
                             onClick={handleDeleteSelected}
                           >
                             Delete Selected
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Wall Controls */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Wall Controls</h3>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            Debug Walls
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      {/* Export Controls */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-medium">Project</h3>
-                        <div className="flex gap-2">
-                          <Button onClick={handleClear} variant="outline" size="sm">
-                            Clear All
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            Export 3D
                           </Button>
                         </div>
                       </div>

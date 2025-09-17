@@ -40,28 +40,32 @@ const ProductModel = ({
   // Calculate final position and scale with proper dimensions
   const finalPosition = useMemo(() => {
     const basePos = canvasTo3DWorld(product.position, scale);
-    // Proper height offset for wall-mounted products (typical wall cabinet height: 150cm)
-    // For now, assume all products are floor-mounted since mountType doesn't exist in PlacedProduct
-    const heightOffset = 0; // product.mountType === 'wall' ? 1.5 : 0;
+    // Check if this is a wall-mounted product based on name/category
+    const isWallMounted = product.name?.toLowerCase().includes('wall') || 
+                         product.category?.toLowerCase().includes('wall');
+    // Wall-mounted products should be positioned at typical wall cabinet height (1.5m)
+    const mountHeight = isWallMounted ? 1.5 : 0;
+    const productHeight = (product.originalDimensions?.height || product.dimensions?.height || 850) * 0.001;
+    const heightOffset = mountHeight + (isWallMounted ? productHeight / 2 : 0);
     return [basePos[0], basePos[1] + heightOffset, basePos[2]] as [number, number, number];
-  }, [product.position, scale]);
+  }, [product.position, product.name, product.category, product.originalDimensions, product.dimensions, scale]);
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {
-    // Use dimensions from the dimensions object in PlacedProduct
-    const width = product.dimensions?.width || 600; // Default 600mm
-    const height = product.dimensions?.height || 850; // Default 850mm
-    const depth = product.dimensions?.length || 600; // Use length for depth, default 600mm
+    // Use originalDimensions if available (stored in mm), fallback to dimensions
+    const width = product.originalDimensions?.width || product.dimensions?.width || 600;
+    const height = product.originalDimensions?.height || product.dimensions?.height || 850;
+    const depth = product.originalDimensions?.depth || product.dimensions?.length || 600;
     
     return {
       width: width * 0.001, // mm to meters
       height: height * 0.001,
       depth: depth * 0.001
     };
-  }, [product.dimensions?.width, product.dimensions?.height, product.dimensions?.length]);
+  }, [product.originalDimensions, product.dimensions]);
 
-  const rotationRad = degToRad(product.rotation || 0);
-  const rotation: [number, number, number] = [0, rotationRad, 0];
+  // Treat product.rotation as radians (consistent with 2D)
+  const rotation: [number, number, number] = [0, product.rotation || 0, 0];
 
   // Physical size in meters
   const lengthM = targetDimensions.depth;

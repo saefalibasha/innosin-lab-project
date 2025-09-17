@@ -142,10 +142,10 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         const point = intersects[0].point; // meters
         const canvasPos = worldTo2DCanvas(point.x, point.z, scale);
 
-        // Validate that the product is placed within walls
+        // Validate that the product is placed within walls using shared utils
         if (wallSegments && wallSegments.length > 0) {
           const polygon = wallsToPolygon(wallSegments);
-          if (polygon.length >= 3) {
+          if (polygon && polygon.length >= 3) {
             const productWidth = (product.width || 600); // in mm
             const productDepth = (product.depth || 600); // in mm
             
@@ -172,6 +172,11 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           position: canvasPos,
           rotation: 0,
           dimensions: product.dimensions,
+          originalDimensions: { // Store original dimensions in mm for consistent sizing
+            width: product.width || 600,
+            height: product.height || 850,
+            depth: product.depth || 600
+          },
           color: product.color,
           scale: 1,
           modelPath: product.modelPath,

@@ -17,6 +17,7 @@ import {
 } from '@/utils/measurements';
 import { getProductDimensionsInMm } from '@/utils/productDimensions';
 import { SnapSystem } from '@/utils/snapSystem';
+import { wallsToPolygon, pointInPolygon, rectInsidePolygon, getWallMidpoints, findClosestWallMidpoint } from '@/utils/polygonUtils';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasWorkspaceProps {
@@ -48,7 +49,7 @@ interface EnhancedCanvasWorkspaceProps {
 
 /* ===================== Config ===================== */
 
-const PRODUCT_CLEARANCE_MM = 20; // min gap to other furniture
+const PRODUCT_CLEARANCE_MM = 0; // Allow seamless adjacency for 4-corner snapping
 const WALL_CLEARANCE_MM = 10;    // min gap to walls
 const USE_RAF_FOR_DRAG = true;
 
@@ -159,53 +160,83 @@ const toProductAABB = (p: PlacedProduct) => toAABB(productCorners(p));
 
 const near = (a:Point, b:Point, eps=1e-3) => Math.hypot(a.x-b.x, a.y-b.y) < eps;
 
-/** order wall endpoints into a closed polygon if possible */
-const wallsToPolygon = (walls: WallSegment[]): Point[] | null => {
-  if (walls.length < 3) return null;
-  // collect unique endpoints
-  const pts: Point[] = [];
-  const pushUnique = (p:Point) => {
-    if (!pts.some(q => near(p,q))) pts.push({x:p.x, y:p.y});
-  };
-  walls.forEach(w => { pushUnique(w.start); pushUnique(w.end); });
+// Helper functions for wall midpoint snapping
+const snapToWallMidpoint = useCallback(
+  (point: Point): Point => {
+    const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40); // 40px threshold
+    return closestMidpoint ? closestMidpoint.point : point;
+  },
+  [wallSegments]
+);
 
-  // Greedy chain by nearest neighbor
-  let start = pts[0];
-  const poly = [start];
-  const remaining = pts.slice(1);
-  while (remaining.length) {
-    let bestIdx = -1, bestD = Infinity;
-    for (let i=0;i<remaining.length;i++) {
-      const d = len(poly[poly.length-1], remaining[i]);
-      if (d < bestD) { bestD = d; bestIdx = i; }
+// Four-corner product snapping helper
+const snapProductToProducts = useCallback(
+  (candidate: PlacedProduct, others: PlacedProduct[]): Point => {
+    const threshold = 12; // px for snapping
+    let bestSnap: Point | null = null;
+    let bestDistance = threshold;
+
+    const candidateCorners = productCorners(candidate);
+    
+    for (const other of others) {
+      if (other.id === candidate.id) continue;
+      
+      const otherCorners = productCorners(other);
+      
+      // Check corner-to-corner snapping
+      for (const candidateCorner of candidateCorners) {
+        for (const otherCorner of otherCorners) {
+          const dx = candidateCorner.x - candidate.position.x;
+          const dy = candidateCorner.y - candidate.position.y;
+          const distance = len(candidateCorner, otherCorner);
+          
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestSnap = {
+              x: otherCorner.x - dx,
+              y: otherCorner.y - dy
+            };
+          }
+        }
+      }
+      
+      // Check edge-to-edge snapping
+      const otherL = other.dimensions.length ?? 40;
+      const otherW = other.dimensions.width ?? 30;
+      const candidateL = candidate.dimensions.length ?? 40;
+      const candidateW = candidate.dimensions.width ?? 30;
+      
+      // Horizontal alignment (placing side by side)
+      const rightEdge = other.position.x + otherL/2;
+      const leftEdge = other.position.x - otherL/2;
+      const candidateLeft = candidate.position.x - candidateL/2;
+      const candidateRight = candidate.position.x + candidateL/2;
+      
+      // Try placing candidate to the right of other
+      const rightSnapX = rightEdge + candidateL/2;
+      const rightSnapPos = { x: rightSnapX, y: candidate.position.y };
+      const rightDist = Math.abs(candidateLeft - rightEdge);
+      
+      if (rightDist < bestDistance && Math.abs(candidate.position.y - other.position.y) < candidateW/2 + otherW/2) {
+        bestDistance = rightDist;
+        bestSnap = rightSnapPos;
+      }
+      
+      // Try placing candidate to the left of other
+      const leftSnapX = leftEdge - candidateL/2;
+      const leftSnapPos = { x: leftSnapX, y: candidate.position.y };
+      const leftDist = Math.abs(candidateRight - leftEdge);
+      
+      if (leftDist < bestDistance && Math.abs(candidate.position.y - other.position.y) < candidateW/2 + otherW/2) {
+        bestDistance = leftDist;
+        bestSnap = leftSnapPos;
+      }
     }
-    const next = remaining.splice(bestIdx,1)[0];
-    poly.push(next);
-  }
-  // close if last connects to first
-  if (!near(poly[0], poly[poly.length-1])) poly.push(poly[0]);
-  // validate: every vertex should be an endpoint of at least one wall
-  const ok = poly.length >= 4;
-  return ok ? poly.slice(0, -1) : null;
-};
-
-const pointInPolygon = (pt:Point, poly:Point[]) => {
-  // ray casting
-  let inside = false;
-  for (let i=0,j=poly.length-1;i<poly.length;j=i++) {
-    const xi=poly[i].x, yi=poly[i].y, xj=poly[j].x, yj=poly[j].y;
-    const intersect = ((yi>pt.y)!==(yj>pt.y)) &&
-      (pt.x < (xj-xi)*(pt.y-yi)/(yj-yi + 1e-9) + xi);
-    if (intersect) inside = !inside;
-  }
-  return inside;
-};
-
-/** ensure all rect corners lie inside polygon */
-const rectInsidePolygon = (p:PlacedProduct, poly:Point[]) => {
-  const corners = productCorners(p);
-  return corners.every(c => pointInPolygon(c, poly));
-};
+    
+    return bestSnap || candidate.position;
+  },
+  [wallSegments]
+);
 
 /* ===================== Component ===================== */
 
@@ -332,7 +363,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   /* ---------- Robust wall + inside-room checks ---------- */
 
   const outerPolygon = useCallback(() => {
-    // prefer a drawn room polygon if present; else derive from walls
+    // prefer a drawn room polygon if present; else derive from walls using shared utils
     if (rooms.length && rooms[0].points.length >= 3) return rooms[0].points;
     return wallsToPolygon(wallSegments);
   }, [rooms, wallSegments]);
@@ -365,7 +396,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   const collidesWithFurniture = useCallback(
     (prod: PlacedProduct, exceptId?: string): boolean => {
-      const pad = mmToCanvas(PRODUCT_CLEARANCE_MM, scale);
+      const pad = 0; // Allow seamless adjacency for snapping
       const a = toProductAABB(prod);
       for (const other of placedProducts) {
         if (other.id === prod.id || other.id === exceptId) continue;
@@ -574,6 +605,10 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     (start: Point, curr: Point, mode: DrawingMode) => {
       const constrained = constrainToOrtho(start, curr);
       if (mode === 'interior-wall') {
+        // For interior walls, prioritize wall midpoints first
+        const midpointSnap = snapToWallMidpoint(constrained);
+        if (midpointSnap !== constrained) return midpointSnap;
+        
         const s1 = snapToWallLength(constrained);
         if (s1.point) return s1.point;
         const s2 = snapToEndpoints(constrained);
@@ -584,7 +619,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       if (s2.point) return s2.point;
       return snapToGrid(constrained);
     },
-    [constrainToOrtho, snapToWallLength, snapToEndpoints, snapToGrid]
+    [constrainToOrtho, snapToWallLength, snapToEndpoints, snapToGrid, snapToWallMidpoint]
   );
 
   /* ===================== Mouse handlers ===================== */
@@ -639,9 +674,21 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
       if (currentMode === 'wall' || currentMode === 'interior-wall') {
         if (!wallStartPoint) {
-          const ep = snapToEndpoints(p);
-          if (ep.point && ep.isSnapping) setWallStartPoint(ep.point);
-          else setWallStartPoint(snapToGrid(p));
+          // For interior walls, prioritize wall midpoints
+          if (currentMode === 'interior-wall') {
+            const midpointSnap = snapToWallMidpoint(p);
+            if (midpointSnap !== p) {
+              setWallStartPoint(midpointSnap);
+            } else {
+              const ep = snapToEndpoints(p);
+              if (ep.point && ep.isSnapping) setWallStartPoint(ep.point);
+              else setWallStartPoint(snapToGrid(p));
+            }
+          } else {
+            const ep = snapToEndpoints(p);
+            if (ep.point && ep.isSnapping) setWallStartPoint(ep.point);
+            else setWallStartPoint(snapToGrid(p));
+          }
           setIsWallPreview(true);
         } else {
           const end = finalPointForPreview(wallStartPoint, p, currentMode);
@@ -761,6 +808,9 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
       let candidate: PlacedProduct = { ...dragged, position: pos };
 
+      // Apply four-corner product snapping first
+      candidate.position = snapProductToProducts(candidate, placedProducts);
+
       // optional spacing snap for benches/islands
       candidate.position = snapIslandBenchDistance(candidate);
 
@@ -787,6 +837,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       snapToGrid,
       placedProducts,
       clampToCanvas,
+      snapProductToProducts,
       snapIslandBenchDistance,
       setPlacedProducts,
       lastValidPos,
@@ -1018,6 +1069,19 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         ctx.lineWidth = 2;
         ctx.stroke();
       });
+    });
+
+    // Draw red dots at wall midpoints for interior wall snapping
+    const wallMidpoints = getWallMidpoints(wallSegments);
+    wallMidpoints.forEach((midpoint) => {
+      ctx.beginPath();
+      ctx.arc(midpoint.x, midpoint.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff0000';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    });
 
       // dimension label (parallel to wall, never upside-down)
       if (showMeasurements) {
@@ -1420,7 +1484,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
               position: pos,
               rotation: 0,
               dimensions: dimsPx,
-              originalDimensions: { length: dimsMm.width, width: dimsMm.depth, height: dimsMm.height },
+              originalDimensions: { width: dimsMm.width, depth: dimsMm.depth, height: dimsMm.height },
               color: product.color || '#4caf50',
               scale: 1,
               modelPath: product.modelPath,
