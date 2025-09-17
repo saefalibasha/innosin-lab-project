@@ -16,8 +16,9 @@ import {
   Target,
   Package,
   AlertCircle,
+  Check,
 } from 'lucide-react';
-import EnhancedSeriesSelector from '@/components/floorplan/EnhancedSeriesSelector';
+import HotspotProductSelector from './HotspotProductSelector';
 
 interface Hotspot {
   id: string;
@@ -193,6 +194,7 @@ const HotspotEditor = () => {
   };
 
   const handleSave = () => {
+    // Enhanced validation
     if (!formData.title?.trim()) {
       toast.error('Please select a product for this hotspot');
       return;
@@ -201,9 +203,16 @@ const HotspotEditor = () => {
       toast.error('Please click on the image to set hotspot position');
       return;
     }
+    if (!formData.image || formData.image === '/placeholder.svg') {
+      toast.warning('Selected product has no image. Using default placeholder.');
+    }
+
+    // Show saving state
     if (isCreating && newHotspotPosition) {
+      toast.info('Creating hotspot...');
       createHotspotMutation.mutate(formData);
     } else if (editingHotspot) {
+      toast.info('Updating hotspot...');
       updateHotspotMutation.mutate({ ...formData, id: editingHotspot.id });
     }
   };
@@ -221,9 +230,13 @@ const HotspotEditor = () => {
     }
   };
 
-  // ✅ fetch product details from Supabase products table
+  // Simplified product selection for hotspots
   const handleProductSelect = async (product: any) => {
     try {
+      // Show loading state
+      toast.info('Loading product details...');
+      
+      // Get complete product data
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -232,21 +245,45 @@ const HotspotEditor = () => {
 
       if (error) throw error;
 
+      // Extract specifications properly
+      let specs = ['Premium Quality', 'Professional Grade', 'Industry Standard'];
+      if (data.specifications) {
+        if (Array.isArray(data.specifications)) {
+          specs = data.specifications.map((s: any) => String(s));
+        } else if (typeof data.specifications === 'object') {
+          specs = Object.values(data.specifications).map((s: any) => String(s));
+        }
+      }
+
+      // Add product dimensions to specifications if available
+      if (data.dimensions) {
+        specs.unshift(`Size: ${data.dimensions}`);
+      }
+
+      // Create comprehensive hotspot data
+      const hotspotData = {
+        title: data.name || 'Product',
+        description: data.description || data.full_description || '',
+        category: data.category || 'Laboratory Equipment',
+        price: 'Contact for pricing', // Products table doesn't have price field
+        image: data.thumbnail_path || data.overview_image_path || '/placeholder.svg',
+        product_link: `/products/${data.id}`,
+        specifications: specs,
+        x_position: formData.x_position,
+        y_position: formData.y_position,
+        is_active: true,
+        display_order: formData.display_order ?? hotspots.length,
+      };
+
       setFormData((prev) => ({
         ...prev,
-        title: data.name,
-        description: data.description || '',
-        category: data.category,
-        price: (data as any).price ?? 'Contact for pricing',
-        image: (data as any).thumbnail_path ?? (data as any).image ?? '',
-        product_link: `/products/${data.id}`,
-        specifications: Array.isArray((data as any).specifications)
-          ? (data as any).specifications.map((s: any) => String(s))
-          : ['Premium Quality', 'Professional Grade'],
+        ...hotspotData,
       }));
+
+      toast.success('Product selected successfully!');
     } catch (err: any) {
       console.error('Error fetching product details:', err);
-      toast.error('Failed to load product details from Supabase');
+      toast.error('Failed to load product details. Please try again.');
     }
   };
 
@@ -267,20 +304,31 @@ const HotspotEditor = () => {
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
+      {/* Enhanced Controls */}
       <div className="flex items-center justify-between">
         {!isCreating && !editingHotspot && (
-          <Button onClick={handleCreateMode} className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Hotspot
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button onClick={handleCreateMode} className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Add Hotspot
+            </Button>
+            {isCreating && (
+              <div className="bg-blue-50 text-blue-700 px-3 py-2 rounded-md text-sm font-medium">
+                💡 Click on the image to place your hotspot
+              </div>
+            )}
+          </div>
         )}
 
         {(isCreating || editingHotspot) && (
           <div className="flex gap-2">
-            <Button onClick={handleSave} size="sm">
+            <Button 
+              onClick={handleSave} 
+              size="sm"
+              disabled={createHotspotMutation.isPending || updateHotspotMutation.isPending}
+            >
               <Save className="w-4 h-4 mr-2" />
-              Save Hotspot
+              {createHotspotMutation.isPending || updateHotspotMutation.isPending ? 'Saving...' : 'Save Hotspot'}
             </Button>
             <Button onClick={handleCancel} variant="outline" size="sm">
               <X className="w-4 h-4 mr-2" />
@@ -289,10 +337,17 @@ const HotspotEditor = () => {
           </div>
         )}
 
-        <Badge variant="outline" className="flex items-center gap-1">
-          <Target className="w-3 h-3" />
-          {hotspots.length} Hotspots
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Target className="w-3 h-3" />
+            {hotspots.length} Hotspots
+          </Badge>
+          {currentContent && (
+            <Badge variant="secondary" className="text-xs">
+              {currentContent.title}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {/* Background image */}
@@ -303,17 +358,38 @@ const HotspotEditor = () => {
           className={`w-full h-[600px] object-cover rounded-lg border ${isCreating ? 'cursor-crosshair' : ''}`}
           onClick={handleImageClick}
         />
-        {/* Hotspot markers */}
+        {/* Enhanced Hotspot markers */}
         {hotspots.map((hotspot) => (
           <div
             key={hotspot.id}
-            className="absolute w-6 h-6 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold cursor-pointer"
+            className="absolute group cursor-pointer"
             style={{ left: `${hotspot.x_position}%`, top: `${hotspot.y_position}%`, transform: 'translate(-50%, -50%)' }}
             onClick={() => handleEdit(hotspot)}
           >
-            {hotspot.display_order + 1}
+            {/* Hotspot marker */}
+            <div className="w-8 h-8 rounded-full bg-red-500 hover:bg-red-600 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold transition-all duration-200 group-hover:scale-110">
+              {hotspot.display_order + 1}
+            </div>
+            
+            {/* Tooltip on hover */}
+            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+              <div className="bg-black text-white text-xs px-2 py-1 rounded whitespace-nowrap">
+                {hotspot.title}
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-l-4 border-r-4 border-t-4 border-transparent border-t-black"></div>
+              </div>
+            </div>
           </div>
         ))}
+
+        {/* New hotspot preview */}
+        {isCreating && newHotspotPosition && (
+          <div
+            className="absolute w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold animate-pulse"
+            style={{ left: `${newHotspotPosition.x}%`, top: `${newHotspotPosition.y}%`, transform: 'translate(-50%, -50%)' }}
+          >
+            <Plus className="w-4 h-4" />
+          </div>
+        )}
       </div>
 
       {/* Product selector */}
@@ -326,27 +402,109 @@ const HotspotEditor = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <EnhancedSeriesSelector
-              onProductDrag={() => {}}
-              currentTool="select"
-              onProductUsed={(id) => console.log('Product used:', id)}
+            <HotspotProductSelector
               onProductSelect={handleProductSelect}
+              selectedProductId={formData.title ? 'selected' : undefined}
             />
 
-            {/* Selected product preview */}
+            {/* Enhanced Selected product preview */}
             {formData.title && (
-              <div className="flex items-center gap-4 mt-4 p-4 border rounded-lg">
-                <img src={formData.image} alt={formData.title} className="w-20 h-20 object-cover rounded" />
-                <div>
-                  <h4 className="font-bold">{formData.title}</h4>
-                  <p className="text-sm text-muted-foreground">{formData.category}</p>
-                  <p className="text-green-600">{formData.price}</p>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
+                <div className="flex items-start gap-4">
+                  <div className="relative">
+                    <img 
+                      src={formData.image || '/placeholder.svg'} 
+                      alt={formData.title} 
+                      className="w-24 h-24 object-cover rounded-lg border"
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder.svg';
+                      }}
+                    />
+                    <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-1">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-lg">{formData.title}</h4>
+                    <p className="text-sm text-gray-600 mb-2">{formData.category}</p>
+                    <p className="text-green-600 font-semibold">{formData.price}</p>
+                    {formData.description && (
+                      <p className="text-sm text-gray-500 mt-2 line-clamp-2">{formData.description}</p>
+                    )}
+                    {formData.specifications && formData.specifications.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {formData.specifications.slice(0, 3).map((spec, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {spec}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
       ) : null}
+
+      {/* Hotspot Management List */}
+      {hotspots.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Manage Hotspots ({hotspots.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {hotspots.map((hotspot, index) => (
+                <div key={hotspot.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{hotspot.title}</h4>
+                      <p className="text-sm text-muted-foreground">{hotspot.category}</p>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Position: {Math.round(hotspot.x_position)}%, {Math.round(hotspot.y_position)}%
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      checked={hotspot.is_active} 
+                      onCheckedChange={(checked) => {
+                        updateHotspotMutation.mutate({ 
+                          ...hotspot, 
+                          is_active: checked 
+                        });
+                      }}
+                    />
+                    <Button
+                      onClick={() => handleEdit(hotspot)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(hotspot.id)}
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

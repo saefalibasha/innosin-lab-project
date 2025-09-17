@@ -20,6 +20,7 @@ interface EnhancedSeriesSelectorProps {
   currentTool?: string;
   onProductUsed?: (productId: string) => void;
   scale?: number;
+  compact?: boolean; // New prop for hotspot editor mode
 }
 
 const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ 
@@ -27,7 +28,8 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   onProductSelect, 
   currentTool = 'select', 
   onProductUsed,
-  scale = 0.15 
+  scale = 0.15,
+  compact = false
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
