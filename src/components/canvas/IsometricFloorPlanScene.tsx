@@ -71,7 +71,7 @@ const IsometricScene = ({
       <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} origin={calculatedOrigin} />
 
       {/* Doors */}
-      <IsometricDoors doors={doors} scale={scale} origin={calculatedOrigin} />
+      <IsometricDoors doors={doors} scale={scale} wallSegments={wallSegments} origin={calculatedOrigin} />
 
       {/* Products */}
       <IsometricProducts placedProducts={placedProducts} scale={scale} onProductClick={onProductClick} selectedProducts={selectedProducts} origin={calculatedOrigin} />

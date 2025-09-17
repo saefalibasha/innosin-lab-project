@@ -1,4 +1,4 @@
-import React, { Suspense, useRef, useEffect } from 'react';
+import React, { Suspense, useRef, useEffect, useMemo } from 'react';
 import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import * as THREE from 'three';
@@ -37,22 +37,41 @@ const ProductModel = ({
     onProductClick?.(product.id);
   };
 
-  const [x, y, z] = canvasTo3DWorld(product.position, scale);
-  const position: [number, number, number] = [x, y, z];
+  // Calculate final position and scale with proper dimensions
+  const finalPosition = useMemo(() => {
+    const basePos = canvasTo3DWorld(product.position, scale);
+    // Proper height offset for wall-mounted products (typical wall cabinet height: 150cm)
+    const heightOffset = product.mountType === 'wall' ? 1.5 : 0;
+    return [basePos[0], basePos[1] + heightOffset, basePos[2]] as [number, number, number];
+  }, [product.position, product.mountType, scale]);
+
+  // Convert dimensions to real-world units with accurate product dimensions
+  const targetDimensions = useMemo(() => {
+    // Use actual product dimensions from the product data
+    const width = product.width || 600; // Default 600mm
+    const height = product.height || 850; // Default 850mm
+    const depth = product.depth || 600; // Default 600mm
+    
+    return {
+      width: width * 0.001, // mm to meters
+      height: height * 0.001,
+      depth: depth * 0.001
+    };
+  }, [product.width, product.height, product.depth]);
 
   const rotationRad = degToRad(product.rotation || 0);
   const rotation: [number, number, number] = [0, rotationRad, 0];
 
   // Physical size in meters
-  const lengthM = toMeters(product.dimensions.length);
-  const widthM = toMeters(product.dimensions.width);
-  const heightM = toMeters(product.dimensions.height || 850);
+  const lengthM = targetDimensions.depth;
+  const widthM = targetDimensions.width;
+  const heightM = targetDimensions.height;
   const halfHeight = heightM / 2;
 
   const fallbackGeometry = (
     <mesh
       ref={meshRef}
-      position={[position[0], halfHeight, position[2]]}
+      position={[finalPosition[0], finalPosition[1] + halfHeight, finalPosition[2]]}
       rotation={rotation}
       onClick={handleClick}
       castShadow
@@ -77,7 +96,7 @@ const ProductModel = ({
           modelPath={product.modelPath}
           productId={product.id}
           targetSize={[lengthM, heightM, widthM]}
-          position={position}
+          position={finalPosition}
           rotation={rotation}
           onClick={handleClick}
           isSelected={isSelected}

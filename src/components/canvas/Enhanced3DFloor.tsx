@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { WallSegment, Room } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
+import { wallsToPolygon } from '@/utils/polygonUtils';
+import * as THREE from 'three';
 
 interface Enhanced3DFloorProps {
   rooms: Room[];
@@ -10,50 +12,46 @@ interface Enhanced3DFloorProps {
   origin?: { minX: number; minY: number };
 }
 
-// Generate floor from wall segments automatically
+// Generate floor from wall segments automatically using actual wall polygon
 const WallFloor = ({ wallSegments, scale, origin }: {
   wallSegments: WallSegment[];
   scale: number;
   origin?: { minX: number; minY: number };
 }) => {
-  const floorGeometry = useMemo(() => {
+  const floorShape = useMemo(() => {
     if (wallSegments.length === 0) return null;
 
-    // Find bounding box of all wall points
-    const wallPoints = wallSegments.flatMap(wall => [wall.start, wall.end]);
+    // Get the polygon outline from walls
+    const polygon = wallsToPolygon(wallSegments);
+    if (polygon.length < 3) return null;
+
+    // Convert to 3D coordinates and create shape
+    const shape = new THREE.Shape();
     
-    if (wallPoints.length < 3) return null;
-
-    const minX = Math.min(...wallPoints.map(p => p.x));
-    const maxX = Math.max(...wallPoints.map(p => p.x));
-    const minY = Math.min(...wallPoints.map(p => p.y));
-    const maxY = Math.max(...wallPoints.map(p => p.y));
-
-    // Convert to 3D coordinates
-    const corner1 = canvasTo3DWorld({ x: minX, y: minY }, scale);
-    const corner2 = canvasTo3DWorld({ x: maxX, y: maxY }, scale);
-
-    const width = Math.abs(corner2[0] - corner1[0]);
-    const depth = Math.abs(corner2[2] - corner1[2]);
-    const centerX = (corner1[0] + corner2[0]) / 2;
-    const centerZ = (corner1[2] + corner2[2]) / 2;
-
-    return {
-      width,
-      depth,
-      position: [centerX, -0.01, centerZ] as [number, number, number]
-    };
+    polygon.forEach((point, index) => {
+      const point3D = canvasTo3DWorld(point, scale);
+      if (index === 0) {
+        shape.moveTo(point3D[0], point3D[2]);
+      } else {
+        shape.lineTo(point3D[0], point3D[2]);
+      }
+    });
+    
+    // Close the shape
+    shape.closePath();
+    
+    return shape;
   }, [wallSegments, scale]);
 
-  if (!floorGeometry) return null;
+  if (!floorShape) return null;
 
   return (
     <mesh
-      position={floorGeometry.position}
+      position={[0, -0.01, 0]}
       receiveShadow
       rotation={[-Math.PI / 2, 0, 0]}
     >
-      <planeGeometry args={[floorGeometry.width, floorGeometry.depth]} />
+      <shapeGeometry args={[floorShape]} />
       <meshLambertMaterial color="#f5f5f5" />
     </mesh>
   );

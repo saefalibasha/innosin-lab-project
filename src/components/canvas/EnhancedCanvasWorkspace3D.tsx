@@ -139,8 +139,29 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         }
 
         const point = intersects[0].point; // meters
-
         const canvasPos = worldTo2DCanvas(point.x, point.z, scale);
+
+        // Validate that the product is placed within walls
+        if (wallSegments && wallSegments.length > 0) {
+          const polygon = wallsToPolygon(wallSegments);
+          if (polygon.length >= 3) {
+            const productWidth = (product.width || 600); // in mm
+            const productDepth = (product.depth || 600); // in mm
+            
+            const isInside = rectInsidePolygon(
+              canvasPos,
+              productWidth * scale, // Convert to canvas units
+              productDepth * scale,
+              0, // No rotation for validation
+              polygon
+            );
+            
+            if (!isInside) {
+              toast.error('Product must be placed within the walls');
+              return; // Don't place the product
+            }
+          }
+        }
 
         const newProduct: PlacedProduct = {
           id: `product-${Date.now()}`,
@@ -167,7 +188,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         toast.error('Failed to add product');
       }
     },
-    [setPlacedProducts, scale]
+    [setPlacedProducts, wallSegments, scale]
   );
 
   // Update function for drag actions in scene

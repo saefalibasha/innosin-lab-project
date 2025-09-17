@@ -1,28 +1,31 @@
 import React from 'react';
-import { Door } from '@/types/floorPlanTypes';
+import { Door, WallSegment } from '@/types/floorPlanTypes';
 import { calculateDoorTransform } from '@/utils/coordinateUtils';
 
 interface IsometricDoorsProps {
   doors: Door[];
   scale: number;
+  wallSegments?: WallSegment[];
   origin?: { minX: number; minY: number };
 }
 
 const DoorModel = ({ 
   door, 
   scale, 
+  wallSegments,
   origin 
 }: { 
   door: Door; 
   scale: number; 
+  wallSegments?: WallSegment[];
   origin?: { minX: number; minY: number };
 }) => {
   // Real-world door dimensions (in meters)
   const doorWidth = 0.9; // Standard 900mm door width
   const doorHeight = 2.0; // Standard door height  
-  const doorThickness = 0.08; // 8cm thick door for visibility
+  const doorThickness = 0.05; // 5cm thick door - thinner for better wall embedding
 
-  const transform = calculateDoorTransform(door, scale);
+  const transform = calculateDoorTransform(door, scale, wallSegments);
 
   if (!transform || !transform.position || !transform.rotation) {
     console.warn('Invalid transform for door:', door);
@@ -53,11 +56,11 @@ const DoorModel = ({
   );
 };
 
-export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale, origin }) => {
+export const IsometricDoors: React.FC<IsometricDoorsProps> = ({ doors, scale, wallSegments, origin }) => {
   return (
     <group>
       {doors.map((door) => (
-        <DoorModel key={door.id} door={door} scale={scale} origin={origin} />
+        <DoorModel key={door.id} door={door} scale={scale} wallSegments={wallSegments} origin={origin} />
       ))}
     </group>
   );

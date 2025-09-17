@@ -30,44 +30,55 @@ export function worldTo2DCanvas(x: number, z: number, scale: number = 0.08): Poi
 }
 
 /**
- * Calculate door position and rotation from door data
- * Uses direct 2D position mapping for 1:1 coordinate matching
+ * Calculate door position and rotation from door data, aligning with nearest wall
  */
-export function calculateDoorTransform(
-  door: any, 
-  scale: number = 0.08, 
+export const calculateDoorTransform = (
+  door: any,
+  scale: number = 0.08,
+  wallSegments: any[] = [],
   origin?: { minX: number; minY: number }
-) {
+) => {
   if (!door || !door.position) {
-    console.warn('calculateDoorTransform received invalid door data:', door);
-    return {
-      position: [0, 0, 0] as [number, number, number],
-      rotation: [0, 0, 0] as [number, number, number]
-    };
+    return null;
   }
 
-  // Use door's exact 2D coordinates from the wall system
-  const doorPosition = {
-    x: door.position.x,
-    y: door.position.y
-  };
-
-  // Convert door position directly from 2D to 3D coordinates using proper scale
-  const [x, y, z] = canvasTo3DWorld(doorPosition, scale);
-
-  // Calculate rotation based on facing direction
-  let rotation = 0;
-  if (door.facing === 'horizontal') {
-    rotation = 0; // Door along X axis
-  } else if (door.facing === 'vertical') {
-    rotation = Math.PI / 2; // Door along Z axis (90 degrees)
+  // Convert door position to 3D world coordinates
+  const position3D = canvasTo3DWorld(door.position, scale);
+  
+  // Find the nearest wall to align the door
+  let doorRotation = door.angle || 0;
+  
+  if (wallSegments.length > 0) {
+    let minDistance = Infinity;
+    let nearestWallAngle = 0;
+    
+    wallSegments.forEach(wall => {
+      // Calculate distance from door to wall
+      const wallMidX = (wall.start.x + wall.end.x) / 2;
+      const wallMidY = (wall.start.y + wall.end.y) / 2;
+      const distance = Math.sqrt(
+        Math.pow(door.position.x - wallMidX, 2) + 
+        Math.pow(door.position.y - wallMidY, 2)
+      );
+      
+      if (distance < minDistance) {
+        minDistance = distance;
+        // Calculate wall angle
+        const dx = wall.end.x - wall.start.x;
+        const dy = wall.end.y - wall.start.y;
+        nearestWallAngle = Math.atan2(dy, dx);
+      }
+    });
+    
+    // Align door perpendicular to wall
+    doorRotation = nearestWallAngle + Math.PI / 2;
   }
-
+  
   return {
-    position: [x, y, z] as [number, number, number],
-    rotation: [0, rotation, 0] as [number, number, number]
+    position: position3D,
+    rotation: [0, doorRotation, 0] as [number, number, number]
   };
-}
+};
 
 /**
  * Check if a product position is valid (within bounds, no collisions)
