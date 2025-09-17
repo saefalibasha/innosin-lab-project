@@ -117,51 +117,71 @@
   .bg-sea-dark {
     background-color: hsl(var(--sea-dark));
   }
-  
-  .border-sea {
-    border-color: hsl(var(--sea));
-  }
-  
-  .text-sand {
-    color: hsl(var(--sand));
-  }
-  
-  .text-sand-light {
-    color: hsl(var(--sand-light));
-  }
-  
-  .bg-sand {
-    background-color: hsl(var(--sand));
-  }
-  
-  .bg-sand-light {
-    background-color: hsl(var(--sand-light));
+
+  /* Custom animations for welcome page */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(1deg); }
+    66% { transform: translateY(-10px) rotate(-1deg); }
   }
 
-  /* Company Theme Utilities */
-  .company-themed .text-company-primary {
-    color: hsl(var(--company-primary));
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
   }
-  
-  .company-themed .text-company-accent {
-    color: hsl(var(--company-accent));
+
+  @keyframes grid {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
   }
-  
-  .company-themed .bg-company-primary {
-    background-color: hsl(var(--company-primary));
+
+  .animate-grid {
+    animation: grid 15s linear infinite;
   }
-  
-  .company-themed .bg-company-accent {
-    background-color: hsl(var(--company-accent));
-  }
-  
-  .company-themed .border-company-primary {
-    border-color: hsl(var(--company-primary));
-  }
-  
-  .company-themed .border-company-accent {
-    border-color: hsl(var(--company-accent));
-  }
+}
+
+.border-sea {
+  border-color: hsl(var(--sea));
+}
+
+.text-sand {
+  color: hsl(var(--sand));
+}
+
+.text-sand-light {
+  color: hsl(var(--sand-light));
+}
+
+.bg-sand {
+  background-color: hsl(var(--sand));
+}
+
+.bg-sand-light {
+  background-color: hsl(var(--sand-light));
+}
+
+/* Company Theme Utilities */
+.company-themed .text-company-primary {
+  color: hsl(var(--company-primary));
+}
+
+.company-themed .text-company-accent {
+  color: hsl(var(--company-accent));
+}
+
+.company-themed .bg-company-primary {
+  background-color: hsl(var(--company-primary));
+}
+
+.company-themed .bg-company-accent {
+  background-color: hsl(var(--company-accent));
+}
+
+.company-themed .border-company-primary {
+  border-color: hsl(var(--company-primary));
+}
+
+.company-themed .border-company-accent {
+  border-color: hsl(var(--company-accent));
 }
 
 /* Enhanced Wave Animation with center-focused movement */
