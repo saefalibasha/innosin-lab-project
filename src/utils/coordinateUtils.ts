@@ -70,8 +70,8 @@ export const calculateDoorTransform = (
       }
     });
     
-    // Align door perpendicular to wall
-    doorRotation = nearestWallAngle + Math.PI / 2;
+    // Align door parallel to wall (not perpendicular)
+    doorRotation = nearestWallAngle;
   }
   
   return {

@@ -41,7 +41,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   const [selectedProductForVariants, setSelectedProductForVariants] =
     useState<Product | null>(null);
 
-  const isInteractionDisabled = currentTool !== 'select';
+  const isInteractionDisabled = false; // Allow dragging regardless of current tool
 
   // Helper functions
   const deriveDrawerCount = (p: Product): number | null => {

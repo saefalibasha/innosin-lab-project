@@ -496,7 +496,7 @@ const FloorPlanner = () => {
                   onClick={() => setViewMode('2d')}
                   className="h-8 px-3 text-xs"
                 >
-                  2D View
+                  2D
                 </Button>
                 <Button
                   variant={viewMode === '3d' ? 'default' : 'ghost'}
@@ -504,14 +504,9 @@ const FloorPlanner = () => {
                   onClick={() => setViewMode('3d')}
                   className="h-8 px-3 text-xs"
                 >
-                  3D Isometric
+                  3D
                 </Button>
               </div>
-              
-              <SegmentedUnitSelector
-                selectedUnit={measurementUnit}
-                onUnitChange={handleUnitChange}
-              />
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}

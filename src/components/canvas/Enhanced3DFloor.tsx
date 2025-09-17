@@ -85,7 +85,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
       rotation={[-Math.PI / 2, 0, 0]}
     >
       <shapeGeometry args={[floorShape]} />
-      <meshLambertMaterial color="#f5f5f5" />
+      <meshLambertMaterial color="#f5f5f5" side={2} />
     </mesh>
   );
 };
@@ -126,7 +126,7 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
       rotation={[-Math.PI / 2, 0, 0]}
     >
       <planeGeometry args={[floorGeometry.width, floorGeometry.depth]} />
-      <meshLambertMaterial color="#f0f0f0" />
+      <meshLambertMaterial color="#f0f0f0" side={2} />
     </mesh>
   );
 };

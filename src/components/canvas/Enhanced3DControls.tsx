@@ -43,27 +43,33 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
     const scene = camera.parent;
     if (!scene) return;
     
-    const intersections = raycaster.intersectObjects(scene.children, true);
+    // Filter for actual product meshes by looking for groups with productId
+    const productMeshes = scene.children.filter((child: any) => 
+      child.userData?.productId && 
+      placedProducts.some(p => p.id === child.userData.productId)
+    );
+    
+    const intersections = raycaster.intersectObjects(productMeshes, true);
     
     if (intersections.length > 0) {
-      // Find the first intersection with a product
-      for (const intersection of intersections) {
-        let object = intersection.object;
-        
-        // Walk up the hierarchy to find the product root
-        while (object && !object.userData?.productId) {
-          object = object.parent!;
-          if (!object) break;
+      const intersection = intersections[0];
+      let productId = intersection.object.userData?.productId;
+      
+      // If not found on the mesh, check parent hierarchy
+      if (!productId) {
+        let current = intersection.object.parent;
+        while (current && !productId) {
+          productId = current.userData?.productId;
+          current = current.parent;
         }
-        
-        if (object?.userData?.productId) {
-          const product = placedProducts.find(p => p.id === object.userData.productId);
-          if (product) {
-            console.log('Starting drag for product:', product.name);
-            startDrag(product, [intersection.point.x, intersection.point.y, intersection.point.z] as [number, number, number], event);
-            onProductSelect(product.id);
-            return; // Exit after finding first valid product
-          }
+      }
+      
+      if (productId) {
+        const product = placedProducts.find(p => p.id === productId);
+        if (product) {
+          onProductSelect(product.id);
+          startDrag(product, [intersection.point.x, intersection.point.y, intersection.point.z] as [number, number, number], event);
+          return;
         }
       }
     }

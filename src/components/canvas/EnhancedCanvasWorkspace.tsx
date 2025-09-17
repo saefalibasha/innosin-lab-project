@@ -264,10 +264,42 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   // Helper functions inside component scope
   const snapToWallMidpoint = useCallback(
     (point: Point): Point => {
-      // For interior-wall mode, always snap to closest midpoint without distance threshold
+      // For interior-wall mode, snap to any point along wall centerlines
       if (currentMode === 'interior-wall') {
-        const closestMidpoint = findClosestWallMidpoint(point, wallSegments, Infinity);
-        return closestMidpoint ? closestMidpoint.point : point;
+        let closestPoint = null;
+        let minDistance = Infinity;
+        
+        wallSegments.forEach(wall => {
+          // Project point onto wall line to find closest point on wall
+          const wallVector = { x: wall.end.x - wall.start.x, y: wall.end.y - wall.start.y };
+          const wallLength = Math.sqrt(wallVector.x * wallVector.x + wallVector.y * wallVector.y);
+          
+          if (wallLength > 0) {
+            const unitVector = { x: wallVector.x / wallLength, y: wallVector.y / wallLength };
+            const toPoint = { x: point.x - wall.start.x, y: point.y - wall.start.y };
+            
+            // Project onto wall line
+            const projection = toPoint.x * unitVector.x + toPoint.y * unitVector.y;
+            const clampedProjection = Math.max(0, Math.min(wallLength, projection));
+            
+            const projectedPoint = {
+              x: wall.start.x + unitVector.x * clampedProjection,
+              y: wall.start.y + unitVector.y * clampedProjection
+            };
+            
+            const distance = Math.sqrt(
+              Math.pow(point.x - projectedPoint.x, 2) + 
+              Math.pow(point.y - projectedPoint.y, 2)
+            );
+            
+            if (distance < 50 && distance < minDistance) {
+              minDistance = distance;
+              closestPoint = projectedPoint;
+            }
+          }
+        });
+        
+        return closestPoint || point;
       }
       // For other modes, use standard distance threshold
       const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40);
@@ -411,11 +443,18 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   );
 
   const blockReasons = useCallback((candidate:PlacedProduct, exceptId?:string) => {
+    // Allow placement when no valid wall polygon exists
+    const wallPolygon = wallsToPolygon(wallSegments);
+    if (!wallPolygon || wallPolygon.length < 3) {
+      if (collidesWithFurniture(candidate, exceptId)) return 'overlap_furniture';
+      return null; // Allow placement when no walls form a valid polygon
+    }
+    
     if (rectOutsideWalls(candidate)) return 'outside_walls';
     if (rectTooCloseToAnyWall(candidate)) return 'near_wall';
     if (collidesWithFurniture(candidate, exceptId)) return 'overlap_furniture';
     return null;
-  }, [rectOutsideWalls, rectTooCloseToAnyWall, collidesWithFurniture]);
+  }, [rectOutsideWalls, rectTooCloseToAnyWall, collidesWithFurniture, wallSegments]);
 
   const clampToCanvas = useCallback(
     (pos: Point, dimsPx: { length: number; width: number }): Point => {
