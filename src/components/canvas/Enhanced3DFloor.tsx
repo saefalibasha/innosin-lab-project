@@ -23,7 +23,27 @@ const WallFloor = ({ wallSegments, scale, origin }: {
 
     // Get the polygon outline from walls
     const polygon = wallsToPolygon(wallSegments);
-    if (polygon.length < 3) return null;
+    if (polygon.length < 3) {
+      // Fallback: create floor from wall extents
+      if (wallSegments.length > 0) {
+        const xs = wallSegments.flatMap(w => [w.start.x, w.end.x]);
+        const ys = wallSegments.flatMap(w => [w.start.y, w.end.y]);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+        
+        const shape = new THREE.Shape();
+        const padding = 200; // Add some padding
+        shape.moveTo(minX - padding, minY - padding);
+        shape.lineTo(maxX + padding, minY - padding);
+        shape.lineTo(maxX + padding, maxY + padding);
+        shape.lineTo(minX - padding, maxY + padding);
+        shape.closePath();
+        return shape;
+      }
+      return null;
+    }
 
     // Convert to 3D coordinates and create shape
     const shape = new THREE.Shape();

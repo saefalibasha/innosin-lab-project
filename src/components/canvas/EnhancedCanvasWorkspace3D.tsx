@@ -1,19 +1,9 @@
-import React, { useRef, useCallback } from 'react';
-import {
-  Point,
-  PlacedProduct,
-  Door,
-  TextAnnotation,
-  WallSegment,
-  Room,
-  DrawingMode,
-} from '@/types/floorPlanTypes';
-import { MeasurementUnit } from '@/utils/measurements';
-import IsometricFloorPlanScene from './IsometricFloorPlanScene';
+import React, { useRef, useCallback, useState } from 'react';
+import { PlacedProduct, WallSegment, Door, Room, Point } from '@/types/floorPlanTypes';
 import { toast } from 'sonner';
-import * as THREE from 'three';
-import { worldTo2DCanvas } from '@/utils/coordinateUtils';
 import { wallsToPolygon, rectInsidePolygon } from '@/utils/polygonUtils';
+import { canvasTo3DWorld } from '@/utils/coordinateUtils';
+import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -24,145 +14,119 @@ interface EnhancedCanvasWorkspace3DProps {
   setPlacedProducts: React.Dispatch<React.SetStateAction<PlacedProduct[]>>;
   doors: Door[];
   setDoors: React.Dispatch<React.SetStateAction<Door[]>>;
-  textAnnotations: TextAnnotation[];
-  setTextAnnotations: React.Dispatch<React.SetStateAction<TextAnnotation[]>>;
+  textAnnotations: any[];
+  setTextAnnotations: React.Dispatch<React.SetStateAction<any[]>>;
   rooms: Room[];
   setRooms: React.Dispatch<React.SetStateAction<Room[]>>;
   scale: number;
-  currentMode: DrawingMode;
   showGrid: boolean;
-  showMeasurements: boolean;
-  gridSize: number;
-  measurementUnit: MeasurementUnit;
-  canvasWidth: number;
-  canvasHeight: number;
-  onClearAll: () => void;
   selectedProducts: string[];
-  onProductSelect: React.Dispatch<React.SetStateAction<string[]>>;
-  onWallUpdate?: (wall: WallSegment) => void;
-  onWallSelect?: (wallId: string) => void;
+  onProductSelect: (productIds: string[]) => void;
+  onClearAll: () => void;
+  currentMode?: string;
+  showMeasurements?: boolean;
+  gridSize?: number;
+  measurementUnit?: string;
+  canvasWidth?: number;
+  canvasHeight?: number;
+  onWallUpdate?: (wall: any) => void;
+  onWallDelete?: (id: string) => void;
+  onWallSelect?: () => void;
 }
 
 const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
-  roomPoints,
-  setRoomPoints,
   wallSegments,
-  setWallSegments,
   placedProducts,
   setPlacedProducts,
   doors,
-  setDoors,
-  textAnnotations,
-  setTextAnnotations,
   rooms,
-  setRooms,
   scale,
-  currentMode,
-  showGrid,
-  showMeasurements,
-  gridSize,
-  measurementUnit,
-  canvasWidth,
-  canvasHeight,
-  onClearAll,
   selectedProducts,
   onProductSelect,
-  onWallSelect,
+  showGrid,
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
-  const sceneRef3D = useRef<any>(null);
+  const [sceneRef3D, setSceneRef3D] = useState<any>(null);
 
-  const handleSceneReady = useCallback((context: {
-    camera: THREE.PerspectiveCamera;
-    scene: THREE.Scene;
-    gl: THREE.WebGLRenderer;
-  }) => {
-    sceneRef3D.current = context;
+  const handleSceneReady = useCallback((scene: any) => {
+    setSceneRef3D(scene);
   }, []);
 
   const handleProductClick = useCallback(
     (productId: string) => {
-      if (currentMode === 'select') {
-        onProductSelect((prev) => (prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]));
+      if (selectedProducts.includes(productId)) {
+        onProductSelect(selectedProducts.filter(id => id !== productId));
+      } else {
+        onProductSelect([...selectedProducts, productId]);
       }
     },
-    [currentMode, onProductSelect]
+    [selectedProducts, onProductSelect]
   );
 
-  const handleWallClick = useCallback(
-    (wallId: string) => {
-      if (currentMode === 'select') {
-        onWallSelect?.(wallId);
-      }
-    },
-    [currentMode, onWallSelect]
-  );
+  const handleWallClick = useCallback((wallId: string) => {
+    console.log('Wall clicked:', wallId);
+  }, []);
 
-  const handleSceneClick = useCallback(
-    (e: any) => {
-      if (e.object.name !== 'product' && e.object.name !== 'wall') {
-        onProductSelect([]);
-      }
-    },
-    [onProductSelect]
-  );
+  const handleSceneClick = useCallback(() => {
+    if (selectedProducts.length > 0) {
+      onProductSelect([]);
+    }
+  }, [selectedProducts, onProductSelect]);
 
   const handleCanvasDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
+    (e: React.DragEvent) => {
       e.preventDefault();
+      if (!htmlRef.current) return;
 
+      // Handle both 'application/json' and 'product' data types
+      const jsonData = e.dataTransfer.getData('application/json');
       const productData = e.dataTransfer.getData('product');
-      if (!productData) return;
+      const data = jsonData || productData;
+      
+      if (!data) {
+        toast.error('No product data found');
+        return;
+      }
 
       try {
-        const product = JSON.parse(productData);
+        const product = JSON.parse(data);
+        console.log('Dropped product data:', product);
 
-        const { camera, scene, gl } = sceneRef3D.current;
-        const raycaster = new THREE.Raycaster();
-        const pointer = new THREE.Vector2();
+        // Get canvas position relative to the drop area
+        const rect = htmlRef.current.getBoundingClientRect();
+        const canvasPos = {
+          x: (e.clientX - rect.left),
+          y: (e.clientY - rect.top)
+        };
 
-        const rect = gl.domElement.getBoundingClientRect();
-        pointer.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        pointer.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        console.log('Canvas position:', canvasPos);
 
-        raycaster.setFromCamera(pointer, camera);
-
-        const floor = scene.children.find((obj: any) => obj.name === 'floor-drop-plane');
-        if (!floor) {
-          toast.error('Drop target not found');
-          return;
-        }
-
-        const intersects = raycaster.intersectObject(floor);
-        if (intersects.length === 0) {
-          toast.error('Cannot place item outside of floor');
-          return;
-        }
-
-        const point = intersects[0].point; // meters
-        const canvasPos = worldTo2DCanvas(point.x, point.z, scale);
-
-        // Validate that the product is placed within walls using shared utils
-        if (wallSegments && wallSegments.length > 0) {
+        // Basic validation if walls exist
+        if (wallSegments.length > 0) {
           const polygon = wallsToPolygon(wallSegments);
-          if (polygon && polygon.length >= 3) {
-            const productWidth = (product.width || 600); // in mm
-            const productDepth = (product.depth || 600); // in mm
+          if (polygon.length >= 3) {
+            const productWidth = (product.width || 600);
+            const productDepth = (product.depth || 600);
             
             const isInside = rectInsidePolygon(
               canvasPos,
-              productWidth * scale, // Convert to canvas units
+              productWidth * scale,
               productDepth * scale,
-              0, // No rotation for validation
+              0,
               polygon
             );
             
             if (!isInside) {
               toast.error('Product must be placed within the walls');
-              return; // Don't place the product
+              return;
             }
           }
         }
+
+        // Create new product with proper dimensions
+        const productWidth = product.width || 600;
+        const productDepth = product.depth || 600;
+        const productHeight = product.height || 850;
 
         const newProduct: PlacedProduct = {
           id: `product-${Date.now()}`,
@@ -171,13 +135,17 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           category: product.category || 'Unknown',
           position: canvasPos,
           rotation: 0,
-          dimensions: product.dimensions,
-          originalDimensions: {
-            length: product.depth || 600,
-            width: product.width || 600,
-            height: product.height || 850
+          dimensions: {
+            length: productWidth,
+            width: productDepth,
+            height: productHeight
           },
-          color: product.color,
+          originalDimensions: {
+            length: productWidth,
+            width: productDepth,
+            height: productHeight
+          },
+          color: product.color || '#4caf50',
           scale: 1,
           modelPath: product.modelPath,
           thumbnail: product.thumbnail,
@@ -197,7 +165,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     [setPlacedProducts, wallSegments, scale]
   );
 
-  // Update function for drag actions in scene
   const handleProductUpdate = useCallback(
     (productId: string, updates: Partial<PlacedProduct>) => {
       setPlacedProducts((prev) => prev.map((p) => (p.id === productId ? { ...p, ...updates } : p)));
@@ -208,7 +175,12 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   const origin = { minX: 0, minY: 0 };
 
   return (
-    <div ref={htmlRef} className="relative w-full h-full bg-gray-50" onDrop={handleCanvasDrop} onDragOver={(e) => e.preventDefault()}>
+    <div 
+      ref={htmlRef} 
+      className="relative w-full h-full bg-gray-50" 
+      onDrop={handleCanvasDrop} 
+      onDragOver={(e) => e.preventDefault()}
+    >
       <IsometricFloorPlanScene
         wallSegments={wallSegments}
         placedProducts={placedProducts}
@@ -223,8 +195,6 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         origin={origin}
         onProductUpdate={handleProductUpdate}
       />
-
-      {/* Clean UI - moved stats to controls below */}
     </div>
   );
 };

@@ -621,7 +621,6 @@ const FloorPlanner = () => {
                 <Card>
                   <CardHeader className="pb-2">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Canvas - Enhanced Precision Layout (2D)</CardTitle>
                       
                       <div className="flex items-center space-x-2">
                         <div className="flex items-center space-x-1 bg-muted rounded-md p-1">
@@ -715,7 +714,7 @@ const FloorPlanner = () => {
                     </div>
                   </CardHeader>
                   
-                  <CardContent>
+                  <CardContent className="pt-6">
                     <div className="w-full h-[700px] relative overflow-hidden">
                       <div 
                         style={{

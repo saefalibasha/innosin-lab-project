@@ -264,7 +264,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   // Helper functions inside component scope
   const snapToWallMidpoint = useCallback(
     (point: Point): Point => {
-      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40);
+      // For interior-wall mode, always snap to closest midpoint regardless of distance
+      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, Infinity);
       return closestMidpoint ? closestMidpoint.point : point;
     },
     [wallSegments]
@@ -380,7 +381,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   const rectOutsideWalls = useCallback(
     (prod:PlacedProduct): boolean => {
       const poly = outerPolygon();
-      if (!poly) return false; // if we can't deduce, don't block
+      if (!poly || poly.length < 3) return false; // if we can't deduce valid polygon, don't block
       // require center and all corners be inside polygon
       if (!pointInPolygon(prod.position, poly)) return true;
       const corners = productCorners(prod);
@@ -1189,19 +1190,35 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         const d = distanceToLineSegment(door.position, w.start, w.end);
         if (d < min) { min = d; nearest = w; }
       }
+      
       const wth = nearest?.thickness ?? 10;
       const doorTh = Math.max(wth * 0.7, 6);
       const doorW = Math.min(Math.max(door.width, 60), 120);
 
-      const horiz = door.facing === 'horizontal';
-      const rw = horiz ? doorW : doorTh;
-      const rh = horiz ? doorTh : doorW;
+      // Calculate wall angle for proper door alignment
+      let wallAngle = 0;
+      if (nearest) {
+        wallAngle = Math.atan2(nearest.end.y - nearest.start.y, nearest.end.x - nearest.start.x);
+      }
+      
+      // Check if wall is more horizontal or vertical
+      const isWallHorizontal = Math.abs(Math.cos(wallAngle)) > Math.abs(Math.sin(wallAngle));
+      
+      // Door should be perpendicular to wall
+      const rw = isWallHorizontal ? doorTh : doorW;
+      const rh = isWallHorizontal ? doorW : doorTh;
 
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(wallAngle + (isWallHorizontal ? Math.PI / 2 : 0));
+      
       ctx.fillStyle = '#8b4513';
-      ctx.fillRect(x - rw / 2, y - rh / 2, rw, rh);
+      ctx.fillRect(-rw / 2, -rh / 2, rw, rh);
       ctx.strokeStyle = '#654321';
       ctx.lineWidth = 1;
-      ctx.strokeRect(x - rw / 2, y - rh / 2, rw, rh);
+      ctx.strokeRect(-rw / 2, -rh / 2, rw, rh);
+      
+      ctx.restore();
     });
 
     // text annotations

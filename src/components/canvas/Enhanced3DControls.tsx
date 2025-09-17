@@ -36,23 +36,37 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   const handlePointerDown = useCallback((event: any) => {
     setIsPointerDown(true);
     
-    if (event.intersections && event.intersections.length > 0) {
-      const intersection = event.intersections[0];
-      const object = intersection.object;
+    // Manual raycasting for more reliable product detection
+    raycaster.setFromCamera(pointer, camera);
+    
+    // Create array of all 3D objects in the scene to check intersections
+    const sceneObjects: THREE.Object3D[] = [];
+    camera.parent?.traverse((obj) => {
+      if (obj.visible && obj !== camera) {
+        sceneObjects.push(obj);
+      }
+    });
+    
+    const intersections = raycaster.intersectObjects(sceneObjects, true);
+    
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+      let object = intersection.object;
       
-      // Find the product that was clicked
-      const product = placedProducts.find(p => {
-        // Check if this object belongs to the product
-        return object.userData?.productId === p.id || 
-               object.name === 'product';
-      });
+      // Walk up the hierarchy to find the product root
+      while (object && !object.userData?.productId) {
+        object = object.parent!;
+      }
       
-      if (product) {
-        startDrag(product, intersection.point, event);
-        onProductSelect(product.id);
+      if (object?.userData?.productId) {
+        const product = placedProducts.find(p => p.id === object.userData.productId);
+        if (product) {
+          startDrag(product, [intersection.point.x, intersection.point.y, intersection.point.z] as [number, number, number], event);
+          onProductSelect(product.id);
+        }
       }
     }
-  }, [placedProducts, startDrag, onProductSelect]);
+  }, [placedProducts, startDrag, onProductSelect, raycaster, pointer, camera]);
 
   const handlePointerMove = useCallback((event: any) => {
     if (dragState.isDragging && isPointerDown) {
@@ -65,7 +79,7 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
       
       if (raycaster.ray.intersectPlane(floorPlane, intersectionPoint)) {
         updateDrag(
-          [intersectionPoint.x, intersectionPoint.y, intersectionPoint.z],
+          [intersectionPoint.x, intersectionPoint.y, intersectionPoint.z] as [number, number, number],
           camera,
           pointer
         );
