@@ -3,6 +3,24 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 
+// Animated background component
+function AnimatedBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Floating orbs */}
+      <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-gradient-to-r from-sea/10 to-sea-light/10 rounded-full blur-3xl animate-float-slow"></div>
+      <div className="absolute top-3/4 right-1/4 w-96 h-96 bg-gradient-to-r from-sea-light/10 to-sea/10 rounded-full blur-3xl animate-float-slower"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-sea/5 to-sea-dark/5 rounded-full blur-3xl animate-pulse-slow"></div>
+      
+      {/* Subtle grid overlay */}
+      <div className="absolute inset-0 opacity-[0.02]" style={{
+        backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--sea)) 1px, transparent 0)`,
+        backgroundSize: '40px 40px'
+      }}></div>
+    </div>
+  );
+}
+
 export default function WelcomeLandingPage() {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
@@ -14,19 +32,22 @@ export default function WelcomeLandingPage() {
   return (
     <div className="relative h-screen w-full bg-white overflow-hidden flex flex-col">
       
+      {/* Animated Background */}
+      <AnimatedBackground />
+      
       {/* Navigation */}
-      <nav className="flex justify-between items-center px-8 py-6 z-10">
+      <nav className="relative z-10 flex justify-between items-center px-8 py-6">
         <div className="flex items-center space-x-3">
           <img 
             src="/brand-logos/innosin-lab-logo.png" 
             alt="Innosin Lab" 
             className="h-8 w-auto"
           />
-          <span className="text-lg font-medium text-gray-900">Innosin Lab</span>
+          <span className="text-lg font-medium text-sea">Innosin Lab</span>
         </div>
         <Button 
           variant="ghost" 
-          className="text-gray-600 hover:text-gray-900 hover:bg-transparent text-sm"
+          className="text-sea/70 hover:text-sea hover:bg-sea/5 text-sm transition-all duration-300"
           onClick={() => navigate("/home")}
         >
           Skip
@@ -34,27 +55,27 @@ export default function WelcomeLandingPage() {
       </nav>
 
       {/* Hero Content */}
-      <div className="flex-1 flex flex-col justify-center items-center px-8">
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8">
         <div className={`text-center max-w-4xl transition-all duration-700 ease-out ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           
           {/* Main Headline */}
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-light text-gray-900 mb-8 leading-tight tracking-tight">
-            Innovation.
+          <h1 className="text-6xl sm:text-7xl lg:text-8xl font-light mb-8 leading-tight tracking-tight">
+            <span className="text-sea">Innovation.</span>
             <br />
-            <span className="font-semibold text-sea">Redefined.</span>
+            <span className="font-semibold text-sea-dark">Redefined.</span>
           </h1>
 
           {/* Subheadline */}
-          <p className="text-xl sm:text-2xl text-gray-600 mb-12 font-light leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl sm:text-2xl text-sea/70 mb-12 font-light leading-relaxed max-w-2xl mx-auto">
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
 
           {/* CTA Button */}
           <Button
             size="lg"
-            className="px-8 py-4 text-lg font-medium rounded-full bg-gray-900 hover:bg-gray-800 text-white transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="px-8 py-4 text-lg font-medium rounded-full bg-sea hover:bg-sea-dark text-white transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             onClick={() => navigate("/home")}
           >
             Explore Now
@@ -64,8 +85,8 @@ export default function WelcomeLandingPage() {
       </div>
 
       {/* Scroll indicator */}
-      <div className="pb-8 flex justify-center">
-        <ChevronDown className="h-6 w-6 text-gray-400 animate-bounce" />
+      <div className="relative z-10 pb-8 flex justify-center">
+        <ChevronDown className="h-6 w-6 text-sea/40 animate-bounce" />
       </div>
     </div>
   );
