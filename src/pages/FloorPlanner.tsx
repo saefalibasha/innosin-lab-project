@@ -488,25 +488,7 @@ const FloorPlanner = () => {
             </div>
             
             <div className="flex items-center space-x-2">
-              {/* View Mode Toggle */}
-              <div className="bg-muted rounded-md p-1">
-                <Button
-                  variant={viewMode === '2d' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('2d')}
-                  className="h-8 px-3 text-xs"
-                >
-                  2D
-                </Button>
-                <Button
-                  variant={viewMode === '3d' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('3d')}
-                  className="h-8 px-3 text-xs"
-                >
-                  3D
-                </Button>
-              </div>
+              {/* View Mode Toggle moved to toolbar below; removed from header */}
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
