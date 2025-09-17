@@ -43,7 +43,7 @@ const HeroNavigation = () => {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-base font-medium transition-colors hover:text-primary ${
+                className={`text-lg font-bold transition-colors hover:text-primary ${
                   isActive(item.href)
                     ? "text-primary"
                     : "text-muted-foreground"
