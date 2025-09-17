@@ -19,6 +19,8 @@ import { getProductDimensionsInMm } from '@/utils/productDimensions';
 import { SnapSystem } from '@/utils/snapSystem';
 import { wallsToPolygon, pointInPolygon, rectInsidePolygon, getWallMidpoints, findClosestWallMidpoint, isValidFloorPolygon } from '@/utils/polygonUtils';
 import { toast } from 'sonner';
+import ProductCornerDots from './ProductCornerDots';
+import WallLengthEditor from '../floorplan/WallLengthEditor';
 
 interface EnhancedCanvasWorkspaceProps {
   roomPoints: Point[];
@@ -1297,6 +1299,24 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         ctx.strokeStyle = '#ff4444';
         ctx.lineWidth = 3;
         ctx.strokeRect(-L / 2 - 5, -W / 2 - 5, L + 10, W + 10);
+        
+        // Draw corner snapping dots
+        const corners = [
+          { x: -L / 2, y: -W / 2 }, // top-left
+          { x: L / 2, y: -W / 2 },  // top-right
+          { x: L / 2, y: W / 2 },   // bottom-right
+          { x: -L / 2, y: W / 2 }   // bottom-left
+        ];
+        
+        corners.forEach(corner => {
+          ctx.fillStyle = '#2563eb';
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(corner.x, corner.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
 
         ctx.fillStyle = '#ff4444';
         ctx.strokeStyle = '#ffffff';

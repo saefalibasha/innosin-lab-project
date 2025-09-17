@@ -642,31 +642,22 @@ const FloorPlanner = () => {
                         
                         <div className="bg-muted rounded-md p-1">
                           <Button
-                            variant={measurementUnit === 'mm' ? 'default' : 'ghost'}
+                            variant={viewMode === '2d' ? 'default' : 'ghost'}
                             size="sm"
-                            onClick={() => setMeasurementUnit('mm')}
+                            onClick={() => setViewMode('2d')}
                             className="h-8 px-3 text-xs"
                           >
-                            MM
+                            2D
                           </Button>
                           <Button
-                            variant={measurementUnit === 'm' ? 'default' : 'ghost'}
+                            variant={viewMode === '3d' ? 'default' : 'ghost'}
                             size="sm"
-                            onClick={() => setMeasurementUnit('m')}
+                            onClick={() => setViewMode('3d')}
                             className="h-8 px-3 text-xs"
                           >
-                            M
+                            3D
                           </Button>
                         </div>
-                        <Badge variant="outline" className="text-xs">
-                          Enhanced Snapping
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          {gridSize}mm grid
-                        </Badge>
-                        <Badge variant="outline" className="text-xs">
-                          Mode: {currentMode}
-                        </Badge>
                         <Button variant="outline" size="sm" asChild>
                           <label>
                             <Upload className="h-4 w-4 mr-2" />

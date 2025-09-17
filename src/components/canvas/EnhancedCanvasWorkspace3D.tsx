@@ -113,10 +113,10 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         const normalizedX = relativeX / rect.width;
         const normalizedY = relativeY / rect.height;
         
-        // Convert to canvas coordinates 
+        // Convert to canvas coordinates using consistent dimensions
         const canvasPos = {
-          x: normalizedX * 800, // Assuming 800px canvas width
-          y: normalizedY * 600  // Assuming 600px canvas height
+          x: normalizedX * 2000, // Match 2D canvas width (CANVAS_WIDTH)
+          y: normalizedY * 1400  // Match 2D canvas height (CANVAS_HEIGHT)
         };
 
         console.log('3D Canvas position:', canvasPos, 'from client:', {x: relativeX, y: relativeY});
