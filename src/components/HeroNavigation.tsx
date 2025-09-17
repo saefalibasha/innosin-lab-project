@@ -34,7 +34,7 @@ const HeroNavigation = () => {
             <img 
               src="/branding/hero-logo.png" 
               alt="Innosin Lab" 
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
           
@@ -43,7 +43,7 @@ const HeroNavigation = () => {
               <Link
                 key={item.href}
                 to={item.href}
-                className={`text-sm font-medium transition-colors hover:text-primary ${
+                className={`text-base font-medium transition-colors hover:text-primary ${
                   isActive(item.href)
                     ? "text-primary"
                     : "text-muted-foreground"
