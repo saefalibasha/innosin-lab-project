@@ -27,10 +27,10 @@ const Index = () => {
         <VideoHero />
 
         {/* Featured Companies Section */}
-        <section className="py-8 bg-white transition-all duration-700 ease-in-out">
+        <section className="py-12 bg-white transition-all duration-700 ease-in-out">
           <div className="container mx-auto px-4">
             <Reveal>
-              <div className="text-center mb-12">
+              <div className="text-center mb-16">
                 <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
                   Featured Laboratory Partners
                 </h2>
@@ -65,18 +65,18 @@ const Index = () => {
         </section>
 
         {/* Shop The Look Section */}
-        <section className="py-12 bg-gradient-to-br from-gray-50 to-white transition-all duration-700 ease-in-out">
+        <section className="py-16 bg-gradient-to-br from-gray-50 to-white transition-all duration-700 ease-in-out">
           <div className="container mx-auto px-4">
             <ShopTheLook />
           </div>
         </section>
 
         {/* Laboratory Transformations Section */}
-        <section className="py-16 bg-white relative overflow-hidden transition-all duration-700 ease-in-out">
+        <section className="py-20 bg-white relative overflow-hidden transition-all duration-700 ease-in-out">
           <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
           <div className="container mx-auto px-4 relative z-10">
             <Reveal>
-              <div className="text-center mb-16">
+              <div className="text-center mb-20">
                 <h2 className="text-4xl md:text-5xl font-bold text-primary mb-6 tracking-tight">
                   Laboratory <span className="text-sea">Transformations</span>
                 </h2>
@@ -94,7 +94,7 @@ const Index = () => {
         <LabTransformCTA />
 
         {/* Newsletter Subscription Section */}
-        <section className="py-10 bg-gradient-to-br from-sea/5 to-gray-50 transition-all duration-700 ease-in-out">
+        <section className="py-12 bg-gradient-to-br from-sea/5 to-gray-50 transition-all duration-700 ease-in-out">
           <div className="container mx-auto px-4">
             <NewsletterSubscription />
           </div>
