@@ -9,13 +9,14 @@ export function wallsToPolygon(wallSegments: WallSegment[]): Point[] {
   // Find all unique points and their connections
   const points = new Map<string, Point>();
   const connections = new Map<string, string[]>();
+  const tolerance = 1; // Allow 1px tolerance for connecting points
 
   wallSegments.forEach(wall => {
-    const startKey = `${wall.start.x},${wall.start.y}`;
-    const endKey = `${wall.end.x},${wall.end.y}`;
+    const startKey = `${Math.round(wall.start.x)},${Math.round(wall.start.y)}`;
+    const endKey = `${Math.round(wall.end.x)},${Math.round(wall.end.y)}`;
     
-    points.set(startKey, wall.start);
-    points.set(endKey, wall.end);
+    points.set(startKey, { x: Math.round(wall.start.x), y: Math.round(wall.start.y) });
+    points.set(endKey, { x: Math.round(wall.end.x), y: Math.round(wall.end.y) });
     
     if (!connections.has(startKey)) connections.set(startKey, []);
     if (!connections.has(endKey)) connections.set(endKey, []);
@@ -24,32 +25,90 @@ export function wallsToPolygon(wallSegments: WallSegment[]): Point[] {
     connections.get(endKey)!.push(startKey);
   });
 
-  // Trace the perimeter
+  // Remove duplicate connections
+  connections.forEach((conns, key) => {
+    connections.set(key, [...new Set(conns)]);
+  });
+
+  // Validate that we have enough connections to form a closed shape
+  const validConnections = Array.from(connections.values()).filter(conns => conns.length >= 2);
+  if (validConnections.length < 3) {
+    return []; // Not enough connected points to form a valid polygon
+  }
+
+  // Find the polygon by tracing the perimeter
   const polygon: Point[] = [];
   const visited = new Set<string>();
   
-  // Start from the first point
-  const startKey = Array.from(points.keys())[0];
+  // Start from the leftmost point to ensure consistent direction
+  const pointKeys = Array.from(points.keys());
+  const startKey = pointKeys.reduce((leftmost, current) => {
+    const leftPoint = points.get(leftmost)!;
+    const currentPoint = points.get(current)!;
+    return currentPoint.x < leftPoint.x ? current : leftmost;
+  });
+  
   let currentKey = startKey;
+  let previousKey: string | null = null;
   
   do {
     const point = points.get(currentKey);
     if (point) polygon.push(point);
     visited.add(currentKey);
     
-    // Find next unvisited connection
+    // Find next connection (prefer continuing in same direction)
     const nextConnections = connections.get(currentKey) || [];
-    let nextKey = nextConnections.find(key => !visited.has(key));
+    let nextKey: string | null = null;
     
-    if (!nextKey && nextConnections.length > 0) {
-      nextKey = nextConnections[0]; // Complete the loop
+    // Filter out the previous point to avoid backtracking
+    const availableConnections = nextConnections.filter(key => key !== previousKey);
+    
+    if (availableConnections.length > 0) {
+      nextKey = availableConnections[0];
     }
     
     if (!nextKey || nextKey === startKey) break;
+    
+    previousKey = currentKey;
     currentKey = nextKey;
   } while (currentKey !== startKey && polygon.length < 100);
 
-  return polygon;
+  // Validate the polygon forms a closed shape
+  if (polygon.length >= 3) {
+    const first = polygon[0];
+    const last = polygon[polygon.length - 1];
+    const distance = Math.sqrt(
+      Math.pow(first.x - last.x, 2) + Math.pow(first.y - last.y, 2)
+    );
+    
+    // If not closed, try to close it by connecting back to start
+    if (distance > tolerance && polygon.length >= 3) {
+      // Check if we can reasonably close the polygon
+      if (distance < 50) { // Allow reasonable gap closure
+        polygon.push(first); // Close the polygon
+      }
+    }
+  }
+
+  return polygon.length >= 3 ? polygon : [];
+}
+
+/**
+ * Check if walls form a closed loop suitable for floor generation
+ */
+export function isValidFloorPolygon(wallSegments: WallSegment[]): boolean {
+  const polygon = wallsToPolygon(wallSegments);
+  
+  if (polygon.length < 3) return false;
+  
+  // Check if polygon is closed (first and last points are close)
+  const first = polygon[0];
+  const last = polygon[polygon.length - 1];
+  const distance = Math.sqrt(
+    Math.pow(first.x - last.x, 2) + Math.pow(first.y - last.y, 2)
+  );
+  
+  return distance < 10; // Allow small gap for closure
 }
 
 /**

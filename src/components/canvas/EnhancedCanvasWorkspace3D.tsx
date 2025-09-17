@@ -1,7 +1,7 @@
 import React, { useRef, useCallback, useState } from 'react';
 import { PlacedProduct, WallSegment, Door, Room, Point } from '@/types/floorPlanTypes';
 import { toast } from 'sonner';
-import { wallsToPolygon, rectInsidePolygon } from '@/utils/polygonUtils';
+import { wallsToPolygon, rectInsidePolygon, isValidFloorPolygon } from '@/utils/polygonUtils';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 
@@ -121,8 +121,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
         console.log('3D Canvas position:', canvasPos, 'from client:', {x: relativeX, y: relativeY});
 
-        // Simplified validation - only check if walls exist and form a valid polygon
+        // Check if walls form a valid floor for placement
         if (wallSegments.length > 0) {
+          if (!isValidFloorPolygon(wallSegments)) {
+            toast.error('Complete the walls to place products inside the room.');
+            return;
+          }
+          
           const polygon = wallsToPolygon(wallSegments);
           if (polygon.length >= 3) {
             // Use consistent dimension mapping

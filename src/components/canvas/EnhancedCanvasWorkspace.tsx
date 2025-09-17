@@ -17,7 +17,7 @@ import {
 } from '@/utils/measurements';
 import { getProductDimensionsInMm } from '@/utils/productDimensions';
 import { SnapSystem } from '@/utils/snapSystem';
-import { wallsToPolygon, pointInPolygon, rectInsidePolygon, getWallMidpoints, findClosestWallMidpoint } from '@/utils/polygonUtils';
+import { wallsToPolygon, pointInPolygon, rectInsidePolygon, getWallMidpoints, findClosestWallMidpoint, isValidFloorPolygon } from '@/utils/polygonUtils';
 import { toast } from 'sonner';
 
 interface EnhancedCanvasWorkspaceProps {
@@ -443,16 +443,21 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
   );
 
   const blockReasons = useCallback((candidate:PlacedProduct, exceptId?:string) => {
-    // Allow placement when no valid wall polygon exists
-    const wallPolygon = wallsToPolygon(wallSegments);
-    if (!wallPolygon || wallPolygon.length < 3) {
-      if (collidesWithFurniture(candidate, exceptId)) return 'overlap_furniture';
-      return null; // Allow placement when no walls form a valid polygon
+    // Check furniture collisions first (always applies)
+    if (collidesWithFurniture(candidate, exceptId)) return 'overlap_furniture';
+    
+    // If no walls exist, allow placement anywhere
+    if (wallSegments.length === 0) return null;
+    
+    // Check if walls form a valid closed polygon for a floor
+    if (!isValidFloorPolygon(wallSegments)) {
+      return 'incomplete_floor'; // Special case for incomplete floor
     }
     
+    // With valid floor, enforce inside placement and wall clearance
     if (rectOutsideWalls(candidate)) return 'outside_walls';
     if (rectTooCloseToAnyWall(candidate)) return 'near_wall';
-    if (collidesWithFurniture(candidate, exceptId)) return 'overlap_furniture';
+    
     return null;
   }, [rectOutsideWalls, rectTooCloseToAnyWall, collidesWithFurniture, wallSegments]);
 
@@ -1553,9 +1558,22 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
             // enforce inside room/walls + not too close to walls + no overlap
             const reason = blockReasons(newProd);
-            if (reason === 'outside_walls') { toast.error('Place items inside the walls.'); return; }
-            if (reason === 'near_wall')     { toast.error('Keep a small clearance from the walls.'); return; }
-            if (reason === 'overlap_furniture') { toast.error('Cannot place: overlaps another item.'); return; }
+            if (reason === 'incomplete_floor') { 
+              toast.error('Complete the walls to place products inside the room.'); 
+              return; 
+            }
+            if (reason === 'outside_walls') { 
+              toast.error('Place items inside the walls.'); 
+              return; 
+            }
+            if (reason === 'near_wall') { 
+              toast.error('Keep a small clearance from the walls.'); 
+              return; 
+            }
+            if (reason === 'overlap_furniture') { 
+              toast.error('Cannot place: overlaps another item.'); 
+              return; 
+            }
 
             // optional spacing snap
             newProd.position = wallSegments.length ? snapIslandBenchDistance(newProd) : newProd.position;
