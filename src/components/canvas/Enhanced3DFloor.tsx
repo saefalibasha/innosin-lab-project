@@ -24,7 +24,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     // Get the polygon outline from walls
     const polygon = wallsToPolygon(wallSegments);
     if (polygon.length < 3) {
-      // Enhanced fallback: create floor from wall extents
+      // Enhanced fallback: create floor from wall extents with precise coordinate mapping
       if (wallSegments.length > 0) {
         const xs = wallSegments.flatMap(w => [w.start.x, w.end.x]);
         const ys = wallSegments.flatMap(w => [w.start.y, w.end.y]);
@@ -34,7 +34,8 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         const maxY = Math.max(...ys);
         
         const shape = new THREE.Shape();
-        const padding = 100; // Reduced padding for better fit
+        // Small padding to ensure walls are covered
+        const padding = 20;
         const [x1, , z1] = canvasTo3DWorld({x: minX - padding, y: minY - padding}, scale);
         const [x2, , z2] = canvasTo3DWorld({x: maxX + padding, y: minY - padding}, scale);
         const [x3, , z3] = canvasTo3DWorld({x: maxX + padding, y: maxY + padding}, scale);
@@ -58,7 +59,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
       return shape;
     }
 
-    // Convert to 3D coordinates and create shape
+    // Convert to 3D coordinates and create shape with precise mapping
     const shape = new THREE.Shape();
     
     polygon.forEach((point, index) => {

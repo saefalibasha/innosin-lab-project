@@ -181,9 +181,9 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
 }) => {
   return (
     <group>
-      {placedProducts.map((product) => (
+      {placedProducts.map((product, index) => (
         <ProductModel
-          key={product.id}
+          key={`${product.id}-${index}`}
           product={product}
           scale={scale}
           onProductClick={onProductClick}

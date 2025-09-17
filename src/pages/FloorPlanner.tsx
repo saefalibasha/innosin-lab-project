@@ -642,9 +642,9 @@ const FloorPlanner = () => {
                         
                         <div className="bg-muted rounded-md p-1">
                           <Button
-                            variant={viewMode === '2d' ? 'default' : 'ghost'}
+                             variant={viewMode === '2d' ? 'default' : 'ghost'}
                             size="sm"
-                            onClick={() => setViewMode('2d')}
+                             onClick={() => setViewMode('2d')}
                             className="h-8 px-3 text-xs"
                           >
                             2D
@@ -652,7 +652,7 @@ const FloorPlanner = () => {
                           <Button
                             variant={viewMode === '3d' ? 'default' : 'ghost'}
                             size="sm"
-                            onClick={() => setViewMode('3d')}
+                             onClick={() => setViewMode('3d')}
                             className="h-8 px-3 text-xs"
                           >
                             3D
