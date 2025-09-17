@@ -23,9 +23,9 @@ export interface PlacedProduct {
     height: number;
   };
   originalDimensions?: {
+    length: number;
     width: number;
     height: number;
-    depth: number;
   };
   color: string;
   scale?: number;

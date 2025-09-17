@@ -55,7 +55,7 @@ const ProductModel = ({
     // Use originalDimensions if available (stored in mm), fallback to dimensions
     const width = product.originalDimensions?.width || product.dimensions?.width || 600;
     const height = product.originalDimensions?.height || product.dimensions?.height || 850;
-    const depth = product.originalDimensions?.depth || product.dimensions?.length || 600;
+    const depth = product.originalDimensions?.length || product.dimensions?.length || 600;
     
     return {
       width: width * 0.001, // mm to meters

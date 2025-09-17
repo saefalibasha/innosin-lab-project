@@ -160,83 +160,7 @@ const toProductAABB = (p: PlacedProduct) => toAABB(productCorners(p));
 
 const near = (a:Point, b:Point, eps=1e-3) => Math.hypot(a.x-b.x, a.y-b.y) < eps;
 
-// Helper functions for wall midpoint snapping
-const snapToWallMidpoint = useCallback(
-  (point: Point): Point => {
-    const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40); // 40px threshold
-    return closestMidpoint ? closestMidpoint.point : point;
-  },
-  [wallSegments]
-);
-
-// Four-corner product snapping helper
-const snapProductToProducts = useCallback(
-  (candidate: PlacedProduct, others: PlacedProduct[]): Point => {
-    const threshold = 12; // px for snapping
-    let bestSnap: Point | null = null;
-    let bestDistance = threshold;
-
-    const candidateCorners = productCorners(candidate);
-    
-    for (const other of others) {
-      if (other.id === candidate.id) continue;
-      
-      const otherCorners = productCorners(other);
-      
-      // Check corner-to-corner snapping
-      for (const candidateCorner of candidateCorners) {
-        for (const otherCorner of otherCorners) {
-          const dx = candidateCorner.x - candidate.position.x;
-          const dy = candidateCorner.y - candidate.position.y;
-          const distance = len(candidateCorner, otherCorner);
-          
-          if (distance < bestDistance) {
-            bestDistance = distance;
-            bestSnap = {
-              x: otherCorner.x - dx,
-              y: otherCorner.y - dy
-            };
-          }
-        }
-      }
-      
-      // Check edge-to-edge snapping
-      const otherL = other.dimensions.length ?? 40;
-      const otherW = other.dimensions.width ?? 30;
-      const candidateL = candidate.dimensions.length ?? 40;
-      const candidateW = candidate.dimensions.width ?? 30;
-      
-      // Horizontal alignment (placing side by side)
-      const rightEdge = other.position.x + otherL/2;
-      const leftEdge = other.position.x - otherL/2;
-      const candidateLeft = candidate.position.x - candidateL/2;
-      const candidateRight = candidate.position.x + candidateL/2;
-      
-      // Try placing candidate to the right of other
-      const rightSnapX = rightEdge + candidateL/2;
-      const rightSnapPos = { x: rightSnapX, y: candidate.position.y };
-      const rightDist = Math.abs(candidateLeft - rightEdge);
-      
-      if (rightDist < bestDistance && Math.abs(candidate.position.y - other.position.y) < candidateW/2 + otherW/2) {
-        bestDistance = rightDist;
-        bestSnap = rightSnapPos;
-      }
-      
-      // Try placing candidate to the left of other
-      const leftSnapX = leftEdge - candidateL/2;
-      const leftSnapPos = { x: leftSnapX, y: candidate.position.y };
-      const leftDist = Math.abs(candidateRight - leftEdge);
-      
-      if (leftDist < bestDistance && Math.abs(candidate.position.y - other.position.y) < candidateW/2 + otherW/2) {
-        bestDistance = leftDist;
-        bestSnap = leftSnapPos;
-      }
-    }
-    
-    return bestSnap || candidate.position;
-  },
-  [wallSegments]
-);
+// (moved snapping helpers into component scope)
 
 /* ===================== Component ===================== */
 
@@ -337,6 +261,76 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
     [showGrid, gridSize, scale]
   );
 
+  // Helper functions inside component scope
+  const snapToWallMidpoint = useCallback(
+    (point: Point): Point => {
+      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40);
+      return closestMidpoint ? closestMidpoint.point : point;
+    },
+    [wallSegments]
+  );
+
+  const snapProductToProducts = useCallback(
+    (candidate: PlacedProduct, others: PlacedProduct[]): Point => {
+      const threshold = 12;
+      let bestSnap: Point | null = null;
+      let bestDistance = threshold;
+
+      const candidateCorners = productCorners(candidate);
+
+      for (const other of others) {
+        if (other.id === candidate.id) continue;
+
+        const otherCorners = productCorners(other);
+
+        for (const candidateCorner of candidateCorners) {
+          for (const otherCorner of otherCorners) {
+            const dx = candidateCorner.x - candidate.position.x;
+            const dy = candidateCorner.y - candidate.position.y;
+            const distance = len(candidateCorner, otherCorner);
+            if (distance < bestDistance) {
+              bestDistance = distance;
+              bestSnap = { x: otherCorner.x - dx, y: otherCorner.y - dy };
+            }
+          }
+        }
+
+        const otherL = other.dimensions.length ?? 40;
+        const otherW = other.dimensions.width ?? 30;
+        const candidateL = candidate.dimensions.length ?? 40;
+        const candidateW = candidate.dimensions.width ?? 30;
+
+        const rightEdge = other.position.x + otherL / 2;
+        const leftEdge = other.position.x - otherL / 2;
+        const candidateLeft = candidate.position.x - candidateL / 2;
+        const candidateRight = candidate.position.x + candidateL / 2;
+
+        const rightSnapX = rightEdge + candidateL / 2;
+        const rightDist = Math.abs(candidateLeft - rightEdge);
+        if (
+          rightDist < bestDistance &&
+          Math.abs(candidate.position.y - other.position.y) < candidateW / 2 + otherW / 2
+        ) {
+          bestDistance = rightDist;
+          bestSnap = { x: rightSnapX, y: candidate.position.y };
+        }
+
+        const leftSnapX = leftEdge - candidateL / 2;
+        const leftDist = Math.abs(candidateRight - leftEdge);
+        if (
+          leftDist < bestDistance &&
+          Math.abs(candidate.position.y - other.position.y) < candidateW / 2 + otherW / 2
+        ) {
+          bestDistance = leftDist;
+          bestSnap = { x: leftSnapX, y: candidate.position.y };
+        }
+      }
+
+      return bestSnap || candidate.position;
+    },
+    []
+  );
+
   const findWallEndpoints = useCallback((): Point[] => {
     const out: Point[] = [];
     wallSegments.forEach((w) => out.push(w.start, w.end));
@@ -389,7 +383,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       if (!poly) return false; // if we can't deduce, don't block
       // require center and all corners be inside polygon
       if (!pointInPolygon(prod.position, poly)) return true;
-      return !rectInsidePolygon(prod, poly);
+      const corners = productCorners(prod);
+      return !corners.every((c) => pointInPolygon(c, poly));
     },
     [outerPolygon]
   );
@@ -1069,19 +1064,6 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         ctx.lineWidth = 2;
         ctx.stroke();
       });
-    });
-
-    // Draw red dots at wall midpoints for interior wall snapping
-    const wallMidpoints = getWallMidpoints(wallSegments);
-    wallMidpoints.forEach((midpoint) => {
-      ctx.beginPath();
-      ctx.arc(midpoint.x, midpoint.y, 4, 0, Math.PI * 2);
-      ctx.fillStyle = '#ff0000';
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
 
       // dimension label (parallel to wall, never upside-down)
       if (showMeasurements) {
@@ -1143,6 +1125,18 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         ctx.fillText(txt, 0, -1);
         ctx.restore();
       }
+    });
+
+    // Draw red dots at wall midpoints for interior wall snapping
+    const wallMidpoints = getWallMidpoints(wallSegments);
+    wallMidpoints.forEach((midpoint) => {
+      ctx.beginPath();
+      ctx.arc(midpoint.x, midpoint.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#ff0000';
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
     });
 
     // active room polyline

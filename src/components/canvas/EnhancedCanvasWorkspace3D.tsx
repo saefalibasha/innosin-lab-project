@@ -172,10 +172,10 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           position: canvasPos,
           rotation: 0,
           dimensions: product.dimensions,
-          originalDimensions: { // Store original dimensions in mm for consistent sizing
+          originalDimensions: {
+            length: product.depth || 600,
             width: product.width || 600,
-            height: product.height || 850,
-            depth: product.depth || 600
+            height: product.height || 850
           },
           color: product.color,
           scale: 1,
