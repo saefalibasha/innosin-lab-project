@@ -1478,7 +1478,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
               position: pos,
               rotation: 0,
               dimensions: dimsPx,
-              originalDimensions: { width: dimsMm.width, depth: dimsMm.depth, height: dimsMm.height },
+              originalDimensions: { length: dimsMm.width, width: dimsMm.depth, height: dimsMm.height },
               color: product.color || '#4caf50',
               scale: 1,
               modelPath: product.modelPath,
