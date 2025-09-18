@@ -62,6 +62,7 @@ export default function WelcomeLandingPage() {
               muted={true}
               loop={false}
               controls={false}
+              interactive={false}
             />
           </div>
 

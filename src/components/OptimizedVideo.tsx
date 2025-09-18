@@ -10,6 +10,7 @@ interface OptimizedVideoProps {
   muted?: boolean;
   loop?: boolean;
   controls?: boolean;
+  interactive?: boolean;
   playsInline?: boolean;
 }
 
@@ -21,6 +22,7 @@ const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
   muted = true,
   loop = false,
   controls = false,
+  interactive = true,
   playsInline = true
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -61,7 +63,7 @@ const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
         onPause={() => setIsPlaying(false)}
       />
       
-      {!controls && (
+      {!controls && interactive && (
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <div className="flex gap-2">
             <button
