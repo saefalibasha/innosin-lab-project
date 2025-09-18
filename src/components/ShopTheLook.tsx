@@ -95,27 +95,28 @@ const ShopTheLook = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <h2 className="text-4xl font-bold text-gray-900">
-              {shopLookContent.title}
-            </h2>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <ShoppingCart className="w-6 h-6 text-blue-600" />
-            </div>
-          </div>
+          <h2 className="text-5xl font-bold text-gray-900 mb-4">
+            {shopLookContent.title}
+          </h2>
         </div>
 
-        {/* Interactive Product Discovery Card - Full Width */}
-        <div className="mb-8">
-          <Card className="border-0 shadow-xl">
+        {/* Interactive Product Discovery Card - Full Width Extended */}
+        <div className="mb-0">
+          <Card className="border-0 shadow-xl rounded-b-none">
             <CardContent className="p-8 text-center">
               <div className="space-y-4">
-                <h3 className="text-2xl font-semibold text-blue-600">
-                  Interactive Product Discovery
-                </h3>
+                <div className="flex items-center justify-center gap-3">
+                  <h3 className="text-2xl font-semibold text-blue-600">
+                    Interactive Product Discovery
+                  </h3>
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <ShoppingCart className="w-6 h-6 text-blue-600" />
+                  </div>
+                </div>
                 <p className="text-gray-600 leading-relaxed max-w-3xl mx-auto">
                   Click on the blue markers to explore our laboratory equipment and get detailed product information.
                 </p>
+                <div className="h-8"></div> {/* Spacer to extend below photo */}
               </div>
             </CardContent>
           </Card>
@@ -127,7 +128,7 @@ const ShopTheLook = () => {
             <img
               src={shopLookContent.background_image}
               alt={shopLookContent.background_alt}
-              className="w-full h-[500px] lg:h-[600px] object-cover rounded-lg shadow-md"
+              className="w-full h-[500px] lg:h-[600px] object-contain bg-gray-50 rounded-lg shadow-md"
               onError={(e) => {
                 e.currentTarget.src = '/api/placeholder/1200/600';
               }}
