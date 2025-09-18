@@ -56,7 +56,7 @@ export default function WelcomeLandingPage() {
           {/* Intro Video */}
           <div className="mb-8 w-full max-w-5xl mx-auto">
             <OptimizedVideo
-              src="/videos/intro-video.mp4"
+              src="/videos/landing-intro-v2.mp4?v=2"
               className="w-full h-auto"
               autoplay={true}
               muted={true}
