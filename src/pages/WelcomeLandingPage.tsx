@@ -57,7 +57,7 @@ export default function WelcomeLandingPage() {
           <div className="w-full max-w-4xl mx-auto">
             <OptimizedVideo
               src="/videos/landing-intro-v4.mp4"
-              className="w-full h-auto"
+              className="w-full h-auto transform scale-105 filter brightness-105 contrast-110 saturate-105"
               autoplay={true}
               muted={true}
               loop={false}
