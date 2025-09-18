@@ -31,7 +31,7 @@ export default function WelcomeLandingPage() {
   }, []);
 
   return (
-    <div className="relative h-screen w-full bg-gray-50 overflow-hidden flex flex-col">
+    <div className="relative h-screen w-full bg-white overflow-hidden flex flex-col">
       
       {/* Animated Background */}
       <AnimatedBackground />
