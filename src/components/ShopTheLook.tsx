@@ -104,127 +104,161 @@ const ShopTheLook = () => {
           </p>
         </div>
 
-        {/* Full Width Interactive Image */}
+        {/* Full Width Interactive Image with Overlay */}
         <div className="relative">
-          <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-            <img
-              src={shopLookContent.background_image}
-              alt={shopLookContent.background_alt}
-              className="w-full h-[600px] lg:h-[700px] object-cover object-center rounded-lg shadow-md"
-              onError={(e) => {
-                e.currentTarget.src = '/api/placeholder/1200/600';
-              }}
-            />
-            
-            {/* Hotspot Markers */}
-            {hotspots.map((hotspot) => (
-              <button
-                key={hotspot.id}
-                className={`absolute w-8 h-8 rounded-full border-3 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 ${
-                  selectedHotspot?.id === hotspot.id
-                    ? 'bg-blue-600 animate-pulse scale-125'
-                    : 'bg-blue-500 hover:bg-blue-600'
-                }`}
-                style={{
-                  left: `${hotspot.x_position}%`,
-                  top: `${hotspot.y_position}%`,
+          <div className="grid lg:grid-cols-3 gap-0">
+            {/* Main Image - Takes 2/3 on large screens */}
+            <div className="lg:col-span-2 relative overflow-hidden rounded-l-2xl shadow-2xl">
+              <img
+                src={shopLookContent.background_image}
+                alt={shopLookContent.background_alt}
+                className="w-full h-[700px] lg:h-[800px] object-cover object-center"
+                onError={(e) => {
+                  e.currentTarget.src = '/api/placeholder/1200/600';
                 }}
-                onClick={() => setSelectedHotspot(hotspot)}
-                aria-label={`View ${hotspot.title}`}
-              >
-                <div className="w-full h-full rounded-full bg-white/30 flex items-center justify-center">
-                  <div className="w-3 h-3 bg-white rounded-full" />
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+              />
+              
+              {/* Hotspot Markers */}
+              {hotspots.map((hotspot) => (
+                <button
+                  key={hotspot.id}
+                  className={`absolute w-8 h-8 rounded-full border-3 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 ${
+                    selectedHotspot?.id === hotspot.id
+                      ? 'bg-blue-600 animate-pulse scale-125'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                  style={{
+                    left: `${hotspot.x_position}%`,
+                    top: `${hotspot.y_position}%`,
+                  }}
+                  onClick={() => setSelectedHotspot(hotspot)}
+                  aria-label={`View ${hotspot.title}`}
+                >
+                  <div className="w-full h-full rounded-full bg-white/30 flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full" />
+                  </div>
+                </button>
+              ))}
+            </div>
 
-        {/* Product Details Below Image */}
-        {selectedHotspot && (
-          <div className="mt-8">
-            <div className="max-w-4xl mx-auto">
-              <Card className="border-0 shadow-xl">
-                <CardContent className="p-8">
-                  <div className="grid md:grid-cols-2 gap-8">
-                    {/* Product Info */}
-                    <div className="space-y-4">
-                      <div>
-                        <Badge className="mb-3 bg-blue-100 text-blue-800 hover:bg-blue-200">
-                          {selectedHotspot.category}
-                        </Badge>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                          {selectedHotspot.title}
-                        </h3>
-                        <p className="text-gray-600 leading-relaxed">
-                          {selectedHotspot.description}
-                        </p>
-                      </div>
+            {/* Product Details Overlay - Takes 1/3 on large screens */}
+            <div className="lg:col-span-1 bg-white rounded-r-2xl shadow-2xl lg:h-[700px] lg:h-[800px] overflow-y-auto">
+              {selectedHotspot ? (
+                <div className="p-6 space-y-6">
+                  {/* Category Badge */}
+                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+                    {selectedHotspot.category}
+                  </Badge>
 
-                      {/* Specifications */}
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3">Key Features</h4>
-                        <div className="space-y-2">
-                          {selectedHotspot.specifications.map((spec, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
-                              <span className="text-gray-600">{spec}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                  {/* Product Title */}
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-3">
+                      {selectedHotspot.title}
+                    </h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {selectedHotspot.description}
+                    </p>
+                  </div>
+
+                  {/* Product Image */}
+                  {selectedHotspot.image && (
+                    <div className="relative overflow-hidden rounded-lg">
+                      <img
+                        src={selectedHotspot.image}
+                        alt={selectedHotspot.title}
+                        className="w-full h-40 object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = '/api/placeholder/400/200';
+                        }}
+                      />
                     </div>
+                  )}
 
-                    {/* Product Image and Actions */}
-                    <div className="space-y-4">
-                      {selectedHotspot.image && (
-                        <div className="relative overflow-hidden rounded-lg">
-                          <img
-                            src={selectedHotspot.image}
-                            alt={selectedHotspot.title}
-                            className="w-full h-48 object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = '/api/placeholder/400/200';
-                            }}
-                          />
-                        </div>
-                      )}
-
-                      {/* Price and Actions */}
-                      <div className="space-y-4">
+                  {/* Dimensions & Details */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900 text-sm">Dimensions & Details</h4>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <p className="text-sm text-gray-500 mb-1">Price</p>
-                          <p className="text-2xl font-bold text-gray-900">
-                            {selectedHotspot.price}
-                          </p>
+                          <span className="text-gray-500">Width:</span>
+                          <span className="ml-2 font-medium">1200mm</span>
                         </div>
-                        <div className="flex gap-3">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => window.open(selectedHotspot.product_link, '_blank')}
-                          >
-                            <ArrowRight className="w-4 h-4 mr-1" />
-                            Learn More
-                          </Button>
-                          <Button 
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => window.open('/contact', '_blank')}
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Get Quote
-                          </Button>
+                        <div>
+                          <span className="text-gray-500">Depth:</span>
+                          <span className="ml-2 font-medium">750mm</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Height:</span>
+                          <span className="ml-2 font-medium">900mm</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Material:</span>
+                          <span className="ml-2 font-medium">Premium HPL</span>
                         </div>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+
+                  {/* Key Features */}
+                  <div className="space-y-3">
+                    <h4 className="font-semibold text-gray-900 text-sm">Key Features</h4>
+                    <div className="space-y-2">
+                      {selectedHotspot.specifications.map((spec, index) => (
+                        <div key={index} className="flex items-start gap-2">
+                          <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-gray-600 text-xs">{spec}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Price */}
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Starting Price</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {selectedHotspot.price}
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => window.open(selectedHotspot.product_link, '_blank')}
+                    >
+                      <ArrowRight className="w-3 h-3 mr-1" />
+                      View Full Details
+                    </Button>
+                    <Button 
+                      size="sm"
+                      className="w-full text-xs"
+                      onClick={() => window.open('/contact', '_blank')}
+                    >
+                      <ShoppingCart className="w-3 h-3 mr-1" />
+                      Request Quote
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 h-full flex flex-col items-center justify-center text-center">
+                  <div className="text-gray-400 mb-4">
+                    <ShoppingCart className="w-12 h-12 mx-auto mb-3" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                    Explore Our Products
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Click on any blue marker in the image to discover detailed product information, specifications, and pricing.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </section>
   );

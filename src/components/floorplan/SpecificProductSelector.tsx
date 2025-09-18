@@ -276,22 +276,22 @@ export const SpecificProductSelector: React.FC<SpecificProductSelectorProps> = (
               {Object.entries(configOptions).map(([configType, options]) => (
                 <div key={configType} className="space-y-2">
                   <label className="text-sm font-medium">{getConfigLabel(configType)}</label>
-                  <Select
-                    value={selectedConfigs[configType] || 'all'}
-                    onValueChange={(value) => handleConfigChange(configType, value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={`Select ${getConfigLabel(configType)}`} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Options</SelectItem>
-                      {options.map(option => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Select
+                      value={selectedConfigs[configType] || 'all'}
+                      onValueChange={(value) => handleConfigChange(configType, value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={`Select ${getConfigLabel(configType)}`} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Options</SelectItem>
+                        {options.map(option => (
+                          <SelectItem key={option} value={option}>
+                            {option}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                 </div>
               ))}
             </div>
