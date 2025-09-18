@@ -37,7 +37,7 @@ export default function WelcomeLandingPage() {
       <AnimatedBackground />
       
       {/* Navigation */}
-      <nav className="relative z-10 flex justify-end items-center px-8 py-6">
+      <nav className="relative z-10 flex justify-end items-center px-8 py-2">
         <Button 
           variant="ghost" 
           className="text-sea/70 hover:text-sea hover:bg-sea/5 text-sm transition-all duration-300"
@@ -48,13 +48,13 @@ export default function WelcomeLandingPage() {
       </nav>
 
       {/* Hero Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-8">
+      <div className="relative z-10 flex-1 flex flex-col justify-start items-center px-8 pt-2">
         <div className={`text-center max-w-4xl transition-all duration-700 ease-out ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           
           {/* Intro Video */}
-          <div className="mb-6 w-full max-w-6xl mx-auto animate-fade-in filter brightness-110 saturate-90">
+          <div className="mb-4 w-full max-w-6xl mx-auto animate-fade-in filter brightness-110 saturate-90">
             <OptimizedVideo
               src="/videos/landing-intro-v3.mp4"
               className="w-full h-auto"
