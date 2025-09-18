@@ -31,7 +31,7 @@ export default function WelcomeLandingPage() {
   }, []);
 
   return (
-    <div className="relative h-screen w-full bg-white overflow-hidden flex flex-col">
+    <div className="relative h-screen w-full bg-gray-50 overflow-hidden flex flex-col">
       
       {/* Animated Background */}
       <AnimatedBackground />
@@ -54,7 +54,7 @@ export default function WelcomeLandingPage() {
         }`}>
           
           {/* Intro Video */}
-          <div className="w-full">
+          <div className="w-full max-w-4xl mx-auto">
             <OptimizedVideo
               src="/videos/landing-intro-v4.mp4"
               className="w-full h-auto"
@@ -67,7 +67,7 @@ export default function WelcomeLandingPage() {
           </div>
 
           {/* Main Tagline */}
-          <div className="px-8 py-6">
+          <div className="px-8 py-8">
             <p className="text-2xl sm:text-3xl lg:text-4xl text-sea/90 font-medium leading-relaxed max-w-4xl mx-auto">
               Pioneering laboratory solutions designed for tomorrow's breakthroughs.
             </p>
