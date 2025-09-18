@@ -178,7 +178,10 @@ const ShopTheLook = () => {
                   <div className="space-y-2">
                     <h4 className="font-semibold text-gray-900 text-sm">Product Description</h4>
                     <p className="text-gray-600 text-xs leading-relaxed">
-                      {selectedHotspot.description || "Professional laboratory furniture designed for modern research environments. Features durable construction with premium materials and ergonomic design for optimal functionality and safety."}
+                      {selectedHotspot.description && selectedHotspot.description.trim() !== '' 
+                        ? selectedHotspot.description 
+                        : "Professional laboratory furniture designed for modern research environments. Features durable construction with premium materials and ergonomic design for optimal functionality and safety."
+                      }
                     </p>
                   </div>
 
