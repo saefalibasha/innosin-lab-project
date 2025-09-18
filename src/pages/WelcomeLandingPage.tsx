@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
+import OptimizedVideo from "@/components/OptimizedVideo";
 
 // Animated background component
 function AnimatedBackground() {
@@ -60,15 +61,27 @@ export default function WelcomeLandingPage() {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           
+          {/* Intro Video */}
+          <div className="mb-12 max-w-4xl mx-auto">
+            <OptimizedVideo
+              src="/videos/intro-video.mp4"
+              className="rounded-2xl shadow-2xl"
+              autoplay={true}
+              muted={true}
+              loop={true}
+              controls={true}
+            />
+          </div>
+
           {/* Main Headline */}
-          <h1 className="text-6xl sm:text-7xl lg:text-8xl mb-8 leading-tight tracking-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl mb-6 leading-tight tracking-tight">
             <span className="font-semibold text-sea">Innovation.</span>
             <br />
             <span className="font-semibold text-sea-dark">Redefined.</span>
           </h1>
 
           {/* Subheadline */}
-          <p className="text-xl sm:text-2xl text-sea/70 mb-12 font-light leading-relaxed max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-sea/70 mb-8 font-light leading-relaxed max-w-2xl mx-auto">
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
 
