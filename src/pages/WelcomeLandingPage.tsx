@@ -37,15 +37,7 @@ export default function WelcomeLandingPage() {
       <AnimatedBackground />
       
       {/* Navigation */}
-      <nav className="relative z-10 flex justify-between items-center px-8 py-6">
-        <div className="flex items-center space-x-4">
-          <img 
-            src="/brand-logos/innosin-lab-logo.png" 
-            alt="Innosin Lab" 
-            className="h-12 w-auto"
-          />
-          <span className="text-2xl font-semibold text-sea">Innosin Lab</span>
-        </div>
+      <nav className="relative z-10 flex justify-end items-center px-8 py-6">
         <Button 
           variant="ghost" 
           className="text-sea/70 hover:text-sea hover:bg-sea/5 text-sm transition-all duration-300"
@@ -62,14 +54,14 @@ export default function WelcomeLandingPage() {
         }`}>
           
           {/* Intro Video */}
-          <div className="mb-12 max-w-4xl mx-auto">
+          <div className="mb-16 w-full max-w-6xl mx-auto">
             <OptimizedVideo
               src="/videos/intro-video.mp4"
-              className="rounded-2xl shadow-2xl"
+              className="w-full h-auto rounded-3xl shadow-2xl border border-sea/10"
               autoplay={true}
               muted={true}
               loop={true}
-              controls={true}
+              controls={false}
             />
           </div>
 
