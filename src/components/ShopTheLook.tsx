@@ -103,6 +103,27 @@ const ShopTheLook = () => {
           </h3>
         </div>
 
+        {/* Interactive Product Discovery Above Photo */}
+        <div className="max-w-3xl mx-auto text-center mb-8">
+          <Card className="border-0 shadow-xl">
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+                  <ShoppingCart className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Interactive Product Discovery
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    Click on the blue markers to explore our laboratory equipment and get detailed product information.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Full Width Interactive Image */}
         <div className="relative">
           <div className="relative overflow-hidden rounded-2xl shadow-2xl">
@@ -140,8 +161,8 @@ const ShopTheLook = () => {
         </div>
 
         {/* Product Details Below Image */}
-        <div className="mt-8">
-          {selectedHotspot ? (
+        {selectedHotspot && (
+          <div className="mt-8">
             <div className="max-w-4xl mx-auto">
               <Card className="border-0 shadow-xl">
                 <CardContent className="p-8">
@@ -222,31 +243,8 @@ const ShopTheLook = () => {
                 </CardContent>
               </Card>
             </div>
-          ) : (
-            <div className="max-w-3xl mx-auto text-center">
-              <Card className="border-0 shadow-xl">
-                <CardContent className="p-8">
-                  <div className="space-y-6">
-                    <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
-                      <ShoppingCart className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-semibold text-gray-900 mb-4">
-                        Interactive Product Discovery
-                      </h3>
-                      <p className="text-xl text-gray-600 leading-relaxed">
-                        {shopLookContent.description}
-                      </p>
-                    </div>
-                    <p className="text-gray-500">
-                      Click on any blue marker in the image above to explore our laboratory solutions in detail.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   );
