@@ -174,41 +174,40 @@ const ShopTheLook = () => {
                     </div>
                   )}
 
-                  {/* Dimensions & Details */}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900 text-sm">Dimensions & Details</h4>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-gray-500">Width:</span>
-                          <span className="ml-2 font-medium">1200mm</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Depth:</span>
-                          <span className="ml-2 font-medium">750mm</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Height:</span>
-                          <span className="ml-2 font-medium">900mm</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-500">Material:</span>
-                          <span className="ml-2 font-medium">Premium HPL</span>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Product Description */}
+                  <div className="space-y-2">
+                    <h4 className="font-semibold text-gray-900 text-sm">Product Description</h4>
+                    <p className="text-gray-600 text-xs leading-relaxed">
+                      {selectedHotspot.description}
+                    </p>
                   </div>
 
-                  {/* Key Features */}
+                  {/* Dimensions & Details */}
                   <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900 text-sm">Key Features</h4>
-                    <div className="space-y-2">
-                      {selectedHotspot.specifications.map((spec, index) => (
-                        <div key={index} className="flex items-start gap-2">
-                          <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-gray-600 text-xs">{spec}</span>
+                    <h4 className="font-semibold text-gray-900 text-sm">Specifications</h4>
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Dimensions:</span>
+                          <span className="font-medium">1200 x 750 x 900 mm</span>
                         </div>
-                      ))}
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Weight:</span>
+                          <span className="font-medium">45 kg</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Finish:</span>
+                          <span className="font-medium">Premium HPL</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Load Capacity:</span>
+                          <span className="font-medium">150 kg</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Standard:</span>
+                          <span className="font-medium">EN 14073</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
