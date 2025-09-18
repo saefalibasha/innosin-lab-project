@@ -370,12 +370,12 @@ const HotspotEditor = () => {
         </div>
       </div>
 
-      {/* Background image - Same as used on home page */}
+      {/* Background image - Same dimensions as home page */}
       <div className="relative">
         <img
           src={currentContent.background_image || '/api/placeholder/1200/800'}
           alt={currentContent.background_alt}
-          className={`w-full h-[600px] object-cover rounded-lg border ${isCreating ? 'cursor-crosshair' : ''}`}
+          className={`w-full h-[700px] lg:h-[800px] object-cover rounded-lg border ${isCreating ? 'cursor-crosshair' : ''}`}
           onClick={handleImageClick}
           onError={(e) => {
             e.currentTarget.src = '/api/placeholder/1200/800';
