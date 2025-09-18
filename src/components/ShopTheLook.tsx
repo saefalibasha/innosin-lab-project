@@ -178,7 +178,7 @@ const ShopTheLook = () => {
                   <div className="space-y-2">
                     <h4 className="font-semibold text-gray-900 text-sm">Product Description</h4>
                     <p className="text-gray-600 text-xs leading-relaxed">
-                      {selectedHotspot.description}
+                      {selectedHotspot.description || "Professional laboratory furniture designed for modern research environments. Features durable construction with premium materials and ergonomic design for optimal functionality and safety."}
                     </p>
                   </div>
 
@@ -197,15 +197,7 @@ const ShopTheLook = () => {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-500">Finish:</span>
-                          <span className="font-medium">Premium HPL</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Load Capacity:</span>
-                          <span className="font-medium">150 kg</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-500">Standard:</span>
-                          <span className="font-medium">EN 14073</span>
+                          <span className="font-medium">Powder Coated</span>
                         </div>
                       </div>
                     </div>
