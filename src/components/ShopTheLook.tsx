@@ -94,31 +94,28 @@ const ShopTheLook = () => {
     <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            {shopLookContent.title}
-          </h2>
-          <h3 className="text-2xl font-semibold text-blue-600 mb-6">
-            {shopLookContent.title_highlight}
-          </h3>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <h2 className="text-4xl font-bold text-gray-900">
+              {shopLookContent.title}
+            </h2>
+            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
         </div>
 
-        {/* Interactive Product Discovery Above Photo */}
-        <div className="max-w-3xl mx-auto text-center mb-8">
+        {/* Interactive Product Discovery Card - Full Width */}
+        <div className="mb-8">
           <Card className="border-0 shadow-xl">
-            <CardContent className="p-6">
+            <CardContent className="p-8 text-center">
               <div className="space-y-4">
-                <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
-                  <ShoppingCart className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Interactive Product Discovery
-                  </h3>
-                  <p className="text-gray-600 leading-relaxed">
-                    Click on the blue markers to explore our laboratory equipment and get detailed product information.
-                  </p>
-                </div>
+                <h3 className="text-2xl font-semibold text-blue-600">
+                  Interactive Product Discovery
+                </h3>
+                <p className="text-gray-600 leading-relaxed max-w-3xl mx-auto">
+                  Click on the blue markers to explore our laboratory equipment and get detailed product information.
+                </p>
               </div>
             </CardContent>
           </Card>
