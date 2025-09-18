@@ -54,7 +54,7 @@ export default function WelcomeLandingPage() {
         }`}>
           
           {/* Intro Video */}
-          <div className="mb-8 w-full max-w-5xl mx-auto">
+          <div className="mb-6 w-full max-w-6xl mx-auto animate-fade-in filter brightness-110 saturate-90">
             <OptimizedVideo
               src="/videos/landing-intro-v2.mp4?v=2"
               className="w-full h-auto"
