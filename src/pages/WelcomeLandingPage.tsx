@@ -48,15 +48,15 @@ export default function WelcomeLandingPage() {
       </nav>
 
       {/* Hero Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-start items-center px-8 pt-2">
-        <div className={`text-center max-w-4xl transition-all duration-700 ease-out ${
+      <div className="relative z-10 flex-1 flex flex-col justify-start items-center">
+        <div className={`text-center w-full transition-all duration-700 ease-out ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
           
           {/* Intro Video */}
-          <div className="mb-4 w-full max-w-6xl mx-auto animate-fade-in filter brightness-110 saturate-90">
+          <div className="w-full">
             <OptimizedVideo
-              src="/videos/landing-intro-v3.mp4"
+              src="/videos/landing-intro-v4.mp4"
               className="w-full h-auto"
               autoplay={true}
               muted={true}
@@ -67,9 +67,11 @@ export default function WelcomeLandingPage() {
           </div>
 
           {/* Main Tagline */}
-          <p className="text-2xl sm:text-3xl lg:text-4xl text-sea/90 mb-6 font-light leading-relaxed max-w-4xl mx-auto">
-            Pioneering laboratory solutions designed for tomorrow's breakthroughs.
-          </p>
+          <div className="px-8 py-6">
+            <p className="text-2xl sm:text-3xl lg:text-4xl text-sea/90 font-medium leading-relaxed max-w-4xl mx-auto">
+              Pioneering laboratory solutions designed for tomorrow's breakthroughs.
+            </p>
+          </div>
 
           {/* CTA Button */}
           <Button
