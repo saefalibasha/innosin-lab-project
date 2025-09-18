@@ -77,8 +77,10 @@ const BeforeAfterComparison = () => {
 
   const onWindowPointerMove = useCallback((e: PointerEvent) => {
     if (!isDragging) return;
-    // no throttling – update every move for speed
-    setPositionFromClientX(e.clientX);
+    // Use requestAnimationFrame for smoother performance
+    requestAnimationFrame(() => {
+      setPositionFromClientX(e.clientX);
+    });
   }, [isDragging, setPositionFromClientX]);
 
   const onWindowPointerUp = useCallback(() => {
@@ -152,29 +154,28 @@ const BeforeAfterComparison = () => {
                   draggable={false}
                 />
 
-                {/* AFTER (clipped) */}
+                {/* AFTER (using transform instead of clip-path for better performance) */}
                 <div
-                  className="absolute inset-0 overflow-hidden"
+                  className="absolute inset-0 overflow-hidden will-change-transform"
                   style={{
-                    clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
-                    // no transition while dragging, tiny snap when released
-                    transition: isDragging ? 'none' : 'clip-path 40ms ease-out',
+                    transform: `translateX(${sliderPosition - 100}%)`,
+                    transition: isDragging ? 'none' : 'transform 150ms cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
                   <img
                     src={project.afterImage}
                     alt="After transformation"
-                    className="w-full h-full object-cover object-center pointer-events-none"
+                    className="w-full h-full object-cover object-center pointer-events-none will-change-transform"
                     draggable={false}
                   />
                 </div>
 
                 {/* Divider + Handle */}
                 <div
-                  className="absolute top-0 bottom-0 w-[3px] bg-white shadow-2xl pointer-events-none z-10"
+                  className="absolute top-0 bottom-0 w-[3px] bg-white shadow-2xl pointer-events-none z-10 will-change-transform"
                   style={{
                     left: `${sliderPosition}%`,
-                    transition: isDragging ? 'none' : 'left 40ms ease-out',
+                    transition: isDragging ? 'none' : 'left 150ms cubic-bezier(0.4, 0, 0.2, 1)',
                   }}
                 >
                   {/* Increase hit feel visually */}
