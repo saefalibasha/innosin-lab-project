@@ -112,7 +112,7 @@ const ShopTheLook = () => {
               <img
                 src={shopLookContent.background_image}
                 alt={shopLookContent.background_alt}
-                className="w-full h-[700px] lg:h-[800px] object-cover object-center"
+                className="w-full h-auto object-cover object-center block"
                 onError={(e) => {
                   e.currentTarget.src = '/api/placeholder/1200/600';
                 }}
@@ -142,7 +142,7 @@ const ShopTheLook = () => {
             </div>
 
             {/* Product Details Overlay - Takes 1/3 on large screens */}
-            <div className="lg:col-span-1 bg-white rounded-r-2xl shadow-2xl lg:h-[700px] lg:h-[800px] overflow-y-auto">
+            <div className="lg:col-span-1 bg-white rounded-r-2xl shadow-2xl overflow-y-auto">
               {selectedHotspot ? (
                 <div className="p-6 space-y-6">
                   {/* Category Badge */}
@@ -155,9 +155,6 @@ const ShopTheLook = () => {
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
                       {selectedHotspot.title}
                     </h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      {selectedHotspot.description}
-                    </p>
                   </div>
 
                   {/* Product Image */}

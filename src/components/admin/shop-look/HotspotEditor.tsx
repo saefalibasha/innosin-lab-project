@@ -370,12 +370,12 @@ const HotspotEditor = () => {
         </div>
       </div>
 
-      {/* Background image - Same dimensions as home page */}
+      {/* Background image - Unified scaling with home page (no fixed height) */}
       <div className="relative">
         <img
           src={currentContent.background_image || '/api/placeholder/1200/800'}
           alt={currentContent.background_alt}
-          className={`w-full h-[700px] lg:h-[800px] object-cover rounded-lg border ${isCreating ? 'cursor-crosshair' : ''}`}
+          className={`w-full h-auto object-cover rounded-lg border block ${isCreating ? 'cursor-crosshair' : ''}`}
           onClick={handleImageClick}
           onError={(e) => {
             e.currentTarget.src = '/api/placeholder/1200/800';
@@ -509,9 +509,7 @@ const HotspotEditor = () => {
                     <h4 className="font-bold text-lg">{formData.title}</h4>
                     <p className="text-sm text-gray-600 mb-2">{formData.category}</p>
                     <p className="text-green-600 font-semibold">{formData.price}</p>
-                    {formData.description && (
-                      <p className="text-sm text-gray-500 mt-2 line-clamp-2">{formData.description}</p>
-                    )}
+                    {/* Description preview removed to avoid duplication; edit below instead */}
                     {formData.specifications && formData.specifications.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
                         {Array.isArray(formData.specifications) 
