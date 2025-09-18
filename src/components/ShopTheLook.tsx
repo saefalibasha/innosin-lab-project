@@ -104,29 +104,13 @@ const ShopTheLook = () => {
           </p>
         </div>
 
-        {/* Extended Card - Full Width */}
-        <div className="mb-0">
-          <Card className="border-0 shadow-xl rounded-b-none">
-            <CardContent className="p-4 text-center">
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                  <ShoppingCart className="w-4 h-4 text-blue-600" />
-                </div>
-                <p className="text-gray-600 text-sm">
-                  Interactive product exploration
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Full Width Interactive Image */}
         <div className="relative">
           <div className="relative overflow-hidden rounded-2xl shadow-2xl">
             <img
               src={shopLookContent.background_image}
               alt={shopLookContent.background_alt}
-              className="w-full h-[400px] lg:h-[500px] object-contain object-center rounded-lg shadow-md"
+              className="w-full h-[400px] lg:h-[500px] object-cover object-center rounded-lg shadow-md"
               onError={(e) => {
                 e.currentTarget.src = '/api/placeholder/1200/600';
               }}
