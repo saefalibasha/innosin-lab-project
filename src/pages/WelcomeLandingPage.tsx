@@ -60,7 +60,7 @@ export default function WelcomeLandingPage() {
               className="w-full h-auto"
               autoplay={true}
               muted={true}
-              loop={true}
+              loop={false}
               controls={false}
             />
           </div>
