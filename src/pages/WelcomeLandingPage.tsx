@@ -54,10 +54,10 @@ export default function WelcomeLandingPage() {
         }`}>
           
           {/* Intro Video */}
-          <div className="mb-16 w-full max-w-6xl mx-auto">
+          <div className="mb-8 w-full max-w-5xl mx-auto">
             <OptimizedVideo
               src="/videos/intro-video.mp4"
-              className="w-full h-auto rounded-3xl shadow-2xl border border-sea/10"
+              className="w-full h-auto"
               autoplay={true}
               muted={true}
               loop={true}
@@ -66,14 +66,14 @@ export default function WelcomeLandingPage() {
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl mb-6 leading-tight tracking-tight">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl mb-4 leading-tight tracking-tight">
             <span className="font-semibold text-sea">Innovation.</span>
             <br />
             <span className="font-semibold text-sea-dark">Redefined.</span>
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg sm:text-xl text-sea/70 mb-8 font-light leading-relaxed max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-sea/70 mb-6 font-light leading-relaxed max-w-2xl mx-auto">
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
 
