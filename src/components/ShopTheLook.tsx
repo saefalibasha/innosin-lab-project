@@ -101,152 +101,151 @@ const ShopTheLook = () => {
           <h3 className="text-2xl font-semibold text-blue-600 mb-6">
             {shopLookContent.title_highlight}
           </h3>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            {shopLookContent.description}
-          </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 items-start">
-          {/* Interactive Image - Takes 2/3 of the width */}
-          <div className="lg:col-span-2 relative">
-            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-              <img
-                src={shopLookContent.background_image}
-                alt={shopLookContent.background_alt}
-                className="w-full h-[500px] lg:h-[600px] object-cover rounded-lg shadow-md"
-                onError={(e) => {
-                  e.currentTarget.src = '/api/placeholder/800/600';
+        {/* Full Width Interactive Image */}
+        <div className="relative">
+          <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+            <img
+              src={shopLookContent.background_image}
+              alt={shopLookContent.background_alt}
+              className="w-full h-[500px] lg:h-[600px] object-cover rounded-lg shadow-md"
+              onError={(e) => {
+                e.currentTarget.src = '/api/placeholder/1200/600';
+              }}
+            />
+            
+            {/* Hotspot Markers */}
+            {hotspots.map((hotspot) => (
+              <button
+                key={hotspot.id}
+                className={`absolute w-8 h-8 rounded-full border-3 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 ${
+                  selectedHotspot?.id === hotspot.id
+                    ? 'bg-blue-600 animate-pulse scale-125'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+                style={{
+                  left: `${hotspot.x_position}%`,
+                  top: `${hotspot.y_position}%`,
                 }}
-              />
-              
-              {/* Hotspot Markers */}
-              {hotspots.map((hotspot) => (
-                <button
-                  key={hotspot.id}
-                  className={`absolute w-8 h-8 rounded-full border-3 border-white shadow-lg transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 hover:scale-125 ${
-                    selectedHotspot?.id === hotspot.id
-                      ? 'bg-blue-600 animate-pulse scale-125'
-                      : 'bg-blue-500 hover:bg-blue-600'
-                  }`}
-                  style={{
-                    left: `${hotspot.x_position}%`,
-                    top: `${hotspot.y_position}%`,
-                  }}
-                  onClick={() => setSelectedHotspot(hotspot)}
-                  aria-label={`View ${hotspot.title}`}
-                >
-                  <div className="w-full h-full rounded-full bg-white/30 flex items-center justify-center">
-                    <div className="w-3 h-3 bg-white rounded-full" />
-                  </div>
-                </button>
-              ))}
-            </div>
+                onClick={() => setSelectedHotspot(hotspot)}
+                aria-label={`View ${hotspot.title}`}
+              >
+                <div className="w-full h-full rounded-full bg-white/30 flex items-center justify-center">
+                  <div className="w-3 h-3 bg-white rounded-full" />
+                </div>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Product Details - Takes 1/3 of the width */}
-          <div className="lg:col-span-1 space-y-6">
-            {selectedHotspot ? (
-              <Card className="border-0 shadow-xl h-fit">
-                <CardContent className="p-6">
-                  <div className="space-y-4">
-                    {/* Product Header */}
-                    <div>
-                      <Badge className="mb-2 bg-blue-100 text-blue-800 hover:bg-blue-200">
-                        {selectedHotspot.category}
-                      </Badge>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {selectedHotspot.title}
-                      </h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
-                        {selectedHotspot.description}
-                      </p>
-                    </div>
-
-                    <Separator />
-
-                    {/* Product Image */}
-                    {selectedHotspot.image && (
-                      <div className="relative overflow-hidden rounded-lg">
-                        <img
-                          src={selectedHotspot.image}
-                          alt={selectedHotspot.title}
-                          className="w-full h-32 object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = '/api/placeholder/400/200';
-                          }}
-                        />
-                      </div>
-                    )}
-
-                    {/* Specifications */}
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2 text-sm">Key Features</h4>
-                      <div className="space-y-1">
-                        {selectedHotspot.specifications.slice(0, 3).map((spec, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                            <CheckCircle className="w-3 h-3 text-green-500 flex-shrink-0" />
-                            <span className="text-gray-600 text-xs">{spec}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Price and Actions */}
-                    <div className="space-y-3">
+        {/* Product Details Below Image */}
+        <div className="mt-8">
+          {selectedHotspot ? (
+            <div className="max-w-4xl mx-auto">
+              <Card className="border-0 shadow-xl">
+                <CardContent className="p-8">
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {/* Product Info */}
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Price</p>
-                        <p className="text-xl font-bold text-gray-900">
-                          {selectedHotspot.price}
+                        <Badge className="mb-3 bg-blue-100 text-blue-800 hover:bg-blue-200">
+                          {selectedHotspot.category}
+                        </Badge>
+                        <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                          {selectedHotspot.title}
+                        </h3>
+                        <p className="text-gray-600 leading-relaxed">
+                          {selectedHotspot.description}
                         </p>
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="w-full"
-                          onClick={() => window.open(selectedHotspot.product_link, '_blank')}
-                        >
-                          <ArrowRight className="w-4 h-4 mr-1" />
-                          Learn More
-                        </Button>
-                        <Button 
-                          size="sm"
-                          className="w-full"
-                          onClick={() => window.open('/contact', '_blank')}
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-1" />
-                          Get Quote
-                        </Button>
+
+                      {/* Specifications */}
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Key Features</h4>
+                        <div className="space-y-2">
+                          {selectedHotspot.specifications.map((spec, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0" />
+                              <span className="text-gray-600">{spec}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Product Image and Actions */}
+                    <div className="space-y-4">
+                      {selectedHotspot.image && (
+                        <div className="relative overflow-hidden rounded-lg">
+                          <img
+                            src={selectedHotspot.image}
+                            alt={selectedHotspot.title}
+                            className="w-full h-48 object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = '/api/placeholder/400/200';
+                            }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Price and Actions */}
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm text-gray-500 mb-1">Price</p>
+                          <p className="text-2xl font-bold text-gray-900">
+                            {selectedHotspot.price}
+                          </p>
+                        </div>
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => window.open(selectedHotspot.product_link, '_blank')}
+                          >
+                            <ArrowRight className="w-4 h-4 mr-1" />
+                            Learn More
+                          </Button>
+                          <Button 
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => window.open('/contact', '_blank')}
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-1" />
+                            Get Quote
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-            ) : (
-              <Card className="border-0 shadow-xl h-fit">
-                <CardContent className="p-6 text-center">
-                  <div className="space-y-3">
-                    <div className="w-12 h-12 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
-                      <ShoppingCart className="w-6 h-6 text-blue-600" />
+            </div>
+          ) : (
+            <div className="max-w-3xl mx-auto text-center">
+              <Card className="border-0 shadow-xl">
+                <CardContent className="p-8">
+                  <div className="space-y-6">
+                    <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+                      <ShoppingCart className="w-8 h-8 text-blue-600" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      <h3 className="text-2xl font-semibold text-gray-900 mb-4">
                         Interactive Product Discovery
                       </h3>
-                      <p className="text-gray-600 text-sm leading-relaxed">
+                      <p className="text-xl text-gray-600 leading-relaxed">
                         {shopLookContent.description}
                       </p>
                     </div>
-                    <p className="text-gray-500 text-xs">
-                      Click on any blue marker to explore our laboratory solutions.
+                    <p className="text-gray-500">
+                      Click on any blue marker in the image above to explore our laboratory solutions in detail.
                     </p>
                   </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </section>
