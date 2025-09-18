@@ -195,10 +195,6 @@ const ShopTheLook = () => {
                           <span className="font-medium">1200 x 750 x 900 mm</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">Weight:</span>
-                          <span className="font-medium">45 kg</span>
-                        </div>
-                        <div className="flex justify-between">
                           <span className="text-gray-500">Finish:</span>
                           <span className="font-medium">Powder Coated</span>
                         </div>
