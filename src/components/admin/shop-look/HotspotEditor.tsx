@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -141,9 +142,17 @@ const HotspotEditor = () => {
 
   const updateHotspotMutation = useMutation({
     mutationFn: async ({ id, ...hotspotData }: Partial<Hotspot> & { id: string }) => {
+      // Ensure specifications are properly serialized
+      const updateData = {
+        ...hotspotData,
+        specifications: hotspotData.specifications 
+          ? JSON.stringify(hotspotData.specifications)
+          : undefined
+      };
+      
       const { data, error } = await supabase
         .from('shop_look_hotspots')
-        .update(hotspotData)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -361,13 +370,16 @@ const HotspotEditor = () => {
         </div>
       </div>
 
-      {/* Background image */}
+      {/* Background image - Same as used on home page */}
       <div className="relative">
         <img
-          src={currentContent.background_image || '/placeholder.svg'}
+          src={currentContent.background_image || '/api/placeholder/1200/800'}
           alt={currentContent.background_alt}
           className={`w-full h-[600px] object-cover rounded-lg border ${isCreating ? 'cursor-crosshair' : ''}`}
           onClick={handleImageClick}
+          onError={(e) => {
+            e.currentTarget.src = '/api/placeholder/1200/800';
+          }}
         />
         {/* Enhanced Hotspot markers */}
         {hotspots.map((hotspot) => (
@@ -459,6 +471,23 @@ const HotspotEditor = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Description editor */}
+                <div className="mt-4 pt-4 border-t border-green-200">
+                  <Label htmlFor="description" className="text-sm font-medium">
+                    Custom Description (Override product description)
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={formData.description || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Enter a custom description for this hotspot..."
+                    className="mt-2 min-h-[80px]"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This description will be shown in the Shop The Look section
+                  </p>
                 </div>
               </div>
             )}
