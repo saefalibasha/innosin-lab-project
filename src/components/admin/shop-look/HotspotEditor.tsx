@@ -81,7 +81,18 @@ const HotspotEditor = () => {
         .order('display_order');
 
       if (error) throw error;
-      return data as Hotspot[];
+      
+      // Transform specifications from JSON to array format
+      return (data || []).map(hotspot => ({
+        ...hotspot,
+        specifications: Array.isArray(hotspot.specifications) 
+          ? hotspot.specifications 
+          : typeof hotspot.specifications === 'string' 
+            ? [hotspot.specifications]
+            : typeof hotspot.specifications === 'object' && hotspot.specifications !== null
+              ? Object.values(hotspot.specifications)
+              : ['Premium Quality', 'Professional Grade', 'Industry Standard']
+      })) as Hotspot[];
     },
   });
 
@@ -433,11 +444,18 @@ const HotspotEditor = () => {
                     )}
                     {formData.specifications && formData.specifications.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-2">
-                        {formData.specifications.slice(0, 3).map((spec, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {spec}
-                          </Badge>
-                        ))}
+                        {Array.isArray(formData.specifications) 
+                          ? formData.specifications.slice(0, 3).map((spec, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {spec}
+                              </Badge>
+                            ))
+                          : Object.values(formData.specifications).slice(0, 3).map((spec, index) => (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {String(spec)}
+                              </Badge>
+                            ))
+                        }
                       </div>
                     )}
                   </div>
