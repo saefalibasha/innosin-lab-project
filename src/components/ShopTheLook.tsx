@@ -110,7 +110,7 @@ const ShopTheLook = () => {
             <img
               src={shopLookContent.background_image}
               alt={shopLookContent.background_alt}
-              className="w-full h-[400px] lg:h-[500px] object-cover object-center rounded-lg shadow-md"
+              className="w-full h-[600px] lg:h-[700px] object-cover object-center rounded-lg shadow-md"
               onError={(e) => {
                 e.currentTarget.src = '/api/placeholder/1200/600';
               }}
