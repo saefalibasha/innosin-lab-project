@@ -94,29 +94,27 @@ const ShopTheLook = () => {
     <section className="py-16 bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <h2 className="text-5xl font-bold text-gray-900 mb-4">
-            {shopLookContent.title}
+            Shop The <span className="text-blue-600">Look</span>
           </h2>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            Explore our products that have been fully set up in real laboratory environments. 
+            Click on the blue markers to discover detailed product information and specifications.
+          </p>
         </div>
 
-        {/* Interactive Product Discovery Card - Full Width Extended */}
+        {/* Extended Card - Full Width */}
         <div className="mb-0">
           <Card className="border-0 shadow-xl rounded-b-none">
-            <CardContent className="p-8 text-center">
-              <div className="space-y-4">
-                <div className="flex items-center justify-center gap-3">
-                  <h3 className="text-2xl font-semibold text-blue-600">
-                    Interactive Product Discovery
-                  </h3>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <ShoppingCart className="w-6 h-6 text-blue-600" />
-                  </div>
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                  <ShoppingCart className="w-4 h-4 text-blue-600" />
                 </div>
-                <p className="text-gray-600 leading-relaxed max-w-3xl mx-auto">
-                  Click on the blue markers to explore our laboratory equipment and get detailed product information.
+                <p className="text-gray-600 text-sm">
+                  Interactive product exploration
                 </p>
-                <div className="h-8"></div> {/* Spacer to extend below photo */}
               </div>
             </CardContent>
           </Card>
@@ -128,7 +126,7 @@ const ShopTheLook = () => {
             <img
               src={shopLookContent.background_image}
               alt={shopLookContent.background_alt}
-              className="w-full h-[500px] lg:h-[600px] object-cover object-center rounded-lg shadow-md"
+              className="w-full h-[400px] lg:h-[500px] object-contain object-center rounded-lg shadow-md"
               onError={(e) => {
                 e.currentTarget.src = '/api/placeholder/1200/600';
               }}
