@@ -415,7 +415,65 @@ const HotspotEditor = () => {
         )}
       </div>
 
-      {/* Product selector */}
+      {/* Hotspot Management List - Move this BEFORE the product selector */}
+      {hotspots.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="w-5 h-5" />
+              Manage Hotspots ({hotspots.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {hotspots.map((hotspot, index) => (
+                <div key={hotspot.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-medium">{hotspot.title}</h4>
+                      <p className="text-sm text-muted-foreground">{hotspot.category}</p>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Position: {Math.round(hotspot.x_position)}%, {Math.round(hotspot.y_position)}%
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch 
+                      checked={hotspot.is_active} 
+                      onCheckedChange={(checked) => {
+                        updateHotspotMutation.mutate({ 
+                          ...hotspot, 
+                          is_active: checked 
+                        });
+                      }}
+                    />
+                    <Button
+                      onClick={() => handleEdit(hotspot)}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      onClick={() => handleDelete(hotspot.id)}
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Product selector - Move this AFTER the hotspot management list */}
       {(isCreating && newHotspotPosition) || editingHotspot ? (
         <Card>
           <CardHeader>
@@ -494,64 +552,6 @@ const HotspotEditor = () => {
           </CardContent>
         </Card>
       ) : null}
-
-      {/* Hotspot Management List */}
-      {hotspots.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5" />
-              Manage Hotspots ({hotspots.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {hotspots.map((hotspot, index) => (
-                <div key={hotspot.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-red-500 text-white text-sm font-bold flex items-center justify-center">
-                      {index + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium">{hotspot.title}</h4>
-                      <p className="text-sm text-muted-foreground">{hotspot.category}</p>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Position: {Math.round(hotspot.x_position)}%, {Math.round(hotspot.y_position)}%
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch 
-                      checked={hotspot.is_active} 
-                      onCheckedChange={(checked) => {
-                        updateHotspotMutation.mutate({ 
-                          ...hotspot, 
-                          is_active: checked 
-                        });
-                      }}
-                    />
-                    <Button
-                      onClick={() => handleEdit(hotspot)}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(hotspot.id)}
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };
