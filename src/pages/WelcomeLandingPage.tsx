@@ -63,6 +63,7 @@ export default function WelcomeLandingPage() {
               loop={false}
               controls={false}
               interactive={false}
+              startTime={2}
             />
           </div>
 

@@ -12,6 +12,7 @@ interface OptimizedVideoProps {
   controls?: boolean;
   interactive?: boolean;
   playsInline?: boolean;
+  startTime?: number; // Start time in seconds
 }
 
 const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
@@ -23,7 +24,8 @@ const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
   loop = false,
   controls = false,
   interactive = true,
-  playsInline = true
+  playsInline = true,
+  startTime = 0
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -47,6 +49,12 @@ const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
     }
   };
 
+  const handleLoadedData = () => {
+    if (videoRef.current && startTime > 0) {
+      videoRef.current.currentTime = startTime;
+    }
+  };
+
   return (
     <div className={`relative group ${className}`}>
       <video
@@ -61,6 +69,7 @@ const OptimizedVideo: React.FC<OptimizedVideoProps> = ({
         className="w-full h-full object-cover"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
+        onLoadedData={handleLoadedData}
       />
       
       {!controls && interactive && (
