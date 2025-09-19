@@ -28,6 +28,8 @@ import RFQCart from "./pages/RFQCart";
 import AdminAuth from "./pages/admin/AdminAuth";
 import Dashboard from "./pages/admin/Dashboard";
 import AdminProductViewer from "./pages/AdminProductViewer";
+import TestHubSpotIntegration from "./pages/TestHubSpotIntegration";
+import HubSpotMonitor from "./pages/admin/HubSpotMonitor";
 
 const queryClient = new QueryClient();
 
@@ -71,6 +73,22 @@ const App = () => (
                 }
               />
               <Route path="/admin/products" element={<AdminProductViewer />} />
+              <Route
+                path="/admin/test-hubspot"
+                element={
+                  <AdminAuthGuard>
+                    <TestHubSpotIntegration />
+                  </AdminAuthGuard>
+                }
+              />
+              <Route
+                path="/admin/hubspot-monitor"
+                element={
+                  <AdminAuthGuard>
+                    <HubSpotMonitor />
+                  </AdminAuthGuard>
+                }
+              />
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
