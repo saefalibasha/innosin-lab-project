@@ -2,6 +2,7 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import HeroNavigation from "@/components/HeroNavigation";
 import Footer from "@/components/Footer";
+import EnhancedLiveChat from "@/components/EnhancedLiveChat";
 
 const SiteLayout: React.FC = () => {
   return (
@@ -16,6 +17,9 @@ const SiteLayout: React.FC = () => {
 
       {/* Bottom footer */}
       <Footer />
+      
+      {/* AI Chat */}
+      <EnhancedLiveChat />
     </div>
   );
 };
