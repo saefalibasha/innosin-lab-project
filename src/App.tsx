@@ -9,7 +9,7 @@ import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
 
 // Layout
-import SiteLayout from "@/components/SiteLayout";
+import SiteLayout from "@/components/layout/SiteLayout";
 
 // Public pages
 import WelcomeLandingPage from "./pages/WelcomeLandingPage";
