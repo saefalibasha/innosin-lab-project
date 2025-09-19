@@ -438,9 +438,9 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-[9999]">
+      <div className="fixed bottom-6 right-6 z-50">
         <Button
-          className="rounded-full w-16 h-16 bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-110"
+          className="rounded-full w-16 h-16 bg-sea hover:bg-sea-dark shadow-xl border-2 border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-110"
           onClick={() => setIsOpen(true)}
         >
           <MessageCircle className="w-7 h-7 text-white" />
