@@ -24,17 +24,18 @@ import {
   TestTube
 } from 'lucide-react';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { stats, loading, error, refetch } = useEnhancedDashboardStats();
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
     if (tabParam) setActiveTab(tabParam);
-  }, [searchParams]);
+  }, [location.search]);
   const handleRefresh = () => {
     refetch();
   };
