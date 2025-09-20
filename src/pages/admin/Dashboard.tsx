@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminAuthGuard from '@/components/AdminAuthGuard';
 import AdminAuthStatus from '@/components/admin/AdminAuthStatus';
 import { ProductSeriesManager } from '@/components/admin/product-series/ProductSeriesManager';
@@ -24,11 +24,17 @@ import {
   TestTube
 } from 'lucide-react';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
+import { useSearchParams } from 'react-router-dom';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const { stats, loading, error, refetch } = useEnhancedDashboardStats();
+  const [searchParams] = useSearchParams();
 
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam) setActiveTab(tabParam);
+  }, [searchParams]);
   const handleRefresh = () => {
     refetch();
   };

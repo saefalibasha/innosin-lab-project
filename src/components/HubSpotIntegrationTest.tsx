@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import { toast } from 'sonner';
 import { TestTube, CheckCircle, XCircle, Loader, Settings } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const HubSpotIntegrationTest = () => {
   const [testResults, setTestResults] = useState<Record<string, 'pending' | 'success' | 'error'>>({});
@@ -54,6 +55,22 @@ const HubSpotIntegrationTest = () => {
 
   const runAllTests = async () => {
     const sessionId = `test-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Ensure a chat session exists so sync_conversation doesn't fallback
+    try {
+      const { error: insertError } = await supabase.from('chat_sessions').insert({
+        session_id: sessionId,
+        status: 'active',
+        email: 'test@example.com',
+        name: 'Test User',
+        company: 'Test Company'
+      });
+      if (insertError) {
+        console.warn('Could not create test chat session (will proceed with fallback):', insertError);
+      }
+    } catch (e) {
+      console.warn('Session insert attempt failed:', e);
+    }
     
     try {
       // Test 1: Create Contact

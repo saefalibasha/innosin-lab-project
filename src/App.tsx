@@ -77,7 +77,7 @@ const App = () => (
                 path="/admin/test-hubspot"
                 element={
                   <AdminAuthGuard>
-                    <TestHubSpotIntegration />
+                    <Navigate to="/admin/dashboard?tab=hubspot-test" replace />
                   </AdminAuthGuard>
                 }
               />
@@ -85,7 +85,7 @@ const App = () => (
                 path="/admin/hubspot-monitor"
                 element={
                   <AdminAuthGuard>
-                    <HubSpotMonitor />
+                    <Navigate to="/admin/dashboard?tab=hubspot-monitor" replace />
                   </AdminAuthGuard>
                 }
               />

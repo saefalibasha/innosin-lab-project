@@ -228,10 +228,10 @@ async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string
   return JSON.parse(responseText);
 }
 
-// Resolve association type id for notes -> contacts dynamically
+// Resolve association type id for notes -> contacts dynamically (v4 labels endpoint)
 async function getNoteToContactAssociationTypeId(): Promise<number> {
-  const tryFetch = async (fromType: string, toType: string) => {
-    const res = await fetch(`https://api.hubapi.com/crm/v4/associations/definitions/${fromType}/${toType}`, {
+  const fetchLabelTypes = async (fromType: string, toType: string) => {
+    const res = await fetch(`https://api.hubapi.com/crm/v4/associations/${fromType}/${toType}/labels`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${hubspotApiKey}`,
@@ -240,18 +240,21 @@ async function getNoteToContactAssociationTypeId(): Promise<number> {
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const first = data?.results?.[0]?.associationTypeId;
-    return typeof first === 'number' ? first : null;
+    const results = data?.results || [];
+    // Prefer HUBSPOT_DEFINED forward association
+    const preferred = results.find((r: any) => r.category === 'HUBSPOT_DEFINED') || results[0];
+    const typeId = preferred?.typeId;
+    return typeof typeId === 'number' ? typeId : null;
   };
 
-  // Try the plural object type names first (docs prefer plurals)
-  let id = await tryFetch('notes', 'contacts');
+  // Try plural object type names first
+  let id = await fetchLabelTypes('notes', 'contacts');
   if (id) return id;
-  // Fallback to singular just in case
-  id = await tryFetch('note', 'contact');
+  // Fallback to singular
+  id = await fetchLabelTypes('note', 'contact');
   if (id) return id;
-  // Last resort: common default
-  return 214;
+  // As last resort, throw so caller surfaces a clear message instead of 404
+  throw new Error('Could not resolve HubSpot association type for notes→contacts. Please ensure associations API is enabled.');
 }
 
 async function createHubSpotNote(noteContent: string): Promise<any> {
@@ -295,6 +298,10 @@ async function associateNoteWithContact(noteId: string, contactId: string): Prom
     if (res.status === 403) {
       console.error('Association forbidden (403):', text);
       throw new Error('HubSpot API access forbidden. Ensure scopes crm.objects.notes.write and crm.associations.write are enabled.');
+    }
+    // Surface clearer message for unresolved association type
+    if (res.status === 404) {
+      throw new Error('HubSpot association type not found for notes→contacts in this portal.');
     }
     handleHubSpotError(res, text);
   }
@@ -525,9 +532,7 @@ serve(async (req) => {
             } catch (assocError: any) {
               console.error('Failed to associate fallback note to contact:', assocError);
               await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, false, assocError.message, { messageCount: 0, fallback: true, associationFailed: true });
-              const msg = assocError?.message?.includes('forbidden')
-                ? 'HubSpot permissions missing: ensure crm.objects.notes.write and crm.associations.write scopes are enabled for the API key.'
-                : assocError?.message || 'Failed to associate note with contact.';
+              const msg = assocError?.message || 'Failed to associate note with contact.';
               return new Response(JSON.stringify({ success: false, error: msg }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
