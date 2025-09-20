@@ -467,8 +467,13 @@ serve(async (req) => {
             .single();
 
           if (sessionError || !sessionData) {
-            console.error('Session lookup error:', sessionError);
-            throw new Error(`Session not found for sessionId: ${sessionId}`);
+            console.warn('Session not found for sync, proceeding with fallback note. sessionId:', sessionId);
+            const fallbackNote = `Chat Conversation Sync Triggered\n\nSession: ${sessionId}\nStatus: No local session found in app DB. Creating a placeholder sync note for tracking.`;
+            const noteResult = await createHubSpotNote(contactId, fallbackNote);
+            await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, true, undefined, { messageCount: 0, fallback: true }, noteResult);
+            return new Response(JSON.stringify({ success: true, noteId: noteResult.id, messageCount: 0, fallback: true }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
           }
 
           const { data: messages, error: messagesError } = await supabase
