@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { isPlaceholderAsset } from '@/utils/assetValidator';
 
 interface EnhancedDashboardStats {
   totalProducts: number;
@@ -64,9 +65,6 @@ export const useEnhancedDashboardStats = () => {
         .eq('is_active', true);
 
       if (assetsError) throw assetsError;
-
-      // Import asset validator for real validation
-      const { isPlaceholderAsset } = await import('@/utils/assetValidator');
 
       // Count only real (non-placeholder) assets
       const assetsUploaded = productsWithAssets?.filter(p => {
