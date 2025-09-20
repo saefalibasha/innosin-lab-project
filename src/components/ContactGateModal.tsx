@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { Building2, Mail, Phone, User, Briefcase } from 'lucide-react';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 interface ContactGateModalProps {
@@ -21,6 +22,7 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
   onSuccess,
   onCancel
 }) => {
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -34,6 +36,23 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
   });
   
   const { createContact, createTicket, loading } = useHubSpotIntegration();
+
+  // Auto-grant access for authenticated admin users
+  useEffect(() => {
+    if (!authLoading && user && isAdmin) {
+      // Store admin session info for consistency
+      sessionStorage.setItem('contactInfo', JSON.stringify({
+        name: user.email?.split('@')[0] || 'Admin User',
+        email: user.email,
+        company: 'INNOSIN Lab',
+        contactId: 'admin-' + user.id,
+        sessionId: crypto.randomUUID(),
+        isAdmin: true
+      }));
+      onSuccess();
+      return;
+    }
+  }, [user, isAdmin, authLoading, onSuccess]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));

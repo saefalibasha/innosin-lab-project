@@ -1173,6 +1173,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_anonymous_session_rate_limit: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: {
           max_attempts?: number
@@ -1180,6 +1184,10 @@ export type Database = {
           time_window_minutes?: number
         }
         Returns: boolean
+      }
+      cleanup_anonymous_sessions_enhanced: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_old_anonymous_sessions: {
         Args: Record<PropertyKey, never>
