@@ -254,8 +254,7 @@ async function getNoteToContactAssociationTypeId(): Promise<number> {
   return 214;
 }
 
-async function createHubSpotNote(contactId: string, noteContent: string): Promise<any> {
-  const associationTypeId = await getNoteToContactAssociationTypeId();
+async function createHubSpotNote(noteContent: string): Promise<any> {
   const response = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
     method: 'POST',
     headers: {
@@ -266,11 +265,7 @@ async function createHubSpotNote(contactId: string, noteContent: string): Promis
       properties: {
         hs_note_body: noteContent,
         hs_timestamp: new Date().toISOString()
-      },
-      associations: [{
-        to: { id: contactId },
-        types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId }]
-      }]
+      }
     }),
   });
 
@@ -281,6 +276,30 @@ async function createHubSpotNote(contactId: string, noteContent: string): Promis
   }
 
   return JSON.parse(responseText);
+}
+
+// Associate a note to a contact using the v4 associations API
+async function associateNoteWithContact(noteId: string, contactId: string): Promise<void> {
+  const associationTypeId = await getNoteToContactAssociationTypeId();
+  const url = `https://api.hubapi.com/crm/v4/objects/notes/${noteId}/associations/contacts/${contactId}/${associationTypeId}`;
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${hubspotApiKey}`,
+      'Content-Type': 'application/json',
+    }
+  });
+
+  const text = await res.text();
+  if (!res.ok) {
+    if (res.status === 403) {
+      console.error('Association forbidden (403):', text);
+      throw new Error('HubSpot API access forbidden. Ensure scopes crm.objects.notes.write and crm.associations.write are enabled.');
+    }
+    handleHubSpotError(res, text);
+  }
+
+  console.log(`Associated note ${noteId} with contact ${contactId} using type ${associationTypeId}`);
 }
 
 async function logIntegrationAction(sessionId: string, action: string, objectType: string, objectId: string, success: boolean, error?: string, requestData?: any, responseData?: any) {
@@ -496,11 +515,24 @@ serve(async (req) => {
           if (sessionError || !sessionData) {
             console.warn('Session not found for sync, proceeding with fallback note. sessionId:', sessionId);
             const fallbackNote = `Chat Conversation Sync Triggered\n\nSession: ${sessionId}\nStatus: No local session found in app DB. Creating a placeholder sync note for tracking.`;
-            const noteResult = await createHubSpotNote(contactId, fallbackNote);
-            await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, true, undefined, { messageCount: 0, fallback: true }, noteResult);
-            return new Response(JSON.stringify({ success: true, noteId: noteResult.id, messageCount: 0, fallback: true }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
+            const noteResult = await createHubSpotNote(fallbackNote);
+            try {
+              await associateNoteWithContact(noteResult.id, contactId);
+              await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, true, undefined, { messageCount: 0, fallback: true }, noteResult);
+              return new Response(JSON.stringify({ success: true, noteId: noteResult.id, messageCount: 0, fallback: true }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            } catch (assocError: any) {
+              console.error('Failed to associate fallback note to contact:', assocError);
+              await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, false, assocError.message, { messageCount: 0, fallback: true, associationFailed: true });
+              const msg = assocError?.message?.includes('forbidden')
+                ? 'HubSpot permissions missing: ensure crm.objects.notes.write and crm.associations.write scopes are enabled for the API key.'
+                : assocError?.message || 'Failed to associate note with contact.';
+              return new Response(JSON.stringify({ success: false, error: msg }), {
+                status: 500,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
           }
 
           const { data: messages, error: messagesError } = await supabase
@@ -527,8 +559,10 @@ serve(async (req) => {
             const noteContent = noteContentRaw.slice(0, 8000);
 
             console.log('Creating HubSpot note with data:', { contactId, noteLength: noteContent.length });
-            const noteResult = await createHubSpotNote(contactId, noteContent);
+            const noteResult = await createHubSpotNote(noteContent);
             console.log('HubSpot note created:', noteResult.id);
+            await associateNoteWithContact(noteResult.id, contactId);
+            console.log('Associated note to contact successfully');
 
             // Mark messages as synced
             const { error: syncError } = await supabase

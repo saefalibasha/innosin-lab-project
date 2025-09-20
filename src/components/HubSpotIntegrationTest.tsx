@@ -43,11 +43,11 @@ const HubSpotIntegrationTest = () => {
       setTestData(prev => ({ ...prev, [testName]: result }));
       toast.success(`${testName} test passed`);
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`${testName} test failed:`, error);
       setTestResults(prev => ({ ...prev, [testName]: 'error' }));
-      setTestData(prev => ({ ...prev, [testName]: error }));
-      toast.error(`${testName} test failed`);
+      setTestData(prev => ({ ...prev, [testName]: { error: error?.message || String(error) } }));
+      toast.error(`${testName} test failed${error?.message ? `: ${error.message}` : ''}`);
       throw error;
     }
   };
