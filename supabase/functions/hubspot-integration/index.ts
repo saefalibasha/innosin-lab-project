@@ -454,6 +454,11 @@ serve(async (req) => {
         console.log('Syncing conversation for session:', sessionId, 'contact:', contactId);
         
         try {
+          // Validate required parameters
+          if (!sessionId || !contactId) {
+            throw new Error('SessionId and contactId are required for conversation sync');
+          }
+
           // Get all messages for this session using the session_id string
           const { data: sessionData, error: sessionError } = await supabase
             .from('chat_sessions')
@@ -463,7 +468,7 @@ serve(async (req) => {
 
           if (sessionError || !sessionData) {
             console.error('Session lookup error:', sessionError);
-            throw new Error('Session not found');
+            throw new Error(`Session not found for sessionId: ${sessionId}`);
           }
 
           const { data: messages, error: messagesError } = await supabase
@@ -486,7 +491,7 @@ serve(async (req) => {
 
             const noteContent = `Chat Conversation Summary (Session: ${sessionId}):\n\n${conversationSummary}`;
 
-            console.log('Creating HubSpot note with data:', { contactId, noteContent: noteContent.substring(0, 200) + '...' });
+            console.log('Creating HubSpot note with data:', { contactId, noteLength: noteContent.length });
             const noteResult = await createHubSpotNote(contactId, noteContent);
             console.log('HubSpot note created:', noteResult.id);
 
@@ -500,19 +505,42 @@ serve(async (req) => {
               console.error('Error marking messages as synced:', syncError);
             }
 
-            await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, true, undefined, { noteContent }, noteResult);
+            await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, true, undefined, { messageCount: messages.length }, noteResult);
             
             console.log('Conversation sync completed successfully');
+            
+            return new Response(JSON.stringify({ 
+              success: true, 
+              noteId: noteResult.id,
+              messageCount: messages.length 
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
           } else {
             console.log('No messages found to sync');
+            
+            // Still log this as a successful operation, but note that no messages were found
+            await logIntegrationAction(sessionId, 'sync_conversation', 'note', '', true, undefined, { messageCount: 0 });
+            
+            return new Response(JSON.stringify({ 
+              success: true, 
+              messageCount: 0,
+              message: 'No messages found to sync'
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
           }
-
-          return new Response(JSON.stringify({ success: true }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
         } catch (error) {
           console.error('Error syncing conversation:', error);
-          await logIntegrationAction(sessionId, 'sync_conversation', 'note', contactId, false, error.message);
+          
+          // Only try to log if we have a sessionId
+          if (sessionId) {
+            try {
+              await logIntegrationAction(sessionId, 'sync_conversation', 'note', '', false, error.message);
+            } catch (logError) {
+              console.error('Error logging sync conversation failure:', logError);
+            }
+          }
           
           return new Response(JSON.stringify({ 
             success: false, 
