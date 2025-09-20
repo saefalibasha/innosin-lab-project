@@ -34,28 +34,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const checkAdminStatus = async (userEmail: string) => {
     try {
       console.log('Checking admin status for:', userEmail);
-      
-      // Use maybeSingle() instead of single() to avoid errors when no row found
-      const { data, error } = await supabase
-        .from('admin_roles')
-        .select('role, is_active')
-        .eq('user_email', userEmail)
-        .eq('is_active', true)
-        .maybeSingle();
-      
-      console.log('Admin query result:', { data, error });
-      
+
+      // Use RPC with SECURITY DEFINER to avoid RLS issues
+      const { data, error } = await supabase.rpc('is_admin', { user_email: userEmail });
+
+      console.log('Admin RPC result:', { data, error });
+
       if (error) {
-        console.error('Database error checking admin status:', error);
+        console.error('RPC error checking admin status:', error);
         setIsAdmin(false);
         return;
       }
-      
-      // data will be null if no admin role found, or the row if found
-      const hasAdminRole = data !== null;
-      console.log('Setting admin status to:', hasAdminRole);
-      setIsAdmin(hasAdminRole);
-      
+
+      setIsAdmin(Boolean(data));
     } catch (error) {
       console.error('Error checking admin status:', error);
       setIsAdmin(false);
