@@ -356,8 +356,8 @@ serve(async (req) => {
         const ticketData: HubSpotTicket = {
           subject,
           content,
-          hs_pipeline: 'support_pipeline',
-          hs_pipeline_stage: 'open',
+          hs_pipeline: '0',
+          hs_pipeline_stage: '1',
           hs_ticket_priority: priority
         };
 
