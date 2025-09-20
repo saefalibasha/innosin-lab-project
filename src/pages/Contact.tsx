@@ -1,6 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GoogleMapsLocation from '@/components/GoogleMapsLocation';
+import { updatePageSEO, addStructuredData } from '@/utils/seoMetadata';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import AnimatedSection from '@/components/AnimatedSection';
 import { Reveal } from '@/components/anim';
@@ -15,6 +16,33 @@ import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import { supabase } from '@/integrations/supabase/client';
 
 const Contact = () => {
+  useEffect(() => {
+    // Update SEO metadata for contact page
+    updatePageSEO('contact');
+
+    // Add structured data for contact page
+    const contactData = {
+      "@context": "https://schema.org",
+      "@type": "ContactPage",
+      "name": "Contact Innosin Lab",
+      "description": "Get in touch with Innosin Lab for custom laboratory design, furniture solutions, and equipment needs. Professional consultation and worldwide service.",
+      "url": "https://innosinlab.com/contact",
+      "mainEntity": {
+        "@type": "Organization",
+        "name": "Innosin Lab Pte. Ltd.",
+        "email": "info@innosinlab.com",
+        "telephone": "+60-3-1234-5678",
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "MY",
+          "addressRegion": "Selangor"
+        }
+      }
+    };
+
+    addStructuredData(contactData);
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',

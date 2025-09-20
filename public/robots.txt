@@ -1,26 +1,40 @@
 
-# Robots.txt for Innosin Lab
-# MAINTENANCE MODE - Site under construction
+# Robots.txt for Innosin Lab - Laboratory Equipment & Furniture Solutions
 
 User-agent: *
-# During maintenance, only allow crawling of the maintenance page
-Disallow: /
-Allow: /maintenance
-Allow: /favicon.ico
-Allow: /assets/
-Allow: /src/assets/
+Allow: /
 
-# Block all other pages during maintenance
-Disallow: /products/
-Disallow: /about
-Disallow: /contact
-Disallow: /blog
-Disallow: /floor-planner
+# Allow all public pages
+Allow: /home
+Allow: /about
+Allow: /contact
+Allow: /products
+Allow: /products/*
+Allow: /blog
+Allow: /blog/*
+Allow: /floor-planner
+Allow: /rfq-cart
+
+# Block admin areas
 Disallow: /admin/
 Disallow: /api/
+Disallow: /auth
 
-# No sitemap during maintenance
-# Sitemap: https://innosinlab.com/sitemap.xml
+# Allow static assets
+Allow: /assets/
+Allow: /src/assets/
+Allow: /favicon.ico
+Allow: *.css
+Allow: *.js
+Allow: *.png
+Allow: *.jpg
+Allow: *.jpeg
+Allow: *.gif
+Allow: *.svg
+Allow: *.webp
 
-# Crawl delay for maintenance mode
-Crawl-delay: 86400
+# Sitemap location
+Sitemap: https://innosinlab.com/sitemap.xml
+
+# Crawl delay (in seconds) - reasonable for lab equipment site
+Crawl-delay: 1

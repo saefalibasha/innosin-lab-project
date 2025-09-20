@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { updatePageSEO, addStructuredData } from '@/utils/seoMetadata';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -50,6 +51,41 @@ const ProductCatalog = () => {
 
   useEffect(() => {
     loadData();
+    
+    // Update SEO metadata for products page
+    updatePageSEO('products');
+
+    // Add structured data for product catalog
+    const catalogData = {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "Laboratory Furniture & Equipment Catalog",
+      "description": "Comprehensive range of laboratory furniture including mobile cabinets, wall cabinets, tall cabinets, and specialized lab equipment. Premium quality with multiple finish options.",
+      "url": "https://innosinlab.com/products",
+      "mainEntity": {
+        "@type": "ItemList",
+        "name": "Laboratory Equipment Categories",
+        "itemListElement": [
+          {
+            "@type": "Product",
+            "name": "Mobile Laboratory Cabinets",
+            "description": "Flexible mobile storage solutions for laboratory environments"
+          },
+          {
+            "@type": "Product",
+            "name": "Wall Laboratory Cabinets", 
+            "description": "Space-efficient wall-mounted storage cabinets"
+          },
+          {
+            "@type": "Product",
+            "name": "Tall Laboratory Cabinets",
+            "description": "Maximum storage capacity tall cabinets for laboratories"
+          }
+        ]
+      }
+    };
+
+    addStructuredData(catalogData);
   }, [loadData]);
 
   // Handle URL parameters for company filtering
