@@ -166,7 +166,44 @@ async function createHubSpotDeal(dealData: HubSpotDeal, contactId?: string): Pro
   return JSON.parse(responseText);
 }
 
+// Function to get available ticket pipelines and stages
+async function getTicketPipelinesAndStages(): Promise<any> {
+  try {
+    const response = await fetch('https://api.hubapi.com/crm/v3/pipelines/tickets', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${hubspotApiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.error('Failed to fetch ticket pipelines:', response.status);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.results || [];
+  } catch (error) {
+    console.error('Error fetching ticket pipelines:', error);
+    return null;
+  }
+}
+
 async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string): Promise<any> {
+  // First, try to get valid pipeline and stage IDs
+  const pipelines = await getTicketPipelinesAndStages();
+  
+  // Use the first available pipeline and its first stage if available
+  if (pipelines && pipelines.length > 0) {
+    const firstPipeline = pipelines[0];
+    if (firstPipeline.stages && firstPipeline.stages.length > 0) {
+      ticketData.hs_pipeline = firstPipeline.id;
+      ticketData.hs_pipeline_stage = firstPipeline.stages[0].id;
+      console.log(`Using pipeline ${firstPipeline.id} with stage ${firstPipeline.stages[0].id}`);
+    }
+  }
+
   const response = await fetch('https://api.hubapi.com/crm/v3/objects/tickets', {
     method: 'POST',
     headers: {
@@ -350,14 +387,32 @@ serve(async (req) => {
         }
       }
 
+      case 'get_ticket_pipelines': {
+        try {
+          const pipelines = await getTicketPipelinesAndStages();
+          return new Response(JSON.stringify({ success: true, pipelines }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } catch (error) {
+          console.error('Error fetching ticket pipelines:', error);
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+      }
+
       case 'create_ticket': {
-        const { sessionId, subject, content, contactId, priority = 'MEDIUM' } = data;
+        const { sessionId, subject, content, contactId, priority = 'MEDIUM', pipelineId, stageId } = data;
         
         const ticketData: HubSpotTicket = {
           subject,
           content,
-          hs_pipeline: '0',
-          hs_pipeline_stage: '1',
+          hs_pipeline: pipelineId || '0',
+          hs_pipeline_stage: stageId || '1',
           hs_ticket_priority: priority
         };
 

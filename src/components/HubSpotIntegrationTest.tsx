@@ -1,15 +1,38 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import { toast } from 'sonner';
-import { TestTube, CheckCircle, XCircle, Loader } from 'lucide-react';
+import { TestTube, CheckCircle, XCircle, Loader, Settings } from 'lucide-react';
 
 const HubSpotIntegrationTest = () => {
   const [testResults, setTestResults] = useState<Record<string, 'pending' | 'success' | 'error'>>({});
   const [testData, setTestData] = useState<any>({});
-  const { createContact, createDeal, createTicket, syncConversation, loading } = useHubSpotIntegration();
+  const [pipelines, setPipelines] = useState<any[]>([]);
+  const [selectedPipeline, setSelectedPipeline] = useState<string>('');
+  const [selectedStage, setSelectedStage] = useState<string>('');
+  const { createContact, createDeal, createTicket, syncConversation, getTicketPipelines, loading } = useHubSpotIntegration();
+
+  useEffect(() => {
+    loadPipelines();
+  }, []);
+
+  const loadPipelines = async () => {
+    try {
+      const pipelineData = await getTicketPipelines();
+      setPipelines(pipelineData);
+      if (pipelineData.length > 0) {
+        setSelectedPipeline(pipelineData[0].id);
+        if (pipelineData[0].stages?.length > 0) {
+          setSelectedStage(pipelineData[0].stages[0].id);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load pipelines:', error);
+    }
+  };
 
   const runTest = async (testName: string, testFunction: () => Promise<any>) => {
     setTestResults(prev => ({ ...prev, [testName]: 'pending' }));
@@ -65,7 +88,9 @@ const HubSpotIntegrationTest = () => {
             subject: 'Test Support Ticket',
             content: 'This is a test ticket created for integration testing.',
             contactId: contactResult.contactId,
-            priority: 'LOW'
+            priority: 'LOW',
+            pipelineId: selectedPipeline,
+            stageId: selectedStage
           })
         );
       }
@@ -108,9 +133,72 @@ const HubSpotIntegrationTest = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Pipeline Configuration */}
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/50">
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            <h4 className="font-medium">Ticket Pipeline Configuration</h4>
+          </div>
+          
+          {pipelines.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Pipeline</label>
+                <Select value={selectedPipeline} onValueChange={(value) => {
+                  setSelectedPipeline(value);
+                  const pipeline = pipelines.find(p => p.id === value);
+                  if (pipeline?.stages?.length > 0) {
+                    setSelectedStage(pipeline.stages[0].id);
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select pipeline" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pipelines.map((pipeline) => (
+                      <SelectItem key={pipeline.id} value={pipeline.id}>
+                        {pipeline.label} ({pipeline.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Stage</label>
+                <Select value={selectedStage} onValueChange={setSelectedStage}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select stage" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {pipelines.find(p => p.id === selectedPipeline)?.stages?.map((stage: any) => (
+                      <SelectItem key={stage.id} value={stage.id}>
+                        {stage.label} ({stage.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No pipelines loaded. Click "Check Pipelines" to fetch them.
+            </div>
+          )}
+          
+          <Button 
+            onClick={loadPipelines} 
+            disabled={loading}
+            variant="outline"
+            size="sm"
+          >
+            Check Pipelines
+          </Button>
+        </div>
+
         <Button 
           onClick={runAllTests} 
-          disabled={loading}
+          disabled={loading || !selectedPipeline || !selectedStage}
           className="w-full"
         >
           {loading ? 'Running Tests...' : 'Run All HubSpot Integration Tests'}

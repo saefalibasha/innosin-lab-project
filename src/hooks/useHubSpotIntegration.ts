@@ -197,7 +197,33 @@ export const useHubSpotIntegration = () => {
     }
   };
 
-  const createTicket = async (data: HubSpotIntegrationData) => {
+  const getTicketPipelines = async () => {
+    setLoading(true);
+    try {
+      const { data: result, error } = await supabase.functions.invoke('hubspot-integration', {
+        body: {
+          action: 'get_ticket_pipelines',
+          data: {}
+        }
+      });
+
+      if (error) throw new Error(`Supabase function error: ${error.message}`);
+      
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to fetch ticket pipelines');
+      }
+      
+      return result.pipelines || [];
+    } catch (error: any) {
+      console.error('Error fetching ticket pipelines:', error);
+      toast.error(`Failed to fetch ticket pipelines: ${error.message}`);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const createTicket = async (data: HubSpotIntegrationData & { pipelineId?: string; stageId?: string }) => {
     setLoading(true);
     try {
       const result = await requestQueue.add(async () => {
@@ -210,7 +236,9 @@ export const useHubSpotIntegration = () => {
                 subject: data.subject,
                 content: data.content,
                 contactId: data.contactId,
-                priority: data.priority || 'MEDIUM'
+                priority: data.priority || 'MEDIUM',
+                pipelineId: data.pipelineId,
+                stageId: data.stageId
               }
             }
           });
@@ -304,6 +332,7 @@ export const useHubSpotIntegration = () => {
     createTicket,
     createInquiry,
     syncConversation,
+    getTicketPipelines,
     loading
   };
 };
