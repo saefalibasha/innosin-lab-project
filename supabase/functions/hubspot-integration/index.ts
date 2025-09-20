@@ -228,7 +228,34 @@ async function createHubSpotTicket(ticketData: HubSpotTicket, contactId?: string
   return JSON.parse(responseText);
 }
 
+// Resolve association type id for notes -> contacts dynamically
+async function getNoteToContactAssociationTypeId(): Promise<number> {
+  const tryFetch = async (fromType: string, toType: string) => {
+    const res = await fetch(`https://api.hubapi.com/crm/v4/associations/definitions/${fromType}/${toType}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${hubspotApiKey}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const first = data?.results?.[0]?.associationTypeId;
+    return typeof first === 'number' ? first : null;
+  };
+
+  // Try the plural object type names first (docs prefer plurals)
+  let id = await tryFetch('notes', 'contacts');
+  if (id) return id;
+  // Fallback to singular just in case
+  id = await tryFetch('note', 'contact');
+  if (id) return id;
+  // Last resort: common default
+  return 214;
+}
+
 async function createHubSpotNote(contactId: string, noteContent: string): Promise<any> {
+  const associationTypeId = await getNoteToContactAssociationTypeId();
   const response = await fetch('https://api.hubapi.com/crm/v3/objects/notes', {
     method: 'POST',
     headers: {
@@ -242,7 +269,7 @@ async function createHubSpotNote(contactId: string, noteContent: string): Promis
       },
       associations: [{
         to: { id: contactId },
-        types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: 214 }]
+        types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId }]
       }]
     }),
   });
@@ -494,7 +521,10 @@ serve(async (req) => {
               `${msg.sender.toUpperCase()}: ${msg.message}`
             ).join('\n\n');
 
-            const noteContent = `Chat Conversation Summary (Session: ${sessionId}):\n\n${conversationSummary}`;
+            const noteContentRaw = `Chat Conversation Summary (Session: ${sessionId}):\n\n${conversationSummary}`;
+
+            // Prevent overly long notes (HubSpot limits payload sizes)
+            const noteContent = noteContentRaw.slice(0, 8000);
 
             console.log('Creating HubSpot note with data:', { contactId, noteLength: noteContent.length });
             const noteResult = await createHubSpotNote(contactId, noteContent);
