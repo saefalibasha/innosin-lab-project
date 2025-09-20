@@ -346,8 +346,52 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify JWT token for authentication
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Authentication required' 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Verify the token with Supabase
+  const { data: user, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user.user) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Invalid authentication token' 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
-    const { action, data } = await req.json();
+    const requestBody = await req.json();
+    const { action, data } = requestBody;
+    
+    // Input validation
+    if (!action || typeof action !== 'string') {
+      throw new Error('Valid action is required');
+    }
+    
+    if (!data || typeof data !== 'object') {
+      throw new Error('Valid data object is required');
+    }
+    
+    // Log security event
+    await supabase.rpc('log_security_event', {
+      p_action: 'hubspot_integration_access',
+      p_resource: 'edge_function',
+      p_resource_id: action,
+      p_metadata: { user_id: user.user.id, action }
+    });
     console.log('HubSpot Integration action:', action, data);
 
     switch (action) {

@@ -21,12 +21,58 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Verify JWT token for authentication
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Authentication required' 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const token = authHeader.replace('Bearer ', '');
+  
+  // Verify the token with Supabase
+  const { data: user, error: authError } = await supabase.auth.getUser(token);
+  if (authError || !user.user) {
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Invalid authentication token' 
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   try {
     const { message, sessionId, chatHistory = [] } = await req.json();
     console.log('Processing message:', { message, sessionId, historyLength: chatHistory.length });
 
-    if (!message || !sessionId) {
-      throw new Error('Message and sessionId are required');
+    // Input validation
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      throw new Error('Valid message is required');
+    }
+    
+    if (!sessionId || typeof sessionId !== 'string') {
+      throw new Error('Valid sessionId is required');
+    }
+
+    // Sanitize message input
+    const sanitizedMessage = message.replace(/[<>]/g, '').trim().slice(0, 4000);
+    
+    // Rate limiting check
+    const { data: recentMessages } = await supabase
+      .from('chat_messages')
+      .select('created_at')
+      .eq('sender', 'user')
+      .gte('created_at', new Date(Date.now() - 60000).toISOString())
+      .limit(10);
+    
+    if (recentMessages && recentMessages.length >= 10) {
+      throw new Error('Rate limit exceeded. Please wait before sending more messages.');
     }
 
     // Enhanced system prompt for laboratory equipment specialist
@@ -77,7 +123,7 @@ When users ask about pricing or want to purchase, collect their contact informat
         role: msg.sender === 'user' ? 'user' : 'assistant',
         content: msg.message
       })),
-      { role: 'user', content: message }
+      { role: 'user', content: sanitizedMessage }
     ];
 
     console.log('Calling OpenAI API with', messages.length, 'messages');

@@ -152,44 +152,6 @@ export type Database = {
         }
         Relationships: []
       }
-      blog_images: {
-        Row: {
-          alt_text: string | null
-          blog_post_id: string | null
-          created_at: string
-          file_name: string
-          file_path: string
-          file_size: number | null
-          id: string
-        }
-        Insert: {
-          alt_text?: string | null
-          blog_post_id?: string | null
-          created_at?: string
-          file_name: string
-          file_path: string
-          file_size?: number | null
-          id?: string
-        }
-        Update: {
-          alt_text?: string | null
-          blog_post_id?: string | null
-          created_at?: string
-          file_name?: string
-          file_path?: string
-          file_size?: number | null
-          id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "blog_images_blog_post_id_fkey"
-            columns: ["blog_post_id"]
-            isOneToOne: false
-            referencedRelation: "blog_posts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       blog_posts: {
         Row: {
           author: string
@@ -925,6 +887,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          resource: string | null
+          resource_id: string | null
+          user_agent: string | null
+          user_email: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource?: string | null
+          resource_id?: string | null
+          user_agent?: string | null
+          user_email: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          resource?: string | null
+          resource_id?: string | null
+          user_agent?: string | null
+          user_email?: string
+        }
+        Relationships: []
+      }
       shop_look_content: {
         Row: {
           background_alt: string | null
@@ -1183,6 +1181,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_old_anonymous_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -1198,6 +1200,15 @@ export type Database = {
       is_super_admin: {
         Args: { user_email: string }
         Returns: boolean
+      }
+      log_security_event: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_resource?: string
+          p_resource_id?: string
+        }
+        Returns: undefined
       }
       process_uploaded_asset: {
         Args: {
