@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AdminAuthGuard from '@/components/AdminAuthGuard';
 import AdminAuthStatus from '@/components/admin/AdminAuthStatus';
 import { ProductSeriesManager } from '@/components/admin/product-series/ProductSeriesManager';
-import { DataSeeder } from '@/components/admin/DataSeeder';
+
 import { EnhancedDashboardStats } from '@/components/admin/enhanced-dashboard/EnhancedDashboardStats';
 import ContentManagement from '@/components/admin/ContentManagement';
 import ChatHistory from '@/components/ChatHistory';
@@ -16,9 +16,6 @@ import {
   FileText, 
   BarChart3, 
   MessageSquare,
-  Users,
-  Settings,
-  Activity,
   RefreshCw,
   MonitorSpeaker,
   TestTube
@@ -88,51 +85,7 @@ const Dashboard = () => {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            {/* Enhanced Stats Overview */}
             <EnhancedDashboardStats />
-
-            {/* System Health Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">System Health</CardTitle>
-                  <Settings className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-emerald-600">Healthy</div>
-                  <p className="text-xs text-muted-foreground">All systems operational</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Asset Health</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {loading ? '...' : `${stats.completionRate}%`}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Assets completion rate</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {loading ? '...' : stats.recentActivity}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Updates in last 24h</p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Data Seeder */}
-            <DataSeeder />
           </TabsContent>
 
           <TabsContent value="products">

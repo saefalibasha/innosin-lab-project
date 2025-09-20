@@ -11,6 +11,11 @@ interface EnhancedDashboardStats {
   assetsUploaded: number;
   recentActivity: number;
   completionRate: number;
+  chatEngagement: number;
+  hubspotHealth: 'healthy' | 'warning' | 'error';
+  databaseHealth: 'healthy' | 'warning' | 'error';
+  contentCoverage: number;
+  assetQualityScore: number;
   lastUpdated: Date;
 }
 
@@ -22,6 +27,11 @@ export const useEnhancedDashboardStats = () => {
     assetsUploaded: 0,
     recentActivity: 0,
     completionRate: 0,
+    chatEngagement: 0,
+    hubspotHealth: 'healthy',
+    databaseHealth: 'healthy',
+    contentCoverage: 0,
+    assetQualityScore: 0,
     lastUpdated: new Date()
   });
   const [loading, setLoading] = useState(true);
@@ -117,6 +127,86 @@ export const useEnhancedDashboardStats = () => {
 
       if (activityError) throw activityError;
 
+      // Get chat engagement (sessions in last 7 days)
+      const lastWeek = new Date();
+      lastWeek.setDate(lastWeek.getDate() - 7);
+
+      const { count: chatEngagement, error: chatError } = await supabase
+        .from('chat_sessions')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', lastWeek.toISOString());
+
+      // Get content coverage (products with complete descriptions)
+      const { data: contentData, error: contentError } = await supabase
+        .from('products')
+        .select('description, full_description')
+        .eq('is_active', true);
+
+      const productsWithContent = contentData?.filter(p => 
+        p.description && p.description.trim().length > 20 &&
+        p.full_description && p.full_description.trim().length > 50
+      ).length || 0;
+
+      const contentCoverage = totalActiveProducts > 0 ? 
+        Math.round((productsWithContent / totalActiveProducts) * 100) : 0;
+
+      // Calculate asset quality score (more detailed than completion rate)
+      const { data: assetData, error: assetDataError } = await supabase
+        .from('products')
+        .select('thumbnail_path, model_path, additional_images, series_thumbnail_path, series_model_path')
+        .eq('is_active', true);
+
+      const assetQualityScores = assetData?.map(p => {
+        let score = 0;
+        // Has real thumbnail (25 points)
+        if ((p.thumbnail_path && !isPlaceholderAsset(p.thumbnail_path)) || 
+            (p.series_thumbnail_path && !isPlaceholderAsset(p.series_thumbnail_path))) {
+          score += 25;
+        }
+        // Has real 3D model (40 points)
+        if ((p.model_path && !isPlaceholderAsset(p.model_path)) || 
+            (p.series_model_path && !isPlaceholderAsset(p.series_model_path))) {
+          score += 40;
+        }
+        // Has additional images (35 points)
+        if (p.additional_images && p.additional_images.length > 0) {
+          const realImages = p.additional_images.filter(img => !isPlaceholderAsset(img)).length;
+          score += Math.min(realImages * 12, 35);
+        }
+        return Math.min(score, 100);
+      }) || [];
+
+      const assetQualityScore = assetQualityScores.length > 0 ? 
+        Math.round(assetQualityScores.reduce((sum, score) => sum + score, 0) / assetQualityScores.length) : 0;
+
+      // Database health check
+      let databaseHealth: 'healthy' | 'warning' | 'error' = 'healthy';
+      try {
+        const healthCheck = await supabase.from('products').select('id').limit(1);
+        if (healthCheck.error) databaseHealth = 'error';
+      } catch {
+        databaseHealth = 'error';
+      }
+
+      // HubSpot health check (simplified - check if we have recent logs)
+      let hubspotHealth: 'healthy' | 'warning' | 'error' = 'healthy';
+      try {
+        const { data: hubspotLogs } = await supabase
+          .from('hubspot_integration_logs')
+          .select('success, created_at')
+          .gte('created_at', yesterday.toISOString())
+          .order('created_at', { ascending: false })
+          .limit(10);
+        
+        if (hubspotLogs && hubspotLogs.length > 0) {
+          const failureRate = hubspotLogs.filter(log => !log.success).length / hubspotLogs.length;
+          if (failureRate > 0.5) hubspotHealth = 'error';
+          else if (failureRate > 0.2) hubspotHealth = 'warning';
+        }
+      } catch {
+        hubspotHealth = 'warning';
+      }
+
       setStats({
         totalProducts: totalProducts || 0,
         activeSeries: activeSeries || 0,
@@ -124,6 +214,11 @@ export const useEnhancedDashboardStats = () => {
         assetsUploaded,
         recentActivity: recentActivity || 0,
         completionRate: Math.round(completionRate),
+        chatEngagement: chatEngagement || 0,
+        hubspotHealth,
+        databaseHealth,
+        contentCoverage,
+        assetQualityScore,
         lastUpdated: new Date()
       });
 

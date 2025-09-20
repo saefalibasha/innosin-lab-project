@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, TrendingUp, Package, Layers, Upload, Activity, Target } from 'lucide-react';
+import { RefreshCw, TrendingUp, Package, Layers, Upload, Activity, Target, MessageSquare, Database, ExternalLink, FileText, Award } from 'lucide-react';
 import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
 
 export const EnhancedDashboardStats = () => {
@@ -24,48 +24,59 @@ export const EnhancedDashboardStats = () => {
     );
   }
 
-  const statCards = [
+  const coreMetrics = [
     {
       title: 'Total Products',
       value: stats.totalProducts,
       icon: Package,
       color: 'text-blue-600',
-      bgColor: 'bg-blue-50'
+      bgColor: 'bg-blue-50',
+      description: 'All active products'
     },
     {
       title: 'Active Series',
       value: stats.activeSeries,
       icon: Layers,
       color: 'text-green-600',
-      bgColor: 'bg-green-50'
+      bgColor: 'bg-green-50',
+      description: 'Product series'
     },
     {
-      title: 'Product Variants',
-      value: stats.totalVariants,
-      icon: TrendingUp,
+      title: 'Asset Quality',
+      value: `${stats.assetQualityScore}%`,
+      icon: Award,
       color: 'text-purple-600',
-      bgColor: 'bg-purple-50'
+      bgColor: 'bg-purple-50',
+      description: 'Complete assets'
     },
     {
-      title: 'Assets Uploaded',
-      value: stats.assetsUploaded,
-      icon: Upload,
+      title: 'Chat Engagement',
+      value: stats.chatEngagement,
+      icon: MessageSquare,
       color: 'text-orange-600',
-      bgColor: 'bg-orange-50'
+      bgColor: 'bg-orange-50',
+      description: 'Last 7 days'
+    }
+  ];
+
+  const systemMetrics = [
+    {
+      title: 'Database Health',
+      value: stats.databaseHealth,
+      icon: Database,
+      color: stats.databaseHealth === 'healthy' ? 'text-green-600' : 
+             stats.databaseHealth === 'warning' ? 'text-yellow-600' : 'text-red-600',
+      bgColor: stats.databaseHealth === 'healthy' ? 'bg-green-50' : 
+               stats.databaseHealth === 'warning' ? 'bg-yellow-50' : 'bg-red-50',
+      description: 'System status'
     },
     {
-      title: 'Recent Activity',
-      value: stats.recentActivity,
-      icon: Activity,
-      color: 'text-pink-600',
-      bgColor: 'bg-pink-50'
-    },
-    {
-      title: 'Variants Completion',
-      value: `${stats.completionRate}%`,
-      icon: Target,
+      title: 'Content Coverage',
+      value: `${stats.contentCoverage}%`,
+      icon: FileText,
       color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50'
+      bgColor: 'bg-indigo-50',
+      description: 'Complete descriptions'
     }
   ];
 
@@ -90,18 +101,19 @@ export const EnhancedDashboardStats = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
+      {/* Core Business Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {coreMetrics.map((metric, index) => {
+          const Icon = metric.icon;
           return (
             <Card key={index} className="relative overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.title}
+                    {metric.title}
                   </CardTitle>
-                  <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                    <Icon className={`h-4 w-4 ${stat.color}`} />
+                  <div className={`p-2 rounded-full ${metric.bgColor}`}>
+                    <Icon className={`h-4 w-4 ${metric.color}`} />
                   </div>
                 </div>
               </CardHeader>
@@ -110,9 +122,47 @@ export const EnhancedDashboardStats = () => {
                   {loading ? (
                     <div className="h-8 bg-gray-200 rounded animate-pulse" />
                   ) : (
-                    stat.value
+                    metric.value
                   )}
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {metric.description}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* System Health Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {systemMetrics.map((metric, index) => {
+          const Icon = metric.icon;
+          return (
+            <Card key={index} className="relative overflow-hidden">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {metric.title}
+                  </CardTitle>
+                  <div className={`p-2 rounded-full ${metric.bgColor}`}>
+                    <Icon className={`h-4 w-4 ${metric.color}`} />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="text-2xl font-bold">
+                  {loading ? (
+                    <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                  ) : (
+                    typeof metric.value === 'string' ? 
+                      metric.value.charAt(0).toUpperCase() + metric.value.slice(1) : 
+                      metric.value
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {metric.description}
+                </p>
               </CardContent>
             </Card>
           );
