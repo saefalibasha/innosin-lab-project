@@ -238,9 +238,9 @@ export const useEnhancedDashboardStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Set up real-time subscriptions for automatic updates
+    // Set up real-time subscriptions with unique channel names to avoid conflicts
     const productsChannel = supabase
-      .channel('dashboard-products-changes')
+      .channel('dashboard-stats-products-changes')
       .on(
         'postgres_changes',
         {
@@ -249,7 +249,7 @@ export const useEnhancedDashboardStats = () => {
           table: 'products'
         },
         (payload) => {
-          console.log('Product change detected, refreshing dashboard stats:', payload);
+          console.log('Dashboard Stats: Product change detected, refreshing stats:', payload);
           // Refresh stats when products are created, updated, or deleted
           fetchStats();
         }
@@ -257,7 +257,7 @@ export const useEnhancedDashboardStats = () => {
       .subscribe();
 
     const chatSessionsChannel = supabase
-      .channel('dashboard-chat-sessions-changes')
+      .channel('dashboard-stats-chat-sessions-changes')
       .on(
         'postgres_changes',
         {
@@ -266,7 +266,7 @@ export const useEnhancedDashboardStats = () => {
           table: 'chat_sessions'
         },
         (payload) => {
-          console.log('New chat session detected, updating engagement stats:', payload);
+          console.log('Dashboard Stats: New chat session detected, updating engagement:', payload);
           // Update chat engagement stats when new sessions are created
           setStats(prev => ({
             ...prev,
@@ -278,7 +278,7 @@ export const useEnhancedDashboardStats = () => {
       .subscribe();
 
     const hubspotLogsChannel = supabase
-      .channel('dashboard-hubspot-logs-changes')
+      .channel('dashboard-stats-hubspot-logs-changes')
       .on(
         'postgres_changes',
         {
@@ -287,7 +287,7 @@ export const useEnhancedDashboardStats = () => {
           table: 'hubspot_integration_logs'
         },
         (payload) => {
-          console.log('HubSpot activity detected, refreshing health status:', payload);
+          console.log('Dashboard Stats: HubSpot activity detected, refreshing health:', payload);
           // Refresh stats when new HubSpot integration logs are added
           fetchStats();
         }
@@ -298,6 +298,7 @@ export const useEnhancedDashboardStats = () => {
     const interval = setInterval(fetchStats, 300000);
     
     return () => {
+      console.log('Dashboard Stats: Cleaning up realtime subscriptions and interval');
       clearInterval(interval);
       supabase.removeChannel(productsChannel);
       supabase.removeChannel(chatSessionsChannel);

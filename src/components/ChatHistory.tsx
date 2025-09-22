@@ -31,9 +31,9 @@ const ChatHistory = () => {
   useEffect(() => {
     fetchChatHistory();
     
-    // Set up real-time subscriptions
+    // Set up real-time subscriptions with unique channel names
     const chatSessionsChannel = supabase
-      .channel('chat-sessions-changes')
+      .channel('chat-history-sessions-updates')
       .on(
         'postgres_changes',
         {
@@ -42,7 +42,7 @@ const ChatHistory = () => {
           table: 'chat_sessions'
         },
         (payload) => {
-          console.log('Chat session change detected:', payload);
+          console.log('Chat History: Chat session change detected:', payload);
           
           if (payload.eventType === 'INSERT') {
             // Add new session to the list
@@ -51,7 +51,6 @@ const ChatHistory = () => {
               ...newSession,
               message_count: 0
             }, ...prev]);
-            toast.success('New chat session started');
           } else if (payload.eventType === 'UPDATE') {
             // Update existing session
             const updatedSession = payload.new as any;
@@ -70,7 +69,7 @@ const ChatHistory = () => {
       .subscribe();
 
     const chatMessagesChannel = supabase
-      .channel('chat-messages-changes')
+      .channel('chat-history-messages-updates')
       .on(
         'postgres_changes',
         {
@@ -79,7 +78,7 @@ const ChatHistory = () => {
           table: 'chat_messages'
         },
         (payload) => {
-          console.log('New message detected:', payload);
+          console.log('Chat History: New message detected:', payload);
           const newMessage = payload.new as any;
           
           // Update message count for the session
@@ -93,16 +92,13 @@ const ChatHistory = () => {
           if (selectedSession === newMessage.session_id) {
             setMessages(prev => [...prev, newMessage]);
           }
-          
-          toast.success('New message received', {
-            description: `Message in session: ${newMessage.session_id.slice(0, 8)}...`
-          });
         }
       )
       .subscribe();
 
     // Cleanup subscriptions
     return () => {
+      console.log('Chat History: Cleaning up realtime subscriptions');
       supabase.removeChannel(chatSessionsChannel);
       supabase.removeChannel(chatMessagesChannel);
     };
