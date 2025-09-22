@@ -238,10 +238,71 @@ export const useEnhancedDashboardStats = () => {
   useEffect(() => {
     fetchStats();
     
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchStats, 30000);
+    // Set up real-time subscriptions for automatic updates
+    const productsChannel = supabase
+      .channel('dashboard-products-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'products'
+        },
+        (payload) => {
+          console.log('Product change detected, refreshing dashboard stats:', payload);
+          // Refresh stats when products are created, updated, or deleted
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    const chatSessionsChannel = supabase
+      .channel('dashboard-chat-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_sessions'
+        },
+        (payload) => {
+          console.log('New chat session detected, updating engagement stats:', payload);
+          // Update chat engagement stats when new sessions are created
+          setStats(prev => ({
+            ...prev,
+            chatEngagement: prev.chatEngagement + 1,
+            lastUpdated: new Date()
+          }));
+        }
+      )
+      .subscribe();
+
+    const hubspotLogsChannel = supabase
+      .channel('dashboard-hubspot-logs-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'hubspot_integration_logs'
+        },
+        (payload) => {
+          console.log('HubSpot activity detected, refreshing health status:', payload);
+          // Refresh stats when new HubSpot integration logs are added
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    // Auto-refresh every 5 minutes (reduced from 30 seconds since we have real-time now)
+    const interval = setInterval(fetchStats, 300000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(productsChannel);
+      supabase.removeChannel(chatSessionsChannel);
+      supabase.removeChannel(hubspotLogsChannel);
+    };
   }, []);
 
   return { stats, loading, error, refetch: fetchStats };
