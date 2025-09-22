@@ -113,26 +113,36 @@ const GoogleMapsLocation = () => {
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
               <div 
-                className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 group"
+                className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
               >
                 
-                {/* Leaflet Map with Google Maps Integration */}
-                <BasicMap
-                  lat={selectedOffice.coordinates.lat}
-                  lng={selectedOffice.coordinates.lng}
+                {/* Leaflet Map - Interactive */}
+                <BasicMap 
+                  lat={selectedOffice.coordinates.lat} 
+                  lng={selectedOffice.coordinates.lng} 
                   zoom={15}
                   height="700px"
-                  className="transition-transform duration-300 group-hover:scale-105"
                 />
 
-                {/* Full-area link to open Google Maps in a new tab */}
-                <a
-                  href={getGoogleMapsUrl(selectedOffice.coordinates.lat, selectedOffice.coordinates.lng)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`Open ${selectedOffice.name} in Google Maps`}
-                  className="absolute inset-0 z-10"
-                />
+                {/* Map action buttons */}
+                <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+                  <a
+                    href={getGoogleMapsUrl(selectedOffice.coordinates.lat, selectedOffice.coordinates.lng)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-white/90 dark:bg-gray-800/90 text-sm font-medium rounded-lg shadow-md hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Open in Google Maps
+                  </a>
+                  <a
+                    href={`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}#map=17/${selectedOffice.coordinates.lat}/${selectedOffice.coordinates.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-2 bg-white/90 dark:bg-gray-800/90 text-sm font-medium rounded-lg shadow-md hover:bg-white dark:hover:bg-gray-800 transition-colors"
+                  >
+                    Open in OpenStreetMap
+                  </a>
+                </div>
                 
                 {/* Click to open overlay */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">

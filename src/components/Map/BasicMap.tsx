@@ -24,11 +24,15 @@ const BasicMap: React.FC<BasicMapProps> = ({
     import('leaflet').then((L) => {
       if (!mapRef.current || mapInstanceRef.current) return;
 
-      // Fix marker icon issue
+      // Fix marker icon issue - use local assets to avoid CDN blocking
+      const markerIconUrl = new URL('leaflet/dist/images/marker-icon.png', import.meta.url).toString();
+      const markerIcon2xUrl = new URL('leaflet/dist/images/marker-icon-2x.png', import.meta.url).toString();
+      const markerShadowUrl = new URL('leaflet/dist/images/marker-shadow.png', import.meta.url).toString();
+      
       const defaultIcon = L.icon({
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconUrl: markerIconUrl,
+        iconRetinaUrl: markerIcon2xUrl,
+        shadowUrl: markerShadowUrl,
         iconSize: [25, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
