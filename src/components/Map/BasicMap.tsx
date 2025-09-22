@@ -24,6 +24,17 @@ const BasicMap: React.FC<BasicMapProps> = ({
     import('leaflet').then((L) => {
       if (!mapRef.current || mapInstanceRef.current) return;
 
+      // Fix marker icon issue
+      const defaultIcon = L.icon({
+        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
       // Initialize map
       const map = L.map(mapRef.current).setView([lat, lng], zoom);
 
@@ -32,8 +43,8 @@ const BasicMap: React.FC<BasicMapProps> = ({
         attribution: '© OpenStreetMap contributors'
       }).addTo(map);
 
-      // Add marker
-      L.marker([lat, lng])
+      // Add marker with custom icon
+      L.marker([lat, lng], { icon: defaultIcon })
         .addTo(map)
         .bindPopup('Our Location')
         .openPopup();
