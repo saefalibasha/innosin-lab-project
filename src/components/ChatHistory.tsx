@@ -30,7 +30,83 @@ const ChatHistory = () => {
 
   useEffect(() => {
     fetchChatHistory();
-  }, []);
+    
+    // Set up real-time subscriptions
+    const chatSessionsChannel = supabase
+      .channel('chat-sessions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_sessions'
+        },
+        (payload) => {
+          console.log('Chat session change detected:', payload);
+          
+          if (payload.eventType === 'INSERT') {
+            // Add new session to the list
+            const newSession = payload.new as any;
+            setSessions(prev => [{
+              ...newSession,
+              message_count: 0
+            }, ...prev]);
+            toast.success('New chat session started');
+          } else if (payload.eventType === 'UPDATE') {
+            // Update existing session
+            const updatedSession = payload.new as any;
+            setSessions(prev => prev.map(session => 
+              session.id === updatedSession.id 
+                ? { ...session, ...updatedSession }
+                : session
+            ));
+          } else if (payload.eventType === 'DELETE') {
+            // Remove session from list
+            const deletedSession = payload.old as any;
+            setSessions(prev => prev.filter(session => session.id !== deletedSession.id));
+          }
+        }
+      )
+      .subscribe();
+
+    const chatMessagesChannel = supabase
+      .channel('chat-messages-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages'
+        },
+        (payload) => {
+          console.log('New message detected:', payload);
+          const newMessage = payload.new as any;
+          
+          // Update message count for the session
+          setSessions(prev => prev.map(session => 
+            session.id === newMessage.session_id
+              ? { ...session, message_count: session.message_count + 1 }
+              : session
+          ));
+          
+          // If this message belongs to the currently selected session, add it
+          if (selectedSession === newMessage.session_id) {
+            setMessages(prev => [...prev, newMessage]);
+          }
+          
+          toast.success('New message received', {
+            description: `Message in session: ${newMessage.session_id.slice(0, 8)}...`
+          });
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscriptions
+    return () => {
+      supabase.removeChannel(chatSessionsChannel);
+      supabase.removeChannel(chatMessagesChannel);
+    };
+  }, [selectedSession]);
 
   const fetchChatHistory = async () => {
     try {
