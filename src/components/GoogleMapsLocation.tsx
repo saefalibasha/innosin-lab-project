@@ -113,8 +113,7 @@ const GoogleMapsLocation = () => {
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
               <div 
-                className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 cursor-pointer group"
-                onClick={() => window.open(getGoogleMapsUrl(selectedOffice.coordinates.lat, selectedOffice.coordinates.lng), '_blank')}
+                className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 group"
               >
                 
                 {/* Leaflet Map with Google Maps Integration */}
@@ -124,6 +123,15 @@ const GoogleMapsLocation = () => {
                   zoom={15}
                   height="700px"
                   className="transition-transform duration-300 group-hover:scale-105"
+                />
+
+                {/* Full-area link to open Google Maps in a new tab */}
+                <a
+                  href={getGoogleMapsUrl(selectedOffice.coordinates.lat, selectedOffice.coordinates.lng)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`Open ${selectedOffice.name} in Google Maps`}
+                  className="absolute inset-0 z-10"
                 />
                 
                 {/* Click to open overlay */}
