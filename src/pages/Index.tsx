@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updatePageSEO, addStructuredData } from '@/utils/seoMetadata';
+import { useSEO } from '@/hooks/useSEO';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Reveal, StaggerList } from '@/components/anim';
@@ -13,39 +13,8 @@ import LabTransformCTA from '@/components/LabTransformCTA';
 const Index = () => {
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Update SEO metadata for home page
-    updatePageSEO('home');
-
-    // Add structured data for organization
-    const organizationData = {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Innosin Lab Pte. Ltd.",
-      "alternateName": "Innosin Lab",
-      "url": "https://innosinlab.com",
-      "logo": "https://innosinlab.com/branding/hero-logo.png",
-      "description": "Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups.",
-      "foundingDate": "1986",
-      "industry": "Laboratory Equipment Manufacturing",
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "MY",
-        "addressRegion": "Selangor"
-      },
-      "contactPoint": {
-        "@type": "ContactPoint",
-        "telephone": "+60-3-1234-5678",
-        "contactType": "Customer Service",
-        "email": "info@innosinlab.com"
-      },
-      "sameAs": [
-        "https://www.linkedin.com/company/innosin-lab"
-      ]
-    };
-
-    addStructuredData(organizationData);
-  }, []);
+  // Optimize SEO for home page
+  useSEO('home');
 
   const companyData = [
     { name: 'Broen-Lab', logo: '/brand-logos/broen-lab-logo.png', origin: 'Denmark', link: '/products?company=Broen-Lab' },

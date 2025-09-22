@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { updatePageSEO, addStructuredData } from '@/utils/seoMetadata';
+import { useSEO } from '@/hooks/useSEO';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Award, Users, Globe, Target, DollarSign, Clock, Headphones, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,45 +10,8 @@ import { aboutPageContent } from '@/data/aboutPageContent';
 import { Reveal, StaggerList } from '@/components/anim';
 
 const About = () => {
-  useEffect(() => {
-    // Update SEO metadata for about page
-    updatePageSEO('about');
-
-    // Add structured data for the company
-    const aboutPageData = {
-      "@context": "https://schema.org",
-      "@type": "AboutPage",
-      "mainEntity": {
-        "@type": "Organization",
-        "name": "Innosin Lab Pte. Ltd.",
-        "foundingDate": "1986",
-        "description": "Innosin Lab is dedicated to providing innovative and high-quality laboratory equipment. Our mission is to empower scientists and researchers with the tools they need to make groundbreaking discoveries.",
-        "hasOfferCatalog": {
-          "@type": "OfferCatalog",
-          "name": "Laboratory Equipment and Furniture",
-          "itemListElement": [
-            {
-              "@type": "OfferCatalog",
-              "name": "Mobile Cabinets",
-              "description": "High-quality mobile laboratory cabinets for flexible workspace solutions"
-            },
-            {
-              "@type": "OfferCatalog", 
-              "name": "Wall Cabinets",
-              "description": "Space-efficient wall-mounted storage solutions"
-            },
-            {
-              "@type": "OfferCatalog",
-              "name": "Tall Cabinets", 
-              "description": "Maximum storage capacity tall laboratory cabinets"
-            }
-          ]
-        }
-      }
-    };
-
-    addStructuredData(aboutPageData);
-  }, []);
+  // Optimize SEO for about page
+  useSEO('about');
 
   // Create timeline data from content structure
   const timelineData = aboutPageContent.timeline.events.map(event => ({
