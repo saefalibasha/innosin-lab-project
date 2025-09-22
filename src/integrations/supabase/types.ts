@@ -284,6 +284,13 @@ export type Database = {
             referencedRelation: "chat_sessions"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "chat_messages_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       chat_sessions: {
@@ -479,6 +486,13 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "chat_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hubspot_integration_logs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "chat_sessions_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1215,7 +1229,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      chat_sessions_public: {
+        Row: {
+          context: Json | null
+          id: string | null
+          last_activity: string | null
+          session_id: string | null
+          start_time: string | null
+          status: string | null
+        }
+        Insert: {
+          context?: Json | null
+          id?: string | null
+          last_activity?: string | null
+          session_id?: string | null
+          start_time?: string | null
+          status?: string | null
+        }
+        Update: {
+          context?: Json | null
+          id?: string | null
+          last_activity?: string | null
+          session_id?: string | null
+          start_time?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_anonymous_session_rate_limit: {
