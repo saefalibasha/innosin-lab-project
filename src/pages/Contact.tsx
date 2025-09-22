@@ -20,11 +20,7 @@ const Contact = () => {
   useSEO('contact');
 
   useEffect(() => {
-
-    // Add structured data for contact page
-    const contactData = {
-      "@context": "https://schema.org",
-      "@type": "ContactPage",
+    // Empty useEffect for any initialization if needed
   }, []);
 
   const [formData, setFormData] = useState({
