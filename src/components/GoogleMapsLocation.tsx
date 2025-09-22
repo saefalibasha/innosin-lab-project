@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Phone, Navigation, Mail } from 'lucide-react';
+import BasicMap from './Map/BasicMap';
 
 // Location component without external map dependencies
 const GoogleMapsLocation = () => {
@@ -11,7 +12,7 @@ const GoogleMapsLocation = () => {
       id: 'singapore',
       name: 'SINGAPORE',
       address: '510 Bedok North Street 3, Singapore 460510',
-      coordinates: { lat: '1.3298', lng: '103.9304' },
+      coordinates: { lat: 1.3298, lng: 103.9304 },
       type: 'Branch Office',
       company: 'Innosin Lab Pte. Ltd.'
     },
@@ -19,7 +20,7 @@ const GoogleMapsLocation = () => {
       id: 'johor',
       name: 'JOHOR BAHRU',
       address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia',
-      coordinates: { lat: '1.6000', lng: '103.8203' },
+      coordinates: { lat: 1.6000, lng: 103.8203 },
       type: 'Headquarters',
       company: 'Innosin Technologies Sdn Bhd'
     },
@@ -27,7 +28,7 @@ const GoogleMapsLocation = () => {
       id: 'kl',
       name: 'KUALA LUMPUR',
       address: 'B-05-16, kompleks Perindustrian EMHUB, Persiaran Surian, Seksyen 3, Taman Sains Selangor, Petaling Jaya, Malaysia, 47810, Selangor',
-      coordinates: { lat: '3.1948', lng: '101.6152' },
+      coordinates: { lat: 3.1948, lng: 101.6152 },
       type: 'Branch Office',
       company: 'Innosin Technologies Sdn Bhd'
     }
@@ -39,7 +40,7 @@ const GoogleMapsLocation = () => {
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
   };
 
-  const getGoogleMapsUrl = (lat: string, lng: string) => {
+  const getGoogleMapsUrl = (lat: number, lng: number) => {
     return `https://www.google.com/maps/@${lat},${lng},17z`;
   };
 
@@ -116,22 +117,17 @@ const GoogleMapsLocation = () => {
                 onClick={() => window.open(getGoogleMapsUrl(selectedOffice.coordinates.lat, selectedOffice.coordinates.lng), '_blank')}
               >
                 
-                {/* Embedded Google Maps */}
-                <iframe
-                  key={`${selectedOffice.id}-${Date.now()}`}
-                  src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.${Math.floor(Math.random() * 1000)}!2d${selectedOffice.coordinates.lng}!3d${selectedOffice.coordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwMDknMTcuMyJOIDEwM8KwNDknMTMuMSJF!5e0!3m2!1sen!2smy!4v${Date.now()}&q=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title={`${selectedOffice.name} Location Map`}
-                  className="w-full h-full transition-transform duration-300 group-hover:scale-105"
+                {/* Leaflet Map with Google Maps Integration */}
+                <BasicMap
+                  lat={selectedOffice.coordinates.lat}
+                  lng={selectedOffice.coordinates.lng}
+                  zoom={15}
+                  height="700px"
+                  className="transition-transform duration-300 group-hover:scale-105"
                 />
                 
                 {/* Click to open overlay */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none">
                   <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
                     <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
                       <Navigation className="w-4 h-4" />
