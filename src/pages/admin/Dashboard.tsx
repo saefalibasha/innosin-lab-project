@@ -10,22 +10,11 @@ import HubSpotIntegrationTest from '@/components/HubSpotIntegrationTest';
 import HubSpotMonitor from '@/pages/admin/HubSpotMonitor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  Package, 
-  FileText, 
-  BarChart3, 
-  MessageSquare,
-  RefreshCw,
-  MonitorSpeaker,
-  TestTube
-} from 'lucide-react';
-import { useEnhancedDashboardStats } from '@/hooks/useEnhancedDashboardStats';
+import { Package, FileText, BarChart3, MessageSquare, MonitorSpeaker, TestTube } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const { stats, loading, error, refetch } = useEnhancedDashboardStats();
   const location = useLocation();
 
   useEffect(() => {
@@ -33,9 +22,6 @@ const Dashboard = () => {
     const tabParam = urlParams.get('tab');
     if (tabParam) setActiveTab(tabParam);
   }, [location.search]);
-  const handleRefresh = () => {
-    refetch();
-  };
 
   return (
     <AdminAuthGuard>
@@ -49,10 +35,6 @@ const Dashboard = () => {
           </div>
           <div className="flex items-center space-x-4">
             <AdminAuthStatus />
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
           </div>
         </div>
 

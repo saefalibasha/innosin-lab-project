@@ -27,6 +27,11 @@ const ChatHistory = () => {
   const [selectedSession, setSelectedSession] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const selectedSessionRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    selectedSessionRef.current = selectedSession;
+  }, [selectedSession]);
 
   useEffect(() => {
     fetchChatHistory();
@@ -45,14 +50,12 @@ const ChatHistory = () => {
           console.log('Chat History: Chat session change detected:', payload);
           
           if (payload.eventType === 'INSERT') {
-            // Add new session to the list
             const newSession = payload.new as any;
             setSessions(prev => [{
               ...newSession,
               message_count: 0
             }, ...prev]);
           } else if (payload.eventType === 'UPDATE') {
-            // Update existing session
             const updatedSession = payload.new as any;
             setSessions(prev => prev.map(session => 
               session.id === updatedSession.id 
@@ -60,7 +63,6 @@ const ChatHistory = () => {
                 : session
             ));
           } else if (payload.eventType === 'DELETE') {
-            // Remove session from list
             const deletedSession = payload.old as any;
             setSessions(prev => prev.filter(session => session.id !== deletedSession.id));
           }
@@ -89,7 +91,7 @@ const ChatHistory = () => {
           ));
           
           // If this message belongs to the currently selected session, add it
-          if (selectedSession === newMessage.session_id) {
+          if (selectedSessionRef.current === newMessage.session_id) {
             setMessages(prev => [...prev, newMessage]);
           }
         }
@@ -102,7 +104,7 @@ const ChatHistory = () => {
       supabase.removeChannel(chatSessionsChannel);
       supabase.removeChannel(chatMessagesChannel);
     };
-  }, [selectedSession]);
+  }, []);
 
   const fetchChatHistory = async () => {
     try {
