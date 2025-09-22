@@ -41,7 +41,7 @@ const GoogleMapsLocation = () => {
   };
 
   const getGoogleMapsUrl = (lat: number, lng: number) => {
-    return `https://www.google.com/maps/@${lat},${lng},17z`;
+    return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
   };
 
   const businessHours = [
