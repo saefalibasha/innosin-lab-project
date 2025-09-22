@@ -18,7 +18,7 @@ const GoogleMapsLocation = () => {
     {
       id: 'johor',
       name: 'JOHOR BAHRU',
-      address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia.',
+      address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia',
       coordinates: { lat: '1.6000', lng: '103.8203' },
       type: 'Headquarters',
       company: 'Innosin Technologies Sdn Bhd'
@@ -37,6 +37,10 @@ const GoogleMapsLocation = () => {
 
   const getDirectionsUrl = (address: string) => {
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+  };
+
+  const getGoogleMapsUrl = (lat: string, lng: string) => {
+    return `https://www.google.com/maps/@${lat},${lng},17z`;
   };
 
   const businessHours = [
@@ -107,20 +111,34 @@ const GoogleMapsLocation = () => {
         <div className="lg:col-span-7 animate-fade-in-left animate-delay-500">
           <Card className="overflow-hidden glass-card hover:shadow-xl transition-all duration-300">
             <CardContent className="p-0">
-              <div className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
+              <div 
+                className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600 cursor-pointer group"
+                onClick={() => window.open(getGoogleMapsUrl(selectedOffice.coordinates.lat, selectedOffice.coordinates.lng), '_blank')}
+              >
                 
-                {/* Embedded OpenStreetMap with precise location - Force refresh with key and timestamp */}
+                {/* Embedded Google Maps */}
                 <iframe
                   key={`${selectedOffice.id}-${Date.now()}`}
-                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(selectedOffice.coordinates.lng) - 0.003},${parseFloat(selectedOffice.coordinates.lat) - 0.003},${parseFloat(selectedOffice.coordinates.lng) + 0.003},${parseFloat(selectedOffice.coordinates.lat) + 0.003}&layer=mapnik&marker=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}&t=${Date.now()}`}
+                  src={`https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3988.${Math.floor(Math.random() * 1000)}!2d${selectedOffice.coordinates.lng}!3d${selectedOffice.coordinates.lat}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zM8KwMDknMTcuMyJOIDEwM8KwNDknMTMuMSJF!5e0!3m2!1sen!2smy!4v${Date.now()}&q=${selectedOffice.coordinates.lat},${selectedOffice.coordinates.lng}`}
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
                   allowFullScreen
                   loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
                   title={`${selectedOffice.name} Location Map`}
-                  className="w-full h-full"
+                  className="w-full h-full transition-transform duration-300 group-hover:scale-105"
                 />
+                
+                {/* Click to open overlay */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
+                    <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                      <Navigation className="w-4 h-4" />
+                      Click to open in Google Maps
+                    </p>
+                  </div>
+                </div>
                 
                 {/* Company Info Overlay */}
                 <div className="absolute bottom-4 left-4 glass-card p-4 rounded-lg shadow-xl max-w-sm animate-slide-up border border-white/20">
