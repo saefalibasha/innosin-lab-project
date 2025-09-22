@@ -14,6 +14,7 @@ import { Package, FileText, BarChart3, MessageSquare, MonitorSpeaker, TestTube }
 import { useLocation } from 'react-router-dom';
 
 const Dashboard = () => {
+  // Force rebuild to resolve Button import issue
   const [activeTab, setActiveTab] = useState('overview');
   const location = useLocation();
 
