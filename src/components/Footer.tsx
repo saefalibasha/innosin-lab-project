@@ -75,8 +75,8 @@ export const Footer = () => {
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-white/80 mt-1" />
                 <div className="text-white/90 text-base">
-                  <div>Industrial Complex, Tech Park</div>
-                  <div>Johor Bahru, Malaysia 81100</div>
+                  <div>Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi</div>
+                  <div>81800 Ulu Tiram, Johor, Malaysia</div>
                 </div>
               </div>
             </div>

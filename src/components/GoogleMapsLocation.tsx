@@ -20,7 +20,7 @@ const GoogleMapsLocation = () => {
       id: 'johor',
       name: 'JOHOR BAHRU',
       address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia',
-      coordinates: { lat: 1.6000, lng: 103.8203 },
+      coordinates: { lat: 1.60000, lng: 103.82028 },
       type: 'Headquarters',
       company: 'Innosin Technologies Sdn Bhd'
     },
