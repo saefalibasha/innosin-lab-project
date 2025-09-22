@@ -216,6 +216,20 @@
   .animate-bounce-in { animation: bounceIn 0.8s ease-out; }
   .animate-pulse-subtle { animation: pulseSubtle 2s ease-in-out infinite; }
 
+  /* Wave Background Animation */
+  @keyframes waveRotate {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .animate-wave-rotate { 
+    animation: waveRotate 5s linear infinite; 
+  }
+  
+  .animate-reverse { 
+    animation-direction: reverse; 
+  }
+
   /* Animation Delays */
   .animate-delay-200 { animation-delay: 200ms; }
   .animate-delay-300 { animation-delay: 300ms; }

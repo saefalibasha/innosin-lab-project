@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import OptimizedVideo from "@/components/OptimizedVideo";
+import AnimatedWaveBackground from "@/components/AnimatedWaveBackground";
 
 // Animated background component
 function AnimatedBackground() {
@@ -33,7 +34,10 @@ export default function WelcomeLandingPage() {
   return (
     <div className="relative h-screen w-full bg-white overflow-hidden flex flex-col">
       
-      {/* Animated Background */}
+      {/* Animated Wave Background */}
+      <AnimatedWaveBackground />
+      
+      {/* Original Animated Background */}
       <AnimatedBackground />
       
       {/* Navigation */}
