@@ -40,15 +40,7 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
   // Auto-grant access for authenticated admin users
   useEffect(() => {
     if (!authLoading && user && isAdmin) {
-      // Store admin session info for consistency
-      sessionStorage.setItem('contactInfo', JSON.stringify({
-        name: user.email?.split('@')[0] || 'Admin User',
-        email: user.email,
-        company: 'INNOSIN Lab',
-        contactId: 'admin-' + user.id,
-        sessionId: crypto.randomUUID(),
-        isAdmin: true
-      }));
+      // Admins get automatic access without storing PII
       onSuccess();
       return;
     }
@@ -91,14 +83,8 @@ export const ContactGateModal: React.FC<ContactGateModalProps> = ({
         toast.success('Inquiry submitted successfully');
       }
 
-      // Store contact info for session
-      sessionStorage.setItem('contactInfo', JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-        company: formData.company,
-        contactId: contactResult.contactId,
-        sessionId
-      }));
+      // Store minimal session token only (no PII in client storage)
+      sessionStorage.setItem('floorPlannerAccess', 'granted');
 
       toast.success('Welcome to the Floor Planner!');
       onSuccess();

@@ -58,13 +58,13 @@ const FloorPlanner = () => {
   // Check for admin access or existing session
   useEffect(() => {
     const checkAccess = () => {
-      const contactInfo = sessionStorage.getItem('contactInfo');
+      const hasAccess = sessionStorage.getItem('floorPlannerAccess');
       if (user && isAdmin) {
         setHasAccess(true);
         setShowContactGate(false);
         return;
       }
-      if (contactInfo) {
+      if (hasAccess === 'granted') {
         setHasAccess(true);
         setShowContactGate(false);
       }

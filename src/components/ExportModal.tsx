@@ -116,11 +116,8 @@ Export Date: ${new Date().toLocaleString()}
     setIsSubmitting(true);
 
     try {
-      // Store user information for session
-      sessionStorage.setItem('exportUserInfo', JSON.stringify({
-        ...userInfo,
-        lastExport: new Date().toISOString()
-      }));
+      // Store minimal export session info (no PII)
+      sessionStorage.setItem('lastExport', new Date().toISOString());
 
       // Export logic based on format
       if (format === 'pdf') {

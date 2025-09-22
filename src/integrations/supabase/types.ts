@@ -293,6 +293,11 @@ export type Database = {
           context: Json | null
           created_at: string
           email: string | null
+          encrypted_company: string | null
+          encrypted_email: string | null
+          encrypted_job_title: string | null
+          encrypted_name: string | null
+          encrypted_phone: string | null
           end_time: string | null
           hubspot_contact_id: string | null
           hubspot_deal_id: string | null
@@ -315,6 +320,11 @@ export type Database = {
           context?: Json | null
           created_at?: string
           email?: string | null
+          encrypted_company?: string | null
+          encrypted_email?: string | null
+          encrypted_job_title?: string | null
+          encrypted_name?: string | null
+          encrypted_phone?: string | null
           end_time?: string | null
           hubspot_contact_id?: string | null
           hubspot_deal_id?: string | null
@@ -337,6 +347,11 @@ export type Database = {
           context?: Json | null
           created_at?: string
           email?: string | null
+          encrypted_company?: string | null
+          encrypted_email?: string | null
+          encrypted_job_title?: string | null
+          encrypted_name?: string | null
+          encrypted_phone?: string | null
           end_time?: string | null
           hubspot_contact_id?: string | null
           hubspot_deal_id?: string | null
@@ -887,6 +902,36 @@ export type Database = {
         }
         Relationships: []
       }
+      secure_session_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          last_accessed: string | null
+          session_data: Json
+          token_hash: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_accessed?: string | null
+          session_data?: Json
+          token_hash: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_accessed?: string | null
+          session_data?: Json
+          token_hash?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_audit_log: {
         Row: {
           action: string
@@ -1189,9 +1234,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      cleanup_expired_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       cleanup_old_anonymous_sessions: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      create_session_token: {
+        Args: { session_data_param: Json; user_id_param?: string }
+        Returns: string
+      }
+      encrypt_pii: {
+        Args: { data: string }
+        Returns: string
       }
       get_current_user_email: {
         Args: Record<PropertyKey, never>
@@ -1200,6 +1257,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_session_data: {
+        Args: { session_token: string }
+        Returns: Json
       }
       is_admin: {
         Args: { user_email: string }
