@@ -1,0 +1,12 @@
+// Netlify redirects to handle tracking parameters and enforce clean URLs
+// Clean up tracking parameters from URLs
+/*?srsltid=* / 301!
+/*?utm_source=* / 301!
+/*?utm_medium=* / 301!
+/*?utm_campaign=* / 301!
+/*?fbclid=* / 301!
+/*?gclid=* / 301!
+
+// Redirect old URLs to clean canonical URLs
+/home / 301
+/index.html / 301

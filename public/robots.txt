@@ -38,3 +38,10 @@ Sitemap: https://innosinlab.com/sitemap.xml
 
 # Crawl delay (in seconds) - reasonable for lab equipment site
 Crawl-delay: 1
+
+# Block tracking parameters and search result IDs
+Disallow: /*?srsltid=*
+Disallow: /*?utm_*
+Disallow: /*?fbclid=*
+Disallow: /*?gclid=*
+Disallow: /*?ref=*
