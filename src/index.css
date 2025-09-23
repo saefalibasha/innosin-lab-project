@@ -225,4 +225,34 @@
 
   /* Animation Controls */
   .no-bounce { animation: none !important; }
+
+  /* Video Blending Effects */
+  .video-blend-container {
+    position: relative;
+  }
+
+  .video-blend-container::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(45deg, 
+      hsl(var(--sea) / 0.08), 
+      transparent 25%, 
+      transparent 75%, 
+      hsl(var(--sea-light) / 0.08)
+    );
+    border-radius: inherit;
+    z-index: -1;
+    filter: blur(1px);
+  }
+
+  .mobile-reduced {
+    transform: scale(0.95);
+    filter: brightness(1.02) contrast(1.03);
+  }
+
+  /* Radial gradient utilities */
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle, var(--tw-gradient-stops));
+  }
 }
