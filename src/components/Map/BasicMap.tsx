@@ -1,5 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
+import { useLeafletCSS } from '../../hooks/useLeafletCSS';
 
 interface BasicMapProps {
   lat: number;
@@ -18,6 +19,9 @@ const BasicMap: React.FC<BasicMapProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
+  
+  // Load Leaflet CSS only when needed
+  useLeafletCSS();
 
   useEffect(() => {
     // Dynamic import to avoid SSR issues

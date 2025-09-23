@@ -1,6 +1,6 @@
 /* Main CSS Entry Point - Modular Design System */
-@import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;600;700;800;900&display=swap');
-@import 'leaflet/dist/leaflet.css';
+/* Fonts optimized via preload in index.html - removed duplicate import */
+/* Leaflet CSS loaded dynamically only when needed */
 
 @tailwind base;
 @tailwind components;
