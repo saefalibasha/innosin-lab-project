@@ -56,7 +56,7 @@ export default function WelcomeLandingPage() {
       </nav>
 
       {/* Hero Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center sm:justify-start items-center px-4 sm:px-8 pt-0 sm:pt-0">
+      <div className="relative z-10 flex-1 flex flex-col justify-center sm:justify-start items-center px-4 sm:px-8 pt-4 sm:pt-2">
         <div className={`text-center w-full max-w-6xl transition-all duration-700 ease-out ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
@@ -86,8 +86,8 @@ export default function WelcomeLandingPage() {
           {/* Main Tagline */}
           <p className={`text-sea/90 font-light leading-relaxed mx-auto px-2 sm:px-0 whitespace-nowrap ${
             isMobile 
-              ? 'text-lg sm:text-xl max-w-sm mb-8 mt-4' 
-              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-12 mt-8'
+              ? 'text-lg sm:text-xl max-w-sm mb-8 mt-8' 
+              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-12 mt-12'
           }`}>
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
