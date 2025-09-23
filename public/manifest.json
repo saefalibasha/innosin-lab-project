@@ -1,0 +1,24 @@
+{
+  "name": "Innosin Lab Project",
+  "short_name": "InnosinLab",
+  "description": "Laboratory Equipment Solutions",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e293b",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "cache_urls": [
+    "/",
+    "/src/main.tsx",
+    "/src/index.css",
+    "/videos/landing-intro-v4.mp4",
+    "/fonts/inter.woff2"
+  ]
+}

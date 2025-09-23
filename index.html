@@ -5,6 +5,19 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- PWA Manifest for better caching -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Cache optimization hints for browsers -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
+    <meta http-equiv="Expires" content="Fri, 01 Jan 2025 00:00:00 GMT" />
+    <meta http-equiv="Expires" content="Fri, 01 Jan 2025 00:00:00 GMT" />
+    
+    <!-- Resource hints for better caching -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="//api.supabase.co" />
     <meta name="theme-color" content="#1a365d" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
     
@@ -25,10 +38,11 @@
       @font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap; src: url(https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHjx4wXiWtFCc.woff2) format('woff2'); unicode-range: U+0000-00FF; }
       @font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url(https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh7USSwiPGQ3q5d0.woff2) format('woff2'); unicode-range: U+0000-00FF; }
     </style>
-    <!-- DNS Prefetch for Performance -->
-    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
-    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
-    <link rel="dns-prefetch" href="//api.supabase.co" />
+    
+    <!-- Enhanced resource preloading for cache efficiency -->
+    <link rel="preload" href="/videos/landing-intro-v4.mp4" as="video" type="video/mp4" crossorigin />
+    <link rel="preload" href="/src/main.tsx" as="script" crossorigin />
+    <link rel="preload" href="/src/index.css" as="style" crossorigin />
     
     <!-- Preconnect to critical domains to eliminate network dependency chains -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -178,6 +192,22 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Register service worker for client-side caching -->
+    <script>
+      // Register service worker for asset caching
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
     
     <!-- Defer non-critical CSS to prevent render blocking -->
     <script>
