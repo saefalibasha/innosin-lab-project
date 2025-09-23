@@ -32,6 +32,14 @@ export default defineConfig(({ mode }) => {
     esbuild: {
       target: 'esnext',
     },
+    optimizeDeps: {
+      include: [
+        'react',
+        'react-dom',
+        'react/jsx-runtime',
+        'react-router-dom'
+      ],
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
