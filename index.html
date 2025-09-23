@@ -286,21 +286,8 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Register service worker for client-side caching -->
-    <script>
-      // Register service worker for asset caching
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('SW registered: ', registration);
-            })
-            .catch(function(registrationError) {
-              console.log('SW registration failed: ', registrationError);
-            });
-        });
-      }
-    </script>
+    <!-- Service worker registration moved to module to avoid dev caching; only registers in production -->
+    <script type="module" src="/src/swRegister.ts"></script>
     
     <!-- Defer non-critical CSS to prevent render blocking -->
     <script>
