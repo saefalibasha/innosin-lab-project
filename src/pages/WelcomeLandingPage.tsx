@@ -84,10 +84,10 @@ export default function WelcomeLandingPage() {
           </div>
 
           {/* Main Tagline */}
-          <p className={`text-sea/90 font-light leading-relaxed mx-auto mb-8 sm:mb-6 px-2 sm:px-0 ${
+          <p className={`text-sea/90 font-light leading-relaxed mx-auto px-2 sm:px-0 whitespace-nowrap ${
             isMobile 
-              ? 'text-lg sm:text-xl max-w-sm' 
-              : 'text-2xl sm:text-3xl lg:text-4xl max-w-4xl'
+              ? 'text-lg sm:text-xl max-w-sm mb-12' 
+              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-16'
           }`}>
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
