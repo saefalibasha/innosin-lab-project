@@ -34,6 +34,7 @@ import {
 } from "./components/LazyRoutes";
 
 // Loading fallback component
+import Index from '@/pages/Index';
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
@@ -66,11 +67,7 @@ const App = () => (
 
                 {/* ✅ Public routes with layout */}
                 <Route element={<SiteLayout />}>
-                  <Route path="/home" element={
-                    <Suspense fallback={<PageLoader />}>
-                      <LazyIndex />
-                    </Suspense>
-                  } />
+                  <Route path="/home" element={<Index />} />
                   <Route path="/auth" element={
                     <Suspense fallback={<PageLoader />}>
                       <LazyAuth />
