@@ -34,6 +34,8 @@ export default function WelcomeLandingPage() {
   const [isVisible, setIsVisible] = useState(false);
   const isMobile = useIsMobile();
 
+  console.log('[welcome] mounted, isMobile=', isMobile);
+
   useEffect(() => {
     setTimeout(() => setIsVisible(true), 200);
   }, []);
