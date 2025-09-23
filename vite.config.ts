@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => {
       port: 8080,
     },
     plugins,
+    build: {
+      target: 'esnext',
+      minify: 'esbuild',
+    },
+    esbuild: {
+      target: 'esnext',
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
