@@ -4,10 +4,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { MotionProvider } from './components/anim'
-import { BrowserRouter } from 'react-router-dom'
-
-console.log('[debug] React main version:', React.version);
-
+import { RFQProvider } from '@/contexts/RFQContext'   // 👈 add this
 
 const container = document.getElementById("root");
 if (!container) {
@@ -16,10 +13,10 @@ if (!container) {
 
 createRoot(container).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <RFQProvider>               {/* 👈 wrap everything */}
       <MotionProvider>
         <App />
       </MotionProvider>
-    </BrowserRouter>
+    </RFQProvider>
   </React.StrictMode>
 );

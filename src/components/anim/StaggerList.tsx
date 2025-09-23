@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { Reveal } from './Reveal';
 
 interface StaggerListProps<T> {
