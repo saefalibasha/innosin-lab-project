@@ -286,15 +286,18 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Unregister service worker and clear caches to avoid stale builds in preview -->
+    <!-- Register service worker for client-side caching -->
     <script>
+      // Register service worker for asset caching
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(registrations => {
-          registrations.forEach(reg => reg.unregister());
-        }).finally(() => {
-          if (window.caches) {
-            caches.keys().then(keys => keys.forEach(key => caches.delete(key)));
-          }
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
         });
       }
     </script>
