@@ -10,8 +10,6 @@ import BeforeAfterComparison from '@/components/BeforeAfterComparison';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
 import LabTransformCTA from '@/components/LabTransformCTA';
 
-console.log('[debug] React in Index version:', React.version);
-
 const Index = () => {
   const navigate = useNavigate();
 
