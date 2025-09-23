@@ -1,11 +1,11 @@
 // src/App.tsx
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
-import { Suspense } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
@@ -51,117 +51,116 @@ const App = () => (
       <AuthProvider>
         <RFQProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-            <Routes>
-              {/* ✅ Redirect / to /welcome */}
-              <Route path="/" element={<Navigate to="/welcome" replace />} />
+              <Toaster />
+              <Sonner />
+              <Routes>
+                {/* ✅ Redirect / to /welcome */}
+                <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-              {/* ✅ Welcome landing page (no layout) */}
-              <Route path="/welcome" element={
-                <Suspense fallback={<PageLoader />}>
-                  <LazyWelcomeLandingPage />
-                </Suspense>
-              } />
+                {/* ✅ Welcome landing page (no layout) */}
+                <Route path="/welcome" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyWelcomeLandingPage />
+                  </Suspense>
+                } />
 
-              {/* ✅ Public routes with layout */}
-              <Route element={<SiteLayout />}>
-                <Route path="/home" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyIndex />
-                  </Suspense>
-                } />
-                <Route path="/auth" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyAuth />
-                  </Suspense>
-                } />
-                <Route path="/about" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyAbout />
-                  </Suspense>
-                } />
-                <Route path="/blog" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyBlog />
-                  </Suspense>
-                } />
-                <Route path="/blog/:id" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyBlogPost />
-                  </Suspense>
-                } />
-                <Route path="/products" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyProductCatalog />
-                  </Suspense>
-                } />
-                <Route path="/products/:id" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyEnhancedProductDetail />
-                  </Suspense>
-                } />
-                <Route path="/floor-planner" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyFloorPlanner />
-                  </Suspense>
-                } />
-                <Route path="/contact" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyContact />
-                  </Suspense>
-                } />
-                <Route path="/rfq-cart" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <LazyRFQCart />
-                  </Suspense>
-                } />
-              </Route>
-
-              {/* ✅ Admin routes (protected and without layout) */}
-              <Route path="/admin/auth" element={
-                <Suspense fallback={<PageLoader />}>
-                  <LazyAdminAuth />
-                </Suspense>
-              } />
-              <Route
-                path="/admin/dashboard"
-                element={
-                  <AdminAuthGuard>
+                {/* ✅ Public routes with layout */}
+                <Route element={<SiteLayout />}>
+                  <Route path="/home" element={
                     <Suspense fallback={<PageLoader />}>
-                      <LazyDashboard />
+                      <LazyIndex />
                     </Suspense>
-                  </AdminAuthGuard>
-                }
-              />
-              <Route path="/admin/products" element={
-                <Suspense fallback={<PageLoader />}>
-                  <LazyAdminProductViewer />
-                </Suspense>
-              } />
-              <Route
-                path="/admin/test-hubspot"
-                element={
-                  <AdminAuthGuard>
-                    <Navigate to="/admin/dashboard?tab=hubspot-test" replace />
-                  </AdminAuthGuard>
-                }
-              />
-              <Route
-                path="/admin/hubspot-monitor"
-                element={
-                  <AdminAuthGuard>
-                    <Navigate to="/admin/dashboard?tab=hubspot-monitor" replace />
-                  </AdminAuthGuard>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </RFQProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+                  } />
+                  <Route path="/auth" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyAuth />
+                    </Suspense>
+                  } />
+                  <Route path="/about" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyAbout />
+                    </Suspense>
+                  } />
+                  <Route path="/blog" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyBlog />
+                    </Suspense>
+                  } />
+                  <Route path="/blog/:id" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyBlogPost />
+                    </Suspense>
+                  } />
+                  <Route path="/products" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyProductCatalog />
+                    </Suspense>
+                  } />
+                  <Route path="/products/:id" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyEnhancedProductDetail />
+                    </Suspense>
+                  } />
+                  <Route path="/floor-planner" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyFloorPlanner />
+                    </Suspense>
+                  } />
+                  <Route path="/contact" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyContact />
+                    </Suspense>
+                  } />
+                  <Route path="/rfq-cart" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyRFQCart />
+                    </Suspense>
+                  } />
+                </Route>
+
+                {/* ✅ Admin routes (protected and without layout) */}
+                <Route path="/admin/auth" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAdminAuth />
+                  </Suspense>
+                } />
+                <Route
+                  path="/admin/dashboard"
+                  element={
+                    <AdminAuthGuard>
+                      <Suspense fallback={<PageLoader />}>
+                        <LazyDashboard />
+                      </Suspense>
+                    </AdminAuthGuard>
+                  }
+                />
+                <Route path="/admin/products" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAdminProductViewer />
+                  </Suspense>
+                } />
+                <Route
+                  path="/admin/test-hubspot"
+                  element={
+                    <AdminAuthGuard>
+                      <Navigate to="/admin/dashboard?tab=hubspot-test" replace />
+                    </AdminAuthGuard>
+                  }
+                />
+                <Route
+                  path="/admin/hubspot-monitor"
+                  element={
+                    <AdminAuthGuard>
+                      <Navigate to="/admin/dashboard?tab=hubspot-monitor" replace />
+                    </AdminAuthGuard>
+                  }
+                />
+              </Routes>
+            </TooltipProvider>
+          </RFQProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    
   </HelmetProvider>
 );
 
