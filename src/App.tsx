@@ -1,11 +1,11 @@
 // src/App.tsx
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
-import { Suspense } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
