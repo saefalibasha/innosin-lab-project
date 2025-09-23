@@ -39,7 +39,7 @@ export default function WelcomeLandingPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
+    <div className="relative h-screen w-full bg-white overflow-hidden flex flex-col">
       
       {/* Animated Background */}
       <AnimatedBackground isMobile={isMobile} />
@@ -56,7 +56,7 @@ export default function WelcomeLandingPage() {
       </nav>
 
       {/* Hero Content */}
-      <div className="relative z-10 flex-1 flex flex-col justify-center sm:justify-start items-center px-4 sm:px-8 pt-0 sm:pt-0">
+      <div className="relative z-10 flex-1 flex flex-col justify-center items-center px-4 sm:px-8">
         <div className={`text-center w-full max-w-6xl transition-all duration-700 ease-out ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
         }`}>
@@ -76,7 +76,7 @@ export default function WelcomeLandingPage() {
               muted={true}
               loop={false}
               controls={false}
-              interactive={isMobile}
+              interactive={false}
               startTime={0}
               blendWithBackground={false}
               mobileSizeReduction={false}
@@ -84,10 +84,10 @@ export default function WelcomeLandingPage() {
           </div>
 
           {/* Main Tagline */}
-          <p className={`text-sea/90 font-light leading-relaxed mx-auto px-2 sm:px-0 whitespace-nowrap ${
+          <p className={`text-sea/90 font-light leading-relaxed mx-auto px-2 sm:px-0 ${
             isMobile 
-              ? 'text-lg sm:text-xl max-w-sm mb-8 mt-4' 
-              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-12 mt-8'
+              ? 'text-lg max-w-sm mb-6 break-words whitespace-normal' 
+              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-8 whitespace-nowrap'
           }`}>
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
