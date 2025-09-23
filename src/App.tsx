@@ -7,10 +7,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { Suspense } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { RFQProvider } from "@/contexts/RFQContext";
+import AdminAuthGuard from "@/components/AdminAuthGuard";
 
 // Layout
 import SiteLayout from "@/components/SiteLayout";
-import AdminAuthGuard from "@/components/AdminAuthGuard";
 
 // Lazy-loaded pages for code splitting
 import {
@@ -48,20 +49,21 @@ const App = () => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-          <Routes>
-            {/* ✅ Redirect / to /welcome */}
-            <Route path="/" element={<Navigate to="/welcome" replace />} />
+        <RFQProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+            <Routes>
+              {/* ✅ Redirect / to /welcome */}
+              <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-            {/* ✅ Welcome landing page (no layout) */}
-            <Route path="/welcome" element={
-              <Suspense fallback={<PageLoader />}>
-                <LazyWelcomeLandingPage />
-              </Suspense>
-            } />
+              {/* ✅ Welcome landing page (no layout) */}
+              <Route path="/welcome" element={
+                <Suspense fallback={<PageLoader />}>
+                  <LazyWelcomeLandingPage />
+                </Suspense>
+              } />
 
               {/* ✅ Public routes with layout */}
               <Route element={<SiteLayout />}>
@@ -157,8 +159,9 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+      </RFQProvider>
+    </AuthProvider>
+  </QueryClientProvider>
   </HelmetProvider>
 );
 
