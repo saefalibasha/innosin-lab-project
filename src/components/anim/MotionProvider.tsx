@@ -1,5 +1,5 @@
+import React, { ReactNode } from 'react';
 import { MotionConfig } from 'framer-motion';
-import { ReactNode } from 'react';
 
 interface MotionProviderProps {
   children: ReactNode;
