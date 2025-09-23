@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import { Suspense } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
@@ -12,25 +13,35 @@ import AdminAuthGuard from "@/components/AdminAuthGuard";
 // Layout
 import SiteLayout from "@/components/SiteLayout";
 
-// Public pages
-import WelcomeLandingPage from "./pages/WelcomeLandingPage";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import About from "./pages/About";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import ProductCatalog from "./pages/ProductCatalog";
-import EnhancedProductDetail from "./pages/EnhancedProductDetail";
-import FloorPlanner from "./pages/FloorPlanner";
-import Contact from "./pages/Contact";
-import RFQCart from "./pages/RFQCart";
+// Lazy-loaded pages for code splitting
+import {
+  LazyWelcomeLandingPage,
+  LazyIndex,
+  LazyAuth,
+  LazyAbout,
+  LazyBlog,
+  LazyBlogPost,
+  LazyProductCatalog,
+  LazyEnhancedProductDetail,
+  LazyFloorPlanner,
+  LazyContact,
+  LazyRFQCart,
+  LazyAdminAuth,
+  LazyDashboard,
+  LazyAdminProductViewer,
+  LazyTestHubSpotIntegration,
+  LazyHubSpotMonitor,
+} from "./components/LazyRoutes";
 
-// Admin pages
-import AdminAuth from "./pages/admin/AdminAuth";
-import Dashboard from "./pages/admin/Dashboard";
-import AdminProductViewer from "./pages/AdminProductViewer";
-import TestHubSpotIntegration from "./pages/TestHubSpotIntegration";
-import HubSpotMonitor from "./pages/admin/HubSpotMonitor";
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-muted-foreground">Loading...</p>
+    </div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -48,33 +59,87 @@ const App = () => (
               <Route path="/" element={<Navigate to="/welcome" replace />} />
 
               {/* ✅ Welcome landing page (no layout) */}
-              <Route path="/welcome" element={<WelcomeLandingPage />} />
+              <Route path="/welcome" element={
+                <Suspense fallback={<PageLoader />}>
+                  <LazyWelcomeLandingPage />
+                </Suspense>
+              } />
 
               {/* ✅ Public routes with layout */}
               <Route element={<SiteLayout />}>
-                <Route path="/home" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/blog" element={<Blog />} />
-                <Route path="/blog/:id" element={<BlogPost />} />
-                <Route path="/products" element={<ProductCatalog />} />
-                <Route path="/products/:id" element={<EnhancedProductDetail />} />
-                <Route path="/floor-planner" element={<FloorPlanner />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/rfq-cart" element={<RFQCart />} />
+                <Route path="/home" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyIndex />
+                  </Suspense>
+                } />
+                <Route path="/auth" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAuth />
+                  </Suspense>
+                } />
+                <Route path="/about" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyAbout />
+                  </Suspense>
+                } />
+                <Route path="/blog" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyBlog />
+                  </Suspense>
+                } />
+                <Route path="/blog/:id" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyBlogPost />
+                  </Suspense>
+                } />
+                <Route path="/products" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyProductCatalog />
+                  </Suspense>
+                } />
+                <Route path="/products/:id" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyEnhancedProductDetail />
+                  </Suspense>
+                } />
+                <Route path="/floor-planner" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyFloorPlanner />
+                  </Suspense>
+                } />
+                <Route path="/contact" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyContact />
+                  </Suspense>
+                } />
+                <Route path="/rfq-cart" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyRFQCart />
+                  </Suspense>
+                } />
               </Route>
 
               {/* ✅ Admin routes (protected and without layout) */}
-              <Route path="/admin/auth" element={<AdminAuth />} />
+              <Route path="/admin/auth" element={
+                <Suspense fallback={<PageLoader />}>
+                  <LazyAdminAuth />
+                </Suspense>
+              } />
               <Route
                 path="/admin/dashboard"
                 element={
                   <AdminAuthGuard>
-                    <Dashboard />
+                    <Suspense fallback={<PageLoader />}>
+                      <LazyDashboard />
+                    </Suspense>
                   </AdminAuthGuard>
                 }
               />
-              <Route path="/admin/products" element={<AdminProductViewer />} />
+              <Route path="/admin/products" element={
+                <Suspense fallback={<PageLoader />}>
+                  <LazyAdminProductViewer />
+                </Suspense>
+              } />
               <Route
                 path="/admin/test-hubspot"
                 element={

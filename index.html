@@ -82,6 +82,12 @@
     
     <!-- Preload critical CSS -->
     <link rel="modulepreload" href="/src/main.tsx" />
+    <link rel="modulepreload" href="/src/App.tsx" />
+    <link rel="modulepreload" href="/src/components/LazyRoutes.tsx" />
+    
+    <!-- Prefetch key route chunks -->
+    <link rel="prefetch" href="/src/pages/Index.tsx" />
+    <link rel="prefetch" href="/src/pages/ProductCatalog.tsx" />
     
     <!-- Structured Data - Organization -->
     <script type="application/ld+json">
