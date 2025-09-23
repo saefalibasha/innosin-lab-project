@@ -67,10 +67,10 @@ export default function WelcomeLandingPage() {
           }`}>
             <OptimizedVideo
               src="/videos/landing-intro-v4.mp4"
-              className={`w-full h-auto transition-all duration-500 ${
+              className={`w-full h-auto transition-all duration-500 rounded-none shadow-none ${
                 isMobile 
-                  ? 'transform scale-100 filter brightness-100 contrast-105 saturate-100' 
-                  : 'transform scale-105 filter brightness-105 contrast-110 saturate-105'
+                  ? 'transform scale-100 filter brightness-110 contrast-100 saturate-90' 
+                  : 'transform scale-105 filter brightness-110 contrast-100 saturate-90'
               }`}
               autoplay={true}
               muted={true}
@@ -78,16 +78,16 @@ export default function WelcomeLandingPage() {
               controls={false}
               interactive={isMobile}
               startTime={0}
-              blendWithBackground={true}
-              mobileSizeReduction={true}
+              blendWithBackground={false}
+              mobileSizeReduction={false}
             />
           </div>
 
           {/* Main Tagline */}
           <p className={`text-sea/90 font-light leading-relaxed mx-auto px-2 sm:px-0 whitespace-nowrap ${
             isMobile 
-              ? 'text-lg sm:text-xl max-w-sm mb-16 mt-8' 
-              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-20 mt-12'
+              ? 'text-lg sm:text-xl max-w-sm mb-8 mt-8' 
+              : 'text-2xl sm:text-3xl lg:text-4xl max-w-none mb-12 mt-12'
           }`}>
             Pioneering laboratory solutions designed for tomorrow's breakthroughs.
           </p>
