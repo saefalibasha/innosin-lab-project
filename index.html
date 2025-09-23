@@ -98,6 +98,10 @@
     <!-- PWA Manifest for better caching -->
     <link rel="manifest" href="/manifest.json" />
     
+    <!-- Cache optimization hints for browsers -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
+    <meta http-equiv="Expires" content="Fri, 01 Jan 2025 00:00:00 GMT" />
+    <meta http-equiv="Expires" content="Fri, 01 Jan 2025 00:00:00 GMT" />
     
     <!-- Resource hints for better caching -->
     <link rel="dns-prefetch" href="//fonts.googleapis.com" />
@@ -210,6 +214,9 @@
     <link rel="modulepreload" href="/src/App.tsx" />
     <link rel="modulepreload" href="/src/components/LazyRoutes.tsx" />
     
+    <!-- Prefetch key route chunks for instant navigation -->
+    <link rel="prefetch" href="/src/pages/Index.tsx" />
+    <link rel="prefetch" href="/src/pages/ProductCatalog.tsx" />
     
     <!-- Additional script to ensure CSS loads properly -->
     <script>

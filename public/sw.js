@@ -1,5 +1,5 @@
 // Service worker with safe caching for production builds
-const CACHE_NAME = 'innosin-lab-v4';
+const CACHE_NAME = 'innosin-lab-v3';
 const CORE_URLS = [
   '/',
 ];
