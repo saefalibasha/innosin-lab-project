@@ -63,7 +63,7 @@ export default function WelcomeLandingPage() {
           
           {/* Intro Video */}
           <div className={`mb-6 sm:mb-4 w-full mx-auto animate-fade-in ${
-            isMobile ? 'max-w-md' : 'max-w-5xl'
+            isMobile ? 'max-w-sm' : 'max-w-4xl'
           }`}>
             <OptimizedVideo
               src="/videos/landing-intro-v4.mp4"
