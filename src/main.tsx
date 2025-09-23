@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { MotionProvider } from './components/anim'
+import { RFQProvider } from '@/contexts/RFQContext'
 
 const container = document.getElementById("root");
 if (!container) {
@@ -12,8 +13,10 @@ if (!container) {
 
 createRoot(container).render(
   <React.StrictMode>
-    <MotionProvider>
-      <App />
-    </MotionProvider>
+    <RFQProvider>
+      <MotionProvider>
+        <App />
+      </MotionProvider>
+    </RFQProvider>
   </React.StrictMode>
 );
