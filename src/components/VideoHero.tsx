@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/carousel';
 
 const VideoHero = () => {
+  console.log('VideoHero rendering...');
   const [scrolled, setScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
 

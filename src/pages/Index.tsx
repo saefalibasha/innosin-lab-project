@@ -7,6 +7,8 @@ import CompanyTimeline from '@/components/CompanyTimeline';
 import LabTransformCTA from '@/components/LabTransformCTA';
 
 const Index = () => {
+  console.log('Index component rendering...');
+  
   return (
     <>
       <Helmet>
@@ -18,19 +20,29 @@ const Index = () => {
 
       <main className="min-h-screen">
         {/* Hero Section */}
-        <VideoHero />
+        <div className="min-h-screen bg-primary/5 flex items-center justify-center">
+          <VideoHero />
+        </div>
         
         {/* Shop The Look Section */}
-        <ShopTheLook />
+        <div className="min-h-screen bg-background">
+          <ShopTheLook />
+        </div>
         
         {/* Before/After Laboratory Transformations */}
-        <BeforeAfterComparison />
+        <div className="min-h-screen bg-muted/20">
+          <BeforeAfterComparison />
+        </div>
         
         {/* Company Timeline */}
-        <CompanyTimeline />
+        <div className="min-h-screen bg-background">
+          <CompanyTimeline />
+        </div>
         
         {/* Call to Action Section */}
-        <LabTransformCTA />
+        <div className="py-24 bg-gradient-to-br from-primary/5 to-sea/5">
+          <LabTransformCTA />
+        </div>
       </main>
     </>
   );
