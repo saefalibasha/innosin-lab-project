@@ -71,11 +71,11 @@
     <meta name="geo.placename" content="Selangor, Malaysia" />
     <meta name="ICBM" content="3.1390, 101.6869" />
     
-    <!-- Google Fonts for Modern Design with Outfit -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- Performance Critical Resource Hints -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"></noscript>
     
-    <!-- Performance Optimization -->
-    <link rel="preload" href="/fonts/inter.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Preload critical CSS -->
     <link rel="modulepreload" href="/src/main.tsx" />
     
     <!-- Structured Data - Organization -->
