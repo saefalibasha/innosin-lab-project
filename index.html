@@ -116,64 +116,17 @@
     
     <!-- Critical CSS inlined to prevent render blocking -->
     <style>
-      /* Critical above-the-fold styles with expanded coverage */
-      :root {
-        --background: 0 0% 100%;
-        --foreground: 222.2 84% 4.9%;
-        --primary: 222.2 47.4% 11.2%;
-        --primary-foreground: 210 40% 98%;
-        --secondary: 210 40% 96%;
-        --border: 214.3 31.8% 91.4%;
-        --sea: 200 85% 45%;
-        --sea-light: 200 75% 55%;
-      }
-      .dark {
-        --background: 222.2 84% 4.9%;
-        --foreground: 210 40% 98%;
-        --primary: 210 40% 98%;
-        --primary-foreground: 222.2 47.4% 11.2%;
-      }
-      
-      * { border-color: hsl(var(--border)); }
-      body { 
-        font-family: 'Lato', system-ui, -apple-system, sans-serif; 
-        margin: 0; 
-        padding: 0; 
-        background-color: hsl(var(--background)); 
-        color: hsl(var(--foreground)); 
-        line-height: 1.5;
-      }
-      
-      /* Essential layout utilities */
+      /* Critical above-the-fold styles */
+      body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; background-color: #ffffff; color: #0f172a; }
       .min-h-screen { min-height: 100vh; }
       .flex { display: flex; }
       .items-center { align-items: center; }
       .justify-center { justify-content: center; }
       .text-center { text-align: center; }
-      .relative { position: relative; }
-      .absolute { position: absolute; }
-      .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-      .w-full { width: 100%; }
-      .h-full { height: 100%; }
-      .p-4 { padding: 1rem; }
-      .px-4 { padding-left: 1rem; padding-right: 1rem; }
-      .py-16 { padding-top: 4rem; padding-bottom: 4rem; }
-      .max-w-7xl { max-width: 80rem; }
-      .mx-auto { margin-left: auto; margin-right: auto; }
-      
-      /* Critical animations */
       .animate-spin { animation: spin 1s linear infinite; }
       @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      .animate-fade-in { animation: fadeIn 0.6s ease-out; }
-      @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-      
-      /* Critical text styles */
-      .text-primary { color: hsl(var(--primary)); }
-      .text-foreground { color: hsl(var(--foreground)); }
-      .bg-background { background-color: hsl(var(--background)); }
-      .bg-primary { background-color: hsl(var(--primary)); }
-      .text-primary-foreground { color: hsl(var(--primary-foreground)); }
-      
+      .text-primary { color: #1e293b; }
+      .text-muted-foreground { color: #64748b; }
       /* Font loading with font-display: swap */
       @font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap; src: url(https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHjx4wXiWtFCc.woff2) format('woff2'); unicode-range: U+0000-00FF; }
       @font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url(https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh7USSwiPGQ3q5d0.woff2) format('woff2'); unicode-range: U+0000-00FF; }
@@ -256,36 +209,6 @@
     <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'" media="print">
     <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
     
-    <!-- Intercept and defer Vite's CSS injection -->
-    <script>
-      // Prevent render-blocking by intercepting CSS injections
-      (function() {
-        const originalAppendChild = document.head.appendChild;
-        const deferredStyles = [];
-        
-        document.head.appendChild = function(element) {
-          if (element.tagName === 'LINK' && 
-              element.rel === 'stylesheet' && 
-              element.href && 
-              element.href.includes('/assets/index-') && 
-              element.href.includes('.css')) {
-            // Defer main CSS bundle
-            element.media = 'print';
-            deferredStyles.push(element);
-            const result = originalAppendChild.call(this, element);
-            
-            // Load after critical rendering
-            requestAnimationFrame(() => {
-              setTimeout(() => element.media = 'all', 0);
-            });
-            
-            return result;
-          }
-          return originalAppendChild.call(this, element);
-        };
-      })();
-    </script>
-    
     <!-- Preload critical resources -->
     <link rel="modulepreload" href="/src/main.tsx" />
     <link rel="modulepreload" href="/src/App.tsx" />
@@ -295,35 +218,21 @@
     <link rel="prefetch" href="/src/pages/Index.tsx" />
     <link rel="prefetch" href="/src/pages/ProductCatalog.tsx" />
     
-    <!-- Enhanced CSS loading management -->
+    <!-- Additional script to ensure CSS loads properly -->
     <script>
-      // Comprehensive deferred CSS loading system
+      // Ensure deferred CSS loads after critical path
       (function() {
+        var cssLinks = document.querySelectorAll('link[media="print"]');
         function loadDeferredCSS() {
-          // Load preloaded stylesheets
-          const printLinks = document.querySelectorAll('link[media="print"]');
-          printLinks.forEach(function(link) {
+          cssLinks.forEach(function(link) {
             link.media = 'all';
           });
-          
-          // Ensure Vite CSS is loaded non-blocking
-          const viteCSS = document.querySelector('link[href*="/assets/index-"][href*=".css"]');
-          if (viteCSS && viteCSS.media !== 'all') {
-            viteCSS.media = 'all';
-          }
         }
-        
-        // Load after critical rendering completes
         if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() {
-            requestAnimationFrame(loadDeferredCSS);
-          });
+          document.addEventListener('DOMContentLoaded', loadDeferredCSS);
         } else {
-          requestAnimationFrame(loadDeferredCSS);
+          loadDeferredCSS();
         }
-        
-        // Fallback for slow connections
-        setTimeout(loadDeferredCSS, 100);
       })();
     </script>
     
