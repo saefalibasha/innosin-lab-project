@@ -4,11 +4,11 @@
   <head>
     <meta charset="UTF-8" />
     
-    <!-- Page Title -->
-    <title>Innosin Lab - Premium Laboratory Furniture & Equipment Solutions</title>
+    <!-- Page Title - Critical for Google Search Results -->
+    <title>Innosin Lab - Premium Laboratory Furniture &amp; Equipment Solutions | Malaysia</title>
     
     <!-- Primary SEO Meta Tags -->
-    <meta name="description" content="Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions." />
+    <meta name="description" content="Leading provider of innovative laboratory furniture, equipment, and custom design solutions in Malaysia. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions since 1986." />
     <meta name="keywords" content="laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, lab workbenches, laboratory solutions, research equipment, lab safety furniture, laboratory installation" />
     <meta name="author" content="Innosin Lab Pte. Ltd." />
     
@@ -31,6 +31,40 @@
     <meta name="twitter:title" content="Innosin Lab - Premium Laboratory Furniture & Equipment Solutions" />
     <meta name="twitter:description" content="Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions." />
     <meta name="twitter:image" content="https://innosinlab.com/branding/hero-logo.png" />
+    
+    <!-- SEO Enhancement for Google Crawlers -->
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    
+    <!-- Immediate URL cleanup script -->
+    <script>
+      // Clean tracking parameters immediately when page loads
+      (function() {
+        const url = new URL(window.location.href);
+        let needsRedirect = false;
+        
+        // Remove tracking parameters that appear in Google search results
+        const trackingParams = ['srsltid', 'utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid', 'ref'];
+        trackingParams.forEach(param => {
+          if (url.searchParams.has(param)) {
+            url.searchParams.delete(param);
+            needsRedirect = true;
+          }
+        });
+        
+        // Redirect to clean URL if tracking parameters were found
+        if (needsRedirect) {
+          const cleanUrl = url.toString();
+          window.history.replaceState({}, document.title, cleanUrl);
+          
+          // Update canonical URL
+          const canonical = document.querySelector('link[rel="canonical"]');
+          if (canonical) {
+            canonical.href = cleanUrl;
+          }
+        }
+      })();
+    </script>
     
     <!-- Structured Data for Homepage -->
     <script type="application/ld+json">

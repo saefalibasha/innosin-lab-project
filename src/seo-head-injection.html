@@ -1,0 +1,38 @@
+<!-- Google Search Console Verification -->
+<meta name="google-site-verification" content="google-site-verification-code" />
+
+<!-- Immediate SEO Script to clean URLs -->
+<script>
+// Immediate URL cleanup for SEO - runs before React
+(function() {
+  const url = new URL(window.location.href);
+  let needsRedirect = false;
+  
+  // Remove tracking parameters
+  const trackingParams = ['srsltid', 'utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid'];
+  trackingParams.forEach(param => {
+    if (url.searchParams.has(param)) {
+      url.searchParams.delete(param);
+      needsRedirect = true;
+    }
+  });
+  
+  // Redirect to clean URL if needed
+  if (needsRedirect) {
+    window.history.replaceState({}, document.title, url.toString());
+  }
+  
+  // Update canonical URL dynamically
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) {
+    canonical.href = url.toString();
+  }
+})();
+</script>
+
+<!-- Force Google to see meta description -->
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+<meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+
+<!-- Additional verification for search engines -->
+<meta name="verify-v1" content="Innosin Lab Laboratory Furniture Equipment Malaysia" />
