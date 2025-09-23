@@ -5,6 +5,8 @@ import App from './App.tsx'
 import './index.css'
 import { MotionProvider } from './components/anim'
 
+console.log('[debug] React main version:', React.version);
+
 
 const container = document.getElementById("root");
 if (!container) {
