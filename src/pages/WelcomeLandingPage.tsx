@@ -41,8 +41,7 @@ export default function WelcomeLandingPage() {
   return (
     <div className="relative h-screen w-full bg-white overflow-hidden flex flex-col">
       
-      {/* Animated Background */}
-      <AnimatedBackground isMobile={isMobile} />
+      {/* Pure white background */}
       
       {/* Navigation */}
       <nav className="relative z-10 flex justify-end items-center px-4 sm:px-8 py-3 sm:py-2">
