@@ -74,60 +74,48 @@
     <priority>0.6</priority>
   </url>
 
-  <!-- Product Pages - Individual Products -->
+  <!-- Product Pages - Correct URLs for existing products -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-mc-pc-755065</loc>
+    <loc>https://innosinlab.com/products/innosin-mobile-cabinet-750mm</loc>
     <lastmod>2025-01-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <image:image>
       <image:loc>https://innosinlab.com/products/innosin-mc-pc-755065/MC-PC%20(755065).jpg</image:loc>
-      <image:title>MC-PC Mobile Cabinet Series 755065</image:title>
+      <image:title>Mobile Cabinet Series for 750mm Bench</image:title>
     </image:image>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-mc-pc-755080</loc>
+    <loc>https://innosinlab.com/products/innosin-mobile-cabinet-900mm</loc>
     <lastmod>2025-01-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <image:image>
       <image:loc>https://innosinlab.com/products/innosin-mc-pc-755080/MC-PC%20(755080).jpg</image:loc>
-      <image:title>MC-PC Mobile Cabinet Series 755080</image:title>
+      <image:title>Mobile Cabinet Series for 900mm Bench</image:title>
     </image:image>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-wcg-pc-753375</loc>
+    <loc>https://innosinlab.com/products/innosin-wall-cabinet-glass</loc>
     <lastmod>2025-01-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://innosinlab.com/products/innosin-wcg-pc-753375/WCG-PC%20(753375).jpg</image:loc>
-      <image:title>WCG-PC Wall Cabinet Glass Series 753375</image:title>
-    </image:image>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-tcg-pc-754018</loc>
+    <loc>https://innosinlab.com/products/innosin-tall-cabinet-glass</loc>
     <lastmod>2025-01-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://innosinlab.com/products/innosin-tcg-pc-754018/TCG-PC%20(754018).jpg</image:loc>
-      <image:title>TCG-PC Tall Cabinet Glass Door Series 754018</image:title>
-    </image:image>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-or-pc-604518</loc>
+    <loc>https://innosinlab.com/products/innosin-open-rack</loc>
     <lastmod>2025-01-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <image:image>
-      <image:loc>https://innosinlab.com/products/innosin-or-pc-604518/OR-PC-3838%20(604518).jpg</image:loc>
-      <image:title>OR-PC Open Rack Series 604518</image:title>
-    </image:image>
   </url>
 
 </urlset>
