@@ -16,7 +16,6 @@ import SiteLayout from "@/components/SiteLayout";
 // Lazy-loaded pages for code splitting
 import {
   LazyWelcomeLandingPage,
-  LazyIndex,
   LazyAuth,
   LazyAbout,
   LazyBlog,
@@ -34,7 +33,7 @@ import {
 } from "./components/LazyRoutes";
 
 // Loading fallback component
-import Index from '@/pages/Index';
+import HomePage from '@/pages/Home';
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
@@ -67,7 +66,7 @@ const App = () => (
 
                 {/* ✅ Public routes with layout */}
                 <Route element={<SiteLayout />}>
-                  <Route path="/home" element={<Index />} />
+                  <Route path="/home" element={<HomePage />} />
                   <Route path="/auth" element={
                     <Suspense fallback={<PageLoader />}>
                       <LazyAuth />

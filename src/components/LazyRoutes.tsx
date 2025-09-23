@@ -2,7 +2,6 @@ import { lazy } from 'react';
 
 // Route-based code splitting - load components only when routes are visited
 export const LazyWelcomeLandingPage = lazy(() => import('../pages/WelcomeLandingPage'));
-export const LazyIndex = lazy(() => import('../pages/SimpleIndex'));
 export const LazyAbout = lazy(() => import('../pages/About'));
 export const LazyBlog = lazy(() => import('../pages/Blog'));
 export const LazyBlogPost = lazy(() => import('../pages/BlogPost'));
