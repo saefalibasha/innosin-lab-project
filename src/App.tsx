@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
@@ -47,11 +47,10 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <HelmetProvider>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <RFQProvider>
-            <TooltipProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RFQProvider>
+          <TooltipProvider>
               <Toaster />
               <Sonner />
               <Routes>
@@ -161,7 +160,7 @@ const App = () => (
           </RFQProvider>
         </AuthProvider>
       </QueryClientProvider>
-    </BrowserRouter>
+    
   </HelmetProvider>
 );
 

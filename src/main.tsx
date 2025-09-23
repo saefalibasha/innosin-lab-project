@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import { MotionProvider } from './components/anim'
+import { BrowserRouter } from 'react-router-dom'
 
 console.log('[debug] React main version:', React.version);
 
@@ -15,8 +16,10 @@ if (!container) {
 
 createRoot(container).render(
   <React.StrictMode>
-    <MotionProvider>
-      <App />
-    </MotionProvider>
+    <BrowserRouter>
+      <MotionProvider>
+        <App />
+      </MotionProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );
