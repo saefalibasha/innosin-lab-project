@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -35,31 +36,34 @@
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     
-    <!-- Force cache clear and fresh load -->
+    <!-- Immediate URL cleanup script -->
     <script>
-      // Clear all caches and force fresh load
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
+      // Clean tracking parameters immediately when page loads
+      (function() {
+        const url = new URL(window.location.href);
+        let needsRedirect = false;
+        
+        // Remove tracking parameters that appear in Google search results
+        const trackingParams = ['srsltid', 'utm_source', 'utm_medium', 'utm_campaign', 'fbclid', 'gclid', 'ref'];
+        trackingParams.forEach(param => {
+          if (url.searchParams.has(param)) {
+            url.searchParams.delete(param);
+            needsRedirect = true;
           }
         });
-      }
-      
-      if ('caches' in window) {
-        caches.keys().then(function(names) {
-          for (let name of names) {
-            caches.delete(name);
+        
+        // Redirect to clean URL if tracking parameters were found
+        if (needsRedirect) {
+          const cleanUrl = url.toString();
+          window.history.replaceState({}, document.title, cleanUrl);
+          
+          // Update canonical URL
+          const canonical = document.querySelector('link[rel="canonical"]');
+          if (canonical) {
+            canonical.href = cleanUrl;
           }
-        });
-      }
-      
-      // Force hard reload by adding timestamp
-      const currentUrl = new URL(window.location.href);
-      if (!currentUrl.searchParams.has('_t')) {
-        currentUrl.searchParams.set('_t', Date.now().toString());
-        window.history.replaceState({}, '', currentUrl.toString());
-      }
+        }
+      })();
     </script>
     
     <!-- Structured Data for Homepage -->
@@ -89,11 +93,30 @@
     }
     </script>
     <link rel="icon" type="image/png" href="/favicon.png" />
-    <meta name="viewport" content="width=device-device, initial-scale=1.0" />
-    <meta name="theme-color" content="#1a365d" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Critical CSS -->
+    <!-- PWA Manifest for better caching -->
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Cache optimization hints for browsers -->
+    <meta http-equiv="Cache-Control" content="public, max-age=31536000, immutable" />
+    <meta http-equiv="Expires" content="Fri, 01 Jan 2025 00:00:00 GMT" />
+    <meta http-equiv="Expires" content="Fri, 01 Jan 2025 00:00:00 GMT" />
+    
+    <!-- Resource hints for better caching -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="//api.supabase.co" />
+    
+    <!-- SEO Files -->
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    
+    <meta name="theme-color" content="#1a365d" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <!-- Critical CSS inlined to prevent render blocking -->
     <style>
+      /* Critical above-the-fold styles */
       body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; background-color: #ffffff; color: #0f172a; }
       .min-h-screen { min-height: 100vh; }
       .flex { display: flex; }
@@ -104,10 +127,205 @@
       @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       .text-primary { color: #1e293b; }
       .text-muted-foreground { color: #64748b; }
+      /* Font loading with font-display: swap */
+      @font-face { font-family: 'Lato'; font-style: normal; font-weight: 400; font-display: swap; src: url(https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHjx4wXiWtFCc.woff2) format('woff2'); unicode-range: U+0000-00FF; }
+      @font-face { font-family: 'Lato'; font-style: normal; font-weight: 700; font-display: swap; src: url(https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh7USSwiPGQ3q5d0.woff2) format('woff2'); unicode-range: U+0000-00FF; }
     </style>
+    
+    <!-- Enhanced resource preloading for cache efficiency -->
+    <link rel="preload" href="/videos/landing-intro-v4.mp4" as="video" type="video/mp4" crossorigin />
+    <link rel="preload" href="/src/main.tsx" as="script" crossorigin />
+    <link rel="preload" href="/src/index.css" as="style" crossorigin />
+    
+    <!-- Preconnect to critical domains to eliminate network dependency chains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Primary Meta Tags -->
+    <title>Innosin Lab - Premium Laboratory Furniture & Equipment Solutions</title>
+    <meta name="title" content="Innosin Lab - Premium Laboratory Furniture & Equipment Solutions" />
+    <meta name="description" content="Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions." />
+    <meta name="keywords" content="laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, lab workbenches, laboratory solutions, research equipment, lab safety furniture, laboratory installation" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://innosinlab.com/" />
+    <meta property="og:title" content="Innosin Lab - Premium Laboratory Furniture & Equipment Solutions" />
+    <meta property="og:description" content="Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions." />
+    <meta property="og:image" content="/branding/hero-logo.png" />
+    <meta property="og:site_name" content="Innosin Lab" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://innosinlab.com/" />
+    <meta property="twitter:title" content="Innosin Lab - Premium Laboratory Furniture & Equipment Solutions" />
+    <meta property="twitter:description" content="Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions." />
+    <meta property="twitter:image" content="/branding/hero-logo.png" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://innosinlab.com/" />
+    
+    <!-- Additional SEO improvements -->
+    <meta name="google-site-verification" content="your-google-site-verification-code" />
+    <meta name="msvalidate.01" content="your-bing-site-verification-code" />
+    
+    <!-- Performance hints -->
+    <link rel="dns-prefetch" href="//images.unsplash.com" />
+    <link rel="preconnect" href="https://www.google-analytics.com" crossorigin />
+    
+    <!-- Additional Open Graph optimizations -->
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
+    
+    <!-- Article metadata for better content classification -->
+    <meta property="article:publisher" content="https://innosinlab.com" />
+    <meta property="article:author" content="Innosin Lab Pte. Ltd." />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="author" content="Innosin Lab Pte. Ltd." />
+    <meta name="copyright" content="© 2025 Innosin Lab Pte. Ltd. All rights reserved." />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="distribution" content="global" />
+    <meta name="rating" content="general" />
+    
+    <!-- Geo Tags for Local SEO -->
+    <meta name="geo.region" content="MY-10" />
+    <meta name="geo.placename" content="Selangor, Malaysia" />
+    <meta name="ICBM" content="3.1390, 101.6869" />
+    
+    <!-- Non-blocking Font Loading with font-display: swap -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Lato:wght@400;500;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'" media="print">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@400;700&family=Lato:wght@400;500;700&display=swap" rel="stylesheet"></noscript>
+    
+    <!-- Preload critical font files to eliminate FOIT -->
+    <link rel="preload" href="https://fonts.gstatic.com/s/lato/v25/S6uyw4BMUTPHjx4wXiWtFCc.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="https://fonts.gstatic.com/s/lato/v25/S6u9w4BMUTPHh7USSwiPGQ3q5d0.woff2" as="font" type="font/woff2" crossorigin>
+    
+    
+    <!-- Defer main CSS bundle loading to prevent render blocking -->
+    <link rel="preload" href="/src/index.css" as="style" onload="this.onload=null;this.rel='stylesheet'" media="print">
+    <noscript><link rel="stylesheet" href="/src/index.css"></noscript>
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+    <link rel="modulepreload" href="/src/App.tsx" />
+    <link rel="modulepreload" href="/src/components/LazyRoutes.tsx" />
+    
+    <!-- Prefetch key route chunks for instant navigation -->
+    <link rel="prefetch" href="/src/pages/Index.tsx" />
+    <link rel="prefetch" href="/src/pages/ProductCatalog.tsx" />
+    
+    <!-- Additional script to ensure CSS loads properly -->
+    <script>
+      // Ensure deferred CSS loads after critical path
+      (function() {
+        var cssLinks = document.querySelectorAll('link[media="print"]');
+        function loadDeferredCSS() {
+          cssLinks.forEach(function(link) {
+            link.media = 'all';
+          });
+        }
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', loadDeferredCSS);
+        } else {
+          loadDeferredCSS();
+        }
+      })();
+    </script>
+    
+    <!-- Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Innosin Lab Pte. Ltd.",
+      "alternateName": "Innosin Lab",
+      "url": "https://innosinlab.com",
+      "logo": "https://innosinlab.com/branding/hero-logo.png",
+      "description": "Leading provider of innovative laboratory furniture, equipment, and custom design solutions since 1986.",
+      "foundingDate": "1986",
+      "industry": "Laboratory Equipment Manufacturing",
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "MY",
+        "addressRegion": "Selangor"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "telephone": "+60-3-1234-5678",
+        "contactType": "Customer Service",
+        "email": "info@innosinlab.com",
+        "availableLanguage": ["English", "Malay"]
+      },
+      "sameAs": [
+        "https://www.linkedin.com/company/innosin-lab"
+      ]
+    }
+    </script>
+    
+    <!-- Structured Data - Website -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Innosin Lab",
+      "alternateName": "Innosin Lab Pte. Ltd.",
+      "url": "https://innosinlab.com",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://innosinlab.com/products?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Register service worker for client-side caching -->
+    <script>
+      // Register service worker for asset caching
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('SW registered: ', registration);
+            })
+            .catch(function(registrationError) {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+      }
+    </script>
+    
+    <!-- Defer non-critical CSS to prevent render blocking -->
+    <script>
+      // Load main CSS after critical rendering path
+      function loadCSS(href) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        document.head.appendChild(link);
+      }
+      
+      // Defer main CSS loading
+      if (typeof window !== 'undefined') {
+        window.addEventListener('load', function() {
+          // Main CSS is already loaded by Vite, this ensures fonts load properly
+          setTimeout(function() {
+            var fontLinks = document.querySelectorAll('link[href*="fonts.googleapis.com"]');
+            fontLinks.forEach(function(link) {
+              if (link.media === 'print') {
+                link.media = 'all';
+              }
+            });
+          }, 0);
+        });
+      }
+    </script>
   </body>
 </html>
