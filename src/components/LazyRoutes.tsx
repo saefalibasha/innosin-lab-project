@@ -1,12 +1,12 @@
 import { lazy } from 'react';
 
-// Route-based code splitting - load components only when routes are visited
-export const LazyWelcomeLandingPage = lazy(() => import('../pages/WelcomeLandingPage'));
-export const LazyIndex = lazy(() => import('../pages/Index'));
-export const LazyAbout = lazy(() => import('../pages/About'));
-export const LazyBlog = lazy(() => import('../pages/Blog'));
+// Eagerly load critical landing routes to avoid chunk issues
+export { default as LazyWelcomeLandingPage } from '../pages/WelcomeLandingPage';
+export { default as LazyIndex } from '../pages/Index';
+export { default as LazyAbout } from '../pages/About';
+export { default as LazyBlog } from '../pages/Blog';
 export const LazyBlogPost = lazy(() => import('../pages/BlogPost'));
-export const LazyProductCatalog = lazy(() => import('../pages/ProductCatalog'));
+export { default as LazyProductCatalog } from '../pages/ProductCatalog';
 export const LazyEnhancedProductDetail = lazy(() => import('../pages/EnhancedProductDetail'));
 export const LazyFloorPlanner = lazy(() => import('../pages/FloorPlanner'));
 export const LazyContact = lazy(() => import('../pages/Contact'));

@@ -306,30 +306,41 @@
       }
     </script>
     
-    <!-- Defer non-critical CSS to prevent render blocking -->
+    <!-- Runtime guard: auto-recover from dynamic import failures -->
     <script>
-      // Load main CSS after critical rendering path
-      function loadCSS(href) {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = href;
-        document.head.appendChild(link);
-      }
-      
-      // Defer main CSS loading
-      if (typeof window !== 'undefined') {
-        window.addEventListener('load', function() {
-          // Main CSS is already loaded by Vite, this ensures fonts load properly
-          setTimeout(function() {
-            var fontLinks = document.querySelectorAll('link[href*="fonts.googleapis.com"]');
-            fontLinks.forEach(function(link) {
-              if (link.media === 'print') {
-                link.media = 'all';
-              }
-            });
-          }, 0);
+      (function(){
+        const RELOAD_FLAG = 'vite_chunk_reload_once';
+        function shouldReload(reason){
+          const msg = String(reason && (reason.message || reason)).toLowerCase();
+          return (
+            msg.includes('failed to fetch dynamically imported module') ||
+            msg.includes('importing a module script failed') ||
+            msg.includes('loading chunk') ||
+            msg.includes('chunk load error') ||
+            msg.includes('unexpected token')
+          );
+        }
+        window.addEventListener('error', function(e){
+          if (shouldReload(e.error || e.message)) {
+            if (!sessionStorage.getItem(RELOAD_FLAG)) {
+              sessionStorage.setItem(RELOAD_FLAG, '1');
+              location.reload();
+            } else {
+              sessionStorage.removeItem(RELOAD_FLAG);
+            }
+          }
         });
-      }
+        window.addEventListener('unhandledrejection', function(e){
+          if (shouldReload(e.reason)) {
+            if (!sessionStorage.getItem(RELOAD_FLAG)) {
+              sessionStorage.setItem(RELOAD_FLAG, '1');
+              location.reload();
+            } else {
+              sessionStorage.removeItem(RELOAD_FLAG);
+            }
+          }
+        });
+      })();
     </script>
   </body>
 </html>
