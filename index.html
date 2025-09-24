@@ -214,9 +214,7 @@
     <link rel="modulepreload" href="/src/App.tsx" />
     <link rel="modulepreload" href="/src/components/LazyRoutes.tsx" />
     
-    <!-- Prefetch key route chunks for instant navigation -->
-    <link rel="prefetch" href="/src/pages/Index.tsx" />
-    <link rel="prefetch" href="/src/pages/ProductCatalog.tsx" />
+    <!-- Removed prefetch of source route modules to avoid chunk mismatch in production -->
     
     <!-- Additional script to ensure CSS loads properly -->
     <script>
@@ -286,18 +284,24 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Register service worker for client-side caching -->
+    <!-- Disable Service Worker and clear caches to prevent stale chunks -->
     <script>
-      // Register service worker for asset caching
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('SW registered: ', registration);
-            })
-            .catch(function(registrationError) {
-              console.log('SW registration failed: ', registrationError);
-            });
+        window.addEventListener('load', async () => {
+          try {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            for (const reg of regs) { await reg.unregister(); }
+            if (window.caches && caches.keys) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+            console.log('SW disabled and caches cleared');
+            if (navigator.serviceWorker.controller) {
+              setTimeout(() => window.location.reload(), 50);
+            }
+          } catch (err) {
+            console.log('SW cleanup error:', err);
+          }
         });
       }
     </script>
