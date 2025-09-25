@@ -34,7 +34,7 @@ const HeroNavigation = () => {
             <img 
               src="/branding/hero-logo.png" 
               alt="Innosin Lab" 
-              className="h-16 w-auto"
+              className="h-12 w-auto"
             />
           </Link>
           
