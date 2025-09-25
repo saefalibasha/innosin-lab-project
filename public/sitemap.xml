@@ -82,59 +82,55 @@
     <priority>0.6</priority>
   </url>
 
-  <!-- Product Series Pages -->
+  <!-- Product Series Pages - Based on Actual Database Content -->
   
-  <!-- Mobile Cabinet Series -->
+  <!-- Innosin Lab Product Series -->
   <url>
-    <loc>https://innosinlab.com/products/mobile-cabinet-series</loc>
+    <loc>https://innosinlab.com/products/mobile-cabinet-for-750mm-h-bench</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
       <image:loc>https://innosinlab.com/products/innosin-mc-pc-755065/MC-PC%20(755065).jpg</image:loc>
-      <image:title>Mobile Cabinet Series - Laboratory Storage Solutions</image:title>
+      <image:title>Mobile Cabinet for 750mm H Bench - Laboratory Storage Solutions</image:title>
     </image:image>
   </url>
 
-  <!-- Mobile Combination Cabinet Series -->
   <url>
-    <loc>https://innosinlab.com/products/mobile-combination-cabinet-series</loc>
+    <loc>https://innosinlab.com/products/mobile-cabinet-for-900mm-h-bench</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://innosinlab.com/products/innosin-mcc-pc-755065/MCC-PC%20(755065).jpg</image:loc>
-      <image:title>Mobile Combination Cabinet Series - Versatile Lab Storage</image:title>
+      <image:loc>https://innosinlab.com/products/innosin-mc-pc-755080/MC-PC%20(755080).jpg</image:loc>
+      <image:title>Mobile Cabinet for 900mm H Bench - Laboratory Storage Solutions</image:title>
     </image:image>
   </url>
 
-  <!-- Wall Cabinet Glass Series -->
   <url>
-    <loc>https://innosinlab.com/products/wall-cabinet-glass-series</loc>
+    <loc>https://innosinlab.com/products/wall-cabinet</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <image:image>
       <image:loc>https://innosinlab.com/products/innosin-wcg-pc-753375/WCG-PC%20(753375).jpg</image:loc>
-      <image:title>Wall Cabinet Glass Series - Space-Efficient Storage</image:title>
+      <image:title>Wall Cabinet Series - Space-Efficient Storage</image:title>
     </image:image>
   </url>
 
-  <!-- Tall Cabinet Glass Series -->
   <url>
-    <loc>https://innosinlab.com/products/tall-cabinet-glass-series</loc>
+    <loc>https://innosinlab.com/products/tall-cabinet-solid-door</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <image:image>
       <image:loc>https://innosinlab.com/products/innosin-tcg-pc-754018/TCG-PC%20(754018).jpg</image:loc>
-      <image:title>Tall Cabinet Glass Series - Maximum Storage Capacity</image:title>
+      <image:title>Tall Cabinet Solid Door - Maximum Storage Capacity</image:title>
     </image:image>
   </url>
 
-  <!-- Open Rack Series -->
   <url>
-    <loc>https://innosinlab.com/products/open-rack-series</loc>
+    <loc>https://innosinlab.com/products/open-rack</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -144,52 +140,70 @@
     </image:image>
   </url>
 
-  <!-- Emergency Shower Series -->
   <url>
-    <loc>https://innosinlab.com/products/emergency-shower-series</loc>
+    <loc>https://innosinlab.com/products/modular-cabinet</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Bio Safety Cabinet Series -->
   <url>
-    <loc>https://innosinlab.com/products/bio-safety-cabinet-series</loc>
+    <loc>https://innosinlab.com/products/sink-cabinet</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://innosinlab.com/products/knee-space</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
-  <!-- Fume Hood Series -->
   <url>
-    <loc>https://innosinlab.com/products/fume-hood-series</loc>
-    <lastmod>2025-09-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Laboratory Bench Series -->
-  <url>
-    <loc>https://innosinlab.com/products/laboratory-bench-series</loc>
-    <lastmod>2025-09-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Laboratory Seating Series -->
-  <url>
-    <loc>https://innosinlab.com/products/laboratory-seating-series</loc>
+    <loc>https://innosinlab.com/products/innosin-laboratory-chair-series</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- UNIFLEX Taps Series -->
+  <!-- Broen-Lab Product Series -->
   <url>
-    <loc>https://innosinlab.com/products/uniflex-taps-series</loc>
+    <loc>https://innosinlab.com/products/broen-lab-emergency-shower-systems</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://innosinlab.com/products/broen-lab-uniflex-taps-series</loc>
     <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+  </url>
+
+  <!-- Oriental Giken Product Series -->
+  <url>
+    <loc>https://innosinlab.com/products/bio-safety-cabinet-tangerine</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://innosinlab.com/products/noce-series-fume-hood</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Hamilton Laboratory Solutions -->
+  <url>
+    <loc>https://innosinlab.com/products/safe-aire-ii-fume-hoods</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
 </urlset>
