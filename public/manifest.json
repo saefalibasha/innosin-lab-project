@@ -8,19 +8,19 @@
   "theme_color": "#1e293b",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/branding/hero-logo.png",
       "sizes": "32x32",
-      "type": "image/x-icon",
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-192.png",
+      "src": "/branding/hero-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/branding/hero-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
