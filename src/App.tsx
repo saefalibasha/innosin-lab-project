@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 
 // Layout
 import SiteLayout from "@/components/SiteLayout";
@@ -53,7 +54,8 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
+            <AppErrorBoundary>
+              <BrowserRouter>
             <Routes>
               {/* ✅ Redirect / to /welcome */}
               <Route path="/" element={<Navigate to="/welcome" replace />} />
@@ -157,11 +159,12 @@ const App = () => (
                 }
               />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </RFQProvider>
-    </AuthProvider>
-  </QueryClientProvider>
+              </BrowserRouter>
+            </AppErrorBoundary>
+          </TooltipProvider>
+        </RFQProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   </HelmetProvider>
 );
 
