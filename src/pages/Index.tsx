@@ -69,11 +69,7 @@ const Index = () => {
         </section>
 
         {/* Shop The Look Section */}
-        <section className="py-16 bg-gradient-to-br from-gray-50 to-white transition-all duration-700 ease-in-out w-full">
-          <div className="container mx-auto px-4">
-            <ShopTheLook />
-          </div>
-        </section>
+        <ShopTheLook />
 
         {/* Laboratory Transformations Section */}
         <section className="py-20 bg-white relative overflow-hidden transition-all duration-700 ease-in-out w-full">
