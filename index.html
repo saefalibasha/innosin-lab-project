@@ -93,8 +93,9 @@
     }
     </script>
     <!-- Favicon and Icons -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/branding/innosin-favicon-32.png?v=20250925" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/branding/innosin-favicon-16.png?v=20250925" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20250925" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -285,7 +286,38 @@
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: system-ui; color: #666;">
+        Loading Innosin Floor Planner...
+      </div>
+    </div>
+    
+    <!-- Error handling and mount watchdog -->
+    <script>
+      console.log('🚀 Innosin app starting...');
+      
+      // Global error handlers
+      window.addEventListener('error', function(e) {
+        console.error('⚠️ Startup error:', e.error);
+        document.getElementById('root').innerHTML = 
+          '<div style="padding: 20px; font-family: system-ui; color: #e11d48; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; margin: 20px; max-width: 600px;"><h3>Application Error</h3><p>Error: ' + e.message + '</p><p>File: ' + e.filename + '</p><button onclick="location.reload()" style="background: #e11d48; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Reload App</button></div>';
+      });
+      
+      window.addEventListener('unhandledrejection', function(e) {
+        console.error('⚠️ Unhandled promise rejection:', e.reason);
+      });
+      
+      // Mount watchdog - check if React mounted successfully
+      setTimeout(function() {
+        const root = document.getElementById('root');
+        if (root && root.children.length === 1 && root.children[0].style.display === 'flex') {
+          console.warn('⚠️ React may not have mounted - showing fallback');
+          root.innerHTML = 
+            '<div style="padding: 20px; font-family: system-ui; color: #0891b2; background: #e0f2fe; border: 1px solid #7dd3fc; border-radius: 8px; margin: 20px; max-width: 600px;"><h3>Loading Issue</h3><p>The app is taking longer than expected to load. This could be due to a network issue.</p><button onclick="location.reload()" style="background: #0891b2; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Reload App</button></div>';
+        }
+      }, 3000);
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
     
     <!-- Disable Service Worker and clear caches to prevent stale chunks -->
