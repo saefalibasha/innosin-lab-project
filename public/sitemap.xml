@@ -2,10 +2,10 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   
-  <!-- Root Domain -->
+  <!-- Welcome Page (Homepage) -->
   <url>
-    <loc>https://innosinlab.com/</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://innosinlab.com/welcome</loc>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -14,22 +14,18 @@
     </image:image>
   </url>
 
-  <!-- Homepage -->
+  <!-- Authentication -->
   <url>
-    <loc>https://innosinlab.com/home</loc>
-    <lastmod>2025-01-21</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://innosinlab.com/branding/hero-logo.png</image:loc>
-      <image:title>Innosin Lab - Laboratory Equipment Solutions</image:title>
-    </image:image>
+    <loc>https://innosinlab.com/auth</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
   </url>
 
   <!-- About Page -->
   <url>
     <loc>https://innosinlab.com/about</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -37,7 +33,7 @@
   <!-- Products Catalog -->
   <url>
     <loc>https://innosinlab.com/products</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
@@ -45,7 +41,7 @@
   <!-- Contact Page -->
   <url>
     <loc>https://innosinlab.com/contact</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -53,7 +49,7 @@
   <!-- Blog -->
   <url>
     <loc>https://innosinlab.com/blog</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -61,7 +57,7 @@
   <!-- Floor Planner -->
   <url>
     <loc>https://innosinlab.com/floor-planner</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -69,51 +65,117 @@
   <!-- RFQ Cart -->
   <url>
     <loc>https://innosinlab.com/rfq-cart</loc>
-    <lastmod>2025-01-21</lastmod>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- Product Pages - Correct URLs for existing products -->
+  <!-- Product Series Pages -->
+  
+  <!-- Mobile Cabinet Series -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-mobile-cabinet-750mm</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://innosinlab.com/products/mobile-cabinet-series</loc>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
     <image:image>
       <image:loc>https://innosinlab.com/products/innosin-mc-pc-755065/MC-PC%20(755065).jpg</image:loc>
-      <image:title>Mobile Cabinet Series for 750mm Bench</image:title>
+      <image:title>Mobile Cabinet Series - Laboratory Storage Solutions</image:title>
     </image:image>
   </url>
 
+  <!-- Mobile Combination Cabinet Series -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-mobile-cabinet-900mm</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://innosinlab.com/products/mobile-combination-cabinet-series</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <image:image>
+      <image:loc>https://innosinlab.com/products/innosin-mcc-pc-755065/MCC-PC%20(755065).jpg</image:loc>
+      <image:title>Mobile Combination Cabinet Series - Versatile Lab Storage</image:title>
+    </image:image>
+  </url>
+
+  <!-- Wall Cabinet Glass Series -->
+  <url>
+    <loc>https://innosinlab.com/products/wall-cabinet-glass-series</loc>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
     <image:image>
-      <image:loc>https://innosinlab.com/products/innosin-mc-pc-755080/MC-PC%20(755080).jpg</image:loc>
-      <image:title>Mobile Cabinet Series for 900mm Bench</image:title>
+      <image:loc>https://innosinlab.com/products/innosin-wcg-pc-753375/WCG-PC%20(753375).jpg</image:loc>
+      <image:title>Wall Cabinet Glass Series - Space-Efficient Storage</image:title>
     </image:image>
   </url>
 
+  <!-- Tall Cabinet Glass Series -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-wall-cabinet-glass</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://innosinlab.com/products/tall-cabinet-glass-series</loc>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://innosinlab.com/products/innosin-tcg-pc-754018/TCG-PC%20(754018).jpg</image:loc>
+      <image:title>Tall Cabinet Glass Series - Maximum Storage Capacity</image:title>
+    </image:image>
   </url>
 
+  <!-- Open Rack Series -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-tall-cabinet-glass</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://innosinlab.com/products/open-rack-series</loc>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
+    <image:image>
+      <image:loc>https://innosinlab.com/products/innosin-or-pc-604518/OR-PC-3838%20(604518).jpg</image:loc>
+      <image:title>Open Rack Series - Flexible Laboratory Storage</image:title>
+    </image:image>
   </url>
 
+  <!-- Emergency Shower Series -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-open-rack</loc>
-    <lastmod>2025-01-21</lastmod>
+    <loc>https://innosinlab.com/products/emergency-shower-series</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Bio Safety Cabinet Series -->
+  <url>
+    <loc>https://innosinlab.com/products/bio-safety-cabinet-series</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Fume Hood Series -->
+  <url>
+    <loc>https://innosinlab.com/products/fume-hood-series</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Laboratory Bench Series -->
+  <url>
+    <loc>https://innosinlab.com/products/laboratory-bench-series</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Laboratory Seating Series -->
+  <url>
+    <loc>https://innosinlab.com/products/laboratory-seating-series</loc>
+    <lastmod>2025-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- UNIFLEX Taps Series -->
+  <url>
+    <loc>https://innosinlab.com/products/uniflex-taps-series</loc>
+    <lastmod>2025-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
