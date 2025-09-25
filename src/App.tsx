@@ -57,11 +57,15 @@ const App = () => (
             <AppErrorBoundary>
               <BrowserRouter>
             <Routes>
-              {/* ✅ Redirect / to /home */}
-              <Route path="/" element={<Navigate to="/home" replace />} />
+              {/* ✅ Redirect / to /welcome */}
+              <Route path="/" element={<Navigate to="/welcome" replace />} />
 
-              {/* ✅ Redirect /welcome to /home */}
-              <Route path="/welcome" element={<Navigate to="/home" replace />} />
+              {/* ✅ Welcome landing page (no layout) */}
+              <Route path="/welcome" element={
+                <Suspense fallback={<PageLoader />}>
+                  <LazyWelcomeLandingPage />
+                </Suspense>
+              } />
 
               {/* ✅ Public routes with layout */}
               <Route element={<SiteLayout />}>
