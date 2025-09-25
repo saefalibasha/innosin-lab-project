@@ -17,13 +17,12 @@ const HeaderBrand = () => {
         <div className="flex items-center space-x-16">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/branding/hero-logo.png?v=3" 
+              src="/branding/hero-logo.png?v=20250925-2" 
               alt="Innosin Lab" 
-              className="h-12 w-auto"
+              className="h-10 md:h-12 w-auto block"
               style={{ 
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
-                backgroundColor: 'transparent',
-                mixBlendMode: 'multiply'
+                backgroundColor: 'transparent'
               }}
             />
           </Link>

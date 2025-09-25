@@ -52,9 +52,9 @@ const HeroNavigation = () => {
           <div className="flex items-center space-x-4">
             <Link to="/" className="flex items-center space-x-2">
               <img 
-                src="/branding/hero-logo.png" 
+                src="/branding/hero-logo.png?v=20250925-2" 
                 alt="Innosin Lab" 
-                className="h-10 w-auto"
+                className="h-10 md:h-12 w-auto block"
               />
               <div className="hidden sm:block">
                 <h1 className="text-xl font-bold text-foreground">LabSpace</h1>
