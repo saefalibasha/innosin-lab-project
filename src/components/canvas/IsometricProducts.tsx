@@ -140,14 +140,28 @@ const ProductGLTF = ({
 }) => {
   const groupRef = useRef<Group>(null);
   const gltf = useLoader(GLTFLoader, modelPath);
+  const [useFallback, setUseFallback] = React.useState(false);
 
   useEffect(() => {
     if (!gltf || !groupRef.current) return;
 
-    // Compute current model bounds
+    // Compute current model bounds BEFORE any transformations
     const box = new Box3().setFromObject(gltf.scene);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
+
+    console.debug('[ProductGLTF] Original GLTF bounds:', {
+      modelPath: modelPath.split('/').pop(),
+      size: { x: size.x, y: size.y, z: size.z }
+    });
+
+    // Check if model is degenerate (empty/placeholder/corrupt)
+    const MIN_VALID_SIZE = 1e-4;
+    if (size.x < MIN_VALID_SIZE || size.y < MIN_VALID_SIZE || size.z < MIN_VALID_SIZE) {
+      console.warn('[ProductGLTF] Degenerate model detected, using fallback proxy:', modelPath);
+      setUseFallback(true);
+      return;
+    }
 
     // Center and place model on floor
     gltf.scene.position.sub(center);
@@ -160,12 +174,37 @@ const ProductGLTF = ({
     const sz = size.z > 0 ? tz / size.z : 1;
     gltf.scene.scale.set(sx, sy, sz);
 
+    console.debug('[ProductGLTF] Transformed:', {
+      modelPath: modelPath.split('/').pop(),
+      scale: { x: sx, y: sy, z: sz },
+      targetSize
+    });
+
     // Ensure raycasting recognizes product
     groupRef.current.traverse((child: any) => {
       child.userData = { ...(child.userData || {}), productId };
       if (!child.name) child.name = 'product';
     });
-  }, [gltf, productId, targetSize]);
+  }, [gltf, productId, targetSize, modelPath]);
+
+  // Render fallback proxy if model is degenerate
+  if (useFallback) {
+    const halfHeight = targetSize[1] / 2;
+    return (
+      <group position={position} rotation={rotation} onClick={onClick} name="product" userData={{ productId }}>
+        <mesh position={[0, halfHeight, 0]} castShadow receiveShadow>
+          <boxGeometry args={targetSize} />
+          <meshLambertMaterial color={isSelected ? '#ff6b6b' : '#cccccc'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
+          {isSelected && (
+            <lineSegments>
+              <edgesGeometry args={[new THREE.BoxGeometry(...targetSize)]} />
+              <lineBasicMaterial color="#ff0000" linewidth={2} />
+            </lineSegments>
+          )}
+        </mesh>
+      </group>
+    );
+  }
 
   return (
     <group ref={groupRef} position={position} rotation={rotation} onClick={onClick} name="product" userData={{ productId }}>

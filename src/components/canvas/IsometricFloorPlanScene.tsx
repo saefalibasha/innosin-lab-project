@@ -73,10 +73,7 @@ const IsometricScene = ({
       });
     });
 
-    // Collect product positions
-    placedProducts.forEach(product => {
-      allPoints2D.push(product.position);
-    });
+    // DO NOT include placedProducts - keeps scene centering stable while dragging
 
     if (allPoints2D.length === 0) {
       return { centerX: 0, centerZ: 0, minX: 0, minZ: 0, maxX: 0, maxZ: 0 };
@@ -105,7 +102,7 @@ const IsometricScene = ({
       maxX,
       maxZ
     };
-  }, [wallSegments, rooms, placedProducts, scale]);
+  }, [wallSegments, rooms, scale]);
 
   const calculatedOrigin = { minX: 0, minY: 0 };
 
