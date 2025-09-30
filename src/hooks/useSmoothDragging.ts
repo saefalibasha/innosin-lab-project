@@ -71,8 +71,11 @@ export const useSmoothDragging = (
     let isValid = true;
 
     if (snapResult.snapped) {
-      // Use snapped position
-      finalPos = snapResult.position;
+      // Use snapped position with pixel normalization
+      finalPos = {
+        x: Math.round(snapResult.position.x),
+        y: Math.round(snapResult.position.y)
+      };
       
       // Verify the snapped position doesn't cause collisions
       const collisionResult = checkProductCollision(dragState.draggedProduct, finalPos);

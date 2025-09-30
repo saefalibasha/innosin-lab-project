@@ -27,8 +27,8 @@ export const useEnhancedCollisionDetection = (
   scale: number
 ) => {
   const FURNITURE_SNAP_THRESHOLD = mmToCanvas(15, scale); // 15mm for furniture snapping
-  const FURNITURE_COLLISION_BUFFER = mmToCanvas(15, scale); // Increased to 15mm between furniture pieces
-  const SEAMLESS_SNAP_DISTANCE = mmToCanvas(5, scale); // 5mm for seamless snapping
+  const FURNITURE_COLLISION_BUFFER = mmToCanvas(2, scale); // 2mm buffer for flush placement
+  const SEAMLESS_SNAP_DISTANCE = mmToCanvas(8, scale); // 8mm for seamless snapping
 
   const getRotatedBounds = useCallback((product: PlacedProduct, position: Point) => {
     const width = mmToCanvas(product.dimensions.length, scale);

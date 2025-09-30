@@ -47,6 +47,7 @@ import ProductRotationControl from '@/components/floorplan/ProductRotationContro
 import { ContactGateModal } from '@/components/ContactGateModal';
 import { useAuth } from '@/contexts/AuthContext';
 import EnhancedCanvasWorkspace3D from '@/components/canvas/EnhancedCanvasWorkspace3D';
+import { FloorPlannerOnboarding } from '@/components/floorplan/FloorPlannerOnboarding';
 
 const FloorPlanner = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -54,6 +55,7 @@ const FloorPlanner = () => {
   // Access control state
   const [hasAccess, setHasAccess] = useState(false);
   const [showContactGate, setShowContactGate] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   
   // Check for admin access or existing session
   useEffect(() => {
@@ -449,6 +451,12 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
   const handleContactSuccess = useCallback(() => {
     setHasAccess(true);
     setShowContactGate(false);
+    
+    // Check if onboarding should be shown
+    const hasSeenOnboarding = sessionStorage.getItem('floorPlannerOnboardingShown');
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
   }, []);
 
   const handleContactCancel = useCallback(() => {
@@ -478,8 +486,18 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
     );
   }
 
+  const handleShowHelp = () => {
+    setShowOnboarding(true);
+  };
+
   return (
     <div className={containerClass}>
+      {/* Onboarding Modal */}
+      <FloorPlannerOnboarding 
+        isOpen={showOnboarding} 
+        onClose={() => setShowOnboarding(false)} 
+      />
+
       <div className="container mx-auto p-4">
         {/* Header */}
         <div className="mb-6">
@@ -490,7 +508,10 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
             </div>
             
             <div className="flex items-center space-x-2">
-              {/* View Mode Toggle moved to toolbar below; removed from header */}
+              <Button variant="outline" size="sm" onClick={handleShowHelp}>
+                <Info className="h-4 w-4 mr-2" />
+                Help
+              </Button>
               <Input
                 value={projectName}
                 onChange={(e) => setProjectName(e.target.value)}
@@ -532,19 +553,21 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Left Sidebar */}
-          <div className="lg:col-span-1 space-y-4">
-            <div className="bg-white rounded-lg border shadow-sm">
-              <div className="p-4 border-b">
-                <h2 className="text-lg font-semibold">Product Library</h2>
-                <p className="text-sm text-muted-foreground">Select products to place on your floor plan</p>
-              </div>
-              <div className="p-4">
-                <EnhancedSeriesSelector
-                  onProductDrag={handleProductDrag}
-                  currentTool={currentMode}
-                  onProductUsed={(productId) => console.log('Product used:', productId)}
-                />
+          {/* Left Sidebar - Sticky with independent scrolling */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-20 h-[calc(100vh-120px)]">
+              <div className="bg-white rounded-lg border shadow-sm h-full flex flex-col">
+                <div className="p-4 border-b flex-shrink-0">
+                  <h2 className="text-lg font-semibold">Product Library</h2>
+                  <p className="text-sm text-muted-foreground">Select products to place on your floor plan</p>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <EnhancedSeriesSelector
+                    onProductDrag={handleProductDrag}
+                    currentTool={currentMode}
+                    onProductUsed={(productId) => console.log('Product used:', productId)}
+                  />
+                </div>
               </div>
             </div>
           </div>

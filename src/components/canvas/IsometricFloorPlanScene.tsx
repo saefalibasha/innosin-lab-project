@@ -55,16 +55,60 @@ const IsometricScene = ({
   origin,
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
+
+  // Calculate bounds and center for proper alignment
+  const sceneBounds = React.useMemo(() => {
+    const allPoints: { x: number; z: number }[] = [];
+
+    // Collect wall points
+    wallSegments.forEach(wall => {
+      allPoints.push(
+        { x: wall.start.x * scale / 1000, z: wall.start.y * scale / 1000 },
+        { x: wall.end.x * scale / 1000, z: wall.end.y * scale / 1000 }
+      );
+    });
+
+    // Collect room points
+    rooms.forEach(room => {
+      room.points.forEach(point => {
+        allPoints.push({ x: point.x * scale / 1000, z: point.y * scale / 1000 });
+      });
+    });
+
+    // Collect product positions
+    placedProducts.forEach(product => {
+      allPoints.push({ x: product.position.x * scale / 1000, z: product.position.y * scale / 1000 });
+    });
+
+    if (allPoints.length === 0) {
+      return { centerX: 0, centerZ: 0, minX: 0, minZ: 0, maxX: 0, maxZ: 0 };
+    }
+
+    const minX = Math.min(...allPoints.map(p => p.x));
+    const maxX = Math.max(...allPoints.map(p => p.x));
+    const minZ = Math.min(...allPoints.map(p => p.z));
+    const maxZ = Math.max(...allPoints.map(p => p.z));
+
+    return {
+      centerX: (minX + maxX) / 2,
+      centerZ: (minZ + maxZ) / 2,
+      minX,
+      minZ,
+      maxX,
+      maxZ
+    };
+  }, [wallSegments, rooms, placedProducts, scale]);
+
   const calculatedOrigin = { minX: 0, minY: 0 };
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[-sceneBounds.centerX, 0, -sceneBounds.centerZ]}>
       {/* Floor */}
       <Enhanced3DFloor rooms={rooms} wallSegments={wallSegments} scale={scale} showSnapGrid={showGrid} origin={calculatedOrigin} />
 
-      {/* Grid if no rooms */}
-      {showGrid && rooms.length === 0 && (
-        <Grid args={[100, 100]} position={[0, 0, 0]} cellSize={1} cellThickness={0.5} cellColor="#e0e0e0" sectionSize={10} sectionThickness={1} sectionColor="#c0c0c0" fadeDistance={50} fadeStrength={1} />
+      {/* Grid if no rooms - centered at origin */}
+      {showGrid && rooms.length === 0 && wallSegments.length === 0 && (
+        <Grid args={[100, 100]} position={[sceneBounds.centerX, 0, sceneBounds.centerZ]} cellSize={1} cellThickness={0.5} cellColor="#e0e0e0" sectionSize={10} sectionThickness={1} sectionColor="#c0c0c0" fadeDistance={50} fadeStrength={1} />
       )}
 
       {/* Walls */}
@@ -88,9 +132,9 @@ const IsometricScene = ({
         selectedProductId={selectedProducts[0]}
       />
 
-      {/* Drop plane for raycasting */}
+      {/* Drop plane for raycasting - centered */}
       {onSceneClick && (
-        <mesh name="floor-drop-plane" position={[0, -0.0001, 0]} onClick={onSceneClick} visible={true}>
+        <mesh name="floor-drop-plane" position={[sceneBounds.centerX, -0.0001, sceneBounds.centerZ]} rotation={[-Math.PI / 2, 0, 0]} onClick={onSceneClick} visible={true}>
           <planeGeometry args={[100, 100]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
