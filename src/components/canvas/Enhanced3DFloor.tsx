@@ -24,6 +24,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     // Get the polygon outline from walls
     const polygon = wallsToPolygon(wallSegments);
     if (polygon.length < 3) {
+      console.debug('Floor generation: wallsToPolygon returned insufficient points, using fallback');
       // Enhanced fallback: create floor from wall extents with precise coordinate mapping
       if (wallSegments.length > 0) {
         const xs = wallSegments.flatMap(w => [w.start.x, w.end.x]);

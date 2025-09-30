@@ -9,6 +9,7 @@ import { IsometricProducts } from './IsometricProducts';
 import { Enhanced3DFloor } from './Enhanced3DFloor';
 import { IsometricDoors } from './IsometricDoors';
 import { Enhanced3DControls } from './Enhanced3DControls';
+import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 
 interface IsometricFloorPlanSceneProps {
   wallSegments: WallSegment[];
@@ -56,42 +57,49 @@ const IsometricScene = ({
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
-  // Calculate bounds and center for proper alignment
+  // Calculate bounds and center for proper alignment using consistent coordinate transformation
   const sceneBounds = React.useMemo(() => {
-    const allPoints: { x: number; z: number }[] = [];
+    const allPoints2D: { x: number; y: number }[] = [];
 
     // Collect wall points
     wallSegments.forEach(wall => {
-      allPoints.push(
-        { x: wall.start.x * scale / 1000, z: wall.start.y * scale / 1000 },
-        { x: wall.end.x * scale / 1000, z: wall.end.y * scale / 1000 }
-      );
+      allPoints2D.push(wall.start, wall.end);
     });
 
     // Collect room points
     rooms.forEach(room => {
       room.points.forEach(point => {
-        allPoints.push({ x: point.x * scale / 1000, z: point.y * scale / 1000 });
+        allPoints2D.push(point);
       });
     });
 
     // Collect product positions
     placedProducts.forEach(product => {
-      allPoints.push({ x: product.position.x * scale / 1000, z: product.position.y * scale / 1000 });
+      allPoints2D.push(product.position);
     });
 
-    if (allPoints.length === 0) {
+    if (allPoints2D.length === 0) {
       return { centerX: 0, centerZ: 0, minX: 0, minZ: 0, maxX: 0, maxZ: 0 };
     }
 
-    const minX = Math.min(...allPoints.map(p => p.x));
-    const maxX = Math.max(...allPoints.map(p => p.x));
-    const minZ = Math.min(...allPoints.map(p => p.z));
-    const maxZ = Math.max(...allPoints.map(p => p.z));
+    // Convert all 2D points to 3D world coordinates using the consistent function
+    const points3D = allPoints2D.map(p => canvasTo3DWorld(p, scale));
+    
+    const xs = points3D.map(p => p[0]);
+    const zs = points3D.map(p => p[2]);
+
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+    const centerX = (minX + maxX) / 2;
+    const centerZ = (minZ + maxZ) / 2;
+    
+    console.debug('Scene bounds (3D):', { minX, maxX, minZ, maxZ, centerX, centerZ });
 
     return {
-      centerX: (minX + maxX) / 2,
-      centerZ: (minZ + maxZ) / 2,
+      centerX,
+      centerZ,
       minX,
       minZ,
       maxX,
@@ -106,9 +114,9 @@ const IsometricScene = ({
       {/* Floor */}
       <Enhanced3DFloor rooms={rooms} wallSegments={wallSegments} scale={scale} showSnapGrid={showGrid} origin={calculatedOrigin} />
 
-      {/* Grid if no rooms - centered at origin */}
+      {/* Grid if no rooms - centered at origin within the group */}
       {showGrid && rooms.length === 0 && wallSegments.length === 0 && (
-        <Grid args={[100, 100]} position={[sceneBounds.centerX, 0, sceneBounds.centerZ]} cellSize={1} cellThickness={0.5} cellColor="#e0e0e0" sectionSize={10} sectionThickness={1} sectionColor="#c0c0c0" fadeDistance={50} fadeStrength={1} />
+        <Grid args={[100, 100]} position={[0, 0, 0]} cellSize={1} cellThickness={0.5} cellColor="#e0e0e0" sectionSize={10} sectionThickness={1} sectionColor="#c0c0c0" fadeDistance={50} fadeStrength={1} />
       )}
 
       {/* Walls */}
@@ -132,10 +140,10 @@ const IsometricScene = ({
         selectedProductId={selectedProducts[0]}
       />
 
-      {/* Drop plane for raycasting - centered */}
+      {/* Drop plane for raycasting - centered at origin within the group */}
       {onSceneClick && (
-        <mesh name="floor-drop-plane" position={[sceneBounds.centerX, -0.0001, sceneBounds.centerZ]} rotation={[-Math.PI / 2, 0, 0]} onClick={onSceneClick} visible={true}>
-          <planeGeometry args={[100, 100]} />
+        <mesh name="floor-drop-plane" position={[0, -0.0001, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={onSceneClick} visible={false}>
+          <planeGeometry args={[1000, 1000]} />
           <meshBasicMaterial transparent opacity={0} />
         </mesh>
       )}

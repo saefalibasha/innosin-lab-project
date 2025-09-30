@@ -30,6 +30,46 @@ export function worldTo2DCanvas(x: number, z: number, scale: number = 0.08): Poi
 }
 
 /**
+ * Project a point onto a line segment and return the projected point and distance
+ */
+function projectPointOnSegment(point: Point, segStart: Point, segEnd: Point): { 
+  projected: Point; 
+  distance: number; 
+  t: number;
+} {
+  const dx = segEnd.x - segStart.x;
+  const dy = segEnd.y - segStart.y;
+  const lengthSquared = dx * dx + dy * dy;
+  
+  if (lengthSquared === 0) {
+    // Degenerate segment - return start point
+    const dist = Math.sqrt(
+      Math.pow(point.x - segStart.x, 2) + Math.pow(point.y - segStart.y, 2)
+    );
+    return { projected: segStart, distance: dist, t: 0 };
+  }
+  
+  // Calculate projection parameter t
+  let t = ((point.x - segStart.x) * dx + (point.y - segStart.y) * dy) / lengthSquared;
+  
+  // Clamp t to [0, 1] to stay on segment
+  t = Math.max(0, Math.min(1, t));
+  
+  // Calculate projected point
+  const projected: Point = {
+    x: segStart.x + t * dx,
+    y: segStart.y + t * dy
+  };
+  
+  // Calculate distance from point to projected point
+  const distance = Math.sqrt(
+    Math.pow(point.x - projected.x, 2) + Math.pow(point.y - projected.y, 2)
+  );
+  
+  return { projected, distance, t };
+}
+
+/**
  * Calculate door position and rotation from door data, aligning with nearest wall
  */
 export const calculateDoorTransform = (
@@ -39,44 +79,48 @@ export const calculateDoorTransform = (
   origin?: { minX: number; minY: number }
 ) => {
   if (!door || !door.position) {
+    console.warn('Invalid door data:', door);
     return null;
   }
 
-  // Convert door position to 3D world coordinates
-  const position3D = canvasTo3DWorld(door.position, scale);
-  
-  // Find the nearest wall to align the door
-  let doorRotation = door.angle || 0;
+  // Find the nearest wall segment using point-to-segment distance
+  let nearestWall = null;
+  let minDistance = Infinity;
+  let projectedPoint: Point = door.position;
+  let wallAngle = 0;
   
   if (wallSegments.length > 0) {
-    let minDistance = Infinity;
-    let nearestWallAngle = 0;
-    
     wallSegments.forEach(wall => {
-      // Calculate distance from door to wall
-      const wallMidX = (wall.start.x + wall.end.x) / 2;
-      const wallMidY = (wall.start.y + wall.end.y) / 2;
-      const distance = Math.sqrt(
-        Math.pow(door.position.x - wallMidX, 2) + 
-        Math.pow(door.position.y - wallMidY, 2)
-      );
+      const result = projectPointOnSegment(door.position, wall.start, wall.end);
       
-      if (distance < minDistance) {
-        minDistance = distance;
+      if (result.distance < minDistance) {
+        minDistance = result.distance;
+        nearestWall = wall;
+        projectedPoint = result.projected;
+        
         // Calculate wall angle
         const dx = wall.end.x - wall.start.x;
         const dy = wall.end.y - wall.start.y;
-        nearestWallAngle = Math.atan2(dy, dx);
+        wallAngle = Math.atan2(dy, dx);
       }
     });
     
-    // Align door parallel to wall (not perpendicular)
-    doorRotation = nearestWallAngle;
+    console.debug('Door placement:', {
+      doorId: door.id,
+      originalPos: door.position,
+      projectedPos: projectedPoint,
+      nearestWallId: nearestWall?.id,
+      wallAngle: wallAngle * (180 / Math.PI),
+      distance: minDistance
+    });
   }
+  
+  // Convert projected position to 3D world coordinates
+  const position3D = canvasTo3DWorld(projectedPoint, scale);
   
   return {
     position: position3D,
-    rotation: [0, doorRotation, 0] as [number, number, number]
+    rotation: [0, wallAngle, 0] as [number, number, number]
   };
 };
 

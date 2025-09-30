@@ -71,10 +71,10 @@ export const useSmoothDragging = (
     let isValid = true;
 
     if (snapResult.snapped) {
-      // Use snapped position with pixel normalization
+      // Use snapped position with sub-pixel normalization to prevent micro-overlaps
       finalPos = {
-        x: Math.round(snapResult.position.x),
-        y: Math.round(snapResult.position.y)
+        x: Math.round(snapResult.position.x * 10) / 10,
+        y: Math.round(snapResult.position.y * 10) / 10
       };
       
       // Verify the snapped position doesn't cause collisions

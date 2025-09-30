@@ -31,7 +31,7 @@ export const useEnhanced3DSnapping = (
     draggedProduct: PlacedProduct,
     products: PlacedProduct[]
   ): { snapped: boolean; position: [number, number, number]; type: string; confidence: number } => {
-    const PRODUCT_SNAP_DISTANCE = 0.3; // 30cm in 3D world units
+    const PRODUCT_SNAP_DISTANCE = 0.2; // 20cm in 3D world units - tighter for precise snapping
     let bestSnap = { snapped: false, position: position3D, type: 'none', confidence: 0 };
 
     // Get dimensions of dragged product from the dimensions object
@@ -136,7 +136,7 @@ export const useEnhanced3DSnapping = (
     draggedProduct: PlacedProduct,
     allowedSnapTypes: string[] = ['product', 'grid']
   ): Enhanced3DSnapResult => {
-    const SNAP_DISTANCE = 0.3; // 30cm
+    const SNAP_DISTANCE = 0.2; // 20cm - tighter for precise alignment
 
     let bestSnap: Enhanced3DSnapResult = {
       snapped: false,
