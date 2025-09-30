@@ -43,12 +43,19 @@ const ProductModel = ({
     // Check if this is a wall-mounted product based on name/category
     const isWallMounted = product.name?.toLowerCase().includes('wall') || 
                          product.category?.toLowerCase().includes('wall');
-    // Wall-mounted products should be positioned at typical wall cabinet height (1.5m)
-    const mountHeight = isWallMounted ? 1.5 : 0;
-    const productHeight = (product.originalDimensions?.height || product.dimensions?.height || 850) * 0.001;
-    const heightOffset = mountHeight + (isWallMounted ? productHeight / 2 : 0);
-    return [basePos[0], basePos[1] + heightOffset, basePos[2]] as [number, number, number];
-  }, [product.position, product.name, product.category, product.originalDimensions, product.dimensions, scale]);
+    // Floor products: y = 0, wall-mounted: y = 1.5m (standard wall cabinet height)
+    const yBase = isWallMounted ? 1.5 : 0;
+    
+    console.debug('[IsometricProducts] Product positioning:', {
+      productId: product.id,
+      name: product.name,
+      isWallMounted,
+      yBase,
+      basePos
+    });
+    
+    return [basePos[0], yBase, basePos[2]] as [number, number, number];
+  }, [product.position, product.name, product.category, scale]);
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {

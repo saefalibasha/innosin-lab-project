@@ -92,9 +92,16 @@ export const useEnhanced3DDragging = (
         'grid',
       ]);
 
+      // snapResult.position is already in 3D world coordinates, don't convert again
       const finalPosition = snapResult.snapped
-        ? canvasTo3DWorld({ x: snapResult.position[0], y: snapResult.position[2] }, scale)
+        ? [snapResult.position[0], 0, snapResult.position[2]] as [number, number, number]
         : targetPosition;
+      
+      console.debug('[useEnhanced3DDragging] Snap result:', { 
+        snapped: snapResult.snapped, 
+        snapPosition: snapResult.position,
+        finalPosition 
+      });
 
       setDragState((prev) => ({
         ...prev,

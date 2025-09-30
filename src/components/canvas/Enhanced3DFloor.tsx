@@ -34,9 +34,11 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         const minY = Math.min(...ys);
         const maxY = Math.max(...ys);
         
+        console.debug('[Enhanced3DFloor] Fallback floor bounds:', { minX, minY, maxX, maxY });
+        
         const shape = new THREE.Shape();
-        // Small padding to ensure walls are covered
-        const padding = 20;
+        // No padding - floor exactly matches wall bounds
+        const padding = 0;
         const [x1, , z1] = canvasTo3DWorld({x: minX - padding, y: minY - padding}, scale);
         const [x2, , z2] = canvasTo3DWorld({x: maxX + padding, y: minY - padding}, scale);
         const [x3, , z3] = canvasTo3DWorld({x: maxX + padding, y: maxY + padding}, scale);
