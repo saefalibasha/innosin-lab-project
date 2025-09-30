@@ -755,6 +755,26 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">Canvas - 3D Isometric View</CardTitle>
                     <div className="flex items-center space-x-2">
+                      {/* View Mode Toggle */}
+                      <div className="bg-muted rounded-md p-1">
+                        <Button
+                          variant={viewMode === ("2d" as ViewMode) ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setViewMode("2d" as ViewMode)}
+                          className="h-8 px-3 text-xs"
+                        >
+                          2D
+                        </Button>
+                        <Button
+                          variant={viewMode === ("3d" as ViewMode) ? "default" : "ghost"}
+                          size="sm"
+                          onClick={() => setViewMode("3d" as ViewMode)}
+                          className="h-8 px-3 text-xs"
+                        >
+                          3D
+                        </Button>
+                      </div>
+                      
                       <Badge variant="outline" className="text-xs">
                         3D Isometric
                       </Badge>
