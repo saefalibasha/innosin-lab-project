@@ -43,8 +43,9 @@ const ProductModel = ({
     // Check if this is a wall-mounted product based on name/category
     const isWallMounted = product.name?.toLowerCase().includes('wall') || 
                          product.category?.toLowerCase().includes('wall');
-    // Floor products: y = 0, wall-mounted: y = 1.5m (standard wall cabinet height)
-    const yBase = isWallMounted ? 1.5 : 0;
+    // Floor products: y slightly above floor to avoid z-fighting; wall-mounted at ~1.5m
+    const groundEpsilon = 0.008; // meters (~8mm)
+    const yBase = isWallMounted ? 1.5 : groundEpsilon;
     
     console.debug('[IsometricProducts] Product positioning:', {
       productId: product.id,

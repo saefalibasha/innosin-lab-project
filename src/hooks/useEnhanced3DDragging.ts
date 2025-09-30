@@ -3,6 +3,7 @@ import { PlacedProduct } from '@/types/floorPlanTypes';
 import { useEnhanced3DSnapping } from './useEnhanced3DSnapping';
 import { canvasTo3DWorld, worldTo2DCanvas } from '@/utils/coordinateUtils';
 
+const GROUND_EPSILON = 0.008; // meters (~8mm) to keep products slightly above floor
 interface DragState3D {
   isDragging: boolean;
   draggedProduct: PlacedProduct | null;
@@ -94,7 +95,7 @@ export const useEnhanced3DDragging = (
 
       // snapResult.position is already in 3D world coordinates, don't convert again
       const finalPosition = snapResult.snapped
-        ? [snapResult.position[0], 0, snapResult.position[2]] as [number, number, number]
+        ? [snapResult.position[0], GROUND_EPSILON, snapResult.position[2]] as [number, number, number]
         : targetPosition;
       
       console.debug('[useEnhanced3DDragging] Snap result:', { 

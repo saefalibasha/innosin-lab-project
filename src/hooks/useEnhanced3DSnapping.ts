@@ -91,7 +91,7 @@ export const useEnhanced3DSnapping = (
           pos: [
             productPos3D[0] + (0 * cos1 - productDepth/2 * sin1) + (0 * cos2 + draggedDepth/2 * sin2),
             position3D[1],
-            productPos3D[2] + (0 * sin1 + productDepth/2 * cos1) + (0 * sin2 + draggedDepth/2 * cos2)
+            productPos3D[2] + (0 * sin1 + productDepth/2 * cos1) - (0 * sin2 + draggedDepth/2 * cos2)
           ],
           type: 'edge-top'
         });
@@ -99,7 +99,7 @@ export const useEnhanced3DSnapping = (
         // Bottom edge (for top edge)
         snapPositions.push({
           pos: [
-            productPos3D[0] - (0 * cos1 - productDepth/2 * sin1) - (0 * cos2 + draggedDepth/2 * sin2),
+            productPos3D[0] - (0 * cos1 - productDepth/2 * sin1) + (0 * cos2 + draggedDepth/2 * sin2),
             position3D[1],
             productPos3D[2] - (0 * sin1 + productDepth/2 * cos1) - (0 * sin2 + draggedDepth/2 * cos2)
           ],

@@ -38,7 +38,8 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         
         const shape = new THREE.Shape();
         // No padding - floor exactly matches wall bounds
-        const padding = 0;
+        // Slight negative padding to inset floor within wall bounds (avoid overlap)
+        const padding = -5;
         const [x1, , z1] = canvasTo3DWorld({x: minX - padding, y: minY - padding}, scale);
         const [x2, , z2] = canvasTo3DWorld({x: maxX + padding, y: minY - padding}, scale);
         const [x3, , z3] = canvasTo3DWorld({x: maxX + padding, y: maxY + padding}, scale);
@@ -84,7 +85,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
 
   return (
     <mesh
-      position={[0, -0.01, 0]}
+      position={[0, -0.02, 0]}
       receiveShadow
       rotation={[-Math.PI / 2, 0, 0]}
     >
