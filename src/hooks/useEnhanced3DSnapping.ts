@@ -34,9 +34,9 @@ export const useEnhanced3DSnapping = (
     const PRODUCT_SNAP_DISTANCE = 0.2; // 20cm in 3D world units - tighter for precise snapping
     let bestSnap = { snapped: false, position: position3D, type: 'none', confidence: 0 };
 
-    // Get dimensions of dragged product from the dimensions object
-    const draggedWidth = (draggedProduct.dimensions?.width || 600) * 0.001; // mm to meters
-    const draggedDepth = (draggedProduct.dimensions?.length || 600) * 0.001; // use length for depth
+    // Get dimensions of dragged product: length=X-axis (depth), width=Z-axis (width)
+    const draggedLengthM = (draggedProduct.dimensions?.length || 600) * 0.001; // X-axis in meters
+    const draggedWidthM = (draggedProduct.dimensions?.width || 600) * 0.001; // Z-axis in meters
     const draggedRotation = draggedProduct.rotation || 0;
 
     products.forEach(product => {
@@ -45,9 +45,9 @@ export const useEnhanced3DSnapping = (
       // Convert product position to 3D
       const productPos3D = canvasTo3DWorld(product.position, scale);
       
-      // Get existing product dimensions
-      const productWidth = (product.dimensions?.width || 600) * 0.001;
-      const productDepth = (product.dimensions?.length || 600) * 0.001;
+      // Get existing product dimensions: length=X-axis, width=Z-axis
+      const productLengthM = (product.dimensions?.length || 600) * 0.001; // X-axis
+      const productWidthM = (product.dimensions?.width || 600) * 0.001; // Z-axis
       const productRotation = product.rotation || 0;
       
       // Calculate distance
@@ -60,50 +60,50 @@ export const useEnhanced3DSnapping = (
         // Enhanced corner/edge snapping for seamless connection
         const snapPositions: Array<{ pos: [number, number, number]; type: string }> = [];
         
-        // Calculate offsets considering rotation
+        // Calculate offsets considering rotation (length=X, width=Z)
         const cos1 = Math.cos(productRotation);
         const sin1 = Math.sin(productRotation);
         const cos2 = Math.cos(draggedRotation);
         const sin2 = Math.sin(draggedRotation);
         
-        // Right edge of existing product (for left edge of dragged product)
+        // Right edge (+Z direction) of existing product aligns with left edge of dragged product
         snapPositions.push({
           pos: [
-            productPos3D[0] + (productWidth/2 * cos1 - 0 * sin1) + (draggedWidth/2 * cos2 - 0 * sin2),
+            productPos3D[0] + (productLengthM/2 * cos1) + (draggedLengthM/2 * cos2),
             position3D[1],
-            productPos3D[2] + (productWidth/2 * sin1 + 0 * cos1) + (draggedWidth/2 * sin2 + 0 * cos2)
+            productPos3D[2] + (productWidthM/2) + (draggedWidthM/2)
           ],
           type: 'edge-right'
         });
         
-        // Left edge of existing product (for right edge of dragged product)
+        // Left edge (-Z direction) of existing product aligns with right edge of dragged product
         snapPositions.push({
           pos: [
-            productPos3D[0] - (productWidth/2 * cos1 - 0 * sin1) - (draggedWidth/2 * cos2 - 0 * sin2),
+            productPos3D[0] + (productLengthM/2 * cos1) - (draggedLengthM/2 * cos2),
             position3D[1],
-            productPos3D[2] - (productWidth/2 * sin1 + 0 * cos1) - (draggedWidth/2 * sin2 + 0 * cos2)
+            productPos3D[2] - (productWidthM/2) - (draggedWidthM/2)
           ],
           type: 'edge-left'
         });
         
-        // Top edge (for bottom edge)
+        // Front edge (+X direction) of existing product aligns with back edge of dragged product
         snapPositions.push({
           pos: [
-            productPos3D[0] + (0 * cos1 - productDepth/2 * sin1) + (0 * cos2 + draggedDepth/2 * sin2),
+            productPos3D[0] + (productLengthM/2) + (draggedLengthM/2),
             position3D[1],
-            productPos3D[2] + (0 * sin1 + productDepth/2 * cos1) - (0 * sin2 + draggedDepth/2 * cos2)
+            productPos3D[2] + (productWidthM/2 * sin1) + (draggedWidthM/2 * sin2)
           ],
-          type: 'edge-top'
+          type: 'edge-front'
         });
         
-        // Bottom edge (for top edge)
+        // Back edge (-X direction) of existing product aligns with front edge of dragged product
         snapPositions.push({
           pos: [
-            productPos3D[0] - (0 * cos1 - productDepth/2 * sin1) + (0 * cos2 + draggedDepth/2 * sin2),
+            productPos3D[0] - (productLengthM/2) - (draggedLengthM/2),
             position3D[1],
-            productPos3D[2] - (0 * sin1 + productDepth/2 * cos1) - (0 * sin2 + draggedDepth/2 * cos2)
+            productPos3D[2] + (productWidthM/2 * sin1) + (draggedWidthM/2 * sin2)
           ],
-          type: 'edge-bottom'
+          type: 'edge-back'
         });
 
         // Find the closest snap position

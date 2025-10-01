@@ -149,9 +149,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           }
         }
 
-        // Create product with consistent dimension mapping
-        const productWidthMm = product.width || product.dimensions?.length || 600;
-        const productDepthMm = product.depth || product.dimensions?.width || 600;
+        // Create product with unified dimension mapping: X=length, Z=width, Y=height
+        const productWidthMm = product.width || product.dimensions?.width || 600;
+        const productDepthMm = product.depth || product.dimensions?.length || 600;
         const productHeightMm = product.height || product.dimensions?.height || 850;
 
         const newProduct: PlacedProduct = {
@@ -162,13 +162,13 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           position: canvasPos,
           rotation: 0,
           dimensions: {
-            length: productWidthMm,  // width maps to length
-            width: productDepthMm,   // depth maps to width  
-            height: productHeightMm
+            length: productDepthMm,  // X-axis (depth/forward-back)
+            width: productWidthMm,   // Z-axis (width/left-right)
+            height: productHeightMm  // Y-axis (height/up-down)
           },
           originalDimensions: {
-            length: productWidthMm,
-            width: productDepthMm,
+            length: productDepthMm,
+            width: productWidthMm,
             height: productHeightMm
           },
           color: product.color || '#4caf50',

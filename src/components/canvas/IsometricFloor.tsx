@@ -14,12 +14,12 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
 
     const shape = new Shape();
 
-    // Convert all points using unified coordinate system
-    const [firstX, , firstZ] = canvasTo3D(room.points[0]);
+    // Convert all points using unified coordinate system with scale
+    const [firstX, , firstZ] = canvasTo3D(room.points[0], scale);
     shape.moveTo(firstX, firstZ);
 
     for (let i = 1; i < room.points.length; i++) {
-      const [pointX, , pointZ] = canvasTo3D(room.points[i]);
+      const [pointX, , pointZ] = canvasTo3D(room.points[i], scale);
       shape.lineTo(pointX, pointZ);
     }
 

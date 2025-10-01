@@ -25,7 +25,64 @@ const isAxisAligned = (polygon: Point[], tolerance = 1): boolean => {
   return true;
 };
 
-// Helper: shrink polygon toward centroid by insetPx
+// Helper: inset rectilinear (axis-aligned) polygon by moving each edge inward
+const insetRectilinearPolygon = (polygon: Point[], insetPx: number): Point[] => {
+  if (polygon.length < 3) return polygon;
+  
+  const result: Point[] = [];
+  const n = polygon.length;
+  
+  for (let i = 0; i < n; i++) {
+    const prev = polygon[(i - 1 + n) % n];
+    const curr = polygon[i];
+    const next = polygon[(i + 1) % n];
+    
+    // Determine edge directions (unit vectors)
+    const edge1dx = curr.x - prev.x;
+    const edge1dy = curr.y - prev.y;
+    const edge1len = Math.sqrt(edge1dx * edge1dx + edge1dy * edge1dy);
+    const e1ux = edge1len > 0 ? edge1dx / edge1len : 0;
+    const e1uy = edge1len > 0 ? edge1dy / edge1len : 0;
+    
+    const edge2dx = next.x - curr.x;
+    const edge2dy = next.y - curr.y;
+    const edge2len = Math.sqrt(edge2dx * edge2dx + edge2dy * edge2dy);
+    const e2ux = edge2len > 0 ? edge2dx / edge2len : 0;
+    const e2uy = edge2len > 0 ? edge2dy / edge2len : 0;
+    
+    // Perpendicular inward normals (rotate 90° clockwise for inward)
+    const n1x = e1uy;
+    const n1y = -e1ux;
+    const n2x = e2uy;
+    const n2y = -e2ux;
+    
+    // Average normal (bisector direction)
+    let nx = n1x + n2x;
+    let ny = n1y + n2y;
+    const nlen = Math.sqrt(nx * nx + ny * ny);
+    if (nlen < 0.001) {
+      // Degenerate corner, use one normal
+      nx = n1x;
+      ny = n1y;
+    } else {
+      nx /= nlen;
+      ny /= nlen;
+    }
+    
+    // Offset distance accounting for corner angle
+    const cosAngle = e1ux * e2ux + e1uy * e2uy;
+    const offsetDist = Math.abs(cosAngle) > 0.99 ? insetPx : insetPx / Math.sqrt((1 + cosAngle) / 2);
+    
+    result.push({
+      x: curr.x + nx * offsetDist,
+      y: curr.y + ny * offsetDist
+    });
+  }
+  
+  return result;
+};
+
+// Fallback: shrink polygon toward centroid by insetPx
 const shrinkPolygonTowardCentroid = (polygon: Point[], insetPx: number): Point[] => {
   if (polygon.length < 3) return polygon;
   const cx = polygon.reduce((sum, p) => sum + p.x, 0) / polygon.length;
@@ -110,21 +167,9 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     let insetPolygon: Point[];
     
     if (isAxisAligned(polygon)) {
-      // For axis-aligned polygons, use precise bounding-box inset
-      console.debug('[Enhanced3DFloor] Using axis-aligned inset');
-      const xs = polygon.map(p => p.x);
-      const ys = polygon.map(p => p.y);
-      const minX = Math.min(...xs);
-      const maxX = Math.max(...xs);
-      const minY = Math.min(...ys);
-      const maxY = Math.max(...ys);
-      
-      insetPolygon = [
-        { x: minX + insetPx, y: minY + insetPx },
-        { x: maxX - insetPx, y: minY + insetPx },
-        { x: maxX - insetPx, y: maxY - insetPx },
-        { x: minX + insetPx, y: maxY - insetPx }
-      ];
+      // For axis-aligned polygons, use rectilinear inset that preserves all vertices
+      console.debug('[Enhanced3DFloor] Using rectilinear inset for axis-aligned polygon');
+      insetPolygon = insetRectilinearPolygon(polygon, insetPx);
     } else {
       // For general polygons, shrink toward centroid
       console.debug('[Enhanced3DFloor] Using centroid-based inset');
