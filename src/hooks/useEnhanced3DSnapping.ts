@@ -21,7 +21,8 @@ interface SnapGuide3D {
 export const useEnhanced3DSnapping = (
   wallSegments: WallSegment[],
   placedProducts: PlacedProduct[],
-  scale: number
+  scale: number,
+  origin?: { minX: number; minY: number }
 ) => {
   const [snapGuides, setSnapGuides] = useState<SnapGuide3D[]>([]);
   const [activeSnap, setActiveSnap] = useState<Enhanced3DSnapResult | null>(null);
@@ -43,7 +44,7 @@ export const useEnhanced3DSnapping = (
       if (product.id === draggedProduct.id) return;
 
       // Convert product position to 3D
-      const productPos3D = canvasTo3DWorld(product.position, scale);
+      const productPos3D = canvasTo3DWorld(product.position, scale, origin);
       
       // Get existing product dimensions: length=X-axis, width=Z-axis
       const productLengthM = (product.dimensions?.length || 600) * 0.001; // X-axis

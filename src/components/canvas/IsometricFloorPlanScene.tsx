@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera, Grid, Environment } from '@react-three/drei';
 import { Group } from 'three';
 import { WallSegment, PlacedProduct, Door, Room } from '@/types/floorPlanTypes';
 
@@ -136,6 +136,7 @@ const IsometricScene = ({
           if (onProductClick) onProductClick(productId);
         }}
         selectedProductId={selectedProducts[0]}
+        origin={effectiveOrigin}
       />
 
       {/* Drop plane for raycasting - centered at origin within the group */}
@@ -155,6 +156,9 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
       <Canvas shadows gl={{ toneMapping: 3, toneMappingExposure: 1.2, outputColorSpace: 'srgb', antialias: true }} style={{ background: 'transparent' }}>
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
         <CameraExporter />
+
+        {/* Environment for PBR materials */}
+        <Environment preset="city" />
 
         {/* Enhanced Lighting */}
         <ambientLight intensity={0.7} />

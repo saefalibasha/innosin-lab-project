@@ -11,6 +11,7 @@ interface Enhanced3DControlsProps {
   onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void;
   onProductSelect: (productId: string) => void;
   selectedProductId?: string;
+  origin?: { minX: number; minY: number };
 }
 
 export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
@@ -19,7 +20,8 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   scale,
   onProductUpdate,
   onProductSelect,
-  selectedProductId
+  selectedProductId,
+  origin
 }) => {
   const { camera, raycaster, pointer } = useThree();
   const [isPointerDown, setIsPointerDown] = useState(false);
@@ -31,7 +33,7 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
     updateDrag,
     endDrag,
     cancelDrag
-  } = useEnhanced3DDragging(wallSegments, placedProducts, scale, onProductUpdate);
+  } = useEnhanced3DDragging(wallSegments, placedProducts, scale, onProductUpdate, origin);
 
   const handlePointerDown = useCallback((event: any) => {
     setIsPointerDown(true);

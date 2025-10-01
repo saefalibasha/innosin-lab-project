@@ -155,11 +155,22 @@ const ProductGLTF = ({
   useEffect(() => {
     if (!gltf || !groupRef.current) return;
 
-    // Compute current model bounds BEFORE any transformations
-    const box = new Box3().setFromObject(gltf.scene);
-    const size = box.getSize(new Vector3());
-    const center = box.getCenter(new Vector3());
+    // First pass: compute raw bounds from mesh geometries
+    const box = new Box3();
+    gltf.scene.traverse((child: any) => {
+      if (child.isMesh && child.geometry) {
+        const geom = child.geometry;
+        if (!geom.boundingBox) geom.computeBoundingBox();
+        if (geom.boundingBox) {
+          const meshBox = geom.boundingBox.clone();
+          meshBox.applyMatrix4(child.matrixWorld);
+          box.union(meshBox);
+        }
+      }
+    });
 
+    const size = box.getSize(new Vector3());
+    
     console.debug('[ProductGLTF] Original GLTF bounds:', {
       modelPath: modelPath.split('/').pop(),
       size: { x: size.x, y: size.y, z: size.z }
@@ -173,21 +184,67 @@ const ProductGLTF = ({
       return;
     }
 
-    // Center horizontally but place bottom on floor
-    // Subtract center to center the model, then offset by -min.y to lift bottom to y=0
-    gltf.scene.position.set(-center.x, -box.min.y, -center.z);
-
     // Scale to match target physical dimensions
     const [tx, ty, tz] = targetSize;
-    const sx = size.x > 0 ? tx / size.x : 1;
-    const sy = size.y > 0 ? ty / size.y : 1;
-    const sz = size.z > 0 ? tz / size.z : 1;
-    gltf.scene.scale.set(sx, sy, sz);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const targetMaxDim = Math.max(tx, ty, tz);
+    const scaleFactor = maxDim > 0 ? targetMaxDim / maxDim : 1;
+    
+    gltf.scene.scale.setScalar(scaleFactor);
+    gltf.scene.updateMatrixWorld(true);
 
-    console.debug('[ProductGLTF] Transformed:', {
+    // Second pass: recompute bounds after scaling
+    const scaledBox = new Box3();
+    gltf.scene.traverse((child: any) => {
+      if (child.isMesh && child.geometry) {
+        const geom = child.geometry;
+        geom.computeBoundingBox();
+        if (geom.boundingBox) {
+          const meshBox = geom.boundingBox.clone();
+          meshBox.applyMatrix4(child.matrixWorld);
+          scaledBox.union(meshBox);
+        }
+      }
+    });
+
+    const scaledSize = new Vector3();
+    const scaledCenter = new Vector3();
+    scaledBox.getSize(scaledSize);
+    scaledBox.getCenter(scaledCenter);
+
+    console.debug('[ProductGLTF] After scaling:', {
       modelPath: modelPath.split('/').pop(),
-      scale: { x: sx, y: sy, z: sz },
-      targetSize
+      scaledSize: scaledSize.toArray(),
+      scaledCenter: scaledCenter.toArray(),
+      targetSize,
+      scaleFactor
+    });
+
+    // Center in X and Z, place bottom at Y=0
+    gltf.scene.position.set(
+      -scaledCenter.x,
+      -scaledBox.min.y,  // Bottom of model at y=0
+      -scaledCenter.z
+    );
+
+    // Material enhancements for PBR rendering
+    gltf.scene.traverse((child: any) => {
+      if (child.isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+        
+        if (child.material) {
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach((mat: any) => {
+            if (mat.isMeshStandardMaterial || mat.isMeshPhysicalMaterial) {
+              mat.envMapIntensity = 1.25; // Boost environment reflection
+              mat.roughness = Math.max(0.3, Math.min(1.0, mat.roughness || 0.8));
+              mat.metalness = Math.max(0, Math.min(0.7, mat.metalness || 0));
+              mat.needsUpdate = true;
+            }
+          });
+        }
+      }
     });
 
     // Ensure raycasting recognizes product

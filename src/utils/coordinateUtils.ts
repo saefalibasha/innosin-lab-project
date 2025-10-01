@@ -8,12 +8,20 @@ export const SCALE_2D_TO_3D = 0.08; // Consistent with 2D scale (0.08 px/mm)
  * Convert 2D canvas coordinates to 3D world coordinates
  * Direct 1:1 mapping with proper mm to meters conversion
  */
-export function canvasTo3DWorld(point: Point, scale: number = 0.08): [number, number, number] {
+export function canvasTo3DWorld(
+  point: Point, 
+  scale: number = 0.08, 
+  origin?: { minX: number; minY: number }
+): [number, number, number] {
+  // Subtract origin offset for consistent coordinate system
+  const adjustedX = origin ? point.x - origin.minX : point.x;
+  const adjustedY = origin ? point.y - origin.minY : point.y;
+  
   // Convert from 2D pixels to 3D meters using scale
   // scale = 0.08 means 80px = 1000mm, so 1px = 12.5mm = 0.0125m
   const pixelsPerMeter = scale * 1000; // px per 1000mm
-  const worldX = point.x / pixelsPerMeter; // Convert px to meters
-  const worldZ = point.y / pixelsPerMeter; // Y becomes Z in 3D floor plane
+  const worldX = adjustedX / pixelsPerMeter; // Convert px to meters
+  const worldZ = adjustedY / pixelsPerMeter; // Y becomes Z in 3D floor plane
   
   return [worldX, 0, worldZ];
 }
@@ -21,11 +29,20 @@ export function canvasTo3DWorld(point: Point, scale: number = 0.08): [number, nu
 /**
  * Convert 3D world coordinates back to 2D canvas coordinates
  */
-export function worldTo2DCanvas(x: number, z: number, scale: number = 0.08): Point {
+export function worldTo2DCanvas(
+  x: number, 
+  z: number, 
+  scale: number = 0.08,
+  origin?: { minX: number; minY: number }
+): Point {
   const pixelsPerMeter = scale * 1000; // px per 1000mm
+  const canvasX = x * pixelsPerMeter;
+  const canvasY = z * pixelsPerMeter;
+  
+  // Add origin offset back for consistent coordinate system
   return {
-    x: x * pixelsPerMeter,
-    y: z * pixelsPerMeter
+    x: origin ? canvasX + origin.minX : canvasX,
+    y: origin ? canvasY + origin.minY : canvasY
   };
 }
 
