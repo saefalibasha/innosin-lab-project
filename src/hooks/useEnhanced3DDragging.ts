@@ -17,8 +17,7 @@ export const useEnhanced3DDragging = (
   wallSegments: any[],
   placedProducts: PlacedProduct[],
   scale: number,
-  onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void,
-  origin?: { minX: number; minY: number }
+  onProductUpdate: (productId: string, updates: Partial<PlacedProduct>) => void
 ) => {
   const [dragState, setDragState] = useState<DragState3D>({
     isDragging: false,
@@ -34,13 +33,12 @@ export const useEnhanced3DDragging = (
   const { snapToPosition, snapGuides, updateSnapGuides, clearSnapGuides } = useEnhanced3DSnapping(
     wallSegments,
     placedProducts.filter((p) => p.id !== dragState.draggedProduct?.id),
-    scale,
-    origin
+    scale
   );
 
   const startDrag = useCallback(
     (product: PlacedProduct, intersectionPoint: [number, number, number], pointerEvent: any) => {
-      const productPosition = canvasTo3DWorld(product.position, scale, origin);
+      const productPosition = canvasTo3DWorld(product.position, scale);
       const offset: [number, number, number] = [
         intersectionPoint[0] - productPosition[0],
         intersectionPoint[1] - productPosition[1],
@@ -58,7 +56,7 @@ export const useEnhanced3DDragging = (
         isValid: true,
       });
     },
-    [scale, origin]
+    [scale]
   );
 
   const updateDrag = useCallback(
@@ -128,15 +126,8 @@ export const useEnhanced3DDragging = (
       const canvasPosition = worldTo2DCanvas(
         dragState.currentPosition[0],
         dragState.currentPosition[2],
-        scale,
-        origin
+        scale
       );
-      
-      console.log('[useEnhanced3DDragging] endDrag conversion:', {
-        world3D: dragState.currentPosition,
-        canvas2D: canvasPosition,
-        origin
-      });
 
       onProductUpdate(dragState.draggedProduct.id, {
         position: canvasPosition,
@@ -154,7 +145,7 @@ export const useEnhanced3DDragging = (
 
     clearSnapGuides();
     dragStartRef.current = null;
-  }, [dragState, onProductUpdate, scale, origin, clearSnapGuides]);
+  }, [dragState, onProductUpdate, scale, clearSnapGuides]);
 
   const cancelDrag = useCallback(() => {
     setDragState({
