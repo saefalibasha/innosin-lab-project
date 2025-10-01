@@ -140,11 +140,14 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         console.debug('[Enhanced3DFloor] Fallback floor bounds:', { minX, minY, maxX, maxY, insetPx });
         
         const shape = new THREE.Shape();
+        // Apply origin offset for coordinate consistency
+        const offsetX = origin?.minX || 0;
+        const offsetY = origin?.minY || 0;
         // Inset floor by wall thickness to stay within walls
-        const [x1, , z1] = canvasTo3DWorld({x: minX + insetPx, y: minY + insetPx}, scale);
-        const [x2, , z2] = canvasTo3DWorld({x: maxX - insetPx, y: minY + insetPx}, scale);
-        const [x3, , z3] = canvasTo3DWorld({x: maxX - insetPx, y: maxY - insetPx}, scale);
-        const [x4, , z4] = canvasTo3DWorld({x: minX + insetPx, y: maxY - insetPx}, scale);
+        const [x1, , z1] = canvasTo3DWorld({x: (minX + insetPx) - offsetX, y: (minY + insetPx) - offsetY}, scale);
+        const [x2, , z2] = canvasTo3DWorld({x: (maxX - insetPx) - offsetX, y: (minY + insetPx) - offsetY}, scale);
+        const [x3, , z3] = canvasTo3DWorld({x: (maxX - insetPx) - offsetX, y: (maxY - insetPx) - offsetY}, scale);
+        const [x4, , z4] = canvasTo3DWorld({x: (minX + insetPx) - offsetX, y: (maxY - insetPx) - offsetY}, scale);
         
         shape.moveTo(x1, z1);
         shape.lineTo(x2, z2);
@@ -182,8 +185,12 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     // Convert to 3D coordinates and create shape
     const shape = new THREE.Shape();
     
+    // Apply origin offset for coordinate consistency
+    const offsetX = origin?.minX || 0;
+    const offsetY = origin?.minY || 0;
+    
     insetPolygon.forEach((point, index) => {
-      const point3D = canvasTo3DWorld(point, scale);
+      const point3D = canvasTo3DWorld({x: point.x - offsetX, y: point.y - offsetY}, scale);
       if (index === 0) {
         shape.moveTo(point3D[0], point3D[2]);
       } else {
@@ -195,7 +202,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     shape.closePath();
     
     return shape;
-  }, [wallSegments, scale]);
+  }, [wallSegments, scale, origin]);
 
   if (!floorShape) return null;
 
@@ -212,15 +219,19 @@ const WallFloor = ({ wallSegments, scale, origin }: {
 };
 
 // Room floor component for explicit rooms - use actual polygon shape
-const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
+const RoomFloor = ({ room, scale, origin }: { room: Room; scale: number; origin?: { minX: number; minY: number } }) => {
   const floorShape = useMemo(() => {
     if (!room.points || room.points.length < 3) return null;
 
     // Build THREE.Shape from actual room polygon points
     const shape = new THREE.Shape();
     
+    // Apply origin offset for coordinate consistency
+    const offsetX = origin?.minX || 0;
+    const offsetY = origin?.minY || 0;
+    
     room.points.forEach((point, index) => {
-      const point3D = canvasTo3DWorld(point, scale);
+      const point3D = canvasTo3DWorld({x: point.x - offsetX, y: point.y - offsetY}, scale);
       if (index === 0) {
         shape.moveTo(point3D[0], point3D[2]);
       } else {
@@ -230,7 +241,7 @@ const RoomFloor = ({ room, scale }: { room: Room; scale: number }) => {
     
     shape.closePath();
     return shape;
-  }, [room.points, scale]);
+  }, [room.points, scale, origin]);
 
   if (!floorShape) return null;
 
@@ -262,7 +273,7 @@ export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
 
       {/* Render explicit room floors */}
       {rooms && rooms.map((room) => (
-        <RoomFloor key={room.id} room={room} scale={scale} />
+        <RoomFloor key={room.id} room={room} scale={scale} origin={origin} />
       ))}
 
       {/* Snap grid overlay */}

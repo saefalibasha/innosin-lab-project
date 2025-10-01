@@ -39,7 +39,14 @@ const ProductModel = ({
 
   // Calculate final position and scale with proper dimensions
   const finalPosition = useMemo(() => {
-    const basePos = canvasTo3DWorld(product.position, scale);
+    // Apply origin offset for coordinate consistency
+    const offsetX = origin?.minX || 0;
+    const offsetY = origin?.minY || 0;
+    const basePos = canvasTo3DWorld({ 
+      x: product.position.x - offsetX, 
+      y: product.position.y - offsetY 
+    }, scale);
+    
     // Check if this is a wall-mounted product based on name/category
     const isWallMounted = product.name?.toLowerCase().includes('wall') || 
                          product.category?.toLowerCase().includes('wall');
@@ -52,11 +59,13 @@ const ProductModel = ({
       name: product.name,
       isWallMounted,
       yBase,
-      basePos
+      basePos,
+      canvasPos: product.position,
+      offset: { offsetX, offsetY }
     });
     
     return [basePos[0], yBase, basePos[2]] as [number, number, number];
-  }, [product.position, product.name, product.category, scale]);
+  }, [product.position, product.name, product.category, scale, origin]);
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {

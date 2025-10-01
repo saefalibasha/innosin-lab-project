@@ -21,9 +21,20 @@ const Wall = ({
   origin?: { minX: number; minY: number }; // ✅ NEW
 }) => {
   const transform = useMemo(() => {
-    // Convert 2D canvas points to 3D world (meters)
-    const start3D = canvasTo3DWorld(wall.start, scale);
-    const end3D = canvasTo3DWorld(wall.end, scale);
+    // Apply origin offset for coordinate consistency
+    const offsetX = origin?.minX || 0;
+    const offsetY = origin?.minY || 0;
+    
+    // Convert 2D canvas points to 3D world (meters) with origin offset
+    const start3D = canvasTo3DWorld({ x: wall.start.x - offsetX, y: wall.start.y - offsetY }, scale);
+    const end3D = canvasTo3DWorld({ x: wall.end.x - offsetX, y: wall.end.y - offsetY }, scale);
+    
+    console.debug('[IsometricWalls] Wall 3D transform:', {
+      wallId: wall.id,
+      start2D: wall.start,
+      start3D,
+      end3D
+    });
 
     const dx = end3D[0] - start3D[0];
     const dz = end3D[2] - start3D[2];
@@ -40,7 +51,7 @@ const Wall = ({
     const rotationY = Math.atan2(dz, dx);
 
     return { mid, length, thicknessMeters, heightMeters, rotationY };
-  }, [wall, scale]);
+  }, [wall, scale, origin]);
 
   const handleClick = (e: any) => {
     e.stopPropagation();

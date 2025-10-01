@@ -198,7 +198,18 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     [setPlacedProducts]
   );
 
-  const origin = { minX: 0, minY: 0 };
+  // Calculate proper origin from wall bounds for consistent coordinate system
+  const origin = React.useMemo(() => {
+    if (wallSegments.length === 0) return { minX: 0, minY: 0 };
+    
+    const xs = wallSegments.flatMap(w => [w.start.x, w.end.x]);
+    const ys = wallSegments.flatMap(w => [w.start.y, w.end.y]);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    
+    console.debug('[EnhancedCanvasWorkspace3D] Calculated origin:', { minX, minY });
+    return { minX, minY };
+  }, [wallSegments]);
 
   return (
     <div 
