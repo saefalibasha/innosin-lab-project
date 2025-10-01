@@ -118,11 +118,11 @@ const WallFloor = ({ wallSegments, scale, origin }: {
   const floorShape = useMemo(() => {
     if (wallSegments.length === 0) return null;
 
-    // Calculate wall thickness-based inset
-    const avgThicknessMm = computeAverageThicknessMm(wallSegments);
-    const insetPx = Math.max(0, (avgThicknessMm / 2) * scale);
+    // Use minimal epsilon (5mm) to prevent z-fighting, not full wall thickness inset
+    const epsilonMm = 5;
+    const epsilonPx = epsilonMm * scale;
     
-    console.debug('[Enhanced3DFloor] Wall thickness inset:', { avgThicknessMm, insetPx });
+    console.debug('[Enhanced3DFloor] Using minimal epsilon:', { epsilonMm, epsilonPx });
 
     // Get the polygon outline from walls
     const polygon = wallsToPolygon(wallSegments);
@@ -137,17 +137,17 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         const minY = Math.min(...ys);
         const maxY = Math.max(...ys);
         
-        console.debug('[Enhanced3DFloor] Fallback floor bounds:', { minX, minY, maxX, maxY, insetPx });
+        console.debug('[Enhanced3DFloor] Fallback floor bounds:', { minX, minY, maxX, maxY });
         
         const shape = new THREE.Shape();
         // Apply origin offset for coordinate consistency
         const offsetX = origin?.minX || 0;
         const offsetY = origin?.minY || 0;
-        // Inset floor by wall thickness to stay within walls
-        const [x1, , z1] = canvasTo3DWorld({x: (minX + insetPx) - offsetX, y: (minY + insetPx) - offsetY}, scale);
-        const [x2, , z2] = canvasTo3DWorld({x: (maxX - insetPx) - offsetX, y: (minY + insetPx) - offsetY}, scale);
-        const [x3, , z3] = canvasTo3DWorld({x: (maxX - insetPx) - offsetX, y: (maxY - insetPx) - offsetY}, scale);
-        const [x4, , z4] = canvasTo3DWorld({x: (minX + insetPx) - offsetX, y: (maxY - insetPx) - offsetY}, scale);
+        // Use minimal epsilon instead of full wall thickness
+        const [x1, , z1] = canvasTo3DWorld({x: (minX + epsilonPx) - offsetX, y: (minY + epsilonPx) - offsetY}, scale);
+        const [x2, , z2] = canvasTo3DWorld({x: (maxX - epsilonPx) - offsetX, y: (minY + epsilonPx) - offsetY}, scale);
+        const [x3, , z3] = canvasTo3DWorld({x: (maxX - epsilonPx) - offsetX, y: (maxY - epsilonPx) - offsetY}, scale);
+        const [x4, , z4] = canvasTo3DWorld({x: (minX + epsilonPx) - offsetX, y: (maxY - epsilonPx) - offsetY}, scale);
         
         shape.moveTo(x1, z1);
         shape.lineTo(x2, z2);
@@ -167,17 +167,21 @@ const WallFloor = ({ wallSegments, scale, origin }: {
       return shape;
     }
 
-    // Inset the polygon to fit inside walls
+    // Apply minimal epsilon to prevent z-fighting
     let insetPolygon: Point[];
     
     if (isAxisAligned(polygon)) {
-      // For axis-aligned polygons, use rectilinear inset that preserves all vertices
-      console.debug('[Enhanced3DFloor] Using rectilinear inset for axis-aligned polygon');
-      insetPolygon = insetRectilinearPolygon(polygon, insetPx);
+      console.debug('[Enhanced3DFloor] Using minimal epsilon for axis-aligned polygon');
+      insetPolygon = insetRectilinearPolygon(polygon, epsilonPx);
     } else {
-      // For general polygons, shrink toward centroid
-      console.debug('[Enhanced3DFloor] Using centroid-based inset');
-      insetPolygon = shrinkPolygonTowardCentroid(polygon, insetPx);
+      console.debug('[Enhanced3DFloor] Using minimal epsilon for general polygon');
+      insetPolygon = shrinkPolygonTowardCentroid(polygon, epsilonPx);
+    }
+    
+    // If epsilon caused collapse, use original polygon
+    if (insetPolygon.length < 3) {
+      console.warn('[Enhanced3DFloor] Epsilon collapsed polygon, using original');
+      insetPolygon = polygon;
     }
     
     console.debug('[Enhanced3DFloor] First 3 floor vertices (2D):', insetPolygon.slice(0, 3));
@@ -264,6 +268,43 @@ export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
   showSnapGrid = false,
   origin,
 }) => {
+  // Calculate floor bounds for grid positioning
+  const floorBounds = useMemo(() => {
+    const allPoints: Point[] = [];
+    
+    if (wallSegments && wallSegments.length > 0) {
+      const polygon = wallsToPolygon(wallSegments);
+      allPoints.push(...polygon);
+    }
+    
+    if (rooms) {
+      rooms.forEach(room => allPoints.push(...room.points));
+    }
+    
+    if (allPoints.length === 0) return { centerX: 0, centerZ: 0, sizeX: 100, sizeZ: 100 };
+    
+    // Convert to 3D with origin offset
+    const points3D = allPoints.map(p => canvasTo3DWorld(
+      { x: p.x - (origin?.minX || 0), y: p.y - (origin?.minY || 0) },
+      scale
+    ));
+    
+    const xs = points3D.map(p => p[0]);
+    const zs = points3D.map(p => p[2]);
+    
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const minZ = Math.min(...zs);
+    const maxZ = Math.max(...zs);
+    
+    return {
+      centerX: (minX + maxX) / 2,
+      centerZ: (minZ + maxZ) / 2,
+      sizeX: Math.max(100, (maxX - minX) * 1.5),
+      sizeZ: Math.max(100, (maxZ - minZ) * 1.5)
+    };
+  }, [wallSegments, rooms, scale, origin]);
+
   return (
     <group>
       {/* Generate floor from wall segments when no rooms exist */}
@@ -276,15 +317,15 @@ export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
         <RoomFloor key={room.id} room={room} scale={scale} origin={origin} />
       ))}
 
-      {/* Snap grid overlay */}
+      {/* Snap grid overlay - positioned at floor center */}
       {showSnapGrid && (
         <Grid 
-          args={[100, 100]} 
-          position={[0, 0.001, 0]} 
-          cellSize={0.5} 
+          args={[floorBounds.sizeX, floorBounds.sizeZ]} 
+          position={[floorBounds.centerX, 0.001, floorBounds.centerZ]} 
+          cellSize={1} 
           cellThickness={0.5} 
           cellColor="#e0e0e0" 
-          sectionSize={5} 
+          sectionSize={10} 
           sectionThickness={1} 
           sectionColor="#c0c0c0" 
           fadeDistance={50} 

@@ -104,12 +104,13 @@ const IsometricScene = ({
     };
   }, [wallSegments, rooms, scale]);
 
-  const calculatedOrigin = { minX: 0, minY: 0 };
+  // Use provided origin or fallback to zero
+  const effectiveOrigin = origin || { minX: 0, minY: 0 };
 
   return (
     <group ref={groupRef} position={[-sceneBounds.centerX, 0, -sceneBounds.centerZ]}>
       {/* Floor */}
-      <Enhanced3DFloor rooms={rooms} wallSegments={wallSegments} scale={scale} showSnapGrid={showGrid} origin={calculatedOrigin} />
+      <Enhanced3DFloor rooms={rooms} wallSegments={wallSegments} scale={scale} showSnapGrid={showGrid} origin={effectiveOrigin} />
 
       {/* Grid if no rooms - centered at origin within the group */}
       {showGrid && rooms.length === 0 && wallSegments.length === 0 && (
@@ -117,13 +118,13 @@ const IsometricScene = ({
       )}
 
       {/* Walls */}
-      <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} origin={calculatedOrigin} />
+      <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} origin={effectiveOrigin} />
 
       {/* Doors */}
-      <IsometricDoors doors={doors} scale={scale} wallSegments={wallSegments} origin={calculatedOrigin} />
+      <IsometricDoors doors={doors} scale={scale} wallSegments={wallSegments} origin={effectiveOrigin} />
 
       {/* Products */}
-      <IsometricProducts placedProducts={placedProducts} scale={scale} onProductClick={onProductClick} selectedProducts={selectedProducts} origin={calculatedOrigin} />
+      <IsometricProducts placedProducts={placedProducts} scale={scale} onProductClick={onProductClick} selectedProducts={selectedProducts} origin={effectiveOrigin} />
 
       {/* Interaction and snapping */}
       <Enhanced3DControls
@@ -151,13 +152,13 @@ const IsometricScene = ({
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
   return (
     <div className="w-full h-full">
-      <Canvas shadows gl={{ toneMapping: 3, outputColorSpace: 'srgb', antialias: true }} style={{ background: 'transparent' }}>
+      <Canvas shadows gl={{ toneMapping: 3, toneMappingExposure: 1.2, outputColorSpace: 'srgb', antialias: true }} style={{ background: 'transparent' }}>
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
         <CameraExporter />
 
         {/* Enhanced Lighting */}
-        <ambientLight intensity={0.6} />
-        <hemisphereLight args={['#ffffff', '#8888ff', 0.5]} />
+        <ambientLight intensity={0.7} />
+        <hemisphereLight args={['#ffffff', '#8888ff', 0.75]} />
         <directionalLight position={[10, 20, 15]} intensity={0.8} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={50} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} />
         <directionalLight position={[-10, 10, -5]} intensity={0.4} />
 

@@ -173,9 +173,9 @@ const ProductGLTF = ({
       return;
     }
 
-    // Center and place model precisely at y=0 (bottom on floor)
-    gltf.scene.position.sub(center);
-    gltf.scene.position.y = 0; // Bottom at floor level
+    // Center horizontally but place bottom on floor
+    // Subtract center to center the model, then offset by -min.y to lift bottom to y=0
+    gltf.scene.position.set(-center.x, -box.min.y, -center.z);
 
     // Scale to match target physical dimensions
     const [tx, ty, tz] = targetSize;

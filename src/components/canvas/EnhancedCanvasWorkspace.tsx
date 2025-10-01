@@ -294,7 +294,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
               Math.pow(point.y - projectedPoint.y, 2)
             );
             
-            if (distance < 80 && distance < minDistance) { // Increased snap range
+            if (distance < 100 && distance < minDistance) { // Increased snap range
               minDistance = distance;
               closestPoint = projectedPoint;
             }
@@ -304,7 +304,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         return closestPoint || point;
       }
       // For other modes, use standard distance threshold
-      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 75); // Increased for easier snapping
+      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 85); // Increased for easier snapping
       return closestMidpoint ? closestMidpoint.point : point;
     },
     [wallSegments, currentMode]
@@ -379,7 +379,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   const snapToEndpoints = useCallback(
     (p: Point): { point: Point | null; showGuides: boolean; isSnapping: boolean } => {
-      const SNAP = 80; // Increased for easier endpoint snapping
+      const SNAP = 85; // Increased for easier endpoint snapping
       for (const ep of findWallEndpoints()) {
         if (len(p, ep) <= SNAP) return { point: ep, showGuides: true, isSnapping: true };
       }
