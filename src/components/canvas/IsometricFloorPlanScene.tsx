@@ -151,14 +151,15 @@ const IsometricScene = ({
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
   return (
     <div className="w-full h-full">
-      <Canvas shadows style={{ background: 'transparent' }}>
+      <Canvas shadows gl={{ toneMapping: 3, outputColorSpace: 'srgb', antialias: true }} style={{ background: 'transparent' }}>
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
         <CameraExporter />
 
-        {/* Lighting */}
-        <ambientLight intensity={0.3} />
+        {/* Enhanced Lighting */}
+        <ambientLight intensity={0.6} />
+        <hemisphereLight args={['#ffffff', '#8888ff', 0.5]} />
         <directionalLight position={[10, 20, 15]} intensity={0.8} castShadow shadow-mapSize-width={2048} shadow-mapSize-height={2048} shadow-camera-far={50} shadow-camera-left={-25} shadow-camera-right={25} shadow-camera-top={25} shadow-camera-bottom={-25} />
-        <directionalLight position={[-10, 10, -5]} intensity={0.3} />
+        <directionalLight position={[-10, 10, -5]} intensity={0.4} />
 
         {/* Controls */}
         <OrbitControls enablePan enableZoom enableRotate minDistance={2} maxDistance={100} enableDamping dampingFactor={0.05} />

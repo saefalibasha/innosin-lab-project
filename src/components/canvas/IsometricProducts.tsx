@@ -72,8 +72,9 @@ const ProductModel = ({
     };
   }, [product.originalDimensions, product.dimensions]);
 
-  // Treat product.rotation as radians (consistent with 2D)
-  const rotation: [number, number, number] = [0, product.rotation || 0, 0];
+  // Convert rotation from degrees to radians for 3D
+  const rotationRad = THREE.MathUtils.degToRad(product.rotation || 0);
+  const rotation: [number, number, number] = [0, rotationRad, 0];
 
   // Physical size in meters
   const lengthM = targetDimensions.depth;
@@ -163,9 +164,9 @@ const ProductGLTF = ({
       return;
     }
 
-    // Center and place model on floor
+    // Center and place model precisely at y=0 (bottom on floor)
     gltf.scene.position.sub(center);
-    gltf.scene.position.y += size.y / 2;
+    gltf.scene.position.y = 0; // Bottom at floor level
 
     // Scale to match target physical dimensions
     const [tx, ty, tz] = targetSize;

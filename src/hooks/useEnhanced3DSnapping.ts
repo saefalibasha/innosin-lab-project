@@ -37,7 +37,7 @@ export const useEnhanced3DSnapping = (
     // Get dimensions of dragged product: length=X-axis (depth), width=Z-axis (width)
     const draggedLengthM = (draggedProduct.dimensions?.length || 600) * 0.001; // X-axis in meters
     const draggedWidthM = (draggedProduct.dimensions?.width || 600) * 0.001; // Z-axis in meters
-    const draggedRotation = draggedProduct.rotation || 0;
+    const draggedRotation = THREE.MathUtils.degToRad(draggedProduct.rotation || 0); // Convert to radians
 
     products.forEach(product => {
       if (product.id === draggedProduct.id) return;
@@ -48,7 +48,7 @@ export const useEnhanced3DSnapping = (
       // Get existing product dimensions: length=X-axis, width=Z-axis
       const productLengthM = (product.dimensions?.length || 600) * 0.001; // X-axis
       const productWidthM = (product.dimensions?.width || 600) * 0.001; // Z-axis
-      const productRotation = product.rotation || 0;
+      const productRotation = THREE.MathUtils.degToRad(product.rotation || 0); // Convert to radians
       
       // Calculate distance
       const distance = Math.sqrt(

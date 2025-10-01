@@ -225,8 +225,8 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
       enabled: true,
       gridSnap: showGrid,
       objectSnap: true,
-      snapDistance: 20,
-      strength: 'medium',
+      snapDistance: 40, // Increased for easier snapping
+      strength: 'strong', // Stronger snapping behavior
       snapToObjects: true,
       snapToAlignment: true,
       snapToGrid: showGrid,
@@ -294,7 +294,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
               Math.pow(point.y - projectedPoint.y, 2)
             );
             
-            if (distance < 50 && distance < minDistance) {
+            if (distance < 80 && distance < minDistance) { // Increased snap range
               minDistance = distance;
               closestPoint = projectedPoint;
             }
@@ -304,7 +304,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
         return closestPoint || point;
       }
       // For other modes, use standard distance threshold
-      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 40);
+      const closestMidpoint = findClosestWallMidpoint(point, wallSegments, 75); // Increased for easier snapping
       return closestMidpoint ? closestMidpoint.point : point;
     },
     [wallSegments, currentMode]
@@ -312,7 +312,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   const snapProductToProducts = useCallback(
     (candidate: PlacedProduct, others: PlacedProduct[]): Point => {
-      const threshold = 12;
+      const threshold = 25; // Increased for easier snapping
       let bestSnap: Point | null = null;
       let bestDistance = threshold;
 
@@ -379,7 +379,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
 
   const snapToEndpoints = useCallback(
     (p: Point): { point: Point | null; showGuides: boolean; isSnapping: boolean } => {
-      const SNAP = 40;
+      const SNAP = 80; // Increased for easier endpoint snapping
       for (const ep of findWallEndpoints()) {
         if (len(p, ep) <= SNAP) return { point: ep, showGuides: true, isSnapping: true };
       }

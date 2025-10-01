@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { Grid } from '@react-three/drei';
 import { WallSegment, Room, Point } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 import { wallsToPolygon } from '@/utils/polygonUtils';
@@ -266,9 +267,17 @@ export const Enhanced3DFloor: React.FC<Enhanced3DFloorProps> = ({
 
       {/* Snap grid overlay */}
       {showSnapGrid && (
-        <gridHelper
-          args={[50, 50, "#e0e0e0", "#f0f0f0"]}
-          position={[0, 0, 0]}
+        <Grid 
+          args={[100, 100]} 
+          position={[0, 0.001, 0]} 
+          cellSize={0.5} 
+          cellThickness={0.5} 
+          cellColor="#e0e0e0" 
+          sectionSize={5} 
+          sectionThickness={1} 
+          sectionColor="#c0c0c0" 
+          fadeDistance={50} 
+          fadeStrength={1} 
         />
       )}
     </group>
