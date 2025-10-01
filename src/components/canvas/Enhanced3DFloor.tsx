@@ -64,14 +64,17 @@ const WallFloor = ({ wallSegments, scale, origin }: {
       origin
     });
 
-    // Convert wall polygon to 3D coordinates - NO INSET, use exact wall outline
+    // Convert wall polygon to 3D coordinates - INVERT by reversing polygon order for correct winding
     const shape = new THREE.Shape();
     const offsetX = origin?.minX || 0;
     const offsetY = origin?.minY || 0;
     
     const vertices3D: [number, number, number][] = [];
     
-    polygon.forEach((point, index) => {
+    // Reverse polygon to invert coordinates/winding order
+    const reversedPolygon = [...polygon].reverse();
+    
+    reversedPolygon.forEach((point, index) => {
       const point3D = canvasTo3DWorld({x: point.x - offsetX, y: point.y - offsetY}, scale);
       vertices3D.push(point3D);
       
@@ -84,7 +87,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     
     shape.closePath();
     
-    console.debug('[Enhanced3DFloor] 3D floor vertices:', {
+    console.debug('[Enhanced3DFloor] 3D floor vertices (inverted):', {
       first3: vertices3D.slice(0, 3).map(v => ({ x: v[0], y: v[1], z: v[2] }))
     });
     
