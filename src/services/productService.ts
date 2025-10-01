@@ -227,6 +227,7 @@ class ProductService {
         .from('products')
         .select('*')
         .eq('is_series_parent', true)
+        .neq('product_series', 'Safe Aire II Fume Hoods')
         .order('series_order');
 
       if (error) throw error;
