@@ -27,7 +27,8 @@ export const useEnhancedCollisionDetection = (
   scale: number
 ) => {
   const FURNITURE_SNAP_THRESHOLD = mmToCanvas(15, scale); // 15mm for furniture snapping
-  const FURNITURE_COLLISION_BUFFER = mmToCanvas(10, scale); // 10mm buffer to prevent overlap
+  const FURNITURE_COLLISION_BUFFER = mmToCanvas(0, scale); // 0mm buffer - allow seamless touching
+  const FURNITURE_MIN_SEPARATION = mmToCanvas(2, scale); // 2mm minimum separation for non-snapped products
   const SEAMLESS_SNAP_DISTANCE = mmToCanvas(15, scale); // 15mm for seamless snapping (increased for easier detection)
   const EDGE_ALIGNMENT_THRESHOLD = mmToCanvas(20, scale); // 20mm for perpendicular edge alignment
 
@@ -238,7 +239,8 @@ export const useEnhancedCollisionDetection = (
 
   const checkProductCollision = useCallback((
     draggedProduct: PlacedProduct,
-    position: Point
+    position: Point,
+    excludeProductId?: string // Allow specifying a product to exclude from buffer checks (for snapping)
   ): CollisionResult => {
     const bounds = getRotatedBounds(draggedProduct, position);
     
@@ -256,11 +258,15 @@ export const useEnhancedCollisionDetection = (
       }
     }
 
-    // Check furniture collisions with increased buffer to prevent overlap
+    // Check furniture collisions - skip buffer for snapped products
     for (const product of placedProducts) {
       if (product.id === draggedProduct.id) continue;
       
-      if (checkRotatedProductCollision(draggedProduct, position, product)) {
+      // For the product we're snapping to, allow 0mm gap (seamless)
+      // For all others, use minimum separation buffer
+      const isSnappedTarget = excludeProductId && product.id === excludeProductId;
+      
+      if (checkRotatedProductCollision(draggedProduct, position, product, isSnappedTarget)) {
         return { hasCollision: true, type: 'furniture', collisionObject: product };
       }
     }
@@ -293,7 +299,8 @@ export const useEnhancedCollisionDetection = (
   const checkRotatedProductCollision = useCallback((
     product1: PlacedProduct,
     position1: Point,
-    product2: PlacedProduct
+    product2: PlacedProduct,
+    isSnappedTarget: boolean = false // True if this is the product we're snapping to
   ): boolean => {
     const bounds1 = getRotatedBounds(product1, position1);
     const bounds2 = getRotatedBounds(product2, product2.position);
@@ -304,18 +311,21 @@ export const useEnhancedCollisionDetection = (
       ...getAxesFromCorners(bounds2.corners)
     ];
 
+    // Use 0mm buffer for snapped products (seamless), minimum separation for others
+    const buffer = isSnappedTarget ? FURNITURE_COLLISION_BUFFER : FURNITURE_MIN_SEPARATION;
+
     for (const axis of axes) {
       const proj1 = projectCornersOntoAxis(bounds1.corners, axis);
       const proj2 = projectCornersOntoAxis(bounds2.corners, axis);
 
-      if (proj1.max + FURNITURE_COLLISION_BUFFER < proj2.min || 
-          proj2.max + FURNITURE_COLLISION_BUFFER < proj1.min) {
+      if (proj1.max + buffer < proj2.min || 
+          proj2.max + buffer < proj1.min) {
         return false; // Separating axis found, no collision
       }
     }
 
     return true; // No separating axis found, collision detected
-  }, [getRotatedBounds, FURNITURE_COLLISION_BUFFER]);
+  }, [getRotatedBounds, FURNITURE_COLLISION_BUFFER, FURNITURE_MIN_SEPARATION]);
 
   // Helper functions for SAT collision detection
   const getAxesFromCorners = (corners: Point[]): Point[] => {

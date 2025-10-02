@@ -78,7 +78,12 @@ export const useSmoothDragging = (
       };
       
       // Verify the snapped position doesn't cause collisions
-      const collisionResult = checkProductCollision(dragState.draggedProduct, finalPos);
+      // Pass the snapped target's ID to allow 0mm gap for seamless edge-to-edge
+      const collisionResult = checkProductCollision(
+        dragState.draggedProduct, 
+        finalPos,
+        snapResult.target?.id // Exclude snapped target from buffer checks
+      );
       isValid = !collisionResult.hasCollision;
     } else {
       // No snap, check for collisions at target position
