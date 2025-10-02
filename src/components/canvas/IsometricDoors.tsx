@@ -50,10 +50,10 @@ const DoorModel = ({
 
   return (
     <group position={position} rotation={rotationRad} onClick={handleClick}>
-      {/* Door frame - matches interior wall color */}
+      {/* Door frame - darker grey for better contrast */}
       <mesh castShadow receiveShadow position={[0, doorHeight / 2, 0]}>
         <boxGeometry args={[doorWidth, doorHeight, doorThickness]} />
-        <meshStandardMaterial color="#9ca3af" />
+        <meshStandardMaterial color="#6b7280" />
       </mesh>
 
       {/* Door handle */}
