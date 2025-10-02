@@ -32,10 +32,7 @@ const ProductModel = ({
 }) => {
   const meshRef = useRef<Mesh>(null);
 
-  const handleClick = (e: any) => {
-    e.stopPropagation();
-    onProductClick?.(product.id);
-  };
+  // Click handling disabled in 3D view
 
   // Calculate final position and scale with proper dimensions
   const finalPosition = useMemo(() => {
@@ -94,7 +91,6 @@ const ProductModel = ({
       ref={meshRef}
       position={[finalPosition[0], finalPosition[1] + halfHeight, finalPosition[2]]}
       rotation={rotation}
-      onClick={handleClick}
       castShadow
       name="product"
       userData={{ productId: product.id }}
@@ -119,7 +115,6 @@ const ProductModel = ({
           targetSize={[lengthM, heightM, widthM]}
           position={finalPosition}
           rotation={rotation}
-          onClick={handleClick}
           isSelected={isSelected}
         />
       </Suspense>
@@ -135,7 +130,6 @@ const ProductGLTF = ({
   targetSize,
   position,
   rotation,
-  onClick,
   isSelected,
 }: {
   modelPath: string;
@@ -143,7 +137,6 @@ const ProductGLTF = ({
   targetSize: [number, number, number];
   position: [number, number, number];
   rotation: [number, number, number];
-  onClick: (e: any) => void;
   isSelected: boolean;
 }) => {
   const groupRef = useRef<Group>(null);
@@ -199,7 +192,7 @@ const ProductGLTF = ({
   if (useFallback) {
     const halfHeight = targetSize[1] / 2;
     return (
-      <group position={position} rotation={rotation} onClick={onClick} name="product" userData={{ productId }}>
+      <group position={position} rotation={rotation} name="product" userData={{ productId }}>
         <mesh position={[0, halfHeight, targetSize[2] / 2]} castShadow receiveShadow>
           <boxGeometry args={targetSize} />
           <meshLambertMaterial color={isSelected ? '#ff6b6b' : '#cccccc'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
@@ -215,7 +208,7 @@ const ProductGLTF = ({
   }
 
   return (
-    <group ref={groupRef} position={position} rotation={rotation} onClick={onClick} name="product" userData={{ productId }}>
+    <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
         <mesh>
