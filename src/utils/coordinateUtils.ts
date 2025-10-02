@@ -115,8 +115,20 @@ export const calculateDoorTransform = (
     });
   }
   
-  // Convert projected position to 3D world coordinates
-  const position3D = canvasTo3DWorld(projectedPoint, scale);
+  // Convert projected position to 3D world coordinates with origin offset
+  const offsetX = origin?.minX || 0;
+  const offsetY = origin?.minY || 0;
+  const position3D = canvasTo3DWorld(
+    { x: projectedPoint.x - offsetX, y: projectedPoint.y - offsetY }, 
+    scale
+  );
+  
+  console.debug('[calculateDoorTransform] Final door transform:', {
+    doorId: door.id,
+    position3D,
+    wallAngle: wallAngle * (180 / Math.PI),
+    origin: { offsetX, offsetY }
+  });
   
   return {
     position: position3D,

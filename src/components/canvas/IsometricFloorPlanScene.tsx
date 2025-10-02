@@ -79,8 +79,10 @@ const IsometricScene = ({
       return { centerX: 0, centerZ: 0, minX: 0, minZ: 0, maxX: 0, maxZ: 0 };
     }
 
-    // Convert all 2D points to 3D world coordinates using the consistent function
-    const points3D = allPoints2D.map(p => canvasTo3DWorld(p, scale));
+    // Convert all 2D points to 3D world coordinates with origin offset applied
+    const ox = origin?.minX || 0;
+    const oy = origin?.minY || 0;
+    const points3D = allPoints2D.map(p => canvasTo3DWorld({ x: p.x - ox, y: p.y - oy }, scale));
     
     const xs = points3D.map(p => p[0]);
     const zs = points3D.map(p => p[2]);
@@ -92,7 +94,10 @@ const IsometricScene = ({
     const centerX = (minX + maxX) / 2;
     const centerZ = (minZ + maxZ) / 2;
     
-    console.debug('Scene bounds (3D):', { minX, maxX, minZ, maxZ, centerX, centerZ });
+    console.debug('[IsometricFloorPlanScene] Scene bounds (origin-aware):', { 
+      minX, maxX, minZ, maxZ, centerX, centerZ,
+      origin: { ox, oy }
+    });
 
     return {
       centerX,

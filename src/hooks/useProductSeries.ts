@@ -186,14 +186,15 @@ export const useProductSeries = () => {
       const filteredSeries = Array.from(seriesMap.values())
         .filter(series => series.products.length > 0)
         .filter(series => {
-          const seriesName = series.name.toLowerCase();
-          // Filter out Broen tap/shower series and Innosin chair series
+          const seriesName = series.name.trim().toLowerCase();
+          // Filter out Broen tap/shower series, Innosin chair series, and Safe Aire II Fume Hoods
           const isBroenTapShower = seriesName.includes('broen') && 
             (seriesName.includes('tap') || seriesName.includes('shower'));
           const isInnosinChair = seriesName.includes('innosin') && 
             seriesName.includes('chair');
+          const isSafeAireII = seriesName === 'safe aire ii fume hoods';
           
-          return !isBroenTapShower && !isInnosinChair;
+          return !isBroenTapShower && !isInnosinChair && !isSafeAireII;
         });
       
       setProductSeries(filteredSeries);

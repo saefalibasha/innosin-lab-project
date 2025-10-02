@@ -54,14 +54,12 @@ const ProductModel = ({
     const groundEpsilon = 0.008; // meters (~8mm)
     const yBase = isWallMounted ? 1.5 : groundEpsilon;
     
-    console.debug('[IsometricProducts] Product positioning:', {
+    console.debug('[IsometricProducts] Product positioning (origin-aware):', {
       productId: product.id,
       name: product.name,
-      isWallMounted,
-      yBase,
-      basePos,
-      canvasPos: product.position,
-      offset: { offsetX, offsetY }
+      canvasPos2D: product.position,
+      finalPos3D: [basePos[0], yBase, basePos[2]],
+      origin: { offsetX, offsetY }
     });
     
     return [basePos[0], yBase, basePos[2]] as [number, number, number];

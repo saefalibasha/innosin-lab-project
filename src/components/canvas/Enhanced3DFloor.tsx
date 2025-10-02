@@ -87,8 +87,9 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     
     shape.closePath();
     
-    console.debug('[Enhanced3DFloor] 3D floor vertices (inverted):', {
-      first3: vertices3D.slice(0, 3).map(v => ({ x: v[0], y: v[1], z: v[2] }))
+    console.debug('[Enhanced3DFloor] 3D floor vertices (inverted, origin-aware):', {
+      first3: vertices3D.slice(0, 3).map(v => ({ x: v[0], y: v[1], z: v[2] })),
+      origin: { offsetX, offsetY }
     });
     
     return shape;
