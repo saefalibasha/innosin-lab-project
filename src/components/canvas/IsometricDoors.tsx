@@ -25,7 +25,7 @@ const DoorModel = ({
   const doorHeight = 2.0; // Standard door height  
   const doorThickness = 0.05; // 5cm thick door - thinner for better wall embedding
 
-  const transform = calculateDoorTransform(door, scale, wallSegments);
+  const transform = calculateDoorTransform(door, scale, wallSegments, origin);
 
   if (!transform || !transform.position || !transform.rotation) {
     console.warn('Invalid transform for door:', door);

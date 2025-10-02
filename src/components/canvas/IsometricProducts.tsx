@@ -171,9 +171,9 @@ const ProductGLTF = ({
       return;
     }
 
-    // Center horizontally but place bottom on floor
-    // Subtract center to center the model, then offset by -min.y to lift bottom to y=0
-    gltf.scene.position.set(-center.x, -box.min.y, -center.z);
+    // Center horizontally (x), anchor back face at z=0, and place bottom on floor
+    // Subtract center.x to center horizontally, use -box.min.z so back face sits at z=0, and -min.y to lift bottom to y=0
+    gltf.scene.position.set(-center.x, -box.min.y, -box.min.z);
 
     // Scale to match target physical dimensions
     const [tx, ty, tz] = targetSize;
@@ -200,7 +200,7 @@ const ProductGLTF = ({
     const halfHeight = targetSize[1] / 2;
     return (
       <group position={position} rotation={rotation} onClick={onClick} name="product" userData={{ productId }}>
-        <mesh position={[0, halfHeight, 0]} castShadow receiveShadow>
+        <mesh position={[0, halfHeight, targetSize[2] / 2]} castShadow receiveShadow>
           <boxGeometry args={targetSize} />
           <meshLambertMaterial color={isSelected ? '#ff6b6b' : '#cccccc'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
           {isSelected && (
