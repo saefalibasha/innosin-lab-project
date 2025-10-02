@@ -94,6 +94,7 @@ const ProductModel = ({
       castShadow
       name="product"
       userData={{ productId: product.id }}
+      raycast={() => null as any}
     >
       <boxGeometry args={[lengthM, heightM, widthM]} />
       <meshLambertMaterial color={isSelected ? '#ff6b6b' : product.color || '#8b5cf6'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
@@ -181,10 +182,14 @@ const ProductGLTF = ({
       targetSize
     });
 
-    // Ensure raycasting recognizes product
+    // Disable interactivity: mark and disable raycasting on all children
     groupRef.current.traverse((child: any) => {
-      child.userData = { ...(child.userData || {}), productId };
+      child.userData = { ...(child.userData || {}), productId, interactive: false };
       if (!child.name) child.name = 'product';
+      // Disable raycasting so objects cannot be selected in 3D
+      if (child.raycast) {
+        child.raycast = () => null as any;
+      }
     });
   }, [gltf, productId, targetSize, modelPath]);
 
@@ -192,8 +197,8 @@ const ProductGLTF = ({
   if (useFallback) {
     const halfHeight = targetSize[1] / 2;
     return (
-      <group position={position} rotation={rotation} name="product" userData={{ productId }}>
-        <mesh position={[0, halfHeight, targetSize[2] / 2]} castShadow receiveShadow>
+      <group position={position} rotation={rotation} name="product" userData={{ productId }} onPointerDown={(e) => e.stopPropagation()} raycast={() => null as any}>
+        <mesh position={[0, halfHeight, targetSize[2] / 2]} castShadow receiveShadow raycast={() => null as any}>
           <boxGeometry args={targetSize} />
           <meshLambertMaterial color={isSelected ? '#ff6b6b' : '#cccccc'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
           {isSelected && (
@@ -208,10 +213,10 @@ const ProductGLTF = ({
   }
 
   return (
-    <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }}>
+    <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }} onPointerDown={(e) => e.stopPropagation()} raycast={() => null as any}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
-        <mesh>
+        <mesh raycast={() => null as any}>
           <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
           <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
         </mesh>
