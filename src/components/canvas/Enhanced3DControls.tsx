@@ -118,18 +118,8 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
 
   return (
     <group>
-      {/* Invisible interaction mesh for handling events */}
-      <mesh
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        visible={false}
-      >
-        <planeGeometry args={[1000, 1000]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-      
-      {/* Snap guides */}
+      {/* 3D product placement disabled - only allow placement in 2D view */}
+      {/* Snap guides still visible for reference */}
       <SnapGuides />
     </group>
   );
