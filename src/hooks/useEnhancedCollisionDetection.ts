@@ -139,31 +139,37 @@ export const useEnhancedCollisionDetection = (
             
             // PERPENDICULAR EDGE ALIGNMENT: Align non-touching edges for continuous lines
             if (isHorizontalSnap) {
+              // Recalculate bounds at the snapped position for accurate edge detection
+              const snappedBounds = getRotatedBounds(draggedProduct, check.snapPos);
+              
               // For horizontal snaps (left-right), also align vertical edges (top or bottom)
-              const topDiff = Math.abs(draggedBounds.top - targetBounds.top);
-              const bottomDiff = Math.abs(draggedBounds.bottom - targetBounds.bottom);
+              const topDiff = Math.abs(snappedBounds.top - targetBounds.top);
+              const bottomDiff = Math.abs(snappedBounds.bottom - targetBounds.bottom);
               
               if (topDiff < EDGE_ALIGNMENT_THRESHOLD && topDiff < bottomDiff) {
                 // Align top edges
-                const yAdjust = targetBounds.top - draggedBounds.top;
+                const yAdjust = targetBounds.top - snappedBounds.top;
                 finalSnapPos = { x: check.snapPos.x, y: check.snapPos.y + yAdjust };
               } else if (bottomDiff < EDGE_ALIGNMENT_THRESHOLD) {
                 // Align bottom edges
-                const yAdjust = targetBounds.bottom - draggedBounds.bottom;
+                const yAdjust = targetBounds.bottom - snappedBounds.bottom;
                 finalSnapPos = { x: check.snapPos.x, y: check.snapPos.y + yAdjust };
               }
             } else if (isVerticalSnap) {
+              // Recalculate bounds at the snapped position for accurate edge detection
+              const snappedBounds = getRotatedBounds(draggedProduct, check.snapPos);
+              
               // For vertical snaps (top-bottom), also align horizontal edges (left or right)
-              const leftDiff = Math.abs(draggedBounds.left - targetBounds.left);
-              const rightDiff = Math.abs(draggedBounds.right - targetBounds.right);
+              const leftDiff = Math.abs(snappedBounds.left - targetBounds.left);
+              const rightDiff = Math.abs(snappedBounds.right - targetBounds.right);
               
               if (leftDiff < EDGE_ALIGNMENT_THRESHOLD && leftDiff < rightDiff) {
                 // Align left edges
-                const xAdjust = targetBounds.left - draggedBounds.left;
+                const xAdjust = targetBounds.left - snappedBounds.left;
                 finalSnapPos = { x: check.snapPos.x + xAdjust, y: check.snapPos.y };
               } else if (rightDiff < EDGE_ALIGNMENT_THRESHOLD) {
                 // Align right edges
-                const xAdjust = targetBounds.right - draggedBounds.right;
+                const xAdjust = targetBounds.right - snappedBounds.right;
                 finalSnapPos = { x: check.snapPos.x + xAdjust, y: check.snapPos.y };
               }
             }
