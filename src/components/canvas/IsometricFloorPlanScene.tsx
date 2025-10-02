@@ -25,6 +25,8 @@ interface IsometricFloorPlanSceneProps {
   selectedProducts: string[];
   showGrid: boolean;
   origin?: { minX: number; minY: number };
+  selectedDoorId?: string;
+  onDoorClick?: (doorId: string) => void;
 }
 
 function CameraExporter() {
@@ -54,6 +56,8 @@ const IsometricScene = ({
   selectedProducts,
   showGrid,
   origin,
+  selectedDoorId,
+  onDoorClick,
 }: IsometricFloorPlanSceneProps) => {
   const groupRef = useRef<Group>(null);
 
@@ -126,7 +130,14 @@ const IsometricScene = ({
       <IsometricWalls wallSegments={wallSegments} scale={scale} onWallClick={onWallClick} origin={effectiveOrigin} />
 
       {/* Doors */}
-      <IsometricDoors doors={doors} scale={scale} wallSegments={wallSegments} origin={effectiveOrigin} />
+      <IsometricDoors 
+        doors={doors} 
+        scale={scale} 
+        wallSegments={wallSegments} 
+        origin={effectiveOrigin}
+        selectedDoorId={selectedDoorId}
+        onDoorClick={onDoorClick}
+      />
 
       {/* Products */}
       <IsometricProducts placedProducts={placedProducts} scale={scale} onProductClick={onProductClick} selectedProducts={selectedProducts} origin={effectiveOrigin} />

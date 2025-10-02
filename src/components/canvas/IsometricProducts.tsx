@@ -51,7 +51,7 @@ const ProductModel = ({
     const isWallMounted = product.name?.toLowerCase().includes('wall') || 
                          product.category?.toLowerCase().includes('wall');
     // Floor products: y slightly above floor to avoid z-fighting; wall-mounted at ~1.5m
-    const groundEpsilon = 0.008; // meters (~8mm)
+    const groundEpsilon = 0.002; // meters (~2mm) - reduced to minimize visual overlap
     const yBase = isWallMounted ? 1.5 : groundEpsilon;
     
     console.debug('[IsometricProducts] Product positioning (origin-aware):', {

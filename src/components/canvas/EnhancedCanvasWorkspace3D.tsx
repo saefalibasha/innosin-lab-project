@@ -32,6 +32,9 @@ interface EnhancedCanvasWorkspace3DProps {
   onWallUpdate?: (wall: any) => void;
   onWallDelete?: (id: string) => void;
   onWallSelect?: () => void;
+  onWallClick?: (wallId: string) => void;
+  selectedDoorId?: string;
+  onDoorClick?: (doorId: string) => void;
 }
 
 const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
@@ -44,6 +47,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   selectedProducts,
   onProductSelect,
   showGrid,
+  onWallClick,
+  selectedDoorId,
+  onDoorClick,
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
   const [sceneRef3D, setSceneRef3D] = useState<any>(null);
@@ -64,8 +70,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   );
 
   const handleWallClick = useCallback((wallId: string) => {
-    console.log('Wall clicked:', wallId);
-  }, []);
+    onWallClick?.(wallId);
+  }, [onWallClick]);
 
   const handleSceneClick = useCallback(() => {
     if (selectedProducts.length > 0) {
@@ -214,9 +220,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
   return (
     <div 
       ref={htmlRef} 
-      className="relative w-full h-full bg-gray-50" 
-      onDrop={handleCanvasDrop} 
-      onDragOver={(e) => e.preventDefault()}
+      className="relative w-full h-full bg-gray-50"
     >
       <IsometricFloorPlanScene
         wallSegments={wallSegments}
@@ -231,6 +235,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         showGrid={showGrid}
         origin={origin}
         onProductUpdate={handleProductUpdate}
+        selectedDoorId={selectedDoorId}
+        onDoorClick={onDoorClick}
       />
     </div>
   );

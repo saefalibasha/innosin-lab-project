@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
 import EnhancedCanvasWorkspace3D from '../canvas/EnhancedCanvasWorkspace3D';
+import WallEditor from '../floorplan/WallEditor';
 
 import {
   PlacedProduct,
@@ -35,6 +36,8 @@ export const FloorPlanner3D = () => {
   const [wallSegments, setWallSegments] = useState<WallSegment[]>(currentState.wallSegments);
   const [rooms, setRooms] = useState<Room[]>(currentState.rooms);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedWallId, setSelectedWallId] = useState<string | null>(null);
+  const [selectedDoorId, setSelectedDoorId] = useState<string | null>(null);
 
   // Canvas settings
   const [currentMode] = useState<DrawingMode>('select');
@@ -59,7 +62,30 @@ export const FloorPlanner3D = () => {
     setWallSegments([]);
     setRooms([]);
     setSelectedProducts([]);
+    setSelectedWallId(null);
+    setSelectedDoorId(null);
   }, []);
+
+  const handleWallClick = useCallback((wallId: string) => {
+    setSelectedWallId(wallId);
+    setSelectedDoorId(null);
+  }, []);
+
+  const handleWallUpdate = useCallback((updatedWall: WallSegment) => {
+    setWallSegments(prev => prev.map(w => w.id === updatedWall.id ? updatedWall : w));
+  }, []);
+
+  const handleWallDelete = useCallback((wallId: string) => {
+    setWallSegments(prev => prev.filter(w => w.id !== wallId));
+    setSelectedWallId(null);
+  }, []);
+
+  const handleDoorClick = useCallback((doorId: string) => {
+    setSelectedDoorId(doorId);
+    setSelectedWallId(null);
+  }, []);
+
+  const selectedWall = selectedWallId ? wallSegments.find(w => w.id === selectedWallId) || null : null;
 
   return (
     <div className="h-screen flex flex-col">
@@ -105,7 +131,22 @@ export const FloorPlanner3D = () => {
               canvasHeight={canvasHeight}
               onClearAll={handleClearAll}
               onWallSelect={() => {}}
+              onWallClick={handleWallClick}
+              selectedDoorId={selectedDoorId}
+              onDoorClick={handleDoorClick}
             />
+            
+            {/* Wall Editor */}
+            {selectedWall && (
+              <WallEditor
+                selectedWall={selectedWall}
+                onWallUpdate={handleWallUpdate}
+                onWallDelete={handleWallDelete}
+                onClose={() => setSelectedWallId(null)}
+                scale={scale}
+                measurementUnit={measurementUnit}
+              />
+            )}
           </div>
         </div>
       </div>

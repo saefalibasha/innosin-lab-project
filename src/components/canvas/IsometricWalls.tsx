@@ -70,9 +70,12 @@ const Wall = ({
       name="wall"
     >
       <boxGeometry args={[transform.length, transform.heightMeters, transform.thicknessMeters]} />
-       <meshLambertMaterial
+      <meshStandardMaterial
         color={wall.type === 'interior' ? '#9ca3af' : '#a3a3a3'}
         transparent={false}
+        polygonOffset={true}
+        polygonOffsetFactor={1}
+        polygonOffsetUnits={1}
       />
     </mesh>
   );
