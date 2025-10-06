@@ -61,7 +61,7 @@ const ProductModel = ({
       yBase = 0.002; // Floor products: slightly above floor to avoid z-fighting
     }
     
-    const result = [basePos[0], yBase, basePos[2]] as [number, number, number];
+    const result = [basePos[0], yBase, -basePos[2]] as [number, number, number];
     
     console.debug('[IsometricProducts] Product positioning:', {
       productId: product.id,
