@@ -57,9 +57,10 @@ export const ProductSeriesManager = () => {
             .eq('parent_series_id', parent.id)
             .eq('is_series_parent', false);
 
-          // Calculate completion percentage
+          // Calculate completion percentage with smart asset fallback
           const hasDescription = parent.description && parent.description.length > 0;
-          const hasThumbnail = parent.thumbnail_path && parent.thumbnail_path.length > 0;
+          const hasThumbnail = (parent.series_thumbnail_path && parent.series_thumbnail_path.length > 0) || 
+                               (parent.thumbnail_path && parent.thumbnail_path.length > 0);
           const hasVariants = (count || 0) > 0;
           
           const completionFields = [hasDescription, hasThumbnail, hasVariants];
