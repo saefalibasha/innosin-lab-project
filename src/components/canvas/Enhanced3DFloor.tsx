@@ -42,10 +42,10 @@ const WallFloor = ({ wallSegments, scale, origin }: {
         const offsetX = origin?.minX || 0;
         const offsetY = origin?.minY || 0;
         
-        const [x1, , z1] = canvasTo3DWorld({x: minX - offsetX, y: -(minY - offsetY)}, scale);
-        const [x2, , z2] = canvasTo3DWorld({x: maxX - offsetX, y: -(minY - offsetY)}, scale);
-        const [x3, , z3] = canvasTo3DWorld({x: maxX - offsetX, y: -(maxY - offsetY)}, scale);
-        const [x4, , z4] = canvasTo3DWorld({x: minX - offsetX, y: -(maxY - offsetY)}, scale);
+        const [x1, , z1] = canvasTo3DWorld({x: minX - offsetX, y: (minY - offsetY)}, scale);
+        const [x2, , z2] = canvasTo3DWorld({x: maxX - offsetX, y: (minY - offsetY)}, scale);
+        const [x3, , z3] = canvasTo3DWorld({x: maxX - offsetX, y: (maxY - offsetY)}, scale);
+        const [x4, , z4] = canvasTo3DWorld({x: minX - offsetX, y: (maxY - offsetY)}, scale);
         
         shape.moveTo(x1, z1);
         shape.lineTo(x2, z2);
@@ -75,7 +75,7 @@ const WallFloor = ({ wallSegments, scale, origin }: {
     const reversedPolygon = [...polygon].reverse();
     
     reversedPolygon.forEach((point, index) => {
-      const point3D = canvasTo3DWorld({x: point.x - offsetX, y: -(point.y - offsetY)}, scale);
+      const point3D = canvasTo3DWorld({x: point.x - offsetX, y: (point.y - offsetY)}, scale);
       vertices3D.push(point3D);
       
       if (index === 0) {
@@ -128,7 +128,7 @@ const RoomFloor = ({ room, scale, origin }: { room: Room; scale: number; origin?
     const offsetY = origin?.minY || 0;
     
     room.points.forEach((point, index) => {
-      const point3D = canvasTo3DWorld({x: point.x - offsetX, y: -(point.y - offsetY)}, scale);
+      const point3D = canvasTo3DWorld({x: point.x - offsetX, y: (point.y - offsetY)}, scale);
       if (index === 0) {
         shape.moveTo(point3D[0], point3D[2]);
       } else {
