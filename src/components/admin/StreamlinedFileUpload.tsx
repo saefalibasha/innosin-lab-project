@@ -164,17 +164,41 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
       // Update progress to 75%
       updateFileStatus(file.name, { progress: 75 });
 
-      // Process the uploaded asset automatically
-      const { error: processError } = await supabase.rpc('process_uploaded_asset', {
+      // Try RPC processing first, fallback to direct update
+      const { error: rpcError } = await supabase.rpc('process_uploaded_asset', {
         p_product_id: productId,
         p_file_path: filePath,
         p_file_type: contentType,
         p_public_url: publicUrl
       });
 
-      if (processError) {
-        console.warn('Asset processing warning:', processError);
-        // Don't fail the upload for processing errors
+      if (rpcError) {
+        console.warn('RPC failed, updating product directly:', rpcError);
+        
+        // Fallback: Direct product table update with absolute URL
+        const updateData: any = { updated_at: new Date().toISOString() };
+        
+        if (contentType.startsWith('image/')) {
+          updateData.thumbnail_path = publicUrl;
+          updateData.overview_image_path = publicUrl;
+        } else if (contentType === 'model/gltf-binary' || filePath.endsWith('.glb')) {
+          updateData.model_path = publicUrl;
+        }
+        
+        const { error: updateError } = await supabase
+          .from('products')
+          .update(updateData)
+          .eq('id', productId);
+          
+        if (updateError) {
+          console.error('Direct update failed:', updateError);
+          throw updateError;
+        }
+        
+        toast({
+          title: "Asset Linked",
+          description: "Using fallback method - model linked successfully",
+        });
       }
 
       // Log upload in database

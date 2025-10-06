@@ -170,21 +170,34 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
     setSelectedVariants(newSelection);
   };
 
-  const handleDeleteVariant = async (variantId: string) => {
+  const handleDeleteVariant = async (variantId: string, hardDelete = false) => {
     try {
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: false })
-        .eq('id', variantId);
+      if (hardDelete) {
+        // Permanent deletion
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', variantId);
+        
+        if (error) throw error;
+        toast.success('Variant permanently deleted');
+      } else {
+        // Soft delete (set is_active to false)
+        const { error } = await supabase
+          .from('products')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', variantId);
 
-      if (error) throw error;
-
+        if (error) throw error;
+        toast.success('Variant deactivated');
+      }
+      
       await fetchVariants();
       onVariantChange?.();
-      toast.success('Variant deleted successfully');
     } catch (error) {
       console.error('Error deleting variant:', error);
-      toast.error('Failed to delete variant');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete variant';
+      toast.error(`Delete failed: ${errorMessage}`);
     }
   };
 
@@ -309,9 +322,22 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleDeleteVariant(variant.id)}
+                      onClick={() => handleDeleteVariant(variant.id, false)}
+                      title="Deactivate variant"
                     >
                       <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => {
+                        if (confirm('Permanently delete this variant? This cannot be undone.')) {
+                          handleDeleteVariant(variant.id, true);
+                        }
+                      }}
+                      title="Permanently delete"
+                    >
+                      <Trash2 className="h-4 w-4 fill-current" />
                     </Button>
                   </div>
                 </div>

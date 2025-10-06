@@ -5,6 +5,7 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Box3, Vector3 } from 'three';
 import { AlertCircle, Box, Loader2 } from 'lucide-react';
+import { getNormalizedAssetUrl } from '@/lib/utils';
 
 interface Enhanced3DViewerProps {
   modelPath: string;
@@ -92,31 +93,8 @@ const Enhanced3DViewer = ({
     if (onError) onError();
   };
 
-  // Enhanced model path resolution with better Supabase support
   const getModelPath = (path: string): string => {
-    if (!path) return '';
-    
-    // If it's already a full URL (Supabase storage or other CDN), return as is
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-    
-    // If it starts with '/', treat as absolute path from public folder
-    if (path.startsWith('/')) {
-      return path;
-    }
-    
-    // Check if it's a Supabase storage path
-    if (path.includes('supabase') || path.includes('storage')) {
-      return path.startsWith('/') ? path : `/${path}`;
-    }
-    
-    // Default: treat as relative path from public/products/
-    if (path.startsWith('products/')) {
-      return `/${path}`;
-    }
-    
-    return `/products/${path}`;
+    return getNormalizedAssetUrl(path);
   };
 
   const resolvedModelPath = getModelPath(modelPath);

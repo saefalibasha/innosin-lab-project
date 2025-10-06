@@ -68,7 +68,8 @@ const StreamlinedFileUpload = ({
       toast.success('Image uploaded successfully');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
+      toast.error(errorMessage);
     } finally {
       setUploading(false);
     }

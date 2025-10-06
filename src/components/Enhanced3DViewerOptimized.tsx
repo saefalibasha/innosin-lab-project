@@ -10,6 +10,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Box3, Vector3, DoubleSide, Group } from 'three';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import type { OrbitControls as ThreeOrbitControls } from 'three-stdlib';
+import { getNormalizedAssetUrl } from '@/lib/utils';
 
 interface Enhanced3DViewerOptimizedProps {
   modelPath: string;
@@ -125,9 +126,7 @@ const Enhanced3DViewerOptimized = ({
   }, []);
 
   const getModelPath = useCallback((path: string): string => {
-    if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('/')) return path;
-    return `/products/${path}`;
+    return getNormalizedAssetUrl(path);
   }, []);
 
   const resolvedModelPath = getModelPath(modelPath);
