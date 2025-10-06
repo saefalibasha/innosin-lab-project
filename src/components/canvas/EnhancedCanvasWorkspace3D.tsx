@@ -3,7 +3,10 @@ import { PlacedProduct, WallSegment, Door, Room, Point } from '@/types/floorPlan
 import { toast } from 'sonner';
 import { wallsToPolygon, rectInsidePolygon, isValidFloorPolygon } from '@/utils/polygonUtils';
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
+import { getProductBehavior } from '@/utils/productBehaviors';
+import { findCabinetsUnderWorktop, calculateWorktopHeightOffset, isValidWorktopPlacement } from '@/utils/worktopUtils';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
+import { WorktopConfigurator } from './WorktopConfigurator';
 
 interface EnhancedCanvasWorkspace3DProps {
   roomPoints: Point[];
@@ -53,6 +56,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 }) => {
   const htmlRef = useRef<HTMLDivElement>(null);
   const [sceneRef3D, setSceneRef3D] = useState<any>(null);
+  const [configuringWorktop, setConfiguringWorktop] = useState<PlacedProduct | null>(null);
 
   const handleSceneReady = useCallback((scene: any) => {
     setSceneRef3D(scene);
@@ -60,13 +64,21 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
   const handleProductClick = useCallback(
     (productId: string) => {
+      const product = placedProducts.find(p => p.id === productId);
+      
+      // If clicking a worktop, open configurator
+      if (product?.isWorktop) {
+        setConfiguringWorktop(product);
+        return;
+      }
+
       if (selectedProducts.includes(productId)) {
         onProductSelect(selectedProducts.filter(id => id !== productId));
       } else {
         onProductSelect([...selectedProducts, productId]);
       }
     },
-    [selectedProducts, onProductSelect]
+    [selectedProducts, onProductSelect, placedProducts]
   );
 
   const handleWallClick = useCallback((wallId: string) => {
@@ -127,6 +139,22 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
 
         console.log('3D Canvas position:', canvasPos, 'from client:', {x: relativeX, y: relativeY});
 
+        // Detect product behavior to handle worktops specially
+        const productBehavior = getProductBehavior({
+          ...product,
+          productId: product.id || product.productId || '',
+          name: product.name || '',
+          category: product.category || '',
+          position: canvasPos,
+          rotation: 0,
+          dimensions: {
+            length: product.depth || product.dimensions?.length || 600,
+            width: product.width || product.dimensions?.width || 600,
+            height: product.height || product.dimensions?.height || 850,
+          },
+          color: product.color || '#4caf50',
+        } as PlacedProduct);
+
         // Check if walls form a valid floor for placement
         if (wallSegments.length > 0) {
           if (!isValidFloorPolygon(wallSegments)) {
@@ -160,6 +188,36 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         const productDepthMm = product.depth || product.dimensions?.length || 600;
         const productHeightMm = product.height || product.dimensions?.height || 850;
 
+        // Special handling for worktops
+        let heightOffset: number | undefined = undefined;
+        let placedOnProductId: string | undefined = undefined;
+
+        if (productBehavior.canBePlacedOnTop) {
+          // Find cabinets underneath
+          const cabinets = findCabinetsUnderWorktop(
+            canvasPos,
+            { length: productDepthMm, width: productWidthMm },
+            placedProducts
+          );
+
+          const validation = isValidWorktopPlacement(
+            canvasPos,
+            { length: productDepthMm, width: productWidthMm },
+            placedProducts
+          );
+
+          if (!validation.valid) {
+            toast.error(validation.reason || 'Invalid worktop placement');
+            return;
+          }
+
+          if (cabinets.length > 0) {
+            heightOffset = calculateWorktopHeightOffset(cabinets);
+            placedOnProductId = cabinets[0].id;
+            toast.success(`Worktop placed on ${cabinets.length} cabinet${cabinets.length > 1 ? 's' : ''}`);
+          }
+        }
+
         const newProduct: PlacedProduct = {
           id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           productId: product.id || product.productId || `unknown-${Date.now()}`,
@@ -185,10 +243,19 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           specifications: product.specifications,
           finishes: product.finishes,
           variants: product.variants,
+          heightOffset,
+          placedOnProductId,
+          isWorktop: productBehavior.canBePlacedOnTop,
         };
 
         setPlacedProducts((prev) => [...prev, newProduct]);
-        toast.success(`Added ${product.name} to 3D floor plan`);
+        
+        // Open configurator for worktops
+        if (productBehavior.canBePlacedOnTop) {
+          setConfiguringWorktop(newProduct);
+        } else {
+          toast.success(`Added ${product.name} to 3D floor plan`);
+        }
       } catch (error) {
         console.error('Error parsing dropped product in 3D:', error);
         toast.error('Failed to parse product data');
@@ -238,6 +305,30 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         selectedDoorId={selectedDoorId}
         onDoorClick={onDoorClick}
       />
+
+      {/* Worktop Configurator */}
+      {configuringWorktop && (
+        <WorktopConfigurator
+          worktop={configuringWorktop}
+          allProducts={placedProducts}
+          onUpdate={(updates) => {
+            const updatedWorktop = { ...configuringWorktop, ...updates };
+            setConfiguringWorktop(updatedWorktop);
+            handleProductUpdate(configuringWorktop.id, updates);
+          }}
+          onCancel={() => {
+            // Remove the worktop if canceling during initial placement
+            if (!placedProducts.find(p => p.id === configuringWorktop.id && p.heightOffset !== undefined)) {
+              setPlacedProducts(prev => prev.filter(p => p.id !== configuringWorktop.id));
+            }
+            setConfiguringWorktop(null);
+          }}
+          onConfirm={() => {
+            toast.success('Worktop configured successfully');
+            setConfiguringWorktop(null);
+          }}
+        />
+      )}
     </div>
   );
 };
