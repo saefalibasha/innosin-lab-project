@@ -77,17 +77,18 @@ const ProductModel = ({
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {
-    // Use originalDimensions if available (stored in mm), fallback to dimensions
-    const width = product.originalDimensions?.width || product.dimensions?.width || 600;
-    const height = product.originalDimensions?.height || product.dimensions?.height || 850;
-    const depth = product.originalDimensions?.length || product.dimensions?.length || 600;
+    // CRITICAL: dimensions are stored in PIXELS in the data model
+    // We need to convert them to MILLIMETERS first, then to METERS
+    const widthMm = product.originalDimensions?.width || (product.dimensions?.width / scale) || 600;
+    const heightMm = product.originalDimensions?.height || (product.dimensions?.height / scale) || 850;
+    const depthMm = product.originalDimensions?.length || (product.dimensions?.length / scale) || 600;
     
     return {
-      width: width * 0.001, // mm to meters
-      height: height * 0.001,
-      depth: depth * 0.001
+      width: widthMm * 0.001, // mm to meters
+      height: heightMm * 0.001,
+      depth: depthMm * 0.001
     };
-  }, [product.originalDimensions, product.dimensions]);
+  }, [product.originalDimensions, product.dimensions, scale]);
 
   // Convert rotation from degrees to radians for 3D
   const rotationRad = THREE.MathUtils.degToRad(product.rotation || 0);

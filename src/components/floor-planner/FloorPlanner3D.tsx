@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import EnhancedSeriesSelector from '../floorplan/EnhancedSeriesSelector';
 import EnhancedCanvasWorkspace3D from '../canvas/EnhancedCanvasWorkspace3D';
 import WallEditor from '../floorplan/WallEditor';
+import { AddWorktopButton } from '../canvas/AddWorktopButton';
 
 import {
   PlacedProduct,
@@ -190,6 +191,15 @@ export const FloorPlanner3D = () => {
           <div className="space-y-2 min-w-0">
             <h3 className="text-sm font-medium">Product Controls</h3>
             <div className="flex flex-wrap gap-2">
+              <AddWorktopButton
+                selectedProducts={selectedProducts}
+                allProducts={placedProducts}
+                scale={scale}
+                onAddWorktop={(worktopData) => {
+                  setPlacedProducts((prev) => [...prev, worktopData as PlacedProduct]);
+                  setSelectedProducts([]);
+                }}
+              />
               <Button
                 variant="outline"
                 size="sm"
