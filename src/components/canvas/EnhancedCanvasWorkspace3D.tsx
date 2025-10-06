@@ -166,8 +166,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           if (polygon.length >= 3) {
             // Use consistent dimension mapping
             const isWorktopProduct = productBehavior.canBePlacedOnTop;
-            const productWidthMm = product.width || product.dimensions?.length || (isWorktopProduct ? 1200 : 600);
-            const productDepthMm = product.depth || product.dimensions?.width || (isWorktopProduct ? 600 : 600);
+            const productWidthMm = product.width || product.dimensions?.length || (isWorktopProduct ? 1650 : 600);
+            const productDepthMm = product.depth || product.dimensions?.width || (isWorktopProduct ? 900 : 600);
             
             const isInside = rectInsidePolygon(
               canvasPos,
@@ -188,9 +188,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         // Special handling for worktops - use standard dimensions if not provided
         const isWorktopProduct = productBehavior.canBePlacedOnTop;
         
-        const productWidthMm = product.width || product.dimensions?.width || (isWorktopProduct ? 1200 : 600);
-        const productDepthMm = product.depth || product.dimensions?.length || (isWorktopProduct ? 600 : 600);
-        const productHeightMm = product.height || product.dimensions?.height || (isWorktopProduct ? 38 : 850);
+        const productWidthMm = product.width || product.dimensions?.width || (isWorktopProduct ? 1650 : 600);
+        const productDepthMm = product.depth || product.dimensions?.length || (isWorktopProduct ? 900 : 600);
+        const productHeightMm = product.height || product.dimensions?.height || (isWorktopProduct ? 18 : 850);
 
         // Special handling for worktops
         let heightOffset: number | undefined = undefined;
