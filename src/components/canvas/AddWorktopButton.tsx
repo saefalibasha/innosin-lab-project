@@ -71,6 +71,14 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
       const depthPx = cabinet.dimensions.length || 0;
       const heightMm = cabinet.originalDimensions?.height || 850;
 
+      console.log('[AddWorktopButton] Cabinet dimensions:', {
+        id: cabinet.id,
+        name: cabinet.name,
+        position: cabinet.position,
+        dimensions: cabinet.dimensions,
+        originalDimensions: cabinet.originalDimensions
+      });
+
       const left = cabinet.position.x - widthPx / 2;
       const right = cabinet.position.x + widthPx / 2;
       const front = cabinet.position.y - depthPx / 2;
