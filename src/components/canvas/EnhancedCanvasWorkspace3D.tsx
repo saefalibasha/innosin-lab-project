@@ -288,6 +288,8 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
     <div 
       ref={htmlRef} 
       className="relative w-full h-full bg-gray-50"
+      onDrop={handleCanvasDrop}
+      onDragOver={(e) => e.preventDefault()}
     >
       <IsometricFloorPlanScene
         wallSegments={wallSegments}
