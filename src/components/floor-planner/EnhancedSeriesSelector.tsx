@@ -171,7 +171,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     const canvasDepth = mmToCanvas(parsedDimensions.height, roomScale);
 
     const placedProduct: PlacedProduct = {
-      id: `placed-${product.id}-${Date.now()}`,
+      id: `placed-${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       productId: product.id,
       name: product.name,
       category: product.category,

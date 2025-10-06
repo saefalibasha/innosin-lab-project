@@ -1558,7 +1558,7 @@ const EnhancedCanvasWorkspace: React.FC<EnhancedCanvasWorkspaceProps> = ({
             pos = clampToCanvas(pos, dimsPx);
 
             const newProd: PlacedProduct = {
-              id: `product-${Date.now()}`,
+              id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
               productId: product.id,
               name: product.name,
               category: product.category || 'Unknown',

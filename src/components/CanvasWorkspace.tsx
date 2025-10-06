@@ -345,7 +345,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({
       const y = e.clientY - rect.top;
 
       const newProduct: PlacedProduct = {
-        id: `product-${Date.now()}`,
+        id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         productId: product.id,
         name: product.name,
         category: product.category || 'Unknown',

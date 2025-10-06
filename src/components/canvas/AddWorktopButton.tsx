@@ -96,7 +96,7 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
     const centerY = (minY + maxY) / 2;
 
     const worktopData: Partial<PlacedProduct> = {
-      id: `worktop-${Date.now()}`,
+      id: `worktop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       productId: 'worktop-custom',
       name: 'Custom Worktop',
       category: 'Worktop',
