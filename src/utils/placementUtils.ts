@@ -69,18 +69,19 @@ export function findNonOverlappingPosition(
     let hasOverlap = false;
 
     for (const existing of existingProducts) {
+      // Add padding to both boxes for spacing
       const existingBox = {
-        x: existing.position.x - existing.dimensions.width / 2,
-        y: existing.position.y - existing.dimensions.length / 2,
-        width: existing.dimensions.width,
-        height: existing.dimensions.length,
+        x: existing.position.x - (existing.dimensions.width / 2) - padding / 2,
+        y: existing.position.y - (existing.dimensions.length / 2) - padding / 2,
+        width: existing.dimensions.width + padding,
+        height: existing.dimensions.length + padding,
       };
 
       const candidateBox = {
-        x: candidate.x - dimensions.width / 2,
-        y: candidate.y - dimensions.length / 2,
-        width: dimensions.width,
-        height: dimensions.length,
+        x: candidate.x - (dimensions.width / 2) - padding / 2,
+        y: candidate.y - (dimensions.length / 2) - padding / 2,
+        width: dimensions.width + padding,
+        height: dimensions.length + padding,
       };
 
       if (aabbOverlap(existingBox, candidateBox)) {
@@ -94,6 +95,7 @@ export function findNonOverlappingPosition(
         attempt: i,
         position: candidate,
         basePosition: basePos,
+        padding,
       });
       return candidate;
     }
