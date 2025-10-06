@@ -5,6 +5,7 @@ import { wallsToPolygon, rectInsidePolygon, isValidFloorPolygon } from '@/utils/
 import { canvasTo3DWorld } from '@/utils/coordinateUtils';
 import { getProductBehavior } from '@/utils/productBehaviors';
 import { findCabinetsUnderWorktop, calculateWorktopHeightOffset, isValidWorktopPlacement } from '@/utils/worktopUtils';
+import { findNonOverlappingPosition } from '@/utils/placementUtils';
 import IsometricFloorPlanScene from './IsometricFloorPlanScene';
 import { WorktopConfigurator } from './WorktopConfigurator';
 
@@ -219,12 +220,20 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           }
         }
 
+        // Find non-overlapping position
+        const finalPosition = findNonOverlappingPosition(
+          canvasPos,
+          { width: productWidthPx, length: productDepthPx },
+          placedProducts,
+          10
+        );
+
         const newProduct: PlacedProduct = {
           id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           productId: product.id || product.productId || `unknown-${Date.now()}`,
           name: product.name || 'Unknown Product',
           category: product.category || 'Cabinet',
-          position: canvasPos,
+          position: finalPosition,
           rotation: 0,
           dimensions: {
             length: productDepthPx,  // Store in pixels like 2D view

@@ -90,8 +90,8 @@ const ProductModel = ({
     };
   }, [product.originalDimensions, product.dimensions, scale]);
 
-  // Convert rotation from degrees to radians for 3D
-  const rotationRad = THREE.MathUtils.degToRad(product.rotation || 0);
+  // Rotation is stored in radians consistently across 2D and 3D
+  const rotationRad = product.rotation || 0;
   const rotation: [number, number, number] = [0, rotationRad, 0];
 
   // Physical size in meters

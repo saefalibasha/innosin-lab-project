@@ -13,6 +13,7 @@ import { parseDimensionString, mmToCanvas, calculateProductScale } from '@/utils
 import { toTitleCase } from '@/utils/formatting';
 import { formatSeriesName, formatProductName } from '@/utils/seriesNameFormatter';
 import { formatAttributeValue, getOrientationDisplayName } from '@/utils/productTerminology';
+import { findNonOverlappingPosition } from '@/utils/placementUtils';
 
 interface EnhancedSeriesSelectorProps {
   onProductDrag?: (product: any) => void;
@@ -21,6 +22,7 @@ interface EnhancedSeriesSelectorProps {
   onProductUsed?: (productId: string) => void;
   scale?: number;
   compact?: boolean; // New prop for hotspot editor mode
+  existingProducts?: PlacedProduct[]; // For anti-overlap
 }
 
 const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({ 
@@ -28,6 +30,7 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
   onProductSelect, 
   currentTool = 'select', 
   onProductUsed,
+  existingProducts = [],
   scale = 0.15,
   compact = false
 }) => {
@@ -170,12 +173,20 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     const canvasHeight = mmToCanvas(parsedDimensions.depth, roomScale);
     const canvasDepth = mmToCanvas(parsedDimensions.height, roomScale);
 
+    // Find non-overlapping position
+    const finalPosition = findNonOverlappingPosition(
+      { x: 100, y: 100 },
+      { width: canvasWidth, length: canvasHeight },
+      existingProducts,
+      10
+    );
+
     const placedProduct: PlacedProduct = {
       id: `placed-${product.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       productId: product.id,
       name: product.name,
       category: product.category,
-      position: { x: 100, y: 100 },
+      position: finalPosition,
       rotation: 0,
       dimensions: {
         length: canvasWidth,

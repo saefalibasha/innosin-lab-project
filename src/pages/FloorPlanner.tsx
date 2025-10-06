@@ -48,6 +48,7 @@ import { ContactGateModal } from '@/components/ContactGateModal';
 import { useAuth } from '@/contexts/AuthContext';
 import EnhancedCanvasWorkspace3D from '@/components/canvas/EnhancedCanvasWorkspace3D';
 import { FloorPlannerOnboarding } from '@/components/floorplan/FloorPlannerOnboarding';
+import { AddWorktopButton } from '@/components/canvas/AddWorktopButton';
 
 const FloorPlanner = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -566,6 +567,7 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                     onProductDrag={handleProductDrag}
                     currentTool={currentMode}
                     onProductUsed={(productId) => console.log('Product used:', productId)}
+                    existingProducts={placedProducts}
                   />
                 </div>
               </div>
@@ -838,7 +840,24 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                       {/* Product Controls */}
                       <div className="space-y-2">
                         <h3 className="text-sm font-medium">Product Controls</h3>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 flex-wrap">
+                          <AddWorktopButton
+                            selectedProducts={selectedProducts}
+                            allProducts={placedProducts}
+                            onAddWorktop={(worktopData) => {
+                              const newWorktop = {
+                                ...worktopData,
+                                id: worktopData.id || `worktop-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                                position: worktopData.position || { x: 0, y: 0 },
+                                rotation: worktopData.rotation || 0,
+                                dimensions: worktopData.dimensions || { length: 0, width: 0, height: 0 },
+                                color: worktopData.color || '#8B4513',
+                              } as PlacedProduct;
+                              setPlacedProducts(prev => [...prev, newWorktop]);
+                              setSelectedProducts([]);
+                            }}
+                            scale={scale}
+                          />
                           <Button 
                             variant="outline" 
                             size="sm" 

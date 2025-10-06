@@ -24,6 +24,7 @@ interface EnhancedSeriesSelectorProps {
   currentTool: string;
   onProductUsed?: (productId: string) => void;
   onProductSelect?: (product: Product) => void;
+  existingProducts?: any[]; // For anti-overlap (not used in this version)
 }
 
 const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
