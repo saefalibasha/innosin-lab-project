@@ -36,7 +36,7 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
       product_series: (p as any).product_series
     })));
     
-    // All selected products must be able to support worktops
+    // All selected products must be valid: none wall-mounted, and at least one supports a worktop
     const canAdd = products.every(p => {
       const behavior = getProductBehavior(p);
       console.log('[AddWorktopButton] Product behavior:', {
@@ -44,8 +44,8 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
         name: p.name,
         behavior
       });
-      return behavior.canSupportWorktop && !behavior.canMountOnWall;
-    });
+      return !behavior.canMountOnWall; // disallow wall-mounted items in selection
+    }) && products.some(p => getProductBehavior(p).canSupportWorktop);
     
     console.log('[AddWorktopButton] Can add worktop:', canAdd);
     return canAdd;

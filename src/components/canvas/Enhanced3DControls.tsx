@@ -65,12 +65,12 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
         const product = placedProducts.find(p => p.id === foundProductId);
         if (product) {
           onProductSelect(product.id);
-          startDrag(product, [hit.point.x, hit.point.y, hit.point.z] as [number, number, number], event);
+          // Dragging disabled in 3D view: selection only
           return;
         }
       }
     }
-  }, [placedProducts, startDrag, onProductSelect, raycaster, pointer, camera, scene]);
+  }, [placedProducts, onProductSelect, raycaster, pointer, camera, scene]);
 
   const handlePointerMove = useCallback((event: any) => {
     if (dragState.isDragging && isPointerDown) {
