@@ -42,7 +42,7 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
     ));
   };
 
-  const uploadSingleFile = async (file: File) => {
+  const uploadSingleFile = async (file: File, retryCount = 0) => {
     const fileId = `${file.name}_${Date.now()}`;
     
     // Add file to state with uploading status
@@ -59,29 +59,55 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
     setUploadedFiles(prev => [...prev, newFile]);
 
     try {
-      // Generate clean filename
-      const fileExtension = file.name.split('.').pop();
+      // Generate clean filename and determine correct content type
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
       const baseFileName = file.name.replace(/\.[^/.]+$/, "");
       const cleanFileName = `${baseFileName.replace(/[^a-zA-Z0-9-_]/g, '_')}.${fileExtension}`;
       
       // Create organized file path
       const filePath = `products/${variantCode.toLowerCase()}/${cleanFileName}`;
 
-      console.log('Uploading file:', { originalName: file.name, filePath, type: file.type });
+      // Determine correct content type
+      let contentType = file.type;
+      if (fileExtension === 'glb' && (file.type === 'application/octet-stream' || !file.type)) {
+        contentType = 'model/gltf-binary';
+      } else if (fileExtension === 'jpg' || fileExtension === 'jpeg') {
+        contentType = 'image/jpeg';
+      } else if (fileExtension === 'png') {
+        contentType = 'image/png';
+      }
+
+      console.log('Uploading file:', { 
+        originalName: file.name, 
+        filePath, 
+        contentType,
+        originalType: file.type 
+      });
 
       // Update progress to 25%
       updateFileStatus(file.name, { progress: 25 });
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage with correct content type
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
+          contentType,
           cacheControl: '3600',
           upsert: true
         });
 
       if (error) {
         console.error('Storage upload error:', error);
+        
+        // Retry once on failure with exponential backoff
+        if (retryCount === 0) {
+          console.log('Retrying upload after 2s delay...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          // Remove the failed file from state before retry
+          setUploadedFiles(prev => prev.filter(f => f.name !== file.name));
+          return uploadSingleFile(file, retryCount + 1);
+        }
+        
         throw new Error(`Upload failed: ${error.message}`);
       }
 
@@ -102,7 +128,7 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
       const { error: processError } = await supabase.rpc('process_uploaded_asset', {
         p_product_id: productId,
         p_file_path: filePath,
-        p_file_type: file.type,
+        p_file_type: contentType,
         p_public_url: publicUrl
       });
 
@@ -116,7 +142,7 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
         await supabase.from('asset_uploads').insert({
           product_id: productId,
           file_path: filePath,
-          file_type: file.type,
+          file_type: contentType,
           file_size: file.size,
           upload_status: 'completed',
           uploaded_by: user?.id
@@ -143,8 +169,8 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
       console.error('Upload error:', error);
       
       let errorMessage = 'Upload failed';
-      if (error.message?.includes('policy')) {
-        errorMessage = 'Please ensure you are logged in and try again';
+      if (error.message?.includes('policy') || error.message?.includes('permission')) {
+        errorMessage = 'Permission denied. Please ensure you are logged in as an admin.';
       } else if (error.message?.includes('size')) {
         errorMessage = 'File size too large (max 50MB)';
       } else if (error.message) {
