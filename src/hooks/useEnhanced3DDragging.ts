@@ -88,15 +88,15 @@ export const useEnhanced3DDragging = (
 
       // Apply snapping
       const snapResult = snapToPosition(targetPosition, dragState.draggedProduct, [
-        'wall',
-        'product',
+        'edge-to-edge',
+        'top-surface',
         'grid',
       ]);
 
-      // snapResult.position is already in 3D world coordinates, don't convert again
-      const finalPosition = snapResult.snapped
-        ? [snapResult.position[0], GROUND_EPSILON, snapResult.position[2]] as [number, number, number]
-        : targetPosition;
+      // Use snap position fully (including Y for worktops), or preserve initial Y when not snapped
+      const finalPosition: [number, number, number] = snapResult.snapped && snapResult.position
+        ? snapResult.position
+        : [targetPosition[0], dragState.initialPosition[1], targetPosition[2]];
       
       console.debug('[useEnhanced3DDragging] Snap result:', { 
         snapped: snapResult.snapped, 
@@ -123,14 +123,29 @@ export const useEnhanced3DDragging = (
     if (!dragState.isDragging || !dragState.draggedProduct) return;
 
     if (dragState.isValid) {
+      const finalPos = dragState.currentPosition;
       const canvasPosition = worldTo2DCanvas(
-        dragState.currentPosition[0],
-        dragState.currentPosition[2],
+        finalPos[0],
+        finalPos[2],
         scale
       );
 
-      onProductUpdate(dragState.draggedProduct.id, {
+      // Prepare update object
+      const updates: Partial<PlacedProduct> = {
         position: canvasPosition,
+      };
+
+      // If product is at a height above ground, save heightOffset
+      if (finalPos[1] > GROUND_EPSILON) {
+        updates.heightOffset = Math.round(finalPos[1] * 1000); // Convert meters to mm
+      }
+
+      onProductUpdate(dragState.draggedProduct.id, updates);
+
+      console.debug('[useEnhanced3DDragging] Drop completed:', {
+        worldPos: finalPos,
+        canvasPos: canvasPosition,
+        heightOffset: updates.heightOffset
       });
     }
 

@@ -21,7 +21,7 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   onProductSelect,
   selectedProductId
 }) => {
-  const { camera, raycaster, pointer } = useThree();
+  const { camera, raycaster, pointer, scene } = useThree();
   const [isPointerDown, setIsPointerDown] = useState(false);
   
   const {
@@ -34,28 +34,20 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
   } = useEnhanced3DDragging(wallSegments, placedProducts, scale, onProductUpdate);
 
   const handlePointerDown = useCallback((event: any) => {
+    event.stopPropagation();
     setIsPointerDown(true);
     
-    // Improved raycasting with better scene traversal
+    // Raycast from pointer to scene
     raycaster.setFromCamera(pointer, camera);
     
-    // Get the entire scene for intersection testing
-    const scene = camera.parent;
-    if (!scene) return;
-    
-    // Filter for actual product meshes by looking for groups with productId
-    const productMeshes = scene.children.filter((child: any) => 
-      child.userData?.productId && 
-      placedProducts.some(p => p.id === child.userData.productId)
-    );
-    
-    const intersections = raycaster.intersectObjects(productMeshes, true);
+    // Intersect all scene objects recursively
+    const intersections = raycaster.intersectObjects(scene.children, true);
     
     if (intersections.length > 0) {
       const intersection = intersections[0];
       let productId = intersection.object.userData?.productId;
       
-      // If not found on the mesh, check parent hierarchy
+      // If not found on the mesh, climb the parent hierarchy
       if (!productId) {
         let current = intersection.object.parent;
         while (current && !productId) {
@@ -73,10 +65,12 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
         }
       }
     }
-  }, [placedProducts, startDrag, onProductSelect, raycaster, pointer, camera]);
+  }, [placedProducts, startDrag, onProductSelect, raycaster, pointer, camera, scene]);
 
   const handlePointerMove = useCallback((event: any) => {
     if (dragState.isDragging && isPointerDown) {
+      event.stopPropagation();
+      
       // Calculate intersection point for drag update
       raycaster.setFromCamera(pointer, camera);
       
@@ -94,11 +88,12 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
     }
   }, [dragState.isDragging, isPointerDown, raycaster, camera, pointer, updateDrag]);
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((event: any) => {
+    event.stopPropagation();
     setIsPointerDown(false);
     
     if (dragState.isDragging) {
-      endDrag(); // This hook already calls onProductUpdate internally
+      endDrag();
     }
   }, [dragState.isDragging, endDrag]);
 
@@ -118,8 +113,20 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
 
   return (
     <group>
-      {/* 3D product placement disabled - only allow placement in 2D view */}
-      {/* Snap guides still visible for reference */}
+      {/* Invisible interaction plane to capture pointer events */}
+      <mesh 
+        onPointerDown={handlePointerDown} 
+        onPointerMove={handlePointerMove} 
+        onPointerUp={handlePointerUp}
+        position={[0, -0.0001, 0]} 
+        rotation={[-Math.PI / 2, 0, 0]} 
+        visible={false}
+      >
+        <planeGeometry args={[1000, 1000]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+      
+      {/* Snap guides */}
       <SnapGuides />
     </group>
   );
