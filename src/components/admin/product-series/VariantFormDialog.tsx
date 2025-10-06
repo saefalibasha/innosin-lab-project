@@ -22,6 +22,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from '@/components/ui/label';
 import { FileUploadManager } from '@/components/admin/FileUploadManager';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   variant_code: z.string().min(2, {
@@ -57,15 +59,47 @@ export const VariantFormDialog = ({
     },
   })
 
-  const onSubmit = useCallback((values: z.infer<typeof formSchema>) => {
-    const newVariant = {
-      ...values,
-      product_series_id: seriesId,
-      id: variant?.id,
-    };
-    onVariantSaved();
-    onOpenChange(false);
-  }, [seriesId, variant?.id, onVariantSaved, onOpenChange])
+  const onSubmit = useCallback(async (values: z.infer<typeof formSchema>) => {
+    try {
+      if (variant?.id) {
+        // UPDATE existing variant
+        const { error } = await supabase
+          .from('products')
+          .update({
+            product_code: values.variant_code,
+            description: values.description,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', variant.id);
+          
+        if (error) throw error;
+        toast.success('Variant updated successfully');
+      } else {
+        // INSERT new variant
+        const { error } = await supabase
+          .from('products')
+          .insert({
+            product_code: values.variant_code,
+            name: `${seriesName} - ${values.variant_code}`,
+            description: values.description,
+            parent_series_id: seriesId,
+            is_series_parent: false,
+            is_active: true,
+            category: '',
+            product_series: seriesName,
+          });
+          
+        if (error) throw error;
+        toast.success('Variant created successfully');
+      }
+      
+      onVariantSaved();
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error saving variant:', error);
+      toast.error('Failed to save variant');
+    }
+  }, [seriesId, seriesName, variant?.id, onVariantSaved, onOpenChange])
 
   const handleVariantCodeChange = useCallback((value: string) => {
     setVariantCode(value);
