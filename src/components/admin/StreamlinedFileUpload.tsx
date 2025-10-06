@@ -59,6 +59,12 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
     setUploadedFiles(prev => [...prev, newFile]);
 
     try {
+      // Refresh session to ensure JWT is current
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        throw new Error('Session expired. Please log in again.');
+      }
+
       // Generate clean filename and determine correct content type
       const fileExtension = file.name.split('.').pop()?.toLowerCase();
       const baseFileName = file.name.replace(/\.[^/.]+$/, "");
@@ -87,7 +93,7 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
       // Update progress to 25%
       updateFileStatus(file.name, { progress: 25 });
 
-      // Upload to Supabase Storage with correct content type
+      // Try direct upload first
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(filePath, file, {
@@ -96,7 +102,41 @@ export const StreamlinedFileUpload: React.FC<StreamlinedFileUploadProps> = ({
           upsert: true
         });
 
-      if (error) {
+      // If permission denied (403), fallback to signed upload
+      if (error && (error.message?.includes('policy') || error.message?.includes('403') || error.message?.includes('permission'))) {
+        console.log('Direct upload failed with permission error, trying signed upload fallback...');
+        
+        // Get signed upload URL from edge function
+        const { data: signedData, error: signedError } = await supabase.functions.invoke('generate-signed-upload', {
+          body: { 
+            filePath,
+            bucket: 'documents'
+          }
+        });
+
+        if (signedError || !signedData?.signedUrl) {
+          console.error('Signed upload URL generation failed:', signedError);
+          throw new Error(`Permission denied and signed upload failed: ${signedError?.message || 'Unknown error'}`);
+        }
+
+        console.log('Got signed upload URL, uploading via signed URL...');
+        
+        // Upload using signed URL
+        const { error: signedUploadError } = await supabase.storage
+          .from('documents')
+          .uploadToSignedUrl(signedData.path, signedData.token, file, {
+            contentType,
+            cacheControl: '3600',
+            upsert: true
+          });
+
+        if (signedUploadError) {
+          console.error('Signed upload error:', signedUploadError);
+          throw new Error(`Signed upload failed: ${signedUploadError.message}`);
+        }
+
+        console.log('Signed upload successful');
+      } else if (error) {
         console.error('Storage upload error:', error);
         
         // Retry once on failure with exponential backoff
