@@ -40,10 +40,10 @@ const ProductModel = ({
     const offsetX = origin?.minX || 0;
     const offsetY = origin?.minY || 0;
     
-    // CRITICAL: Negate Y to match coordinate system used by walls and floors
+    // CRITICAL: Use product.position directly (already in canvas coordinates)
     const basePos = canvasTo3DWorld({ 
       x: product.position.x - offsetX, 
-      y: -(product.position.y - offsetY) 
+      y: product.position.y - offsetY 
     }, scale);
     
     // Check if this is a wall-mounted product based on name/category
@@ -189,21 +189,10 @@ const ProductGLTF = ({
     const sz = size.z > 0 ? tz / size.z : 1;
     gltf.scene.scale.set(sx, sy, sz);
 
-    // Recompute bounding box after transformations for accurate selection overlay
-    const transformedBox = new Box3().setFromObject(gltf.scene);
-    const transformedSize = new Vector3();
-    transformedBox.getSize(transformedSize);
-    const transformedCenter = new Vector3();
-    transformedBox.getCenter(transformedCenter);
-
     console.debug('[ProductGLTF] Transformed:', {
       modelPath: modelPath.split('/').pop(),
       scale: { x: sx, y: sy, z: sz },
-      targetSize,
-      transformedBounds: {
-        size: transformedSize,
-        center: transformedCenter
-      }
+      targetSize
     });
 
     // Add productId to all children for raycasting
@@ -211,9 +200,6 @@ const ProductGLTF = ({
       child.userData = { ...(child.userData || {}), productId };
       if (!child.name) child.name = 'product';
     });
-
-    // Store transformed bounds for selection overlay
-    (groupRef.current as any).transformedBounds = { size: transformedSize, center: transformedCenter };
   }, [gltf, productId, targetSize, modelPath]);
 
   // Render fallback proxy if model is degenerate
@@ -235,17 +221,12 @@ const ProductGLTF = ({
     );
   }
 
-  // Get transformed bounds for selection overlay
-  const bounds = (groupRef.current as any)?.transformedBounds;
-  const overlayPosition = bounds ? [bounds.center.x, bounds.center.y, bounds.center.z] as [number, number, number] : [0, targetSize[1] / 2, 0] as [number, number, number];
-  const overlaySize = bounds ? [bounds.size.x, bounds.size.y, bounds.size.z] as [number, number, number] : targetSize;
-
   return (
     <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
-        <mesh position={overlayPosition}>
-          <boxGeometry args={overlaySize} />
+        <mesh>
+          <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
           <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
         </mesh>
       )}
