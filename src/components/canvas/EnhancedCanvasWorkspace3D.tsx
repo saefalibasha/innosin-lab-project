@@ -192,12 +192,18 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         const productDepthMm = product.depth || product.dimensions?.length || (isWorktopProduct ? 900 : 600);
         const productHeightMm = product.height || product.dimensions?.height || (isWorktopProduct ? 18 : 850);
 
+        // Convert to canvas pixels for consistent storage with 2D view
+        const mmToCanvas = (mm: number) => mm * scale;
+        const productWidthPx = mmToCanvas(productWidthMm);
+        const productDepthPx = mmToCanvas(productDepthMm);
+        const productHeightPx = mmToCanvas(productHeightMm);
+
         // Special handling for worktops
         let heightOffset: number | undefined = undefined;
         let placedOnProductId: string | undefined = undefined;
 
         if (productBehavior.canBePlacedOnTop) {
-          // Find cabinets underneath
+          // Find cabinets underneath - use mm for comparison
           const cabinets = findCabinetsUnderWorktop(
             canvasPos,
             { length: productDepthMm, width: productWidthMm },
@@ -221,12 +227,12 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           position: canvasPos,
           rotation: 0,
           dimensions: {
-            length: productDepthMm,  // X-axis (depth/forward-back)
-            width: productWidthMm,   // Z-axis (width/left-right)
-            height: productHeightMm  // Y-axis (height/up-down)
+            length: productDepthPx,  // Store in pixels like 2D view
+            width: productWidthPx,   // Store in pixels like 2D view
+            height: productHeightPx  // Store in pixels like 2D view
           },
           originalDimensions: {
-            length: productDepthMm,
+            length: productDepthMm,  // Keep original mm for reference
             width: productWidthMm,
             height: productHeightMm
           },
