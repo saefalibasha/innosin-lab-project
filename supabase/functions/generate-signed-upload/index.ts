@@ -76,6 +76,9 @@ serve(async (req) => {
       }
     );
 
+    // First, try to remove existing file (ignore errors if file doesn't exist)
+    await adminClient.storage.from(bucket).remove([filePath]);
+
     const { data, error } = await adminClient.storage
       .from(bucket)
       .createSignedUploadUrl(filePath);
