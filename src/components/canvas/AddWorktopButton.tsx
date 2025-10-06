@@ -122,7 +122,10 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
     toast.success(`Worktop added spanning ${cabinets.length} cabinet${cabinets.length > 1 ? 's' : ''}`);
   };
 
-  if (!canAddWorktop) return null;
+  // Always render the button; disable when not applicable so users can discover it
+  const disabledReason = selectedProducts.length === 0
+    ? 'Select at least one base/modular cabinet'
+    : 'Selection includes a wall-mounted item or no base cabinets';
 
   return (
     <Button
@@ -130,6 +133,8 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
       size="sm"
       variant="default"
       className="gap-2"
+      disabled={!canAddWorktop}
+      title={!canAddWorktop ? disabledReason : 'Add a worktop spanning selected cabinets'}
     >
       <Plus className="h-4 w-4" />
       Add Worktop
