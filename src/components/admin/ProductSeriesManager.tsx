@@ -218,6 +218,7 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
 
       // Group products by series and properly transform them
       const seriesMap = new Map<string, Product[]>();
+      const dbProductMap = new Map<string, DatabaseProduct[]>(); // Keep DB products for asset checking
       
       products.forEach(rawProduct => {
         // First ensure we have a proper DatabaseProduct
@@ -228,8 +229,10 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         
         if (!seriesMap.has(seriesName)) {
           seriesMap.set(seriesName, []);
+          dbProductMap.set(seriesName, []);
         }
         seriesMap.get(seriesName)!.push(transformedProduct);
+        dbProductMap.get(seriesName)!.push(dbProduct);
       });
 
       // Calculate series statistics and create ProductSeries objects with enhanced asset validation
@@ -237,16 +240,19 @@ export const ProductSeriesManager: React.FC<ProductSeriesManagerProps> = ({
         const totalProducts = transformedProducts.length;
         const activeProducts = transformedProducts.filter(p => p.is_active).length;
         
-        // Basic asset counting for immediate display
-        const productsWithBothAssets = transformedProducts.filter(p => {
-          const hasImage = !!(p.thumbnail_path);
-          const hasModel = !!(p.model_path);
+        // Get corresponding database products for accurate asset checking
+        const dbProducts = dbProductMap.get(name) || [];
+        
+        // Basic asset counting for immediate display with smart fallback
+        const productsWithBothAssets = dbProducts.filter(p => {
+          const hasImage = !!(p.series_thumbnail_path || p.thumbnail_path);
+          const hasModel = !!(p.series_model_path || p.model_path);
           return hasImage && hasModel;
         }).length;
         
-        const productsWithSomeAssets = transformedProducts.filter(p => {
-          const hasImage = !!(p.thumbnail_path);
-          const hasModel = !!(p.model_path);
+        const productsWithSomeAssets = dbProducts.filter(p => {
+          const hasImage = !!(p.series_thumbnail_path || p.thumbnail_path);
+          const hasModel = !!(p.series_model_path || p.model_path);
           return hasImage || hasModel;
         }).length;
         
