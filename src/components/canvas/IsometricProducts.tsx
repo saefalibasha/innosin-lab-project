@@ -178,21 +178,23 @@ const ProductGLTF = ({
       return;
     }
 
-    // Center horizontally (x) and depth (z), and place bottom on floor (y)
-    // Use -center.x and -center.z to center the model, and -box.min.y to sit bottom at y=0
-    gltf.scene.position.set(-center.x, -box.min.y, -center.z);
-
-    // Scale to match target physical dimensions
+    // Scale to match target physical dimensions FIRST
     const [tx, ty, tz] = targetSize;
     const sx = size.x > 0 ? tx / size.x : 1;
     const sy = size.y > 0 ? ty / size.y : 1;
     const sz = size.z > 0 ? tz / size.z : 1;
     gltf.scene.scale.set(sx, sy, sz);
 
-    console.debug('[ProductGLTF] Transformed:', {
+    // Recompute bounds AFTER scaling, then center X/Z and sit on floor (Y)
+    const scaledBox = new Box3().setFromObject(gltf.scene);
+    const scaledCenter = scaledBox.getCenter(new Vector3());
+    gltf.scene.position.set(-scaledCenter.x, -scaledBox.min.y, -scaledCenter.z);
+
+    console.debug('[ProductGLTF] Transformed (scaled + centered):', {
       modelPath: modelPath.split('/').pop(),
       scale: { x: sx, y: sy, z: sz },
-      targetSize
+      targetSize,
+      offset: { x: -scaledCenter.x, y: -scaledBox.min.y, z: -scaledCenter.z }
     });
 
     // Add productId to all children for raycasting
