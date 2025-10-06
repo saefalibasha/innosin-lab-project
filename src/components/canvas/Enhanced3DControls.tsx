@@ -44,23 +44,28 @@ export const Enhanced3DControls: React.FC<Enhanced3DControlsProps> = ({
     const intersections = raycaster.intersectObjects(scene.children, true);
     
     if (intersections.length > 0) {
-      const intersection = intersections[0];
-      let productId = intersection.object.userData?.productId;
-      
-      // If not found on the mesh, climb the parent hierarchy
-      if (!productId) {
-        let current = intersection.object.parent;
-        while (current && !productId) {
-          productId = current.userData?.productId;
+      // Find the FIRST intersection that belongs to a product (has productId in its hierarchy)
+      let foundProductId: string | null = null;
+      let hit: any = null;
+      for (const inter of intersections) {
+        let pid = inter.object.userData?.productId as string | undefined;
+        let current: any = inter.object.parent;
+        while (!pid && current) {
+          pid = current.userData?.productId;
           current = current.parent;
+        }
+        if (pid) {
+          foundProductId = pid;
+          hit = inter;
+          break;
         }
       }
       
-      if (productId) {
-        const product = placedProducts.find(p => p.id === productId);
+      if (foundProductId) {
+        const product = placedProducts.find(p => p.id === foundProductId);
         if (product) {
           onProductSelect(product.id);
-          startDrag(product, [intersection.point.x, intersection.point.y, intersection.point.z] as [number, number, number], event);
+          startDrag(product, [hit.point.x, hit.point.y, hit.point.z] as [number, number, number], event);
           return;
         }
       }
