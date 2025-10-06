@@ -87,8 +87,11 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
     const overhangPx = OVERHANG_MM * scale;
 
     // Calculate worktop dimensions and position
-    const worktopWidthPx = (maxX - minX) + (overhangPx * 2);
-    const worktopDepthPx = (maxY - minY) + (overhangPx * 2);
+    // CRITICAL: Align with 3D coordinate system
+    // - width (X-axis) = left-right span
+    // - length (Z-axis) = front-back span (depth)
+    const worktopWidthPx = (maxX - minX) + (overhangPx * 2);  // Left-right
+    const worktopDepthPx = (maxY - minY) + (overhangPx * 2);  // Front-back
     const worktopWidthMm = worktopWidthPx / scale;
     const worktopDepthMm = worktopDepthPx / scale;
 
@@ -103,13 +106,13 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
       position: { x: centerX, y: centerY },
       rotation: 0,
       dimensions: {
-        width: worktopWidthPx,
-        length: worktopDepthPx,
-        height: 18 * scale, // 18mm standard thickness
+        width: worktopWidthPx,    // Left-right (X)
+        length: worktopDepthPx,   // Front-back (Z)
+        height: 18 * scale,       // 18mm standard thickness (Y)
       },
       originalDimensions: {
-        width: worktopWidthMm,
-        length: worktopDepthMm,
+        width: worktopWidthMm,    // Left-right in mm
+        length: worktopDepthMm,   // Front-back in mm
         height: 18,
       },
       color: '#4A4A4A', // Dark grey worktop
