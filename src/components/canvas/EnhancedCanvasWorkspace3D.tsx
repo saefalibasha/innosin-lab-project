@@ -165,8 +165,9 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           const polygon = wallsToPolygon(wallSegments);
           if (polygon.length >= 3) {
             // Use consistent dimension mapping
-            const productWidthMm = product.width || product.dimensions?.length || 600;
-            const productDepthMm = product.depth || product.dimensions?.width || 600;
+            const isWorktopProduct = productBehavior.canBePlacedOnTop;
+            const productWidthMm = product.width || product.dimensions?.length || (isWorktopProduct ? 1200 : 600);
+            const productDepthMm = product.depth || product.dimensions?.width || (isWorktopProduct ? 600 : 600);
             
             const isInside = rectInsidePolygon(
               canvasPos,
@@ -184,9 +185,12 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
         }
 
         // Create product with unified dimension mapping: X=length, Z=width, Y=height
-        const productWidthMm = product.width || product.dimensions?.width || 600;
-        const productDepthMm = product.depth || product.dimensions?.length || 600;
-        const productHeightMm = product.height || product.dimensions?.height || 850;
+        // Special handling for worktops - use standard dimensions if not provided
+        const isWorktopProduct = productBehavior.canBePlacedOnTop;
+        
+        const productWidthMm = product.width || product.dimensions?.width || (isWorktopProduct ? 1200 : 600);
+        const productDepthMm = product.depth || product.dimensions?.length || (isWorktopProduct ? 600 : 600);
+        const productHeightMm = product.height || product.dimensions?.height || (isWorktopProduct ? 38 : 850);
 
         // Special handling for worktops
         let heightOffset: number | undefined = undefined;
@@ -200,21 +204,12 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
             placedProducts
           );
 
-          const validation = isValidWorktopPlacement(
-            canvasPos,
-            { length: productDepthMm, width: productWidthMm },
-            placedProducts
-          );
-
-          if (!validation.valid) {
-            toast.error(validation.reason || 'Invalid worktop placement');
-            return;
-          }
-
           if (cabinets.length > 0) {
             heightOffset = calculateWorktopHeightOffset(cabinets);
             placedOnProductId = cabinets[0].id;
             toast.success(`Worktop placed on ${cabinets.length} cabinet${cabinets.length > 1 ? 's' : ''}`);
+          } else {
+            toast.info('Worktop placed. Use configurator to adjust position and length.');
           }
         }
 

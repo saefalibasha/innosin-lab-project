@@ -112,12 +112,8 @@ export function isValidWorktopPlacement(
 ): { valid: boolean; reason?: string } {
   const cabinets = findCabinetsUnderWorktop(worktopPosition, worktopDimensions, allProducts);
 
-  if (cabinets.length === 0) {
-    return { 
-      valid: false, 
-      reason: 'Worktop must be placed on top of at least one cabinet' 
-    };
-  }
-
+  // Allow worktop placement even without cabinets (for initial drop)
+  // Validation happens in the configurator
+  
   return { valid: true };
 }
