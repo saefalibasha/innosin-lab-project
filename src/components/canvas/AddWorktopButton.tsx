@@ -26,11 +26,29 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
       .map(id => allProducts.find(p => p.id === id))
       .filter((p): p is PlacedProduct => p !== undefined);
     
+    // Debug logging to understand product structure
+    console.log('[AddWorktopButton] Selected products:', products.map(p => ({
+      id: p.id,
+      name: p.name,
+      productId: p.productId,
+      product_code: (p as any).product_code,
+      category: p.category,
+      product_series: (p as any).product_series
+    })));
+    
     // All selected products must be able to support worktops
-    return products.every(p => {
+    const canAdd = products.every(p => {
       const behavior = getProductBehavior(p);
+      console.log('[AddWorktopButton] Product behavior:', {
+        productId: p.id,
+        name: p.name,
+        behavior
+      });
       return behavior.canSupportWorktop && !behavior.canMountOnWall;
     });
+    
+    console.log('[AddWorktopButton] Can add worktop:', canAdd);
+    return canAdd;
   }, [selectedProducts, allProducts]);
 
   const handleAddWorktop = () => {

@@ -19,12 +19,16 @@ interface ProductBehavior {
  */
 export function getProductBehavior(product: PlacedProduct): ProductBehavior {
   const productId = product.productId || '';
+  const productCode = (product as any).product_code?.toLowerCase() || '';
   const name = product.name?.toLowerCase() || '';
   const category = product.category?.toLowerCase() || '';
   const productSeries = (product as any).product_series?.toLowerCase() || '';
   
-  // Detect series from productId, name, category, or product_series for Innosin products
-  if (productId.includes('mc-pc') || name.includes('mobile cabinet') || category.includes('mobile')) {
+  // Combine all identifiers for flexible matching
+  const allIds = `${productId} ${productCode} ${name} ${category} ${productSeries}`.toLowerCase();
+  
+  // Detect series from productId, product_code, name, category, or product_series for Innosin products
+  if (allIds.includes('mc-pc') || allIds.includes('mobile cabinet') || allIds.includes('mobile')) {
     return {
       snapToWalls: true,
       snapToProducts: true,
@@ -38,7 +42,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
     };
   }
   
-  if (productId.includes('mcc-pc') || name.includes('combination cabinet') || category.includes('modular')) {
+  if (allIds.includes('mcc-pc') || allIds.includes('combination cabinet') || allIds.includes('modular')) {
     return {
       snapToWalls: true,
       snapToProducts: true,
@@ -52,7 +56,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
     };
   }
   
-  if (productId.includes('wcg-pc') || name.includes('wall cabinet') || category.includes('wall')) {
+  if (allIds.includes('wcg-pc') || allIds.includes('wall cabinet') || allIds.includes('wall')) {
     return {
       snapToWalls: true,
       snapToProducts: true,
@@ -66,7 +70,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
     };
   }
   
-  if (productId.includes('tcg-pc') || name.includes('tall cabinet') || category.includes('tall')) {
+  if (allIds.includes('tcg-pc') || allIds.includes('tall cabinet') || allIds.includes('tall')) {
     return {
       snapToWalls: true,
       snapToProducts: true,
@@ -82,15 +86,10 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
   
   // Worktop detection - check multiple fields
   const isWorktop = 
-    productId.includes('worktop') || 
-    productId.includes('work-top') ||
-    productId.toLowerCase().includes('ep-wt') || // Your specific worktop code
-    name.includes('work top') || 
-    name.includes('worktop') ||
-    category.includes('worktop') ||
-    category.toLowerCase() === 'worktop' ||
-    productSeries.includes('work top') ||
-    productSeries.includes('worktop');
+    allIds.includes('worktop') || 
+    allIds.includes('work-top') ||
+    allIds.includes('work top') ||
+    allIds.includes('ep-wt');
 
   if (isWorktop) {
     return {
