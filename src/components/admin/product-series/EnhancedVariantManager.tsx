@@ -84,18 +84,33 @@ export const EnhancedVariantManager: React.FC<EnhancedVariantManagerProps> = ({
     try {
       setLoading(true);
       
-      // Fetch variants using both product_series and parent_series_id for better coverage
-      const { data, error } = await supabase
+      // Primary query by parent_series_id
+      const { data: primaryData, error: primaryError } = await supabase
         .from('products')
         .select('*')
-        .or(`product_series.eq.${seriesId},parent_series_id.eq.${seriesId}`)
+        .eq('parent_series_id', seriesId)
         .eq('is_series_parent', false)
         .order('variant_order', { ascending: true });
 
-      if (error) throw error;
+      if (primaryError) throw primaryError;
+
+      let finalData = primaryData || [];
+
+      // If no results and we have a seriesName, try fallback query
+      if (finalData.length === 0 && seriesName) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('product_series', seriesName)
+          .eq('is_series_parent', false)
+          .order('variant_order', { ascending: true });
+
+        if (fallbackError) throw fallbackError;
+        finalData = fallbackData || [];
+      }
 
       // Transform database products to variants - using raw data directly
-      const transformedVariants = (data || []).map(transformToVariant);
+      const transformedVariants = finalData.map(transformToVariant);
       setVariants(transformedVariants);
     } catch (error) {
       console.error('Error fetching variants:', error);

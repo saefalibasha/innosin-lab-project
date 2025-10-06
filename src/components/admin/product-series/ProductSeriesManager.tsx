@@ -287,6 +287,7 @@ export const ProductSeriesManager = () => {
             <EnhancedVariantManager 
               seriesId={selectedSeries.id}
               seriesName={selectedSeries.name}
+              onVariantChange={fetchProductSeries}
             />
           )}
         </DialogContent>

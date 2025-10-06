@@ -60,6 +60,12 @@ export const VariantFormDialog = ({
   })
 
   const onSubmit = useCallback(async (values: z.infer<typeof formSchema>) => {
+    // Block submission if seriesId is invalid
+    if (!seriesId || seriesId === 'undefined') {
+      toast.error('Invalid series ID. Please close and reopen this dialog.');
+      return;
+    }
+
     try {
       if (variant?.id) {
         // UPDATE existing variant
@@ -72,7 +78,10 @@ export const VariantFormDialog = ({
           })
           .eq('id', variant.id);
           
-        if (error) throw error;
+        if (error) {
+          toast.error(`Update failed: ${error.message}`);
+          throw error;
+        }
         toast.success('Variant updated successfully');
       } else {
         // INSERT new variant
@@ -89,7 +98,10 @@ export const VariantFormDialog = ({
             product_series: seriesName,
           });
           
-        if (error) throw error;
+        if (error) {
+          toast.error(`Insert failed: ${error.message}`);
+          throw error;
+        }
         toast.success('Variant created successfully');
       }
       
@@ -97,7 +109,6 @@ export const VariantFormDialog = ({
       onOpenChange(false);
     } catch (error) {
       console.error('Error saving variant:', error);
-      toast.error('Failed to save variant');
     }
   }, [seriesId, seriesName, variant?.id, onVariantSaved, onOpenChange])
 
