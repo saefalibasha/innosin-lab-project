@@ -40,7 +40,7 @@ const ProductModel = ({
     const offsetX = origin?.minX || 0;
     const offsetY = origin?.minY || 0;
     
-    // Direct 2D to 3D mapping - use exact same conversion as walls and floor
+    // CRITICAL: Use product.position directly (already in canvas coordinates)
     const basePos = canvasTo3DWorld({ 
       x: product.position.x - offsetX, 
       y: product.position.y - offsetY 
