@@ -21,8 +21,9 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
   const productId = product.productId || '';
   const name = product.name?.toLowerCase() || '';
   const category = product.category?.toLowerCase() || '';
+  const productSeries = (product as any).product_series?.toLowerCase() || '';
   
-  // Detect series from productId, name, or category for Innosin products
+  // Detect series from productId, name, category, or product_series for Innosin products
   if (productId.includes('mc-pc') || name.includes('mobile cabinet') || category.includes('mobile')) {
     return {
       snapToWalls: true,
@@ -79,8 +80,19 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
     };
   }
   
-  // Worktop detection
-  if (productId.includes('worktop') || name.includes('work top') || name.includes('worktop') || category.includes('worktop')) {
+  // Worktop detection - check multiple fields
+  const isWorktop = 
+    productId.includes('worktop') || 
+    productId.includes('work-top') ||
+    productId.toLowerCase().includes('ep-wt') || // Your specific worktop code
+    name.includes('work top') || 
+    name.includes('worktop') ||
+    category.includes('worktop') ||
+    category.toLowerCase() === 'worktop' ||
+    productSeries.includes('work top') ||
+    productSeries.includes('worktop');
+
+  if (isWorktop) {
     return {
       snapToWalls: false,
       snapToProducts: true,
