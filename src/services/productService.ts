@@ -207,6 +207,7 @@ class ProductService {
         .from('products')
         .select('*')
         .eq('is_series_parent', true)
+        .eq('is_active', true)
         .or(`name.ilike.%${query}%,description.ilike.%${query}%,product_code.ilike.%${query}%,editable_title.ilike.%${query}%,editable_description.ilike.%${query}%,product_series.ilike.%${query}%`)
         .order('series_order');
 
@@ -227,6 +228,7 @@ class ProductService {
         .from('products')
         .select('*')
         .eq('is_series_parent', true)
+        .eq('is_active', true)
         .neq('product_series', 'Safe Aire II Fume Hoods')
         .order('series_order');
 
@@ -266,6 +268,7 @@ class ProductService {
         .from('products')
         .select('company_tags')
         .eq('is_series_parent', true)
+        .eq('is_active', true)
         .not('company_tags', 'is', null);
 
       if (error) throw error;
