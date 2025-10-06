@@ -40,10 +40,10 @@ const ProductModel = ({
     const offsetX = origin?.minX || 0;
     const offsetY = origin?.minY || 0;
     
-    // CRITICAL: Use product.position directly (already in canvas coordinates)
+    // CRITICAL: Negate Y to match floor coordinate system
     const basePos = canvasTo3DWorld({ 
       x: product.position.x - offsetX, 
-      y: product.position.y - offsetY 
+      y: -(product.position.y - offsetY) 
     }, scale);
     
     // Check if this is a wall-mounted product based on name/category
