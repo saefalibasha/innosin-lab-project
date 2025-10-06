@@ -22,7 +22,7 @@ export function findNonOverlappingPosition(
   basePos: { x: number; y: number },
   dimensions: { width: number; length: number },
   existingProducts: PlacedProduct[],
-  padding: number = 10
+  padding: number = 20 // Increased default padding for better spacing
 ): { x: number; y: number } {
   const maxAttempts = 100;
   const stepX = dimensions.width + padding;
@@ -100,7 +100,8 @@ export function findNonOverlappingPosition(
   }
 
   // If all positions are occupied, warn and return base position with an offset
-  console.warn('[placementUtils] Could not find non-overlapping position after', maxAttempts, 'attempts');
+  console.warn('[placementUtils] Could not find non-overlapping position after', maxAttempts, 'attempts. Using fallback position.');
+  console.warn('[placementUtils] Base position:', basePos, 'Dimensions:', dimensions, 'Existing products:', existingProducts.length);
   return {
     x: basePos.x + dimensions.width + padding,
     y: basePos.y + dimensions.length + padding,

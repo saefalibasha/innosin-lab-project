@@ -173,12 +173,16 @@ const EnhancedSeriesSelector: React.FC<EnhancedSeriesSelectorProps> = ({
     const canvasHeight = mmToCanvas(parsedDimensions.depth, roomScale);
     const canvasDepth = mmToCanvas(parsedDimensions.height, roomScale);
 
-    // Find non-overlapping position
+    // Use smarter base position - offset based on existing products
+    const baseX = existingProducts.length > 0 ? 300 : 200;
+    const baseY = existingProducts.length > 0 ? 300 : 200;
+
+    // Find non-overlapping position with improved spacing
     const finalPosition = findNonOverlappingPosition(
-      { x: 100, y: 100 },
+      { x: baseX, y: baseY },
       { width: canvasWidth, length: canvasHeight },
       existingProducts,
-      10
+      20 // Increased padding for better spacing
     );
 
     const placedProduct: PlacedProduct = {

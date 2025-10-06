@@ -851,7 +851,7 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                                 position: worktopData.position || { x: 0, y: 0 },
                                 rotation: worktopData.rotation || 0,
                                 dimensions: worktopData.dimensions || { length: 0, width: 0, height: 0 },
-                                color: worktopData.color || '#8B4513',
+                                color: worktopData.color || '#4A4A4A', // Dark grey worktop default
                               } as PlacedProduct;
                               setPlacedProducts(prev => [...prev, newWorktop]);
                               setSelectedProducts([]);

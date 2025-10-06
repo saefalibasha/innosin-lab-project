@@ -112,11 +112,19 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
         length: worktopDepthMm,
         height: 18,
       },
-      color: '#8B4513',
+      color: '#4A4A4A', // Dark grey worktop
       heightOffset: maxHeight,
       placedOnProductId: cabinets[0].id,
       isWorktop: true,
     };
+
+    console.log('[AddWorktopButton] Created worktop:', {
+      dimensions: { widthMm: worktopWidthMm, depthMm: worktopDepthMm },
+      position: { x: centerX, y: centerY },
+      cabinets: cabinets.length,
+      cabinetBounds: { minX, maxX, minY, maxY },
+      overhang: OVERHANG_MM
+    });
 
     onAddWorktop(worktopData);
     toast.success(`Worktop added spanning ${cabinets.length} cabinet${cabinets.length > 1 ? 's' : ''}`);

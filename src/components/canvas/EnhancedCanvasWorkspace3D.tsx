@@ -225,8 +225,15 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           canvasPos,
           { width: productWidthPx, length: productDepthPx },
           placedProducts,
-          10
+          20 // Increased padding for better spacing
         );
+
+        console.log('[3D Drop] Position calculation:', {
+          originalDrop: canvasPos,
+          finalPosition,
+          dimensions: { width: productWidthPx, length: productDepthPx },
+          existingCount: placedProducts.length
+        });
 
         const newProduct: PlacedProduct = {
           id: `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
