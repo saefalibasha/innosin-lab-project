@@ -9,6 +9,9 @@ interface ProductBehavior {
   defaultMountHeight: number; // in mm
   series: string;
   category: string;
+  canBePlacedOnTop?: boolean; // For worktops
+  requiresBaseProduct?: boolean; // Worktops need a base
+  canSupportWorktop?: boolean; // For base cabinets that can support worktops
 }
 
 /**
@@ -28,6 +31,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
       canMountOnWall: false,
       allowStacking: false,
       defaultMountHeight: 0,
+      canSupportWorktop: true,
       series: 'mobile-cabinet',
       category: 'mobile'
     };
@@ -41,6 +45,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
       canMountOnWall: false,
       allowStacking: true,
       defaultMountHeight: 0,
+      canSupportWorktop: true,
       series: 'modular-cabinet',
       category: 'modular'
     };
@@ -54,6 +59,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
       canMountOnWall: true,
       allowStacking: false,
       defaultMountHeight: 1200,
+      canSupportWorktop: false,
       series: 'wall-cabinet',
       category: 'wall'
     };
@@ -67,12 +73,29 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
       canMountOnWall: false,
       allowStacking: false,
       defaultMountHeight: 0,
+      canSupportWorktop: false,
       series: 'tall-cabinet',
       category: 'tall'
     };
   }
   
-  // Default behavior for unknown products
+  // Worktop detection
+  if (productId.includes('worktop') || name.includes('work top') || name.includes('worktop') || category.includes('worktop')) {
+    return {
+      snapToWalls: false,
+      snapToProducts: true,
+      snapToFloor: false,
+      canMountOnWall: false,
+      allowStacking: false,
+      canBePlacedOnTop: true,
+      requiresBaseProduct: true,
+      defaultMountHeight: 850, // Height of typical base cabinet
+      series: 'worktop',
+      category: 'worktop'
+    };
+  }
+  
+  // Default behavior for unknown products (can support worktops if floor-based)
   return {
     snapToWalls: true,
     snapToProducts: true,
@@ -80,6 +103,7 @@ export function getProductBehavior(product: PlacedProduct): ProductBehavior {
     canMountOnWall: false,
     allowStacking: false,
     defaultMountHeight: 0,
+    canSupportWorktop: true,
     series: 'unknown',
     category: 'general'
   };

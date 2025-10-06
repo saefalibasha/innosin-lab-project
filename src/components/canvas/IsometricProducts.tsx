@@ -47,20 +47,29 @@ const ProductModel = ({
     // Check if this is a wall-mounted product based on name/category
     const isWallMounted = product.name?.toLowerCase().includes('wall') || 
                          product.category?.toLowerCase().includes('wall');
-    // Floor products: y slightly above floor to avoid z-fighting; wall-mounted at ~1.5m
-    const groundEpsilon = 0.002; // meters (~2mm) - reduced to minimize visual overlap
-    const yBase = isWallMounted ? 1.5 : groundEpsilon;
+    
+    // Check if product has custom height offset (for worktops)
+    let yBase: number;
+    if (product.heightOffset !== undefined && product.heightOffset !== null) {
+      // Convert height offset from mm to meters
+      yBase = product.heightOffset * 0.001;
+    } else if (isWallMounted) {
+      yBase = 1.5; // Wall-mounted at ~1.5m
+    } else {
+      yBase = 0.002; // Floor products: slightly above floor to avoid z-fighting
+    }
     
     console.debug('[IsometricProducts] Product positioning (origin-aware):', {
       productId: product.id,
       name: product.name,
       canvasPos2D: product.position,
+      heightOffset: product.heightOffset,
       finalPos3D: [basePos[0], yBase, basePos[2]],
       origin: { offsetX, offsetY }
     });
     
     return [basePos[0], yBase, basePos[2]] as [number, number, number];
-  }, [product.position, product.name, product.category, scale, origin]);
+  }, [product.position, product.name, product.category, product.heightOffset, scale, origin]);
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {

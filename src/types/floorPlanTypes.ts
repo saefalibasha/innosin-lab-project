@@ -35,6 +35,9 @@ export interface PlacedProduct {
   specifications?: string[];
   finishes?: ProductFinish[];
   variants?: ProductVariant[];
+  heightOffset?: number; // Y-position offset in mm (for worktops on cabinets)
+  placedOnProductId?: string; // ID of product this is placed on top of
+  isWorktop?: boolean; // Identifies worktop products
 }
 
 export interface ProductFinish {

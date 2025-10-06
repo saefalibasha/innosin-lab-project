@@ -1,13 +1,16 @@
 import { useState, useCallback } from 'react';
 import { PlacedProduct, WallSegment } from '@/types/floorPlanTypes';
 import { canvasTo3DWorld, worldTo2DCanvas } from '@/utils/coordinateUtils';
+import { getProductBehavior } from '@/utils/productBehaviors';
+import { findCabinetsUnderWorktop, calculateWorktopHeightOffset } from '@/utils/worktopUtils';
 import * as THREE from 'three';
 
 interface Enhanced3DSnapResult {
   snapped: boolean;
   position: [number, number, number];
-  snapType: 'wall' | 'product' | 'grid' | 'none';
+  snapType: 'wall' | 'product' | 'grid' | 'top-surface' | 'none';
   confidence: number;
+  targetProduct?: PlacedProduct;
 }
 
 interface SnapGuide3D {
@@ -131,12 +134,71 @@ export const useEnhanced3DSnapping = (
     return bestSnap;
   }, [scale]);
 
+  const snapToTopSurface = useCallback((
+    position3D: [number, number, number],
+    draggedProduct: PlacedProduct,
+    products: PlacedProduct[]
+  ): Enhanced3DSnapResult => {
+    const behavior = getProductBehavior(draggedProduct);
+    
+    // Only snap to top surface for worktops
+    if (!behavior.canBePlacedOnTop) {
+      return { snapped: false, position: position3D, snapType: 'none', confidence: 0 };
+    }
+
+    const SURFACE_SNAP_DISTANCE = 0.3; // 30cm horizontal snap distance
+    let bestSnap: Enhanced3DSnapResult = { snapped: false, position: position3D, snapType: 'none', confidence: 0 };
+
+    // Convert 3D position back to 2D canvas coordinates to find cabinets underneath
+    const canvas2D = worldTo2DCanvas(position3D[0], position3D[2], scale);
+    const cabinets = findCabinetsUnderWorktop(
+      canvas2D,
+      { 
+        length: draggedProduct.dimensions?.length || 600,
+        width: draggedProduct.dimensions?.width || 600 
+      },
+      products
+    );
+
+    if (cabinets.length > 0) {
+      // Calculate height offset (top surface of tallest cabinet)
+      const heightOffsetMm = calculateWorktopHeightOffset(cabinets);
+      const heightOffsetM = heightOffsetMm * 0.001; // Convert to meters
+
+      // Find center position of the cabinet row
+      const avgX = cabinets.reduce((sum, c) => sum + c.position.x, 0) / cabinets.length;
+      const avgY = cabinets.reduce((sum, c) => sum + c.position.y, 0) / cabinets.length;
+      
+      const targetCanvas2D = { x: avgX, y: avgY };
+      const target3D = canvasTo3DWorld(targetCanvas2D, scale);
+
+      const horizontalDistance = Math.sqrt(
+        Math.pow(position3D[0] - target3D[0], 2) +
+        Math.pow(position3D[2] - target3D[2], 2)
+      );
+
+      if (horizontalDistance < SURFACE_SNAP_DISTANCE) {
+        const confidence = 1 - (horizontalDistance / SURFACE_SNAP_DISTANCE);
+        bestSnap = {
+          snapped: true,
+          position: [target3D[0], heightOffsetM, target3D[2]],
+          snapType: 'top-surface',
+          confidence,
+          targetProduct: cabinets[0]
+        };
+      }
+    }
+
+    return bestSnap;
+  }, [scale]);
+
   const snapToPosition = useCallback((
     position3D: [number, number, number],
     draggedProduct: PlacedProduct,
     allowedSnapTypes: string[] = ['product', 'grid']
   ): Enhanced3DSnapResult => {
     const SNAP_DISTANCE = 0.2; // 20cm - tighter for precise alignment
+    const behavior = getProductBehavior(draggedProduct);
 
     let bestSnap: Enhanced3DSnapResult = {
       snapped: false,
@@ -145,8 +207,16 @@ export const useEnhanced3DSnapping = (
       confidence: 0,
     };
 
-    // Product snapping
-    if (allowedSnapTypes.includes('product')) {
+    // Top surface snapping for worktops (highest priority)
+    if (behavior.canBePlacedOnTop && allowedSnapTypes.includes('product')) {
+      const topSurfaceSnap = snapToTopSurface(position3D, draggedProduct, placedProducts);
+      if (topSurfaceSnap.snapped && topSurfaceSnap.confidence > bestSnap.confidence) {
+        bestSnap = topSurfaceSnap;
+      }
+    }
+
+    // Product edge snapping (for non-worktop products or if no surface snap)
+    if (!bestSnap.snapped && allowedSnapTypes.includes('product') && !behavior.canBePlacedOnTop) {
       const productSnap = snapToProducts(position3D, draggedProduct, placedProducts);
       if (productSnap.snapped && productSnap.confidence > bestSnap.confidence) {
         bestSnap = {
@@ -181,7 +251,7 @@ export const useEnhanced3DSnapping = (
     }
 
     return bestSnap;
-  }, [placedProducts, snapToProducts]);
+  }, [placedProducts, snapToProducts, snapToTopSurface]);
 
   const updateSnapGuides = useCallback((snapResult: Enhanced3DSnapResult) => {
     const guides: SnapGuide3D[] = [];
@@ -193,6 +263,14 @@ export const useEnhanced3DSnapping = (
             position: [snapResult.position[0], 0.1, snapResult.position[2]], 
             color: '#4ecdc4', 
             opacity: 0.9 
+          });
+          break;
+        case 'top-surface':
+          guides.push({ 
+            type: 'surface', 
+            position: snapResult.position, 
+            color: '#22c55e', 
+            opacity: 0.8 
           });
           break;
         case 'grid':
