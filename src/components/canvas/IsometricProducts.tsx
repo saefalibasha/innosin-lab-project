@@ -160,8 +160,16 @@ const ProductGLTF = ({
   useEffect(() => {
     if (!gltf || !groupRef.current) return;
 
-    // Compute current model bounds BEFORE any transformations
-    const box = new Box3().setFromObject(gltf.scene);
+    const scene = gltf.scene;
+
+    // Reset transforms to measure clean bounds
+    scene.position.set(0, 0, 0);
+    scene.rotation.set(0, 0, 0);
+    scene.scale.set(1, 1, 1);
+    scene.updateMatrixWorld(true);
+
+    // Compute current model bounds BEFORE scaling
+    const box = new Box3().setFromObject(scene);
     const size = box.getSize(new Vector3());
     const center = box.getCenter(new Vector3());
 
@@ -178,18 +186,20 @@ const ProductGLTF = ({
       return;
     }
 
-    // Center horizontally (x) and depth (z), and place bottom on floor (y)
-    // Use -center.x and -center.z to center the model, and -box.min.y to sit bottom at y=0
-    gltf.scene.position.set(-center.x, -box.min.y, -center.z);
-
     // Scale to match target physical dimensions
     const [tx, ty, tz] = targetSize;
     const sx = size.x > 0 ? tx / size.x : 1;
     const sy = size.y > 0 ? ty / size.y : 1;
     const sz = size.z > 0 ? tz / size.z : 1;
-    gltf.scene.scale.set(sx, sy, sz);
+    scene.scale.set(sx, sy, sz);
+    scene.updateMatrixWorld(true);
 
-    console.debug('[ProductGLTF] Transformed:', {
+    // Recompute bounds AFTER scaling, then center and sit on floor
+    const scaledBox = new Box3().setFromObject(scene);
+    const scaledCenter = scaledBox.getCenter(new Vector3());
+    scene.position.set(-scaledCenter.x, -scaledBox.min.y, -scaledCenter.z);
+
+    console.debug('[ProductGLTF] Transformed (scaled + centered):', {
       modelPath: modelPath.split('/').pop(),
       scale: { x: sx, y: sy, z: sz },
       targetSize
