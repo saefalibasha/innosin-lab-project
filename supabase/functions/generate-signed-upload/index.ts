@@ -12,10 +12,17 @@ serve(async (req) => {
   }
 
   try {
+    // Get authorization header and set it on the client so RPCs use the JWT
+    const authHeader = req.headers.get('Authorization') || '';
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: 'No authorization header' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 });
+    }
+
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
+        global: { headers: { Authorization: authHeader } },
         auth: {
           persistSession: false,
           autoRefreshToken: false,
@@ -23,16 +30,10 @@ serve(async (req) => {
       }
     );
 
-    // Get authorization header
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
     // Verify user session
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
 
     if (authError || !user) {
       throw new Error('Unauthorized');
@@ -63,10 +64,22 @@ serve(async (req) => {
       throw new Error('Invalid upload path');
     }
 
-    // Create signed upload URL (valid for 5 minutes)
-    const { data, error } = await supabase.storage
+    // Create signed upload URL (valid for 5 minutes) using service role to bypass RLS after our own checks
+    const adminClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+      }
+    );
+
+    const { data, error } = await adminClient.storage
       .from(bucket)
       .createSignedUploadUrl(filePath);
+
 
     if (error) {
       console.error('Error creating signed URL:', error);
