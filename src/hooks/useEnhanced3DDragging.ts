@@ -143,9 +143,11 @@ export const useEnhanced3DDragging = (
       onProductUpdate(dragState.draggedProduct.id, updates);
 
       console.debug('[useEnhanced3DDragging] Drop completed:', {
+        productId: dragState.draggedProduct.id,
         worldPos: finalPos,
         canvasPos: canvasPosition,
-        heightOffset: updates.heightOffset
+        heightOffset: updates.heightOffset,
+        originalStoredPos: dragState.draggedProduct.position
       });
     }
 

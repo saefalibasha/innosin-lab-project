@@ -39,6 +39,8 @@ const ProductModel = ({
     // Apply origin offset for coordinate consistency
     const offsetX = origin?.minX || 0;
     const offsetY = origin?.minY || 0;
+    
+    // CRITICAL: Use product.position directly (already in canvas coordinates)
     const basePos = canvasTo3DWorld({ 
       x: product.position.x - offsetX, 
       y: product.position.y - offsetY 
@@ -59,17 +61,19 @@ const ProductModel = ({
       yBase = 0.002; // Floor products: slightly above floor to avoid z-fighting
     }
     
-    console.debug('[IsometricProducts] Product positioning (origin-aware):', {
+    const result = [basePos[0], yBase, basePos[2]] as [number, number, number];
+    
+    console.debug('[IsometricProducts] Product positioning:', {
       productId: product.id,
       name: product.name,
-      canvasPos2D: product.position,
-      heightOffset: product.heightOffset,
-      finalPos3D: [basePos[0], yBase, basePos[2]],
-      origin: { offsetX, offsetY }
+      storedPosition: product.position,
+      offsetApplied: { offsetX, offsetY },
+      position3D: result,
+      heightOffset: product.heightOffset
     });
     
-    return [basePos[0], yBase, basePos[2]] as [number, number, number];
-  }, [product.position, product.name, product.category, product.heightOffset, scale, origin]);
+    return result;
+  }, [product.position, product.name, product.category, product.heightOffset, scale, origin, product.id]);
 
   // Convert dimensions to real-world units with accurate product dimensions
   const targetDimensions = useMemo(() => {
