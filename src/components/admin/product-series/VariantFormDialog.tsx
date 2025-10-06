@@ -21,7 +21,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from '@/components/ui/label';
-import { FileUploadManager } from '@/components/admin/FileUploadManager';
+import { StreamlinedFileUpload } from '@/components/admin/StreamlinedFileUpload';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -166,15 +167,23 @@ export const VariantFormDialog = ({
 
             <div className="space-y-4">
               <Label>Upload Assets</Label>
-              <FileUploadManager
-                productId={seriesId}
-                variantCode={variantCode}
-                allowedTypes={['.glb', '.jpg', '.jpeg', '.png']}
-                maxFiles={10}
-                onUploadSuccess={(files) => {
-                  console.log('Files uploaded for variant:', files);
-                }}
-              />
+              {variant?.id ? (
+                <StreamlinedFileUpload
+                  productId={variant.id}
+                  variantCode={form.getValues('variant_code') || variant.product_code || ''}
+                  onUploadSuccess={() => {
+                    toast.success('Assets uploaded');
+                    onVariantSaved();
+                  }}
+                />
+              ) : (
+                <Alert>
+                  <AlertTitle>Save variant first</AlertTitle>
+                  <AlertDescription>
+                    Create the variant to get its ID, then upload images and 3D models. You can also manage assets from the Manage Variants screen.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <div className="flex justify-end">

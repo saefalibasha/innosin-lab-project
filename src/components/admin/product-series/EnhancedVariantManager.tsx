@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight, Image, Box } from 'lucide-react';
+import { Trash2, Edit, Plus, Eye, Search, ToggleLeft, ToggleRight, Image, Box, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Variant } from '@/types/variant';
