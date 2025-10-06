@@ -225,7 +225,7 @@ const ProductGLTF = ({
     <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
-        <mesh>
+        <mesh position={[0, targetSize[1] / 2, 0]}>
           <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
           <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
         </mesh>
