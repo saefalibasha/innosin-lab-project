@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -153,7 +154,7 @@ const RFQCart = () => {
                       <ShoppingCart className="w-16 h-16 text-muted-foreground mx-auto mb-4 animate-float" />
                       <p className="text-lg text-muted-foreground mb-4">Your cart is empty</p>
                       <Button asChild variant="heroSolid" className="animate-scale-in">
-                        <a href="/products">Browse Products</a>
+                        <Link to="/products">Browse Products</Link>
                       </Button>
                     </div>
                   ) : (

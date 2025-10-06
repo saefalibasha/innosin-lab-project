@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart } from 'lucide-react';
 import AnimatedSection from '@/components/AnimatedSection';
@@ -18,7 +19,7 @@ const QuoteCartSummary: React.FC<QuoteCartSummaryProps> = ({ itemCount }) => {
           <ShoppingCart className="w-5 h-5 text-sea" />
           <span>{itemCount} items in quote</span>
           <Button size="sm" variant="secondary" asChild>
-            <a href="/rfq-cart">View Cart</a>
+            <Link to="/rfq-cart">View Cart</Link>
           </Button>
         </div>
       </div>

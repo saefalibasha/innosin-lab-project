@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -224,9 +225,9 @@ const ShopLookContentEditor: React.FC = () => {
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           Admin authentication required to manage Shop The Look content. Please go to{" "}
-          <a href="/admin/auth" className="underline text-blue-600">
+          <Link to="/admin/auth" className="underline text-blue-600">
             Admin Login
-          </a>{" "}
+          </Link>{" "}
           to authenticate.
         </AlertDescription>
       </Alert>
