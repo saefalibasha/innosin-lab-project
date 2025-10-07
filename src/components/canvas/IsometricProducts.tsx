@@ -96,9 +96,15 @@ const ProductModel = ({
     };
   }, [product.originalDimensions, product.dimensions, scale]);
 
-  // Rotation is stored in radians consistently across 2D and 3D
-  const rotationRad = product.rotation || 0;
+  // CRITICAL: Rotation is stored in degrees, must convert to radians for Three.js
+  const rotationRad = THREE.MathUtils.degToRad(product.rotation || 0);
   const rotation: [number, number, number] = [0, rotationRad, 0];
+  
+  console.debug('[ProductModel] Rotation conversion:', {
+    productId: product.id,
+    rotationDegrees: product.rotation,
+    rotationRadians: rotationRad
+  });
 
   // Physical size in meters
   const lengthM = targetDimensions.depth;

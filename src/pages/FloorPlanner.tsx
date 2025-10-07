@@ -832,8 +832,56 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                       <div className="space-y-2">
                         <h3 className="text-sm font-medium">View Controls</h3>
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm">Reset View</Button>
-                          <Button variant="outline" size="sm">Fit to View</Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const camera = (window as any).__threeCamera;
+                              const controls = (window as any).__threeControls;
+                              if (camera && controls) {
+                                camera.position.set(20, 20, 20);
+                                controls.target.set(0, 0, 0);
+                                controls.update();
+                                toast.success('View reset');
+                              }
+                            }}
+                          >
+                            <Home className="h-4 w-4 mr-2" />
+                            Reset View
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const camera = (window as any).__threeCamera;
+                              const controls = (window as any).__threeControls;
+                              if (camera && controls && placedProducts.length > 0) {
+                                // Calculate bounds of all products
+                                let minX = Infinity, minZ = Infinity, maxX = -Infinity, maxZ = -Infinity;
+                                placedProducts.forEach(p => {
+                                  minX = Math.min(minX, p.position.x);
+                                  minZ = Math.min(minZ, p.position.y);
+                                  maxX = Math.max(maxX, p.position.x);
+                                  maxZ = Math.max(maxZ, p.position.y);
+                                });
+                                
+                                const centerX = (minX + maxX) / 2;
+                                const centerZ = (minZ + maxZ) / 2;
+                                const rangeX = maxX - minX;
+                                const rangeZ = maxZ - minZ;
+                                const maxRange = Math.max(rangeX, rangeZ);
+                                const distance = maxRange * 0.8 + 15;
+                                
+                                camera.position.set(centerX + distance, distance, centerZ + distance);
+                                controls.target.set(centerX, 0, centerZ);
+                                controls.update();
+                                toast.success('View fitted to content');
+                              }
+                            }}
+                          >
+                            <Maximize2 className="h-4 w-4 mr-2" />
+                            Fit to View
+                          </Button>
                         </div>
                       </div>
                       
@@ -864,7 +912,63 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                             disabled={selectedProducts.length === 0}
                             onClick={handleRotateSelected}
                           >
-                            Rotate Selected
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Rotate
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={selectedProducts.length < 2}
+                            onClick={() => {
+                              // Align Z-axis of all selected products to the first one
+                              if (selectedProducts.length < 2) return;
+                              const firstProduct = placedProducts.find(p => p.id === selectedProducts[0]);
+                              if (!firstProduct) return;
+                              
+                              setPlacedProducts(prev => prev.map(product => {
+                                if (selectedProducts.includes(product.id) && product.id !== selectedProducts[0]) {
+                                  return { ...product, position: { ...product.position, y: firstProduct.position.y } };
+                                }
+                                return product;
+                              }));
+                              toast.success(`Aligned ${selectedProducts.length} products`);
+                            }}
+                          >
+                            Align Edges
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            disabled={selectedProducts.length === 0}
+                            onClick={() => {
+                              const { calculateWallMountTransform, isWallMountable } = require('@/utils/wallMountUtils');
+                              
+                              let mountedCount = 0;
+                              setPlacedProducts(prev => prev.map(product => {
+                                if (!selectedProducts.includes(product.id)) return product;
+                                if (!isWallMountable(product)) return product;
+                                
+                                const transform = calculateWallMountTransform(product, wallSegments, 1500);
+                                if (transform) {
+                                  mountedCount++;
+                                  return {
+                                    ...product,
+                                    position: transform.position,
+                                    rotation: transform.rotation,
+                                    heightOffset: transform.heightOffset
+                                  };
+                                }
+                                return product;
+                              }));
+                              
+                              if (mountedCount > 0) {
+                                toast.success(`Mounted ${mountedCount} product(s) to wall`);
+                              } else {
+                                toast.info('No wall-mountable products selected or walls too far');
+                              }
+                            }}
+                          >
+                            Mount to Wall
                           </Button>
                           <Button 
                             variant="outline" 
@@ -872,7 +976,8 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                             disabled={selectedProducts.length === 0}
                             onClick={handleDeleteSelected}
                           >
-                            Delete Selected
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
                           </Button>
                         </div>
                       </div>

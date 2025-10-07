@@ -29,16 +29,20 @@ interface IsometricFloorPlanSceneProps {
   onDoorClick?: (doorId: string) => void;
 }
 
-function CameraExporter() {
+function CameraExporter({ controlsRef }: { controlsRef: React.RefObject<any> }) {
   const { camera } = useThree();
   useEffect(() => {
     (window as any).__threeCamera = camera;
+    (window as any).__threeControls = controlsRef.current;
     return () => {
       if ((window as any).__threeCamera === camera) {
         delete (window as any).__threeCamera;
       }
+      if ((window as any).__threeControls === controlsRef.current) {
+        delete (window as any).__threeControls;
+      }
     };
-  }, [camera]);
+  }, [camera, controlsRef]);
   return null;
 }
 
@@ -58,7 +62,8 @@ const IsometricScene = ({
   origin,
   selectedDoorId,
   onDoorClick,
-}: IsometricFloorPlanSceneProps) => {
+  controlsRef,
+}: IsometricFloorPlanSceneProps & { controlsRef: React.RefObject<any> }) => {
   const groupRef = useRef<Group>(null);
 
   // Calculate bounds and center for proper alignment using consistent coordinate transformation
@@ -166,11 +171,13 @@ const IsometricScene = ({
 };
 
 const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) => {
+  const controlsRef = useRef<any>(null);
+
   return (
     <div className="w-full h-full">
       <Canvas shadows gl={{ toneMapping: 3, toneMappingExposure: 1.2, outputColorSpace: 'srgb', antialias: true }} style={{ background: 'transparent' }}>
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
-        <CameraExporter />
+        <CameraExporter controlsRef={controlsRef} />
 
         {/* Enhanced Lighting */}
         <ambientLight intensity={0.7} />
@@ -179,10 +186,10 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
         <directionalLight position={[-10, 10, -5]} intensity={0.4} />
 
         {/* Controls */}
-        <OrbitControls enablePan enableZoom enableRotate minDistance={2} maxDistance={100} enableDamping dampingFactor={0.05} />
+        <OrbitControls ref={controlsRef} enablePan enableZoom enableRotate minDistance={2} maxDistance={100} enableDamping dampingFactor={0.05} />
 
         {/* Main scene */}
-        <IsometricScene {...props} />
+        <IsometricScene {...props} controlsRef={controlsRef} />
       </Canvas>
     </div>
   );
