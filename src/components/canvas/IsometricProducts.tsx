@@ -32,7 +32,13 @@ const ProductModel = ({
 }) => {
   const meshRef = useRef<Mesh>(null);
 
-  // Click handling disabled in 3D view
+  // Handle product click
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (onProductClick) {
+      onProductClick(product.id);
+    }
+  };
 
   // Calculate final position and scale with proper dimensions
   const finalPosition = useMemo(() => {
@@ -108,6 +114,7 @@ const ProductModel = ({
       castShadow
       name="product"
       userData={{ productId: product.id }}
+      onClick={handleClick}
     >
       <boxGeometry args={[lengthM, heightM, widthM]} />
       <meshLambertMaterial color={isSelected ? '#ff6b6b' : product.color || '#8b5cf6'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
@@ -130,6 +137,7 @@ const ProductModel = ({
           position={finalPosition}
           rotation={rotation}
           isSelected={isSelected}
+          onProductClick={onProductClick}
         />
       </Suspense>
     );
@@ -145,6 +153,7 @@ const ProductGLTF = ({
   position,
   rotation,
   isSelected,
+  onProductClick,
 }: {
   modelPath: string;
   productId: string;
@@ -152,10 +161,19 @@ const ProductGLTF = ({
   position: [number, number, number];
   rotation: [number, number, number];
   isSelected: boolean;
+  onProductClick?: (productId: string) => void;
 }) => {
   const groupRef = useRef<Group>(null);
   const gltf = useLoader(GLTFLoader, modelPath);
   const [useFallback, setUseFallback] = React.useState(false);
+
+  // Handle product click
+  const handleClick = (e: any) => {
+    e.stopPropagation();
+    if (onProductClick) {
+      onProductClick(productId);
+    }
+  };
 
   useEffect(() => {
     if (!gltf || !groupRef.current) return;
@@ -216,7 +234,7 @@ const ProductGLTF = ({
   if (useFallback) {
     const halfHeight = targetSize[1] / 2;
     return (
-      <group position={position} rotation={rotation} name="product" userData={{ productId }}>
+      <group position={position} rotation={rotation} name="product" userData={{ productId }} onClick={handleClick}>
         <mesh position={[0, halfHeight, 0]} castShadow receiveShadow userData={{ productId }}>
           <boxGeometry args={targetSize} />
           <meshLambertMaterial color={isSelected ? '#ff6b6b' : '#cccccc'} transparent={isSelected} opacity={isSelected ? 0.8 : 1} />
@@ -232,7 +250,7 @@ const ProductGLTF = ({
   }
 
   return (
-    <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }}>
+    <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }} onClick={handleClick}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
         <mesh position={[0, targetSize[1] / 2, 0]}>
