@@ -52,31 +52,56 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
   }, [selectedProducts, allProducts]);
 
   const handleAddWorktop = () => {
-    const cabinets = selectedProducts
+    // Gather selected products and filter to valid base cabinets that can support a worktop
+    const selected = selectedProducts
       .map(id => allProducts.find(p => p.id === id))
       .filter((p): p is PlacedProduct => p !== undefined);
 
-    if (cabinets.length === 0) {
-      toast.error('No cabinets selected');
+    // Filter: must support worktop, not wall-mounted, not an existing worktop
+    const baseCabinets = selected.filter(p => {
+      const behavior = getProductBehavior(p);
+      return behavior.canSupportWorktop && !behavior.canMountOnWall && !p.isWorktop;
+    });
+
+    if (baseCabinets.length === 0) {
+      toast.error('Select at least one base cabinet that supports a worktop');
       return;
     }
 
-    // Calculate bounding box of all selected cabinets
+    // Calculate bounding box of all valid cabinets, respecting rotation (90° swaps width/depth)
     let minX = Infinity, maxX = -Infinity;
     let minY = Infinity, maxY = -Infinity;
     let maxHeight = 0;
 
-    cabinets.forEach(cabinet => {
-      const widthPx = cabinet.dimensions.width || 0;
-      const depthPx = cabinet.dimensions.length || 0;
+    const toDegrees = (val: number) => (Math.abs(val) <= Math.PI * 2 ? (val * 180) / Math.PI : val);
+    const isNearRightAngle = (deg: number) => {
+      const norm = ((deg % 360) + 360) % 360;
+      const delta = Math.abs((norm % 180) - 90);
+      return delta < 5; // within 5 degrees of 90/270
+    };
+
+    baseCabinets.forEach(cabinet => {
+      let widthPx = cabinet.dimensions.width || 0;
+      let depthPx = cabinet.dimensions.length || 0;
       const heightMm = cabinet.originalDimensions?.height || 850;
 
-      console.log('[AddWorktopButton] Cabinet dimensions:', {
+      const rotDeg = toDegrees(cabinet.rotation || 0);
+      const swapped = isNearRightAngle(rotDeg);
+      if (swapped) {
+        const tmp = widthPx;
+        widthPx = depthPx;
+        depthPx = tmp;
+      }
+
+      console.log('[AddWorktopButton] Cabinet bbox contribution:', {
         id: cabinet.id,
         name: cabinet.name,
         position: cabinet.position,
         dimensions: cabinet.dimensions,
-        originalDimensions: cabinet.originalDimensions
+        originalDimensions: cabinet.originalDimensions,
+        rotation: cabinet.rotation,
+        rotDeg,
+        swapped
       });
 
       const left = cabinet.position.x - widthPx / 2;
@@ -125,20 +150,20 @@ export const AddWorktopButton: React.FC<AddWorktopButtonProps> = ({
       },
       color: '#4A4A4A', // Dark grey worktop
       heightOffset: maxHeight,
-      placedOnProductId: cabinets[0].id,
+      placedOnProductId: baseCabinets[0].id,
       isWorktop: true,
     };
 
     console.log('[AddWorktopButton] Created worktop:', {
       dimensions: { widthMm: worktopWidthMm, depthMm: worktopDepthMm },
       position: { x: centerX, y: centerY },
-      cabinets: cabinets.length,
+      cabinets: baseCabinets.length,
       cabinetBounds: { minX, maxX, minY, maxY },
       overhang: OVERHANG_MM
     });
 
     onAddWorktop(worktopData);
-    toast.success(`Worktop added spanning ${cabinets.length} cabinet${cabinets.length > 1 ? 's' : ''}`);
+    toast.success(`Worktop added spanning ${baseCabinets.length} cabinet${baseCabinets.length > 1 ? 's' : ''}`);
   };
 
   // Always render the button; disable when not applicable so users can discover it

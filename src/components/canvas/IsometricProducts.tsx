@@ -77,12 +77,9 @@ const ProductModel = ({
       // Convert height offset from mm to meters
       const heightOffsetM = product.heightOffset * 0.001;
       
-      // If it's a worktop, add half its height to center it properly on top of the cabinet
-      if (product.isWorktop) {
-        yBase = heightOffsetM + (targetDimensions.height / 2);
-      } else {
-        yBase = heightOffsetM;
-      }
+      // IMPORTANT: finalPosition.y must be the object's bottom for ALL products
+      // Worktops previously added +halfHeight here, causing mismatch with overlay
+      yBase = heightOffsetM;
     } else if (isWallMounted) {
       yBase = 1.5; // Wall-mounted at ~1.5m
     } else {
