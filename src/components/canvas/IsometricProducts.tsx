@@ -179,6 +179,7 @@ const ProductGLTF = ({
   const groupRef = useRef<Group>(null);
   const gltf = useLoader(GLTFLoader, modelPath);
   const [useFallback, setUseFallback] = React.useState(false);
+  const [overlaySize, setOverlaySize] = React.useState<[number, number, number] | null>(null);
 
   // Handle product click
   const handleClick = (e: any) => {
@@ -214,6 +215,7 @@ const ProductGLTF = ({
     if (size.x < MIN_VALID_SIZE || size.y < MIN_VALID_SIZE || size.z < MIN_VALID_SIZE) {
       console.warn('[ProductGLTF] Degenerate model detected, using fallback proxy:', modelPath);
       setUseFallback(true);
+      setOverlaySize(null);
       return;
     }
 
@@ -227,13 +229,18 @@ const ProductGLTF = ({
 
     // Recompute bounds AFTER scaling, then center and sit on floor
     const scaledBox = new Box3().setFromObject(scene);
+    const scaledSize = scaledBox.getSize(new Vector3());
     const scaledCenter = scaledBox.getCenter(new Vector3());
     scene.position.set(-scaledCenter.x, -scaledBox.min.y, -scaledCenter.z);
+
+    // Store overlay size based on ACTUAL transformed bounds to guarantee alignment
+    setOverlaySize([scaledSize.x, scaledSize.y, scaledSize.z]);
 
     console.debug('[ProductGLTF] Transformed (scaled + centered):', {
       modelPath: modelPath.split('/').pop(),
       scale: { x: sx, y: sy, z: sz },
-      targetSize
+      targetSize,
+      computedSize: { x: scaledSize.x, y: scaledSize.y, z: scaledSize.z }
     });
 
     // Add productId to all children for raycasting
@@ -266,10 +273,17 @@ const ProductGLTF = ({
     <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }} onClick={handleClick}>
       <primitive object={gltf.scene} castShadow receiveShadow />
       {isSelected && (
-        <mesh position={[0, targetSize[1] / 2, 0]}>
-          <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
-          <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
-        </mesh>
+        overlaySize ? (
+          <lineSegments position={[0, overlaySize[1] / 2, 0]}>
+            <edgesGeometry args={[new THREE.BoxGeometry(overlaySize[0], overlaySize[1], overlaySize[2])]} />
+            <lineBasicMaterial color="#ff0000" linewidth={2} />
+          </lineSegments>
+        ) : (
+          <mesh position={[0, targetSize[1] / 2, 0]}>
+            <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
+            <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
+          </mesh>
+        )
       )}
     </group>
   );
