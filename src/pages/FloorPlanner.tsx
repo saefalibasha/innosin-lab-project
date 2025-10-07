@@ -940,40 +940,6 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                             variant="outline" 
                             size="sm" 
                             disabled={selectedProducts.length === 0}
-                            onClick={() => {
-                              const { calculateWallMountTransform, isWallMountable } = require('@/utils/wallMountUtils');
-                              
-                              let mountedCount = 0;
-                              setPlacedProducts(prev => prev.map(product => {
-                                if (!selectedProducts.includes(product.id)) return product;
-                                if (!isWallMountable(product)) return product;
-                                
-                                const transform = calculateWallMountTransform(product, wallSegments, 1500);
-                                if (transform) {
-                                  mountedCount++;
-                                  return {
-                                    ...product,
-                                    position: transform.position,
-                                    rotation: transform.rotation,
-                                    heightOffset: transform.heightOffset
-                                  };
-                                }
-                                return product;
-                              }));
-                              
-                              if (mountedCount > 0) {
-                                toast.success(`Mounted ${mountedCount} product(s) to wall`);
-                              } else {
-                                toast.info('No wall-mountable products selected or walls too far');
-                              }
-                            }}
-                          >
-                            Mount to Wall
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            disabled={selectedProducts.length === 0}
                             onClick={handleDeleteSelected}
                           >
                             <Trash2 className="h-4 w-4 mr-2" />

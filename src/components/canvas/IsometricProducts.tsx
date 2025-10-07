@@ -60,7 +60,14 @@ const ProductModel = ({
     let yBase: number;
     if (product.heightOffset !== undefined && product.heightOffset !== null) {
       // Convert height offset from mm to meters
-      yBase = product.heightOffset * 0.001;
+      const heightOffsetM = product.heightOffset * 0.001;
+      
+      // If it's a worktop, add half its height to center it properly on top of the cabinet
+      if (product.isWorktop) {
+        yBase = heightOffsetM + (targetDimensions.height / 2);
+      } else {
+        yBase = heightOffsetM;
+      }
     } else if (isWallMounted) {
       yBase = 1.5; // Wall-mounted at ~1.5m
     } else {
