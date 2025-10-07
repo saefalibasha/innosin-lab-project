@@ -103,14 +103,18 @@ const ProductModel = ({
     return result;
   }, [product.position, product.name, product.category, product.heightOffset, scale, origin, product.id, targetDimensions]);
 
-  // CRITICAL: Rotation is stored in degrees, must convert to radians for Three.js
-  const rotationRad = THREE.MathUtils.degToRad(product.rotation || 0);
-  const rotation: [number, number, number] = [0, rotationRad, 0];
+  // Normalize rotation: auto-detect degrees vs radians, ensure radians for Three.js
+  const rawRotation = product.rotation || 0;
+  const rotationY =
+    Math.abs(rawRotation) > Math.PI * 2
+      ? THREE.MathUtils.degToRad(rawRotation)
+      : rawRotation;
+  const rotation: [number, number, number] = [0, rotationY, 0];
   
-  console.debug('[ProductModel] Rotation conversion:', {
+  console.debug('[ProductModel] Rotation normalized:', {
     productId: product.id,
-    rotationDegrees: product.rotation,
-    rotationRadians: rotationRad
+    raw: rawRotation,
+    interpretedRadians: rotationY
   });
 
   // Physical size in meters
@@ -134,7 +138,7 @@ const ProductModel = ({
       {isSelected && (
         <lineSegments>
           <edgesGeometry args={[new THREE.BoxGeometry(lengthM, heightM, widthM)]} />
-          <lineBasicMaterial color="#ff0000" linewidth={2} />
+          <lineBasicMaterial color="#ff0000" linewidth={2} depthTest={false} />
         </lineSegments>
       )}
     </mesh>
@@ -249,8 +253,22 @@ const ProductGLTF = ({
       if (!child.name) child.name = 'product';
     });
   }, [gltf, productId, targetSize, modelPath]);
-
-  // Render fallback proxy if model is degenerate
+  
+   // Debug: log group world position and overlay size
+   useEffect(() => {
+     if (!groupRef.current) return;
+     const worldPos = new Vector3();
+     groupRef.current.getWorldPosition(worldPos);
+     console.debug('[ProductGLTF] World placement:', {
+       productId,
+       positionProp: position,
+       rotationProp: rotation,
+       worldPos: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
+       overlaySize
+     });
+   }, [overlaySize, position, rotation, productId]);
+ 
+   // Render fallback proxy if model is degenerate
   if (useFallback) {
     const halfHeight = targetSize[1] / 2;
     return (
@@ -261,7 +279,7 @@ const ProductGLTF = ({
           {isSelected && (
             <lineSegments>
               <edgesGeometry args={[new THREE.BoxGeometry(...targetSize)]} />
-              <lineBasicMaterial color="#ff0000" linewidth={2} />
+              <lineBasicMaterial color="#ff0000" linewidth={2} depthTest={false} />
             </lineSegments>
           )}
         </mesh>
@@ -276,12 +294,12 @@ const ProductGLTF = ({
         overlaySize ? (
           <lineSegments position={[0, overlaySize[1] / 2, 0]}>
             <edgesGeometry args={[new THREE.BoxGeometry(overlaySize[0], overlaySize[1], overlaySize[2])]} />
-            <lineBasicMaterial color="#ff0000" linewidth={2} />
+            <lineBasicMaterial color="#ff0000" linewidth={2} depthTest={false} />
           </lineSegments>
         ) : (
           <mesh position={[0, targetSize[1] / 2, 0]}>
             <boxGeometry args={[targetSize[0], targetSize[1], targetSize[2]]} />
-            <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} />
+            <meshBasicMaterial color="#ff0000" wireframe transparent opacity={0.35} depthTest={false} />
           </mesh>
         )
       )}
@@ -300,7 +318,7 @@ export const IsometricProducts: React.FC<IsometricProductsProps> = ({
     <group>
       {placedProducts.map((product, index) => (
         <ProductModel
-          key={`${product.id}-${index}`}
+          key={product.id}
           product={product}
           scale={scale}
           onProductClick={onProductClick}
