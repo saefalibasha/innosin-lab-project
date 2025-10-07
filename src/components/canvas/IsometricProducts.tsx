@@ -32,6 +32,16 @@ const ProductModel = ({
 }) => {
   const meshRef = useRef<Mesh>(null);
 
+  // Debug: log when selection changes
+  useEffect(() => {
+    console.log(`[ProductModel] ${product.id} selection changed:`, {
+      isSelected,
+      productId: product.id,
+      name: product.name,
+      hasModelPath: !!product.modelPath
+    });
+  }, [isSelected, product.id, product.name, product.modelPath]);
+
   // Handle product click
   const handleClick = (e: any) => {
     e.stopPropagation();
@@ -251,19 +261,25 @@ const ProductGLTF = ({
     });
   }, [gltf, productId, targetSize, modelPath]);
   
-   // Debug: log group world position and overlay size
+   // Debug: log comprehensive position data on every render
    useEffect(() => {
      if (!groupRef.current) return;
      const worldPos = new Vector3();
      groupRef.current.getWorldPosition(worldPos);
-     console.debug('[ProductGLTF] World placement:', {
+     
+     console.log(`[ProductGLTF] ${productId} ${isSelected ? 'SELECTED' : 'unselected'}:`, {
        productId,
+       isSelected,
        positionProp: position,
        rotationProp: rotation,
-       worldPos: { x: worldPos.x, y: worldPos.y, z: worldPos.z },
-       overlaySize
+       worldPos: { x: worldPos.x.toFixed(3), y: worldPos.y.toFixed(3), z: worldPos.z.toFixed(3) },
+       overlaySize: overlaySize ? `${overlaySize[0].toFixed(3)}x${overlaySize[1].toFixed(3)}x${overlaySize[2].toFixed(3)}` : 'null',
+       overlayBottomY: overlaySize ? worldPos.y : 'n/a',
+       overlayTopY: overlaySize ? (worldPos.y + overlaySize[1]).toFixed(3) : 'n/a',
+       modelBottomShouldBe: position[1].toFixed(3)
      });
-   }, [overlaySize, position, rotation, productId]);
+   }, [overlaySize, position, rotation, productId, isSelected]);
+ 
  
    // Render fallback proxy if model is degenerate
   if (useFallback) {
