@@ -177,7 +177,6 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
     <div className="w-full h-full">
       <Canvas shadows gl={{ toneMapping: 3, toneMappingExposure: 1.2, outputColorSpace: 'srgb', antialias: true }} style={{ background: 'transparent' }}>
         <PerspectiveCamera makeDefault position={[20, 20, 20]} fov={50} near={0.1} far={1000} />
-        <CameraExporter controlsRef={controlsRef} />
 
         {/* Enhanced Lighting */}
         <ambientLight intensity={0.7} />
@@ -187,6 +186,8 @@ const IsometricFloorPlanScene: React.FC<IsometricFloorPlanSceneProps> = (props) 
 
         {/* Controls */}
         <OrbitControls ref={controlsRef} enablePan enableZoom enableRotate minDistance={2} maxDistance={100} enableDamping dampingFactor={0.05} />
+        {/* Export camera and controls AFTER controls are mounted so the ref is ready */}
+        <CameraExporter controlsRef={controlsRef} />
 
         {/* Main scene */}
         <IsometricScene {...props} controlsRef={controlsRef} />
