@@ -40,6 +40,21 @@ const ProductModel = ({
     }
   };
 
+  // Convert dimensions to real-world units with accurate product dimensions
+  const targetDimensions = useMemo(() => {
+    // CRITICAL: dimensions are stored in PIXELS in the data model
+    // We need to convert them to MILLIMETERS first, then to METERS
+    const widthMm = product.originalDimensions?.width || (product.dimensions?.width / scale) || 600;
+    const heightMm = product.originalDimensions?.height || (product.dimensions?.height / scale) || 850;
+    const depthMm = product.originalDimensions?.length || (product.dimensions?.length / scale) || 600;
+    
+    return {
+      width: widthMm * 0.001, // mm to meters
+      height: heightMm * 0.001,
+      depth: depthMm * 0.001
+    };
+  }, [product.originalDimensions, product.dimensions, scale]);
+
   // Calculate final position and scale with proper dimensions
   const finalPosition = useMemo(() => {
     // Apply origin offset for coordinate consistency
@@ -86,22 +101,7 @@ const ProductModel = ({
     });
     
     return result;
-  }, [product.position, product.name, product.category, product.heightOffset, scale, origin, product.id]);
-
-  // Convert dimensions to real-world units with accurate product dimensions
-  const targetDimensions = useMemo(() => {
-    // CRITICAL: dimensions are stored in PIXELS in the data model
-    // We need to convert them to MILLIMETERS first, then to METERS
-    const widthMm = product.originalDimensions?.width || (product.dimensions?.width / scale) || 600;
-    const heightMm = product.originalDimensions?.height || (product.dimensions?.height / scale) || 850;
-    const depthMm = product.originalDimensions?.length || (product.dimensions?.length / scale) || 600;
-    
-    return {
-      width: widthMm * 0.001, // mm to meters
-      height: heightMm * 0.001,
-      depth: depthMm * 0.001
-    };
-  }, [product.originalDimensions, product.dimensions, scale]);
+  }, [product.position, product.name, product.category, product.heightOffset, scale, origin, product.id, targetDimensions]);
 
   // CRITICAL: Rotation is stored in degrees, must convert to radians for Three.js
   const rotationRad = THREE.MathUtils.degToRad(product.rotation || 0);
