@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import OptimizedVideo from "@/components/OptimizedVideo";
@@ -39,10 +40,15 @@ export default function WelcomeLandingPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
+    <>
+      <Helmet>
+        <link rel="canonical" href="https://www.innosinlab.com/welcome" />
+      </Helmet>
       
-      {/* Animated Background */}
-      <AnimatedBackground isMobile={isMobile} />
+      <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
+        
+        {/* Animated Background */}
+        <AnimatedBackground isMobile={isMobile} />
       
       {/* Navigation */}
       <nav className="relative z-10 flex justify-end items-center px-4 sm:px-8 py-3 sm:py-2">
@@ -114,6 +120,7 @@ export default function WelcomeLandingPage() {
           <ChevronDown className="h-6 w-6 text-sea/40 animate-bounce" />
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,84 +1,84 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Sitemap Version: 2.0 - Updated 2025-09-25 -->
+<!-- Sitemap Version: 2.1 - Updated 2025-10-09 -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   
   <!-- Welcome Landing Page -->
   <url>
-    <loc>https://innosinlab.com/welcome</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/welcome</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
-      <image:loc>https://innosinlab.com/branding/hero-logo.png</image:loc>
+      <image:loc>https://www.innosinlab.com/branding/hero-logo.png</image:loc>
       <image:title>Innosin Lab - Laboratory Equipment Solutions</image:title>
     </image:image>
   </url>
 
   <!-- Homepage -->
   <url>
-    <loc>https://innosinlab.com/home</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/home</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <priority>0.8</priority>
     <image:image>
-      <image:loc>https://innosinlab.com/branding/hero-logo.png</image:loc>
+      <image:loc>https://www.innosinlab.com/branding/hero-logo.png</image:loc>
       <image:title>Innosin Lab - Laboratory Equipment Solutions</image:title>
     </image:image>
   </url>
 
   <!-- Authentication -->
   <url>
-    <loc>https://innosinlab.com/auth</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/auth</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
 
   <!-- About Page -->
   <url>
-    <loc>https://innosinlab.com/about</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/about</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Products Catalog -->
   <url>
-    <loc>https://innosinlab.com/products</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- Contact Page -->
   <url>
-    <loc>https://innosinlab.com/contact</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/contact</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Blog -->
   <url>
-    <loc>https://innosinlab.com/blog</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/blog</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <!-- Floor Planner -->
   <url>
-    <loc>https://innosinlab.com/floor-planner</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/floor-planner</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- RFQ Cart -->
   <url>
-    <loc>https://innosinlab.com/rfq-cart</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/rfq-cart</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -87,102 +87,102 @@
   
   <!-- Innosin Lab Product Series -->
   <url>
-    <loc>https://innosinlab.com/products/innosin-mobile-cabinet-750mm</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-mobile-cabinet-750mm</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-mobile-cabinet-900mm</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-mobile-cabinet-900mm</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-wall-cabinet-glass</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-wall-cabinet-glass</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-tall-cabinet-glass</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-tall-cabinet-glass</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-open-rack</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-open-rack</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-modular-cabinet</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-modular-cabinet</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-sink-cabinet</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-sink-cabinet</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-knee-space</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-knee-space</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/innosin-laboratory-chair</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/innosin-laboratory-chair</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
   <!-- Broen-Lab Product Series -->
   <url>
-    <loc>https://innosinlab.com/products/broen-lab-emergency-shower</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/broen-lab-emergency-shower</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/broen-lab-uniflex-taps</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/broen-lab-uniflex-taps</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Oriental Giken Product Series -->
   <url>
-    <loc>https://innosinlab.com/products/oriental-giken-bio-safety-cabinet</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/oriental-giken-bio-safety-cabinet</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
-    <loc>https://innosinlab.com/products/oriental-giken-fume-hood</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/oriental-giken-fume-hood</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Hamilton Laboratory Solutions -->
   <url>
-    <loc>https://innosinlab.com/products/hamilton-fume-hoods</loc>
-    <lastmod>2025-09-25</lastmod>
+    <loc>https://www.innosinlab.com/products/hamilton-fume-hoods</loc>
+    <lastmod>2025-10-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

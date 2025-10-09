@@ -34,7 +34,7 @@ Allow: *.svg
 Allow: *.webp
 
 # Sitemap location
-Sitemap: https://innosinlab.com/sitemap.xml
+Sitemap: https://www.innosinlab.com/sitemap.xml
 
 # Crawl delay (in seconds) - reasonable for lab equipment site
 Crawl-delay: 1
