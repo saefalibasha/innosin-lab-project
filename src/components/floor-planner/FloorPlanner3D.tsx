@@ -17,6 +17,8 @@ import { useFloorPlanHistory } from '@/hooks/useFloorPlanHistory';
 import { MeasurementUnit } from '@/utils/measurements';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 
 export const FloorPlanner3D = () => {
   const initialFloorPlanState = {
@@ -150,6 +152,18 @@ export const FloorPlanner3D = () => {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Usage Tips Disclaimer */}
+      <div className="border-t bg-muted/30 px-4 py-3">
+        <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-xs text-muted-foreground">
+            <strong className="text-foreground">Tips:</strong> When adding worktops, furniture may shift slightly. 
+            Refresh the canvas by toggling to 2D view and back to 3D if needed. 
+            Place wall cabinets directly against walls for proper positioning.
+          </AlertDescription>
+        </Alert>
       </div>
 
       {/* Functional 3D Controls - responsive, no overlap */}
