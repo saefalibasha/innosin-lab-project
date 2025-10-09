@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Save, 
   Download, 
@@ -15,6 +16,7 @@ import {
   Home,
   ZoomIn,
   ZoomOut,
+  AlertCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -823,6 +825,18 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
                       onProductSelect={setSelectedProducts}
                       onWallUpdate={handleWallUpdate}
                     />
+                  </div>
+                  
+                  {/* Usage Tips Disclaimer */}
+                  <div className="mt-4">
+                    <Alert className="border-blue-200 bg-blue-50/50 dark:border-blue-900 dark:bg-blue-950/20">
+                      <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <AlertDescription className="text-xs text-muted-foreground">
+                        <strong className="text-foreground">Tips:</strong> When adding worktops, furniture may shift slightly. 
+                        Refresh the canvas by toggling to 2D view and back to 3D if needed. 
+                        Place wall cabinets directly against walls for proper positioning.
+                      </AlertDescription>
+                    </Alert>
                   </div>
                   
                   {/* 3D Controls Below Canvas */}
