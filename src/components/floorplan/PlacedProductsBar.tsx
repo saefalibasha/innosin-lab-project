@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Package, RotateCw, Trash2, Eye, EyeOff } from 'lucide-react';
 import { PlacedProduct } from '@/types/floorPlanTypes';
@@ -144,7 +144,7 @@ export const PlacedProductsBar: React.FC<PlacedProductsBarProps> = ({
         </div>
 
         {productGroups.length > 0 ? (
-          <ScrollArea className="w-full">
+          <ScrollArea className="w-full whitespace-nowrap">
             <div className="flex gap-2 pb-2">
               {productGroups.map((group) => {
                 const selectionState = getGroupSelectionState(group);
@@ -208,6 +208,7 @@ export const PlacedProductsBar: React.FC<PlacedProductsBarProps> = ({
                 );
               })}
             </div>
+            <ScrollBar orientation="horizontal" />
           </ScrollArea>
         ) : (
           <div className="text-center py-6 text-muted-foreground">
