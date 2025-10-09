@@ -191,6 +191,7 @@ const ProductGLTF = ({
   const gltf = useLoader(GLTFLoader, modelPath);
   const [useFallback, setUseFallback] = React.useState(false);
   const [overlaySize, setOverlaySize] = React.useState<[number, number, number] | null>(null);
+  const [clonedScene, setClonedScene] = React.useState<Group | null>(null);
 
   // Handle product click
   const handleClick = (e: any) => {
@@ -203,7 +204,9 @@ const ProductGLTF = ({
   useEffect(() => {
     if (!gltf || !groupRef.current) return;
 
-    const scene = gltf.scene;
+    // CRITICAL: Clone the scene to allow multiple instances of the same model
+    // Three.js objects can only have one parent, so we must clone for each product
+    const scene = gltf.scene.clone(true);
 
     // Reset transforms to measure clean bounds
     scene.position.set(0, 0, 0);
@@ -255,10 +258,13 @@ const ProductGLTF = ({
     });
 
     // Add productId to all children for raycasting
-    groupRef.current.traverse((child: any) => {
+    scene.traverse((child: any) => {
       child.userData = { ...(child.userData || {}), productId };
       if (!child.name) child.name = 'product';
     });
+
+    // Store the cloned and configured scene for rendering
+    setClonedScene(scene);
   }, [gltf, productId, targetSize, modelPath]);
   
    // Debug: log comprehensive position data on every render
@@ -302,7 +308,7 @@ const ProductGLTF = ({
 
   return (
     <group ref={groupRef} position={position} rotation={rotation} name="product" userData={{ productId }} onClick={handleClick}>
-      <primitive object={gltf.scene} castShadow receiveShadow />
+      {clonedScene && <primitive object={clonedScene} castShadow receiveShadow />}
       {isSelected && (
         overlaySize ? (
           <lineSegments position={[0, overlaySize[1] / 2, 0]}>

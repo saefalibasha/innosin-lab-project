@@ -225,7 +225,7 @@ const EnhancedCanvasWorkspace3D: React.FC<EnhancedCanvasWorkspace3DProps> = ({
           canvasPos,
           { width: productWidthPx, length: productDepthPx },
           placedProducts,
-          20 // Increased padding for better spacing
+          40 // Increased padding for clearer separation of duplicate products
         );
 
         console.log('[3D Drop] Position calculation:', {
