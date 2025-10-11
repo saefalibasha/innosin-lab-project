@@ -361,8 +361,27 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
   };
 
   const handleContactSubmit = async () => {
-    if (!contactInfo.email || !contactInfo.name || !session || !session.databaseId) {
-      toast.error('Please fill in at least name and email');
+    // Sanitize and validate inputs
+    const sanitizedEmail = contactInfo.email?.trim().replace(/['"]/g, '');
+    const sanitizedName = contactInfo.name?.trim();
+    const sanitizedCompany = contactInfo.company?.trim();
+    const sanitizedPhone = contactInfo.phone?.trim();
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!sanitizedName || !sanitizedEmail) {
+      toast.error('Please provide at least your name and email');
+      return;
+    }
+
+    if (!emailRegex.test(sanitizedEmail)) {
+      toast.error('Please provide a valid email address');
+      return;
+    }
+
+    if (!session || !session.databaseId) {
+      toast.error('Session not initialized');
       return;
     }
 
@@ -372,10 +391,10 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
       // Create HubSpot contact
       const result = await createContact({
         sessionId: session.sessionId,
-        email: contactInfo.email,
-        name: contactInfo.name,
-        company: contactInfo.company,
-        phone: contactInfo.phone
+        email: sanitizedEmail,
+        name: sanitizedName,
+        company: sanitizedCompany,
+        phone: sanitizedPhone
       });
 
       if (result?.contactId) {
@@ -391,10 +410,10 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
         await supabase
           .from('chat_sessions')
           .update({
-            email: contactInfo.email,
-            name: contactInfo.name,
-            company: contactInfo.company,
-            phone: contactInfo.phone,
+            email: sanitizedEmail,
+            name: sanitizedName,
+            company: sanitizedCompany,
+            phone: sanitizedPhone,
             hubspot_contact_id: result.contactId
           })
           .eq('id', session.databaseId);
@@ -424,7 +443,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
             sessionId: session.sessionId,
             contactId: result.contactId,
             subject: ticketSubject,
-            content: `Chat conversation summary:\n\n${conversationSummary}\n\nFull conversation has been synced to contact timeline.\n\nContact: ${contactInfo.name}\nEmail: ${contactInfo.email}\nCompany: ${contactInfo.company || 'Not provided'}\nPhone: ${contactInfo.phone || 'Not provided'}`,
+            content: `Chat conversation summary:\n\n${conversationSummary}\n\nFull conversation has been synced to contact timeline.\n\nContact: ${sanitizedName}\nEmail: ${sanitizedEmail}\nCompany: ${sanitizedCompany || 'Not provided'}\nPhone: ${sanitizedPhone || 'Not provided'}`,
             priority: 'MEDIUM'
           });
 
@@ -448,8 +467,8 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
         const confirmMessage: ChatMessage = {
           id: `bot_${Date.now()}`,
           message: ticketId 
-            ? `Thank you ${contactInfo.name}! I've:\n✅ Saved your contact information\n✅ Created a support ticket (#${ticketId})\n✅ Logged our conversation to your account\n\nOur team will review your inquiry and follow up within 24 hours. How else can I help you today?`
-            : `Thank you ${contactInfo.name}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
+            ? `Thank you ${sanitizedName}! I've:\n✅ Saved your contact information\n✅ Created a support ticket (#${ticketId})\n✅ Logged our conversation to your account\n\nOur team will review your inquiry and follow up within 24 hours. How else can I help you today?`
+            : `Thank you ${sanitizedName}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
           sender: 'bot',
           timestamp: new Date()
         };
