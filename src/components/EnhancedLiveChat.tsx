@@ -406,11 +406,50 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
           contactId: result.contactId
         });
 
+        // Create support ticket for chat conversation
+        let ticketId = null;
+        try {
+          console.log('Creating support ticket for chat session:', session.sessionId);
+          
+          const ticketSubject = messages.length > 1 
+            ? `Chat Inquiry: ${messages[1].message.substring(0, 50)}${messages[1].message.length > 50 ? '...' : ''}`
+            : 'General Chat Inquiry';
+
+          const conversationSummary = messages
+            .slice(0, 5) // First 5 messages
+            .map(msg => `${msg.sender === 'user' ? 'Customer' : 'AI'}: ${msg.message}`)
+            .join('\n\n');
+
+          const ticketResult = await createTicket({
+            sessionId: session.sessionId,
+            contactId: result.contactId,
+            subject: ticketSubject,
+            content: `Chat conversation summary:\n\n${conversationSummary}\n\nFull conversation has been synced to contact timeline.\n\nContact: ${contactInfo.name}\nEmail: ${contactInfo.email}\nCompany: ${contactInfo.company || 'Not provided'}\nPhone: ${contactInfo.phone || 'Not provided'}`,
+            priority: 'MEDIUM'
+          });
+
+          if (ticketResult?.ticketId) {
+            ticketId = ticketResult.ticketId;
+            console.log('Support ticket created:', ticketId);
+            
+            // Update session with ticket ID
+            await supabase
+              .from('chat_sessions')
+              .update({ hubspot_ticket_id: ticketId })
+              .eq('id', session.databaseId);
+          }
+        } catch (ticketError) {
+          console.error('Failed to create support ticket:', ticketError);
+          // Continue even if ticket creation fails - don't block the chat
+        }
+
         setShowContactForm(false);
         
         const confirmMessage: ChatMessage = {
           id: `bot_${Date.now()}`,
-          message: `Thank you ${contactInfo.name}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
+          message: ticketId 
+            ? `Thank you ${contactInfo.name}! I've:\n✅ Saved your contact information\n✅ Created a support ticket (#${ticketId})\n✅ Logged our conversation to your account\n\nOur team will review your inquiry and follow up within 24 hours. How else can I help you today?`
+            : `Thank you ${contactInfo.name}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
           sender: 'bot',
           timestamp: new Date()
         };
@@ -418,7 +457,9 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
         setMessages(prev => [...prev, confirmMessage]);
         await saveMessage(confirmMessage, session.databaseId);
         
-        toast.success('Contact information saved and synced successfully!');
+        toast.success(ticketId 
+          ? `Contact saved, ticket #${ticketId} created!` 
+          : 'Contact information saved and synced successfully!');
       }
     } catch (error) {
       console.error('Error creating contact:', error);
