@@ -23,7 +23,7 @@ const RFQCart = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createContact, createDeal } = useHubSpotIntegration();
+  const { createContact, createDeal, createTicket } = useHubSpotIntegration();
 
   const handleContactChange = (field: string, value: string) => {
     setContactInfo(prev => ({ ...prev, [field]: value }));
@@ -97,9 +97,22 @@ const RFQCart = () => {
           contactId: contactResult.data.hubspot_contact_id,
           amount: 0 // Amount TBD for RFQ
         });
+
+        // Create HubSpot ticket for the RFQ
+        await createTicket({
+          sessionId,
+          name: contactInfo.name,
+          email: contactInfo.email,
+          company: contactInfo.company,
+          phone: contactInfo.phone,
+          subject: `RFQ Submission - ${items.length} items from ${contactInfo.name}`,
+          content: `RFQ request from ${contactInfo.name} (${contactInfo.company || 'N/A'}):\n\nItems requested: ${items.length}\nTotal quantity: ${items.reduce((sum, item) => sum + item.quantity, 0)}\n\nAdditional message: ${contactInfo.message || 'None'}\n\nItems:\n${items.map(item => `- ${item.name} (${item.category}) x${item.quantity}`).join('\n')}`,
+          contactId: contactResult.data.hubspot_contact_id,
+          priority: 'MEDIUM'
+        });
       }
 
-      toast.success('Request for Quote submitted successfully!');
+      toast.success('Request for Quote submitted successfully! A support ticket has been created and our team will follow up within 24 hours.');
       clearCart();
       setContactInfo({ name: '', email: '', company: '', phone: '', message: '' });
     } catch (error) {
