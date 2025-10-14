@@ -53,6 +53,8 @@ import { FloorPlannerOnboarding } from '@/components/floorplan/FloorPlannerOnboa
 import { AddWorktopButton } from '@/components/canvas/AddWorktopButton';
 
 const FloorPlanner = () => {
+  console.log('[FloorPlanner] Component mounting');
+  
   const { user, isAdmin, loading } = useAuth();
   
   // Access control state
@@ -63,15 +65,21 @@ const FloorPlanner = () => {
   // Check for admin access or existing session
   useEffect(() => {
     const checkAccess = () => {
+      console.log('[FloorPlanner] Checking access...', { user, isAdmin, loading });
       const hasAccess = sessionStorage.getItem('floorPlannerAccess');
+      
       if (user && isAdmin) {
+        console.log('[FloorPlanner] Admin access granted');
         setHasAccess(true);
         setShowContactGate(false);
         return;
       }
       if (hasAccess === 'granted') {
+        console.log('[FloorPlanner] Session access granted');
         setHasAccess(true);
         setShowContactGate(false);
+      } else {
+        console.log('[FloorPlanner] No access - showing contact gate');
       }
     };
     checkAccess();
@@ -452,12 +460,14 @@ const [viewMode, setViewMode] = useState<ViewMode>('2d');
   }, [rooms]);
 
   const handleContactSuccess = useCallback(() => {
+    console.log('[FloorPlanner] Contact success - granting access');
     setHasAccess(true);
     setShowContactGate(false);
     
     // Check if onboarding should be shown
     const hasSeenOnboarding = sessionStorage.getItem('floorPlannerOnboardingShown');
     if (!hasSeenOnboarding) {
+      console.log('[FloorPlanner] Showing onboarding');
       setShowOnboarding(true);
     }
   }, []);

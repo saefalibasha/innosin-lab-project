@@ -62,6 +62,9 @@ export const pageSEOMetadata: Record<string, SEOMetadata> = {
 export const updatePageSEO = (pageKey: keyof typeof pageSEOMetadata, customData?: Partial<SEOMetadata>) => {
   const metadata = { ...pageSEOMetadata[pageKey], ...customData };
   
+  // Determine if this is a private/admin route
+  const isPrivateRoute = ['admin', 'auth'].some(route => pageKey.toLowerCase().includes(route));
+  
   // Update title
   document.title = metadata.title;
   
@@ -86,6 +89,10 @@ export const updatePageSEO = (pageKey: keyof typeof pageSEOMetadata, customData?
     metaKeywords.setAttribute('content', metadata.keywords);
     document.head.appendChild(metaKeywords);
   }
+  
+  // Update or create meta robots tag
+  const robotsContent = isPrivateRoute ? 'noindex, nofollow' : 'index, follow';
+  updateOrCreateMeta('name', 'robots', robotsContent);
   
   // Update Open Graph tags
   updateOrCreateMeta('property', 'og:title', metadata.title);

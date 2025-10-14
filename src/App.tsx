@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
 import { Suspense } from "react";
+import * as React from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RFQProvider } from "@/contexts/RFQContext";
 import AdminAuthGuard from "@/components/AdminAuthGuard";
@@ -34,15 +35,56 @@ import {
   LazyHubSpotMonitor,
 } from "./components/LazyRoutes";
 
-// Loading fallback component
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="text-center">
-      <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-      <p className="text-muted-foreground">Loading...</p>
+// Loading fallback component with watchdog timer
+const PageLoader = ({ timeout = 10000 }: { timeout?: number }) => {
+  const [showRetry, setShowRetry] = React.useState(false);
+  
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      console.warn('[PageLoader] Component taking longer than expected to load');
+      setShowRetry(true);
+    }, timeout);
+    
+    return () => clearTimeout(timer);
+  }, [timeout]);
+  
+  if (showRetry) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold mb-2">Loading Taking Longer Than Expected</h2>
+          <p className="text-muted-foreground mb-6">
+            The page is taking longer than usual to load. This might be due to a slow connection or a temporary issue.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Retry Load
+            </button>
+            <a
+              href="/home"
+              className="px-4 py-2 border border-border rounded-md hover:bg-accent"
+            >
+              Go Home
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-muted-foreground">Loading Innosin Floor Planner...</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const queryClient = new QueryClient();
 

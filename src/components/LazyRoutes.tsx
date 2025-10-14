@@ -1,4 +1,34 @@
-import { lazy } from 'react';
+import { lazy, ComponentType } from 'react';
+
+// Utility for lazy loading with retry logic
+const lazyWithRetry = <T extends ComponentType<any>>(
+  componentImport: () => Promise<{ default: T }>,
+  componentName: string,
+  retries = 3,
+  retryDelay = 1000
+) => {
+  return lazy(async () => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        console.log(`[LazyLoad] Loading ${componentName} (attempt ${i + 1}/${retries})`);
+        const module = await componentImport();
+        console.log(`[LazyLoad] Successfully loaded ${componentName}`);
+        return module;
+      } catch (error) {
+        console.warn(`[LazyLoad] Failed to load ${componentName} (attempt ${i + 1}/${retries}):`, error);
+        
+        if (i === retries - 1) {
+          console.error(`[LazyLoad] All retry attempts failed for ${componentName}`);
+          throw error;
+        }
+        
+        // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, retryDelay * Math.pow(2, i)));
+      }
+    }
+    throw new Error(`Failed to load ${componentName} after ${retries} attempts`);
+  });
+};
 
 // Eagerly load critical landing routes to avoid chunk issues
 export { default as LazyWelcomeLandingPage } from '../pages/WelcomeLandingPage';
@@ -8,7 +38,12 @@ export { default as LazyBlog } from '../pages/Blog';
 export const LazyBlogPost = lazy(() => import('../pages/BlogPost'));
 export { default as LazyProductCatalog } from '../pages/ProductCatalog';
 export const LazyEnhancedProductDetail = lazy(() => import('../pages/EnhancedProductDetail'));
-export const LazyFloorPlanner = lazy(() => import('../pages/FloorPlanner'));
+
+// Floor Planner with retry logic for reliability
+export const LazyFloorPlanner = lazyWithRetry(
+  () => import('../pages/FloorPlanner'),
+  'FloorPlanner'
+);
 export const LazyContact = lazy(() => import('../pages/Contact'));
 export const LazyAuth = lazy(() => import('../pages/Auth'));
 export const LazyRFQCart = lazy(() => import('../pages/RFQCart'));
