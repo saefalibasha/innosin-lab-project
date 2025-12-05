@@ -1,7 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Product as ProductType } from '@/types/product';
-import productService from './productService';
+import productService, { fetchCompanyTagsFromDatabase } from './productService';
+import { withTimeout } from '@/utils/withTimeout';
+
+const REQUEST_TIMEOUT = 8000; // 8 seconds
 
 export class EnhancedProductService {
   private cache = new Map<string, any>();
@@ -54,6 +57,48 @@ export class EnhancedProductService {
 
   async searchProducts(query: string): Promise<ProductType[]> {
     return await productService.searchProducts(query);
+  }
+
+  async getProductSeries(forceRefresh = false): Promise<ProductType[]> {
+    const cacheKey = 'product_series';
+    if (!forceRefresh && this.isCacheValid(cacheKey)) {
+      console.log('[EnhancedProductService] Returning cached product series');
+      return this.cache.get(cacheKey);
+    }
+
+    console.log('[EnhancedProductService] Fetching product series from database');
+    const products = await withTimeout(
+      productService.getProductSeries(),
+      REQUEST_TIMEOUT,
+      'Product series fetch timed out'
+    );
+    this.setCache(cacheKey, products);
+    return products;
+  }
+
+  async getCompanyTags(forceRefresh = false): Promise<string[]> {
+    const cacheKey = 'company_tags';
+    if (!forceRefresh && this.isCacheValid(cacheKey)) {
+      console.log('[EnhancedProductService] Returning cached company tags');
+      return this.cache.get(cacheKey);
+    }
+
+    console.log('[EnhancedProductService] Fetching company tags from database');
+    const tags = await withTimeout(
+      fetchCompanyTagsFromDatabase(),
+      REQUEST_TIMEOUT,
+      'Company tags fetch timed out'
+    );
+    this.setCache(cacheKey, tags);
+    return tags;
+  }
+
+  async searchProductSeries(query: string): Promise<ProductType[]> {
+    return await withTimeout(
+      productService.searchProductSeries(query),
+      REQUEST_TIMEOUT,
+      'Product series search timed out'
+    );
   }
 
   clearCache() {
