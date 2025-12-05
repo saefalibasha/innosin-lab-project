@@ -20,7 +20,7 @@ export type Database = {
           changed_by_email: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_role: string | null
           old_role: string | null
           target_user_email: string
@@ -31,7 +31,7 @@ export type Database = {
           changed_by_email: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_role?: string | null
           old_role?: string | null
           target_user_email: string
@@ -42,7 +42,7 @@ export type Database = {
           changed_by_email?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_role?: string | null
           old_role?: string | null
           target_user_email?: string
@@ -891,7 +891,7 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           operation: string
           success: boolean | null
           user_id: string | null
@@ -900,7 +900,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation: string
           success?: boolean | null
           user_id?: string | null
@@ -909,7 +909,7 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           operation?: string
           success?: boolean | null
           user_id?: string | null
@@ -951,7 +951,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           metadata: Json | null
           resource: string | null
           resource_id: string | null
@@ -962,7 +962,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           resource?: string | null
           resource_id?: string | null
@@ -973,7 +973,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           metadata?: Json | null
           resource?: string | null
           resource_id?: string | null
@@ -1258,10 +1258,7 @@ export type Database = {
       }
     }
     Functions: {
-      check_anonymous_session_rate_limit: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      check_anonymous_session_rate_limit: { Args: never; Returns: boolean }
       check_rate_limit: {
         Args: {
           max_attempts?: number
@@ -1270,46 +1267,19 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_anonymous_sessions_enhanced: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_anonymous_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_anonymous_sessions_enhanced: { Args: never; Returns: undefined }
+      cleanup_expired_tokens: { Args: never; Returns: undefined }
+      cleanup_old_anonymous_sessions: { Args: never; Returns: undefined }
       create_session_token: {
         Args: { session_data_param: Json; user_id_param?: string }
         Returns: string
       }
-      encrypt_pii: {
-        Args: { data: string }
-        Returns: string
-      }
-      get_current_user_email: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_session_data: {
-        Args: { session_token: string }
-        Returns: Json
-      }
-      is_admin: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
-      is_super_admin: {
-        Args: { user_email: string }
-        Returns: boolean
-      }
+      encrypt_pii: { Args: { data: string }; Returns: string }
+      get_current_user_email: { Args: never; Returns: string }
+      get_current_user_role: { Args: never; Returns: string }
+      get_session_data: { Args: { session_token: string }; Returns: Json }
+      is_admin: { Args: { user_email: string }; Returns: boolean }
+      is_super_admin: { Args: { user_email: string }; Returns: boolean }
       log_security_event: {
         Args: {
           p_action: string
