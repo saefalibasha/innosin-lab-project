@@ -14,6 +14,8 @@ interface ChatMessage {
   sender: 'user' | 'bot';
   timestamp: Date;
   confidence?: number;
+  ticketId?: string;
+  intentMatched?: string;
 }
 
 interface UserSession {
@@ -248,14 +250,14 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
 
   const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
     try {
-      // First try the OpenAI-powered chat
       console.log('Calling AI chat function with message:', userMessage);
       
       const { data, error } = await supabase.functions.invoke('ai-chat', {
         body: {
           message: userMessage,
           sessionId: session?.sessionId,
-          chatHistory: messages.slice(-10) // Send last 10 messages for context
+          chatHistory: messages.slice(-10),
+          contactId: session?.hubspotContactId
         }
       });
 
@@ -265,13 +267,32 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
       }
 
       if (data?.success && data?.message) {
-        console.log('AI response received:', data.message);
+        console.log('AI response received:', { 
+          message: data.message.substring(0, 100), 
+          ticketCreated: data.ticketCreated,
+          intentMatched: data.intentMatched 
+        });
+
+        // Show toast if ticket was created
+        if (data.ticketCreated) {
+          toast.success(`Support ticket #${data.ticketCreated} created`, {
+            description: 'Our team will follow up shortly.'
+          });
+        }
+
+        // Show contact form if quote/support request and no contact info
+        if (data.intentMatched && ['quote', 'support', 'installation', 'maintenance', 'humanAgent'].includes(data.intentMatched) && !session?.hubspotContactId) {
+          setTimeout(() => setShowContactForm(true), 2000);
+        }
+
         return {
           id: `bot_${Date.now()}`,
           message: data.message,
           sender: 'bot',
           timestamp: new Date(),
-          confidence: data.confidence || 0.9
+          confidence: data.confidence || 0.9,
+          ticketId: data.ticketCreated,
+          intentMatched: data.intentMatched
         };
       } else {
         throw new Error('Invalid response from AI chat function');
@@ -279,12 +300,9 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
     } catch (error) {
       console.error('AI chat error, falling back to rule-based:', error);
       
-      // Fallback to rule-based responses if OpenAI fails
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       const { response: responseText, confidence } = findBestResponse(userMessage);
-      
-      // Check if user is asking for quote or sales related info and no contact info exists
       const lowerMessage = userMessage.toLowerCase();
       let finalResponse = responseText;
       

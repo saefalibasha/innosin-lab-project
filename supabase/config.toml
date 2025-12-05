@@ -48,4 +48,4 @@ verify_jwt = true
 
 [[edge_runtime.functions]]
 name = "ai-chat"
-verify_jwt = true
+verify_jwt = false
