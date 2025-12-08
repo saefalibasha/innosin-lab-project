@@ -341,36 +341,63 @@ async function logIntegrationAction(sessionId: string, action: string, objectTyp
   }
 }
 
+// Input validation helpers
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return typeof email === 'string' && email.length <= 255 && emailRegex.test(email);
+}
+
+function sanitizeString(str: string | undefined, maxLength: number = 500): string {
+  if (!str || typeof str !== 'string') return '';
+  return str.trim().slice(0, maxLength).replace(/[<>]/g, '');
+}
+
+// Rate limiting check using Supabase
+async function checkRateLimit(identifier: string, maxAttempts: number = 10, windowMinutes: number = 60): Promise<boolean> {
+  try {
+    const windowStart = new Date(Date.now() - windowMinutes * 60 * 1000).toISOString();
+    
+    const { count, error } = await supabase
+      .from('rate_limit_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('operation', 'hubspot_integration')
+      .gte('created_at', windowStart)
+      .or(`email.eq.${identifier},ip_address.eq.${identifier}`);
+    
+    if (error) {
+      console.error('Rate limit check error:', error);
+      return true; // Allow on error to prevent blocking legitimate requests
+    }
+    
+    return (count || 0) < maxAttempts;
+  } catch (e) {
+    console.error('Rate limit check failed:', e);
+    return true;
+  }
+}
+
+async function logRateLimit(identifier: string, success: boolean): Promise<void> {
+  try {
+    await supabase.from('rate_limit_log').insert({
+      operation: 'hubspot_integration',
+      email: identifier.includes('@') ? identifier : null,
+      ip_address: !identifier.includes('@') ? identifier : null,
+      success
+    });
+  } catch (e) {
+    console.error('Failed to log rate limit:', e);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Verify JWT token for authentication
-  const authHeader = req.headers.get('authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Authentication required' 
-    }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-  
-  // Verify the token with Supabase
-  const { data: user, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user.user) {
-    return new Response(JSON.stringify({ 
-      success: false, 
-      error: 'Invalid authentication token' 
-    }), {
-      status: 401,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
+  // Get client identifier for rate limiting (prefer email from request, fallback to IP-like session)
+  const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
 
   try {
     const requestBody = await req.json();
@@ -378,57 +405,119 @@ serve(async (req) => {
     
     // Input validation
     if (!action || typeof action !== 'string') {
-      throw new Error('Valid action is required');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Valid action is required' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
     
     if (!data || typeof data !== 'object') {
-      throw new Error('Valid data object is required');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Valid data object is required' 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Rate limiting - use email if provided, otherwise use IP
+    const rateLimitIdentifier = data.email || clientIp;
+    const isAllowed = await checkRateLimit(rateLimitIdentifier);
+    
+    if (!isAllowed) {
+      console.warn('Rate limit exceeded for:', rateLimitIdentifier);
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Too many requests. Please try again later.' 
+      }), {
+        status: 429,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Optional: Check for authenticated user (not required for public forms)
+    let userId: string | null = null;
+    const authHeader = req.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: user } = await supabase.auth.getUser(token);
+      userId = user?.user?.id || null;
     }
     
-    // Log security event
-    await supabase.rpc('log_security_event', {
-      p_action: 'hubspot_integration_access',
-      p_resource: 'edge_function',
-      p_resource_id: action,
-      p_metadata: { user_id: user.user.id, action }
-    });
-    console.log('HubSpot Integration action:', action, data);
+    // Log security event (works for both auth and anon)
+    try {
+      await supabase.rpc('log_security_event', {
+        p_action: 'hubspot_integration_access',
+        p_resource: 'edge_function',
+        p_resource_id: action,
+        p_metadata: { user_id: userId, action, client_ip: clientIp }
+      });
+    } catch (logErr) {
+      console.warn('Could not log security event:', logErr);
+    }
+    
+    console.log('HubSpot Integration action:', action, 'from:', rateLimitIdentifier);
+
+    // Log rate limit attempt
+    await logRateLimit(rateLimitIdentifier, true);
 
     switch (action) {
       case 'create_contact': {
         const { sessionId, email, name, company, jobTitle, phone } = data;
         
+        // Validate required fields
+        if (!email || !isValidEmail(email)) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Valid email address is required' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const sanitizedName = sanitizeString(name, 100);
+        const sanitizedCompany = sanitizeString(company, 200);
+        const sanitizedJobTitle = sanitizeString(jobTitle, 100);
+        const sanitizedPhone = sanitizeString(phone, 30);
+        
         const contactData: HubSpotContact = {
-          email,
-          firstname: name?.split(' ')[0],
-          lastname: name?.split(' ').slice(1).join(' '),
-          company,
-          jobtitle: jobTitle,
-          phone
+          email: email.trim().toLowerCase(),
+          firstname: sanitizedName?.split(' ')[0] || '',
+          lastname: sanitizedName?.split(' ').slice(1).join(' ') || '',
+          company: sanitizedCompany,
+          jobtitle: sanitizedJobTitle,
+          phone: sanitizedPhone
         };
 
         try {
           const hubspotContact = await createHubSpotContact(contactData);
           console.log('HubSpot contact processed:', hubspotContact.id);
           
-          // Update chat session with HubSpot contact ID
-          const { error: updateError } = await supabase
-            .from('chat_sessions')
-            .update({ hubspot_contact_id: hubspotContact.id })
-            .eq('session_id', sessionId);
+          // Update chat session with HubSpot contact ID (if sessionId provided)
+          if (sessionId) {
+            const { error: updateError } = await supabase
+              .from('chat_sessions')
+              .update({ hubspot_contact_id: hubspotContact.id })
+              .eq('session_id', sessionId);
 
-          if (updateError) {
-            console.error('Error updating session with contact ID:', updateError);
+            if (updateError) {
+              console.error('Error updating session with contact ID:', updateError);
+            }
           }
 
-          await logIntegrationAction(sessionId, 'create_contact', 'contact', hubspotContact.id, true, undefined, contactData, hubspotContact);
+          await logIntegrationAction(sessionId || 'anonymous', 'create_contact', 'contact', hubspotContact.id, true, undefined, contactData, hubspotContact);
 
           return new Response(JSON.stringify({ success: true, contactId: hubspotContact.id }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } catch (error) {
           console.error('Error creating/finding HubSpot contact:', error);
-          await logIntegrationAction(sessionId, 'create_contact', 'contact', '', false, error.message, contactData);
+          await logIntegrationAction(sessionId || 'anonymous', 'create_contact', 'contact', '', false, error.message, contactData);
           
           return new Response(JSON.stringify({ 
             success: false, 
@@ -505,9 +594,23 @@ serve(async (req) => {
       case 'create_ticket': {
         const { sessionId, subject, content, contactId, priority = 'MEDIUM', pipelineId, stageId } = data;
         
+        // Validate required fields
+        if (!subject || typeof subject !== 'string' || subject.trim().length === 0) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Subject is required for ticket creation' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        const sanitizedSubject = sanitizeString(subject, 200);
+        const sanitizedContent = sanitizeString(content, 5000);
+        
         const ticketData: HubSpotTicket = {
-          subject,
-          content,
+          subject: sanitizedSubject,
+          content: sanitizedContent,
           hs_pipeline: pipelineId || '0',
           hs_pipeline_stage: stageId || '1',
           hs_ticket_priority: priority
@@ -516,24 +619,26 @@ serve(async (req) => {
         try {
           const hubspotTicket = await createHubSpotTicket(ticketData, contactId);
           
-          // Update chat session with HubSpot ticket ID
-          const { error: updateError } = await supabase
-            .from('chat_sessions')
-            .update({ hubspot_ticket_id: hubspotTicket.id })
-            .eq('session_id', sessionId);
+          // Update chat session with HubSpot ticket ID (if sessionId provided)
+          if (sessionId) {
+            const { error: updateError } = await supabase
+              .from('chat_sessions')
+              .update({ hubspot_ticket_id: hubspotTicket.id })
+              .eq('session_id', sessionId);
 
-          if (updateError) {
-            console.error('Error updating session with ticket ID:', updateError);
+            if (updateError) {
+              console.error('Error updating session with ticket ID:', updateError);
+            }
           }
 
-          await logIntegrationAction(sessionId, 'create_ticket', 'ticket', hubspotTicket.id, true, undefined, ticketData, hubspotTicket);
+          await logIntegrationAction(sessionId || 'anonymous', 'create_ticket', 'ticket', hubspotTicket.id, true, undefined, ticketData, hubspotTicket);
 
           return new Response(JSON.stringify({ success: true, ticketId: hubspotTicket.id }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
         } catch (error) {
           console.error('Error creating HubSpot ticket:', error);
-          await logIntegrationAction(sessionId, 'create_ticket', 'ticket', '', false, error.message, ticketData);
+          await logIntegrationAction(sessionId || 'anonymous', 'create_ticket', 'ticket', '', false, error.message, ticketData);
           
           return new Response(JSON.stringify({ 
             success: false, 
