@@ -60,9 +60,24 @@ const addPageStructuredData = (pageKey: keyof typeof pageSEOMetadata, pathname: 
         "name": pageSEOMetadata[pageKey].title,
         "description": pageSEOMetadata[pageKey].description,
         "url": fullUrl,
-        "about": {
-          "@type": "Product",
-          "category": "Laboratory Furniture"
+        "mainEntity": {
+          "@type": "ItemList",
+          "name": "Laboratory Equipment Catalog",
+          "description": "Complete range of laboratory furniture and equipment",
+          "itemListOrder": "https://schema.org/ItemListUnordered",
+          "numberOfItems": 14,
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Mobile Cabinets", "url": `${baseUrl}/products?category=mobile-cabinets` },
+            { "@type": "ListItem", "position": 2, "name": "Wall Cabinets", "url": `${baseUrl}/products?category=wall-cabinets` },
+            { "@type": "ListItem", "position": 3, "name": "Tall Cabinets", "url": `${baseUrl}/products?category=tall-cabinets` },
+            { "@type": "ListItem", "position": 4, "name": "Fume Hoods", "url": `${baseUrl}/products?category=fume-hoods` },
+            { "@type": "ListItem", "position": 5, "name": "Bio Safety Cabinets", "url": `${baseUrl}/products?category=bio-safety-cabinets` }
+          ]
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Innosin Lab Pte. Ltd.",
+          "url": "https://www.innosinlab.com"
         }
       };
       break;

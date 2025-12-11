@@ -19,6 +19,8 @@ import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurato
 import ModularCabinetConfigurator from '@/components/product/ModularCabinetConfigurator';
 import { SpecificProductSelector } from '@/components/floorplan/SpecificProductSelector';
 import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
+import { useSEO } from '@/hooks/useSEO';
+import { addStructuredData } from '@/utils/seoMetadata';
 
 const EnhancedProductDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,10 +34,57 @@ const EnhancedProductDetail = () => {
   const [selectedModularConfiguration, setSelectedModularConfiguration] = useState<any>(null);
   const [currentAssets, setCurrentAssets] = useState<any>(null);
 
+  // Initialize SEO with base metadata
+  useSEO('productDetail');
+
   useEffect(() => {
     if (!id) return;
     fetchProductData(id);
   }, [id]);
+
+  // Add dynamic Product structured data when series loads
+  useEffect(() => {
+    if (series) {
+      const productImage = series.series_thumbnail_path || series.thumbnail_path;
+      const fullImageUrl = productImage?.startsWith('http') 
+        ? productImage 
+        : `https://www.innosinlab.com${productImage}`;
+      
+      addStructuredData({
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": series.name,
+        "description": series.description || `High-quality ${series.category} laboratory furniture from Innosin Lab`,
+        "image": fullImageUrl,
+        "category": series.category || "Laboratory Furniture",
+        "sku": series.product_code || series.id,
+        "brand": {
+          "@type": "Brand",
+          "name": series.company_tags?.[0] || "Innosin Lab"
+        },
+        "manufacturer": {
+          "@type": "Organization",
+          "name": series.company_tags?.[0] || "Innosin Lab Pte. Ltd."
+        },
+        "offers": {
+          "@type": "Offer",
+          "availability": "https://schema.org/InStock",
+          "priceCurrency": "SGD",
+          "price": "0",
+          "priceValidUntil": "2026-12-31",
+          "url": `https://www.innosinlab.com/products/${id}`,
+          "seller": {
+            "@type": "Organization",
+            "name": "Innosin Lab Pte. Ltd.",
+            "url": "https://www.innosinlab.com"
+          }
+        }
+      });
+
+      // Update page title dynamically
+      document.title = `${series.name} | Laboratory Furniture - Innosin Lab`;
+    }
+  }, [series, id]);
 
   const fetchProductData = async (productId: string) => {
     try {
