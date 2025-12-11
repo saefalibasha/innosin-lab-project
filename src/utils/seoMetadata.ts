@@ -56,6 +56,13 @@ export const pageSEOMetadata: Record<string, SEOMetadata> = {
     keywords: "laboratory furniture quote, lab equipment pricing, custom laboratory quote, lab furniture cost, laboratory design consultation",
     ogImage: "/branding/hero-logo.png",
     canonical: "https://www.innosinlab.com/rfq-cart"
+  },
+  productDetail: {
+    title: "Product Details - Laboratory Furniture | Innosin Lab",
+    description: "View detailed specifications and configurations for laboratory furniture and equipment from Innosin Lab.",
+    keywords: "laboratory furniture, lab equipment, product specifications, product details, lab furniture configurations",
+    ogImage: "/branding/hero-logo.png",
+    canonical: "https://www.innosinlab.com/products"
   }
 };
 
