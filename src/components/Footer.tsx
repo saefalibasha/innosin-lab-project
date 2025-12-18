@@ -158,8 +158,8 @@ export const Footer = () => {
             </div>
 
             {/* right slogan */}
-            <div className="px-4 py-6 flex items-center justify-center lg:justify-end lg:pr-6 min-w-0">
-              <div className="text-xs sm:text-sm text-white/80 uppercase tracking-wide text-center lg:text-right whitespace-nowrap">
+            <div className="px-4 py-6 flex items-center justify-center min-w-0">
+              <div className="text-xs sm:text-sm text-white/80 uppercase tracking-wide text-center whitespace-nowrap">
                 Innovative Solutions
               </div>
             </div>
