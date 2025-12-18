@@ -506,13 +506,13 @@ serve(async (req) => {
           const { data: sessionData } = await supabase
             .from('chat_sessions')
             .select('hubspot_contact_id')
-            .eq('session_id', sessionId)
+            .eq('session_id', sanitizedSessionId)
             .single();
           effectiveContactId = sessionData?.hubspot_contact_id;
         }
 
         ticketCreated = await createHubSpotTicket(
-          sessionId,
+          sanitizedSessionId,
           intentMatch.match.ticketType || 'General Inquiry',
           intentMatch.match.ticketPriority || 'MEDIUM',
           sanitizedMessage,
@@ -606,7 +606,7 @@ When users ask about pricing or want to purchase, mention that they can request 
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .select('id')
-        .eq('session_id', sessionId)
+        .eq('session_id', sanitizedSessionId)
         .single();
 
       if (!sessionError && sessionData) {
