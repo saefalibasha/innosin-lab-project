@@ -42,7 +42,7 @@ export default function WelcomeLandingPage() {
   return (
     <>
       <Helmet>
-        <link rel="canonical" href="https://www.innosinlab.com/welcome" />
+        <link rel="canonical" href="https://www.innosinlab.com/" />
       </Helmet>
       
       <div className="relative min-h-screen w-full bg-white overflow-hidden flex flex-col">
