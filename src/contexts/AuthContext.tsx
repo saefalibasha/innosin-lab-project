@@ -29,7 +29,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { validateAndSanitize, schemas, checkRateLimit } = useSecurityValidation();
+  const { validateAndSanitize, schemas } = useSecurityValidation();
 
   const checkAdminStatus = async (userEmail: string) => {
     try {
@@ -86,18 +86,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signUp = async (email: string, password: string) => {
-    // Rate limiting check
-    if (!checkRateLimit('signup', 3, 900000)) { // 3 attempts per 15 minutes
-      return { error: { message: 'Too many signup attempts. Please try again later.' } };
+    // Server-side rate limiting check
+    try {
+      const { data: allowed, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        operation_name: 'signup',
+        max_attempts: 3,
+        time_window_minutes: 15
+      });
+      
+      if (rateLimitError) {
+        console.error('Rate limit check failed:', rateLimitError);
+      } else if (!allowed) {
+        return { error: { message: 'Too many signup attempts. Please try again later.' } };
+      }
+    } catch (err) {
+      console.error('Rate limit check error:', err);
+      // Continue with signup if rate limit check fails (fail-open for availability)
     }
 
     // Validate inputs
-    const emailValidation = validateAndSanitize(email, schemas.email, 'validate_email');
+    const emailValidation = validateAndSanitize(email, schemas.email);
     if (!emailValidation.success) {
       return { error: { message: emailValidation.error } };
     }
 
-    const passwordValidation = validateAndSanitize(password, schemas.password, 'validate_password');
+    const passwordValidation = validateAndSanitize(password, schemas.password);
     if (!passwordValidation.success) {
       return { error: { message: passwordValidation.error } };
     }
@@ -112,12 +125,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Log the attempt
+    // Log the attempt for server-side rate limiting
     if (error) {
       try {
         await supabase.from('rate_limit_log').insert({
           email: emailValidation.data,
-          operation: 'signup_failed',
+          operation: 'signup',
           success: false
         });
       } catch (logError) {
@@ -129,13 +142,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signIn = async (email: string, password: string) => {
-    // Rate limiting check
-    if (!checkRateLimit('signin', 5, 900000)) { // 5 attempts per 15 minutes
-      return { error: { message: 'Too many signin attempts. Please try again later.' } };
+    // Server-side rate limiting check
+    try {
+      const { data: allowed, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        operation_name: 'signin',
+        max_attempts: 5,
+        time_window_minutes: 15
+      });
+      
+      if (rateLimitError) {
+        console.error('Rate limit check failed:', rateLimitError);
+      } else if (!allowed) {
+        return { error: { message: 'Too many signin attempts. Please try again later.' } };
+      }
+    } catch (err) {
+      console.error('Rate limit check error:', err);
+      // Continue with signin if rate limit check fails (fail-open for availability)
     }
 
     // Validate email format (but allow existing passwords through)
-    const emailValidation = validateAndSanitize(email, schemas.email, 'validate_signin_email');
+    const emailValidation = validateAndSanitize(email, schemas.email);
     if (!emailValidation.success) {
       return { error: { message: 'Invalid email format' } };
     }
@@ -145,12 +171,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password,
     });
 
-    // Log the attempt
+    // Log the attempt for server-side rate limiting
     if (error) {
       try {
         await supabase.from('rate_limit_log').insert({
           email: emailValidation.data,
-          operation: 'signin_failed',
+          operation: 'signin',
           success: false
         });
       } catch (logError) {

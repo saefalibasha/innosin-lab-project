@@ -14,6 +14,59 @@ const hubspotApiKey = Deno.env.get('HUBSPOT_API_KEY');
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+// Input validation constants
+const MAX_MESSAGE_LENGTH = 5000;
+const MAX_SESSION_ID_LENGTH = 100;
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+// Validate and sanitize input
+function validateInput(message: unknown, sessionId: unknown): { 
+  valid: boolean; 
+  error?: string; 
+  sanitizedMessage?: string; 
+  sanitizedSessionId?: string 
+} {
+  // Validate message
+  if (!message || typeof message !== 'string') {
+    return { valid: false, error: 'Message is required and must be a string' };
+  }
+  
+  if (message.length === 0) {
+    return { valid: false, error: 'Message cannot be empty' };
+  }
+  
+  if (message.length > MAX_MESSAGE_LENGTH) {
+    return { valid: false, error: `Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters` };
+  }
+  
+  // Validate sessionId
+  if (!sessionId || typeof sessionId !== 'string') {
+    return { valid: false, error: 'Session ID is required and must be a string' };
+  }
+  
+  if (sessionId.length > MAX_SESSION_ID_LENGTH) {
+    return { valid: false, error: 'Invalid session ID format' };
+  }
+  
+  // UUID format validation for sessionId
+  if (!UUID_REGEX.test(sessionId)) {
+    return { valid: false, error: 'Session ID must be a valid UUID' };
+  }
+  
+  // Sanitize message - remove potential XSS vectors
+  const sanitizedMessage = message
+    .replace(/[<>]/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+=/gi, '')
+    .trim()
+    .slice(0, MAX_MESSAGE_LENGTH);
+  
+  return { 
+    valid: true, 
+    sanitizedMessage, 
+    sanitizedSessionId: sessionId.trim() 
+  };
+}
 // Specific response mappings for common queries
 const specificResponses: Record<string, {
   triggers: string[];
@@ -395,20 +448,30 @@ serve(async (req) => {
   }
 
   try {
-    const { message, sessionId, chatHistory = [], contactId } = await req.json();
-    console.log('Processing message:', { message, sessionId, historyLength: chatHistory.length, hasContactId: !!contactId });
-
-    if (!message || typeof message !== 'string' || message.trim().length === 0) {
-      throw new Error('Valid message is required');
+    const requestBody = await req.json();
+    const { message, sessionId, chatHistory = [], contactId } = requestBody;
+    
+    // Validate and sanitize inputs
+    const validation = validateInput(message, sessionId);
+    if (!validation.valid) {
+      console.error('Input validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
     
-    if (!sessionId || typeof sessionId !== 'string') {
-      throw new Error('Valid sessionId is required');
-    }
-
-    const sanitizedMessage = message.replace(/[<>]/g, '').trim().slice(0, 4000);
+    const sanitizedMessage = validation.sanitizedMessage!;
+    const sanitizedSessionId = validation.sanitizedSessionId!;
     
-    // Rate limiting check
+    console.log('Processing message:', { 
+      messageLength: sanitizedMessage.length, 
+      sessionId: sanitizedSessionId, 
+      historyLength: chatHistory.length, 
+      hasContactId: !!contactId 
+    });
+    
+    // Rate limiting check - server-side enforcement
     const { data: recentMessages } = await supabase
       .from('chat_messages')
       .select('created_at')
@@ -417,7 +480,11 @@ serve(async (req) => {
       .limit(15);
     
     if (recentMessages && recentMessages.length >= 15) {
-      throw new Error('Rate limit exceeded. Please wait before sending more messages.');
+      console.warn('Rate limit exceeded for chat messages');
+      return new Response(
+        JSON.stringify({ error: 'Rate limit exceeded. Please wait before sending more messages.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Check for specific intent first
