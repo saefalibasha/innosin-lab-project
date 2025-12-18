@@ -3,24 +3,12 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   
-  <!-- Welcome Landing Page -->
+  <!-- Homepage (Root Domain - Canonical URL) -->
   <url>
-    <loc>https://www.innosinlab.com/welcome</loc>
-    <lastmod>2025-12-11</lastmod>
+    <loc>https://www.innosinlab.com/</loc>
+    <lastmod>2025-12-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <image:image>
-      <image:loc>https://www.innosinlab.com/branding/hero-logo.png</image:loc>
-      <image:title>Innosin Lab - Laboratory Equipment Solutions</image:title>
-    </image:image>
-  </url>
-
-  <!-- Homepage -->
-  <url>
-    <loc>https://www.innosinlab.com/home</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
     <image:image>
       <image:loc>https://www.innosinlab.com/branding/hero-logo.png</image:loc>
       <image:title>Innosin Lab - Laboratory Equipment Solutions</image:title>

@@ -8,6 +8,13 @@ interface SEOMetadata {
 }
 
 export const pageSEOMetadata: Record<string, SEOMetadata> = {
+  welcome: {
+    title: "Innosin Lab - Premium Laboratory Furniture & Equipment Solutions | Malaysia",
+    description: "Leading provider of innovative laboratory furniture, equipment, and custom design solutions in Malaysia. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups.",
+    keywords: "laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, Malaysia",
+    ogImage: "/branding/hero-logo.png",
+    canonical: "https://www.innosinlab.com/"
+  },
   home: {
     title: "Innosin Lab - Premium Laboratory Furniture & Equipment Solutions",
     description: "Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions.",
