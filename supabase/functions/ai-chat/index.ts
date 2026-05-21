@@ -215,7 +215,7 @@ serve(async (req) => {
       - Solid Single Door — protects contents from light and dust, single-bay
 
 PRODUCT RULES:
-- All four brands are available — recommend the right brand for the question (e.g. fume hood → Broen-Lab; eyewash → Oriental Giken; premium bench → Hamilton; lab storage → Innosin).
+- All four brands are available — recommend the right brand for the question (e.g. fume hood/BSC → Oriental Giken; eyewash/safety shower → Broen-Lab; premium bench → Hamilton; lab storage → Innosin).
 - Direct users to /products?search=<brand or product> or specific categories when relevant.
 - Never invent product codes. Use only items present in the knowledge base or the catalog above.
 - For quotes, installation, or unknowns, offer to connect them with the sales team and capture contact details.
