@@ -228,7 +228,7 @@ const ProductCatalog = () => {
         </CardContent>
       </Card>
 
-      {/* Product Series Display */}
+      {/* Product Series Display - Grouped by Category */}
       {loading ? (
         <div className={viewMode === 'grid' 
           ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
@@ -243,17 +243,36 @@ const ProductCatalog = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className={viewMode === 'grid' 
-          ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-          : "space-y-4"
-        }>
-          {filteredSeries.map((series) => (
-            <ProductCard
-              key={series.id}
-              product={series}
-              variant="series"
-            />
-          ))}
+        <div className="space-y-12">
+          {Object.entries(
+            filteredSeries.reduce((acc, series) => {
+              const category = series.category || 'Uncategorized';
+              if (!acc[category]) acc[category] = [];
+              acc[category].push(series);
+              return acc;
+            }, {} as Record<string, ProductType[]>)
+          )
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([category, items]) => (
+              <section key={category}>
+                <div className="flex items-center justify-between mb-4 pb-2 border-b">
+                  <h2 className="text-2xl font-semibold">{category}</h2>
+                  <Badge variant="secondary">{items.length}</Badge>
+                </div>
+                <div className={viewMode === 'grid' 
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+                  : "space-y-4"
+                }>
+                  {items.map((series) => (
+                    <ProductCard
+                      key={series.id}
+                      product={series}
+                      variant="series"
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
         </div>
       )}
     </div>
