@@ -315,9 +315,9 @@ const EnhancedLiveChat = () => {
             <button
               onClick={() => setIsOpen(true)}
               aria-label="Open chat"
-              className="relative h-14 w-14 sm:h-15 sm:w-15 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform"
+              className="relative h-14 w-14 sm:h-15 sm:w-15 rounded-full bg-sea text-white shadow-lg shadow-sea/30 flex items-center justify-center hover:scale-105 transition-transform font-sans"
             >
-              <span className="absolute inset-0 rounded-full bg-primary opacity-40 animate-ping" />
+              <span className="absolute inset-0 rounded-full bg-sea opacity-40 animate-ping" />
               <MessageCircle className="w-6 h-6 relative" />
             </button>
           </motion.div>
