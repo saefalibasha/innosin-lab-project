@@ -34,8 +34,12 @@ function generateUUID(): string {
 }
 
 const QUICK_REPLIES = [
-  'Browse Knee Space benches',
-  'Mobile cabinets',
+  'Eyewash & safety showers (Broen-Lab)',
+  'Fume hoods & biosafety cabinets (Oriental Giken)',
+  'Lab furniture (Hamilton)',
+  'Knee Space benches (Innosin)',
+  'Mobile cabinets (Innosin)',
+  'Wall cabinets (Innosin)',
   'Request a quote',
   'Talk to a human',
 ];
