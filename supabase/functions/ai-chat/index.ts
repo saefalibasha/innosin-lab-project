@@ -188,17 +188,17 @@ serve(async (req) => {
 
 === PRODUCT CATALOG (all 4 brands sold on the site) ===
 
-1. BROEN-LAB — Fume hoods and ventilation systems
-   - Specializes in chemical safety: ducted fume hoods, ventilation enclosures, lab airflow systems.
-   - Use when the user asks about fume hoods, fume cupboards, chemical containment, ASHRAE 110.
+1. BROEN-LAB — Emergency safety equipment
+   - Eyewash stations and safety showers (ANSI Z358.1 compliant), combination units.
+   - Use when the user asks about emergency eyewash, drench showers, or emergency safety stations.
 
 2. HAMILTON LABORATORY SOLUTIONS — Premium laboratory furniture and benches
    - High-end lab benches with chemical-resistant worktops (epoxy, phenolic, stainless).
    - Use when the user asks about premium workbenches, casework, or chemical-resistant surfaces.
 
-3. ORIENTAL GIKEN INC. — Emergency safety equipment
-   - Eyewash stations and safety showers (ANSI Z358.1 compliant).
-   - Use when the user asks about emergency eyewash, drench showers, combination units.
+3. ORIENTAL GIKEN INC. — Fume hoods and biosafety cabinets
+   - Ducted fume hoods, ventilation enclosures, Class II biosafety cabinets.
+   - Use when the user asks about fume hoods, fume cupboards, BSCs, chemical containment, ASHRAE 110, or NSF/ANSI 49.
 
 4. INNOSIN LAB (own brand) — Laboratory storage and furniture
    a) Knee Space Series — modular lab benches
