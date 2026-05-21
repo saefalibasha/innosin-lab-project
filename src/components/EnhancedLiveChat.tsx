@@ -134,7 +134,7 @@ const EnhancedLiveChat = () => {
 
       const welcome: ChatMessage = {
         id: 'welcome',
-        message: `Hi, I'm the Innosin Lab assistant. I can help with our full catalog — Broen-Lab fume hoods, Hamilton lab furniture, Oriental Giken safety showers and eyewashes, and our own Innosin Knee Space benches, Mobile Cabinets, and Wall Cabinets. How can I help?`,
+        message: `Hi, I'm the Innosin Lab assistant. I can help with our full catalog — Broen-Lab safety showers and eyewash stations, Hamilton lab furniture, Oriental Giken fume hoods and biosafety cabinets, and our own Innosin Knee Space benches, Mobile Cabinets, and Wall Cabinets. How can I help?`,
         sender: 'bot',
         timestamp: new Date(),
       };

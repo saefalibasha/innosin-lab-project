@@ -7,7 +7,7 @@ export const brandCollections = [
   {
     // Collection 1: Broen-Lab
     title: "Broen-Lab",
-    description: "Broen-Lab specializes in advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
+    description: "Broen-Lab specializes in emergency safety equipment including eyewash stations and safety showers compliant with ANSI Z358.1",
     logoPath: "/brand-logos/broen-lab-logo.png",
     category: "Broen-Lab"
   },
@@ -21,7 +21,7 @@ export const brandCollections = [
   {
     // Collection 3: Oriental Giken Inc.
     title: "Oriental Giken Inc.",
-    description: "Oriental Giken Inc. offers emergency safety equipment including eye wash stations and safety showers",
+    description: "Oriental Giken Inc. provides advanced fume hoods and biosafety cabinets engineered for chemical containment and biological safety",
     logoPath: "/brand-logos/oriental-giken-logo.png",
     category: "Oriental Giken Inc."
   },

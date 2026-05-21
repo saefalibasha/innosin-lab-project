@@ -16,7 +16,7 @@ const companyThemes: Record<string, CompanyTheme> = {
     primary: '213 100% 25%', // Navy blue for safety equipment
     accent: '213 85% 45%',
     logo: '/brand-logos/broen-lab-logo.png',
-    description: 'Advanced fume hoods and ventilation systems designed for chemical safety and efficiency'
+    description: 'Emergency safety equipment including eyewash stations and safety showers (ANSI Z358.1)'
   },
   'Hamilton Laboratory Solutions': {
     name: 'Hamilton Laboratory Solutions',
@@ -30,7 +30,7 @@ const companyThemes: Record<string, CompanyTheme> = {
     primary: '15 100% 35%', // Modern orange/red (Tangerine inspired)
     accent: '15 85% 55%',
     logo: '/brand-logos/oriental-giken-logo.png',
-    description: 'Emergency safety equipment including eye wash stations and safety showers'
+    description: 'Advanced fume hoods and biosafety cabinets for chemical containment and biological safety'
   },
   'Innosin Lab': {
     name: 'Innosin Lab',
