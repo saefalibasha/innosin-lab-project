@@ -16,7 +16,7 @@ const companyThemes: Record<string, CompanyTheme> = {
     primary: '213 100% 25%', // Navy blue for safety equipment
     accent: '213 85% 45%',
     logo: '/brand-logos/broen-lab-logo.png',
-    description: 'Advanced fume hoods and ventilation systems designed for chemical safety and efficiency'
+    description: 'Emergency safety equipment including eyewash stations and safety showers (ANSI Z358.1)'
   },
   'Hamilton Laboratory Solutions': {
     name: 'Hamilton Laboratory Solutions',
