@@ -315,9 +315,9 @@ const EnhancedLiveChat = () => {
             <button
               onClick={() => setIsOpen(true)}
               aria-label="Open chat"
-              className="relative h-14 w-14 sm:h-15 sm:w-15 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform"
+              className="relative h-14 w-14 sm:h-15 sm:w-15 rounded-full bg-sea text-white shadow-lg shadow-sea/30 flex items-center justify-center hover:scale-105 transition-transform font-sans"
             >
-              <span className="absolute inset-0 rounded-full bg-primary opacity-40 animate-ping" />
+              <span className="absolute inset-0 rounded-full bg-sea opacity-40 animate-ping" />
               <MessageCircle className="w-6 h-6 relative" />
             </button>
           </motion.div>
@@ -345,9 +345,9 @@ const EnhancedLiveChat = () => {
               className="fixed z-[9999] inset-x-4 bottom-4 top-16 sm:inset-auto sm:bottom-6 sm:right-6 sm:top-auto sm:w-[400px] sm:h-[600px] sm:max-h-[85vh] flex"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex flex-col flex-1 bg-white rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex flex-col flex-1 bg-white rounded-2xl shadow-2xl overflow-hidden font-sans">
                 {/* Header */}
-                <div className="px-4 py-3.5 bg-gradient-to-r from-primary to-primary/85 text-primary-foreground flex items-center justify-between shrink-0">
+                <div className="px-4 py-3.5 bg-primary text-primary-foreground flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center ring-1 ring-white/20">
                       <Bot className="w-5 h-5" />
@@ -414,14 +414,14 @@ const EnhancedLiveChat = () => {
                         >
                           <div className={`flex items-end gap-2 max-w-[85%] ${isUser ? 'flex-row-reverse' : ''}`}>
                             {!isUser && (
-                              <div className={`w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 ${showIcon ? 'opacity-100' : 'opacity-0'}`}>
+                              <div className={`w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center shrink-0 ${showIcon ? 'opacity-100' : 'opacity-0'}`}>
                                 <Bot className="w-3.5 h-3.5" />
                               </div>
                             )}
                             <div
                               className={`px-3.5 py-2.5 text-sm leading-relaxed rounded-2xl ${
                                 isUser
-                                  ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                  ? 'bg-sea text-white rounded-br-sm'
                                   : 'bg-white text-foreground border border-slate-200/70 rounded-bl-sm shadow-sm'
                               }`}
                             >
@@ -437,7 +437,7 @@ const EnhancedLiveChat = () => {
                     {isTyping && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                         <div className="flex items-end gap-2">
-                          <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center">
                             <Bot className="w-3.5 h-3.5" />
                           </div>
                           <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-sm border border-slate-200/70 shadow-sm">
@@ -460,7 +460,7 @@ const EnhancedLiveChat = () => {
                         {QUICK_REPLIES.map((reply) => (
                           <button
                             key={reply}
-                            className="text-xs px-3 py-1.5 rounded-full border border-primary/30 text-primary bg-white hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
+                            className="text-xs px-3 py-1.5 rounded-full border border-sea/40 text-sea bg-white hover:bg-sea hover:text-white hover:border-sea transition-colors disabled:opacity-50"
                             onClick={() => handleQuickReply(reply)}
                             disabled={isTyping}
                           >
@@ -478,13 +478,13 @@ const EnhancedLiveChat = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type your message…"
-                        className="flex-1 text-sm rounded-full border-slate-200 bg-slate-50 focus-visible:ring-primary/30"
+                        className="flex-1 text-sm rounded-full border-slate-200 bg-slate-50 focus-visible:ring-sea/30"
                         onKeyPress={handleKeyPress}
                         disabled={isTyping}
                       />
                       <Button
                         size="icon"
-                        className="rounded-full bg-primary hover:bg-primary/90 shrink-0 h-10 w-10"
+                        className="rounded-full bg-sea hover:bg-sea-dark text-white shrink-0 h-10 w-10"
                         onClick={() => handleSendMessage()}
                         disabled={isTyping || !message.trim()}
                         aria-label="Send"

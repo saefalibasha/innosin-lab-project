@@ -27,7 +27,7 @@ function buildCorsHeaders(origin: string | null): Record<string, string> {
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY')!;
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
@@ -116,10 +116,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (!openAIApiKey) {
-    console.error('OPENAI_API_KEY is not set');
+  if (!lovableApiKey) {
+    console.error('LOVABLE_API_KEY is not set');
     return new Response(
-      JSON.stringify({ success: false, message: 'AI service not configured', error: 'missing_openai_key' }),
+      JSON.stringify({ success: false, message: 'AI service not configured', error: 'missing_lovable_api_key' }),
       { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
@@ -250,26 +250,36 @@ ${knowledgeContext ? `KNOWLEDGE BASE (most relevant catalog entries):\n${knowled
       { role: 'user', content: sanitizedMessage },
     ];
 
-    console.log('Calling OpenAI with', messages.length, 'messages');
+    console.log('Calling Lovable AI Gateway with', messages.length, 'messages');
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'google/gemini-2.5-flash',
         messages,
-        max_tokens: 600,
-        temperature: 0.7,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.error('Lovable AI Gateway error:', response.status, errorText);
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Rate limit exceeded. Please try again shortly.', error: 'rate_limit' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'AI credits exhausted. Please add credits to your Lovable workspace.', error: 'payment_required' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      throw new Error(`Lovable AI Gateway error: ${response.status}`);
     }
 
     const data = await response.json();
