@@ -79,15 +79,15 @@ const Navigation = () => {
             <SheetTitle>Menu</SheetTitle>
           </SheetHeader>
           <nav className="grid gap-4 text-lg">
-            <Link to="/" className="flex items-center hover:text-primary">
+            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center hover:text-primary">
               <Home className="h-4 w-4 mr-2" />
               Home
             </Link>
-            <Link to="/products" className="flex items-center hover:text-primary">
+            <Link to="/products" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center hover:text-primary">
               <ShoppingBag className="h-4 w-4 mr-2" />
               Products
             </Link>
-            <Link to="/floor-planner" className="flex items-center hover:text-primary">
+            <Link to="/floor-planner" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center hover:text-primary">
               <LayoutDashboard className="h-4 w-4 mr-2" />
               Floor Planner
             </Link>
@@ -98,20 +98,21 @@ const Navigation = () => {
                   <Link
                     key={company.name}
                     to={company.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
                     className="block px-4 py-2 hover:bg-gray-100"
                   >{company.name}</Link>
                 ))}
               </div>
             </div>
-            <Link to="/blog" className="flex items-center hover:text-primary">
+            <Link to="/blog" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center hover:text-primary">
               <Newspaper className="h-4 w-4 mr-2" />
               Blog
             </Link>
-            <Link to="/about" className="flex items-center hover:text-primary">
+            <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center hover:text-primary">
               <Info className="h-4 w-4 mr-2" />
               About Us
             </Link>
-            <Link to="/contact" className="flex items-center hover:text-primary">
+            <Link to="/contact" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center hover:text-primary">
               <Mail className="h-4 w-4 mr-2" />
               Contact
             </Link>

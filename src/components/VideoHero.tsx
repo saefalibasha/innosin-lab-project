@@ -35,7 +35,7 @@ const VideoHero = () => {
         <div className="px-4 sm:px-6 lg:px-8 pt-6">
           <div className="max-w-7xl mx-auto">
             <Carousel 
-              className="w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden shadow-2xl"
+              className="w-full h-[60vh] sm:h-[65vh] min-h-[360px] sm:min-h-[500px] rounded-2xl overflow-hidden shadow-2xl"
               opts={{
                 align: "center",
                 loop: true,
@@ -44,7 +44,7 @@ const VideoHero = () => {
               <CarouselContent className="-ml-2 md:-ml-4">
                 {heroContent.slides.map((slide) => (
                   <CarouselItem key={slide.id} className="pl-2 md:pl-4 basis-full md:basis-[85%] lg:basis-[90%]">
-                    <div className="relative w-full h-[65vh] min-h-[500px] rounded-2xl overflow-hidden">
+                    <div className="relative w-full h-[60vh] sm:h-[65vh] min-h-[360px] sm:min-h-[500px] rounded-2xl overflow-hidden">
                       {/* Background Image */}
                       <div 
                         className="absolute inset-0 bg-cover bg-center bg-no-repeat"

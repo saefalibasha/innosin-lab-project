@@ -380,12 +380,12 @@ const EnhancedLiveChat = () => {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-6 z-[9999]">
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999]">
         <Button
-          className="rounded-full w-16 h-16 bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-110"
+          className="rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-110"
           onClick={() => setIsOpen(true)}
         >
-          <MessageCircle className="w-7 h-7 text-white" />
+          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
         </Button>
         <Badge className="absolute -top-1 left-1/2 transform -translate-x-1/2 bg-green-500 text-white animate-pulse px-2 py-1 whitespace-nowrap">
           AI Chat
@@ -395,8 +395,8 @@ const EnhancedLiveChat = () => {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <Card className={`w-96 ${isMinimized ? 'h-16' : 'h-[520px]'} shadow-2xl transition-all glass-card border-sea/20`}>
+    <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50">
+      <Card className={`w-full sm:w-96 ${isMinimized ? 'h-16' : 'h-[520px] max-h-[85vh]'} shadow-2xl transition-all glass-card border-sea/20`}>
         <CardHeader className="p-4 bg-gradient-to-r from-sea to-sea-dark text-white rounded-t-lg flex flex-row items-center justify-between">
           <div className="flex items-center space-x-2">
             <Bot className="w-5 h-5" />

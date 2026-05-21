@@ -95,7 +95,7 @@ const ShopTheLook = () => {
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-6">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Shop The <span className="text-blue-600">Look</span>
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
@@ -108,7 +108,7 @@ const ShopTheLook = () => {
         <div className="relative">
           <div className="grid lg:grid-cols-3 gap-0">
             {/* Main Image - Takes 2/3 on large screens */}
-            <div className="lg:col-span-2 relative overflow-hidden rounded-l-2xl shadow-2xl">
+            <div className="lg:col-span-2 relative overflow-hidden rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none shadow-2xl">
               <img
                 src={shopLookContent.background_image}
                 alt={shopLookContent.background_alt}
@@ -142,7 +142,7 @@ const ShopTheLook = () => {
             </div>
 
             {/* Product Details Overlay - Takes 1/3 on large screens */}
-            <div className="lg:col-span-1 bg-white rounded-r-2xl shadow-2xl overflow-y-auto">
+            <div className="lg:col-span-1 bg-white rounded-b-2xl lg:rounded-r-2xl lg:rounded-bl-none shadow-2xl overflow-y-auto">
               {selectedHotspot ? (
                 <div className="p-6 space-y-6">
                   {/* Category Badge */}

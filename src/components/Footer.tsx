@@ -92,7 +92,7 @@ export const Footer = () => {
                 <div key={link.name} className="flex items-center justify-between group">
                   <Link
                     to={link.href}
-                    className="text-2xl lg:text-3xl font-extrabold tracking-tight"
+                    className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight"
                   >
                     {link.name}
                   </Link>
@@ -116,7 +116,7 @@ export const Footer = () => {
                 { label: 'Instagram', href: 'https://www.instagram.com/innosin_techlab/?hl=en' },
               ].map((s) => (
                 <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between group">
-                  <span className="text-2xl lg:text-3xl font-extrabold tracking-tight">
+                  <span className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight">
                     {s.label}
                   </span>
                   <ExternalLink className="w-4 h-4 text-white/90 group-hover:rotate-6 transition-transform" />
