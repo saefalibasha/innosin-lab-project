@@ -437,7 +437,7 @@ const EnhancedLiveChat = () => {
                     {isTyping && (
                       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
                         <div className="flex items-end gap-2">
-                          <div className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center">
                             <Bot className="w-3.5 h-3.5" />
                           </div>
                           <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-sm border border-slate-200/70 shadow-sm">
