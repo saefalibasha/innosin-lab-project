@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,13 +15,11 @@ interface ChatMessage {
   sender: 'user' | 'bot';
   timestamp: Date;
   confidence?: number;
-  ticketId?: string;
-  intentMatched?: string;
 }
 
 interface UserSession {
   sessionId: string;
-  databaseId?: string; // The UUID from the database
+  databaseId?: string;
   email?: string;
   name?: string;
   company?: string;
@@ -29,6 +28,91 @@ interface UserSession {
   lastActivity: Date;
   messages: ChatMessage[];
   hubspotContactId?: string;
+  escalated?: boolean;
+}
+
+const SUPPORT_EMAIL = 'info@innosinlab.com';
+
+// Generate a UUID v4 (edge function requires UUID session ids)
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+const QUICK_REPLIES = [
+  'Browse Products',
+  'Request a Quote',
+  'Technical Support',
+  'Talk to a Human',
+];
+
+const PRODUCT_LINK_REGEX = /\[PRODUCT:([^\]]+)\]/g;
+
+/**
+ * Render message text and convert [PRODUCT:/path] markers into inline links.
+ * The marker decorates the immediately-preceding token (product code) as the link.
+ */
+function renderMessageContent(text: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+  const regex = new RegExp(PRODUCT_LINK_REGEX.source, 'g');
+
+  while ((match = regex.exec(text)) !== null) {
+    const before = text.slice(lastIndex, match.index);
+    const href = match[1];
+
+    // Find the preceding word/code (letters, digits, dashes) to use as link label
+    const wordMatch = before.match(/([A-Za-z0-9][A-Za-z0-9\-_/]*)\s*$/);
+    if (wordMatch) {
+      const wordStart = before.length - wordMatch[0].length + (wordMatch[0].length - wordMatch[1].length);
+      parts.push(before.slice(0, wordStart));
+      parts.push(
+        <Link
+          key={`pl-${key++}`}
+          to={href}
+          className="text-sea underline font-medium hover:text-sea-dark"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {wordMatch[1]}
+        </Link>
+      );
+    } else {
+      parts.push(before);
+      parts.push(
+        <Link
+          key={`pl-${key++}`}
+          to={href}
+          className="text-sea underline font-medium hover:text-sea-dark"
+        >
+          View product
+        </Link>
+      );
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  parts.push(text.slice(lastIndex));
+  return parts;
+}
+
+function isHumanEscalation(text: string): boolean {
+  const t = text.toLowerCase();
+  return (
+    t.includes('talk to a human') ||
+    t.includes('talk to human') ||
+    t.includes('speak to someone') ||
+    t.includes('speak to a human') ||
+    t.includes('real person') ||
+    t.includes('human agent') ||
+    t.includes('live agent')
+  );
 }
 
 const EnhancedLiveChat = () => {
@@ -39,68 +123,10 @@ const EnhancedLiveChat = () => {
   const [isTyping, setIsTyping] = useState(false);
   const [session, setSession] = useState<UserSession | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
-  const [contactInfo, setContactInfo] = useState({
-    name: '',
-    email: '',
-    company: '',
-    phone: ''
-  });
+  const [contactInfo, setContactInfo] = useState({ name: '', email: '', company: '', phone: '' });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   const { createContact, createTicket, syncConversation, loading } = useHubSpotIntegration();
-
-  const quickResponses = [
-    'Product catalog & specifications',
-    'Request detailed quote',
-    'Technical support & troubleshooting',
-    'Professional installation services',
-    'Pricing & financing options',
-    'Warranty & maintenance',
-    'Custom laboratory design',
-    'Compliance & certifications'
-  ];
-
-  // Enhanced knowledge base for more comprehensive responses
-  const knowledgeBase = {
-    products: {
-      'eyewash': {
-        keywords: ['eyewash', 'eye wash', 'emergency', 'safety shower', 'bl-hes', 'bl-ebs'],
-        response: 'Our emergency eyewash stations include bench-mounted (BL-HES-BENCH-001), wall-mounted (BL-HES-WALL-002), and recessed models (BL-EBS-RECESSED-003). They meet ANSI Z358.1 standards and provide 15 minutes of continuous flow. Would you like specific technical specifications, installation requirements, or pricing information?'
-      },
-      'fume': {
-        keywords: ['fume', 'hood', 'cupboard', 'ventilation', 'extraction'],
-        response: 'Our fume cupboards offer superior containment and energy efficiency. We have various models including walk-in fume hoods, bench-top units, and specialized chemistry fume cupboards. Key features include variable air volume controls, safety monitoring systems, and ASHRAE 110 compliance. What type of laboratory work will you be conducting?'
-      },
-      'safety': {
-        keywords: ['safety', 'shower', 'emergency', 'decontamination', 'bl-bs'],
-        response: 'Our safety shower systems (BL-BS-WALL-006) provide full-body emergency decontamination with ANSI Z358.1 compliance. Features include thermostatic mixing valves, high-visibility signage, and corrosion-resistant construction. Would you like information about installation requirements, maintenance procedures, or compliance documentation?'
-      },
-      'furniture': {
-        keywords: ['furniture', 'bench', 'cabinet', 'storage', 'lab furniture'],
-        response: 'Our laboratory furniture includes modular benching systems, chemical storage cabinets, mobile carts, and specialized workstations. All furniture meets laboratory safety standards with chemical-resistant surfaces and ergonomic design. What type of laboratory setup are you planning?'
-      }
-    },
-    services: {
-      'installation': {
-        keywords: ['install', 'installation', 'setup', 'commissioning'],
-        response: 'We provide comprehensive installation services including site surveys, project management, certified installation by trained technicians, testing and commissioning, and staff training. Our installation team ensures compliance with all safety standards and local regulations. Would you like to schedule a site survey or discuss project timeline?'
-      },
-      'maintenance': {
-        keywords: ['maintenance', 'service', 'repair', 'calibration'],
-        response: 'Our maintenance services include preventive maintenance programs, emergency repairs, calibration services, and compliance testing. We offer annual service contracts with priority response times and genuine parts guarantee. What equipment do you need serviced?'
-      },
-      'design': {
-        keywords: ['design', 'planning', 'layout', 'consultation'],
-        response: 'Our laboratory design team provides comprehensive planning services including workflow analysis, space optimization, utility planning, and regulatory compliance consulting. We use 3D modeling and can provide virtual walkthroughs. Are you planning a new laboratory or renovating an existing facility?'
-      }
-    },
-    compliance: {
-      'standards': {
-        keywords: ['standard', 'compliance', 'regulation', 'ansi', 'osha', 'certification'],
-        response: 'Our products comply with major safety standards including ANSI Z358.1 for emergency equipment, ASHRAE 110 for fume hoods, OSHA regulations, and local building codes. We provide all necessary documentation and certificates. Which specific compliance requirements do you need to meet?'
-      }
-    }
-  };
 
   useEffect(() => {
     if (isOpen && !session) {
@@ -109,24 +135,20 @@ const EnhancedLiveChat = () => {
   }, [isOpen]);
 
   useEffect(() => {
-    scrollToBottom();
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const initializeSession = async () => {
-    const sessionId = `session_${Date.now()}`;
-    
+    const sessionId = generateUUID();
     try {
-      // Get current user (null for anonymous)
       const { data: user } = await supabase.auth.getUser();
-      
-      // Create session in database first
       const { data: sessionData, error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
           session_id: sessionId,
-          user_id: user?.user?.id || null, // Allow null for anonymous users
+          user_id: user?.user?.id || null,
           start_time: new Date().toISOString(),
-          status: 'active'
+          status: 'active',
         })
         .select()
         .single();
@@ -142,29 +164,17 @@ const EnhancedLiveChat = () => {
         databaseId: sessionData.id,
         startTime: new Date(),
         lastActivity: new Date(),
-        messages: []
+        messages: [],
       };
-      
       setSession(newSession);
-      
-      // Enhanced welcome message with more comprehensive introduction
+
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
-        message: `Hello! I'm your AI assistant for Innosin Lab, your trusted partner in laboratory safety and equipment solutions. I can help you with:
-
-• Product information & technical specifications
-• Custom quotes & pricing
-• Installation & maintenance services  
-• Safety compliance & certifications
-• Laboratory design & planning consultation
-• Technical support & troubleshooting
-
-I have extensive knowledge about our emergency eyewash stations, fume cupboards, safety showers, and laboratory furniture. How can I assist you today?`,
+        message: `Hi! I'm the Innosin Lab AI assistant. I can help with product info, quotes, installation, and technical questions about our laboratory safety equipment and furniture. How can I help today?`,
         sender: 'bot',
         timestamp: new Date(),
-        confidence: 1.0
+        confidence: 1.0,
       };
-      
       setMessages([welcomeMessage]);
       await saveMessage(welcomeMessage, sessionData.id);
     } catch (error) {
@@ -175,256 +185,162 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
 
   const saveMessage = async (msg: ChatMessage, sessionDatabaseId: string) => {
     try {
-      console.log('Saving message:', { msg, sessionDatabaseId });
-      
       const { error } = await supabase.from('chat_messages').insert({
         session_id: sessionDatabaseId,
         message: msg.message,
         sender: msg.sender,
-        confidence: msg.confidence || null
+        confidence: msg.confidence || null,
       });
-
-      if (error) {
-        console.error('Error saving message:', error);
-        throw error;
-      }
-      
-      console.log('Message saved successfully');
+      if (error) throw error;
     } catch (error) {
       console.error('Error saving message:', error);
-      toast.error('Failed to save message');
     }
   };
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const findBestResponse = (userMessage: string): { response: string; confidence: number } => {
-    const lowerMessage = userMessage.toLowerCase();
-    let bestMatch = { response: '', confidence: 0.3 };
-
-    // Check all knowledge base categories
-    Object.values(knowledgeBase).forEach(category => {
-      Object.values(category).forEach(item => {
-        const matchCount = item.keywords.filter(keyword => 
-          lowerMessage.includes(keyword.toLowerCase())
-        ).length;
-        
-        if (matchCount > 0) {
-          const confidence = Math.min(0.95, 0.6 + (matchCount * 0.15));
-          if (confidence > bestMatch.confidence) {
-            bestMatch = { response: item.response, confidence };
-          }
-        }
-      });
+  const callAIChat = async (userMessage: string): Promise<ChatMessage> => {
+    const { data, error } = await supabase.functions.invoke('ai-chat', {
+      body: {
+        message: userMessage,
+        sessionId: session?.sessionId,
+        contactId: session?.hubspotContactId,
+      },
     });
 
-    // Enhanced fallback responses based on intent
-    if (bestMatch.confidence < 0.5) {
-      if (lowerMessage.includes('help') || lowerMessage.includes('assistance')) {
-        bestMatch = {
-          response: 'I\'m here to help! I can provide detailed information about our laboratory equipment, safety systems, installation services, maintenance programs, and compliance requirements. What specific area would you like to explore?',
-          confidence: 0.7
-        };
-      } else if (lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('quote')) {
-        bestMatch = {
-          response: 'I\'d be happy to help you with pricing information. To provide accurate quotes, I\'ll need to understand your specific requirements including product types, quantities, installation needs, and timeline. Could you please share more details about your project?',
-          confidence: 0.8
-        };
-      } else if (lowerMessage.includes('contact') || lowerMessage.includes('speak') || lowerMessage.includes('call')) {
-        bestMatch = {
-          response: 'I can connect you with our expert team! Please share your contact information so our specialists can reach out to discuss your specific laboratory needs and provide personalized assistance.',
-          confidence: 0.75
-        };
-      } else {
-        bestMatch = {
-          response: 'Thank you for your question. As a laboratory equipment specialist, I can provide detailed information about emergency eyewash stations, fume cupboards, safety showers, laboratory furniture, installation services, and compliance requirements. Could you please tell me more about what you\'re looking for?',
-          confidence: 0.4
-        };
-      }
-    }
+    if (error) throw new Error(error.message);
+    if (!data?.message) throw new Error('Invalid response from AI chat');
 
-    return bestMatch;
+    return {
+      id: `bot_${Date.now()}`,
+      message: data.message,
+      sender: 'bot',
+      timestamp: new Date(),
+      confidence: data.confidence || 0.9,
+    };
   };
 
-  const simulateAIResponse = async (userMessage: string): Promise<ChatMessage> => {
+  const handleEscalateToHuman = async (triggerText: string) => {
+    if (!session || !session.databaseId) return;
+
+    const escalationMsg: ChatMessage = {
+      id: `bot_${Date.now()}`,
+      message: `Got it — I'm connecting you with a team member. A specialist will be in touch shortly.\n\nFor immediate assistance, please email us at ${SUPPORT_EMAIL}. If you'd like a faster response, share your contact details below and we'll follow up directly.`,
+      sender: 'bot',
+      timestamp: new Date(),
+      confidence: 1.0,
+    };
+    setMessages((prev) => [...prev, escalationMsg]);
+    await saveMessage(escalationMsg, session.databaseId);
+
+    setSession({ ...session, escalated: true });
+
+    // Create a HubSpot ticket capturing the conversation so far
     try {
-      console.log('Calling AI chat function with message:', userMessage);
-      
-      const { data, error } = await supabase.functions.invoke('ai-chat', {
-        body: {
-          message: userMessage,
-          sessionId: session?.sessionId,
-          chatHistory: messages.slice(-10),
-          contactId: session?.hubspotContactId
-        }
+      const conversationSummary = [...messages, escalationMsg]
+        .slice(-20)
+        .map((m) => `${m.sender === 'user' ? 'Customer' : 'AI'}: ${m.message}`)
+        .join('\n\n');
+
+      await createTicket({
+        sessionId: session.sessionId,
+        contactId: session.hubspotContactId,
+        subject: `Human handoff requested: ${triggerText.substring(0, 60)}`,
+        content: `Customer requested to speak with a human.\n\nConversation:\n\n${conversationSummary}`,
+        priority: 'HIGH',
       });
+    } catch (err) {
+      console.error('Failed to create escalation ticket:', err);
+    }
 
-      if (error) {
-        console.error('AI chat function error:', error);
-        throw new Error(error.message);
-      }
-
-      if (data?.success && data?.message) {
-        console.log('AI response received:', { 
-          message: data.message.substring(0, 100), 
-          ticketCreated: data.ticketCreated,
-          intentMatched: data.intentMatched 
-        });
-
-        // Show toast if ticket was created
-        if (data.ticketCreated) {
-          toast.success(`Support ticket #${data.ticketCreated} created`, {
-            description: 'Our team will follow up shortly.'
-          });
-        }
-
-        // Show contact form if quote/support request and no contact info
-        if (data.intentMatched && ['quote', 'support', 'installation', 'maintenance', 'humanAgent'].includes(data.intentMatched) && !session?.hubspotContactId) {
-          setTimeout(() => setShowContactForm(true), 2000);
-        }
-
-        return {
-          id: `bot_${Date.now()}`,
-          message: data.message,
-          sender: 'bot',
-          timestamp: new Date(),
-          confidence: data.confidence || 0.9,
-          ticketId: data.ticketCreated,
-          intentMatched: data.intentMatched
-        };
-      } else {
-        throw new Error('Invalid response from AI chat function');
-      }
-    } catch (error) {
-      console.error('AI chat error, falling back to rule-based:', error);
-      
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const { response: responseText, confidence } = findBestResponse(userMessage);
-      const lowerMessage = userMessage.toLowerCase();
-      let finalResponse = responseText;
-      
-      if ((lowerMessage.includes('quote') || lowerMessage.includes('price') || lowerMessage.includes('cost') || lowerMessage.includes('purchase')) && !session?.hubspotContactId) {
-        finalResponse += '\n\nTo provide you with accurate pricing and personalized service, I\'d like to collect your contact information. Would you like to share your details so our team can assist you better?';
-        setTimeout(() => setShowContactForm(true), 2000);
-      }
-      
-      return {
-        id: `bot_${Date.now()}`,
-        message: finalResponse,
-        sender: 'bot',
-        timestamp: new Date(),
-        confidence
-      };
+    // Prompt for contact info if we don't have it yet
+    if (!session.hubspotContactId) {
+      setTimeout(() => setShowContactForm(true), 800);
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!message.trim() || !session || !session.databaseId) return;
-    
+  const handleSendMessage = async (overrideText?: string) => {
+    const text = (overrideText ?? message).trim();
+    if (!text || !session || !session.databaseId) return;
+
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
-      message: message.trim(),
+      message: text,
       sender: 'user',
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
-    setMessages(prev => [...prev, userMessage]);
+
+    setMessages((prev) => [...prev, userMessage]);
     setMessage('');
     setIsTyping(true);
-    
-    // Save user message
     await saveMessage(userMessage, session.databaseId);
-    
-    // Update session
-    setSession({
-      ...session,
-      lastActivity: new Date(),
-      messages: [...session.messages, userMessage]
-    });
-    
+
+    // Detect human-escalation intent before calling the AI
+    if (isHumanEscalation(text)) {
+      setIsTyping(false);
+      await handleEscalateToHuman(text);
+      return;
+    }
+
     try {
-      const aiResponse = await simulateAIResponse(message);
-      setMessages(prev => [...prev, aiResponse]);
-      
-      // Save AI response
+      const aiResponse = await callAIChat(text);
+      setMessages((prev) => [...prev, aiResponse]);
       await saveMessage(aiResponse, session.databaseId);
-      
-      // Update session with bot response
-      setSession({
-        ...session,
-        lastActivity: new Date(),
-        messages: [...session.messages, userMessage, aiResponse]
-      });
-      
     } catch (error) {
-      console.error('Error getting AI response:', error);
+      console.error('AI chat error:', error);
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
-        message: 'I apologize, but I\'m having trouble processing your request right now. Please try again, or feel free to ask about our laboratory equipment, safety systems, or services.',
+        message: `I'm having trouble responding right now. Please try again, or email us at ${SUPPORT_EMAIL}.`,
         sender: 'bot',
         timestamp: new Date(),
-        confidence: 0.5
+        confidence: 0.3,
       };
-      setMessages(prev => [...prev, errorMessage]);
-      
-      if (session.databaseId) {
-        await saveMessage(errorMessage, session.databaseId);
-      }
+      setMessages((prev) => [...prev, errorMessage]);
+      await saveMessage(errorMessage, session.databaseId);
     } finally {
       setIsTyping(false);
     }
   };
 
+  const handleQuickReply = (reply: string) => {
+    if (reply === 'Talk to a Human') {
+      // Send as a user message and trigger escalation
+      handleSendMessage('Talk to a human');
+    } else {
+      handleSendMessage(reply);
+    }
+  };
+
   const handleContactSubmit = async () => {
-    // Sanitize and validate inputs
     const sanitizedEmail = contactInfo.email?.trim().replace(/['"]/g, '');
     const sanitizedName = contactInfo.name?.trim();
     const sanitizedCompany = contactInfo.company?.trim();
     const sanitizedPhone = contactInfo.phone?.trim();
-
-    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
+
     if (!sanitizedName || !sanitizedEmail) {
       toast.error('Please provide at least your name and email');
       return;
     }
-
     if (!emailRegex.test(sanitizedEmail)) {
       toast.error('Please provide a valid email address');
       return;
     }
-
     if (!session || !session.databaseId) {
       toast.error('Session not initialized');
       return;
     }
 
     try {
-      console.log('Creating contact with session ID:', session.sessionId);
-      
-      // Create HubSpot contact
       const result = await createContact({
         sessionId: session.sessionId,
         email: sanitizedEmail,
         name: sanitizedName,
         company: sanitizedCompany,
-        phone: sanitizedPhone
+        phone: sanitizedPhone,
       });
 
       if (result?.contactId) {
-        // Update session with contact info and HubSpot ID
-        const updatedSession = {
-          ...session,
-          ...contactInfo,
-          hubspotContactId: result.contactId
-        };
-        setSession(updatedSession);
+        setSession({ ...session, ...contactInfo, hubspotContactId: result.contactId });
 
-        // Update database
         await supabase
           .from('chat_sessions')
           .update({
@@ -432,79 +348,27 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
             name: sanitizedName,
             company: sanitizedCompany,
             phone: sanitizedPhone,
-            hubspot_contact_id: result.contactId
+            hubspot_contact_id: result.contactId,
           })
           .eq('id', session.databaseId);
 
-        // Sync conversation to HubSpot
-        console.log('Syncing conversation for session:', session.sessionId, 'contact:', result.contactId);
-        await syncConversation({
-          sessionId: session.sessionId,
-          contactId: result.contactId
-        });
-
-        // Create support ticket for chat conversation
-        let ticketId = null;
-        try {
-          console.log('Creating support ticket for chat session:', session.sessionId);
-          
-          const ticketSubject = messages.length > 1 
-            ? `Chat Inquiry: ${messages[1].message.substring(0, 50)}${messages[1].message.length > 50 ? '...' : ''}`
-            : 'General Chat Inquiry';
-
-          const conversationSummary = messages
-            .slice(0, 5) // First 5 messages
-            .map(msg => `${msg.sender === 'user' ? 'Customer' : 'AI'}: ${msg.message}`)
-            .join('\n\n');
-
-          const ticketResult = await createTicket({
-            sessionId: session.sessionId,
-            contactId: result.contactId,
-            subject: ticketSubject,
-            content: `Chat conversation summary:\n\n${conversationSummary}\n\nFull conversation has been synced to contact timeline.\n\nContact: ${sanitizedName}\nEmail: ${sanitizedEmail}\nCompany: ${sanitizedCompany || 'Not provided'}\nPhone: ${sanitizedPhone || 'Not provided'}`,
-            priority: 'MEDIUM'
-          });
-
-          if (ticketResult?.ticketId) {
-            ticketId = ticketResult.ticketId;
-            console.log('Support ticket created:', ticketId);
-            
-            // Update session with ticket ID
-            await supabase
-              .from('chat_sessions')
-              .update({ hubspot_ticket_id: ticketId })
-              .eq('id', session.databaseId);
-          }
-        } catch (ticketError) {
-          console.error('Failed to create support ticket:', ticketError);
-          // Continue even if ticket creation fails - don't block the chat
-        }
+        await syncConversation({ sessionId: session.sessionId, contactId: result.contactId });
 
         setShowContactForm(false);
-        
         const confirmMessage: ChatMessage = {
           id: `bot_${Date.now()}`,
-          message: ticketId 
-            ? `Thank you ${sanitizedName}! I've:\n✅ Saved your contact information\n✅ Created a support ticket (#${ticketId})\n✅ Logged our conversation to your account\n\nOur team will review your inquiry and follow up within 24 hours. How else can I help you today?`
-            : `Thank you ${sanitizedName}! I've saved your contact information and our conversation has been logged to our CRM system. Our team will now be able to provide you with personalized assistance and follow up on your laboratory equipment needs. How can I help you further today?`,
+          message: `Thanks ${sanitizedName}! I've saved your details and our team will follow up shortly.`,
           sender: 'bot',
-          timestamp: new Date()
+          timestamp: new Date(),
         };
-        
-        setMessages(prev => [...prev, confirmMessage]);
+        setMessages((prev) => [...prev, confirmMessage]);
         await saveMessage(confirmMessage, session.databaseId);
-        
-        toast.success(ticketId 
-          ? `Contact saved, ticket #${ticketId} created!` 
-          : 'Contact information saved and synced successfully!');
+        toast.success('Contact information saved');
       }
     } catch (error) {
       console.error('Error creating contact:', error);
       toast.error('Failed to save contact information. Please try again.');
     }
-  };
-  const handleQuickResponse = (response: string) => {
-    setMessage(response);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -532,7 +396,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
-      <Card className={`w-96 ${isMinimized ? 'h-16' : 'h-[600px]'} shadow-2xl transition-all glass-card border-sea/20`}>
+      <Card className={`w-96 ${isMinimized ? 'h-16' : 'h-[520px]'} shadow-2xl transition-all glass-card border-sea/20`}>
         <CardHeader className="p-4 bg-gradient-to-r from-sea to-sea-dark text-white rounded-t-lg flex flex-row items-center justify-between">
           <div className="flex items-center space-x-2">
             <Bot className="w-5 h-5" />
@@ -542,74 +406,34 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-green-500 text-white text-xs">
-              Online
-            </Badge>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-white hover:bg-white/20 transition-colors"
-              onClick={() => setIsMinimized(!isMinimized)}
-            >
+            <Badge variant="secondary" className="bg-green-500 text-white text-xs">Online</Badge>
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-white hover:bg-white/20" onClick={() => setIsMinimized(!isMinimized)}>
               <Minimize2 className="w-3 h-3" />
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-white hover:bg-white/20 transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-white hover:bg-white/20" onClick={() => setIsOpen(false)}>
               <X className="w-3 h-3" />
             </Button>
           </div>
         </CardHeader>
-        
+
         {!isMinimized && (
-          <CardContent className="p-0 flex flex-col h-[580px]">
-            {/* Contact Form Modal */}
+          <CardContent className="p-0 flex flex-col h-[460px]">
             {showContactForm && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
                 <div className="bg-white p-6 rounded-lg m-4 w-full max-w-sm">
                   <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
-                  <p className="text-sm text-gray-600 mb-4">Help us provide you with personalized assistance and accurate pricing.</p>
+                  <p className="text-sm text-gray-600 mb-4">Share your details and our team will follow up.</p>
                   <div className="space-y-3">
-                    <Input
-                      placeholder="Your name *"
-                      value={contactInfo.name}
-                      onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
-                    />
-                    <Input
-                      placeholder="Email address *"
-                      type="email"
-                      value={contactInfo.email}
-                      onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
-                    />
-                    <Input
-                      placeholder="Company"
-                      value={contactInfo.company}
-                      onChange={(e) => setContactInfo({...contactInfo, company: e.target.value})}
-                    />
-                    <Input
-                      placeholder="Phone number"
-                      value={contactInfo.phone}
-                      onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
-                    />
+                    <Input placeholder="Your name *" value={contactInfo.name} onChange={(e) => setContactInfo({ ...contactInfo, name: e.target.value })} />
+                    <Input placeholder="Email address *" type="email" value={contactInfo.email} onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })} />
+                    <Input placeholder="Company" value={contactInfo.company} onChange={(e) => setContactInfo({ ...contactInfo, company: e.target.value })} />
+                    <Input placeholder="Phone number" value={contactInfo.phone} onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })} />
                   </div>
                   <div className="flex space-x-2 mt-4">
-                    <Button 
-                      onClick={handleContactSubmit} 
-                      disabled={loading}
-                      className="flex-1"
-                    >
+                    <Button onClick={handleContactSubmit} disabled={loading} className="flex-1">
                       {loading ? 'Saving...' : 'Submit'}
                     </Button>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setShowContactForm(false)}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
+                    <Button variant="outline" onClick={() => setShowContactForm(false)} className="flex-1">Cancel</Button>
                   </div>
                 </div>
               </div>
@@ -617,12 +441,9 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white to-sea-light/10">
-              {messages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`flex items-start space-x-2 max-w-[85%]`}>
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className="flex items-start space-x-2 max-w-[85%]">
                     {msg.sender !== 'user' && (
                       <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center text-xs mt-1">
                         <Bot className="w-3 h-3" />
@@ -635,10 +456,10 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
                           : 'bg-white/80 text-sea-dark border border-sea/20 backdrop-blur-sm'
                       }`}
                     >
-                      <div className="whitespace-pre-line">{msg.message}</div>
-                      <div className={`text-xs mt-1 opacity-70 flex items-center ${
-                        msg.sender === 'user' ? 'text-white/70' : 'text-sea/70'
-                      }`}>
+                      <div className="whitespace-pre-line break-words">
+                        {msg.sender === 'bot' ? renderMessageContent(msg.message) : msg.message}
+                      </div>
+                      <div className={`text-xs mt-1 opacity-70 flex items-center ${msg.sender === 'user' ? 'text-white/70' : 'text-sea/70'}`}>
                         <Clock className="w-3 h-3 mr-1" />
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -651,7 +472,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
                   </div>
                 </div>
               ))}
-              
+
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="flex items-center space-x-2">
@@ -660,9 +481,9 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
                     </div>
                     <div className="bg-white/80 p-3 rounded-lg border border-sea/20">
                       <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" />
+                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
                       </div>
                     </div>
                   </div>
@@ -671,18 +492,19 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Responses - Compact */}
+            {/* Quick replies */}
             <div className="p-2 border-t border-sea/20 bg-white/50 backdrop-blur-sm">
-              <div className="flex flex-wrap gap-1 mb-2">
-                {quickResponses.slice(0, 3).map(response => (
+              <div className="flex flex-wrap gap-1">
+                {QUICK_REPLIES.map((reply) => (
                   <Button
-                    key={response}
+                    key={reply}
                     variant="outline"
                     size="sm"
-                    className="text-xs h-6 px-2 border-sea/30 text-sea hover:bg-sea hover:text-white transition-all duration-300"
-                    onClick={() => handleQuickResponse(response)}
+                    className="text-xs h-7 px-2 border-sea/30 text-sea hover:bg-sea hover:text-white transition-all duration-300"
+                    onClick={() => handleQuickReply(reply)}
+                    disabled={isTyping}
                   >
-                    {response}
+                    {reply}
                   </Button>
                 ))}
               </div>
@@ -702,7 +524,7 @@ I have extensive knowledge about our emergency eyewash stations, fume cupboards,
                 <Button
                   size="sm"
                   className="bg-sea hover:bg-sea-dark transition-all duration-300"
-                  onClick={handleSendMessage}
+                  onClick={() => handleSendMessage()}
                   disabled={isTyping || !message.trim()}
                 >
                   <Send className="w-4 h-4" />
