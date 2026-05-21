@@ -467,7 +467,7 @@ const EnhancedLiveChat = () => {
               )}
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-sea-light/5 via-white to-sea-light/10 scroll-smooth">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-sea-light/5 via-white to-sea-light/10 scroll-smooth overscroll-contain">
                 <AnimatePresence initial={false}>
                   {messages.map((msg) => (
                     <motion.div
