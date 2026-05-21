@@ -32,7 +32,15 @@ const Contact = () => {
     message: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const { createContact, createTicket } = useHubSpotIntegration();
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => setCooldown((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -95,6 +103,8 @@ const Contact = () => {
 
       toast.success(contactPageContent.form.successMessage);
       setFormData({ name: '', email: '', company: '', jobTitle: '', subject: '', message: '' });
+      setCooldown(60);
+
     } catch (error) {
       console.error('Contact form submission error:', error);
       toast.error('Failed to submit contact form. Please try again.');
@@ -248,10 +258,15 @@ const Contact = () => {
                   type="submit" 
                   size="lg" 
                   className="w-full bg-sea hover:bg-sea-dark"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || cooldown > 0}
                 >
-                  {isSubmitting ? 'Submitting...' : contactPageContent.form.submitButton}
+                  {isSubmitting
+                    ? 'Submitting...'
+                    : cooldown > 0
+                      ? `Please wait ${cooldown}s before sending another message`
+                      : contactPageContent.form.submitButton}
                 </Button>
+
               </form>
             </CardContent>
           </Card>

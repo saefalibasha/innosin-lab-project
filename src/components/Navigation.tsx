@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Home, LayoutDashboard, ShoppingBag, Settings } from 'lucide-react';
+import { Menu, X, Home, LayoutDashboard, ShoppingBag, Info, Newspaper, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 
@@ -17,7 +17,7 @@ const Navigation = () => {
   return (
     <header className="bg-background border-b border-border h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
       <Link to="/" className="text-lg font-semibold">
-        Lab Inventory
+        Innosin Lab
       </Link>
 
       {/* Desktop Navigation */}
@@ -52,9 +52,17 @@ const Navigation = () => {
             </div>
           </div>
         </div>
-        <Link to="/admin" className="hover:text-primary">
-          <Settings className="h-4 w-4 mr-2 inline-block align-middle" />
-          Admin
+        <Link to="/blog" className="hover:text-primary">
+          <Newspaper className="h-4 w-4 mr-2 inline-block align-middle" />
+          Blog
+        </Link>
+        <Link to="/about" className="hover:text-primary">
+          <Info className="h-4 w-4 mr-2 inline-block align-middle" />
+          About Us
+        </Link>
+        <Link to="/contact" className="hover:text-primary">
+          <Mail className="h-4 w-4 mr-2 inline-block align-middle" />
+          Contact
         </Link>
       </nav>
 
@@ -95,9 +103,17 @@ const Navigation = () => {
                 ))}
               </div>
             </div>
-            <Link to="/admin" className="flex items-center hover:text-primary">
-              <Settings className="h-4 w-4 mr-2" />
-              Admin
+            <Link to="/blog" className="flex items-center hover:text-primary">
+              <Newspaper className="h-4 w-4 mr-2" />
+              Blog
+            </Link>
+            <Link to="/about" className="flex items-center hover:text-primary">
+              <Info className="h-4 w-4 mr-2" />
+              About Us
+            </Link>
+            <Link to="/contact" className="flex items-center hover:text-primary">
+              <Mail className="h-4 w-4 mr-2" />
+              Contact
             </Link>
           </nav>
           <Button

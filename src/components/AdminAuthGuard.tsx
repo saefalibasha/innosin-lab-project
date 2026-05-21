@@ -13,8 +13,7 @@ const AdminAuthGuard: React.FC<AdminAuthGuardProps> = ({ children }) => {
   const { user, isAdmin, loading } = useAuth();
   const { toast } = useToast();
 
-  // Debug info for troubleshooting
-  console.log('AdminAuthGuard - Auth state:', { user: !!user, isAdmin, loading });
+
 
   if (loading) {
     return (
