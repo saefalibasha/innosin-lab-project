@@ -21,7 +21,7 @@ export const brandCollections = [
   {
     // Collection 3: Oriental Giken Inc.
     title: "Oriental Giken Inc.",
-    description: "Oriental Giken Inc. offers emergency safety equipment including eye wash stations and safety showers",
+    description: "Oriental Giken Inc. provides advanced fume hoods and biosafety cabinets engineered for chemical containment and biological safety",
     logoPath: "/brand-logos/oriental-giken-logo.png",
     category: "Oriental Giken Inc."
   },
