@@ -127,7 +127,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="container-custom py-12 pt-20">
+    <div className="container-custom py-8 pt-10 md:py-12 md:pt-20">
       {/* Header */}
       <div className="text-center mb-16">
         <AnimatedSection animation="fade-in" delay={100}>
