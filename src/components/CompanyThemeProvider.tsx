@@ -30,7 +30,7 @@ const companyThemes: Record<string, CompanyTheme> = {
     primary: '15 100% 35%', // Modern orange/red (Tangerine inspired)
     accent: '15 85% 55%',
     logo: '/brand-logos/oriental-giken-logo.png',
-    description: 'Emergency safety equipment including eye wash stations and safety showers'
+    description: 'Advanced fume hoods and biosafety cabinets for chemical containment and biological safety'
   },
   'Innosin Lab': {
     name: 'Innosin Lab',
