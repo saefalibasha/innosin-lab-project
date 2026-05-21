@@ -116,10 +116,10 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (!openAIApiKey) {
-    console.error('OPENAI_API_KEY is not set');
+  if (!lovableApiKey) {
+    console.error('LOVABLE_API_KEY is not set');
     return new Response(
-      JSON.stringify({ success: false, message: 'AI service not configured', error: 'missing_openai_key' }),
+      JSON.stringify({ success: false, message: 'AI service not configured', error: 'missing_lovable_api_key' }),
       { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
