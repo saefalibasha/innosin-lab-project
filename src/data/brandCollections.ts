@@ -7,7 +7,7 @@ export const brandCollections = [
   {
     // Collection 1: Broen-Lab
     title: "Broen-Lab",
-    description: "Broen-Lab specializes in advanced fume hoods and ventilation systems designed for chemical safety and efficiency",
+    description: "Broen-Lab specializes in emergency safety equipment including eyewash stations and safety showers compliant with ANSI Z358.1",
     logoPath: "/brand-logos/broen-lab-logo.png",
     category: "Broen-Lab"
   },
