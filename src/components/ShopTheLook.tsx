@@ -108,7 +108,7 @@ const ShopTheLook = () => {
         <div className="relative">
           <div className="grid lg:grid-cols-3 gap-0">
             {/* Main Image - Takes 2/3 on large screens */}
-            <div className="lg:col-span-2 relative overflow-hidden rounded-l-2xl shadow-2xl">
+            <div className="lg:col-span-2 relative overflow-hidden rounded-t-2xl lg:rounded-l-2xl lg:rounded-tr-none shadow-2xl">
               <img
                 src={shopLookContent.background_image}
                 alt={shopLookContent.background_alt}
