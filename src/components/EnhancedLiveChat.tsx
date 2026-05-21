@@ -13,6 +13,7 @@ interface ChatMessage {
   message: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+  card?: { label: string; href: string };
 }
 
 interface UserSession {
@@ -43,6 +44,15 @@ const QUICK_REPLIES = [
   'Request a quote',
   'Talk to a human',
 ];
+
+const CATEGORY_LINKS: Record<string, { label: string; href: string }> = {
+  'Eyewash & safety showers (Broen-Lab)': { label: 'Browse Broen-Lab safety products', href: '/products?brand=Broen-Lab' },
+  'Fume hoods & biosafety cabinets (Oriental Giken)': { label: 'Browse Oriental Giken products', href: '/products?brand=Oriental+Giken' },
+  'Lab furniture (Hamilton)': { label: 'Browse Hamilton lab furniture', href: '/products?brand=Hamilton' },
+  'Knee Space benches (Innosin)': { label: 'Browse Knee Space benches', href: '/products?series=Knee+Space' },
+  'Mobile cabinets (Innosin)': { label: 'Browse Mobile Cabinets', href: '/products?series=Mobile+Cabinet' },
+  'Wall cabinets (Innosin)': { label: 'Browse Wall Cabinets', href: '/products?series=Wall+Cabinet' },
+};
 
 const PRODUCT_LINK_REGEX = /\[PRODUCT:([^\]]+)\]/g;
 
@@ -255,7 +265,46 @@ const EnhancedLiveChat = () => {
     }
   };
 
-  const handleQuickReply = (reply: string) => handleSendMessage(reply);
+  const handleQuickReply = async (reply: string) => {
+    const link = CATEGORY_LINKS[reply];
+    if (link && session?.databaseId) {
+      // Send user message first, then surface the link card
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        message: reply,
+        sender: 'user',
+        timestamp: new Date(),
+      };
+      appendMessage(userMessage);
+      await saveMessage(userMessage, session.databaseId);
+
+      const card: ChatMessage = {
+        id: `bot_card_${Date.now()}`,
+        message: `Here's our ${reply.replace(/\s*\(.*\)\s*/, '').toLowerCase()} range — click to browse:`,
+        sender: 'bot',
+        timestamp: new Date(),
+        card: link,
+      };
+      appendMessage(card);
+      await saveMessage(card, session.databaseId);
+
+      // Also ask the AI to describe the products
+      if (isSendingRef.current) return;
+      isSendingRef.current = true;
+      setIsTyping(true);
+      try {
+        const aiResponse = await callAIChat(reply);
+        appendMessage(aiResponse);
+      } catch (error) {
+        console.error('AI chat error:', error);
+      } finally {
+        setIsTyping(false);
+        isSendingRef.current = false;
+      }
+      return;
+    }
+    handleSendMessage(reply);
+  };
 
   const handleContactSubmit = async () => {
     const email = contactInfo.email?.trim().replace(/['"]/g, '');
@@ -426,12 +475,21 @@ const EnhancedLiveChat = () => {
                               className={`px-3.5 py-2.5 text-sm leading-relaxed rounded-2xl ${
                                 isUser
                                   ? 'bg-sea text-white rounded-br-sm'
-                                  : 'bg-white text-foreground border border-slate-200/70 rounded-bl-sm shadow-sm'
+                                  : 'bg-sand-light text-foreground rounded-bl-sm shadow-sm'
                               }`}
                             >
                               <div className="whitespace-pre-line break-words">
                                 {isUser ? msg.message : renderMessageContent(msg.message)}
                               </div>
+                              {msg.card && (
+                                <Link
+                                  to={msg.card.href}
+                                  onClick={() => setIsOpen(false)}
+                                  className="mt-2.5 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-sea text-white text-xs font-medium hover:bg-sea-dark transition-colors"
+                                >
+                                  {msg.card.label} →
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </motion.div>
@@ -465,7 +523,7 @@ const EnhancedLiveChat = () => {
                           <button
                             key={reply}
                             type="button"
-                            className="text-xs px-3 py-1.5 rounded-full border border-sea/40 text-sea bg-white hover:bg-sea hover:text-white hover:border-sea transition-colors disabled:opacity-50"
+                            className="text-xs px-3 py-1.5 rounded-full border border-primary text-primary bg-white hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
                             onClick={() => handleQuickReply(reply)}
                             disabled={isTyping || !session?.databaseId}
                           >
