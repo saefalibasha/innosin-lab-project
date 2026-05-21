@@ -116,6 +116,14 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (!openAIApiKey) {
+    console.error('OPENAI_API_KEY is not set');
+    return new Response(
+      JSON.stringify({ success: false, message: 'AI service not configured', error: 'missing_openai_key' }),
+      { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const requestBody = await req.json();
     const { message, sessionId, contactId } = requestBody;
