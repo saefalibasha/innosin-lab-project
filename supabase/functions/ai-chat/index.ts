@@ -2,20 +2,25 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.0';
 
-const ALLOWED_ORIGINS = [
-  'https://innosinlab.com',
-  'https://www.innosinlab.com',
-  'https://innosin-lab-project.lovable.app',
-  'https://id-preview--0abd258b-3c2e-45ec-a3fd-b9d84e2e42ac.lovable.app',
-  'http://localhost:5173',
-  'http://localhost:8080',
-];
+function isAllowedOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    const host = url.hostname;
+    if (host === 'innosinlab.com' || host === 'www.innosinlab.com') return true;
+    if (host.endsWith('.lovable.app')) return true;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 function buildCorsHeaders(origin: string | null): Record<string, string> {
-  const allowed = origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowed = origin && isAllowedOrigin(origin) ? origin : '*';
   return {
     'Access-Control-Allow-Origin': allowed,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Vary': 'Origin',
   };
 }
