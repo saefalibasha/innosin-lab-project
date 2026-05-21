@@ -45,6 +45,15 @@ const QUICK_REPLIES = [
   'Talk to a human',
 ];
 
+const CATEGORY_LINKS: Record<string, { label: string; href: string }> = {
+  'Eyewash & safety showers (Broen-Lab)': { label: 'Browse Broen-Lab safety products', href: '/products?brand=Broen-Lab' },
+  'Fume hoods & biosafety cabinets (Oriental Giken)': { label: 'Browse Oriental Giken products', href: '/products?brand=Oriental+Giken' },
+  'Lab furniture (Hamilton)': { label: 'Browse Hamilton lab furniture', href: '/products?brand=Hamilton' },
+  'Knee Space benches (Innosin)': { label: 'Browse Knee Space benches', href: '/products?series=Knee+Space' },
+  'Mobile cabinets (Innosin)': { label: 'Browse Mobile Cabinets', href: '/products?series=Mobile+Cabinet' },
+  'Wall cabinets (Innosin)': { label: 'Browse Wall Cabinets', href: '/products?series=Wall+Cabinet' },
+};
+
 const PRODUCT_LINK_REGEX = /\[PRODUCT:([^\]]+)\]/g;
 
 function renderMessageContent(text: string): React.ReactNode {
