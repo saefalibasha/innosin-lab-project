@@ -345,9 +345,9 @@ const EnhancedLiveChat = () => {
               className="fixed z-[9999] inset-x-4 bottom-4 top-16 sm:inset-auto sm:bottom-6 sm:right-6 sm:top-auto sm:w-[400px] sm:h-[600px] sm:max-h-[85vh] flex"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex flex-col flex-1 bg-white rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex flex-col flex-1 bg-white rounded-2xl shadow-2xl overflow-hidden font-sans">
                 {/* Header */}
-                <div className="px-4 py-3.5 bg-gradient-to-r from-primary to-primary/85 text-primary-foreground flex items-center justify-between shrink-0">
+                <div className="px-4 py-3.5 bg-primary text-primary-foreground flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center ring-1 ring-white/20">
                       <Bot className="w-5 h-5" />
