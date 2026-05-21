@@ -13,6 +13,7 @@ interface ChatMessage {
   message: string;
   sender: 'user' | 'bot';
   timestamp: Date;
+  card?: { label: string; href: string };
 }
 
 interface UserSession {
