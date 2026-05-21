@@ -265,7 +265,21 @@ const EnhancedLiveChat = () => {
     }
   };
 
-  const handleQuickReply = (reply: string) => handleSendMessage(reply);
+  const handleQuickReply = async (reply: string) => {
+    const link = CATEGORY_LINKS[reply];
+    if (link && session?.databaseId) {
+      const card: ChatMessage = {
+        id: `bot_card_${Date.now()}`,
+        message: `Here's our ${reply.replace(/\s*\(.*\)\s*/, '').toLowerCase()} range — click to browse:`,
+        sender: 'bot',
+        timestamp: new Date(),
+        card: link,
+      };
+      appendMessage(card);
+      await saveMessage(card, session.databaseId);
+    }
+    handleSendMessage(reply);
+  };
 
   const handleContactSubmit = async () => {
     const email = contactInfo.email?.trim().replace(/['"]/g, '');
