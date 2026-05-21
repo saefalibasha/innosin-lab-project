@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, Send, X, Minimize2, Bot, User, Clock } from 'lucide-react';
+import { MessageCircle, Send, X, Minimize2, Bot, User, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
@@ -381,159 +382,191 @@ const EnhancedLiveChat = () => {
   if (!isOpen) {
     return (
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999]">
-        <Button
-          className="rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-blue-600 hover:bg-blue-700 shadow-xl border-2 border-white/20 backdrop-blur-md transition-all duration-300 hover:scale-110"
-          onClick={() => setIsOpen(true)}
+        <motion.div
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 260, damping: 20 }}
         >
-          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
-        </Button>
-        <Badge className="absolute -top-1 left-1/2 transform -translate-x-1/2 bg-green-500 text-white animate-pulse px-2 py-1 whitespace-nowrap">
-          AI Chat
-        </Badge>
+          <Button
+            className="relative rounded-full w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-sea to-sea-dark hover:from-sea-dark hover:to-sea shadow-xl shadow-sea/30 border border-white/10 transition-transform duration-200 hover:scale-105"
+            onClick={() => setIsOpen(true)}
+            aria-label="Open AI chat"
+          >
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+            </span>
+          </Button>
+        </motion.div>
       </div>
     );
   }
 
   return (
     <div className="fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 z-50">
-      <Card className={`w-full sm:w-96 ${isMinimized ? 'h-16' : 'h-[520px] max-h-[85vh]'} shadow-2xl transition-all glass-card border-sea/20`}>
-        <CardHeader className="p-4 bg-gradient-to-r from-sea to-sea-dark text-white rounded-t-lg flex flex-row items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <Bot className="w-5 h-5" />
-            <div>
-              <CardTitle className="text-sm font-medium">AI Chat</CardTitle>
-              <p className="text-xs opacity-90">Innosin Lab Expert Support</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-green-500 text-white text-xs">Online</Badge>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-white hover:bg-white/20" onClick={() => setIsMinimized(!isMinimized)}>
-              <Minimize2 className="w-3 h-3" />
-            </Button>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0 text-white hover:bg-white/20" onClick={() => setIsOpen(false)}>
-              <X className="w-3 h-3" />
-            </Button>
-          </div>
-        </CardHeader>
-
-        {!isMinimized && (
-          <CardContent className="p-0 flex flex-col h-[460px]">
-            {showContactForm && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-                <div className="bg-white p-6 rounded-lg m-4 w-full max-w-sm">
-                  <h3 className="text-lg font-semibold mb-4">Contact Information</h3>
-                  <p className="text-sm text-gray-600 mb-4">Share your details and our team will follow up.</p>
-                  <div className="space-y-3">
-                    <Input placeholder="Your name *" value={contactInfo.name} onChange={(e) => setContactInfo({ ...contactInfo, name: e.target.value })} />
-                    <Input placeholder="Email address *" type="email" value={contactInfo.email} onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })} />
-                    <Input placeholder="Company" value={contactInfo.company} onChange={(e) => setContactInfo({ ...contactInfo, company: e.target.value })} />
-                    <Input placeholder="Phone number" value={contactInfo.phone} onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })} />
-                  </div>
-                  <div className="flex space-x-2 mt-4">
-                    <Button onClick={handleContactSubmit} disabled={loading} className="flex-1">
-                      {loading ? 'Saving...' : 'Submit'}
-                    </Button>
-                    <Button variant="outline" onClick={() => setShowContactForm(false)} className="flex-1">Cancel</Button>
-                  </div>
-                </div>
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.96 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+      >
+        <Card
+          className={`w-full sm:w-[400px] flex flex-col overflow-hidden shadow-2xl shadow-sea/20 border-sea/15 bg-white/95 backdrop-blur-xl rounded-2xl transition-[height] duration-300 ease-out ${
+            isMinimized ? 'h-16' : 'h-[560px] max-h-[85vh]'
+          }`}
+        >
+          <CardHeader className="p-3.5 bg-gradient-to-r from-sea to-sea-dark text-white flex flex-row items-center justify-between shrink-0">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-full bg-white/15 backdrop-blur flex items-center justify-center ring-1 ring-white/20">
+                <Sparkles className="w-4 h-4" />
               </div>
-            )}
+              <div className="leading-tight">
+                <CardTitle className="text-sm font-semibold">Innosin Lab Assistant</CardTitle>
+                <p className="text-[11px] opacity-80 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Online · usually replies instantly
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-white hover:bg-white/15 rounded-full" onClick={() => setIsMinimized(!isMinimized)} aria-label="Minimize">
+                <Minimize2 className="w-3.5 h-3.5" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 w-7 p-0 text-white hover:bg-white/15 rounded-full" onClick={() => setIsOpen(false)} aria-label="Close">
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-white to-sea-light/10">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className="flex items-start space-x-2 max-w-[85%]">
-                    {msg.sender !== 'user' && (
-                      <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center text-xs mt-1">
-                        <Bot className="w-3 h-3" />
-                      </div>
-                    )}
-                    <div
-                      className={`p-3 rounded-lg text-sm transition-all duration-300 ${
-                        msg.sender === 'user'
-                          ? 'bg-sea text-white shadow-md'
-                          : 'bg-white/80 text-sea-dark border border-sea/20 backdrop-blur-sm'
-                      }`}
-                    >
-                      <div className="whitespace-pre-line break-words">
-                        {msg.sender === 'bot' ? renderMessageContent(msg.message) : msg.message}
-                      </div>
-                      <div className={`text-xs mt-1 opacity-70 flex items-center ${msg.sender === 'user' ? 'text-white/70' : 'text-sea/70'}`}>
-                        <Clock className="w-3 h-3 mr-1" />
-                        {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </div>
+          {!isMinimized && (
+            <CardContent className="p-0 flex flex-col flex-1 min-h-0 relative">
+              {showContactForm && (
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-10 p-4">
+                  <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white p-5 rounded-xl w-full max-w-sm shadow-2xl"
+                  >
+                    <h3 className="text-base font-semibold mb-1">Share your details</h3>
+                    <p className="text-xs text-muted-foreground mb-4">A specialist will follow up shortly.</p>
+                    <div className="space-y-2.5">
+                      <Input placeholder="Your name *" value={contactInfo.name} onChange={(e) => setContactInfo({ ...contactInfo, name: e.target.value })} />
+                      <Input placeholder="Email address *" type="email" value={contactInfo.email} onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })} />
+                      <Input placeholder="Company" value={contactInfo.company} onChange={(e) => setContactInfo({ ...contactInfo, company: e.target.value })} />
+                      <Input placeholder="Phone number" value={contactInfo.phone} onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })} />
                     </div>
-                    {msg.sender === 'user' && (
-                      <div className="w-6 h-6 rounded-full bg-gray-400 text-white flex items-center justify-center text-xs mt-1">
-                        <User className="w-3 h-3" />
-                      </div>
-                    )}
-                  </div>
+                    <div className="flex gap-2 mt-4">
+                      <Button onClick={handleContactSubmit} disabled={loading} className="flex-1 bg-sea hover:bg-sea-dark">
+                        {loading ? 'Saving...' : 'Submit'}
+                      </Button>
+                      <Button variant="outline" onClick={() => setShowContactForm(false)} className="flex-1">Cancel</Button>
+                    </div>
+                  </motion.div>
                 </div>
-              ))}
+              )}
 
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center text-xs">
-                      <Bot className="w-3 h-3" />
-                    </div>
-                    <div className="bg-white/80 p-3 rounded-lg border border-sea/20">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                        <div className="w-2 h-2 bg-sea/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-gradient-to-b from-sea-light/5 via-white to-sea-light/10 scroll-smooth">
+                <AnimatePresence initial={false}>
+                  {messages.map((msg) => (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.22, ease: 'easeOut' }}
+                      className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`flex items-end gap-2 max-w-[85%] ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                        <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs shadow-sm ${
+                          msg.sender === 'user'
+                            ? 'bg-gradient-to-br from-slate-400 to-slate-500 text-white'
+                            : 'bg-gradient-to-br from-sea to-sea-dark text-white'
+                        }`}>
+                          {msg.sender === 'user' ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                        </div>
+                        <div
+                          className={`px-3.5 py-2.5 text-sm leading-relaxed shadow-sm ${
+                            msg.sender === 'user'
+                              ? 'bg-gradient-to-br from-sea to-sea-dark text-white rounded-2xl rounded-br-md'
+                              : 'bg-white text-foreground border border-sea/10 rounded-2xl rounded-bl-md'
+                          }`}
+                        >
+                          <div className="whitespace-pre-line break-words">
+                            {msg.sender === 'bot' ? renderMessageContent(msg.message) : msg.message}
+                          </div>
+                          <div className={`text-[10px] mt-1.5 ${msg.sender === 'user' ? 'text-white/60' : 'text-muted-foreground'}`}>
+                            {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {isTyping && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+                    <div className="flex items-end gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sea to-sea-dark text-white flex items-center justify-center">
+                        <Bot className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="bg-white px-4 py-3 rounded-2xl rounded-bl-md border border-sea/10 shadow-sm">
+                        <div className="flex gap-1">
+                          <span className="w-1.5 h-1.5 bg-sea/70 rounded-full animate-bounce" />
+                          <span className="w-1.5 h-1.5 bg-sea/70 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }} />
+                          <span className="w-1.5 h-1.5 bg-sea/70 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }} />
+                        </div>
                       </div>
                     </div>
+                  </motion.div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Quick replies */}
+              {messages.length <= 2 && (
+                <div className="px-3 py-2 border-t border-sea/10 bg-white/60 backdrop-blur-sm shrink-0">
+                  <div className="flex flex-wrap gap-1.5">
+                    {QUICK_REPLIES.map((reply) => (
+                      <button
+                        key={reply}
+                        className="text-xs px-3 py-1.5 rounded-full border border-sea/25 text-sea bg-white hover:bg-sea hover:text-white transition-colors duration-200 disabled:opacity-50"
+                        onClick={() => handleQuickReply(reply)}
+                        disabled={isTyping}
+                      >
+                        {reply}
+                      </button>
+                    ))}
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
-            </div>
 
-            {/* Quick replies */}
-            <div className="p-2 border-t border-sea/20 bg-white/50 backdrop-blur-sm">
-              <div className="flex flex-wrap gap-1">
-                {QUICK_REPLIES.map((reply) => (
-                  <Button
-                    key={reply}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs h-7 px-2 border-sea/30 text-sea hover:bg-sea hover:text-white transition-all duration-300"
-                    onClick={() => handleQuickReply(reply)}
+              {/* Input */}
+              <div className="p-3 border-t border-sea/10 bg-white shrink-0">
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Ask about products, BSL labs, quotes…"
+                    className="flex-1 text-sm rounded-full border-sea/20 focus-visible:ring-sea/30 bg-sea-light/10"
+                    onKeyPress={handleKeyPress}
                     disabled={isTyping}
+                  />
+                  <Button
+                    size="icon"
+                    className="rounded-full bg-gradient-to-br from-sea to-sea-dark hover:opacity-90 shadow-md shrink-0 h-10 w-10"
+                    onClick={() => handleSendMessage()}
+                    disabled={isTyping || !message.trim()}
+                    aria-label="Send"
                   >
-                    {reply}
+                    <Send className="w-4 h-4" />
                   </Button>
-                ))}
+                </div>
               </div>
-            </div>
-
-            {/* Input */}
-            <div className="p-4 border-t border-sea/20 bg-white/80 backdrop-blur-sm">
-              <div className="flex space-x-2">
-                <Input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 text-sm border-sea/30 focus:border-sea"
-                  onKeyPress={handleKeyPress}
-                  disabled={isTyping}
-                />
-                <Button
-                  size="sm"
-                  className="bg-sea hover:bg-sea-dark transition-all duration-300"
-                  onClick={() => handleSendMessage()}
-                  disabled={isTyping || !message.trim()}
-                >
-                  <Send className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
+            </CardContent>
+          )}
+        </Card>
+      </motion.div>
     </div>
   );
 };
