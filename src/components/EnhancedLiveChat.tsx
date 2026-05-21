@@ -475,12 +475,21 @@ const EnhancedLiveChat = () => {
                               className={`px-3.5 py-2.5 text-sm leading-relaxed rounded-2xl ${
                                 isUser
                                   ? 'bg-sea text-white rounded-br-sm'
-                                  : 'bg-white text-foreground border border-slate-200/70 rounded-bl-sm shadow-sm'
+                                  : 'bg-sand-light text-foreground rounded-bl-sm shadow-sm'
                               }`}
                             >
                               <div className="whitespace-pre-line break-words">
                                 {isUser ? msg.message : renderMessageContent(msg.message)}
                               </div>
+                              {msg.card && (
+                                <Link
+                                  to={msg.card.href}
+                                  onClick={() => setIsOpen(false)}
+                                  className="mt-2.5 inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-full bg-sea text-white text-xs font-medium hover:bg-sea-dark transition-colors"
+                                >
+                                  {msg.card.label} →
+                                </Link>
+                              )}
                             </div>
                           </div>
                         </motion.div>
