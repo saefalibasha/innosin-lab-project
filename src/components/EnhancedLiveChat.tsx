@@ -414,14 +414,14 @@ const EnhancedLiveChat = () => {
                         >
                           <div className={`flex items-end gap-2 max-w-[85%] ${isUser ? 'flex-row-reverse' : ''}`}>
                             {!isUser && (
-                              <div className={`w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 ${showIcon ? 'opacity-100' : 'opacity-0'}`}>
+                              <div className={`w-6 h-6 rounded-full bg-sea text-white flex items-center justify-center shrink-0 ${showIcon ? 'opacity-100' : 'opacity-0'}`}>
                                 <Bot className="w-3.5 h-3.5" />
                               </div>
                             )}
                             <div
                               className={`px-3.5 py-2.5 text-sm leading-relaxed rounded-2xl ${
                                 isUser
-                                  ? 'bg-primary text-primary-foreground rounded-br-sm'
+                                  ? 'bg-sea text-white rounded-br-sm'
                                   : 'bg-white text-foreground border border-slate-200/70 rounded-bl-sm shadow-sm'
                               }`}
                             >
