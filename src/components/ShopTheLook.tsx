@@ -142,7 +142,7 @@ const ShopTheLook = () => {
             </div>
 
             {/* Product Details Overlay - Takes 1/3 on large screens */}
-            <div className="lg:col-span-1 bg-white rounded-r-2xl shadow-2xl overflow-y-auto">
+            <div className="lg:col-span-1 bg-white rounded-b-2xl lg:rounded-r-2xl lg:rounded-bl-none shadow-2xl overflow-y-auto">
               {selectedHotspot ? (
                 <div className="p-6 space-y-6">
                   {/* Category Badge */}
