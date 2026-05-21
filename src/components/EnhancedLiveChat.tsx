@@ -34,8 +34,12 @@ function generateUUID(): string {
 }
 
 const QUICK_REPLIES = [
-  'Browse Knee Space benches',
-  'Mobile cabinets',
+  'Eyewash & safety showers (Broen-Lab)',
+  'Fume hoods & biosafety cabinets (Oriental Giken)',
+  'Lab furniture (Hamilton)',
+  'Knee Space benches (Innosin)',
+  'Mobile cabinets (Innosin)',
+  'Wall cabinets (Innosin)',
   'Request a quote',
   'Talk to a human',
 ];
@@ -460,9 +464,10 @@ const EnhancedLiveChat = () => {
                         {QUICK_REPLIES.map((reply) => (
                           <button
                             key={reply}
+                            type="button"
                             className="text-xs px-3 py-1.5 rounded-full border border-sea/40 text-sea bg-white hover:bg-sea hover:text-white hover:border-sea transition-colors disabled:opacity-50"
                             onClick={() => handleQuickReply(reply)}
-                            disabled={isTyping}
+                            disabled={isTyping || !session?.databaseId}
                           >
                             {reply}
                           </button>
