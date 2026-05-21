@@ -460,7 +460,7 @@ const EnhancedLiveChat = () => {
                         {QUICK_REPLIES.map((reply) => (
                           <button
                             key={reply}
-                            className="text-xs px-3 py-1.5 rounded-full border border-primary/30 text-primary bg-white hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
+                            className="text-xs px-3 py-1.5 rounded-full border border-sea/40 text-sea bg-white hover:bg-sea hover:text-white hover:border-sea transition-colors disabled:opacity-50"
                             onClick={() => handleQuickReply(reply)}
                             disabled={isTyping}
                           >
