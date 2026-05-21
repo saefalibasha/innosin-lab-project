@@ -92,7 +92,7 @@ export const Footer = () => {
                 <div key={link.name} className="flex items-center justify-between group">
                   <Link
                     to={link.href}
-                    className="text-2xl lg:text-3xl font-extrabold tracking-tight"
+                    className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight"
                   >
                     {link.name}
                   </Link>
