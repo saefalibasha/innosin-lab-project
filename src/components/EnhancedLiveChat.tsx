@@ -478,13 +478,13 @@ const EnhancedLiveChat = () => {
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Type your message…"
-                        className="flex-1 text-sm rounded-full border-slate-200 bg-slate-50 focus-visible:ring-primary/30"
+                        className="flex-1 text-sm rounded-full border-slate-200 bg-slate-50 focus-visible:ring-sea/30"
                         onKeyPress={handleKeyPress}
                         disabled={isTyping}
                       />
                       <Button
                         size="icon"
-                        className="rounded-full bg-primary hover:bg-primary/90 shrink-0 h-10 w-10"
+                        className="rounded-full bg-sea hover:bg-sea-dark text-white shrink-0 h-10 w-10"
                         onClick={() => handleSendMessage()}
                         disabled={isTyping || !message.trim()}
                         aria-label="Send"
