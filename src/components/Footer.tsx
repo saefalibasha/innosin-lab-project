@@ -38,7 +38,7 @@ export const Footer = () => {
   const navigationLinks = [
     { name: 'Home', href: '/' },
     { name: 'Products', href: '/products' },
-    { name: 'Floor Planner', href: '/floorplanner' },
+    { name: 'Floor Planner', href: '/floor-planner' },
     { name: 'Blog', href: '/blog' },
     { name: 'About Us', href: '/about' },
     { name: 'Contact', href: '/contact' },
