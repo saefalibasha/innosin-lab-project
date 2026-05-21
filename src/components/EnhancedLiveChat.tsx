@@ -268,6 +268,16 @@ const EnhancedLiveChat = () => {
   const handleQuickReply = async (reply: string) => {
     const link = CATEGORY_LINKS[reply];
     if (link && session?.databaseId) {
+      // Send user message first, then surface the link card
+      const userMessage: ChatMessage = {
+        id: `user_${Date.now()}`,
+        message: reply,
+        sender: 'user',
+        timestamp: new Date(),
+      };
+      appendMessage(userMessage);
+      await saveMessage(userMessage, session.databaseId);
+
       const card: ChatMessage = {
         id: `bot_card_${Date.now()}`,
         message: `Here's our ${reply.replace(/\s*\(.*\)\s*/, '').toLowerCase()} range — click to browse:`,
@@ -277,6 +287,21 @@ const EnhancedLiveChat = () => {
       };
       appendMessage(card);
       await saveMessage(card, session.databaseId);
+
+      // Also ask the AI to describe the products
+      if (isSendingRef.current) return;
+      isSendingRef.current = true;
+      setIsTyping(true);
+      try {
+        const aiResponse = await callAIChat(reply);
+        appendMessage(aiResponse);
+      } catch (error) {
+        console.error('AI chat error:', error);
+      } finally {
+        setIsTyping(false);
+        isSendingRef.current = false;
+      }
+      return;
     }
     handleSendMessage(reply);
   };
