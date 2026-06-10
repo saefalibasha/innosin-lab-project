@@ -692,11 +692,12 @@ serve(async (req) => {
             } catch (assocError: any) {
               console.error('Failed to associate fallback note to contact:', assocError);
               await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, false, assocError.message, { messageCount: 0, fallback: true, associationFailed: true });
-              const msg = assocError?.message || 'Failed to associate note with contact.';
+              const msg = 'Failed to associate note with contact.';
               return new Response(JSON.stringify({ success: false, error: msg }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
               });
+
             }
           }
 
