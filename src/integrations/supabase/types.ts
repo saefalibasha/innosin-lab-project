@@ -74,6 +74,129 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_health_log: {
+        Row: {
+          agent_name: string | null
+          check_type: string | null
+          created_at: string | null
+          details: string | null
+          id: string
+          resolved_at: string | null
+          status: string | null
+        }
+        Insert: {
+          agent_name?: string | null
+          check_type?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          resolved_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          agent_name?: string | null
+          check_type?: string | null
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          resolved_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      agent_memory: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string | null
+          last_updated: string | null
+          memory_type: string | null
+          session_id: string | null
+          value: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key?: string | null
+          last_updated?: string | null
+          memory_type?: string | null
+          session_id?: string | null
+          value?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string | null
+          last_updated?: string | null
+          memory_type?: string | null
+          session_id?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
+      api_usage: {
+        Row: {
+          approved_by: string | null
+          cost_usd: number | null
+          created_at: string | null
+          id: string
+          task_type: string | null
+          tokens_in: number | null
+          tokens_out: number | null
+        }
+        Insert: {
+          approved_by?: string | null
+          cost_usd?: number | null
+          created_at?: string | null
+          id?: string
+          task_type?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Update: {
+          approved_by?: string | null
+          cost_usd?: number | null
+          created_at?: string | null
+          id?: string
+          task_type?: string | null
+          tokens_in?: number | null
+          tokens_out?: number | null
+        }
+        Relationships: []
+      }
+      approval_log: {
+        Row: {
+          action_type: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          permission_level: number | null
+          status: string | null
+        }
+        Insert: {
+          action_type?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          permission_level?: number | null
+          status?: string | null
+        }
+        Update: {
+          action_type?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          permission_level?: number | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       asset_uploads: {
         Row: {
           created_at: string | null
@@ -497,6 +620,470 @@ export type Database = {
           },
         ]
       }
+      inno_alert_log: {
+        Row: {
+          bucket: string
+          sent_at: string
+          task_id: string
+        }
+        Insert: {
+          bucket: string
+          sent_at?: string
+          task_id: string
+        }
+        Update: {
+          bucket?: string
+          sent_at?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inno_alert_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "inno_vault_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inno_email_intel: {
+        Row: {
+          action_required: boolean | null
+          actions_taken: string[] | null
+          category: string | null
+          created_at: string | null
+          follow_ups: string[] | null
+          from_addr: string | null
+          from_address: string | null
+          gmail_id: string
+          id: string
+          needs_saef_reply: boolean | null
+          pending_items: string[] | null
+          processed_at: string | null
+          project: string | null
+          project_name: string | null
+          raw_claude_json: Json | null
+          received_at: string
+          sentiment: string | null
+          snippet: string | null
+          subject: string | null
+          summary: string | null
+          thread_id: string
+          urgency: string | null
+        }
+        Insert: {
+          action_required?: boolean | null
+          actions_taken?: string[] | null
+          category?: string | null
+          created_at?: string | null
+          follow_ups?: string[] | null
+          from_addr?: string | null
+          from_address?: string | null
+          gmail_id: string
+          id?: string
+          needs_saef_reply?: boolean | null
+          pending_items?: string[] | null
+          processed_at?: string | null
+          project?: string | null
+          project_name?: string | null
+          raw_claude_json?: Json | null
+          received_at: string
+          sentiment?: string | null
+          snippet?: string | null
+          subject?: string | null
+          summary?: string | null
+          thread_id: string
+          urgency?: string | null
+        }
+        Update: {
+          action_required?: boolean | null
+          actions_taken?: string[] | null
+          category?: string | null
+          created_at?: string | null
+          follow_ups?: string[] | null
+          from_addr?: string | null
+          from_address?: string | null
+          gmail_id?: string
+          id?: string
+          needs_saef_reply?: boolean | null
+          pending_items?: string[] | null
+          processed_at?: string | null
+          project?: string | null
+          project_name?: string | null
+          raw_claude_json?: Json | null
+          received_at?: string
+          sentiment?: string | null
+          snippet?: string | null
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string
+          urgency?: string | null
+        }
+        Relationships: []
+      }
+      inno_email_tasks: {
+        Row: {
+          created_at: string | null
+          deadline: string | null
+          deadline_text: string | null
+          description: string
+          email_intel_id: string | null
+          id: string
+          last_alerted_at: string | null
+          owner: string | null
+          priority: string | null
+          project: string | null
+          promoted_to_vault_task_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          deadline?: string | null
+          deadline_text?: string | null
+          description: string
+          email_intel_id?: string | null
+          id?: string
+          last_alerted_at?: string | null
+          owner?: string | null
+          priority?: string | null
+          project?: string | null
+          promoted_to_vault_task_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          deadline?: string | null
+          deadline_text?: string | null
+          description?: string
+          email_intel_id?: string | null
+          id?: string
+          last_alerted_at?: string | null
+          owner?: string | null
+          priority?: string | null
+          project?: string | null
+          promoted_to_vault_task_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inno_email_tasks_email_intel_id_fkey"
+            columns: ["email_intel_id"]
+            isOneToOne: false
+            referencedRelation: "inno_email_intel"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inno_email_tasks_promoted_to_vault_task_id_fkey"
+            columns: ["promoted_to_vault_task_id"]
+            isOneToOne: false
+            referencedRelation: "inno_vault_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inno_gdrive_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          file_id: string | null
+          file_name: string | null
+          id: string
+          mime_type: string | null
+          query: string | null
+          status: string | null
+          summary: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          file_id?: string | null
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          query?: string | null
+          status?: string | null
+          summary?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          file_id?: string | null
+          file_name?: string | null
+          id?: string
+          mime_type?: string | null
+          query?: string | null
+          status?: string | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
+      inno_gmail_log: {
+        Row: {
+          action: string
+          approved_by: string | null
+          created_at: string | null
+          from_address: string | null
+          id: string
+          message_id: string | null
+          status: string | null
+          subject: string | null
+          summary: string | null
+          thread_id: string | null
+          to_address: string | null
+        }
+        Insert: {
+          action: string
+          approved_by?: string | null
+          created_at?: string | null
+          from_address?: string | null
+          id?: string
+          message_id?: string | null
+          status?: string | null
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string | null
+          to_address?: string | null
+        }
+        Update: {
+          action?: string
+          approved_by?: string | null
+          created_at?: string | null
+          from_address?: string | null
+          id?: string
+          message_id?: string | null
+          status?: string | null
+          subject?: string | null
+          summary?: string | null
+          thread_id?: string | null
+          to_address?: string | null
+        }
+        Relationships: []
+      }
+      inno_message_log: {
+        Row: {
+          channel: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          project_id: string | null
+          role: string
+          session_id: string | null
+          telegram_chat_id: string
+          telegram_username: string | null
+          thread_id: string | null
+          tokens_used: number | null
+          tool_calls: Json | null
+        }
+        Insert: {
+          channel?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          role: string
+          session_id?: string | null
+          telegram_chat_id: string
+          telegram_username?: string | null
+          thread_id?: string | null
+          tokens_used?: number | null
+          tool_calls?: Json | null
+        }
+        Update: {
+          channel?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          project_id?: string | null
+          role?: string
+          session_id?: string | null
+          telegram_chat_id?: string
+          telegram_username?: string | null
+          thread_id?: string | null
+          tokens_used?: number | null
+          tool_calls?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inno_message_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "inno_project_state"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "inno_message_log_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "inno_vault_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inno_reminders: {
+        Row: {
+          completed: boolean | null
+          created_at: string | null
+          due_date: string | null
+          id: number
+          list_name: string | null
+          notes: string | null
+          priority: number | null
+          reminder_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed?: boolean | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: number
+          list_name?: string | null
+          notes?: string | null
+          priority?: number | null
+          reminder_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed?: boolean | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: number
+          list_name?: string | null
+          notes?: string | null
+          priority?: number | null
+          reminder_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      inno_vault_daily: {
+        Row: {
+          actions_taken: string[] | null
+          created_at: string | null
+          date: string
+          emails_triaged: number | null
+          id: string
+          leads_captured: number | null
+          open_tasks_count: number | null
+          priorities: string[] | null
+          summary: string | null
+        }
+        Insert: {
+          actions_taken?: string[] | null
+          created_at?: string | null
+          date: string
+          emails_triaged?: number | null
+          id?: string
+          leads_captured?: number | null
+          open_tasks_count?: number | null
+          priorities?: string[] | null
+          summary?: string | null
+        }
+        Update: {
+          actions_taken?: string[] | null
+          created_at?: string | null
+          date?: string
+          emails_triaged?: number | null
+          id?: string
+          leads_captured?: number | null
+          open_tasks_count?: number | null
+          priorities?: string[] | null
+          summary?: string | null
+        }
+        Relationships: []
+      }
+      inno_vault_notes: {
+        Row: {
+          content: string | null
+          created_at: string | null
+          id: string
+          last_reviewed_at: string | null
+          links: string[] | null
+          tags: string[] | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          last_reviewed_at?: string | null
+          links?: string[] | null
+          tags?: string[] | null
+          title: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          last_reviewed_at?: string | null
+          links?: string[] | null
+          tags?: string[] | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      inno_vault_tasks: {
+        Row: {
+          created_at: string | null
+          due_date: string | null
+          id: string
+          notes: string | null
+          project_id: string | null
+          source: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          source?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          source?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inno_vault_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "inno_project_state"
+            referencedColumns: ["project_id"]
+          },
+          {
+            foreignKeyName: "inno_vault_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "inno_vault_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       knowledge_analytics: {
         Row: {
           entry_id: string | null
@@ -886,6 +1473,104 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          client_name: string | null
+          contact_person: string | null
+          created_at: string | null
+          data_retention_date: string | null
+          id: string
+          last_updated: string | null
+          notes: string | null
+          project_name: string | null
+          service_type: string | null
+          start_date: string | null
+          status: string | null
+          target_completion: string | null
+        }
+        Insert: {
+          client_name?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          data_retention_date?: string | null
+          id?: string
+          last_updated?: string | null
+          notes?: string | null
+          project_name?: string | null
+          service_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          target_completion?: string | null
+        }
+        Update: {
+          client_name?: string | null
+          contact_person?: string | null
+          created_at?: string | null
+          data_retention_date?: string | null
+          id?: string
+          last_updated?: string | null
+          notes?: string | null
+          project_name?: string | null
+          service_type?: string | null
+          start_date?: string | null
+          status?: string | null
+          target_completion?: string | null
+        }
+        Relationships: []
+      }
+      quotes: {
+        Row: {
+          amount_sgd: number | null
+          approved_by: string | null
+          client_name: string | null
+          created_at: string | null
+          data_retention_date: string | null
+          follow_up_date: string | null
+          id: string
+          notes: string | null
+          project_id: string | null
+          quote_ref: string | null
+          sent_date: string | null
+          status: string | null
+        }
+        Insert: {
+          amount_sgd?: number | null
+          approved_by?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          data_retention_date?: string | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          quote_ref?: string | null
+          sent_date?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount_sgd?: number | null
+          approved_by?: string | null
+          client_name?: string | null
+          created_at?: string | null
+          data_retention_date?: string | null
+          follow_up_date?: string | null
+          id?: string
+          notes?: string | null
+          project_id?: string | null
+          quote_ref?: string | null
+          sent_date?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_log: {
         Row: {
           created_at: string | null
@@ -982,6 +1667,42 @@ export type Database = {
         }
         Relationships: []
       }
+      security_log: {
+        Row: {
+          action_taken: string | null
+          alert_type: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          resolved_at: string | null
+          reviewed_by: string | null
+          severity: string | null
+          source: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          alert_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          reviewed_by?: string | null
+          severity?: string | null
+          source?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          alert_type?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          resolved_at?: string | null
+          reviewed_by?: string | null
+          severity?: string | null
+          source?: string | null
+        }
+        Relationships: []
+      }
       shop_look_content: {
         Row: {
           background_alt: string | null
@@ -1069,6 +1790,36 @@ export type Database = {
           updated_at?: string | null
           x_position?: number
           y_position?: number
+        }
+        Relationships: []
+      }
+      task_queue: {
+        Row: {
+          created_at: string | null
+          id: string
+          processed_at: string | null
+          retry_count: number | null
+          status: string | null
+          task_data: Json | null
+          task_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          retry_count?: number | null
+          status?: string | null
+          task_data?: Json | null
+          task_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          retry_count?: number | null
+          status?: string | null
+          task_data?: Json | null
+          task_type?: string | null
         }
         Relationships: []
       }
@@ -1253,6 +2004,19 @@ export type Database = {
           session_id?: string | null
           start_time?: string | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      inno_project_state: {
+        Row: {
+          closed_last_week: number | null
+          due_this_week: number | null
+          last_note_at: string | null
+          open_count: number | null
+          overdue_count: number | null
+          project: string | null
+          project_id: string | null
+          tags: string[] | null
         }
         Relationships: []
       }
