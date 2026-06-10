@@ -310,16 +310,19 @@ ${knowledgeContext ? `KNOWLEDGE BASE (most relevant catalog entries):\n${knowled
 
   } catch (error) {
     console.error('AI Chat error:', error);
+    const errMsg = (error as Error).message || '';
+    const isRateLimit = errMsg.includes('rate limit');
     const fallbackResponse = "I apologize, but I'm experiencing technical difficulties right now. Please contact our team directly at info@innosinlab.com for immediate assistance.";
     return new Response(JSON.stringify({
       success: false,
       message: fallbackResponse,
       confidence: 0.3,
-      error: (error as Error).message,
+      error_code: isRateLimit ? 'RATE_LIMITED' : 'INTERNAL_ERROR',
       timestamp: new Date().toISOString(),
     }), {
-      status: (error as Error).message.includes('rate limit') ? 429 : 500,
+      status: isRateLimit ? 429 : 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
+
 });
