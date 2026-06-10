@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import DOMPurify from 'dompurify';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Calendar, Clock, User } from 'lucide-react';
@@ -60,8 +61,27 @@ export default function BlogPost() {
     );
   }
 
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.excerpt || undefined,
+    image: post.featured_image || undefined,
+    datePublished: post.publish_date || undefined,
+    author: { "@type": "Person", name: post.author || "Innosin Lab" },
+    publisher: {
+      "@type": "Organization",
+      name: "Innosin Lab",
+      logo: { "@type": "ImageObject", url: "https://www.innosinlab.com/branding/hero-logo.png" }
+    },
+    mainEntityOfPage: `https://www.innosinlab.com/blog/${post.id}`
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
+      </Helmet>
       <div className="max-w-4xl mx-auto py-12 px-4">
         <Link to="/blog">
           <Button variant="outline" className="mb-8">
@@ -69,6 +89,7 @@ export default function BlogPost() {
             Back to Blog
           </Button>
         </Link>
+
 
         <article>
           <header className="mb-8">

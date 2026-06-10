@@ -27,8 +27,13 @@ const Index = () => {
     <div className="min-h-screen flex flex-col">
       {/* Main content only; header & footer are provided by SiteLayout */}
       <main className="flex-grow">
+        {/* Accessible page heading for SEO (visually hidden) */}
+        <h1 className="sr-only">
+          Precision Laboratory Furniture &amp; Equipment Solutions
+        </h1>
         {/* Video Hero Section */}
         <VideoHero />
+
 
         {/* Featured Companies Section */}
         <section className="py-12 bg-white transition-all duration-700 ease-in-out">

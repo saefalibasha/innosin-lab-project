@@ -190,11 +190,13 @@ const ProductCatalog = () => {
                 ))}
               </select>
               
-              <div className="flex border rounded-lg">
+              <div className="flex border rounded-lg" role="group" aria-label="View mode">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('grid')}
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === 'grid'}
                 >
                   <Grid className="h-4 w-4" />
                 </Button>
@@ -202,6 +204,8 @@ const ProductCatalog = () => {
                   variant={viewMode === 'list' ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setViewMode('list')}
+                  aria-label="List view"
+                  aria-pressed={viewMode === 'list'}
                 >
                   <List className="h-4 w-4" />
                 </Button>
