@@ -1,0 +1,25 @@
+# Innosin Lab
+
+> Innosin Lab Pte. Ltd. is a Malaysia-based provider of laboratory furniture and equipment since 1986. We distribute four brands across the lab safety, furniture, and ventilation categories.
+
+## Brands & Categories
+
+- **Broen-Lab** (Denmark): Eyewash stations and emergency safety showers.
+- **Hamilton Laboratory Solutions** (USA): Premium laboratory furniture and benches with chemical-resistant surfaces.
+- **Oriental Giken Inc.** (Japan): Fume hoods, biosafety cabinets, and ventilation systems.
+- **Innosin Lab** (Malaysia): Knee Space benches, Mobile Cabinets, Wall Cabinets, Tall Cabinets, Modular Cabinets, Sink Cabinets, Open Racks, and Laboratory Chairs. Cabinets are available in Glass Single/Double Door and Solid Single/Double Door variants.
+
+## Key Pages
+
+- [Home](https://www.innosinlab.com/): Company overview and featured brands.
+- [Product Catalog](https://www.innosinlab.com/products): Full catalog organized by category and brand.
+- [About](https://www.innosinlab.com/about): Company history and capabilities.
+- [Contact](https://www.innosinlab.com/contact): Quote requests and inquiries.
+- [Floor Planner](https://www.innosinlab.com/floor-planner): Interactive laboratory layout tool.
+- [Blog](https://www.innosinlab.com/blog): Industry insights.
+- [Sitemap](https://www.innosinlab.com/sitemap.xml)
+
+## Contact
+
+- Email: info@innosinlab.com
+- Location: Selangor, Malaysia
