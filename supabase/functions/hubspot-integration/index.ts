@@ -592,11 +592,12 @@ serve(async (req) => {
           console.error('Error fetching ticket pipelines:', error);
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message 
+            error: 'Failed to fetch ticket pipelines.' 
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
