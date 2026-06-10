@@ -498,17 +498,24 @@ serve(async (req) => {
           const hubspotContact = await createHubSpotContact(contactData);
           console.log('HubSpot contact processed:', hubspotContact.id);
           
-          // Update chat session with HubSpot contact ID (if sessionId provided)
+          // Update chat session with HubSpot contact ID + contact fields (if sessionId provided)
           if (sessionId) {
             const { error: updateError } = await supabase
               .from('chat_sessions')
-              .update({ hubspot_contact_id: hubspotContact.id })
+              .update({
+                hubspot_contact_id: hubspotContact.id,
+                email: contactData.email ?? null,
+                name: [contactData.firstname, contactData.lastname].filter(Boolean).join(' ') || null,
+                company: contactData.company ?? null,
+                phone: contactData.phone ?? null,
+              })
               .eq('session_id', sessionId);
 
             if (updateError) {
               console.error('Error updating session with contact ID:', updateError);
             }
           }
+
 
           await logIntegrationAction(sessionId || 'anonymous', 'create_contact', 'contact', hubspotContact.id, true, undefined, contactData, hubspotContact);
 

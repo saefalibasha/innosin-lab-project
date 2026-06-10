@@ -125,18 +125,18 @@ const EnhancedLiveChat = () => {
 
   const initializeSession = async () => {
     const sessionId = generateUUID();
+    const databaseId = generateUUID();
     try {
       const { data: user } = await supabase.auth.getUser();
-      const { data: sessionData, error: sessionError } = await supabase
+      const { error: sessionError } = await supabase
         .from('chat_sessions')
         .insert({
+          id: databaseId,
           session_id: sessionId,
           user_id: user?.user?.id || null,
           start_time: new Date().toISOString(),
           status: 'active',
-        })
-        .select()
-        .single();
+        });
 
       if (sessionError) {
         console.error('Error creating session:', sessionError);
@@ -144,7 +144,8 @@ const EnhancedLiveChat = () => {
         return;
       }
 
-      setSession({ sessionId, databaseId: sessionData.id });
+      setSession({ sessionId, databaseId });
+
 
       const welcome: ChatMessage = {
         id: 'welcome',
@@ -153,7 +154,7 @@ const EnhancedLiveChat = () => {
         timestamp: new Date(),
       };
       setMessages([welcome]);
-      await saveMessage(welcome, sessionData.id);
+      await saveMessage(welcome, databaseId);
     } catch (error) {
       console.error('Error initializing session:', error);
       toast.error('Failed to initialize chat session');
@@ -320,10 +321,9 @@ const EnhancedLiveChat = () => {
       const result = await createContact({ sessionId: session.sessionId, email, name, company, phone });
       if (result?.contactId) {
         setSession({ ...session, hubspotContactId: result.contactId });
-        await supabase.from('chat_sessions').update({
-          email, name, company, phone, hubspot_contact_id: result.contactId,
-        }).eq('id', session.databaseId);
+        // chat_sessions row is updated server-side by the hubspot-integration edge function
         await syncConversation({ sessionId: session.sessionId, contactId: result.contactId });
+
         setShowContactForm(false);
         const confirm: ChatMessage = {
           id: `bot_${Date.now()}`,
