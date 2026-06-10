@@ -160,12 +160,13 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'PDF processing failed. Please try again or contact support.' }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
+
   }
 })
 
