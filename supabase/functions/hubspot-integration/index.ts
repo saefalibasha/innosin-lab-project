@@ -528,12 +528,13 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message,
+            error: 'Failed to create contact. Please try again.',
             isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
           }), {
             status: error.message?.includes('rate limit') ? 429 : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
@@ -571,12 +572,13 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message,
+            error: 'Failed to create deal. Please try again.',
             isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
           }), {
             status: error.message?.includes('rate limit') ? 429 : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
@@ -590,11 +592,12 @@ serve(async (req) => {
           console.error('Error fetching ticket pipelines:', error);
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message 
+            error: 'Failed to fetch ticket pipelines.' 
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
@@ -649,12 +652,13 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message,
+            error: 'Failed to create ticket. Please try again.',
             isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
           }), {
             status: error.message?.includes('rate limit') ? 429 : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
@@ -688,11 +692,12 @@ serve(async (req) => {
             } catch (assocError: any) {
               console.error('Failed to associate fallback note to contact:', assocError);
               await logIntegrationAction(sessionId, 'sync_conversation', 'note', noteResult.id, false, assocError.message, { messageCount: 0, fallback: true, associationFailed: true });
-              const msg = assocError?.message || 'Failed to associate note with contact.';
+              const msg = 'Failed to associate note with contact.';
               return new Response(JSON.stringify({ success: false, error: msg }), {
                 status: 500,
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
               });
+
             }
           }
 
@@ -774,12 +779,13 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message,
+            error: 'Failed to sync conversation. Please try again.',
             isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
           }), {
             status: error.message?.includes('rate limit') ? 429 : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
@@ -792,9 +798,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('HubSpot Integration error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: 'An internal error occurred. Please try again.',
       isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
     }), {
+
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
