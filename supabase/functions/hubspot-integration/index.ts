@@ -652,12 +652,13 @@ serve(async (req) => {
           
           return new Response(JSON.stringify({ 
             success: false, 
-            error: error.message,
+            error: 'Failed to create ticket. Please try again.',
             isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
           }), {
             status: error.message?.includes('rate limit') ? 429 : 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
+
         }
       }
 
