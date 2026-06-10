@@ -7,68 +7,70 @@ interface SEOMetadata {
   canonical?: string;
 }
 
+const OG_IMAGE = "https://www.innosinlab.com/branding/hero-logo.png";
+
 export const pageSEOMetadata: Record<string, SEOMetadata> = {
   welcome: {
-    title: "Innosin Lab - Premium Laboratory Furniture & Equipment Solutions | Malaysia",
-    description: "Leading provider of innovative laboratory furniture, equipment, and custom design solutions in Malaysia. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups.",
+    title: "Innosin Lab — Laboratory Furniture & Equipment",
+    description: "Laboratory furniture, fume hoods and safety equipment for research labs across Malaysia and Asia.",
     keywords: "laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, Malaysia",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/"
   },
   home: {
-    title: "Innosin Lab - Premium Laboratory Furniture & Equipment Solutions",
-    description: "Leading provider of innovative laboratory furniture, equipment, and custom design solutions. Specializing in high-quality lab cabinets, workbenches, and complete laboratory setups for research institutions.",
+    title: "Innosin Lab — Laboratory Furniture & Equipment",
+    description: "Laboratory furniture, fume hoods, cabinets and safety equipment for research labs across Malaysia and Asia.",
     keywords: "laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, lab workbenches, laboratory solutions, research equipment, lab safety furniture, laboratory installation",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/"
   },
   products: {
-    title: "Laboratory Furniture & Equipment | Product Catalog - Innosin Lab",
-    description: "Explore our comprehensive range of laboratory furniture including mobile cabinets, wall cabinets, tall cabinets, and specialized lab equipment. Premium quality with multiple finish options.",
+    title: "Laboratory Furniture Catalog | Innosin Lab",
+    description: "Browse mobile, wall and tall lab cabinets, fume hoods, benches and safety equipment from Innosin Lab and partner brands.",
     keywords: "laboratory furniture catalog, lab cabinets, mobile laboratory cabinets, wall cabinets, tall cabinets, lab equipment, powder coat finish, stainless steel lab furniture",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/products"
   },
   about: {
-    title: "About Innosin Lab - Laboratory Solutions Experts Since 1986",
-    description: "Learn about Innosin Lab's 35+ years of expertise in laboratory furniture and equipment. Our commitment to innovation, quality, and customer satisfaction in laboratory solutions.",
+    title: "About Innosin Lab — Since 1986",
+    description: "35+ years building laboratory furniture and equipment for research, education and industry across Asia.",
     keywords: "Innosin Lab history, laboratory furniture company, lab equipment manufacturer, laboratory design experts, quality laboratory furniture",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/about"
   },
   contact: {
-    title: "Contact Innosin Lab - Laboratory Furniture & Equipment Specialists",
-    description: "Get in touch with Innosin Lab for custom laboratory design, furniture solutions, and equipment needs. Professional consultation and worldwide service.",
+    title: "Contact Innosin Lab",
+    description: "Talk to Innosin Lab about laboratory design, furniture, fume hoods and safety equipment. Quotes and consultation available.",
     keywords: "contact Innosin Lab, laboratory furniture consultation, lab design services, laboratory equipment support, custom lab solutions",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/contact"
   },
   blog: {
-    title: "Laboratory Design Blog & Insights - Innosin Lab",
-    description: "Stay updated with the latest trends in laboratory design, furniture innovations, and industry insights from Innosin Lab's experts.",
+    title: "Lab Design Blog | Innosin Lab",
+    description: "Insights on laboratory design, furniture innovations and safety best practices from the Innosin Lab team.",
     keywords: "laboratory design blog, lab furniture trends, laboratory innovations, scientific furniture insights, lab design best practices",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/blog"
   },
   floorPlanner: {
-    title: "Interactive Laboratory Floor Planner - Design Your Lab | Innosin Lab",
-    description: "Use our interactive 3D floor planner to design your laboratory layout with Innosin Lab furniture. Visualize and plan your perfect laboratory space.",
+    title: "3D Laboratory Floor Planner | Innosin Lab",
+    description: "Plan your lab layout in 3D with real Innosin Lab furniture. Free interactive floor planner.",
     keywords: "laboratory floor planner, lab design tool, 3D laboratory design, interactive lab planner, laboratory layout design",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/floor-planner"
   },
   rfqCart: {
-    title: "Request for Quote - Laboratory Furniture & Equipment | Innosin Lab",
-    description: "Get a customized quote for your laboratory furniture and equipment needs. Professional consultation and competitive pricing from Innosin Lab.",
+    title: "Request a Quote | Innosin Lab",
+    description: "Get a tailored quote for laboratory furniture, fume hoods and equipment from Innosin Lab.",
     keywords: "laboratory furniture quote, lab equipment pricing, custom laboratory quote, lab furniture cost, laboratory design consultation",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/rfq-cart"
   },
   productDetail: {
-    title: "Product Details - Laboratory Furniture | Innosin Lab",
-    description: "View detailed specifications and configurations for laboratory furniture and equipment from Innosin Lab.",
+    title: "Product Details | Innosin Lab",
+    description: "Specifications, configurations and finish options for Innosin Lab laboratory furniture and equipment.",
     keywords: "laboratory furniture, lab equipment, product specifications, product details, lab furniture configurations",
-    ogImage: "/branding/hero-logo.png",
+    ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/products"
   }
 };
