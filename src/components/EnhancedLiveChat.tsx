@@ -154,7 +154,7 @@ const EnhancedLiveChat = () => {
         timestamp: new Date(),
       };
       setMessages([welcome]);
-      await saveMessage(welcome, sessionData.id);
+      await saveMessage(welcome, databaseId);
     } catch (error) {
       console.error('Error initializing session:', error);
       toast.error('Failed to initialize chat session');
