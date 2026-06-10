@@ -798,9 +798,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('HubSpot Integration error:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: 'An internal error occurred. Please try again.',
       isRateLimit: error.message?.includes('rate limit') || error.message?.includes('429')
     }), {
+
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
