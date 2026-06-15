@@ -449,7 +449,7 @@ const EnhancedProductDetail = () => {
                     <Enhanced3DViewerOptimized
                       modelPath={currentAssets?.model || ''}
                       className="w-full h-96 lg:h-[500px]"
-                      productId={id}
+                      productId={series?.id}
                       preloadModels={currentAssets?.model ? [currentAssets.model] : []}
                     />
                   </div>
