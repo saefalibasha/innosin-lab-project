@@ -3,19 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Clock, Phone, Navigation, Mail } from 'lucide-react';
-import BasicMap from './Map/BasicMap';
+import GoogleMap from './Map/GoogleMap';
 
-// Location component without external map dependencies
+// Location component using Google Maps Platform
 const GoogleMapsLocation = () => {
   const offices = [
     {
       id: 'singapore',
       name: 'SINGAPORE',
-      address: '11 Changi North Street 1, #02-04, Singapore',
+      address: '11 Changi North Street 1, #02-04, Singapore 498823',
       phone: '+65 6993 4996',
       phoneHref: 'tel:+6569934996',
-      coordinates: { lat: 1.3868, lng: 103.9915 },
-      type: 'Branch Office',
+      coordinates: { lat: 1.3506518, lng: 103.9691325 },
+      type: 'Main Office',
       company: 'Innosin Lab Pte. Ltd.'
     },
     {
@@ -24,17 +24,17 @@ const GoogleMapsLocation = () => {
       address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia',
       phone: '(+607) 863 3535',
       phoneHref: 'tel:+6078633535',
-      coordinates: { lat: 1.60000, lng: 103.82028 },
-      type: 'Headquarters',
+      coordinates: { lat: 1.5891948, lng: 103.8185457 },
+      type: 'Manufacturing Headquarters',
       company: 'Innosin Technologies Sdn Bhd'
     },
     {
       id: 'kl',
       name: 'KUALA LUMPUR',
-      address: 'B-05-16, kompleks Perindustrian EMHUB, Persiaran Surian, Seksyen 3, Taman Sains Selangor, Petaling Jaya, Malaysia, 47810, Selangor',
+      address: 'B-05-16, Kompleks Perindustrian EMHUB, Persiaran Surian, Seksyen 3, Taman Sains Selangor, 47810 Petaling Jaya, Selangor, Malaysia',
       phone: '(+607) 863 3535',
       phoneHref: 'tel:+6078633535',
-      coordinates: { lat: 3.1948, lng: 101.6152 },
+      coordinates: { lat: 3.1596635, lng: 101.5724001 },
       type: 'Branch Office',
       company: 'Innosin Technologies Sdn Bhd'
     }
@@ -122,12 +122,13 @@ const GoogleMapsLocation = () => {
                 className="relative h-[700px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600"
               >
                 
-                {/* Leaflet Map - Interactive */}
-                <BasicMap 
-                  lat={selectedOffice.coordinates.lat} 
-                  lng={selectedOffice.coordinates.lng} 
-                  zoom={15}
+                {/* Google Maps - Interactive */}
+                <GoogleMap
+                  lat={selectedOffice.coordinates.lat}
+                  lng={selectedOffice.coordinates.lng}
+                  zoom={17}
                   height="700px"
+                  title={`${selectedOffice.company} — ${selectedOffice.name}`}
                 />
 
                 {/* Map action buttons */}
