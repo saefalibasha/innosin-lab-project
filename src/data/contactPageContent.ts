@@ -65,10 +65,11 @@ export const contactPageContent = {
     title: "Visit Our Office",
     description: "Come see our showroom and meet our team in person",
     address: {
-      street: "123 Laboratory Drive",
+      street: "11 Changi North Street 1, #02-04",
       city: "Singapore",
-      postalCode: "123456",
-      country: "Singapore"
+      postalCode: "",
+      country: "Singapore",
+      phone: "+65 6993 4996"
     },
     // Office images
     officeImages: [
