@@ -38,7 +38,7 @@ export const heroContent = {
     },
     {
       id: 2,
-      image: "/hero-images/slide-2-research.jpg",
+      image: "/hero-images/slide-2-research.webp",
       alt: "Advanced research facility with state-of-the-art equipment",
       titles: {
         title1: "Sincerity in Every Project.",
