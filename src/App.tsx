@@ -28,6 +28,9 @@ import {
   LazyFloorPlanner,
   LazyContact,
   LazyRFQCart,
+  LazyLabFurnitureSG,
+  LazyFumeHoodsSG,
+  LazySupplierSG,
   LazyAdminAuth,
   LazyDashboard,
   LazyAdminProductViewer,
@@ -155,6 +158,21 @@ const App = () => (
                 <Route path="/rfq-cart" element={
                   <Suspense fallback={<PageLoader />}>
                     <LazyRFQCart />
+                  </Suspense>
+                } />
+                <Route path="/lab-furniture-singapore" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyLabFurnitureSG />
+                  </Suspense>
+                } />
+                <Route path="/fume-hoods-singapore" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyFumeHoodsSG />
+                  </Suspense>
+                } />
+                <Route path="/laboratory-furniture-supplier-singapore" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazySupplierSG />
                   </Suspense>
                 } />
               </Route>
