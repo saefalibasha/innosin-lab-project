@@ -1,6 +1,6 @@
 // src/pages/EnhancedProductDetail.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +18,13 @@ import OpenRackConfigurator from '@/components/product/OpenRackConfigurator';
 import WallCabinetConfigurator from '@/components/product/WallCabinetConfigurator';
 import ModularCabinetConfigurator from '@/components/product/ModularCabinetConfigurator';
 import { SpecificProductSelector } from '@/components/floorplan/SpecificProductSelector';
-import { fetchProductById, fetchProductsByParentSeriesId } from '@/api/products';
+import { fetchProductBySlugOrId, fetchProductsByParentSeriesId, isUuid } from '@/api/products';
 import { useSEO } from '@/hooks/useSEO';
 import { addStructuredData } from '@/utils/seoMetadata';
 
 const EnhancedProductDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: routeParam } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { addItem } = useRFQ();
 
   const [activeTab, setActiveTab] = useState('photos');
@@ -38,18 +39,27 @@ const EnhancedProductDetail = () => {
   useSEO('productDetail');
 
   useEffect(() => {
-    if (!id) return;
-    fetchProductData(id);
-  }, [id]);
+    if (!routeParam) return;
+    fetchProductData(routeParam);
+  }, [routeParam]);
 
   // Add dynamic Product structured data when series loads
   useEffect(() => {
     if (series) {
+      // Redirect legacy UUID URLs → SEO-friendly slug URL (301-style client redirect).
+      const canonicalSlug = series.slug || series.id;
+      if (routeParam && isUuid(routeParam) && series.slug && series.slug !== routeParam) {
+        navigate(`/products/${series.slug}`, { replace: true });
+        return;
+      }
+
       const productImage = series.series_thumbnail_path || series.thumbnail_path;
-      const fullImageUrl = productImage?.startsWith('http') 
-        ? productImage 
+      const fullImageUrl = productImage?.startsWith('http')
+        ? productImage
         : `https://www.innosinlab.com${productImage}`;
-      
+
+      const canonicalUrl = `https://www.innosinlab.com/products/${canonicalSlug}`;
+
       addStructuredData({
         "@context": "https://schema.org",
         "@type": "Product",
@@ -72,7 +82,7 @@ const EnhancedProductDetail = () => {
           "priceCurrency": "SGD",
           "price": "0",
           "priceValidUntil": "2026-12-31",
-          "url": `https://www.innosinlab.com/products/${id}`,
+          "url": canonicalUrl,
           "seller": {
             "@type": "Organization",
             "name": "Innosin Lab Pte. Ltd.",
@@ -81,24 +91,33 @@ const EnhancedProductDetail = () => {
         }
       });
 
+      // Update canonical link tag to match the slug URL.
+      let link = document.querySelector("link[rel='canonical']") as HTMLLinkElement | null;
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'canonical';
+        document.head.appendChild(link);
+      }
+      link.href = canonicalUrl;
+
       // Update page title dynamically
       document.title = `${series.name} | Laboratory Furniture - Innosin Lab`;
     }
-  }, [series, id]);
+  }, [series, routeParam, navigate]);
 
-  const fetchProductData = async (productId: string) => {
+  const fetchProductData = async (slugOrId: string) => {
     try {
       setLoading(true);
-      const product = await fetchProductById(productId);
+      const product = await fetchProductBySlugOrId(slugOrId);
       setSeries(product);
 
       if (product?.is_series_parent) {
-        const variants = await fetchProductsByParentSeriesId(productId);
+        const variants = await fetchProductsByParentSeriesId(product.id);
         setSeries({ ...product, variants });
         if (variants?.length > 0) setSelectedVariantId(variants[0].id);
       } else if (product?.parent_series_id) {
         try {
-          const parentProduct = await fetchProductById(product.parent_series_id);
+          const parentProduct = await fetchProductBySlugOrId(product.parent_series_id);
           const variants = await fetchProductsByParentSeriesId(product.parent_series_id);
           setSeries({ ...parentProduct, variants, is_series_parent: true });
           setSelectedVariantId(product.id);
