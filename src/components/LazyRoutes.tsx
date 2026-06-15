@@ -48,6 +48,11 @@ export const LazyContact = lazy(() => import('../pages/Contact'));
 export const LazyAuth = lazy(() => import('../pages/Auth'));
 export const LazyRFQCart = lazy(() => import('../pages/RFQCart'));
 
+// SEO landing pages (Singapore)
+export const LazyLabFurnitureSG = lazy(() => import('../pages/seo/LabFurnitureSingapore'));
+export const LazyFumeHoodsSG = lazy(() => import('../pages/seo/FumeHoodsSingapore'));
+export const LazySupplierSG = lazy(() => import('../pages/seo/LaboratoryFurnitureSupplierSingapore'));
+
 // Admin routes - separate chunk for admin functionality
 export const LazyAdminAuth = lazy(() => import('../pages/admin/AdminAuth'));
 export const LazyDashboard = lazy(() => import('../pages/admin/Dashboard'));
