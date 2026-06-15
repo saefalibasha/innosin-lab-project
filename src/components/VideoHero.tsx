@@ -42,16 +42,17 @@ const VideoHero = () => {
               }}
             >
               <CarouselContent className="-ml-2 md:-ml-4">
-                {heroContent.slides.map((slide) => (
+                {heroContent.slides.map((slide, idx) => (
                   <CarouselItem key={slide.id} className="pl-2 md:pl-4 basis-full md:basis-[85%] lg:basis-[90%]">
                     <div className="relative w-full h-[60vh] sm:h-[65vh] min-h-[360px] sm:min-h-[500px] rounded-2xl overflow-hidden">
                       {/* Background Image */}
-                      <div 
-                        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-                        style={{ 
-                          backgroundImage: `url(${slide.image})`,
-                          backgroundSize: 'cover'
-                        }}
+                      <img
+                        src={slide.image}
+                        alt={slide.alt}
+                        loading={idx === 0 ? 'eager' : 'lazy'}
+                        fetchPriority={idx === 0 ? 'high' : 'low'}
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
                       
                       {/* Dark Overlay for better text readability */}
