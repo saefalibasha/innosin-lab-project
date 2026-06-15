@@ -1386,6 +1386,7 @@ export type Database = {
           series_overview_image_path: string | null
           series_slug: string | null
           series_thumbnail_path: string | null
+          slug: string | null
           specifications: Json | null
           target_variant_count: number | null
           thumbnail_path: string | null
@@ -1425,6 +1426,7 @@ export type Database = {
           series_overview_image_path?: string | null
           series_slug?: string | null
           series_thumbnail_path?: string | null
+          slug?: string | null
           specifications?: Json | null
           target_variant_count?: number | null
           thumbnail_path?: string | null
@@ -1464,6 +1466,7 @@ export type Database = {
           series_overview_image_path?: string | null
           series_slug?: string | null
           series_thumbnail_path?: string | null
+          slug?: string | null
           specifications?: Json | null
           target_variant_count?: number | null
           thumbnail_path?: string | null
@@ -2062,6 +2065,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      slugify: { Args: { input: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
