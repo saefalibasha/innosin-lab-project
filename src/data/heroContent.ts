@@ -16,7 +16,7 @@ export const heroContent = {
   slides: [
     {
       id: 1,
-      image: "/hero-images/slide-1-precision.jpg",
+      image: "/hero-images/slide-1-precision.webp",
       alt: "Modern laboratory equipment showcasing precision instruments",
       titles: {
         title1: "Innovative Laboratory Solutions.",
@@ -38,7 +38,7 @@ export const heroContent = {
     },
     {
       id: 2,
-      image: "/hero-images/slide-2-research.jpg",
+      image: "/hero-images/slide-2-research.webp",
       alt: "Advanced research facility with state-of-the-art equipment",
       titles: {
         title1: "Sincerity in Every Project.",
@@ -60,7 +60,7 @@ export const heroContent = {
     },
     {
       id: 3,
-      image: "/hero-images/slide-3-future.jpg",
+      image: "/hero-images/slide-3-future.webp",
       alt: "Futuristic laboratory workspace showcasing innovation",
       titles: {
         title1: "Your Trusted Lab Partner",
