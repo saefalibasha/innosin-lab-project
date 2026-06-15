@@ -16,7 +16,7 @@ export const heroContent = {
   slides: [
     {
       id: 1,
-      image: "/hero-images/slide-1-precision.jpg",
+      image: "/hero-images/slide-1-precision.webp",
       alt: "Modern laboratory equipment showcasing precision instruments",
       titles: {
         title1: "Innovative Laboratory Solutions.",
