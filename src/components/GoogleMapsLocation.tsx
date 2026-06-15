@@ -11,8 +11,10 @@ const GoogleMapsLocation = () => {
     {
       id: 'singapore',
       name: 'SINGAPORE',
-      address: '510 Bedok North Street 3, Singapore 460510',
-      coordinates: { lat: 1.3298, lng: 103.9304 },
+      address: '11 Changi North Street 1, #02-04, Singapore',
+      phone: '+65 6993 4996',
+      phoneHref: 'tel:+6569934996',
+      coordinates: { lat: 1.3868, lng: 103.9915 },
       type: 'Branch Office',
       company: 'Innosin Lab Pte. Ltd.'
     },
@@ -20,6 +22,8 @@ const GoogleMapsLocation = () => {
       id: 'johor',
       name: 'JOHOR BAHRU',
       address: 'Lot 48, 18km, Jalan Johor Bahru - Kota Tinggi, 81800 Ulu Tiram, Johor, Malaysia',
+      phone: '(+607) 863 3535',
+      phoneHref: 'tel:+6078633535',
       coordinates: { lat: 1.60000, lng: 103.82028 },
       type: 'Headquarters',
       company: 'Innosin Technologies Sdn Bhd'
@@ -28,13 +32,15 @@ const GoogleMapsLocation = () => {
       id: 'kl',
       name: 'KUALA LUMPUR',
       address: 'B-05-16, kompleks Perindustrian EMHUB, Persiaran Surian, Seksyen 3, Taman Sains Selangor, Petaling Jaya, Malaysia, 47810, Selangor',
+      phone: '(+607) 863 3535',
+      phoneHref: 'tel:+6078633535',
       coordinates: { lat: 3.1948, lng: 101.6152 },
       type: 'Branch Office',
       company: 'Innosin Technologies Sdn Bhd'
     }
   ];
 
-  const [selectedOffice, setSelectedOffice] = useState(offices[1]); // Default to HQ
+  const [selectedOffice, setSelectedOffice] = useState(offices[0]); // Default to Singapore
 
   const getDirectionsUrl = (address: string) => {
     return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
@@ -60,8 +66,8 @@ const GoogleMapsLocation = () => {
     {
       icon: <Phone className="w-4 h-4" />,
       label: 'Phone',
-      value: '(+607) 863 3535',
-      action: () => window.open('tel:+6078633535')
+      value: selectedOffice.phone,
+      action: () => window.open(selectedOffice.phoneHref)
     },
     {
       icon: <Mail className="w-4 h-4" />,
