@@ -1,180 +1,96 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Sitemap Version: 3.0 - Updated 2025-12-11 -->
+<!-- Sitemap Version: 4.0 - Updated 2026-06-15 - Singapore SEO -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
-  
-  <!-- Homepage (Root Domain - Canonical URL) -->
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
   <url>
     <loc>https://www.innosinlab.com/</loc>
-    <lastmod>2025-12-18</lastmod>
+    <xhtml:link rel="alternate" hreflang="en-sg" href="https://www.innosinlab.com/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://www.innosinlab.com/" />
+    <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
       <image:loc>https://www.innosinlab.com/branding/hero-logo.png</image:loc>
-      <image:title>Innosin Lab - Laboratory Equipment Solutions</image:title>
+      <image:title>Innosin Lab - Laboratory Furniture Singapore</image:title>
     </image:image>
   </url>
 
-  <!-- About Page -->
+  <!-- Singapore-targeted landing pages -->
   <url>
-    <loc>https://www.innosinlab.com/about</loc>
-    <lastmod>2025-12-11</lastmod>
+    <loc>https://www.innosinlab.com/lab-furniture-singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-sg" href="https://www.innosinlab.com/lab-furniture-singapore" />
+    <lastmod>2026-06-15</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.9</priority>
   </url>
-
-  <!-- Products Catalog -->
   <url>
-    <loc>https://www.innosinlab.com/products</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>weekly</changefreq>
+    <loc>https://www.innosinlab.com/fume-hoods-singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-sg" href="https://www.innosinlab.com/fume-hoods-singapore" />
+    <lastmod>2026-06-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.innosinlab.com/laboratory-furniture-supplier-singapore</loc>
+    <xhtml:link rel="alternate" hreflang="en-sg" href="https://www.innosinlab.com/laboratory-furniture-supplier-singapore" />
+    <lastmod>2026-06-15</lastmod>
+    <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
-  <!-- Contact Page -->
+  <url>
+    <loc>https://www.innosinlab.com/about</loc>
+    <lastmod>2026-06-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.innosinlab.com/products</loc>
+    <lastmod>2026-06-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
   <url>
     <loc>https://www.innosinlab.com/contact</loc>
-    <lastmod>2025-12-11</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
-
-  <!-- Blog -->
   <url>
     <loc>https://www.innosinlab.com/blog</loc>
-    <lastmod>2025-12-11</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
-
-  <!-- Floor Planner -->
   <url>
     <loc>https://www.innosinlab.com/floor-planner</loc>
-    <lastmod>2025-12-11</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
-
-  <!-- RFQ Cart -->
   <url>
     <loc>https://www.innosinlab.com/rfq-cart</loc>
-    <lastmod>2025-12-11</lastmod>
+    <lastmod>2026-06-15</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
 
-  <!-- Product Series Pages - Using Actual Database UUIDs -->
-  
-  <!-- Bio Safety Cabinet - TANGERINE Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/24c65511-9923-4573-acf4-4b0767e20f66</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Broen-Lab Emergency Shower Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/45d4f541-9cf1-483f-abe4-aa94a325a49f</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Broen-Lab UNIFLEX Taps Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/fe2b5a02-f3ae-4ae8-89b6-e73175d78acd</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Fume Hood - NOCE Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/65563e13-5476-408e-9d75-8aac834a542e</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Innosin Laboratory Chair Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/01bceed3-2d85-4edc-b698-d8ff84c75a68</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
-  <!-- Knee Space Laboratory Bench Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/105ef44e-2db5-4084-a541-51e30f89dbb5</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Mobile Cabinet For 750mm Height Bench Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/98535774-921b-4003-a048-f878da72d06c</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Mobile Cabinet For 900mm Height Bench Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/62592e68-88a4-4f3a-a176-6cb7351ab4a4</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Modular Cabinet Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/9ae7c8e7-337d-41f6-b39b-f306b2e74003</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Open Rack Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/f0c3d7cb-4b99-4c8e-9cdf-a1618128ffb2</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Safe Aire II Fume Hoods -->
-  <url>
-    <loc>https://www.innosinlab.com/products/50a770f2-6974-4adb-826b-7a5e1d7de77b</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <!-- Sink Cabinet Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/63d78a14-bb48-4b63-9128-d8386cbe9960</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Tall Cabinet Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/1ddb039d-0d3e-4d8a-87dc-01064f7002c7</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <!-- Wall Cabinet Series -->
-  <url>
-    <loc>https://www.innosinlab.com/products/cbd89884-373f-4086-b7b5-5cedb9441ea7</loc>
-    <lastmod>2025-12-11</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
+  <!-- Product Series Pages -->
+  <url><loc>https://www.innosinlab.com/products/24c65511-9923-4573-acf4-4b0767e20f66</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/45d4f541-9cf1-483f-abe4-aa94a325a49f</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/fe2b5a02-f3ae-4ae8-89b6-e73175d78acd</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.innosinlab.com/products/65563e13-5476-408e-9d75-8aac834a542e</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/01bceed3-2d85-4edc-b698-d8ff84c75a68</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://www.innosinlab.com/products/105ef44e-2db5-4084-a541-51e30f89dbb5</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/98535774-921b-4003-a048-f878da72d06c</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/62592e68-88a4-4f3a-a176-6cb7351ab4a4</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/9ae7c8e7-337d-41f6-b39b-f306b2e74003</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/f0c3d7cb-4b99-4c8e-9cdf-a1618128ffb2</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.innosinlab.com/products/50a770f2-6974-4adb-826b-7a5e1d7de77b</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.innosinlab.com/products/63d78a14-bb48-4b63-9128-d8386cbe9960</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.innosinlab.com/products/1ddb039d-0d3e-4d8a-87dc-01064f7002c7</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://www.innosinlab.com/products/cbd89884-373f-4086-b7b5-5cedb9441ea7</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>
 
 </urlset>

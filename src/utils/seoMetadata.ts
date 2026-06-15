@@ -11,67 +11,88 @@ const OG_IMAGE = "https://www.innosinlab.com/branding/hero-logo.png";
 
 export const pageSEOMetadata: Record<string, SEOMetadata> = {
   welcome: {
-    title: "Innosin Lab — Laboratory Furniture & Equipment",
-    description: "Laboratory furniture, fume hoods and safety equipment for research labs across Malaysia and Asia.",
-    keywords: "laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, Malaysia",
+    title: "Lab Furniture & Fume Hoods Singapore | Innosin Lab",
+    description: "Innosin Lab Singapore supplies laboratory furniture, fume hoods and safety equipment for research, education and industry across Singapore and Southeast Asia.",
+    keywords: "lab furniture singapore, laboratory furniture singapore, fume hood singapore, laboratory furniture supplier singapore",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/"
   },
   home: {
-    title: "Innosin Lab — Laboratory Furniture & Equipment",
-    description: "Laboratory furniture, fume hoods, cabinets and safety equipment for research labs across Malaysia and Asia.",
-    keywords: "laboratory furniture, lab equipment, laboratory design, lab cabinets, scientific furniture, lab workbenches, laboratory solutions, research equipment, lab safety furniture, laboratory installation",
+    title: "Lab Furniture & Fume Hoods Singapore | Innosin Lab",
+    description: "Singapore's trusted source for laboratory furniture, fume hoods, lab cabinets and safety equipment. Designed for research, education and industrial labs since 1986.",
+    keywords: "lab furniture singapore, laboratory furniture singapore, fume hood singapore, laboratory furniture supplier, lab cabinets singapore, laboratory design singapore, lab workbenches, lab equipment singapore",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/"
   },
   products: {
-    title: "Laboratory Furniture Catalog | Innosin Lab",
-    description: "Browse mobile, wall and tall lab cabinets, fume hoods, benches and safety equipment from Innosin Lab and partner brands.",
-    keywords: "laboratory furniture catalog, lab cabinets, mobile laboratory cabinets, wall cabinets, tall cabinets, lab equipment, powder coat finish, stainless steel lab furniture",
+    title: "Lab Furniture Catalog — Fume Hoods, Cabinets, Benches | Singapore",
+    description: "Browse Innosin Lab's Singapore catalog: fume hoods, mobile/wall/tall lab cabinets, workbenches, sink cabinets and safety equipment with full 3D previews.",
+    keywords: "laboratory furniture catalog singapore, fume hoods singapore, lab cabinets, mobile laboratory cabinets, wall cabinets, tall cabinets, lab workbenches, sink cabinets",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/products"
   },
   about: {
-    title: "About Innosin Lab — Since 1986",
-    description: "35+ years building laboratory furniture and equipment for research, education and industry across Asia.",
-    keywords: "Innosin Lab history, laboratory furniture company, lab equipment manufacturer, laboratory design experts, quality laboratory furniture",
+    title: "About Innosin Lab Singapore — Laboratory Furniture Since 1986",
+    description: "Innosin Lab is a Singapore-based laboratory furniture and fume hood manufacturer with 35+ years serving research, education and industry across Southeast Asia.",
+    keywords: "innosin lab singapore, laboratory furniture company singapore, lab equipment manufacturer singapore, laboratory design experts",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/about"
   },
   contact: {
-    title: "Contact Innosin Lab",
-    description: "Talk to Innosin Lab about laboratory design, furniture, fume hoods and safety equipment. Quotes and consultation available.",
-    keywords: "contact Innosin Lab, laboratory furniture consultation, lab design services, laboratory equipment support, custom lab solutions",
+    title: "Contact Innosin Lab Singapore — Lab Furniture Quotes",
+    description: "Get in touch with Innosin Lab Singapore for laboratory design, fume hoods, lab cabinets and safety equipment. Quotes and consultation available.",
+    keywords: "contact innosin lab singapore, laboratory furniture consultation singapore, lab design services singapore, custom laboratory quote",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/contact"
   },
   blog: {
-    title: "Lab Design Blog | Innosin Lab",
-    description: "Insights on laboratory design, furniture innovations and safety best practices from the Innosin Lab team.",
-    keywords: "laboratory design blog, lab furniture trends, laboratory innovations, scientific furniture insights, lab design best practices",
+    title: "Lab Design Blog | Innosin Lab Singapore",
+    description: "Insights on laboratory design, fume hood selection and safety best practices from the Innosin Lab Singapore team.",
+    keywords: "laboratory design blog singapore, lab furniture trends, fume hood guide, laboratory innovations, lab design best practices",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/blog"
   },
   floorPlanner: {
-    title: "3D Laboratory Floor Planner | Innosin Lab",
-    description: "Plan your lab layout in 3D with real Innosin Lab furniture. Free interactive floor planner.",
-    keywords: "laboratory floor planner, lab design tool, 3D laboratory design, interactive lab planner, laboratory layout design",
+    title: "Free 3D Laboratory Floor Planner Singapore | Innosin Lab",
+    description: "Plan your Singapore lab layout in 3D with real Innosin Lab furniture, cabinets and fume hoods. Free interactive floor planner — no signup needed.",
+    keywords: "laboratory floor planner singapore, lab design tool, 3D laboratory design, interactive lab planner, laboratory layout design singapore",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/floor-planner"
   },
   rfqCart: {
-    title: "Request a Quote | Innosin Lab",
-    description: "Get a tailored quote for laboratory furniture, fume hoods and equipment from Innosin Lab.",
-    keywords: "laboratory furniture quote, lab equipment pricing, custom laboratory quote, lab furniture cost, laboratory design consultation",
+    title: "Request a Quote | Innosin Lab Singapore",
+    description: "Get a tailored Singapore quote for laboratory furniture, fume hoods and lab equipment from Innosin Lab.",
+    keywords: "laboratory furniture quote singapore, lab equipment pricing, custom laboratory quote, fume hood quote singapore",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/rfq-cart"
   },
   productDetail: {
-    title: "Product Details | Innosin Lab",
-    description: "Specifications, configurations and finish options for Innosin Lab laboratory furniture and equipment.",
-    keywords: "laboratory furniture, lab equipment, product specifications, product details, lab furniture configurations",
+    title: "Lab Product Details | Innosin Lab Singapore",
+    description: "Specifications, configurations and finishes for Innosin Lab Singapore laboratory furniture, fume hoods and cabinets.",
+    keywords: "laboratory furniture singapore, lab equipment specifications, fume hood specifications, lab furniture configurations",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/products"
+  },
+  labFurnitureSG: {
+    title: "Lab Furniture Singapore — Cabinets, Benches & Workstations | Innosin Lab",
+    description: "Buy lab furniture in Singapore — modular cabinets, workbenches, sink cabinets, mobile and tall cabinets engineered for research and teaching labs. Free 3D planner and Singapore-based support.",
+    keywords: "lab furniture singapore, laboratory furniture singapore, lab cabinets singapore, lab workbenches singapore, laboratory furniture supplier singapore",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/lab-furniture-singapore"
+  },
+  fumeHoodsSG: {
+    title: "Fume Hoods Singapore — Ducted, Ductless & Bio Safety | Innosin Lab",
+    description: "Fume hoods in Singapore: NOCE ducted, Safe Aire II and TANGERINE Class II bio safety cabinets. Built to SS, EN 14175 and NSF/ANSI 49 standards with local installation and service.",
+    keywords: "fume hood singapore, ductless fume hood singapore, bio safety cabinet singapore, fume cupboard singapore, laboratory fume hood",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/fume-hoods-singapore"
+  },
+  supplierSG: {
+    title: "Laboratory Furniture Supplier Singapore | Innosin Lab",
+    description: "A trusted laboratory furniture supplier in Singapore for universities, hospitals, biotech and industrial labs. End-to-end design, supply, installation and after-sales support.",
+    keywords: "laboratory furniture supplier singapore, lab furniture supplier singapore, laboratory equipment supplier, lab fitout singapore, lab refurbishment singapore",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/laboratory-furniture-supplier-singapore"
   }
 };
 
@@ -166,16 +187,16 @@ const updateOrCreateMeta = (attributeType: 'name' | 'property', attributeValue: 
   }
 };
 
-export const addStructuredData = (data: any) => {
-  // Remove existing structured data
-  const existingScript = document.querySelector('script[type="application/ld+json"]');
-  if (existingScript) {
-    existingScript.remove();
-  }
-  
-  // Add new structured data
+export const addStructuredData = (data: any, key = 'page') => {
+  // Only remove previously-injected dynamic blocks (preserves the static
+  // Organization / WebSite / LocalBusiness JSON-LD in index.html).
+  document
+    .querySelectorAll(`script[type="application/ld+json"][data-dynamic="${key}"]`)
+    .forEach((s) => s.remove());
+
   const script = document.createElement('script');
   script.type = 'application/ld+json';
+  script.setAttribute('data-dynamic', key);
   script.textContent = JSON.stringify(data);
   document.head.appendChild(script);
 };
