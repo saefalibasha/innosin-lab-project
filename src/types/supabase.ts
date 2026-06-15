@@ -39,6 +39,7 @@ export interface DatabaseProduct {
   inherits_series_assets: boolean;
   target_variant_count: number;
   keywords: string[];
+  slug?: string;
 }
 
 export interface RealtimePayload {
