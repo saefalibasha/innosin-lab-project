@@ -15,7 +15,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, variant = 'default' 
   const navigate = useNavigate();
 
   const handleViewDetails = () => {
-    navigate(`/products/${product.id}`);
+    // Prefer the SEO-friendly slug; fall back to UUID for products without one yet.
+    navigate(`/products/${product.slug || product.id}`);
   };
 
   // Use company tag (first one) or fallback to category

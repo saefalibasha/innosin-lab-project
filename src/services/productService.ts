@@ -42,7 +42,8 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
     editable_description: rawProduct.editable_description || rawProduct.description || '',
     inherits_series_assets: rawProduct.inherits_series_assets || false,
     target_variant_count: rawProduct.target_variant_count || 0,
-    keywords: rawProduct.keywords || []
+    keywords: rawProduct.keywords || [],
+    slug: rawProduct.slug || undefined
   };
 };
 
@@ -50,6 +51,7 @@ const ensureDatabaseProduct = (rawProduct: any): DatabaseProduct => {
 const transformDatabaseProduct = (dbProduct: DatabaseProduct): Product => {
   return {
     id: dbProduct.id,
+    slug: dbProduct.slug,
     name: dbProduct.editable_title || dbProduct.name,
     category: dbProduct.category,
     dimensions: dbProduct.dimensions || '',
