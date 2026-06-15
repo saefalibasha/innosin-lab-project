@@ -60,7 +60,7 @@ export const heroContent = {
     },
     {
       id: 3,
-      image: "/hero-images/slide-3-future.jpg",
+      image: "/hero-images/slide-3-future.webp",
       alt: "Futuristic laboratory workspace showcasing innovation",
       titles: {
         title1: "Your Trusted Lab Partner",
