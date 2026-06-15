@@ -52,6 +52,16 @@ export const LazyRFQCart = lazy(() => import('../pages/RFQCart'));
 export const LazyLabFurnitureSG = lazy(() => import('../pages/seo/LabFurnitureSingapore'));
 export const LazyFumeHoodsSG = lazy(() => import('../pages/seo/FumeHoodsSingapore'));
 export const LazySupplierSG = lazy(() => import('../pages/seo/LaboratoryFurnitureSupplierSingapore'));
+export const LazyLabCabinetsSG = lazy(() => import('../pages/seo/LabCabinetsSingapore'));
+export const LazyLabBenchesSG = lazy(() => import('../pages/seo/LabBenchesSingapore'));
+export const LazyBiosafetySG = lazy(() => import('../pages/seo/BiosafetyCabinetsSingapore'));
+export const LazyLabFurnitureMY = lazy(() => import('../pages/seo/LabFurnitureMalaysia'));
+export const LazyLabDesignSG = lazy(() => import('../pages/seo/LabDesignSingapore'));
+export const LazyGuideLabBenches = lazy(() => import('../pages/guides/ChoosingLabBenches'));
+export const LazyGuideFumeVsBSC = lazy(() => import('../pages/guides/FumeHoodVsBiosafety'));
+export const LazyGuideDuctedVsDuctless = lazy(() => import('../pages/guides/DuctedVsDuctless'));
+export const LazyGuideLabCabinets = lazy(() => import('../pages/guides/LabCabinetsGuide'));
+export const LazyGuideStandardsSG = lazy(() => import('../pages/guides/LabStandardsSG'));
 
 // Admin routes - separate chunk for admin functionality
 export const LazyAdminAuth = lazy(() => import('../pages/admin/AdminAuth'));

@@ -31,6 +31,16 @@ import {
   LazyLabFurnitureSG,
   LazyFumeHoodsSG,
   LazySupplierSG,
+  LazyLabCabinetsSG,
+  LazyLabBenchesSG,
+  LazyBiosafetySG,
+  LazyLabFurnitureMY,
+  LazyLabDesignSG,
+  LazyGuideLabBenches,
+  LazyGuideFumeVsBSC,
+  LazyGuideDuctedVsDuctless,
+  LazyGuideLabCabinets,
+  LazyGuideStandardsSG,
   LazyAdminAuth,
   LazyDashboard,
   LazyAdminProductViewer,
@@ -174,6 +184,36 @@ const App = () => (
                   <Suspense fallback={<PageLoader />}>
                     <LazySupplierSG />
                   </Suspense>
+                } />
+                <Route path="/lab-cabinets-singapore" element={
+                  <Suspense fallback={<PageLoader />}><LazyLabCabinetsSG /></Suspense>
+                } />
+                <Route path="/lab-benches-singapore" element={
+                  <Suspense fallback={<PageLoader />}><LazyLabBenchesSG /></Suspense>
+                } />
+                <Route path="/biosafety-cabinets-singapore" element={
+                  <Suspense fallback={<PageLoader />}><LazyBiosafetySG /></Suspense>
+                } />
+                <Route path="/laboratory-furniture-malaysia" element={
+                  <Suspense fallback={<PageLoader />}><LazyLabFurnitureMY /></Suspense>
+                } />
+                <Route path="/laboratory-design-singapore" element={
+                  <Suspense fallback={<PageLoader />}><LazyLabDesignSG /></Suspense>
+                } />
+                <Route path="/guides/choosing-lab-benches" element={
+                  <Suspense fallback={<PageLoader />}><LazyGuideLabBenches /></Suspense>
+                } />
+                <Route path="/guides/fume-hood-vs-biosafety-cabinet" element={
+                  <Suspense fallback={<PageLoader />}><LazyGuideFumeVsBSC /></Suspense>
+                } />
+                <Route path="/guides/ducted-vs-ductless-fume-hoods" element={
+                  <Suspense fallback={<PageLoader />}><LazyGuideDuctedVsDuctless /></Suspense>
+                } />
+                <Route path="/guides/lab-cabinets-buying-guide" element={
+                  <Suspense fallback={<PageLoader />}><LazyGuideLabCabinets /></Suspense>
+                } />
+                <Route path="/guides/lab-furniture-standards-singapore" element={
+                  <Suspense fallback={<PageLoader />}><LazyGuideStandardsSG /></Suspense>
                 } />
               </Route>
 

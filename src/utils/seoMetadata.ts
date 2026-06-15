@@ -93,6 +93,76 @@ export const pageSEOMetadata: Record<string, SEOMetadata> = {
     keywords: "laboratory furniture supplier singapore, lab furniture supplier singapore, laboratory equipment supplier, lab fitout singapore, lab refurbishment singapore",
     ogImage: OG_IMAGE,
     canonical: "https://www.innosinlab.com/laboratory-furniture-supplier-singapore"
+  },
+  labCabinetsSG: {
+    title: "Lab Cabinets Singapore — Modular, Tall, Wall & Mobile | Innosin Lab",
+    description: "Laboratory cabinets in Singapore — modular, tall, wall, mobile and SCDF-compliant flammable safety cabinets in powder coat or stainless steel.",
+    keywords: "lab cabinets singapore, laboratory cabinets singapore, mobile cabinets, tall lab cabinet, flammable storage cabinet singapore",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/lab-cabinets-singapore"
+  },
+  labBenchesSG: {
+    title: "Lab Benches Singapore — Modular & Knee-Space Workbenches | Innosin Lab",
+    description: "Laboratory workbenches in Singapore — modular, knee-space and fixed benches with epoxy, phenolic, stainless or polypropylene tops.",
+    keywords: "lab bench singapore, laboratory bench singapore, lab workbench, knee space bench, modular lab bench",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/lab-benches-singapore"
+  },
+  biosafetySG: {
+    title: "Biosafety Cabinets Singapore — Class II Type A2 BSCs | Innosin Lab",
+    description: "Class II Type A2 and B2 biosafety cabinets in Singapore, NSF/ANSI 49 listed with annual recertification and decontamination service.",
+    keywords: "biosafety cabinet singapore, class ii bsc singapore, nsf 49 cabinet, microbiological safety cabinet singapore",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/biosafety-cabinets-singapore"
+  },
+  labFurnitureMY: {
+    title: "Laboratory Furniture Malaysia — Fume Hoods, Benches & Cabinets | Innosin",
+    description: "Laboratory furniture in Malaysia from Innosin Technologies — fume hoods, benches and cabinets manufactured in Johor and supplied across Malaysia.",
+    keywords: "laboratory furniture malaysia, lab furniture johor, fume hood malaysia, lab cabinets malaysia",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/laboratory-furniture-malaysia"
+  },
+  labDesignSG: {
+    title: "Laboratory Design Singapore — Fit-out & 3D Planning | Innosin Lab",
+    description: "End-to-end laboratory design in Singapore — concept, 3D layout, furniture supply, fume-hood commissioning and turnkey fit-out.",
+    keywords: "laboratory design singapore, lab fit out singapore, lab refurbishment singapore, laboratory consultants singapore",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/laboratory-design-singapore"
+  },
+  guideLabBenches: {
+    title: "How to Choose Lab Benches — Buyer's Guide (2026) | Innosin Lab",
+    description: "Modular vs fixed lab benches, worktop materials, ergonomics, load ratings and Singapore compliance — a practical buyer's guide.",
+    keywords: "lab bench, choosing lab benches, modular lab bench, epoxy worktop, lab bench height",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/guides/choosing-lab-benches"
+  },
+  guideFumeVsBSC: {
+    title: "Fume Hood vs Biosafety Cabinet — Which Do You Need? | Innosin Lab",
+    description: "When to use a chemical fume hood and when to use a Class II biosafety cabinet — standards, special cases and Singapore guidance.",
+    keywords: "fume hood vs biosafety cabinet, bsc vs fume hood, class ii a2, chemical fume hood",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/guides/fume-hood-vs-biosafety-cabinet"
+  },
+  guideDuctedVsDuctless: {
+    title: "Ducted vs Ductless Fume Hoods — Which Should You Buy? | Innosin Lab",
+    description: "Pros, cons and 10-year cost comparison for ducted vs ductless (filtered) fume hoods, with Singapore standards (SS 651, EN 14175).",
+    keywords: "ducted vs ductless fume hood, filtered fume hood, recirculating fume hood, en 14175",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/guides/ducted-vs-ductless-fume-hoods"
+  },
+  guideLabCabinets: {
+    title: "Lab Cabinets Buying Guide — Storage, Safety & Sizing | Innosin Lab",
+    description: "Under-bench, tall, wall, mobile and chemical safety cabinets — how to size and specify laboratory storage for Singapore labs.",
+    keywords: "lab cabinets, laboratory storage, flammable cabinet, ss304 lab cabinet, mobile cabinet",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/guides/lab-cabinets-buying-guide"
+  },
+  guideStandardsSG: {
+    title: "Lab Furniture Standards in Singapore — SS, EN, NSF & SCDF | Innosin Lab",
+    description: "Reference guide to SS 651, EN 14175, ASHRAE 110, NSF/ANSI 49, SEFA 8 and SCDF flammable storage codes for Singapore labs.",
+    keywords: "ss 651, en 14175, nsf 49, sefa 8, lab standards singapore, scdf flammable storage",
+    ogImage: OG_IMAGE,
+    canonical: "https://www.innosinlab.com/guides/lab-furniture-standards-singapore"
   }
 };
 
