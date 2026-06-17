@@ -17,8 +17,12 @@ const HeaderBrand = () => {
         <div className="flex items-center space-x-16">
           <Link to="/" className="flex items-center space-x-2">
             <img 
-              src="/branding/hero-logo.png?v=20250925-2" 
+              src="/branding/hero-logo.webp" 
               alt="Innosin Lab" 
+              width={140}
+              height={140}
+              fetchPriority="high"
+              decoding="async"
               className="h-10 md:h-12 w-auto block"
               style={{ 
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
