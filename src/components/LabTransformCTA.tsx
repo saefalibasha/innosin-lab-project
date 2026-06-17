@@ -7,9 +7,8 @@ import { homePageContent } from '@/data/homePageContent';
 
 const LabTransformCTA = () => {
   return (
-    <section className="py-24 bg-gradient-to-br from-white via-gray-50/30 to-sea/5 relative overflow-hidden transition-all duration-700 ease-in-out">
-      {/* Subtle background pattern */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
+    <section className="py-24 bg-gradient-to-b from-background to-sea/5 relative overflow-hidden">
+
       
       <div className="container mx-auto px-4 text-center relative z-10">
         <div className="animate-fade-in">

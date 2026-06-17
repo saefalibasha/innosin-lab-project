@@ -82,7 +82,7 @@ const ShopTheLook = () => {
 
   if (isLoading || !shopLookContent) {
     return (
-      <section className="py-16 bg-gradient-to-br from-white via-gray-50/30 to-sea/5">
+      <section className="py-16 bg-background">
         <div className="container mx-auto px-4">
           <div className="text-center">Loading...</div>
         </div>
@@ -91,7 +91,7 @@ const ShopTheLook = () => {
   }
 
   return (
-    <section className="py-16 bg-gradient-to-br from-white via-gray-50/30 to-sea/5">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-6">
