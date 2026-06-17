@@ -81,8 +81,8 @@ const Index = () => {
         <ShopTheLook />
 
         {/* Laboratory Transformations Section */}
-        <section className="py-20 bg-white relative overflow-hidden transition-all duration-700 ease-in-out w-full">
-          <div className="absolute inset-0 bg-gradient-to-r from-sea/5 to-transparent"></div>
+        <section className="py-20 bg-background relative overflow-hidden w-full">
+
           <div className="container mx-auto px-4 relative z-10">
             <Reveal>
               <div className="text-center mb-20">
@@ -103,7 +103,7 @@ const Index = () => {
         <LabTransformCTA />
 
         {/* Newsletter Subscription Section */}
-        <section className="py-12 bg-gradient-to-br from-sea/5 to-gray-50 transition-all duration-700 ease-in-out w-full">
+        <section className="py-12 bg-gradient-to-b from-sea/5 to-background transition-all duration-700 ease-in-out w-full">
           <div className="container mx-auto px-4">
             <NewsletterSubscription />
           </div>
