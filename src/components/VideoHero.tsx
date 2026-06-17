@@ -49,9 +49,11 @@ const VideoHero = () => {
                       <img
                         src={slide.image}
                         alt={slide.alt}
+                        width={1600}
+                        height={900}
                         loading={idx === 0 ? 'eager' : 'lazy'}
                         fetchPriority={idx === 0 ? 'high' : 'low'}
-                        decoding="async"
+                        decoding={idx === 0 ? 'sync' : 'async'}
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                       
