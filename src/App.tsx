@@ -99,7 +99,17 @@ const PageLoader = ({ timeout = 10000 }: { timeout?: number }) => {
   );
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes — dedupes Supabase fetches across remounts
+      gcTime: 30 * 60 * 1000,   // keep cache 30 min
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>

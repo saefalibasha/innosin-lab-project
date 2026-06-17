@@ -17,10 +17,10 @@ const Index = () => {
   useSEO('home');
 
   const companyData = [
-    { name: 'Broen-Lab', logo: '/brand-logos/broen-lab-logo.png', origin: 'Denmark', link: '/products?company=Broen-Lab' },
-    { name: 'Hamilton Laboratory Solutions', logo: '/brand-logos/hamilton-laboratory-logo.png', origin: 'USA', link: '/products?company=Hamilton Laboratory Solutions' },
-    { name: 'Oriental Giken Inc.', logo: '/brand-logos/oriental-giken-logo.png', origin: 'Japan', link: '/products?company=Oriental Giken Inc.' },
-    { name: 'Innosin Lab', logo: '/brand-logos/innosin-lab-logo.png', origin: 'Malaysia', link: '/products?company=Innosin Lab' }
+    { name: 'Broen-Lab', logo: '/brand-logos/broen-lab-logo.webp', origin: 'Denmark', link: '/products?company=Broen-Lab' },
+    { name: 'Hamilton Laboratory Solutions', logo: '/brand-logos/hamilton-laboratory-logo.webp', origin: 'USA', link: '/products?company=Hamilton Laboratory Solutions' },
+    { name: 'Oriental Giken Inc.', logo: '/brand-logos/oriental-giken-logo.webp', origin: 'Japan', link: '/products?company=Oriental Giken Inc.' },
+    { name: 'Innosin Lab', logo: '/brand-logos/innosin-lab-logo.webp', origin: 'Malaysia', link: '/products?company=Innosin Lab' }
   ];
 
   return (
@@ -60,6 +60,10 @@ const Index = () => {
                     <img
                       src={company.logo}
                       alt={`${company.name} Logo`}
+                      width={224}
+                      height={224}
+                      loading="lazy"
+                      decoding="async"
                       className="w-32 h-32 object-contain transition-transform duration-300 group-hover:scale-110"
                     />
                     <Badge variant="secondary" className="text-xs px-3 py-1 bg-gray-100 text-gray-800">
