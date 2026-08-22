@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import GoogleMapsLocation from '@/components/GoogleMapsLocation';
 import { useSEO } from '@/hooks/useSEO';
 import NewsletterSubscription from '@/components/NewsletterSubscription';
@@ -104,6 +105,7 @@ const Contact = () => {
       toast.success(contactPageContent.form.successMessage);
       setFormData({ name: '', email: '', company: '', jobTitle: '', subject: '', message: '' });
       setCooldown(60);
+      navigate('/quote-received');
 
     } catch (error) {
       console.error('Contact form submission error:', error);
