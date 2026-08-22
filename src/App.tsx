@@ -28,6 +28,7 @@ import {
   LazyFloorPlanner,
   LazyContact,
   LazyRFQCart,
+  LazyQuoteReceived,
   LazyLabFurnitureSG,
   LazyFumeHoodsSG,
   LazySupplierSG,
