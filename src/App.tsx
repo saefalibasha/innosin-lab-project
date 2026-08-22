@@ -28,6 +28,7 @@ import {
   LazyFloorPlanner,
   LazyContact,
   LazyRFQCart,
+  LazyQuoteReceived,
   LazyLabFurnitureSG,
   LazyFumeHoodsSG,
   LazySupplierSG,
@@ -178,6 +179,11 @@ const App = () => (
                 <Route path="/rfq-cart" element={
                   <Suspense fallback={<PageLoader />}>
                     <LazyRFQCart />
+                  </Suspense>
+                } />
+                <Route path="/quote-received" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyQuoteReceived />
                   </Suspense>
                 } />
                 <Route path="/lab-furniture-singapore" element={

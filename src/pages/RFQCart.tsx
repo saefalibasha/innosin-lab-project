@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,7 @@ import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import { supabase } from '@/integrations/supabase/client';
 
 const RFQCart = () => {
+  const navigate = useNavigate();
   const { items, removeItem, updateItem, clearCart, itemCount } = useRFQ();
   const [contactInfo, setContactInfo] = useState({
     name: '',
@@ -115,6 +116,7 @@ const RFQCart = () => {
       toast.success('Request for Quote submitted successfully! A support ticket has been created and our team will follow up within 24 hours.');
       clearCart();
       setContactInfo({ name: '', email: '', company: '', phone: '', message: '' });
+      navigate('/quote-received');
     } catch (error) {
       console.error('RFQ submission error:', error);
       toast.error('Failed to submit RFQ. Please try again.');
