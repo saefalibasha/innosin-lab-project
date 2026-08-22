@@ -180,6 +180,11 @@ const App = () => (
                     <LazyRFQCart />
                   </Suspense>
                 } />
+                <Route path="/quote-received" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LazyQuoteReceived />
+                  </Suspense>
+                } />
                 <Route path="/lab-furniture-singapore" element={
                   <Suspense fallback={<PageLoader />}>
                     <LazyLabFurnitureSG />

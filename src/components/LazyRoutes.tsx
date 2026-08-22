@@ -47,6 +47,7 @@ export const LazyFloorPlanner = lazyWithRetry(
 export const LazyContact = lazy(() => import('../pages/Contact'));
 export const LazyAuth = lazy(() => import('../pages/Auth'));
 export const LazyRFQCart = lazy(() => import('../pages/RFQCart'));
+export const LazyQuoteReceived = lazy(() => import('../pages/QuoteReceived'));
 
 // SEO landing pages (Singapore)
 export const LazyLabFurnitureSG = lazy(() => import('../pages/seo/LabFurnitureSingapore'));
