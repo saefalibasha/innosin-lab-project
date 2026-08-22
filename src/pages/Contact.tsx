@@ -17,6 +17,7 @@ import { useHubSpotIntegration } from '@/hooks/useHubSpotIntegration';
 import { supabase } from '@/integrations/supabase/client';
 
 const Contact = () => {
+  const navigate = useNavigate();
   // Optimize SEO for contact page
   useSEO('contact');
 
