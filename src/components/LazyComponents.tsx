@@ -42,7 +42,7 @@ export const LazyLabTransformCTA = withLazyLoading(
 
 // Map component with loading
 export const LazyMap = withLazyLoading(
-  () => import('../components/Map/BasicMap'),
+  () => import('../components/Map/GoogleMap'),
   <div className="h-96 bg-muted animate-pulse rounded-lg flex items-center justify-center">
     <div className="text-center">
       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>

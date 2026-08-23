@@ -141,14 +141,6 @@ const GoogleMapsLocation = () => {
                   >
                     Open in Google Maps
                   </a>
-                  <a
-                    href={`https://www.openstreetmap.org/?mlat=${selectedOffice.coordinates.lat}&mlon=${selectedOffice.coordinates.lng}#map=17/${selectedOffice.coordinates.lat}/${selectedOffice.coordinates.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-3 py-2 bg-white/90 dark:bg-gray-800/90 text-sm font-medium rounded-lg shadow-md hover:bg-white dark:hover:bg-gray-800 transition-colors"
-                  >
-                    Open in OpenStreetMap
-                  </a>
                 </div>
                 
                 {/* Click to open overlay */}

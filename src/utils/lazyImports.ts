@@ -26,11 +26,8 @@ export const loadLibrary = {
   // Load Recharts only when charts are needed
   recharts: () => import('recharts'),
   
-  // Load Leaflet only when maps are needed
-  leaflet: () => import('leaflet'),
-  
-  // Load React Leaflet only when maps are needed
-  reactLeaflet: () => import('react-leaflet'),
+  // Load analytics only when needed
+  analytics: () => import('@vercel/analytics'),
 };
 
 // Preload critical chunks based on user interaction
