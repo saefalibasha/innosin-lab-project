@@ -1,6 +1,5 @@
 /* Main CSS Entry Point - Modular Design System */
 /* Fonts optimized via preload in index.html - removed duplicate import */
-/* Leaflet CSS loaded dynamically only when needed */
 
 @tailwind base;
 @tailwind components;
