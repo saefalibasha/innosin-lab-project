@@ -25,9 +25,6 @@ export const loadLibrary = {
   
   // Load Recharts only when charts are needed
   recharts: () => import('recharts'),
-  
-  // Load analytics only when needed
-  analytics: () => import('@vercel/analytics'),
 };
 
 // Preload critical chunks based on user interaction
